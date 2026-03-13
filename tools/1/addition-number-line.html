@@ -101,6 +101,8 @@ body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);heigh
 /* ── Tick hover/click styling (in SVG via JS) ── */
 @keyframes drawIn { from { opacity:0; } to { opacity:1; } }
 @keyframes pulseGlow { 0%,100%{filter:drop-shadow(0 0 4px currentColor);} 50%{filter:drop-shadow(0 0 12px currentColor);} }
+@keyframes stepPulse { 0%,100%{ r:10; opacity:0.7; } 50%{ r:14; opacity:1; } }
+@keyframes stepRipple { 0%{ r:8; opacity:0.6; } 100%{ r:24; opacity:0; } }
 .anim { opacity:0; }
 
 ::-webkit-scrollbar{width:6px;}::-webkit-scrollbar-track{background:transparent;}::-webkit-scrollbar-thumb{background:var(--border);border-radius:3px;}
@@ -150,10 +152,12 @@ let S = {
   // Explore inputs
   a:3, b:4, op:'+', eTotal:7,
   // Interactive state machine
-  // phase: 'ready' | 'click1' | 'click2' | 'answer' | 'done'
+  // phase: 'ready' | 'click1' | 'stepping' | 'click2' | 'answer' | 'done'
   phase:'ready',
   clickedA: null, // tick value student clicked for first jump
   clickedR: null, // tick value student clicked for second jump (result)
+  stepCurrent: null, // current position during stepping
+  stepsCompleted: [], // ticks already tapped during step-through
   // Practice
   pA:0, pB:0, pOp:'+', pAnswer:0, pMissing:'result',
   // Play
@@ -170,7 +174,7 @@ function rand(a,b){return Math.floor(Math.random()*(b-a+1))+a;}
 function showFB(t,c){const f=document.getElementById('feedback');f.textContent=t;f.className='feedback '+c+' show';setTimeout(()=>f.classList.remove('show'),1200);}
 
 function setMode(m){
-  S.mode=m; S.phase='ready'; S.clickedA=null; S.clickedR=null;
+  S.mode=m; S.phase='ready'; S.clickedA=null; S.clickedR=null; S.stepCurrent=null; S.stepsCompleted=[];
   document.querySelectorAll('.mode-tab').forEach(t=>t.className='mode-tab');
   document.getElementById('tab'+m.charAt(0).toUpperCase()+m.slice(1)).className='mode-tab active-'+m;
   S.round=0; S.score=0; S.streak=0;
@@ -181,7 +185,7 @@ function setDiff(d){
   S.diff=d; S.maxNL=d==='emergent'?10:20;
   document.querySelectorAll('.diff-btn').forEach(b=>b.classList.remove('active'));
   document.getElementById('diff'+d.charAt(0).toUpperCase()).classList.add('active');
-  S.phase='ready'; S.clickedA=null; S.clickedR=null;
+  S.phase='ready'; S.clickedA=null; S.clickedR=null; S.stepCurrent=null; S.stepsCompleted=[];
   if(S.mode==='practice') newPractice();
   if(S.mode==='play'){S.round=0;}
   render();
@@ -239,20 +243,73 @@ function buildInteractiveNL(a, b, op, max, phase, clickedA, clickedR, clickable,
   // ── Zero dot (always) ──
   html += `<circle cx="${nx(0, max)}" cy="${NL_Y}" r="5" fill="#8b9cc0"/>`;
 
+  // ── STEP-THROUGH DOTS (show completed steps + next step glow) ──
+  const stepsCompleted = S.stepsCompleted || [];
+  const stepCurrent = S.stepCurrent;
+
+  // Draw completed step dots (small pink filled dots along the path)
+  if(stepsCompleted.length > 0 && clickedA !== null){
+    stepsCompleted.forEach((tick, idx) => {
+      const sx = nx(tick, max);
+      html += `<circle cx="${sx}" cy="${NL_Y}" r="6" fill="#ff3b8b" stroke="#0a0e1a" stroke-width="1.5" opacity="0.9">
+        <animate attributeName="opacity" values="0;0.9" dur="0.2s" fill="freeze"/>
+      </circle>`;
+      // Small hop arc from previous position to this tick
+      const prevTick = idx === 0 ? clickedA : stepsCompleted[idx - 1];
+      const px = nx(prevTick, max);
+      const arcMidX = (px + sx) / 2;
+      const arcY = NL_Y - 28;
+      html += `<path d="M${px},${NL_Y - 6} Q${arcMidX},${arcY} ${sx},${NL_Y - 6}"
+        fill="none" stroke="#ff3b8b" stroke-width="2" stroke-dasharray="4,3" opacity="0.5">
+        <animate attributeName="opacity" values="0;0.5" dur="0.3s" fill="freeze"/>
+      </path>`;
+    });
+  }
+
   // ── CLICKABLE TICK ZONES (invisible wider hit areas) ──
   if(clickable){
     for(let i = 0; i <= max; i++){
       const x = nx(i, max);
       // Determine expected click based on phase
       let isExpected = false;
+      let isNextStep = false;
       if(phase === 'click1' && i === a) isExpected = true;
       if(phase === 'click2' && i === result) isExpected = true;
+      if(phase === 'stepping') {
+        // During stepping, highlight the NEXT tick to tap
+        const nextTick = S.stepCurrent !== null ? S.stepCurrent + (op === '+' ? 1 : -1) : (clickedA + (op === '+' ? 1 : -1));
+        if(i === nextTick) isNextStep = true;
+        // Also show upcoming dots as faint guides
+        const startFrom = clickedA;
+        const endAt = result;
+        const direction = op === '+' ? 1 : -1;
+        const isOnPath = op === '+' ? (i > clickedA && i <= result) : (i < clickedA && i >= result);
+        const isAlreadyDone = stepsCompleted.includes(i);
+        if(isOnPath && !isAlreadyDone && !isNextStep){
+          // Faint upcoming dot
+          html += `<circle cx="${x}" cy="${NL_Y}" r="6" fill="none" stroke="#ff3b8b" stroke-width="1.5" opacity="0.2"/>`;
+        }
+      }
 
-      // Hover glow ring for expected tick
+      // Glow ring for expected click1/click2
       if(isExpected){
         const glowColor = phase === 'click1' ? '#00d4ff' : '#ff3b8b';
         html += `<circle cx="${x}" cy="${NL_Y}" r="14" fill="none" stroke="${glowColor}" stroke-width="2" opacity="0.5" style="animation: pulseGlow 1.5s ease-in-out infinite; color:${glowColor};">
           <animate attributeName="r" values="12;16;12" dur="1.5s" repeatCount="indefinite"/>
+        </circle>`;
+      }
+
+      // Glowing pulsing dot for next step during stepping phase
+      if(isNextStep){
+        // Ripple ring
+        html += `<circle cx="${x}" cy="${NL_Y}" r="8" fill="none" stroke="#ff3b8b" stroke-width="2" opacity="0">
+          <animate attributeName="r" values="8;24" dur="1.5s" repeatCount="indefinite"/>
+          <animate attributeName="opacity" values="0.6;0" dur="1.5s" repeatCount="indefinite"/>
+        </circle>`;
+        // Main glowing dot
+        html += `<circle cx="${x}" cy="${NL_Y}" fill="#ff3b8b" stroke="#fff" stroke-width="2" opacity="0.8">
+          <animate attributeName="r" values="8;11;8" dur="1s" repeatCount="indefinite"/>
+          <animate attributeName="opacity" values="0.7;1;0.7" dur="1s" repeatCount="indefinite"/>
         </circle>`;
       }
 
@@ -360,44 +417,61 @@ function tickClickExplore(n){
   const isMissingAddend = (S.diff === 'advanced');
 
   if(isMissingAddend){
-    // Missing addend mode: click start (a), then click total (eTotal)
+    // Missing addend mode: click start (a), then step to total (eTotal)
     const target2 = S.eTotal;
     if(S.phase === 'click1'){
       if(n === S.a){
         S.clickedA = n;
-        S.phase = 'click2';
+        S.stepsCompleted = [];
+        S.stepCurrent = n;
+        S.phase = 'stepping';
         render();
       } else {
         showFB(`Click on ${S.a}!`, 'try-again');
       }
-    } else if(S.phase === 'click2'){
-      if(n === target2){
-        S.clickedR = n;
-        S.phase = 'answer';
+    } else if(S.phase === 'stepping'){
+      const nextExpected = S.stepCurrent + 1; // always forward for missing addend
+      if(n === nextExpected){
+        S.stepsCompleted.push(n);
+        S.stepCurrent = n;
+        if(n === target2){
+          // All steps done
+          S.clickedR = n;
+          S.phase = 'answer';
+        }
         render();
       } else {
-        showFB(`Click on ${target2} — that's your total!`, 'try-again');
+        showFB(`Tap ${nextExpected} — one step at a time!`, 'try-again');
       }
     }
   } else {
-    // Standard mode: click start (a), then click result
+    // Standard mode: click start (a), then step to result
     const result = S.op==='+'? S.a+S.b : S.a-S.b;
     if(S.phase === 'click1'){
       if(n === S.a){
         S.clickedA = n;
-        S.phase = 'click2';
+        S.stepsCompleted = [];
+        S.stepCurrent = n;
+        S.phase = 'stepping';
         render();
       } else {
         showFB(`Click on ${S.a}!`, 'try-again');
       }
-    } else if(S.phase === 'click2'){
-      if(n === result){
-        S.clickedR = n;
-        S.phase = 'done';
+    } else if(S.phase === 'stepping'){
+      const direction = S.op === '+' ? 1 : -1;
+      const nextExpected = S.stepCurrent + direction;
+      if(n === nextExpected){
+        S.stepsCompleted.push(n);
+        S.stepCurrent = n;
+        if(n === result){
+          // All steps done — complete the arrow
+          S.clickedR = n;
+          S.phase = 'done';
+        }
         render();
       } else {
-        const direction = S.op === '+' ? 'forward' : 'backward';
-        showFB(`Count ${S.b} ${direction} from ${S.a}`, 'try-again');
+        const word = S.op === '+' ? 'forward' : 'backward';
+        showFB(`Tap ${nextExpected} — count ${word} one step!`, 'try-again');
       }
     }
   }
@@ -409,30 +483,33 @@ function tickClickPractice(n){
   if(S.phase === 'click1'){
     if(n === S.pA){
       S.clickedA = n;
-      S.phase = 'click2';
+      S.stepsCompleted = [];
+      S.stepCurrent = n;
+      S.phase = 'stepping';
       render();
     } else {
       showFB(`Click on ${S.pA} first!`, 'try-again');
     }
-  } else if(S.phase === 'click2'){
-    if(n === correctResult){
-      S.clickedR = n;
-      S.phase = 'answer';
-      render();
-      // Focus the answer input after render
-      setTimeout(()=>{
-        const inp = document.getElementById('practiceAnswer');
-        if(inp) inp.focus();
-      }, 200);
-    } else {
-      let hint;
-      if(S.pMissing === 'addend'){
-        hint = `Click on ${S.pAnswer} on the number line`;
+  } else if(S.phase === 'stepping'){
+    const direction = S.pOp === '+' ? 1 : -1;
+    const nextExpected = S.stepCurrent + direction;
+    if(n === nextExpected){
+      S.stepsCompleted.push(n);
+      S.stepCurrent = n;
+      if(n === correctResult){
+        S.clickedR = n;
+        S.phase = 'answer';
+        render();
+        setTimeout(()=>{
+          const inp = document.getElementById('practiceAnswer');
+          if(inp) inp.focus();
+        }, 200);
       } else {
-        const direction = S.pOp === '+' ? 'forward' : 'backward';
-        hint = `Count ${S.pB} ${direction} from ${S.pA}`;
+        render();
       }
-      showFB(hint, 'try-again');
+    } else {
+      const word = S.pOp === '+' ? 'forward' : 'backward';
+      showFB(`Tap ${nextExpected} — count ${word} one step!`, 'try-again');
     }
   }
 }
@@ -451,6 +528,8 @@ function startExplore(){
   S.phase = 'click1';
   S.clickedA = null;
   S.clickedR = null;
+  S.stepCurrent = null;
+  S.stepsCompleted = [];
   render();
 }
 
@@ -486,8 +565,10 @@ function renderExplore(ws, sp){
       h += `<div class="instruction-box" style="border-color:var(--pink);">Set the <strong>start</strong> and <strong>total</strong>, then click <strong>Start</strong> to find the missing addend!</div>`;
     } else if(S.phase === 'click1'){
       h += `<div class="instruction-box highlight-cyan">Click on <strong>${S.a}</strong> — that's your starting number</div>`;
-    } else if(S.phase === 'click2'){
-      h += `<div class="instruction-box highlight-pink">Now click on <strong>${S.eTotal}</strong> — where do you end up?</div>`;
+    } else if(S.phase === 'stepping'){
+      const stepsLeft = S.eTotal - S.stepCurrent;
+      const nextTick = S.stepCurrent + 1;
+      h += `<div class="instruction-box highlight-pink">Tap the glowing dot on <strong>${nextTick}</strong> — ${stepsLeft} step${stepsLeft!==1?'s':''} to go!</div>`;
     } else if(S.phase === 'answer'){
       h += `<div class="instruction-box highlight-green">Count the jumps from ${S.a} to ${S.eTotal}. How many is that?</div>`;
     } else if(S.phase === 'done'){
@@ -508,7 +589,7 @@ function renderExplore(ws, sp){
     h += '</div>';
 
     // Number line — use missingVal as b for the arrow
-    const clickable = (S.phase === 'click1' || S.phase === 'click2');
+    const clickable = (S.phase === 'click1' || S.phase === 'click2' || S.phase === 'stepping');
     h += buildInteractiveNL(S.a, missingVal, '+', S.maxNL, S.phase, S.clickedA, S.clickedR, clickable, 'addend');
 
     // Controls
@@ -544,8 +625,12 @@ function renderExplore(ws, sp){
       h += `<div class="instruction-box">Set your numbers, then click <strong>Start</strong> to build the jumps!</div>`;
     } else if(S.phase === 'click1'){
       h += `<div class="instruction-box highlight-cyan">Click on <strong>${S.a}</strong> on the number line to make the first jump</div>`;
-    } else if(S.phase === 'click2'){
-      h += `<div class="instruction-box highlight-pink">Now count ${S.b} ${S.op==='+'?'forward':'backward'} — click on the answer!</div>`;
+    } else if(S.phase === 'stepping'){
+      const direction = S.op === '+' ? 1 : -1;
+      const target = S.op === '+' ? S.a + S.b : S.a - S.b;
+      const stepsLeft = Math.abs(target - S.stepCurrent);
+      const nextTick = S.stepCurrent + direction;
+      h += `<div class="instruction-box highlight-pink">Tap <strong>${nextTick}</strong> — count ${S.op==='+'?'forward':'backward'} one step! (${stepsLeft} left)</div>`;
     } else if(S.phase === 'done'){
       h += `<div class="instruction-box highlight-green">${S.a} ${S.op} ${S.b} = ${res}</div>`;
     }
@@ -560,7 +645,7 @@ function renderExplore(ws, sp){
     h += '</div>';
 
     // Interactive number line
-    const clickable = (S.phase === 'click1' || S.phase === 'click2');
+    const clickable = (S.phase === 'click1' || S.phase === 'click2' || S.phase === 'stepping');
     h += buildInteractiveNL(S.a, S.b, S.op, S.maxNL, S.phase, S.clickedA, S.clickedR, clickable, null);
 
     // Controls row
@@ -639,6 +724,7 @@ function renderExplore(ws, sp){
 function newPractice(){
   const max = S.diff==='emergent'?10:20;
   S.clickedA = null; S.clickedR = null; S.phase = 'click1';
+  S.stepCurrent = null; S.stepsCompleted = [];
   if(S.diff==='advanced'){
     S.pA = rand(1, Math.floor(max/2));
     S.pAnswer = rand(S.pA+1, Math.min(S.pA+10, max));
@@ -670,11 +756,12 @@ function renderPractice(ws, sp){
   // Instruction banner that evolves with phase
   if(S.phase === 'click1'){
     h += `<div class="instruction-box highlight-cyan">Click on <strong>${S.pA}</strong> on the number line to start</div>`;
-  } else if(S.phase === 'click2'){
-    const dir = S.pOp === '+' ? 'forward' : 'backward';
-    h += `<div class="instruction-box highlight-pink">${S.pMissing==='addend' ?
-      `Click on <strong>${S.pA+S.pB}</strong> — where do you land?` :
-      `Count <strong>${S.pB}</strong> ${dir} from ${S.pA} — click the answer!`}</div>`;
+  } else if(S.phase === 'stepping'){
+    const direction = S.pOp === '+' ? 1 : -1;
+    const target = S.pOp === '+' ? S.pA + S.pB : S.pA - S.pB;
+    const stepsLeft = Math.abs(target - S.stepCurrent);
+    const nextTick = S.stepCurrent + direction;
+    h += `<div class="instruction-box highlight-pink">Tap <strong>${nextTick}</strong> — ${stepsLeft} step${stepsLeft!==1?'s':''} to go!</div>`;
   } else if(S.phase === 'answer'){
     h += `<div class="instruction-box highlight-green">Great jumps! Now type your answer below</div>`;
   }
@@ -697,7 +784,7 @@ function renderPractice(ws, sp){
   h += '</div>';
 
   // Interactive number line with arrows built as they click
-  const clickable = (S.phase === 'click1' || S.phase === 'click2');
+  const clickable = (S.phase === 'click1' || S.phase === 'click2' || S.phase === 'stepping');
   h += buildInteractiveNL(S.pA, S.pB, S.pOp, max, S.phase, S.clickedA, S.clickedR, clickable, S.pMissing);
 
   // Answer input only shows AFTER both arrows are placed
@@ -724,9 +811,9 @@ function renderPractice(ws, sp){
       <strong style="color:var(--cyan);">① Click ${S.pA}</strong><br>
       <span style="font-size:12px;">Place the first dot on the number line</span>
     </div>
-    <div style="margin-bottom:8px;opacity:${S.phase==='click2'?1:(S.clickedA!==null?0.5:0.3)};">
-      <strong style="color:var(--pink);">② Count ${S.pOp==='+'?'forward':'backward'} ${S.pMissing==='addend'?'?':S.pB}</strong><br>
-      <span style="font-size:12px;">Click where you land</span>
+    <div style="margin-bottom:8px;opacity:${S.phase==='stepping'?1:(S.clickedA!==null?0.5:0.3)};">
+      <strong style="color:var(--pink);">② Tap each dot ${S.pOp==='+'?'forward':'backward'}</strong><br>
+      <span style="font-size:12px;">One step at a time to ${S.pMissing==='addend'?'the total':'the answer'}!</span>
     </div>
     <div style="opacity:${S.phase==='answer'?1:0.3};">
       <strong style="color:var(--green);">③ Type the answer</strong><br>
