@@ -1,0 +1,951 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>VINCULUM — Addition Strategies</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="../../vinculum-core.css">
+<style>
+        /* Theme system loaded from vinculum-core.css */
+.vinculum-rtm-btn .rtm-icon{font-size:14px;}
+
+/* ═══ FOCUS VISIBLE (Keyboard Navigation) ═══ */
+*:focus-visible {
+  outline:2px solid var(--cyan);outline-offset:2px;border-radius:4px;
+}
+.sr-only {
+  position:absolute;width:1px;height:1px;padding:0;margin:-1px;
+  overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0;
+}
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            height: 100vh;
+            overflow: hidden;
+        }
+
+        .container {
+            display: flex;
+            flex-direction: column;
+            height: 100vh;
+        }
+
+        /* Header */
+        .back-btn {
+  display:inline-block;padding:6px 12px;border-radius:8px;
+  border:1px solid var(--border);background:transparent;
+  color:var(--text2);font-size:13px;font-family:inherit;
+  cursor:pointer;transition:all 0.2s;text-decoration:none;
+}
+.back-btn:hover { background:var(--card); color:var(--cyan); }
+.header {
+            background: linear-gradient(180deg, rgba(26, 34, 54, 0.8) 0%, rgba(17, 24, 39, 0.4) 100%);
+            border-bottom: 1px solid var(--border);
+            padding: 16px 24px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 20px;
+        }
+
+        .header-left {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+        }
+
+        .header-title {
+            font-size: 20px;
+            font-weight: 700;
+            background: var(--grad);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .badges {
+            display: flex;
+            gap: 8px;
+            align-items: center;
+        }
+
+        .badge {
+            background: var(--card2);
+            border: 1px solid var(--border);
+            padding: 4px 12px;
+            border-radius: 12px;
+            font-size: 11px;
+            font-weight: 600;
+            color: var(--cyan);
+            font-family: 'JetBrains Mono', monospace;
+            text-transform: uppercase;
+        }
+
+        /* Mode Tabs */
+        .mode-tabs {
+            display: flex;
+            gap: 12px;
+            padding: 12px 24px;
+            background: var(--bg2);
+            border-bottom: 1px solid var(--border);
+        }
+
+        .tab-button {
+            flex: 1;
+            padding: 10px 16px;
+            border: 1px solid var(--border);
+            border-radius: 20px;
+            background: transparent;
+            color: var(--text2);
+            font-weight: 500;
+            cursor: pointer;
+            font-size: 13px;
+            transition: all 0.3s ease;
+        }
+
+        .tab-button.active {
+            background: var(--cyan);
+            color: var(--bg);
+            border-color: var(--cyan);
+        }
+
+        .tab-button:hover:not(.active) {
+            border-color: var(--cyan);
+            color: var(--cyan);
+        }
+
+        /* Main Content Area */
+        .main-content {
+            display: flex;
+            flex: 1;
+            gap: 16px;
+            padding: 16px 24px;
+            overflow: hidden;
+        }
+
+        .workspace {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            overflow: auto;
+        }
+
+        .side-panel {
+            width: 280px;
+            background: var(--card);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 16px;
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+        }
+
+        .side-panel-section h3 {
+            font-size: 12px;
+            font-weight: 700;
+            text-transform: uppercase;
+            color: var(--cyan);
+            margin-bottom: 8px;
+            letter-spacing: 0.5px;
+        }
+
+        .vocabulary {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            font-size: 12px;
+        }
+
+        .vocab-item {
+            padding: 8px;
+            background: var(--card2);
+            border-left: 2px solid var(--cyan);
+            border-radius: 4px;
+        }
+
+        .vocab-term {
+            font-weight: 600;
+            color: var(--cyan);
+            font-family: 'JetBrains Mono', monospace;
+        }
+
+        .vocab-def {
+            color: var(--text2);
+            margin-top: 2px;
+            font-size: 11px;
+        }
+
+        .fact-box {
+            background: var(--card2);
+            border-left: 2px solid var(--yellow);
+            padding: 8px;
+            border-radius: 4px;
+            font-size: 12px;
+            color: var(--text2);
+            line-height: 1.4;
+        }
+
+        /* Strategy Container */
+        .strategy-container {
+            background: var(--card);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 16px;
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+        }
+
+        .problem-display {
+            font-size: 28px;
+            font-weight: 700;
+            font-family: 'JetBrains Mono', monospace;
+            text-align: center;
+            padding: 16px;
+            background: var(--card2);
+            border-radius: 8px;
+            color: var(--cyan);
+            margin-bottom: 12px;
+        }
+
+        .strategy-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 12px;
+        }
+
+        .strategy-box {
+            background: var(--card2);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: 12px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .strategy-box:hover {
+            border-color: var(--cyan);
+            transform: translateY(-2px);
+        }
+
+        .strategy-box.selected {
+            background: var(--cyan);
+            color: var(--bg);
+            border-color: var(--cyan);
+        }
+
+        .strategy-title {
+            font-weight: 700;
+            font-size: 13px;
+            margin-bottom: 8px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .strategy-steps {
+            font-size: 11px;
+            line-height: 1.5;
+            color: var(--text2);
+        }
+
+        .strategy-box.selected .strategy-steps {
+            color: inherit;
+        }
+
+        /* Visual Models */
+        .model-display {
+            background: var(--card2);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: 16px;
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            align-items: center;
+        }
+
+        .ten-frame {
+            display: grid;
+            grid-template-columns: repeat(5, 1fr);
+            gap: 6px;
+            padding: 12px;
+            background: var(--bg2);
+            border-radius: 6px;
+        }
+
+        .counter {
+            width: 40px;
+            height: 40px;
+            border: 2px solid var(--border);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 700;
+            font-size: 12px;
+        }
+
+        .counter.filled {
+            background: var(--cyan);
+            color: var(--bg);
+            border-color: var(--cyan);
+        }
+
+        /* Practice & Play Sections */
+        .practice-section {
+            background: var(--card);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 16px;
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+        }
+
+        .question-text {
+            font-size: 14px;
+            font-weight: 600;
+            color: var(--text);
+            margin-bottom: 12px;
+        }
+
+        .choices {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 8px;
+        }
+
+        .choice-btn {
+            padding: 10px 8px;
+            background: var(--card2);
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            color: var(--text);
+            font-weight: 600;
+            cursor: pointer;
+            font-size: 13px;
+            transition: all 0.2s ease;
+        }
+
+        .choice-btn:hover {
+            border-color: var(--cyan);
+            background: rgba(0, 212, 255, 0.1);
+        }
+
+        .choice-btn.selected {
+            background: var(--cyan);
+            color: var(--bg);
+            border-color: var(--cyan);
+        }
+
+        .choice-btn.correct {
+            background: var(--green);
+            color: var(--bg);
+            border-color: var(--green);
+        }
+
+        .choice-btn.incorrect {
+            animation: shake 0.3s ease-out;
+        }
+
+        @keyframes shake {
+            0%, 100% { transform: translateX(0); }
+            25% { transform: translateX(-5px); }
+            75% { transform: translateX(5px); }
+        }
+
+        /* Play Mode */
+        .play-section {
+            background: var(--card);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 16px;
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+        }
+
+        .play-stats {
+            display: flex;
+            gap: 16px;
+            margin-bottom: 12px;
+        }
+
+        .stat {
+            flex: 1;
+            background: var(--card2);
+            padding: 12px;
+            border-radius: 8px;
+            border-left: 2px solid var(--cyan);
+        }
+
+        .stat-label {
+            font-size: 11px;
+            font-weight: 600;
+            text-transform: uppercase;
+            color: var(--text2);
+            margin-bottom: 4px;
+        }
+
+        .stat-value {
+            font-size: 24px;
+            font-weight: 700;
+            color: var(--cyan);
+            font-family: 'JetBrains Mono', monospace;
+        }
+
+        .btn {
+            padding: 8px 16px;
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            background: var(--bg2);
+            color: var(--text);
+            font-weight: 600;
+            cursor: pointer;
+            font-size: 12px;
+            transition: all 0.2s ease;
+            font-family: 'Inter', sans-serif;
+        }
+
+        .btn:hover {
+            background: var(--cyan);
+            color: var(--bg);
+            border-color: var(--cyan);
+        }
+
+        .btn-sm {
+            padding: 6px 12px;
+            font-size: 11px;
+        }
+
+        .btn-group {
+            display: flex;
+            gap: 8px;
+            flex-wrap: wrap;
+        }
+
+        .scrollable {
+            overflow-y: auto;
+        }
+
+        ::-webkit-scrollbar {
+            width: 6px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: var(--bg2);
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: var(--border);
+            border-radius: 3px;
+        }
+
+        ::-webkit-scrollbar-thumb:hover {
+            background: var(--muted);
+        }
+
+        @media (max-width: 1200px) {
+            .side-panel {
+                width: 240px;
+            }
+            .strategy-grid {
+                grid-template-columns: repeat(2, 1fr);
+            }
+        }
+
+        @media (max-width: 768px) {
+            .main-content {
+                flex-direction: column;
+            }
+            .side-panel {
+                width: 100%;
+                max-height: 150px;
+            }
+            .workspace {
+                overflow-y: auto;
+            }
+            .strategy-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- Header -->
+        <div class="header">
+            <div class="header-left">
+                <a class="back-btn" href="../../VINCULUM-Hub.html" style="text-decoration:none;">◀ Hub</a>
+                <div class="header-title"><span>VINCULUM</span> Addition Strategies</div>
+                <div class="badges">
+                    <div class="badge">2.NBT</div>
+                    <div class="badge">2.NBT.5</div>
+                    <div class="badge">2.NBT.6</div>
+                    <div class="badge">MN 2.1.2.1</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Mode Tabs -->
+        <div class="mode-tabs">
+            <button class="tab-button active" onclick="switchMode('explore')">Explore</button>
+            <button class="tab-button" onclick="switchMode('practice')">Practice</button>
+            <button class="tab-button" onclick="switchMode('play')">Play</button>
+            <div style="margin-left:auto;display:flex;gap:4px;align-items:center;">
+                <span style="font-size:11px;color:var(--text2);margin-right:4px;">Range:</span>
+                <button class="tab-button active" style="flex:none;padding:6px 12px;" id="diff50" onclick="setDiff('50')">Within 50</button>
+                <button class="tab-button" style="flex:none;padding:6px 12px;" id="diff100" onclick="setDiff('100')">Within 100</button>
+                <button class="tab-button" style="flex:none;padding:6px 12px;" id="diffExplain" onclick="setDiff('explain')">Explain</button>
+            </div>
+        </div>
+
+        <!-- Main Content -->
+        <div class="main-content">
+            <div class="workspace scrollable">
+                <!-- EXPLORE MODE -->
+                <div id="explore-mode" class="mode-content">
+                    <div class="strategy-container">
+                        <div class="problem-display" id="problem-display">25 + 18</div>
+
+                        <div class="strategy-grid" id="strategy-grid">
+                            <!-- Will be populated dynamically -->
+                        </div>
+
+                        <div class="model-display" id="model-display">
+                            <!-- Will be populated dynamically -->
+                        </div>
+
+                        <div style="display: flex; gap: 8px; margin-top: 12px;">
+                            <button class="btn" onclick="generateNewProblem()">New Problem</button>
+                            <button class="btn" onclick="cycleStrategy()">Next Strategy</button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- PRACTICE MODE -->
+                <div id="practice-mode" class="mode-content" style="display: none;">
+                    <div class="practice-section" id="practice-container">
+                        <!-- Will be populated dynamically -->
+                    </div>
+                </div>
+
+                <!-- PLAY MODE -->
+                <div id="play-mode" class="mode-content" style="display: none;">
+                    <div class="play-section">
+                        <div class="play-stats">
+                            <div class="stat">
+                                <div class="stat-label">Time</div>
+                                <div class="stat-value" id="play-timer">00:00</div>
+                            </div>
+                            <div class="stat">
+                                <div class="stat-label">Correct</div>
+                                <div class="stat-value" id="play-correct">0/10</div>
+                            </div>
+                            <div class="stat">
+                                <div class="stat-label">Streak</div>
+                                <div class="stat-value" id="play-streak">0</div>
+                            </div>
+                        </div>
+                        <div id="play-container" style="background: var(--card2); padding: 16px; border-radius: 8px; min-height: 100px;"></div>
+                        <div style="display: flex; gap: 8px;">
+                            <button class="btn" onclick="startPlayRound()">Start Game</button>
+                            <button class="btn" onclick="resetPlayRound()">Reset</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Side Panel -->
+            <div class="side-panel">
+                <div class="side-panel-section">
+                    <h3>Strategies</h3>
+                    <div class="vocabulary">
+                        <div class="vocab-item">
+                            <div class="vocab-term">Make a Ten</div>
+                            <div class="vocab-def">Break numbers to make 10 first</div>
+                        </div>
+                        <div class="vocab-item">
+                            <div class="vocab-term">Decompose</div>
+                            <div class="vocab-def">Break into tens and ones</div>
+                        </div>
+                        <div class="vocab-item">
+                            <div class="vocab-term">Number Line</div>
+                            <div class="vocab-def">Jump along a number line</div>
+                        </div>
+                        <div class="vocab-item">
+                            <div class="vocab-term">Compensation</div>
+                            <div class="vocab-def">Round and adjust the total</div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="side-panel-section">
+                    <h3>Tip</h3>
+                    <div class="fact-box" id="fact-box">
+                        Different strategies work best for different problems!
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+<div class="feedback" id="feedback"></div>
+    <script>
+function showFB(t,c){var f=document.getElementById("feedback");if(!f)return;f.textContent=t;f.className="feedback "+c+" show";setTimeout(function(){f.classList.remove("show");},1200);}
+        // State Management
+        const S = {
+            mode: 'explore',
+            difficulty: '50',
+            currentProblem: { a: 25, b: 18 },
+            currentStrategy: 0,
+            playGameRunning: false,
+            playStartTime: null,
+            playScore: { correct: 0, total: 10, streak: 0 },
+
+            strategies: [
+                {
+                    name: 'Make a Ten',
+                    desc: 'Break one number to make 10, then add the rest',
+                    steps: []
+                },
+                {
+                    name: 'Decompose',
+                    desc: 'Break both into tens and ones, add separately',
+                    steps: []
+                },
+                {
+                    name: 'Number Line',
+                    desc: 'Start at one number, jump by the other',
+                    steps: []
+                },
+                {
+                    name: 'Compensation',
+                    desc: 'Round one number, then adjust the total',
+                    steps: []
+                }
+            ]
+        };
+
+        document.addEventListener('DOMContentLoaded', () => {
+            generateNewProblem();
+        });
+
+        // Explore Mode
+        function generateNewProblem() {
+            const max = parseInt(S.difficulty) || 50;
+            S.currentProblem.a = Math.floor(Math.random() * max / 2) + 10;
+            S.currentProblem.b = Math.floor(Math.random() * max / 2) + 10;
+            S.currentStrategy = 0;
+            renderProblem();
+        }
+
+        function renderProblem() {
+            const { a, b } = S.currentProblem;
+            const sum = a + b;
+
+            document.getElementById('problem-display').textContent = `${a} + ${b}`;
+
+            // Build strategy boxes
+            let html = '';
+
+            // Strategy 1: Make a Ten
+            if (a % 10 !== 0 || b % 10 !== 0) {
+                const makesTen = (10 - (a % 10)) <= b;
+                const needed = 10 - (a % 10);
+                const remaining = b - needed;
+                const result1 = 10 + a - (10 - (a % 10)) + b;
+                html += `
+                    <div class="strategy-box" onclick="selectStrategy(0)">
+                        <div class="strategy-title">Make a Ten</div>
+                        <div class="strategy-steps">
+                            ${a} + ${needed} = 10<br/>
+                            10 + ${remaining} = ${sum}
+                        </div>
+                    </div>
+                `;
+            }
+
+            // Strategy 2: Decompose
+            const aTens = Math.floor(a / 10) * 10;
+            const aOnes = a % 10;
+            const bTens = Math.floor(b / 10) * 10;
+            const bOnes = b % 10;
+            const tensSum = aTens + bTens;
+            const onesSum = aOnes + bOnes;
+            html += `
+                <div class="strategy-box" onclick="selectStrategy(1)">
+                    <div class="strategy-title">Decompose</div>
+                    <div class="strategy-steps">
+                        ${aTens} + ${bTens} = ${tensSum}<br/>
+                        ${aOnes} + ${bOnes} = ${onesSum}<br/>
+                        ${tensSum} + ${onesSum} = ${sum}
+                    </div>
+                </div>
+            `;
+
+            // Strategy 3: Number Line
+            html += `
+                <div class="strategy-box" onclick="selectStrategy(2)">
+                    <div class="strategy-title">Number Line</div>
+                    <div class="strategy-steps">
+                        Start at ${a}<br/>
+                        Jump by ${Math.min(10, b)}<br/>
+                        Land on ${sum}
+                    </div>
+                </div>
+            `;
+
+            // Strategy 4: Compensation
+            const roundB = Math.ceil(b / 10) * 10;
+            const diff = roundB - b;
+            html += `
+                <div class="strategy-box" onclick="selectStrategy(3)">
+                    <div class="strategy-title">Compensation</div>
+                    <div class="strategy-steps">
+                        ${a} + ${roundB} = ${a + roundB}<br/>
+                        ${a + roundB} - ${diff} = ${sum}
+                    </div>
+                </div>
+            `;
+
+            document.getElementById('strategy-grid').innerHTML = html;
+            renderModel();
+        }
+
+        function renderModel() {
+            const { a, b } = S.currentProblem;
+            const sum = a + b;
+            const strategy = S.currentStrategy;
+
+            let html = '<div style="text-align: center; font-weight: 700; margin-bottom: 8px;">';
+
+            if (strategy === 0) { // Make a Ten
+                const needed = 10 - (a % 10);
+                const remaining = b - needed;
+                html += `<div>Step 1: ${a} + ${needed} = 10</div>`;
+                html += `<div style="margin-top: 8px;">`;
+                for (let i = 0; i < 10; i++) {
+                    html += `<span style="display:inline-block;width:30px;height:30px;background:var(--cyan);border-radius:4px;margin:2px;"></span>`;
+                }
+                html += `</div>`;
+                html += `<div style="margin-top: 8px;">Step 2: 10 + ${remaining} = ${sum}</div>`;
+            } else if (strategy === 1) { // Decompose
+                const aTens = Math.floor(a / 10);
+                const aOnes = a % 10;
+                const bTens = Math.floor(b / 10);
+                const bOnes = b % 10;
+                html += `<div>${aTens} tens + ${bTens} tens = ${aTens + bTens} tens</div>`;
+                html += `<div style="margin-top: 8px;">${aOnes} ones + ${bOnes} ones = ${aOnes + bOnes}</div>`;
+            } else if (strategy === 2) { // Number Line
+                html += `<svg width="100%" height="60" viewBox="0 0 400 60">
+                    <line x1="20" y1="30" x2="380" y2="30" stroke="var(--border)" stroke-width="2"/>
+                    <circle cx="20" cy="30" r="5" fill="var(--cyan)"/>
+                    <circle cx="380" cy="30" r="5" fill="var(--cyan)"/>
+                    <text x="20" y="50" text-anchor="middle" font-size="12">${a}</text>
+                    <text x="380" y="50" text-anchor="middle" font-size="12">${sum}</text>
+                    <path d="M 40 20 Q 200 5 360 20" stroke="var(--cyan)" stroke-width="2" fill="none" marker-end="url(#arrowhead)"/>
+                    <text x="200" y="15" text-anchor="middle" font-size="11" fill="var(--cyan)">+${b}</text>
+                </svg>`;
+            } else if (strategy === 3) { // Compensation
+                const roundB = Math.ceil(b / 10) * 10;
+                const diff = roundB - b;
+                html += `<div>${a} + ${roundB} = ${a + roundB}</div>`;
+                html += `<div style="margin-top: 8px;">${a + roundB} - ${diff} = ${sum}</div>`;
+            }
+
+            html += '</div>';
+            document.getElementById('model-display').innerHTML = html;
+        }
+
+        function selectStrategy(idx) {
+            S.currentStrategy = idx;
+            renderModel();
+        }
+
+        function cycleStrategy() {
+            S.currentStrategy = (S.currentStrategy + 1) % 4;
+            renderModel();
+        }
+
+        // Mode Switching
+        function switchMode(mode) {
+            S.mode = mode;
+            document.querySelectorAll('.mode-content').forEach(el => el.style.display = 'none');
+            document.getElementById(mode + '-mode').style.display = 'block';
+            document.querySelectorAll('.mode-tabs .tab-button:not([id^="diff"])').forEach(btn => btn.classList.remove('active'));
+            event.target.classList.add('active');
+            if (mode === 'practice') generatePracticeQuestion();
+        }
+
+        // Difficulty Selector
+        function setDiff(d) {
+            S.difficulty = d;
+            document.querySelectorAll('[id^="diff"]').forEach(b => b.classList.remove('active'));
+            document.getElementById('diff' + d).classList.add('active');
+            if (S.mode === 'practice') generatePracticeQuestion();
+        }
+
+        // Practice Mode
+        function generatePracticeQuestion() {
+            const container = document.getElementById('practice-container');
+            const max = parseInt(S.difficulty) || 50;
+
+            if (S.difficulty === 'explain') {
+                // Strategy explanation question
+                const a = Math.floor(Math.random() * max / 2) + 10;
+                const b = Math.floor(Math.random() * max / 2) + 10;
+                const sum = a + b;
+                const strategies = ['Decompose', 'Make a Ten', 'Number Line'];
+                const correct = strategies[Math.floor(Math.random() * strategies.length)];
+
+                const choices = [correct];
+                while (choices.length < 4) {
+                    const s = strategies[Math.floor(Math.random() * strategies.length)];
+                    if (!choices.includes(s)) choices.push(s);
+                }
+                choices.sort(() => Math.random() - 0.5);
+
+                let html = `<div style="font-size:11px;font-weight:700;text-transform:uppercase;color:var(--yellow);margin-bottom:8px;">Strategy</div>
+                           <div class="question-text">Which strategy is BEST for ${a} + ${b}?</div>
+                           <div class="choices">`;
+                choices.forEach(choice => {
+                    html += `<button class="choice-btn" onclick="selectPracticeChoice(this, '${choice}', '${correct}')">${choice}</button>`;
+                });
+                html += `</div>`;
+                container.innerHTML = html;
+            } else {
+                // Solve with work shown
+                const a = Math.floor(Math.random() * max / 2) + 10;
+                const b = Math.floor(Math.random() * max / 2) + 10;
+                const sum = a + b;
+
+                const choices = [sum];
+                while (choices.length < 4) {
+                    const wrong = sum + (Math.random() < 0.5 ? -1 : 1) * (Math.floor(Math.random() * 5) + 1);
+                    if (wrong > 0 && !choices.includes(wrong)) choices.push(wrong);
+                }
+                choices.sort(() => Math.random() - 0.5);
+
+                let html = `<div style="font-size:11px;font-weight:700;text-transform:uppercase;color:var(--yellow);margin-bottom:8px;">Solve</div>
+                           <div class="question-text">${a} + ${b} = ?</div>
+                           <div class="choices">`;
+                choices.forEach(choice => {
+                    html += `<button class="choice-btn" onclick="selectPracticeChoice(this, ${choice}, ${sum})">${choice}</button>`;
+                });
+                html += `</div>`;
+                container.innerHTML = html;
+            }
+        }
+
+        function selectPracticeChoice(btn, choice, correct) {
+            document.querySelectorAll('.choice-btn').forEach(b => b.onclick = null);
+            btn.classList.add('selected');
+            setTimeout(() => {
+                if (choice === correct || (typeof choice === 'string' && choice === correct)) {
+                    showFB('✓ Correct!', 'correct');
+                    setTimeout(() => generatePracticeQuestion(), 800);
+                } else {
+                    showFB('Try again!', 'incorrect');
+                    btn.classList.remove('selected');
+                    btn.classList.add('incorrect');
+                    setTimeout(() => generatePracticeQuestion(), 800);
+                }
+            }, 300);
+        }
+
+        // Play Mode
+        function startPlayRound() {
+            if (S.playGameRunning) return;
+            S.playGameRunning = true;
+            S.playStartTime = Date.now();
+            S.playScore = { correct: 0, total: 10, streak: 0 };
+            const container = document.getElementById('play-container');
+            container.innerHTML = '';
+            document.getElementById('play-timer').textContent = '00:00';
+            document.getElementById('play-correct').textContent = '0/10';
+            document.getElementById('play-streak').textContent = '0';
+            updatePlayTimer();
+            generatePlayQuestion();
+        }
+
+        function generatePlayQuestion() {
+            if (!S.playGameRunning) return;
+            const max = parseInt(S.difficulty) || 50;
+            const a = Math.floor(Math.random() * max / 2) + 10;
+            const b = Math.floor(Math.random() * max / 2) + 10;
+            const sum = a + b;
+
+            const choices = [sum];
+            while (choices.length < 4) {
+                const wrong = sum + (Math.random() < 0.5 ? -2 : 2) * (Math.floor(Math.random() * 3) + 1);
+                if (wrong > 0 && !choices.includes(wrong)) choices.push(wrong);
+            }
+            choices.sort(() => Math.random() - 0.5);
+
+            const container = document.getElementById('play-container');
+            let html = `<div class="question-text">${a} + ${b} = ?</div>
+                       <div class="choices">`;
+            choices.forEach(choice => {
+                html += `<button class="choice-btn" onclick="selectPlayChoice(${choice}, ${sum})">${choice}</button>`;
+            });
+            html += `</div>`;
+            container.innerHTML = html;
+        }
+
+        function selectPlayChoice(choice, correct) {
+            if (!S.playGameRunning) return;
+            document.querySelectorAll('.choice-btn').forEach(b => b.onclick = null);
+
+            if (choice === correct) {
+                S.playScore.correct++;
+                S.playScore.streak++;
+            } else {
+                S.playScore.streak = 0;
+            }
+
+            document.getElementById('play-correct').textContent = `${S.playScore.correct}/10`;
+            document.getElementById('play-streak').textContent = S.playScore.streak;
+
+            if (S.playScore.correct >= 10) {
+                S.playGameRunning = false;
+                alert(`Great! Score: ${S.playScore.correct}/10, Streak: ${S.playScore.streak}`);
+            } else {
+                setTimeout(() => generatePlayQuestion(), 500);
+            }
+        }
+
+        function updatePlayTimer() {
+            if (!S.playGameRunning) return;
+            const elapsed = Math.floor((Date.now() - S.playStartTime) / 1000);
+            const min = Math.floor(elapsed / 60);
+            const sec = elapsed % 60;
+            document.getElementById('play-timer').textContent =
+                `${String(min).padStart(2, '0')}:${String(sec).padStart(2, '0')}`;
+            setTimeout(updatePlayTimer, 100);
+        }
+
+        function resetPlayRound() {
+            S.playGameRunning = false;
+            document.getElementById('play-timer').textContent = '00:00';
+            document.getElementById('play-correct').textContent = '0/10';
+            document.getElementById('play-streak').textContent = '0';
+            document.getElementById('play-container').innerHTML = '';
+        }
+    </script>
+<script src="../../vinculum-core.js"></script>
+<!-- Foundation loaded from vinculum-core.js -->
+</body>
+</html>

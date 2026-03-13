@@ -1,0 +1,554 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>VINCULUM — Counter Builder</title>
+<link rel="stylesheet" href="../../vinculum-core.css">
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;600&display=swap');
+/* Theme system loaded from vinculum-core.css */
+.vinculum-rtm-btn .rtm-icon{font-size:14px;}
+
+/* ═══ FOCUS VISIBLE (Keyboard Navigation) ═══ */
+*:focus-visible {
+  outline:2px solid var(--cyan);outline-offset:2px;border-radius:4px;
+}
+.sr-only {
+  position:absolute;width:1px;height:1px;padding:0;margin:-1px;
+  overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0;
+}
+*{margin:0;padding:0;box-sizing:border-box;}
+body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);height:100vh;display:flex;flex-direction:column;overflow:hidden;user-select:none;}
+
+.header{display:flex;align-items:center;justify-content:space-between;padding:12px 24px;background:var(--bg2);border-bottom:1px solid var(--border);flex-shrink:0;}
+.header-left{display:flex;align-items:center;gap:16px;}
+.back-btn{padding:6px 12px;border-radius:8px;border:1px solid var(--border);background:transparent;color:var(--text2);font-size:13px;font-family:inherit;cursor:pointer;}
+.back-btn:hover{background:var(--card);color:var(--cyan);}
+.header-title{font-size:18px;font-weight:800;}
+.header-title span{background:var(--grad);-webkit-background-clip:text;-webkit-text-fill-color:transparent;}
+.header-badge{font-size:10px;font-weight:700;padding:3px 10px;border-radius:6px;background:rgba(0,230,118,0.1);color:var(--green);border:1px solid rgba(0,230,118,0.2);letter-spacing:1px;}
+.std-tags{display:flex;gap:6px;}
+.std-tag{font-size:10px;font-family:'JetBrains Mono',monospace;font-weight:600;padding:3px 8px;border-radius:5px;background:rgba(0,212,255,0.08);color:var(--cyan);}
+.std-tag.mn{background:rgba(255,145,0,0.08);color:var(--orange);}
+
+.mode-tabs{display:flex;gap:4px;padding:8px 24px;background:var(--bg2);border-bottom:1px solid var(--border);flex-shrink:0;}
+.mode-tab{padding:8px 20px;border-radius:8px;border:1px solid transparent;background:transparent;color:var(--muted);font-size:13px;font-weight:600;font-family:inherit;cursor:pointer;display:flex;align-items:center;gap:6px;transition:all 0.2s;}
+.mode-tab:hover{color:var(--text2);background:var(--card);}
+.mode-tab.active-explore{background:rgba(0,212,255,0.1);color:var(--cyan);border-color:rgba(0,212,255,0.3);}
+.mode-tab.active-practice{background:rgba(0,230,118,0.1);color:var(--green);border-color:rgba(0,230,118,0.3);}
+.mode-tab.active-play{background:rgba(255,59,139,0.1);color:var(--pink);border-color:rgba(255,59,139,0.3);}
+.diff-selector{margin-left:auto;display:flex;gap:4px;align-items:center;}
+.diff-label{font-size:11px;color:var(--muted);margin-right:8px;font-weight:600;text-transform:uppercase;letter-spacing:1px;}
+.diff-btn{padding:5px 12px;border-radius:6px;border:1px solid var(--border);background:transparent;color:var(--muted);font-size:11px;font-weight:600;font-family:inherit;cursor:pointer;transition:all 0.2s;}
+.diff-btn.active{background:rgba(0,212,255,0.1);color:var(--cyan);border-color:rgba(0,212,255,0.3);}
+
+.main{flex:1;display:flex;overflow:hidden;}
+.workspace{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:24px;gap:16px;overflow-y:auto;}
+.side-panel{width:280px;background:var(--bg2);border-left:1px solid var(--border);padding:20px;overflow-y:auto;flex-shrink:0;}
+.panel-section{margin-bottom:20px;}
+.panel-title{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:1.5px;color:var(--muted);margin-bottom:8px;}
+.panel-text{font-size:13px;color:var(--text2);line-height:1.6;}
+
+/* ── Ten-Frame Grid ── */
+.ten-frame-wrap{display:flex;gap:20px;justify-content:center;flex-wrap:wrap;margin:16px 0;}
+.ten-frame{display:grid;grid-template-columns:repeat(5,1fr);gap:8px;width:140px;padding:12px;background:var(--card);border-radius:12px;border:2px solid var(--border);}
+.frame-label{font-size:11px;font-weight:700;color:var(--muted);text-align:center;margin-top:8px;letter-spacing:1px;}
+.counter-slot{width:24px;height:24px;border-radius:50%;background:var(--card);border:2px solid var(--border);display:flex;align-items:center;justify-content:center;position:relative;}
+.counter-dot{width:20px;height:20px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:10px;color:#fff;}
+.counter-dot.cyan{background:var(--cyan);}
+.counter-dot.pink{background:var(--pink);}
+
+/* ── Equation Display ── */
+.equation-display{font-size:48px;font-weight:900;font-family:'JetBrains Mono',monospace;text-align:center;margin:16px 0;letter-spacing:8px;display:flex;align-items:center;justify-content:center;gap:12px;flex-wrap:wrap;}
+.eq-part{padding:8px 16px;border-radius:12px;min-width:70px;display:flex;align-items:center;justify-content:center;}
+.eq-a{background:rgba(0,212,255,0.15);color:var(--cyan);}
+.eq-b{background:rgba(255,59,139,0.15);color:var(--pink);}
+.eq-total{background:rgba(179,136,255,0.15);color:var(--purple);}
+.eq-op{color:var(--text2);}
+.eq-missing{color:var(--text);animation:pulse-glow 1.2s infinite;}
+
+@keyframes pulse-glow{0%{box-shadow:0 0 8px rgba(255,193,7,0.4);} 50%{box-shadow:0 0 16px rgba(255,193,7,0.8);} 100%{box-shadow:0 0 8px rgba(255,193,7,0.4);}}
+
+/* ── Controls ── */
+.instruction-box{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:14px 20px;text-align:center;font-size:15px;color:var(--text2);font-weight:500;max-width:600px;transition:all 0.3s;}
+.instruction-box.highlight-cyan{border-color:var(--cyan);color:var(--cyan);}
+.instruction-box.highlight-pink{border-color:var(--pink);color:var(--pink);}
+.instruction-box.highlight-green{border-color:var(--green);color:var(--green);}
+
+.controls{display:flex;gap:8px;flex-wrap:wrap;justify-content:center;}
+.ctrl-btn{padding:10px 20px;border-radius:10px;border:1px solid var(--border);background:var(--card);color:var(--text2);font-size:13px;font-weight:600;font-family:inherit;cursor:pointer;transition:all 0.2s;display:flex;align-items:center;gap:6px;}
+.ctrl-btn:hover{background:var(--card2);color:var(--text);}
+.ctrl-btn.primary{background:var(--grad);color:var(--bg);border-color:transparent;}
+
+/* ── Explore Controls ── */
+.counter-controls{display:flex;gap:8px;justify-content:center;flex-wrap:wrap;}
+.counter-ctrl{width:48px;height:48px;border-radius:10px;border:2px solid var(--border);background:var(--card);color:var(--text);font-size:24px;font-weight:700;cursor:pointer;transition:all 0.15s;display:flex;align-items:center;justify-content:center;}
+.counter-ctrl:hover{border-color:var(--cyan);transform:scale(1.08);}
+
+/* ── Answer Buttons ── */
+.answer-grid{display:flex;gap:10px;flex-wrap:wrap;justify-content:center;max-width:500px;}
+.answer-btn{width:52px;height:52px;border-radius:12px;border:2px solid var(--border);background:var(--card);color:var(--text);font-size:20px;font-weight:700;font-family:'JetBrains Mono',monospace;cursor:pointer;transition:all 0.15s;display:flex;align-items:center;justify-content:center;}
+.answer-btn:hover{border-color:var(--cyan);transform:scale(1.1);}
+.answer-btn.correct-flash{border-color:var(--green);background:rgba(0,230,118,0.2);color:var(--green);animation:correctFlash 0.4s ease-out;}
+.answer-btn.incorrect-flash{border-color:var(--pink);background:rgba(255,59,139,0.2);color:var(--pink);animation:shake 0.3s ease-in-out;}
+
+@keyframes correctFlash{0%{transform:scale(1.2);} 100%{transform:scale(1);}}
+@keyframes shake{0%,100%{transform:translateX(0);} 25%{transform:translateX(-4px);} 75%{transform:translateX(4px);}}
+
+.score-display{text-align:center;padding:16px;background:var(--card);border-radius:12px;margin-bottom:12px;}
+.score-value{font-size:36px;font-weight:900;font-family:'JetBrains Mono',monospace;background:var(--grad);-webkit-background-clip:text;-webkit-text-fill-color:transparent;}
+.score-label{font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:1px;}
+.streak-bar{height:6px;background:var(--card);border-radius:3px;overflow:hidden;margin-top:8px;}
+.streak-fill{height:100%;background:var(--grad);border-radius:3px;transition:width 0.3s;}
+
+.feedback{position:fixed;top:50%;left:50%;transform:translate(-50%,-50%) scale(0);padding:24px 48px;border-radius:20px;font-size:28px;font-weight:800;z-index:200;pointer-events:none;transition:transform 0.3s cubic-bezier(0.175,0.885,0.32,1.275),opacity 0.3s;opacity:0;}
+.feedback.show{transform:translate(-50%,-50%) scale(1);opacity:1;}
+.feedback.correct{background:rgba(0,230,118,0.15);color:var(--green);border:2px solid var(--green);}
+.feedback.incorrect{background:rgba(255,59,139,0.15);color:var(--pink);border:2px solid var(--pink);}
+.feedback.try-again{background:rgba(255,193,7,0.15);color:var(--yellow);border:2px solid var(--yellow);}
+
+::-webkit-scrollbar{width:6px;}::-webkit-scrollbar-track{background:transparent;}::-webkit-scrollbar-thumb{background:var(--border);border-radius:3px;}
+
+@media (max-width:768px) {
+  .header{flex-direction:column;align-items:flex-start;gap:8px;}
+  .header-left{flex-direction:column;gap:6px;width:100%;}
+  .std-tags{flex-wrap:wrap;}
+  .mode-tabs{flex-wrap:wrap;padding:8px 12px;}
+  .diff-selector{margin-left:0;width:100%;}
+  .main{flex-direction:column;}
+  .side-panel{width:100%;max-height:200px;border-left:none;border-top:1px solid var(--border);}
+  .workspace{padding:16px;}
+  .equation-display{font-size:36px;gap:8px;}
+  .ten-frame-wrap{gap:12px;}
+  .ten-frame{width:120px;}
+}
+</style>
+</head>
+<body>
+
+<div class="header">
+  <div class="header-left">
+    <a class="back-btn" href="../../VINCULUM-Hub.html" style="text-decoration:none;">◀ Hub</a>
+    <div class="header-title"><span>VINCULUM</span> Counter Builder</div>
+    <span class="header-badge">1.OA</span>
+  </div>
+  <div class="std-tags">
+    <span class="std-tag">1.OA.1</span>
+    <span class="std-tag">1.OA.2</span>
+    <span class="std-tag">1.OA.5</span>
+    <span class="std-tag mn">MN 1.2.2.1</span>
+  </div>
+</div>
+
+<div class="mode-tabs">
+  <button class="mode-tab active-explore" id="tabExplore" onclick="setMode('explore')"><svg width="18" height="18" viewBox="0 0 48 48" fill="none"><path d="M4 24C4 24 12 12 24 12C36 12 44 24 44 24C44 24 36 36 24 36C12 36 4 24 4 24Z" stroke="currentColor" stroke-width="3" fill="none"/><circle cx="24" cy="24" r="7" stroke="currentColor" stroke-width="3" fill="none"/><circle cx="24" cy="24" r="3" fill="currentColor"/><line x1="24" y1="4" x2="24" y2="9" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" opacity="0.5"/><line x1="10" y1="8" x2="13" y2="12" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" opacity="0.5"/><line x1="38" y1="8" x2="35" y2="12" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" opacity="0.5"/></svg> Explore</button>
+  <button class="mode-tab" id="tabPractice" onclick="setMode('practice')"><svg width="18" height="18" viewBox="0 0 48 48" fill="none"><circle cx="24" cy="24" r="20" stroke="currentColor" stroke-width="3" fill="none" opacity="0.3"/><circle cx="24" cy="24" r="20" stroke="currentColor" stroke-width="3" fill="none" stroke-dasharray="126" stroke-dashoffset="32" stroke-linecap="round"/><polyline points="16,24 22,32 34,16" stroke="currentColor" stroke-width="4" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg> Practice</button>
+  <button class="mode-tab" id="tabPlay" onclick="setMode('play')"><svg width="18" height="18" viewBox="0 0 48 48" fill="none"><polygon points="28,4 12,28 22,28 18,44 36,18 26,18" fill="none" stroke="currentColor" stroke-width="3" stroke-linejoin="round"/><polygon points="27,8 15,27 23,27 20,40 34,19 26,19" fill="currentColor" opacity="0.15"/></svg> Play</button>
+  <div class="diff-selector">
+    <span class="diff-label">Level</span>
+    <button class="diff-btn active" id="diffE" onclick="setDiff('emergent')">Within 5</button>
+    <button class="diff-btn" id="diffP" onclick="setDiff('proficient')">Within 10</button>
+    <button class="diff-btn" id="diffA" onclick="setDiff('advanced')">Within 20</button>
+  </div>
+</div>
+
+<div class="main">
+  <div class="workspace" role="main" id="workspace"></div>
+  <div class="side-panel" id="sidePanel"></div>
+</div>
+<div class="feedback" id="feedback"></div>
+
+<script>
+let S = {
+  mode: 'explore',
+  diff: 'emergent',
+  maxN: 5,
+  groupA: 0,
+  groupB: 0,
+  pWhole: 0,
+  pGroupA: 0,
+  pGroupB: 0,
+  pMissing: 'b',
+  score: 0,
+  streak: 0,
+  best: 0,
+  round: 0,
+  total: 10,
+  playWhole: 0,
+  playGroupA: 0,
+  playGroupB: 0,
+  playMissing: 'b',
+  playChoices: []
+};
+
+function rand(a, b) {
+  return Math.floor(Math.random() * (b - a + 1)) + a;
+}
+
+function showFB(t, c) {
+  const f = document.getElementById('feedback');
+  f.textContent = t;
+  f.className = 'feedback ' + c + ' show';
+  setTimeout(() => f.classList.remove('show'), 1200);
+}
+
+function setMode(m) {
+  S.mode = m;
+  document.querySelectorAll('.mode-tab').forEach(t => t.className = 'mode-tab');
+  document.getElementById('tab' + m.charAt(0).toUpperCase() + m.slice(1)).className = 'mode-tab active-' + m;
+  S.round = 0;
+  S.score = 0;
+  S.streak = 0;
+  if (m === 'practice') newPractice();
+  render();
+}
+
+function setDiff(d) {
+  S.diff = d;
+  S.maxN = d === 'emergent' ? 5 : d === 'proficient' ? 10 : 20;
+  document.querySelectorAll('.diff-btn').forEach(b => b.classList.remove('active'));
+  document.getElementById('diff' + d.charAt(0).toUpperCase()).classList.add('active');
+  S.groupA = 0;
+  S.groupB = 0;
+  if (S.mode === 'practice') newPractice();
+  if (S.mode === 'play') S.round = 0;
+  render();
+}
+
+function render() {
+  const ws = document.getElementById('workspace');
+  const sp = document.getElementById('sidePanel');
+  if (S.mode === 'explore') renderExplore(ws, sp);
+  else if (S.mode === 'practice') renderPractice(ws, sp);
+  else renderPlay(ws, sp);
+}
+
+/* ═══════════════════════════════════════════
+   TEN-FRAME SVG
+   ═══════════════════════════════════════════ */
+
+function buildTenFrame(count, color, label) {
+  let h = '<div class="ten-frame-wrap">';
+  h += '<div>';
+  h += '<div class="ten-frame">';
+  for (let i = 0; i < 10; i++) {
+    if (i < count) {
+      h += `<div class="counter-slot"><div class="counter-dot ${color}"></div></div>`;
+    } else {
+      h += '<div class="counter-slot"></div>';
+    }
+  }
+  h += '</div>';
+  h += `<div class="frame-label">${label}</div>`;
+  h += '</div>';
+  h += '</div>';
+  return h;
+}
+
+/* ═══════════════════════════════════════════
+   EXPLORE MODE
+   ═══════════════════════════════════════════ */
+
+function renderExplore(ws, sp) {
+  let h = '';
+  h += `<div class="instruction-box">Build two groups of counters, then see the equation</div>`;
+
+  // Ten-frame display
+  h += buildTenFrame(S.groupA, 'cyan', 'Group A');
+  h += buildTenFrame(S.groupB, 'pink', 'Group B');
+
+  // Equation display
+  h += '<div class="equation-display">';
+  h += `<div class="eq-part eq-a">${S.groupA}</div>`;
+  h += `<div class="eq-op">+</div>`;
+  h += `<div class="eq-part eq-b">${S.groupB}</div>`;
+  h += `<div class="eq-op">=</div>`;
+  h += `<div class="eq-part eq-total">${S.groupA + S.groupB}</div>`;
+  h += '</div>';
+
+  // Controls for adding/removing counters
+  h += '<div class="counter-controls">';
+  h += `<button class="counter-ctrl" onclick="S.groupA=Math.max(0,S.groupA-1);render();">−</button>`;
+  h += `<span style="align-self:center;color:var(--cyan);font-weight:700;">Group A</span>`;
+  h += `<button class="counter-ctrl" onclick="S.groupA=Math.min(S.maxN,S.groupA+1);render();">+</button>`;
+  h += `<span style="margin-left:20px;align-self:center;color:var(--pink);font-weight:700;">Group B</span>`;
+  h += `<button class="counter-ctrl" onclick="S.groupB=Math.max(0,S.groupB-1);render();">−</button>`;
+  h += `<button class="counter-ctrl" onclick="S.groupB=Math.min(S.maxN,S.groupB+1);render();">+</button>`;
+  h += '</div>';
+
+  // Reset button
+  h += '<div class="controls">';
+  h += `<button class="ctrl-btn primary" onclick="S.groupA=0;S.groupB=0;render();">↺ Reset</button>`;
+  h += '</div>';
+
+  ws.innerHTML = h;
+
+  // Side panel
+  let sp_html = `<div class="panel-section"><div class="panel-title">Vocabulary</div>
+    <div class="panel-text">
+      <strong>Group:</strong> a collection of counters<br>
+      <strong>Add:</strong> combine two groups<br>
+      <strong>Total:</strong> how many in all
+    </div></div>`;
+
+  sp_html += `<div class="panel-section"><div class="panel-title">Tip</div>
+    <div class="panel-text">Use the + and − buttons to build each group. Watch the equation change!</div></div>`;
+
+  sp.innerHTML = sp_html;
+}
+
+/* ═══════════════════════════════════════════
+   PRACTICE MODE
+   ═══════════════════════════════════════════ */
+
+function newPractice() {
+  const max = S.maxN;
+  S.pGroupA = rand(1, max - 1);
+  S.pGroupB = rand(1, max - S.pGroupA);
+  S.pWhole = S.pGroupA + S.pGroupB;
+  const r = rand(1, 3);
+  S.pMissing = r === 1 ? 'a' : r === 2 ? 'b' : 'whole';
+}
+
+function renderPractice(ws, sp) {
+  if (!S.pWhole) newPractice();
+
+  const showA = S.pMissing !== 'a';
+  const showB = S.pMissing !== 'b';
+  const showW = S.pMissing !== 'whole';
+
+  let h = '';
+  h += `<div class="instruction-box highlight-green">Find the missing number!</div>`;
+
+  // Ten-frame display
+  if (showA) {
+    h += buildTenFrame(S.pGroupA, 'cyan', 'Group A');
+  } else {
+    h += '<div class="ten-frame-wrap"><div><div class="ten-frame" style="opacity:0.4;"></div><div class="frame-label">Group A: ?</div></div></div>';
+  }
+
+  if (showB) {
+    h += buildTenFrame(S.pGroupB, 'pink', 'Group B');
+  } else {
+    h += '<div class="ten-frame-wrap"><div><div class="ten-frame" style="opacity:0.4;"></div><div class="frame-label">Group B: ?</div></div></div>';
+  }
+
+  // Equation display
+  h += '<div class="equation-display">';
+  if (!showA) {
+    h += `<div class="eq-part eq-a eq-missing">?</div>`;
+  } else {
+    h += `<div class="eq-part eq-a">${S.pGroupA}</div>`;
+  }
+  h += `<div class="eq-op">+</div>`;
+  if (!showB) {
+    h += `<div class="eq-part eq-b eq-missing">?</div>`;
+  } else {
+    h += `<div class="eq-part eq-b">${S.pGroupB}</div>`;
+  }
+  h += `<div class="eq-op">=</div>`;
+  if (!showW) {
+    h += `<div class="eq-part eq-total eq-missing">?</div>`;
+  } else {
+    h += `<div class="eq-part eq-total">${S.pWhole}</div>`;
+  }
+  h += '</div>';
+
+  // Answer buttons
+  h += '<div class="answer-grid">';
+  for (let n = 0; n <= S.maxN; n++) {
+    h += `<button class="answer-btn" id="pans${n}" onclick="checkPractice(${n})">${n}</button>`;
+  }
+  h += '</div>';
+
+  // Skip button
+  h += '<div class="controls" style="margin-top:8px;">';
+  h += `<button class="ctrl-btn" onclick="newPractice();render();">Skip →</button>`;
+  h += '</div>';
+
+  ws.innerHTML = h;
+
+  // Side panel
+  let sp_html = `<div class="panel-section"><div class="panel-title">Strategy</div>
+    <div class="panel-text" style="background:var(--card);padding:12px;border-radius:8px;">
+      <div style="margin-bottom:8px;">
+        <strong style="color:var(--cyan);">① Count</strong><br>
+        <span style="font-size:12px;">Count the dots shown</span>
+      </div>
+      <div style="margin-bottom:8px;">
+        <strong style="color:var(--green);">② Think</strong><br>
+        <span style="font-size:12px;">What number completes it?</span>
+      </div>
+      <div>
+        <strong style="color:var(--pink);">③ Tap</strong><br>
+        <span style="font-size:12px;">Click the answer</span>
+      </div>
+    </div></div>`;
+
+  sp_html += `<div class="panel-section"><div class="panel-title">Tip</div>
+    <div class="panel-text">Count on your fingers or use the ten-frames to help!</div></div>`;
+
+  sp.innerHTML = sp_html;
+}
+
+function checkPractice(clicked) {
+  let correct;
+  if (S.pMissing === 'a') correct = S.pGroupA;
+  else if (S.pMissing === 'b') correct = S.pGroupB;
+  else correct = S.pWhole;
+
+  const btn = document.getElementById('pans' + clicked);
+
+  if (clicked === correct) {
+    btn.classList.add('correct-flash');
+    showFB(`✓ ${S.pGroupA} + ${S.pGroupB} = ${S.pWhole}`, 'correct');
+    setTimeout(() => {
+      newPractice();
+      render();
+    }, 1500);
+  } else {
+    btn.classList.add('incorrect-flash');
+    showFB('Try again!', 'try-again');
+    setTimeout(() => {
+      btn.classList.remove('incorrect-flash');
+    }, 400);
+  }
+}
+
+/* ═══════════════════════════════════════════
+   PLAY MODE
+   ═══════════════════════════════════════════ */
+
+function startGame() {
+  S.round = 1;
+  S.score = 0;
+  S.streak = 0;
+  newPlayRound();
+}
+
+function newPlayRound() {
+  const max = S.maxN;
+  S.playGroupA = rand(1, max - 1);
+  S.playGroupB = rand(1, max - S.playGroupA);
+  S.playWhole = S.playGroupA + S.playGroupB;
+  const r = rand(1, 3);
+  S.playMissing = r === 1 ? 'a' : r === 2 ? 'b' : 'whole';
+
+  let answer;
+  if (S.playMissing === 'a') answer = S.playGroupA;
+  else if (S.playMissing === 'b') answer = S.playGroupB;
+  else answer = S.playWhole;
+
+  const choices = new Set([answer]);
+  while (choices.size < 5) {
+    let c = answer + rand(-2, 2);
+    if (c >= 0 && c <= max) choices.add(c);
+    else choices.add(rand(0, max));
+  }
+  S.playChoices = Array.from(choices).sort((a, b) => a - b);
+}
+
+function renderPlay(ws, sp) {
+  if (S.round === 0) startGame();
+
+  const showA = S.playMissing !== 'a';
+  const showB = S.playMissing !== 'b';
+  const showW = S.playMissing !== 'whole';
+
+  let h = '';
+  h += `<div style="font-size:13px;color:var(--muted);margin-bottom:12px;">Round ${S.round} of ${S.total}</div>`;
+
+  // Ten-frames
+  if (showA) {
+    h += buildTenFrame(S.playGroupA, 'cyan', 'Group A');
+  } else {
+    h += '<div class="ten-frame-wrap"><div><div class="ten-frame" style="opacity:0.4;"></div><div class="frame-label">Group A: ?</div></div></div>';
+  }
+
+  if (showB) {
+    h += buildTenFrame(S.playGroupB, 'pink', 'Group B');
+  } else {
+    h += '<div class="ten-frame-wrap"><div><div class="ten-frame" style="opacity:0.4;"></div><div class="frame-label">Group B: ?</div></div></div>';
+  }
+
+  // Equation display
+  h += '<div class="equation-display">';
+  if (!showA) {
+    h += `<div class="eq-part eq-a eq-missing">?</div>`;
+  } else {
+    h += `<div class="eq-part eq-a">${S.playGroupA}</div>`;
+  }
+  h += `<div class="eq-op">+</div>`;
+  if (!showB) {
+    h += `<div class="eq-part eq-b eq-missing">?</div>`;
+  } else {
+    h += `<div class="eq-part eq-b">${S.playGroupB}</div>`;
+  }
+  h += `<div class="eq-op">=</div>`;
+  if (!showW) {
+    h += `<div class="eq-part eq-total eq-missing">?</div>`;
+  } else {
+    h += `<div class="eq-part eq-total">${S.playWhole}</div>`;
+  }
+  h += '</div>';
+
+  // Answer buttons
+  h += '<div class="answer-grid">';
+  S.playChoices.forEach(n => {
+    h += `<button class="answer-btn" id="pans${n}" onclick="playPick(${n})">${n}</button>`;
+  });
+  h += '</div>';
+
+  ws.innerHTML = h;
+
+  // Side panel
+  sp.innerHTML = `
+    <div class="score-display"><div class="score-value">${S.score}</div><div class="score-label">Score</div></div>
+    <div class="score-display" style="background:transparent;padding:8px;">
+      <div style="font-size:18px;font-weight:700;color:var(--yellow);"><svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor" style="vertical-align:-2px;"><path d="M12 23c-4.97 0-8-3.58-8-7.5 0-3.07 2.17-5.84 4.5-7.5-.28 2.5 1.5 4.5 1.5 4.5s2-2.5 2-5.5c0-1.5-.5-3-1-4 3 1.5 5 4 5 7 0 .5-.08 1-.08 1s1.08-1.18 1.58-2.5C19.78 11.72 20 14.5 20 15.5c0 3.92-3.03 7.5-8 7.5z"/></svg> ${S.streak}</div>
+      <div class="score-label">Streak</div>
+      <div class="streak-bar"><div class="streak-fill" style="width:${Math.min(S.streak * 20, 100)}%;"></div></div>
+    </div>
+    <div class="panel-section"><div class="panel-title">Best Streak</div>
+    <div class="panel-text" style="font-size:24px;font-weight:800;color:var(--purple);"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="vertical-align:-2px;"><path d="M6 4h12v2a6 6 0 01-12 0V4z" fill="currentColor" opacity="0.2"/><path d="M6 4h12v2a6 6 0 01-12 0V4z"/><path d="M6 6H3v2a3 3 0 003 3"/><path d="M18 6h3v2a3 3 0 01-3 3"/><line x1="12" y1="14" x2="12" y2="18"/><line x1="8" y1="18" x2="16" y2="18" stroke-linecap="round"/></svg> ${S.best}</div></div>`;
+}
+
+function playPick(n) {
+  let answer;
+  if (S.playMissing === 'a') answer = S.playGroupA;
+  else if (S.playMissing === 'b') answer = S.playGroupB;
+  else answer = S.playWhole;
+
+  const btn = document.getElementById('pans' + n);
+  if (n === answer) {
+    btn.classList.add('correct-flash');
+    S.score += 10 + S.streak * 2;
+    S.streak++;
+    if (S.streak > S.best) S.best = S.streak;
+    showFB(`✓ ${S.playGroupA} + ${S.playGroupB} = ${S.playWhole}`, 'correct');
+  } else {
+    btn.classList.add('incorrect-flash');
+    S.streak = 0;
+    showFB(`${answer} was correct`, 'incorrect');
+  }
+  setTimeout(() => {
+    if (S.round >= S.total) {
+      showFB(`Game Over! Score: ${S.score}`, 'correct');
+      setTimeout(() => {
+        S.round = 0;
+        render();
+      }, 2000);
+      return;
+    }
+    S.round++;
+    newPlayRound();
+    render();
+  }, 1200);
+}
+
+render();
+</script>
+<script src="../../vinculum-core.js"></script>
+</body>
+</html>

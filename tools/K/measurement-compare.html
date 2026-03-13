@@ -1,0 +1,1346 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>VINCULUM — Measurement Compare</title>
+    <link rel="stylesheet" href="../../vinculum-core.css">
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;600&display=swap');
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 16px 24px;
+            border-bottom: 1px solid var(--border);
+            background: var(--card);
+        }
+
+        .header-left {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+            flex: 1;
+        }
+
+        .back-btn {
+            padding: 8px 12px;
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            background: transparent;
+            color: var(--text2);
+            font-size: 13px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+            font-family: inherit;
+        }
+
+        .back-btn:hover {
+            background: var(--bg);
+            color: var(--cyan);
+        }
+
+        .back-btn:active {
+            transform: scale(0.95);
+        }
+
+        .header-title {
+            font-size: 20px;
+            font-weight: 700;
+            color: var(--text);
+        }
+
+        .header-title span {
+            background: linear-gradient(135deg, var(--cyan), var(--pink));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .header-badge {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 32px;
+            height: 32px;
+            border-radius: 6px;
+            background: rgba(0, 212, 255, 0.15);
+            color: var(--cyan);
+            font-weight: 700;
+            font-size: 14px;
+        }
+
+        .help-btn {
+            padding: 8px 12px;
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            background: transparent;
+            color: var(--text2);
+            font-size: 16px;
+            cursor: pointer;
+            transition: all 0.2s;
+            font-family: inherit;
+        }
+
+        .help-btn:hover {
+            background: var(--bg);
+            color: var(--cyan);
+        }
+
+        .std-tags {
+            display: flex;
+            gap: 8px;
+        }
+
+        .std-tag {
+            padding: 6px 12px;
+            border-radius: 4px;
+            background: rgba(255, 105, 180, 0.1);
+            color: var(--pink);
+            font-size: 11px;
+            font-weight: 600;
+            font-family: 'JetBrains Mono', monospace;
+        }
+
+        .mode-tabs {
+            display: flex;
+            align-items: center;
+            padding: 12px 24px;
+            border-bottom: 1px solid var(--border);
+            background: var(--card);
+            gap: 8px;
+            flex-wrap: wrap;
+        }
+
+        .mode-tab {
+            padding: 8px 16px;
+            border: none;
+            border-radius: 6px;
+            background: transparent;
+            color: var(--muted);
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+            font-family: inherit;
+            white-space: nowrap;
+        }
+
+        .mode-tab:hover {
+            background: var(--bg);
+            color: var(--text2);
+        }
+
+        .mode-tab.active-explore,
+        .mode-tab.active-practice,
+        .mode-tab.active-play {
+            background: rgba(0, 212, 255, 0.15);
+            color: var(--cyan);
+        }
+
+        .diff-btn {
+            padding: 6px 14px;
+            border-radius: 8px;
+            border: 1px solid var(--border);
+            background: transparent;
+            color: var(--muted);
+            font-size: 11px;
+            font-weight: 700;
+            font-family: inherit;
+            cursor: pointer;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            transition: all 0.2s;
+        }
+
+        .diff-btn:hover {
+            color: var(--text2);
+            background: var(--card);
+        }
+
+        .diff-btn.active {
+            background: rgba(0, 212, 255, 0.1);
+            color: var(--cyan);
+            border-color: rgba(0, 212, 255, 0.3);
+        }
+
+        .main {
+            flex: 1;
+            overflow-y: auto;
+            display: flex;
+            align-items: flex-start;
+            justify-content: center;
+            padding: 24px;
+        }
+
+        .workspace {
+            width: 100%;
+            max-width: 900px;
+        }
+
+        /* ============= ONBOARDING OVERLAY ============= */
+        .onboarding-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.6);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+        }
+
+        .onboarding-modal {
+            background: var(--card);
+            border-radius: 12px;
+            padding: 32px;
+            max-width: 500px;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3);
+        }
+
+        .onboarding-title {
+            font-size: 24px;
+            font-weight: 700;
+            color: var(--text);
+            margin-bottom: 16px;
+            background: linear-gradient(135deg, var(--cyan), var(--pink));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .onboarding-objective {
+            font-size: 16px;
+            font-weight: 600;
+            color: var(--text);
+            margin-bottom: 24px;
+        }
+
+        .onboarding-steps {
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+            margin-bottom: 24px;
+        }
+
+        .onboarding-step {
+            padding: 12px;
+            border-left: 4px solid var(--cyan);
+            background: rgba(0, 212, 255, 0.08);
+            border-radius: 4px;
+        }
+
+        .onboarding-step-title {
+            font-weight: 600;
+            color: var(--cyan);
+            font-size: 14px;
+            margin-bottom: 4px;
+        }
+
+        .onboarding-step-text {
+            color: var(--text2);
+            font-size: 14px;
+            line-height: 1.5;
+        }
+
+        .onboarding-button {
+            padding: 12px 24px;
+            border: none;
+            border-radius: 8px;
+            background: linear-gradient(135deg, var(--cyan), var(--pink));
+            color: white;
+            font-size: 14px;
+            font-weight: 700;
+            cursor: pointer;
+            transition: all 0.2s;
+            font-family: inherit;
+            width: 100%;
+        }
+
+        .onboarding-button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(0, 212, 255, 0.3);
+        }
+
+        /* ============= EXPLORE MODE ============= */
+        .explore-section {
+            display: flex;
+            flex-direction: column;
+            gap: 32px;
+        }
+
+        .explore-header {
+            font-size: 18px;
+            font-weight: 700;
+            color: var(--text);
+            margin-bottom: 16px;
+        }
+
+        .attribute-selector {
+            display: flex;
+            gap: 12px;
+            margin-bottom: 24px;
+            flex-wrap: wrap;
+        }
+
+        .attribute-btn {
+            padding: 10px 16px;
+            border-radius: 6px;
+            border: 1px solid var(--border);
+            background: transparent;
+            color: var(--text2);
+            font-size: 13px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+            font-family: inherit;
+        }
+
+        .attribute-btn.active {
+            background: rgba(0, 212, 255, 0.15);
+            color: var(--cyan);
+            border-color: var(--cyan);
+        }
+
+        .attribute-btn:hover {
+            color: var(--cyan);
+            border-color: var(--cyan);
+        }
+
+        .demo-container {
+            background: var(--card);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: 24px;
+            margin-bottom: 24px;
+        }
+
+        .comparison-text {
+            font-size: 16px;
+            font-weight: 600;
+            color: var(--text);
+            margin-bottom: 24px;
+            text-align: center;
+        }
+
+        .comparison-text strong {
+            background: linear-gradient(135deg, var(--cyan), var(--pink));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .demo-objects-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 24px;
+            margin-bottom: 24px;
+        }
+
+        .demo-object {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+
+        .object-label {
+            font-size: 14px;
+            font-weight: 600;
+            color: var(--text2);
+            text-align: center;
+        }
+
+        .object-emoji {
+            font-size: 32px;
+            text-align: center;
+        }
+
+        .slider-container {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .slider {
+            width: 100%;
+            height: 8px;
+            border-radius: 4px;
+            background: var(--border);
+            outline: none;
+            -webkit-appearance: none;
+            appearance: none;
+        }
+
+        .slider::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 18px;
+            height: 18px;
+            border-radius: 50%;
+            background: var(--cyan);
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .slider::-webkit-slider-thumb:hover {
+            transform: scale(1.2);
+            box-shadow: 0 0 10px rgba(0, 212, 255, 0.5);
+        }
+
+        .slider::-moz-range-thumb {
+            width: 18px;
+            height: 18px;
+            border-radius: 50%;
+            background: var(--cyan);
+            cursor: pointer;
+            border: none;
+            transition: all 0.2s;
+        }
+
+        .slider::-moz-range-thumb:hover {
+            transform: scale(1.2);
+            box-shadow: 0 0 10px rgba(0, 212, 255, 0.5);
+        }
+
+        .slider-value {
+            font-size: 13px;
+            font-weight: 600;
+            color: var(--muted);
+            text-align: center;
+        }
+
+        .number-line-svg {
+            width: 100%;
+            height: auto;
+            margin-bottom: 16px;
+        }
+
+        /* ============= PRACTICE MODE ============= */
+        .practice-section {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 32px;
+        }
+
+        .question-card {
+            background: var(--card);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: 32px;
+            width: 100%;
+            max-width: 600px;
+            text-align: center;
+        }
+
+        .question-text {
+            font-size: 20px;
+            font-weight: 700;
+            color: var(--text);
+            margin-bottom: 24px;
+        }
+
+        .question-text .emoji {
+            font-size: 28px;
+            margin: 0 4px;
+        }
+
+        .objects-display {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 24px;
+            margin-bottom: 32px;
+        }
+
+        .object-card {
+            padding: 16px;
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            background: var(--bg);
+        }
+
+        .object-card-emoji {
+            font-size: 48px;
+            margin-bottom: 12px;
+        }
+
+        .object-card-name {
+            font-size: 14px;
+            font-weight: 600;
+            color: var(--text2);
+            margin-bottom: 12px;
+        }
+
+        .ruler-display {
+            height: 60px;
+            display: flex;
+            align-items: center;
+            margin-top: 8px;
+        }
+
+        .answer-buttons {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            width: 100%;
+        }
+
+        .answer-btn {
+            padding: 12px 24px;
+            border: 2px solid var(--border);
+            border-radius: 8px;
+            background: transparent;
+            color: var(--text);
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+            font-family: inherit;
+        }
+
+        .answer-btn:hover {
+            border-color: var(--cyan);
+            color: var(--cyan);
+            background: rgba(0, 212, 255, 0.08);
+        }
+
+        .answer-btn:active {
+            transform: scale(0.98);
+        }
+
+        .answer-btn.selected {
+            border-color: var(--cyan);
+            background: rgba(0, 212, 255, 0.15);
+            color: var(--cyan);
+        }
+
+        .answer-btn.correct {
+            border-color: var(--green);
+            background: rgba(76, 175, 80, 0.15);
+            color: var(--green);
+        }
+
+        .answer-btn.incorrect {
+            border-color: var(--red);
+            background: rgba(244, 67, 54, 0.15);
+            color: var(--red);
+        }
+
+        /* ============= PLAY MODE ============= */
+        .play-section {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 24px;
+        }
+
+        .play-header {
+            width: 100%;
+            max-width: 600px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 16px;
+            background: var(--card);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            margin-bottom: 16px;
+        }
+
+        .play-timer {
+            font-size: 24px;
+            font-weight: 700;
+            background: linear-gradient(135deg, var(--cyan), var(--pink));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .play-score {
+            font-size: 18px;
+            font-weight: 700;
+            color: var(--text);
+        }
+
+        .play-score-label {
+            font-size: 12px;
+            color: var(--muted);
+            font-weight: 400;
+        }
+
+        .game-over-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.6);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 999;
+        }
+
+        .game-over-modal {
+            background: var(--card);
+            border-radius: 12px;
+            padding: 32px;
+            text-align: center;
+            max-width: 400px;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3);
+        }
+
+        .game-over-title {
+            font-size: 28px;
+            font-weight: 700;
+            color: var(--text);
+            margin-bottom: 16px;
+            background: linear-gradient(135deg, var(--cyan), var(--pink));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .game-over-score {
+            font-size: 48px;
+            font-weight: 700;
+            color: var(--cyan);
+            margin-bottom: 24px;
+        }
+
+        .game-over-button {
+            padding: 12px 24px;
+            border: none;
+            border-radius: 8px;
+            background: linear-gradient(135deg, var(--cyan), var(--pink));
+            color: white;
+            font-size: 14px;
+            font-weight: 700;
+            cursor: pointer;
+            transition: all 0.2s;
+            font-family: inherit;
+        }
+
+        .game-over-button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(0, 212, 255, 0.3);
+        }
+
+        .feedback {
+            position: fixed;
+            bottom: 24px;
+            left: 50%;
+            transform: translateX(-50%);
+            padding: 12px 20px;
+            border-radius: 6px;
+            font-size: 14px;
+            font-weight: 600;
+            z-index: 500;
+        }
+
+        .feedback.positive {
+            background: rgba(76, 175, 80, 0.2);
+            color: var(--green);
+            border: 1px solid rgba(76, 175, 80, 0.3);
+        }
+
+        .feedback.negative {
+            background: rgba(244, 67, 54, 0.2);
+            color: var(--red);
+            border: 1px solid rgba(244, 67, 54, 0.3);
+        }
+
+        /* ============= RESPONSIVE ============= */
+        @media (max-width: 768px) {
+            .header {
+                flex-wrap: wrap;
+                gap: 12px;
+            }
+
+            .header-title {
+                font-size: 18px;
+            }
+
+            .demo-objects-row {
+                grid-template-columns: 1fr;
+            }
+
+            .objects-display {
+                grid-template-columns: 1fr;
+            }
+
+            .onboarding-modal {
+                margin: 16px;
+                max-width: calc(100% - 32px);
+            }
+
+            .question-card {
+                padding: 20px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <div class="header-left">
+            <button class="back-btn" onclick="window.location.href='../index.html';">← Back</button>
+            <div class="header-title">VINCULUM <span>Measurement</span></div>
+            <div class="header-badge">K</div>
+        </div>
+        <div style="display: flex; align-items: center; gap: 12px;">
+            <div class="std-tags">
+                <div class="std-tag">K.MD.A.1</div>
+                <div class="std-tag">K.MD.A.2</div>
+            </div>
+            <button class="help-btn" onclick="showOnboarding();" title="Help">?</button>
+        </div>
+    </div>
+
+    <div class="mode-tabs">
+        <button class="mode-tab active-explore" onclick="switchMode('explore');">Explore</button>
+        <button class="mode-tab" onclick="switchMode('practice');">Practice</button>
+        <button class="mode-tab" onclick="switchMode('play');">Play</button>
+        <div style="flex: 1;"></div>
+        <button class="diff-btn active" onclick="setDiff('emergent');">Emergent</button>
+        <button class="diff-btn" onclick="setDiff('proficient');">Proficient</button>
+        <button class="diff-btn" onclick="setDiff('advanced');">Advanced</button>
+    </div>
+
+    <div class="main">
+        <div class="workspace" id="workspace"></div>
+    </div>
+
+    <div id="onboarding" class="onboarding-overlay" style="display: none;">
+        <div class="onboarding-modal">
+            <div class="onboarding-title">Welcome! 👋</div>
+            <div class="onboarding-objective">Compare objects by length, weight, and capacity using measurement tools!</div>
+            <div class="onboarding-steps">
+                <div class="onboarding-step">
+                    <div class="onboarding-step-title">📊 Explore</div>
+                    <div class="onboarding-step-text">Use sliders to change object sizes. Watch the ruler and number line!</div>
+                </div>
+                <div class="onboarding-step">
+                    <div class="onboarding-step-title">✍️ Practice</div>
+                    <div class="onboarding-step-text">Look at the objects and their measurements. Pick which is longer, heavier, or holds more!</div>
+                </div>
+                <div class="onboarding-step">
+                    <div class="onboarding-step-title">⚡ Play</div>
+                    <div class="onboarding-step-text">Race the clock! Answer as many as you can in 60 seconds!</div>
+                </div>
+            </div>
+            <button class="onboarding-button" onclick="dismissOnboarding();">Got it! Let's go!</button>
+        </div>
+    </div>
+
+    <script src="../../vinculum-core.js"></script>
+    <script>
+        // Object definitions
+        const LENGTH_OBJECTS = [
+            { name: 'Crayon', emoji: '🖍️' },
+            { name: 'Pencil', emoji: '✏️' },
+            { name: 'Book', emoji: '📕' },
+            { name: 'Shoe', emoji: '👟' },
+            { name: 'Spoon', emoji: '🥄' },
+            { name: 'Banana', emoji: '🍌' },
+            { name: 'Ruler', emoji: '📏' },
+            { name: 'Toothbrush', emoji: '🪥' }
+        ];
+
+        const WEIGHT_OBJECTS = [
+            { name: 'Apple', emoji: '🍎', baseWeight: 3 },
+            { name: 'Teddy Bear', emoji: '🧸', baseWeight: 5 },
+            { name: 'Book', emoji: '📖', baseWeight: 4 },
+            { name: 'Block', emoji: '🧱', baseWeight: 2 },
+            { name: 'Ball', emoji: '⚽', baseWeight: 3 },
+            { name: 'Cup', emoji: '🥤', baseWeight: 1 }
+        ];
+
+        const CAPACITY_OBJECTS = [
+            { name: 'Glass', emoji: '🥛' },
+            { name: 'Bottle', emoji: '🍼' },
+            { name: 'Bucket', emoji: '🪣' },
+            { name: 'Bowl', emoji: '🥣' },
+            { name: 'Mug', emoji: '☕' }
+        ];
+
+        // State
+        let currentMode = 'explore';
+        let currentDifficulty = 'emergent';
+        let currentAttribute = 'length';
+        let onboardingDismissed = false;
+
+        // Explore state
+        let exploreValueA = 3;
+        let exploreValueB = 5;
+        let exploreObjectA = LENGTH_OBJECTS[0];
+        let exploreObjectB = LENGTH_OBJECTS[1];
+
+        // Practice state
+        let practiceQuestion = null;
+        let practiceSelectedAnswer = null;
+
+        // Play state
+        let playTimeLeft = 60;
+        let playScore = 0;
+        let playGameRunning = false;
+        let playCurrentQuestion = null;
+        let playSelectedAnswer = null;
+        let playGameInterval = null;
+
+        // Standard feedback function
+        function showFB(text, className) {
+            const existing = document.querySelector('.feedback');
+            if (existing) existing.remove();
+            const fb = document.createElement('div');
+            fb.className = 'feedback ' + className;
+            fb.textContent = text;
+            document.body.appendChild(fb);
+            setTimeout(() => fb.remove(), 2000);
+        }
+
+        // Onboarding functions
+        function showOnboarding() {
+            document.getElementById('onboarding').style.display = 'flex';
+        }
+
+        function dismissOnboarding() {
+            onboardingDismissed = true;
+            document.getElementById('onboarding').style.display = 'none';
+        }
+
+        // Show onboarding on first load
+        window.addEventListener('load', () => {
+            if (!onboardingDismissed) {
+                showOnboarding();
+            }
+        });
+
+        // Create SVG number line
+        function createNumberLine(value, maxValue, color, label) {
+            const width = 300;
+            const height = 80;
+            const padding = 30;
+            const lineStartX = padding;
+            const lineEndX = width - padding;
+            const lineY = 40;
+            const tickHeight = 8;
+
+            let svg = `<svg class="number-line-svg" viewBox="0 0 ${width} ${height}" xmlns="http://www.w3.org/2000/svg">`;
+
+            // Draw horizontal line
+            svg += `<line x1="${lineStartX}" y1="${lineY}" x2="${lineEndX}" y2="${lineY}" stroke="var(--border)" stroke-width="2"/>`;
+
+            // Draw tick marks and numbers
+            const pixelsPerUnit = (lineEndX - lineStartX) / maxValue;
+            for (let i = 0; i <= maxValue; i++) {
+                const x = lineStartX + (i * pixelsPerUnit);
+                svg += `<line x1="${x}" y1="${lineY - tickHeight}" x2="${x}" y2="${lineY + tickHeight}" stroke="var(--border)" stroke-width="1"/>`;
+                svg += `<text x="${x}" y="${lineY + 20}" text-anchor="middle" font-size="12" fill="var(--muted)" font-family="Inter">${i}</text>`;
+            }
+
+            // Draw colored bar representing the value
+            const barEndX = lineStartX + (value * pixelsPerUnit);
+            svg += `<rect x="${lineStartX}" y="${lineY - 6}" width="${barEndX - lineStartX}" height="12" fill="${color}" opacity="0.7" rx="2"/>`;
+
+            // Draw label above
+            svg += `<text x="${width / 2}" y="20" text-anchor="middle" font-size="13" font-weight="600" fill="var(--text)" font-family="Inter">${label}</text>`;
+
+            svg += `</svg>`;
+            return svg;
+        }
+
+        // Mode switching
+        function switchMode(mode) {
+            currentMode = mode;
+            document.querySelectorAll('.mode-tab').forEach(btn => {
+                btn.classList.remove('active-explore', 'active-practice', 'active-play');
+            });
+            document.querySelector(`.mode-tab.active-${mode}`).classList.add(`active-${mode}`);
+            renderWorkspace();
+        }
+
+        // Difficulty setting
+        function setDiff(diff) {
+            currentDifficulty = diff;
+            document.querySelectorAll('.diff-btn').forEach(btn => btn.classList.remove('active'));
+            event.target.classList.add('active');
+            renderWorkspace();
+        }
+
+        // Main render function
+        function renderWorkspace() {
+            const container = document.getElementById('workspace');
+            container.innerHTML = '';
+
+            if (currentMode === 'explore') {
+                renderExplore(container);
+            } else if (currentMode === 'practice') {
+                renderPractice(container);
+            } else if (currentMode === 'play') {
+                renderPlay(container);
+            }
+        }
+
+        // ============= EXPLORE MODE =============
+        function renderExplore(container) {
+            let html = '<div class="explore-section">';
+            html += '<div class="explore-header">Explore Measurements</div>';
+
+            // Attribute selector
+            const attributes = currentDifficulty === 'emergent'
+                ? ['length']
+                : currentDifficulty === 'proficient'
+                ? ['length', 'weight']
+                : ['length', 'weight', 'capacity'];
+
+            html += '<div class="attribute-selector">';
+            attributes.forEach(attr => {
+                const isActive = currentAttribute === attr ? 'active' : '';
+                const label = attr.charAt(0).toUpperCase() + attr.slice(1);
+                html += `<button class="attribute-btn ${isActive}" onclick="setExploreAttribute('${attr}');">${label}</button>`;
+            });
+            html += '</div>';
+
+            if (currentAttribute === 'length') {
+                html += createLengthExplore();
+            } else if (currentAttribute === 'weight') {
+                html += createWeightExplore();
+            } else if (currentAttribute === 'capacity') {
+                html += createCapacityExplore();
+            }
+
+            html += '</div>';
+            container.innerHTML = html;
+        }
+
+        function setExploreAttribute(attr) {
+            currentAttribute = attr;
+            renderExplore(document.getElementById('workspace'));
+        }
+
+        function createLengthExplore() {
+            const maxValue = currentDifficulty === 'emergent' ? 6 : currentDifficulty === 'proficient' ? 8 : 10;
+
+            // Randomize objects each render
+            const objA = LENGTH_OBJECTS[Math.floor(Math.random() * LENGTH_OBJECTS.length)];
+            const objB = LENGTH_OBJECTS.find(o => o !== objA) || LENGTH_OBJECTS[(Math.floor(Math.random() * LENGTH_OBJECTS.length))];
+            exploreObjectA = objA;
+            exploreObjectB = objB;
+
+            let html = '<div class="demo-container">';
+            html += `<div class="comparison-text">The <strong>${objA.emoji} ${objA.name}</strong> is ${exploreValueA > exploreValueB ? 'LONGER' : exploreValueA < exploreValueB ? 'SHORTER' : 'the SAME LENGTH'} — it measures <strong>${exploreValueA}</strong> units! The <strong>${objB.emoji} ${objB.name}</strong> measures <strong>${exploreValueB}</strong> units.</div>`;
+
+            html += '<div class="demo-objects-row">';
+
+            // Object A
+            html += '<div class="demo-object">';
+            html += `<div class="object-label">${objA.emoji} ${objA.name}</div>`;
+            html += createNumberLine(exploreValueA, maxValue, 'var(--cyan)', '');
+            html += '<div class="slider-container">';
+            html += `<input type="range" class="slider" min="1" max="${maxValue}" value="${exploreValueA}" oninput="updateLengthA(this.value);">`;
+            html += `<div class="slider-value">${exploreValueA} units</div>`;
+            html += '</div>';
+            html += '</div>';
+
+            // Object B
+            html += '<div class="demo-object">';
+            html += `<div class="object-label">${objB.emoji} ${objB.name}</div>`;
+            html += createNumberLine(exploreValueB, maxValue, 'var(--pink)', '');
+            html += '<div class="slider-container">';
+            html += `<input type="range" class="slider" min="1" max="${maxValue}" value="${exploreValueB}" oninput="updateLengthB(this.value);">`;
+            html += `<div class="slider-value">${exploreValueB} units</div>`;
+            html += '</div>';
+            html += '</div>';
+
+            html += '</div></div>';
+            return html;
+        }
+
+        function updateLengthA(val) {
+            exploreValueA = parseInt(val);
+            renderExplore(document.getElementById('workspace'));
+        }
+
+        function updateLengthB(val) {
+            exploreValueB = parseInt(val);
+            renderExplore(document.getElementById('workspace'));
+        }
+
+        function createWeightExplore() {
+            const maxValue = currentDifficulty === 'emergent' ? 6 : currentDifficulty === 'proficient' ? 8 : 10;
+            const objA = WEIGHT_OBJECTS[Math.floor(Math.random() * WEIGHT_OBJECTS.length)];
+            const objB = WEIGHT_OBJECTS.find(o => o !== objA) || WEIGHT_OBJECTS[(Math.floor(Math.random() * WEIGHT_OBJECTS.length))];
+
+            const weightA = objA.baseWeight + Math.floor(Math.random() * 3);
+            const weightB = objB.baseWeight + Math.floor(Math.random() * 3);
+
+            let html = '<div class="demo-container">';
+            html += `<div class="comparison-text">The <strong>${objA.emoji} ${objA.name}</strong> is ${weightA > weightB ? 'HEAVIER' : weightA < weightB ? 'LIGHTER' : 'the SAME WEIGHT'} — it's <strong>${weightA}</strong> blocks heavy! The <strong>${objB.emoji} ${objB.name}</strong> is <strong>${weightB}</strong> blocks heavy.</div>`;
+
+            html += createBalanceScale(weightA, weightB, objA, objB);
+            html += '</div>';
+            return html;
+        }
+
+        function createBalanceScale(weightA, weightB, objA, objB) {
+            const width = 300;
+            const height = 200;
+            const centerX = width / 2;
+            const centerY = 120;
+            const scaleDiff = (weightA - weightB) * 8;
+            const leftTilt = Math.max(-20, Math.min(20, scaleDiff / 10));
+
+            let svg = `<svg class="number-line-svg" viewBox="0 0 ${width} ${height}" xmlns="http://www.w3.org/2000/svg">`;
+
+            // Pivot point
+            svg += `<circle cx="${centerX}" cy="${centerY}" r="6" fill="var(--text2)"/>`;
+
+            // Left pan (with rotation)
+            const leftX = centerX - 80;
+            const leftPanY = centerY + (leftTilt > 0 ? 30 : 20);
+            svg += `<g transform="translate(${leftX}, ${leftPanY}) rotate(${leftTilt})">`;
+            svg += `<rect x="-40" y="0" width="80" height="12" fill="var(--cyan)" opacity="0.7" rx="2"/>`;
+            svg += `<text x="0" y="35" text-anchor="middle" font-size="12" fill="var(--text)" font-family="Inter">${objA.emoji}</text>`;
+            svg += `<text x="0" y="55" text-anchor="middle" font-size="11" fill="var(--muted)" font-family="Inter">${weightA} blocks</text>`;
+            svg += `</g>`;
+
+            // Right pan (with rotation)
+            const rightX = centerX + 80;
+            const rightPanY = centerY + (leftTilt < 0 ? 30 : 20);
+            svg += `<g transform="translate(${rightX}, ${rightPanY}) rotate(${-leftTilt})">`;
+            svg += `<rect x="-40" y="0" width="80" height="12" fill="var(--pink)" opacity="0.7" rx="2"/>`;
+            svg += `<text x="0" y="35" text-anchor="middle" font-size="12" fill="var(--text)" font-family="Inter">${objB.emoji}</text>`;
+            svg += `<text x="0" y="55" text-anchor="middle" font-size="11" fill="var(--muted)" font-family="Inter">${weightB} blocks</text>`;
+            svg += `</g>`;
+
+            // Balance beam
+            svg += `<g transform="translate(${centerX}, ${centerY}) rotate(${leftTilt})">`;
+            svg += `<rect x="-100" y="-4" width="200" height="8" fill="var(--text2)" opacity="0.5" rx="2"/>`;
+            svg += `</g>`;
+
+            svg += `</svg>`;
+            return svg;
+        }
+
+        function createCapacityExplore() {
+            const maxValue = currentDifficulty === 'emergent' ? 6 : currentDifficulty === 'proficient' ? 8 : 10;
+            const objA = CAPACITY_OBJECTS[Math.floor(Math.random() * CAPACITY_OBJECTS.length)];
+            const objB = CAPACITY_OBJECTS.find(o => o !== objA) || CAPACITY_OBJECTS[(Math.floor(Math.random() * CAPACITY_OBJECTS.length))];
+
+            const capA = Math.floor(Math.random() * maxValue) + 1;
+            const capB = Math.floor(Math.random() * maxValue) + 1;
+
+            let html = '<div class="demo-container">';
+            html += `<div class="comparison-text">The <strong>${objA.emoji} ${objA.name}</strong> holds ${capA > capB ? 'MORE' : capA < capB ? 'LESS' : 'the SAME AMOUNT'} — <strong>${capA}</strong> scoops! The <strong>${objB.emoji} ${objB.name}</strong> holds <strong>${capB}</strong> scoops.</div>`;
+
+            html += '<div class="demo-objects-row">';
+            html += `<div class="demo-object"><div class="object-label">${objA.emoji} ${objA.name}</div><div class="object-emoji" style="font-size: 48px; margin: 16px 0;">${objA.emoji}</div><div class="slider-value">${capA} scoops</div></div>`;
+            html += `<div class="demo-object"><div class="object-label">${objB.emoji} ${objB.name}</div><div class="object-emoji" style="font-size: 48px; margin: 16px 0;">${objB.emoji}</div><div class="slider-value">${capB} scoops</div></div>`;
+            html += '</div></div>';
+            return html;
+        }
+
+        // ============= PRACTICE MODE =============
+        function renderPractice(container) {
+            let html = '<div class="practice-section">';
+
+            if (!practiceQuestion) {
+                practiceQuestion = generatePracticeQuestion();
+            }
+
+            const q = practiceQuestion;
+            html += '<div class="question-card">';
+            html += `<div class="question-text">${q.question}</div>`;
+
+            // Display objects with measurements
+            html += '<div class="objects-display">';
+
+            if (q.type === 'length') {
+                html += `<div class="object-card">
+                    <div class="object-card-emoji">${q.objA.emoji}</div>
+                    <div class="object-card-name">${q.objA.name}</div>
+                    <div class="ruler-display">${createNumberLine(q.valueA, 10, 'var(--cyan)', '')}</div>
+                </div>`;
+
+                html += `<div class="object-card">
+                    <div class="object-card-emoji">${q.objB.emoji}</div>
+                    <div class="object-card-name">${q.objB.name}</div>
+                    <div class="ruler-display">${createNumberLine(q.valueB, 10, 'var(--pink)', '')}</div>
+                </div>`;
+            } else if (q.type === 'weight') {
+                html += `<div class="object-card">
+                    <div class="object-card-emoji">${q.objA.emoji}</div>
+                    <div class="object-card-name">${q.objA.name}</div>
+                    <div class="slider-value">${q.valueA} blocks</div>
+                </div>`;
+
+                html += `<div class="object-card">
+                    <div class="object-card-emoji">${q.objB.emoji}</div>
+                    <div class="object-card-name">${q.objB.name}</div>
+                    <div class="slider-value">${q.valueB} blocks</div>
+                </div>`;
+            } else if (q.type === 'capacity') {
+                html += `<div class="object-card">
+                    <div class="object-card-emoji">${q.objA.emoji}</div>
+                    <div class="object-card-name">${q.objA.name}</div>
+                    <div class="slider-value">${q.valueA} scoops</div>
+                </div>`;
+
+                html += `<div class="object-card">
+                    <div class="object-card-emoji">${q.objB.emoji}</div>
+                    <div class="object-card-name">${q.objB.name}</div>
+                    <div class="slider-value">${q.valueB} scoops</div>
+                </div>`;
+            }
+
+            html += '</div>';
+
+            // Answer buttons
+            html += '<div class="answer-buttons">';
+            q.answers.forEach(answer => {
+                const isSelected = practiceSelectedAnswer === answer.text;
+                const selectedClass = isSelected ? 'selected' : '';
+                html += `<button class="answer-btn ${selectedClass}" onclick="selectPracticeAnswer('${answer.text}');">${answer.text}</button>`;
+            });
+            html += '</div>';
+
+            html += '</div>';
+            html += '</div>';
+            container.innerHTML = html;
+        }
+
+        function generatePracticeQuestion() {
+            const maxValue = currentDifficulty === 'emergent' ? 6 : currentDifficulty === 'proficient' ? 8 : 10;
+            let type = 'length';
+
+            if (currentDifficulty === 'proficient' && Math.random() > 0.5) {
+                type = 'weight';
+            } else if (currentDifficulty === 'advanced') {
+                const types = ['length', 'weight', 'capacity'];
+                type = types[Math.floor(Math.random() * types.length)];
+            }
+
+            let question, objA, objB, valueA, valueB, answers, correctAnswer;
+
+            if (type === 'length') {
+                objA = LENGTH_OBJECTS[Math.floor(Math.random() * LENGTH_OBJECTS.length)];
+                objB = LENGTH_OBJECTS.find(o => o !== objA) || LENGTH_OBJECTS[0];
+                valueA = Math.floor(Math.random() * (maxValue - 1)) + 1;
+                valueB = Math.floor(Math.random() * (maxValue - 1)) + 1;
+                question = `Which is longer, the <span class="emoji">${objA.emoji}</span> ${objA.name} or the <span class="emoji">${objB.emoji}</span> ${objB.name}?`;
+                correctAnswer = valueA > valueB ? objA.name : valueB > valueA ? objB.name : 'They are the same length';
+                answers = [
+                    { text: objA.name, correct: valueA > valueB },
+                    { text: objB.name, correct: valueB > valueA },
+                    { text: 'They are the same length', correct: valueA === valueB }
+                ];
+            } else if (type === 'weight') {
+                objA = WEIGHT_OBJECTS[Math.floor(Math.random() * WEIGHT_OBJECTS.length)];
+                objB = WEIGHT_OBJECTS.find(o => o !== objA) || WEIGHT_OBJECTS[0];
+                valueA = objA.baseWeight + Math.floor(Math.random() * 3);
+                valueB = objB.baseWeight + Math.floor(Math.random() * 3);
+                question = `Which is heavier, the <span class="emoji">${objA.emoji}</span> ${objA.name} or the <span class="emoji">${objB.emoji}</span> ${objB.name}?`;
+                correctAnswer = valueA > valueB ? objA.name : valueB > valueA ? objB.name : 'They are the same weight';
+                answers = [
+                    { text: objA.name, correct: valueA > valueB },
+                    { text: objB.name, correct: valueB > valueA },
+                    { text: 'They are the same weight', correct: valueA === valueB }
+                ];
+            } else {
+                objA = CAPACITY_OBJECTS[Math.floor(Math.random() * CAPACITY_OBJECTS.length)];
+                objB = CAPACITY_OBJECTS.find(o => o !== objA) || CAPACITY_OBJECTS[0];
+                valueA = Math.floor(Math.random() * (maxValue - 1)) + 1;
+                valueB = Math.floor(Math.random() * (maxValue - 1)) + 1;
+                question = `Which holds more, the <span class="emoji">${objA.emoji}</span> ${objA.name} or the <span class="emoji">${objB.emoji}</span> ${objB.name}?`;
+                correctAnswer = valueA > valueB ? objA.name : valueB > valueA ? objB.name : 'They hold the same amount';
+                answers = [
+                    { text: objA.name, correct: valueA > valueB },
+                    { text: objB.name, correct: valueB > valueA },
+                    { text: 'They hold the same amount', correct: valueA === valueB }
+                ];
+            }
+
+            return { question, type, objA, objB, valueA, valueB, answers, correctAnswer };
+        }
+
+        function selectPracticeAnswer(answer) {
+            practiceSelectedAnswer = answer;
+            const isCorrect = practiceQuestion.answers.find(a => a.text === answer).correct;
+
+            if (isCorrect) {
+                showFB('✓ Correct!', 'positive');
+                setTimeout(() => {
+                    practiceQuestion = null;
+                    practiceSelectedAnswer = null;
+                    renderPractice(document.getElementById('workspace'));
+                }, 1500);
+            } else {
+                showFB('✗ Try again!', 'negative');
+            }
+
+            renderPractice(document.getElementById('workspace'));
+        }
+
+        // ============= PLAY MODE =============
+        function renderPlay(container) {
+            let html = '<div class="play-section">';
+
+            if (!playGameRunning) {
+                html += '<div class="question-card" style="max-width: 600px;">';
+                html += '<div style="font-size: 20px; font-weight: 700; color: var(--text); margin-bottom: 24px;">Ready to race the clock?</div>';
+                html += '<div style="font-size: 14px; color: var(--text2); margin-bottom: 24px;">Answer as many questions as you can in 60 seconds!</div>';
+                html += '<button class="answer-btn" onclick="startPlayGame();" style="background: linear-gradient(135deg, var(--cyan), var(--pink)); color: white; border: none; font-weight: 700;">Start Game!</button>';
+                html += '</div>';
+            } else {
+                html += '<div class="play-header">';
+                html += `<div class="play-timer">${playTimeLeft}s</div>`;
+                html += `<div class="play-score"><span class="play-score-label">Score</span><div>${playScore}</div></div>`;
+                html += '</div>';
+
+                if (playCurrentQuestion) {
+                    const q = playCurrentQuestion;
+                    html += '<div class="question-card">';
+                    html += `<div class="question-text">${q.question}</div>`;
+                    html += '<div class="answer-buttons">';
+                    q.answers.forEach(answer => {
+                        const isSelected = playSelectedAnswer === answer.text ? 'selected' : '';
+                        html += `<button class="answer-btn ${isSelected}" onclick="selectPlayAnswer('${answer.text}');">${answer.text}</button>`;
+                    });
+                    html += '</div>';
+                    html += '</div>';
+                }
+            }
+
+            html += '</div>';
+            container.innerHTML = html;
+        }
+
+        function startPlayGame() {
+            playGameRunning = true;
+            playScore = 0;
+            playTimeLeft = 60;
+            playCurrentQuestion = generatePlayQuestion();
+            playSelectedAnswer = null;
+            renderPlay(document.getElementById('workspace'));
+
+            playGameInterval = setInterval(() => {
+                playTimeLeft--;
+                if (playTimeLeft <= 0) {
+                    endPlayGame();
+                } else {
+                    renderPlay(document.getElementById('workspace'));
+                }
+            }, 1000);
+        }
+
+        function generatePlayQuestion() {
+            const maxValue = currentDifficulty === 'emergent' ? 6 : currentDifficulty === 'proficient' ? 8 : 10;
+            let type = 'length';
+
+            if (currentDifficulty === 'proficient' && Math.random() > 0.5) {
+                type = 'weight';
+            } else if (currentDifficulty === 'advanced') {
+                const types = ['length', 'weight', 'capacity'];
+                type = types[Math.floor(Math.random() * types.length)];
+            }
+
+            let question, objA, objB, valueA, valueB, answers;
+
+            if (type === 'length') {
+                objA = LENGTH_OBJECTS[Math.floor(Math.random() * LENGTH_OBJECTS.length)];
+                objB = LENGTH_OBJECTS.find(o => o !== objA) || LENGTH_OBJECTS[0];
+                valueA = Math.floor(Math.random() * (maxValue - 1)) + 1;
+                valueB = Math.floor(Math.random() * (maxValue - 1)) + 1;
+                question = `Longer: ${objA.emoji} or ${objB.emoji}?`;
+                answers = [
+                    { text: objA.name, correct: valueA > valueB },
+                    { text: objB.name, correct: valueB > valueA },
+                    { text: 'Same', correct: valueA === valueB }
+                ];
+            } else if (type === 'weight') {
+                objA = WEIGHT_OBJECTS[Math.floor(Math.random() * WEIGHT_OBJECTS.length)];
+                objB = WEIGHT_OBJECTS.find(o => o !== objA) || WEIGHT_OBJECTS[0];
+                valueA = objA.baseWeight + Math.floor(Math.random() * 3);
+                valueB = objB.baseWeight + Math.floor(Math.random() * 3);
+                question = `Heavier: ${objA.emoji} or ${objB.emoji}?`;
+                answers = [
+                    { text: objA.name, correct: valueA > valueB },
+                    { text: objB.name, correct: valueB > valueA },
+                    { text: 'Same', correct: valueA === valueB }
+                ];
+            } else {
+                objA = CAPACITY_OBJECTS[Math.floor(Math.random() * CAPACITY_OBJECTS.length)];
+                objB = CAPACITY_OBJECTS.find(o => o !== objA) || CAPACITY_OBJECTS[0];
+                valueA = Math.floor(Math.random() * (maxValue - 1)) + 1;
+                valueB = Math.floor(Math.random() * (maxValue - 1)) + 1;
+                question = `Holds more: ${objA.emoji} or ${objB.emoji}?`;
+                answers = [
+                    { text: objA.name, correct: valueA > valueB },
+                    { text: objB.name, correct: valueB > valueA },
+                    { text: 'Same', correct: valueA === valueB }
+                ];
+            }
+
+            return { question, answers };
+        }
+
+        function selectPlayAnswer(answer) {
+            const isCorrect = playCurrentQuestion.answers.find(a => a.text === answer).correct;
+
+            if (isCorrect) {
+                playScore++;
+            }
+
+            playCurrentQuestion = generatePlayQuestion();
+            playSelectedAnswer = null;
+            renderPlay(document.getElementById('workspace'));
+        }
+
+        function endPlayGame() {
+            clearInterval(playGameInterval);
+            playGameRunning = false;
+
+            let html = '<div class="game-over-overlay">';
+            html += '<div class="game-over-modal">';
+            html += '<div class="game-over-title">Game Over!</div>';
+            html += `<div class="game-over-score">${playScore}</div>`;
+            html += '<div style="font-size: 14px; color: var(--text2); margin-bottom: 24px;">Great job! You got ${playScore} correct.</div>';
+            html += '<button class="game-over-button" onclick="startPlayGame();">Play Again</button>';
+            html += '</div></div>';
+
+            const overlay = document.createElement('div');
+            overlay.innerHTML = html;
+            document.body.appendChild(overlay);
+
+            // After showing overlay, set game variables back
+            setTimeout(() => {
+                renderPlay(document.getElementById('workspace'));
+            }, 100);
+        }
+
+        // Initialize on load
+        window.addEventListener('load', () => {
+            renderWorkspace();
+        });
+    </script>
+</body>
+</html>

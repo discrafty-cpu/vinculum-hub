@@ -1,0 +1,1010 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>VINCULUM — Counting Objects Lab</title>
+<link rel="stylesheet" href="../../vinculum-core.css">
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;600&display=swap');
+
+/* Theme system loaded from vinculum-core.css */
+.vinculum-rtm-btn .rtm-icon{font-size:14px;}
+
+/* ═══ FOCUS VISIBLE (Keyboard Navigation) ═══ */
+*:focus-visible {
+  outline:2px solid var(--cyan);outline-offset:2px;border-radius:4px;
+}
+.sr-only {
+  position:absolute;width:1px;height:1px;padding:0;margin:-1px;
+  overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0;
+}
+
+* { margin:0; padding:0; box-sizing:border-box; }
+body {
+  font-family: 'Inter', sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  height: 100vh;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  user-select: none;
+}
+
+/* ── HEADER ── */
+.header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 24px;
+  background: var(--bg2);
+  border-bottom: 1px solid var(--border);
+  flex-shrink: 0;
+}
+.header-left {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+.back-btn {
+  padding: 6px 12px;
+  border-radius: 8px;
+  border: 1px solid var(--border);
+  background: transparent;
+  color: var(--text2);
+  font-size: 13px;
+  font-family: inherit;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+.back-btn:hover { background: var(--card); color: var(--cyan); }
+.header-title {
+  font-size: 18px;
+  font-weight: 800;
+}
+.header-title span {
+  background: var(--grad);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+.header-badge {
+  font-size: 10px;
+  font-weight: 700;
+  padding: 3px 10px;
+  border-radius: 6px;
+  background: rgba(0,212,255,0.1);
+  color: var(--cyan);
+  border: 1px solid rgba(0,212,255,0.2);
+  letter-spacing: 1px;
+}
+.std-tags {
+  display: flex;
+  gap: 6px;
+}
+.std-tag {
+  font-size: 10px;
+  font-family: 'JetBrains Mono', monospace;
+  font-weight: 600;
+  padding: 3px 8px;
+  border-radius: 5px;
+  background: rgba(0,212,255,0.08);
+  color: var(--cyan);
+}
+.std-tag.mn { background: rgba(255,145,0,0.08); color: var(--orange); }
+
+/* ── MODE TABS ── */
+.mode-tabs {
+  display: flex;
+  gap: 4px;
+  padding: 8px 24px;
+  background: var(--bg2);
+  border-bottom: 1px solid var(--border);
+  flex-shrink: 0;
+}
+.mode-tab {
+  padding: 8px 20px;
+  border-radius: 8px;
+  border: 1px solid transparent;
+  background: transparent;
+  color: var(--muted);
+  font-size: 13px;
+  font-weight: 600;
+  font-family: inherit;
+  cursor: pointer;
+  transition: all 0.2s;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.mode-tab:hover { color: var(--text2); background: var(--card); }
+.mode-tab.active-explore { background: rgba(0,212,255,0.1); color: var(--cyan); border-color: rgba(0,212,255,0.3); }
+.mode-tab.active-practice { background: rgba(0,230,118,0.1); color: var(--green); border-color: rgba(0,230,118,0.3); }
+.mode-tab.active-play { background: rgba(255,59,139,0.1); color: var(--pink); border-color: rgba(255,59,139,0.3); }
+
+/* Difficulty selector */
+.diff-selector {
+  margin-left: auto;
+  display: flex;
+  gap: 4px;
+  align-items: center;
+}
+.diff-label {
+  font-size: 11px;
+  color: var(--muted);
+  margin-right: 8px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+}
+.diff-btn {
+  padding: 5px 12px;
+  border-radius: 6px;
+  border: 1px solid var(--border);
+  background: transparent;
+  color: var(--muted);
+  font-size: 11px;
+  font-weight: 600;
+  font-family: inherit;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+.diff-btn:hover { color: var(--text2); }
+.diff-btn.active { background: rgba(0,212,255,0.1); color: var(--cyan); border-color: rgba(0,212,255,0.3); }
+
+/* ── MAIN AREA ── */
+.main {
+  flex: 1;
+  display: flex;
+  overflow: hidden;
+}
+
+/* ── WORKSPACE ── */
+.workspace {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+  position: relative;
+}
+
+/* ── COUNT DISPLAY ── */
+.count-display {
+  position: absolute;
+  top: 24px;
+  left: 50%;
+  transform: translateX(-50%);
+  text-align: center;
+}
+.count-number {
+  font-size: 72px;
+  font-weight: 900;
+  background: var(--grad);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  line-height: 1;
+  font-family: 'JetBrains Mono', monospace;
+  transition: transform 0.15s;
+}
+.count-number.bump {
+  transform: scale(1.15);
+}
+.count-label {
+  font-size: 14px;
+  color: var(--muted);
+  margin-top: 4px;
+}
+
+/* ── OBJECT AREA ── */
+.object-area {
+  width: 100%;
+  max-width: 700px;
+  height: 320px;
+  background: var(--card);
+  border: 2px dashed var(--border);
+  border-radius: 20px;
+  position: relative;
+  display: flex;
+  flex-wrap: wrap;
+  align-content: flex-start;
+  padding: 20px;
+  gap: 12px;
+  transition: border-color 0.2s;
+  overflow: hidden;
+}
+.object-area.drag-over {
+  border-color: var(--cyan);
+  background: rgba(0,212,255,0.03);
+}
+.object-area-label {
+  position: absolute;
+  bottom: 12px;
+  left: 50%;
+  transform: translateX(-50%);
+  font-size: 12px;
+  color: var(--muted);
+  pointer-events: none;
+}
+
+/* ── OBJECTS ── */
+.counting-object {
+  width: 56px;
+  height: 56px;
+  border-radius: 14px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 32px;
+  cursor: pointer;
+  transition: transform 0.15s, box-shadow 0.15s;
+  position: relative;
+  -webkit-tap-highlight-color: transparent;
+}
+.counting-object:hover {
+  transform: scale(1.1);
+}
+.counting-object:active {
+  transform: scale(0.95);
+}
+.counting-object.counted {
+  box-shadow: 0 0 0 3px var(--cyan), 0 4px 16px rgba(0,212,255,0.3);
+}
+.counting-object .count-badge {
+  position: absolute;
+  top: -6px;
+  right: -6px;
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  background: var(--cyan);
+  color: var(--bg);
+  font-size: 11px;
+  font-weight: 800;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  opacity: 0;
+  transform: scale(0);
+  transition: all 0.2s;
+  font-family: 'JetBrains Mono', monospace;
+}
+.counting-object.counted .count-badge {
+  opacity: 1;
+  transform: scale(1);
+}
+
+/* ── TEN FRAME ── */
+.ten-frame {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  grid-template-rows: repeat(2, 1fr);
+  gap: 4px;
+  width: 100%;
+  max-width: 500px;
+  aspect-ratio: 5/2;
+  margin-top: 16px;
+}
+.ten-frame-cell {
+  background: var(--card);
+  border: 2px solid var(--border);
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 28px;
+  transition: all 0.2s;
+  cursor: pointer;
+  aspect-ratio: 1;
+}
+.ten-frame-cell.filled {
+  background: rgba(0,212,255,0.08);
+  border-color: var(--cyan);
+}
+.ten-frame-cell:hover {
+  border-color: var(--text2);
+}
+
+/* ── OBJECT PICKER ── */
+.object-picker {
+  display: flex;
+  gap: 8px;
+  margin-top: 16px;
+  flex-wrap: wrap;
+  justify-content: center;
+}
+.picker-btn {
+  width: 48px;
+  height: 48px;
+  border-radius: 12px;
+  border: 2px solid var(--border);
+  background: var(--card);
+  font-size: 24px;
+  cursor: pointer;
+  transition: all 0.2s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.picker-btn:hover { border-color: var(--cyan); transform: scale(1.1); }
+.picker-btn.selected { border-color: var(--cyan); background: rgba(0,212,255,0.1); box-shadow: 0 0 12px rgba(0,212,255,0.2); }
+
+/* ── CONTROLS ── */
+.controls {
+  display: flex;
+  gap: 8px;
+  margin-top: 16px;
+  flex-wrap: wrap;
+  justify-content: center;
+}
+.ctrl-btn {
+  padding: 10px 20px;
+  border-radius: 10px;
+  border: 1px solid var(--border);
+  background: var(--card);
+  color: var(--text2);
+  font-size: 13px;
+  font-weight: 600;
+  font-family: inherit;
+  cursor: pointer;
+  transition: all 0.2s;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.ctrl-btn:hover { background: var(--card-hover); color: var(--text); }
+.ctrl-btn.primary {
+  background: var(--grad);
+  color: var(--bg);
+  border-color: transparent;
+}
+.ctrl-btn.primary:hover { opacity: 0.9; }
+.ctrl-btn.danger { color: var(--pink); }
+.ctrl-btn.danger:hover { background: rgba(255,59,139,0.1); }
+
+/* ── NUMBER SELECTOR (for Practice/Play) ── */
+.number-target {
+  text-align: center;
+  padding: 16px;
+}
+.number-target-label {
+  font-size: 14px;
+  color: var(--text2);
+  margin-bottom: 4px;
+}
+.number-target-value {
+  font-size: 48px;
+  font-weight: 900;
+  font-family: 'JetBrains Mono', monospace;
+  color: var(--green);
+}
+
+/* ── FEEDBACK ── */
+.feedback {
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%) scale(0);
+  padding: 24px 48px;
+  border-radius: 20px;
+  font-size: 28px;
+  font-weight: 800;
+  z-index: 200;
+  pointer-events: none;
+  transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275), opacity 0.3s;
+  opacity: 0;
+}
+.feedback.show {
+  transform: translate(-50%, -50%) scale(1);
+  opacity: 1;
+}
+.feedback.correct {
+  background: rgba(0,230,118,0.15);
+  color: var(--green);
+  border: 2px solid var(--green);
+}
+.feedback.incorrect {
+  background: rgba(255,59,139,0.15);
+  color: var(--pink);
+  border: 2px solid var(--pink);
+}
+.feedback.try-again {
+  background: rgba(255,193,7,0.15);
+  color: var(--yellow);
+  border: 2px solid var(--yellow);
+}
+
+/* ── SIDE PANEL (Instructions / Score) ── */
+.side-panel {
+  width: 280px;
+  background: var(--bg2);
+  border-left: 1px solid var(--border);
+  padding: 20px;
+  overflow-y: auto;
+  flex-shrink: 0;
+}
+.panel-section {
+  margin-bottom: 20px;
+}
+.panel-title {
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 1.5px;
+  color: var(--muted);
+  margin-bottom: 8px;
+}
+.panel-text {
+  font-size: 13px;
+  color: var(--text2);
+  line-height: 1.6;
+}
+.score-display {
+  text-align: center;
+  padding: 16px;
+  background: var(--card);
+  border-radius: 12px;
+  margin-bottom: 12px;
+}
+.score-value {
+  font-size: 36px;
+  font-weight: 900;
+  font-family: 'JetBrains Mono', monospace;
+  background: var(--grad);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+.score-label {
+  font-size: 11px;
+  color: var(--muted);
+  text-transform: uppercase;
+  letter-spacing: 1px;
+}
+.streak-bar {
+  height: 6px;
+  background: var(--card);
+  border-radius: 3px;
+  overflow: hidden;
+  margin-top: 8px;
+}
+.streak-fill {
+  height: 100%;
+  background: var(--grad);
+  border-radius: 3px;
+  transition: width 0.3s;
+}
+
+/* ── ANSWER BUTTONS (Play mode) ── */
+.answer-grid {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 8px;
+  margin-top: 16px;
+  max-width: 400px;
+}
+.answer-btn {
+  padding: 14px;
+  border-radius: 12px;
+  border: 2px solid var(--border);
+  background: var(--card);
+  color: var(--text);
+  font-size: 20px;
+  font-weight: 700;
+  font-family: 'JetBrains Mono', monospace;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+.answer-btn:hover {
+  border-color: var(--cyan);
+  background: rgba(0,212,255,0.05);
+  transform: scale(1.05);
+}
+.answer-btn.correct-flash {
+  border-color: var(--green);
+  background: rgba(0,230,118,0.15);
+  color: var(--green);
+}
+.answer-btn.incorrect-flash {
+  border-color: var(--pink);
+  background: rgba(255,59,139,0.15);
+  color: var(--pink);
+}
+
+/* ── ANIMATIONS ── */
+@keyframes pop {
+  0% { transform: scale(0); }
+  70% { transform: scale(1.2); }
+  100% { transform: scale(1); }
+}
+@keyframes shake {
+  0%, 100% { transform: translateX(0); }
+  25% { transform: translateX(-8px); }
+  75% { transform: translateX(8px); }
+}
+.pop-in { animation: pop 0.3s ease-out forwards; }
+.shake { animation: shake 0.3s ease-in-out; }
+
+/* scrollbar */
+::-webkit-scrollbar { width: 6px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+</style>
+</head>
+<body>
+
+<!-- ═══ HEADER ═══ -->
+<div class="header">
+  <div class="header-left">
+    <a class="back-btn" href="../../VINCULUM-Hub.html" style="text-decoration:none;">◀ Hub</a>
+    <div class="header-title"><span>VINCULUM</span> Counting Objects Lab</div>
+    <span class="header-badge">K.CC</span>
+  </div>
+  <div class="std-tags">
+    <span class="std-tag">K.CC.4</span>
+    <span class="std-tag">K.CC.5</span>
+    <span class="std-tag mn">MN K.1.1.1</span>
+  </div>
+</div>
+
+<!-- ═══ MODE TABS ═══ -->
+<div class="mode-tabs">
+  <button class="mode-tab active-explore" id="tabExplore" onclick="setMode('explore')">
+    <svg width="18" height="18" viewBox="0 0 48 48" fill="none"><path d="M4 24C4 24 12 12 24 12C36 12 44 24 44 24C44 24 36 36 24 36C12 36 4 24 4 24Z" stroke="currentColor" stroke-width="3" fill="none"/><circle cx="24" cy="24" r="7" stroke="currentColor" stroke-width="3" fill="none"/><circle cx="24" cy="24" r="3" fill="currentColor"/><line x1="24" y1="4" x2="24" y2="9" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" opacity="0.5"/><line x1="10" y1="8" x2="13" y2="12" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" opacity="0.5"/><line x1="38" y1="8" x2="35" y2="12" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" opacity="0.5"/></svg> Explore
+  </button>
+  <button class="mode-tab" id="tabPractice" onclick="setMode('practice')">
+    <svg width="18" height="18" viewBox="0 0 48 48" fill="none"><circle cx="24" cy="24" r="20" stroke="currentColor" stroke-width="3" fill="none" opacity="0.3"/><circle cx="24" cy="24" r="20" stroke="currentColor" stroke-width="3" fill="none" stroke-dasharray="126" stroke-dashoffset="32" stroke-linecap="round"/><polyline points="16,24 22,32 34,16" stroke="currentColor" stroke-width="4" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg> Practice
+  </button>
+  <button class="mode-tab" id="tabPlay" onclick="setMode('play')">
+    <svg width="18" height="18" viewBox="0 0 48 48" fill="none"><polygon points="28,4 12,28 22,28 18,44 36,18 26,18" fill="none" stroke="currentColor" stroke-width="3" stroke-linejoin="round"/><polygon points="27,8 15,27 23,27 20,40 34,19 26,19" fill="currentColor" opacity="0.15"/></svg> Play
+  </button>
+  <div class="diff-selector">
+    <span class="diff-label">Level</span>
+    <button class="diff-btn active" id="diffE" onclick="setDiff('emergent')">1–5</button>
+    <button class="diff-btn" id="diffP" onclick="setDiff('proficient')">1–10</button>
+    <button class="diff-btn" id="diffA" onclick="setDiff('advanced')">1–20</button>
+  </div>
+</div>
+
+<!-- ═══ MAIN ═══ -->
+<div class="main">
+  <div class="workspace" role="main" id="workspace"></div>
+  <div class="side-panel" id="sidePanel"></div>
+</div>
+
+<!-- ═══ FEEDBACK POPUP ═══ -->
+<div class="feedback" id="feedback"></div>
+
+<script>
+function showFB(t,c){var f=document.getElementById("feedback");if(!f)return;f.textContent=t;f.className="feedback "+c+" show";setTimeout(function(){f.classList.remove("show");},1200);}
+// ════════════════════════════════════════
+// STATE
+// ════════════════════════════════════════
+const OBJECTS = ['🍎','🌟','🐟','🦋','🎈','🍊','🐢','🌸','<svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor" style="vertical-align:-2px;" opacity="0.7"><path d="M12 2s-4 4-4 10c0 2 .5 4 1 5h6c.5-1 1-3 1-5 0-6-4-10-4-10z"/><circle cx="12" cy="10" r="2" fill="white"/><path d="M7 17l-2 4h4zM17 17l2 4h-4z" opacity="0.5"/></svg>','🍓','🐱','🎵','💎','🌈','🍪'];
+let state = {
+  mode: 'explore',      // explore | practice | play
+  diff: 'emergent',     // emergent | proficient | advanced
+  maxNum: 5,
+  currentObject: '🍎',
+  // Explore
+  objects: [],
+  counted: new Set(),
+  // Practice
+  targetNumber: 0,
+  practicePhase: 'placing', // placing | checking
+  // Play
+  playTarget: 0,
+  playScore: 0,
+  playStreak: 0,
+  playBest: 0,
+  playRound: 0,
+  playTotal: 10,
+  tenFrame: new Array(10).fill(false)
+};
+
+// ════════════════════════════════════════
+// HELPERS
+// ════════════════════════════════════════
+function getMaxNum() {
+  return { emergent: 5, proficient: 10, advanced: 20 }[state.diff];
+}
+
+function randInt(min, max) {
+  return Math.floor(Math.random() * (max - min + 1)) + min;
+}
+
+function showFeedback(text, type) {
+  const fb = document.getElementById('feedback');
+  fb.textContent = text;
+  fb.className = 'feedback ' + type + ' show';
+  setTimeout(() => { fb.classList.remove('show'); }, 1200);
+}
+
+// ════════════════════════════════════════
+// MODE SWITCHING
+// ════════════════════════════════════════
+function setMode(mode) {
+  state.mode = mode;
+  state.objects = [];
+  state.counted = new Set();
+  state.tenFrame = new Array(10).fill(false);
+
+  // Update tabs
+  document.querySelectorAll('.mode-tab').forEach(t => t.className = 'mode-tab');
+  const tabEl = document.getElementById('tab' + mode.charAt(0).toUpperCase() + mode.slice(1));
+  tabEl.className = 'mode-tab active-' + mode;
+
+  render();
+}
+
+function setDiff(diff) {
+  state.diff = diff;
+  state.maxNum = getMaxNum();
+  document.querySelectorAll('.diff-btn').forEach(b => b.classList.remove('active'));
+  document.getElementById('diff' + diff.charAt(0).toUpperCase()).classList.add('active');
+
+  // Reset current mode
+  setMode(state.mode);
+}
+
+// ════════════════════════════════════════
+// RENDER
+// ════════════════════════════════════════
+function render() {
+  const ws = document.getElementById('workspace');
+  const sp = document.getElementById('sidePanel');
+
+  if (state.mode === 'explore') renderExplore(ws, sp);
+  else if (state.mode === 'practice') renderPractice(ws, sp);
+  else renderPlay(ws, sp);
+}
+
+// ─── EXPLORE MODE ───
+function renderExplore(ws, sp) {
+  let html = '';
+  html += '<div class="count-display"><div class="count-number" id="countNum">' + state.counted.size + '</div><div class="count-label">objects counted</div></div>';
+
+  html += '<div style="height:80px;"></div>';
+
+  // Object area
+  html += '<div class="object-area" id="objectArea">';
+  state.objects.forEach((obj, i) => {
+    const isCounted = state.counted.has(i);
+    html += `<div class="counting-object ${isCounted ? 'counted' : ''}" onclick="countObject(${i})" style="background: ${obj.color}20;">
+      ${obj.emoji}
+      <div class="count-badge">${isCounted ? (Array.from(state.counted).indexOf(i) + 1) : ''}</div>
+    </div>`;
+  });
+  if (state.objects.length === 0) {
+    html += '<div class="object-area-label">Click + to add objects, or choose an object type below</div>';
+  }
+  html += '</div>';
+
+  // Ten frame
+  html += '<div class="ten-frame" id="tenFrame">';
+  for (let i = 0; i < 10; i++) {
+    const filled = i < state.counted.size;
+    html += `<div class="ten-frame-cell ${filled ? 'filled' : ''}">${filled ? state.currentObject : ''}</div>`;
+  }
+  html += '</div>';
+
+  // Object picker
+  html += '<div class="object-picker">';
+  OBJECTS.slice(0, 10).forEach(obj => {
+    html += `<button class="picker-btn ${state.currentObject === obj ? 'selected' : ''}" onclick="pickObject('${obj}')">${obj}</button>`;
+  });
+  html += '</div>';
+
+  // Controls
+  html += '<div class="controls">';
+  html += '<button class="ctrl-btn primary" onclick="addObject()">+ Add Object</button>';
+  html += `<button class="ctrl-btn" onclick="addMultiple()">+ Add ${Math.min(5, state.maxNum)}</button>`;
+  html += '<button class="ctrl-btn" onclick="resetCount()">↺ Reset Count</button>';
+  html += '<button class="ctrl-btn danger" onclick="clearAll()">✕ Clear All</button>';
+  html += '</div>';
+
+  ws.innerHTML = html;
+
+  // Side panel
+  sp.innerHTML = `
+    <div class="panel-section">
+      <div class="panel-title">How to Use</div>
+      <div class="panel-text">
+        1. Choose an object type below<br><br>
+        2. Click <strong>+ Add</strong> to place objects in the counting area<br><br>
+        3. Click each object to <strong>count it</strong> — watch the number grow!<br><br>
+        4. The <strong>ten frame</strong> fills up as you count
+      </div>
+    </div>
+    <div class="panel-section">
+      <div class="panel-title">Standards</div>
+      <div class="panel-text">
+        <strong>K.CC.4</strong> — Understand the relationship between numbers and quantities; connect counting to cardinality<br><br>
+        <strong>K.CC.5</strong> — Count to answer "how many?" questions about as many as 20 things
+      </div>
+    </div>
+    <div class="panel-section">
+      <div class="panel-title">Key Concept</div>
+      <div class="panel-text">
+        The <strong>last number you say</strong> when counting tells you how many objects there are in the whole group. This is called <strong>cardinality</strong>.
+      </div>
+    </div>
+  `;
+}
+
+function addObject() {
+  if (state.objects.length >= state.maxNum) {
+    showFeedback(`Max ${state.maxNum} objects!`, 'try-again');
+    return;
+  }
+  const colors = ['#00d4ff','#ff3b8b','#ffc107','#00e676','#b388ff','#ff9100'];
+  state.objects.push({
+    emoji: state.currentObject,
+    color: colors[state.objects.length % colors.length]
+  });
+  render();
+}
+
+function addMultiple() {
+  const toAdd = Math.min(5, state.maxNum - state.objects.length);
+  if (toAdd <= 0) { showFeedback(`Max ${state.maxNum} objects!`, 'try-again'); return; }
+  const colors = ['#00d4ff','#ff3b8b','#ffc107','#00e676','#b388ff','#ff9100'];
+  for (let i = 0; i < toAdd; i++) {
+    state.objects.push({
+      emoji: state.currentObject,
+      color: colors[(state.objects.length) % colors.length]
+    });
+  }
+  render();
+}
+
+function countObject(idx) {
+  if (state.counted.has(idx)) {
+    state.counted.delete(idx);
+    // Reindex
+    const arr = Array.from(state.counted).filter(i => i !== idx);
+    state.counted = new Set(arr);
+  } else {
+    state.counted.add(idx);
+  }
+  render();
+  // Bump animation
+  const numEl = document.getElementById('countNum');
+  if (numEl) {
+    numEl.classList.add('bump');
+    setTimeout(() => numEl.classList.remove('bump'), 150);
+  }
+}
+
+function resetCount() {
+  state.counted = new Set();
+  render();
+}
+
+function clearAll() {
+  state.objects = [];
+  state.counted = new Set();
+  render();
+}
+
+function pickObject(emoji) {
+  state.currentObject = emoji;
+  render();
+}
+
+// ─── PRACTICE MODE ───
+function renderPractice(ws, sp) {
+  if (state.targetNumber === 0) {
+    state.targetNumber = randInt(1, state.maxNum);
+    state.practicePhase = 'placing';
+    state.objects = [];
+    state.counted = new Set();
+    state.tenFrame = new Array(10).fill(false);
+  }
+
+  let html = '';
+
+  // Target prompt
+  html += '<div class="number-target">';
+  html += '<div class="number-target-label">Place this many objects:</div>';
+  html += `<div class="number-target-value">${state.targetNumber}</div>`;
+  html += '</div>';
+
+  // Object area
+  html += '<div class="object-area" id="objectArea">';
+  state.objects.forEach((obj, i) => {
+    html += `<div class="counting-object pop-in" style="background: ${obj.color}20;">${obj.emoji}</div>`;
+  });
+  html += '</div>';
+
+  // Ten frame
+  html += '<div class="ten-frame">';
+  for (let i = 0; i < 10; i++) {
+    const filled = i < state.objects.length;
+    html += `<div class="ten-frame-cell ${filled ? 'filled' : ''}">${filled ? state.currentObject : ''}</div>`;
+  }
+  html += '</div>';
+
+  // Controls
+  html += '<div class="controls">';
+  html += '<button class="ctrl-btn primary" onclick="practiceAdd()">+ Add One</button>';
+  html += '<button class="ctrl-btn danger" onclick="practiceRemove()">− Remove One</button>';
+  html += `<button class="ctrl-btn" style="background:rgba(0,230,118,0.1);color:var(--green);border-color:rgba(0,230,118,0.3);" onclick="practiceCheck()">✓ Check My Answer</button>`;
+  html += '</div>';
+
+  ws.innerHTML = html;
+
+  sp.innerHTML = `
+    <div class="panel-section">
+      <div class="panel-title">Instructions</div>
+      <div class="panel-text">
+        Look at the target number above.<br><br>
+        Click <strong>+ Add One</strong> to place objects until you have exactly that many.<br><br>
+        Use the ten frame to help you keep track!<br><br>
+        When you think you have the right amount, click <strong>✓ Check</strong>.
+      </div>
+    </div>
+    <div class="panel-section">
+      <div class="panel-title">Scaffold</div>
+      <div class="panel-text" style="background: var(--card); padding: 12px; border-radius: 8px;">
+        You have <strong style="color:var(--cyan);">${state.objects.length}</strong> object${state.objects.length !== 1 ? 's' : ''}.<br>
+        You need <strong style="color:var(--green);">${state.targetNumber}</strong>.<br><br>
+        ${state.objects.length < state.targetNumber ?
+          `Add <strong style="color:var(--yellow);">${state.targetNumber - state.objects.length}</strong> more!` :
+          state.objects.length > state.targetNumber ?
+          `Remove <strong style="color:var(--pink);">${state.objects.length - state.targetNumber}</strong>!` :
+          `<span style="color:var(--green);">Looks right! Click Check!</span>`
+        }
+      </div>
+    </div>
+    <div class="panel-section">
+      <div class="panel-title">Key Idea</div>
+      <div class="panel-text">When you count, the <strong>last number you say</strong> tells you the total. Count each object <strong>once</strong>.</div>
+    </div>
+  `;
+}
+
+function practiceAdd() {
+  if (state.objects.length >= 20) return;
+  const colors = ['#00d4ff','#ff3b8b','#ffc107','#00e676','#b388ff','#ff9100'];
+  state.objects.push({
+    emoji: state.currentObject,
+    color: colors[state.objects.length % colors.length]
+  });
+  render();
+}
+
+function practiceRemove() {
+  if (state.objects.length === 0) return;
+  state.objects.pop();
+  render();
+}
+
+function practiceCheck() {
+  if (state.objects.length === state.targetNumber) {
+    showFeedback('✓ Correct!', 'correct');
+    setTimeout(() => {
+      state.targetNumber = randInt(1, state.maxNum);
+      state.objects = [];
+      render();
+    }, 1500);
+  } else if (state.objects.length < state.targetNumber) {
+    showFeedback('Not enough — add more!', 'try-again');
+  } else {
+    showFeedback('Too many — remove some!', 'try-again');
+  }
+}
+
+// ─── PLAY MODE ───
+function renderPlay(ws, sp) {
+  if (state.playRound === 0) startNewGame();
+
+  let html = '';
+
+  // Show objects
+  html += '<div style="text-align:center; margin-bottom:8px;">';
+  html += `<div style="font-size:14px; color:var(--muted);">Round ${state.playRound} of ${state.playTotal}</div>`;
+  html += '</div>';
+
+  // Object display area
+  html += '<div class="object-area" style="justify-content:center; align-items:center; cursor:default; height:260px;">';
+  for (let i = 0; i < state.playTarget; i++) {
+    const colors = ['#00d4ff','#ff3b8b','#ffc107','#00e676','#b388ff','#ff9100'];
+    html += `<div class="counting-object pop-in" style="background:${colors[i % colors.length]}20; animation-delay:${i * 0.05}s;">${state.currentObject}</div>`;
+  }
+  html += '</div>';
+
+  // Question
+  html += '<div style="text-align:center; margin-top:16px; font-size:18px; font-weight:600; color:var(--text2);">How many ' + state.currentObject + ' do you see?</div>';
+
+  // Answer buttons
+  html += '<div class="answer-grid" style="margin: 16px auto;">';
+  const answers = generateAnswers(state.playTarget, state.maxNum);
+  answers.forEach(num => {
+    html += `<button class="answer-btn" id="ans${num}" onclick="playAnswer(${num})">${num}</button>`;
+  });
+  html += '</div>';
+
+  ws.innerHTML = html;
+
+  // Side panel with score
+  sp.innerHTML = `
+    <div class="score-display">
+      <div class="score-value">${state.playScore}</div>
+      <div class="score-label">Score</div>
+    </div>
+    <div class="score-display" style="background:transparent; padding:8px;">
+      <div style="font-size:18px; font-weight:700; color:var(--yellow);"><svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor" style="vertical-align:-2px;"><path d="M12 23c-4.97 0-8-3.58-8-7.5 0-3.07 2.17-5.84 4.5-7.5-.28 2.5 1.5 4.5 1.5 4.5s2-2.5 2-5.5c0-1.5-.5-3-1-4 3 1.5 5 4 5 7 0 .5-.08 1-.08 1s1.08-1.18 1.58-2.5C19.78 11.72 20 14.5 20 15.5c0 3.92-3.03 7.5-8 7.5z"/></svg> ${state.playStreak}</div>
+      <div class="score-label">Streak</div>
+      <div class="streak-bar"><div class="streak-fill" style="width:${Math.min(state.playStreak * 20, 100)}%;"></div></div>
+    </div>
+    <div class="panel-section">
+      <div class="panel-title">How to Play</div>
+      <div class="panel-text">
+        Count the objects and tap the correct number.<br><br>
+        <strong>Quick answers</strong> earn bonus points!<br><br>
+        Build a streak for even more!
+      </div>
+    </div>
+    <div class="panel-section">
+      <div class="panel-title">Best Streak</div>
+      <div class="panel-text" style="font-size:24px; font-weight:800; color:var(--purple);"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="vertical-align:-2px;"><path d="M6 4h12v2a6 6 0 01-12 0V4z" fill="currentColor" opacity="0.2"/><path d="M6 4h12v2a6 6 0 01-12 0V4z"/><path d="M6 6H3v2a3 3 0 003 3"/><path d="M18 6h3v2a3 3 0 01-3 3"/><line x1="12" y1="14" x2="12" y2="18"/><line x1="8" y1="18" x2="16" y2="18" stroke-linecap="round"/></svg> ${state.playBest}</div>
+    </div>
+  `;
+}
+
+function startNewGame() {
+  state.playScore = 0;
+  state.playStreak = 0;
+  state.playRound = 1;
+  state.playTarget = randInt(1, state.maxNum);
+  state.currentObject = OBJECTS[randInt(0, OBJECTS.length - 1)];
+}
+
+function generateAnswers(correct, max) {
+  const answers = new Set([correct]);
+  while (answers.size < Math.min(max, 10)) {
+    answers.add(randInt(1, max));
+  }
+  return Array.from(answers).sort((a, b) => a - b);
+}
+
+function playAnswer(num) {
+  const btn = document.getElementById('ans' + num);
+  if (num === state.playTarget) {
+    btn.classList.add('correct-flash');
+    state.playScore += 10 + (state.playStreak * 2);
+    state.playStreak++;
+    if (state.playStreak > state.playBest) state.playBest = state.playStreak;
+    showFeedback('✓ ' + state.playTarget + '!', 'correct');
+  } else {
+    btn.classList.add('incorrect-flash');
+    state.playStreak = 0;
+    showFeedback(state.playTarget + ' was correct', 'incorrect');
+  }
+
+  setTimeout(() => {
+    if (state.playRound >= state.playTotal) {
+      showFeedback(`Game Over! Score: ${state.playScore}`, 'correct');
+      setTimeout(() => {
+        state.playRound = 0;
+        render();
+      }, 2000);
+      return;
+    }
+    state.playRound++;
+    state.playTarget = randInt(1, state.maxNum);
+    state.currentObject = OBJECTS[randInt(0, OBJECTS.length - 1)];
+    render();
+  }, 1000);
+}
+
+// ════════════════════════════════════════
+// INIT
+// ════════════════════════════════════════
+render();
+</script>
+<script src="../../vinculum-core.js"></script>
+<!-- Foundation loaded from vinculum-core.js -->
+</body>
+</html>

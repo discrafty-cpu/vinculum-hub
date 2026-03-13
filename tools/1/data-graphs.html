@@ -1,0 +1,531 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>VINCULUM — Data Graphs</title>
+<link rel="stylesheet" href="../../vinculum-core.css">
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;600&display=swap');
+/* Theme system loaded from vinculum-core.css */
+.vinculum-rtm-btn .rtm-icon{font-size:14px;}
+
+/* ═══ FOCUS VISIBLE (Keyboard Navigation) ═══ */
+*:focus-visible {
+  outline:2px solid var(--cyan);outline-offset:2px;border-radius:4px;
+}
+.sr-only {
+  position:absolute;width:1px;height:1px;padding:0;margin:-1px;
+  overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0;
+}
+*{margin:0;padding:0;box-sizing:border-box;}
+body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);height:100vh;display:flex;flex-direction:column;overflow:hidden;user-select:none;}
+
+.header{display:flex;align-items:center;justify-content:space-between;padding:12px 24px;background:var(--bg2);border-bottom:1px solid var(--border);flex-shrink:0;}
+.header-left{display:flex;align-items:center;gap:16px;}
+.back-btn{padding:6px 12px;border-radius:8px;border:1px solid var(--border);background:transparent;color:var(--text2);font-size:13px;font-family:inherit;cursor:pointer;}
+.back-btn:hover{background:var(--card);color:var(--cyan);}
+.header-title{font-size:18px;font-weight:800;}
+.header-title span{background:var(--grad);-webkit-background-clip:text;-webkit-text-fill-color:transparent;}
+.header-badge{font-size:10px;font-weight:700;padding:3px 10px;border-radius:6px;background:rgba(0,230,118,0.1);color:var(--green);border:1px solid rgba(0,230,118,0.2);letter-spacing:1px;}
+.std-tags{display:flex;gap:6px;}
+.std-tag{font-size:10px;font-family:'JetBrains Mono',monospace;font-weight:600;padding:3px 8px;border-radius:5px;background:rgba(0,212,255,0.08);color:var(--cyan);}
+.std-tag.mn{background:rgba(255,145,0,0.08);color:var(--orange);}
+
+.mode-tabs{display:flex;gap:4px;padding:8px 24px;background:var(--bg2);border-bottom:1px solid var(--border);flex-shrink:0;}
+.mode-tab{padding:8px 20px;border-radius:8px;border:1px solid transparent;background:transparent;color:var(--muted);font-size:13px;font-weight:600;font-family:inherit;cursor:pointer;display:flex;align-items:center;gap:6px;transition:all 0.2s;}
+.mode-tab:hover{color:var(--text2);background:var(--card);}
+.mode-tab.active-explore{background:rgba(0,212,255,0.1);color:var(--cyan);border-color:rgba(0,212,255,0.3);}
+.mode-tab.active-practice{background:rgba(0,230,118,0.1);color:var(--green);border-color:rgba(0,230,118,0.3);}
+.mode-tab.active-play{background:rgba(255,59,139,0.1);color:var(--pink);border-color:rgba(255,59,139,0.3);}
+.diff-selector{margin-left:auto;display:flex;gap:4px;align-items:center;}
+.diff-label{font-size:11px;color:var(--muted);margin-right:8px;font-weight:600;text-transform:uppercase;letter-spacing:1px;}
+.diff-btn{padding:5px 12px;border-radius:6px;border:1px solid var(--border);background:transparent;color:var(--muted);font-size:11px;font-weight:600;font-family:inherit;cursor:pointer;transition:all 0.2s;}
+.diff-btn.active{background:rgba(0,212,255,0.1);color:var(--cyan);border-color:rgba(0,212,255,0.3);}
+
+.main{flex:1;display:flex;overflow:hidden;}
+.workspace{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:24px;gap:16px;overflow-y:auto;}
+.side-panel{width:280px;background:var(--bg2);border-left:1px solid var(--border);padding:20px;overflow-y:auto;flex-shrink:0;}
+.panel-section{margin-bottom:20px;}
+.panel-title{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:1.5px;color:var(--muted);margin-bottom:8px;}
+.panel-text{font-size:13px;color:var(--text2);line-height:1.6;}
+
+/* ── Survey Question & Data Builder ── */
+.instruction-box{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:14px 20px;text-align:center;font-size:15px;color:var(--text2);font-weight:500;max-width:600px;transition:all 0.3s;}
+.instruction-box.highlight-cyan{border-color:var(--cyan);color:var(--cyan);}
+
+.survey-q{font-size:16px;font-weight:600;color:var(--text);margin-bottom:12px;text-align:center;}
+.survey-emoji{font-size:32px;margin:0 8px;}
+
+/* ── Category Buttons (Data Input) ── */
+.category-buttons{display:flex;gap:12px;justify-content:center;flex-wrap:wrap;margin:16px 0;}
+.category-btn{padding:12px 24px;border-radius:10px;border:2px solid var(--border);background:var(--card);color:var(--text);font-size:14px;font-weight:600;font-family:inherit;cursor:pointer;transition:all 0.2s;display:flex;align-items:center;gap:8px;min-width:100px;justify-content:center;}
+.category-btn:hover{border-color:var(--cyan);transform:scale(1.05);}
+.category-btn.active{border-color:var(--cyan);background:rgba(0,212,255,0.12);color:var(--cyan);}
+
+/* ── Graph Displays ── */
+.graph-container{width:100%;max-width:500px;margin:20px 0;}
+.graph-type-buttons{display:flex;gap:8px;justify-content:center;margin-bottom:16px;}
+.graph-type-btn{padding:6px 14px;border-radius:6px;border:1px solid var(--border);background:var(--card);color:var(--text2);font-size:12px;font-weight:600;font-family:inherit;cursor:pointer;transition:all 0.2s;}
+.graph-type-btn.active{background:rgba(0,212,255,0.15);color:var(--cyan);border-color:rgba(0,212,255,0.3);}
+
+/* Picture Graph */
+.picture-graph{display:flex;gap:20px;align-items:flex-end;justify-content:center;margin:20px 0;min-height:220px;}
+.picture-col{display:flex;flex-direction:column;align-items:center;gap:8px;}
+.picture-col-label{font-size:13px;font-weight:600;color:var(--text2);}
+.picture-stack{display:flex;flex-direction:column;gap:4px;align-items:center;}
+.picture-icon{font-size:32px;width:40px;height:40px;display:flex;align-items:center;justify-content:center;}
+
+/* Bar Graph */
+.bar-graph{display:flex;align-items:flex-end;justify-content:center;gap:16px;min-height:220px;padding:20px 0;}
+.bar-col{display:flex;flex-direction:column;align-items:center;gap:8px;flex:1;max-width:80px;}
+.bar-label{font-size:13px;font-weight:600;color:var(--text2);text-align:center;min-height:32px;display:flex;align-items:flex-end;justify-content:center;}
+.bar-svg-wrap{width:100%;flex:1;display:flex;align-items:flex-end;justify-content:center;}
+
+/* Tally Chart */
+.tally-grid{display:grid;grid-template-columns:1fr 1fr;gap:20px;margin:20px 0;}
+.tally-item{background:var(--card);border:1px solid var(--border);border-radius:10px;padding:16px;text-align:center;}
+.tally-label{font-size:13px;font-weight:600;color:var(--text2);margin-bottom:12px;}
+.tally-marks{font-size:14px;color:var(--text);letter-spacing:4px;font-family:'JetBrains Mono',monospace;}
+.tally-count{font-size:20px;font-weight:700;color:var(--cyan);margin-top:8px;}
+
+/* ── Controls ── */
+.controls{display:flex;gap:8px;flex-wrap:wrap;justify-content:center;margin:16px 0;}
+.ctrl-btn{padding:10px 20px;border-radius:10px;border:1px solid var(--border);background:var(--card);color:var(--text2);font-size:13px;font-weight:600;font-family:inherit;cursor:pointer;transition:all 0.2s;display:flex;align-items:center;gap:6px;}
+.ctrl-btn:hover{background:var(--card2);color:var(--text);}
+.ctrl-btn.primary{background:var(--grad);color:var(--bg);border-color:transparent;}
+
+/* ── Answer Grid (Practice & Play) ── */
+.answer-grid{display:flex;gap:10px;flex-wrap:wrap;justify-content:center;max-width:500px;}
+.answer-btn{width:52px;height:52px;border-radius:12px;border:2px solid var(--border);background:var(--card);color:var(--text);font-size:20px;font-weight:700;font-family:'JetBrains Mono',monospace;cursor:pointer;transition:all 0.15s;display:flex;align-items:center;justify-content:center;}
+.answer-btn:hover{border-color:var(--cyan);transform:scale(1.1);}
+.answer-btn.correct-flash{border-color:var(--green);background:rgba(0,230,118,0.2);color:var(--green);animation:correctFlash 0.4s ease-out;}
+.answer-btn.incorrect-flash{border-color:var(--pink);background:rgba(255,59,139,0.2);color:var(--pink);animation:shake 0.3s ease-in-out;}
+
+@keyframes correctFlash{0%{transform:scale(1.2);} 100%{transform:scale(1);}}
+@keyframes shake{0%,100%{transform:translateX(0);} 25%{transform:translateX(-4px);} 75%{transform:translateX(4px);}}
+
+.score-display{text-align:center;padding:16px;background:var(--card);border-radius:12px;margin-bottom:12px;}
+.score-value{font-size:36px;font-weight:900;font-family:'JetBrains Mono',monospace;background:var(--grad);-webkit-background-clip:text;-webkit-text-fill-color:transparent;}
+.score-label{font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:1px;}
+.streak-bar{height:6px;background:var(--card);border-radius:3px;overflow:hidden;margin-top:8px;}
+.streak-fill{height:100%;background:var(--grad);border-radius:3px;transition:width 0.3s;}
+
+.feedback{position:fixed;top:50%;left:50%;transform:translate(-50%,-50%) scale(0);padding:24px 48px;border-radius:20px;font-size:28px;font-weight:800;z-index:200;pointer-events:none;transition:transform 0.3s cubic-bezier(0.175,0.885,0.32,1.275),opacity 0.3s;opacity:0;}
+.feedback.show{transform:translate(-50%,-50%) scale(1);opacity:1;}
+.feedback.correct{background:rgba(0,230,118,0.15);color:var(--green);border:2px solid var(--green);}
+.feedback.incorrect{background:rgba(255,59,139,0.15);color:var(--pink);border:2px solid var(--pink);}
+
+::-webkit-scrollbar{width:6px;}::-webkit-scrollbar-track{background:transparent;}::-webkit-scrollbar-thumb{background:var(--border);border-radius:3px;}
+
+@media (max-width: 900px) {
+  .side-panel{width:240px;padding:16px;}
+  .workspace{padding:16px;}
+}
+</style>
+</head>
+<body>
+
+<div class="header">
+  <div class="header-left">
+    <a class="back-btn" href="../../VINCULUM-Hub.html" style="text-decoration:none;">◀ Hub</a>
+    <div class="header-title"><span>VINCULUM</span> Data Graphs</div>
+    <span class="header-badge">1.MD</span>
+  </div>
+  <div class="std-tags">
+    <span class="std-tag">1.MD.4</span>
+    <span class="std-tag mn">MN 1.3.2.1</span>
+  </div>
+</div>
+
+<div class="mode-tabs">
+  <button class="mode-tab active-explore" id="tabExplore" onclick="setMode('explore')"><svg width="18" height="18" viewBox="0 0 48 48" fill="none"><path d="M4 24C4 24 12 12 24 12C36 12 44 24 44 24C44 24 36 36 24 36C12 36 4 24 4 24Z" stroke="currentColor" stroke-width="3" fill="none"/><circle cx="24" cy="24" r="7" stroke="currentColor" stroke-width="3" fill="none"/><circle cx="24" cy="24" r="3" fill="currentColor"/></svg> Explore</button>
+  <button class="mode-tab" id="tabPractice" onclick="setMode('practice')"><svg width="18" height="18" viewBox="0 0 48 48" fill="none"><circle cx="24" cy="24" r="20" stroke="currentColor" stroke-width="3" fill="none" opacity="0.3"/><circle cx="24" cy="24" r="20" stroke="currentColor" stroke-width="3" fill="none" stroke-dasharray="126" stroke-dashoffset="32" stroke-linecap="round"/><polyline points="16,24 22,32 34,16" stroke="currentColor" stroke-width="4" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg> Practice</button>
+  <button class="mode-tab" id="tabPlay" onclick="setMode('play')"><svg width="18" height="18" viewBox="0 0 48 48" fill="none"><polygon points="28,4 12,28 22,28 18,44 36,18 26,18" fill="none" stroke="currentColor" stroke-width="3" stroke-linejoin="round"/><polygon points="27,8 15,27 23,27 20,40 34,19 26,19" fill="currentColor" opacity="0.15"/></svg> Play</button>
+  <div class="diff-selector">
+    <span class="diff-label">Level</span>
+    <button class="diff-btn active" id="diff2" onclick="setDiff('two')">2 Categories</button>
+    <button class="diff-btn" id="diff3" onclick="setDiff('three')">3 Categories</button>
+    <button class="diff-btn" id="diffC" onclick="setDiff('compare')">Compare</button>
+  </div>
+</div>
+
+<div class="main">
+  <div class="workspace" role="main" id="workspace"></div>
+  <div class="side-panel" id="sidePanel"></div>
+</div>
+<div class="feedback" id="feedback"></div>
+
+<script>
+const SURVEYS = [
+  { q: 'Favorite Fruit', cats: ['🍎 Apple', '🍌 Banana', '🍊 Orange'] },
+  { q: 'Favorite Pet', cats: ['🐕 Dog', '🐱 Cat', '🐦 Bird'] },
+  { q: 'Favorite Toy', cats: ['🪀 Ball', '🧸 Teddy', '🚗 Car'] },
+  { q: 'Favorite Sport', cats: ['⚽ Soccer', '🏀 Basketball', '🎾 Tennis'] }
+];
+
+const COLORS = ['#00d4ff', '#ff3b8b', '#b388ff'];
+
+let S = {
+  mode: 'explore',
+  diff: 'two',
+  surveyIdx: 0,
+  data: {},
+  graphType: 'picture',
+  pQuestion: 0,
+  pData: {},
+  score: 0,
+  streak: 0,
+  round: 0,
+  playRound: 0,
+  playTotal: 10
+};
+
+function rand(a, b) {
+  return Math.floor(Math.random() * (b - a + 1)) + a;
+}
+
+function showFB(t, c) {
+  const f = document.getElementById('feedback');
+  f.textContent = t;
+  f.className = 'feedback ' + c + ' show';
+  setTimeout(() => f.classList.remove('show'), 1200);
+}
+
+function setMode(m) {
+  S.mode = m;
+  S.round = 0;
+  S.score = 0;
+  S.streak = 0;
+  document.querySelectorAll('.mode-tab').forEach(t => t.className = 'mode-tab');
+  document.getElementById('tab' + m.charAt(0).toUpperCase() + m.slice(1)).className = 'mode-tab active-' + m;
+  initSurvey();
+  if (m === 'practice') newPractice();
+  render();
+}
+
+function setDiff(d) {
+  S.diff = d;
+  document.querySelectorAll('.diff-btn').forEach(b => b.classList.remove('active'));
+  const idMap = { two: 'diff2', three: 'diff3', compare: 'diffC' };
+  document.getElementById(idMap[d]).classList.add('active');
+  initSurvey();
+  if (S.mode === 'practice') newPractice();
+  render();
+}
+
+function initSurvey() {
+  const numCats = S.diff === 'two' ? 2 : 3;
+  const survey = SURVEYS[Math.floor(Math.random() * SURVEYS.length)];
+  S.surveyIdx = survey;
+  S.data = {};
+  for (let i = 0; i < numCats; i++) {
+    S.data[i] = 0;
+  }
+}
+
+function getSurvey() {
+  const numCats = S.diff === 'two' ? 2 : 3;
+  return {
+    q: S.surveyIdx.q,
+    cats: S.surveyIdx.cats.slice(0, numCats)
+  };
+}
+
+function render() {
+  const ws = document.getElementById('workspace');
+  const sp = document.getElementById('sidePanel');
+  if (S.mode === 'explore') renderExplore(ws, sp);
+  else if (S.mode === 'practice') renderPractice(ws, sp);
+  else renderPlay(ws, sp);
+}
+
+function renderExplore(ws, sp) {
+  const survey = getSurvey();
+  let h = '';
+
+  h += `<div class="instruction-box">Click a ${survey.q === 'Favorite Fruit' ? '🍎' : survey.q === 'Favorite Pet' ? '🐕' : '🪀'} to add it to the graph</div>`;
+
+  h += '<div class="category-buttons">';
+  for (let i = 0; i < survey.cats.length; i++) {
+    const cat = survey.cats[i];
+    const emoji = cat.split(' ')[0];
+    h += `<button class="category-btn" onclick="S.data[${i}]++;render();" title="Click to add ${cat}">${emoji}</button>`;
+  }
+  h += '</div>';
+
+  h += '<div class="graph-type-buttons">';
+  h += `<button class="graph-type-btn ${S.graphType === 'picture' ? 'active' : ''}" onclick="S.graphType='picture';render();">Picture</button>`;
+  h += `<button class="graph-type-btn ${S.graphType === 'bar' ? 'active' : ''}" onclick="S.graphType='bar';render();">Bar</button>`;
+  h += `<button class="graph-type-btn ${S.graphType === 'tally' ? 'active' : ''}" onclick="S.graphType='tally';render();">Tally</button>`;
+  h += '</div>';
+
+  h += renderGraph(S.data, survey);
+
+  h += '<div class="controls">';
+  h += `<button class="ctrl-btn primary" onclick="S.data={};for(let i=0;i<survey.cats.length;i++)S.data[i]=0;render();">Clear</button>`;
+  h += '</div>';
+
+  ws.innerHTML = h;
+
+  let sp_html = `<div class="panel-section"><div class="panel-title">Vocabulary</div>
+    <div class="panel-text">
+      <strong style="color:var(--cyan);">Category:</strong> A group<br>
+      <strong style="color:var(--cyan);">Data:</strong> The information<br>
+      <strong style="color:var(--cyan);">Tally:</strong> Count marks
+    </div></div>`;
+
+  sp_html += `<div class="panel-section"><div class="panel-title">How to Use</div>
+    <div class="panel-text">
+      <strong style="color:var(--cyan);">1. Click</strong> emoji buttons<br>
+      <strong style="color:var(--cyan);">2. Watch</strong> the graph grow<br>
+      <strong style="color:var(--cyan);">3. Switch</strong> graph types
+    </div></div>`;
+
+  sp.innerHTML = sp_html;
+}
+
+function renderGraph(data, survey) {
+  const total = Object.values(data).reduce((a, b) => a + b, 0);
+  const maxVal = Math.max(...Object.values(data), 5);
+
+  if (S.graphType === 'picture') return renderPictureGraph(data, survey);
+  if (S.graphType === 'bar') return renderBarGraph(data, survey, maxVal);
+  if (S.graphType === 'tally') return renderTallyChart(data, survey);
+}
+
+function renderPictureGraph(data, survey) {
+  let h = '<div class="graph-container"><div class="picture-graph">';
+  for (let i = 0; i < survey.cats.length; i++) {
+    const cat = survey.cats[i];
+    const emoji = cat.split(' ')[0];
+    const count = data[i] || 0;
+    h += '<div class="picture-col">';
+    h += '<div class="picture-stack">';
+    for (let j = 0; j < count; j++) {
+      h += `<div class="picture-icon">${emoji}</div>`;
+    }
+    h += '</div>';
+    h += `<div class="picture-col-label">${cat.split(' ').slice(1).join(' ')}</div>`;
+    h += '</div>';
+  }
+  h += '</div></div>';
+  return h;
+}
+
+function renderBarGraph(data, survey, maxVal) {
+  let h = '<div class="graph-container"><div class="bar-graph">';
+  for (let i = 0; i < survey.cats.length; i++) {
+    const cat = survey.cats[i];
+    const count = data[i] || 0;
+    const height = (count / maxVal) * 160;
+    h += '<div class="bar-col">';
+    h += '<div class="bar-svg-wrap">';
+    h += `<svg viewBox="0 0 40 160" style="width:30px;height:160px;"><rect x="8" y="${160 - height}" width="24" height="${height}" fill="${COLORS[i]}" rx="4" style="transition:all 0.3s;"/></svg>`;
+    h += '</div>';
+    h += `<div class="bar-label">${cat.split(' ').slice(1).join(' ')}<br><strong>${count}</strong></div>`;
+    h += '</div>';
+  }
+  h += '</div></div>';
+  return h;
+}
+
+function renderTallyChart(data, survey) {
+  let h = '<div class="graph-container"><div class="tally-grid">';
+  for (let i = 0; i < survey.cats.length; i++) {
+    const cat = survey.cats[i];
+    const count = data[i] || 0;
+    const tallies = renderTallies(count);
+    h += '<div class="tally-item">';
+    h += `<div class="tally-label">${cat}</div>`;
+    h += `<div class="tally-marks">${tallies}</div>`;
+    h += `<div class="tally-count">${count}</div>`;
+    h += '</div>';
+  }
+  h += '</div></div>';
+  return h;
+}
+
+function renderTallies(count) {
+  let marks = '';
+  const groups = Math.floor(count / 5);
+  const remainder = count % 5;
+  for (let i = 0; i < groups; i++) {
+    marks += '||||⁄ ';
+  }
+  for (let i = 0; i < remainder; i++) {
+    marks += '|';
+  }
+  return marks.trim() || '—';
+}
+
+function newPractice() {
+  const survey = getSurvey();
+  S.pQuestion = rand(0, 2);
+  S.pData = {};
+  for (let i = 0; i < survey.cats.length; i++) {
+    S.pData[i] = rand(2, 6);
+  }
+}
+
+function renderPractice(ws, sp) {
+  if (!S.pData || Object.keys(S.pData).length === 0) newPractice();
+  const survey = getSurvey();
+  const questions = [
+    { q: `How many chose ${survey.cats[0]}?`, ans: S.pData[0] },
+    { q: `How many chose ${survey.cats[1]}?`, ans: S.pData[1] },
+    { q: `Which has the most?`, ans: 'label', target: Object.keys(S.pData).reduce((a, b) => S.pData[a] > S.pData[b] ? a : b) }
+  ];
+  if (survey.cats.length === 3) {
+    questions.push({ q: `Which has the fewest?`, ans: 'label', target: Object.keys(S.pData).reduce((a, b) => S.pData[a] < S.pData[b] ? a : b) });
+  }
+
+  const question = questions[S.pQuestion % questions.length];
+  let h = '';
+
+  h += `<div class="instruction-box highlight-cyan">${question.q}</div>`;
+
+  h += renderGraph(S.pData, survey);
+
+  if (question.ans === 'label') {
+    h += '<div class="category-buttons" style="margin-top:20px;">';
+    for (let i = 0; i < survey.cats.length; i++) {
+      h += `<button class="category-btn" id="pans${i}" onclick="checkPractice(${i})">${survey.cats[i]}</button>`;
+    }
+    h += '</div>';
+  } else {
+    h += '<div class="answer-grid" style="margin-top:20px;">';
+    const maxAns = Math.max(...Object.values(S.pData)) + 2;
+    for (let n = 0; n <= maxAns; n++) {
+      h += `<button class="answer-btn" id="pans${n}" onclick="checkPractice(${n})">${n}</button>`;
+    }
+    h += '</div>';
+  }
+
+  h += '<div class="controls" style="margin-top:12px;">';
+  h += `<button class="ctrl-btn" onclick="newPractice();render();">Skip →</button>`;
+  h += '</div>';
+
+  ws.innerHTML = h;
+
+  let sp_html = `<div class="panel-section"><div class="score-display">
+    <div class="score-value">${S.score}</div>
+    <div class="score-label">Score</div>
+    <div class="streak-bar"><div class="streak-fill" style="width:${S.streak * 10}%"></div></div>
+  </div></div>`;
+
+  sp_html += `<div class="panel-section"><div class="panel-title">Tips</div>
+    <div class="panel-text">
+      Count the symbols or bars.<br>
+      Compare numbers to find most/fewest.
+    </div></div>`;
+
+  sp.innerHTML = sp_html;
+}
+
+function checkPractice(clicked) {
+  const survey = getSurvey();
+  const questions = [
+    { q: `How many chose ${survey.cats[0]}?`, ans: S.pData[0] },
+    { q: `How many chose ${survey.cats[1]}?`, ans: S.pData[1] },
+    { q: `Which has the most?`, ans: 'label', target: Object.keys(S.pData).reduce((a, b) => S.pData[a] > S.pData[b] ? a : b) }
+  ];
+  if (survey.cats.length === 3) {
+    questions.push({ q: `Which has the fewest?`, ans: 'label', target: Object.keys(S.pData).reduce((a, b) => S.pData[a] < S.pData[b] ? a : b) });
+  }
+
+  const question = questions[S.pQuestion % questions.length];
+  let correct = question.ans === 'label' ? parseInt(question.target) : question.ans;
+
+  const btn = document.getElementById('pans' + clicked);
+  if (clicked === correct) {
+    btn.classList.add('correct-flash');
+    S.score++;
+    S.streak++;
+    showFB('✓ Correct!', 'correct');
+    setTimeout(() => { newPractice(); render(); }, 800);
+  } else {
+    btn.classList.add('incorrect-flash');
+    S.streak = 0;
+    showFB('✗ Try again', 'incorrect');
+  }
+}
+
+function renderPlay(ws, sp) {
+  if (S.playRound >= S.playTotal) {
+    let h = `<div style="text-align:center;">
+      <div style="font-size:48px;font-weight:900;margin:20px 0;">🎉</div>
+      <div style="font-size:28px;font-weight:700;color:var(--cyan);margin:10px 0;">Game Over!</div>
+      <div style="font-size:32px;font-family:'JetBrains Mono';background:var(--grad);-webkit-background-clip:text;-webkit-text-fill-color:transparent;font-weight:900;margin:20px 0;">${S.score}/${S.playTotal}</div>
+      <div class="controls" style="margin-top:20px;">
+        <button class="ctrl-btn primary" onclick="S.playRound=0;S.score=0;render();">Play Again</button>
+      </div>
+    </div>`;
+    ws.innerHTML = h;
+
+    let sp_html = `<div class="panel-section"><div class="panel-title">Great Work!</div>
+      <div class="panel-text">You read ${S.score} graphs correctly!</div></div>`;
+    sp.innerHTML = sp_html;
+    return;
+  }
+
+  const survey = getSurvey();
+  const data = {};
+  for (let i = 0; i < survey.cats.length; i++) {
+    data[i] = rand(2, 5);
+  }
+
+  const question = rand(0, 1);
+  const catIdx = rand(0, survey.cats.length - 1);
+
+  let h = '';
+  h += `<div class="instruction-box highlight-cyan">${question === 0 ? `How many chose ${survey.cats[catIdx]}?` : `Which has the most?`}</div>`;
+
+  h += renderGraph(data, survey);
+
+  if (question === 0) {
+    h += '<div class="answer-grid" style="margin-top:20px;">';
+    const maxAns = Math.max(...Object.values(data)) + 2;
+    for (let n = 0; n <= maxAns; n++) {
+      h += `<button class="answer-btn" id="pans${n}" onclick="checkPlay(${n},${data[catIdx]},${question})">${n}</button>`;
+    }
+    h += '</div>';
+  } else {
+    h += '<div class="category-buttons" style="margin-top:20px;">';
+    for (let i = 0; i < survey.cats.length; i++) {
+      const ans = Object.keys(data).reduce((a, b) => data[a] > data[b] ? a : b);
+      h += `<button class="category-btn" id="pans${i}" onclick="checkPlay(${i},${ans},${question})">${survey.cats[i]}</button>`;
+    }
+    h += '</div>';
+  }
+
+  ws.innerHTML = h;
+
+  let sp_html = `<div class="panel-section"><div class="score-display">
+    <div class="score-value">${S.score}</div>
+    <div class="score-label">Score</div>
+    <div class="streak-bar"><div class="streak-fill" style="width:${(S.playRound / S.playTotal) * 100}%"></div></div>
+  </div></div>`;
+
+  sp_html += `<div class="panel-section"><div class="panel-title">Round ${S.playRound + 1}/${S.playTotal}</div>
+    <div class="panel-text">Read the graph and answer quickly!</div></div>`;
+
+  sp.innerHTML = sp_html;
+}
+
+function checkPlay(clicked, correct, question) {
+  const btn = document.getElementById('pans' + clicked);
+  if (clicked === correct) {
+    btn.classList.add('correct-flash');
+    S.score++;
+    showFB('✓ Fast!', 'correct');
+    setTimeout(() => { S.playRound++; render(); }, 600);
+  } else {
+    btn.classList.add('incorrect-flash');
+    showFB('✗ Oops', 'incorrect');
+    setTimeout(() => { S.playRound++; render(); }, 600);
+  }
+}
+</script>
+</body>
+</html>

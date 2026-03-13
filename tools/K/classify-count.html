@@ -1,0 +1,1461 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>VINCULUM — Classify & Count</title>
+  <link rel="stylesheet" href="../../vinculum-core.css">
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;600&display=swap');
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: 'Inter', sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      margin: 0;
+      padding: 0;
+      overflow-x: hidden;
+    }
+
+    /* HEADER */
+    .header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 16px 24px;
+      background: var(--card);
+      border-bottom: 1px solid var(--border);
+      gap: 24px;
+    }
+
+    .header-left {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+    }
+
+    .back-btn {
+      background: transparent;
+      border: none;
+      color: var(--cyan);
+      font-size: 16px;
+      font-weight: 600;
+      cursor: pointer;
+      padding: 8px 12px;
+      border-radius: 6px;
+      font-family: inherit;
+      transition: all 0.2s ease;
+    }
+
+    .back-btn:hover {
+      background: rgba(0, 212, 255, 0.1);
+      color: var(--cyan);
+    }
+
+    .header-title {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .header-title span {
+      font-size: 20px;
+      font-weight: 700;
+      color: var(--text);
+    }
+
+    .header-badge {
+      display: inline-block;
+      background: rgba(0, 212, 255, 0.15);
+      color: var(--cyan);
+      font-size: 11px;
+      font-weight: 700;
+      padding: 4px 8px;
+      border-radius: 4px;
+      min-width: 24px;
+      text-align: center;
+    }
+
+    .std-tags {
+      display: flex;
+      gap: 8px;
+    }
+
+    .std-tag {
+      background: rgba(0, 212, 255, 0.1);
+      color: var(--cyan);
+      font-size: 11px;
+      font-weight: 700;
+      padding: 6px 10px;
+      border-radius: 4px;
+      font-family: 'JetBrains Mono', monospace;
+      letter-spacing: 0.5px;
+    }
+
+    /* MODE TABS */
+    .mode-tabs {
+      display: flex;
+      align-items: center;
+      padding: 12px 24px;
+      background: var(--bg);
+      border-bottom: 1px solid var(--border);
+      gap: 12px;
+      flex-wrap: wrap;
+    }
+
+    .mode-tab {
+      padding: 8px 16px;
+      border: none;
+      border-bottom: 2px solid transparent;
+      background: transparent;
+      color: var(--muted);
+      font-size: 13px;
+      font-weight: 600;
+      cursor: pointer;
+      font-family: inherit;
+      transition: all 0.2s ease;
+      border-radius: 4px 4px 0 0;
+    }
+
+    .mode-tab:hover {
+      color: var(--text2);
+      background: rgba(255, 255, 255, 0.05);
+    }
+
+    .mode-tab.active-explore,
+    .mode-tab.active-practice,
+    .mode-tab.active-play {
+      color: var(--cyan);
+      border-bottom-color: var(--cyan);
+      background: rgba(0, 212, 255, 0.05);
+    }
+
+    .diff-btn {
+      padding: 6px 14px;
+      border-radius: 8px;
+      border: 1px solid var(--border);
+      background: transparent;
+      color: var(--muted);
+      font-size: 11px;
+      font-weight: 700;
+      font-family: inherit;
+      cursor: pointer;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      transition: all 0.2s ease;
+    }
+
+    .diff-btn:hover {
+      color: var(--text2);
+      background: var(--card);
+    }
+
+    .diff-btn.active {
+      background: rgba(0, 212, 255, 0.1);
+      color: var(--cyan);
+      border-color: rgba(0, 212, 255, 0.3);
+    }
+
+    /* MAIN CONTENT */
+    .main {
+      padding: 24px;
+      flex: 1;
+      overflow-y: auto;
+    }
+
+    .workspace {
+      max-width: 1000px;
+      margin: 0 auto;
+    }
+
+    /* EXPLORE MODE */
+    .explore-container {
+      display: flex;
+      flex-direction: column;
+      gap: 32px;
+    }
+
+    .scatter-zone {
+      background: var(--card);
+      border: 2px solid var(--border);
+      border-radius: 12px;
+      padding: 24px;
+      min-height: 280px;
+      position: relative;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-wrap: wrap;
+      gap: 16px;
+    }
+
+    .instruction-box {
+      background: rgba(0, 212, 255, 0.05);
+      border: 1px solid rgba(0, 212, 255, 0.2);
+      border-radius: 8px;
+      padding: 16px;
+      margin-bottom: 24px;
+      color: var(--text2);
+      font-size: 15px;
+      font-weight: 500;
+      text-align: center;
+    }
+
+    .object {
+      width: 50px;
+      height: 50px;
+      border-radius: 8px;
+      cursor: grab;
+      transition: all 0.3s ease;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 28px;
+      user-select: none;
+      position: absolute;
+    }
+
+    .object:hover {
+      transform: scale(1.1);
+      box-shadow: 0 4px 12px var(--shadow);
+    }
+
+    .object.dragging {
+      opacity: 0.8;
+      cursor: grabbing;
+      z-index: 1000;
+    }
+
+    /* CATEGORY BINS */
+    .bins-container {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 20px;
+      margin-bottom: 32px;
+    }
+
+    .bin {
+      background: var(--card);
+      border: 3px solid;
+      border-radius: 12px;
+      padding: 20px;
+      min-height: 150px;
+      position: relative;
+      transition: all 0.2s ease;
+    }
+
+    .bin.bin-red {
+      border-color: rgba(239, 68, 68, 0.4);
+      background: rgba(239, 68, 68, 0.05);
+    }
+
+    .bin.bin-blue {
+      border-color: rgba(59, 130, 246, 0.4);
+      background: rgba(59, 130, 246, 0.05);
+    }
+
+    .bin.bin-green {
+      border-color: rgba(34, 197, 94, 0.4);
+      background: rgba(34, 197, 94, 0.05);
+    }
+
+    .bin.bin-yellow {
+      border-color: rgba(234, 179, 8, 0.4);
+      background: rgba(234, 179, 8, 0.05);
+    }
+
+    .bin.bin-purple {
+      border-color: rgba(168, 85, 247, 0.4);
+      background: rgba(168, 85, 247, 0.05);
+    }
+
+    .bin.bin-orange {
+      border-color: rgba(249, 115, 22, 0.4);
+      background: rgba(249, 115, 22, 0.05);
+    }
+
+    .bin.bin-circle {
+      border-color: rgba(0, 212, 255, 0.4);
+      background: rgba(0, 212, 255, 0.05);
+    }
+
+    .bin.bin-square {
+      border-color: rgba(236, 72, 153, 0.4);
+      background: rgba(236, 72, 153, 0.05);
+    }
+
+    .bin.bin-triangle {
+      border-color: rgba(34, 197, 94, 0.4);
+      background: rgba(34, 197, 94, 0.05);
+    }
+
+    .bin.bin-big {
+      border-color: rgba(168, 85, 247, 0.4);
+      background: rgba(168, 85, 247, 0.05);
+    }
+
+    .bin.bin-small {
+      border-color: rgba(59, 130, 246, 0.4);
+      background: rgba(59, 130, 246, 0.05);
+    }
+
+    .bin.bin-animal {
+      border-color: rgba(249, 115, 22, 0.4);
+      background: rgba(249, 115, 22, 0.05);
+    }
+
+    .bin.bin-fruit {
+      border-color: rgba(234, 179, 8, 0.4);
+      background: rgba(234, 179, 8, 0.05);
+    }
+
+    .bin.bin-vehicle {
+      border-color: rgba(236, 72, 153, 0.4);
+      background: rgba(236, 72, 153, 0.05);
+    }
+
+    .bin-label {
+      font-size: 14px;
+      font-weight: 700;
+      color: var(--text);
+      margin-bottom: 12px;
+      text-transform: capitalize;
+    }
+
+    .bin-count {
+      position: absolute;
+      top: 12px;
+      right: 12px;
+      background: var(--cyan);
+      color: var(--bg);
+      width: 32px;
+      height: 32px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 700;
+      font-size: 14px;
+    }
+
+    .bin-items {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      min-height: 40px;
+    }
+
+    .bin-item {
+      width: 40px;
+      height: 40px;
+      border-radius: 6px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 20px;
+      animation: slideIn 0.4s ease;
+    }
+
+    @keyframes slideIn {
+      from {
+        opacity: 0;
+        transform: scale(0.5);
+      }
+      to {
+        opacity: 1;
+        transform: scale(1);
+      }
+    }
+
+    /* CHART */
+    .chart-container {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 24px;
+      margin-bottom: 32px;
+    }
+
+    .chart-title {
+      font-size: 14px;
+      font-weight: 700;
+      color: var(--text2);
+      margin-bottom: 16px;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+    }
+
+    .chart {
+      display: flex;
+      align-items: flex-end;
+      gap: 16px;
+      height: 180px;
+      justify-content: center;
+    }
+
+    .chart-bar-wrapper {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 8px;
+      flex: 1;
+      max-width: 120px;
+    }
+
+    .chart-bar {
+      width: 60px;
+      background: var(--grad);
+      border-radius: 8px 8px 0 0;
+      transition: all 0.4s ease;
+      min-height: 4px;
+      box-shadow: 0 2px 8px var(--shadow);
+    }
+
+    .chart-label {
+      font-size: 12px;
+      font-weight: 600;
+      color: var(--text2);
+      text-align: center;
+      text-transform: capitalize;
+    }
+
+    .chart-value {
+      font-size: 14px;
+      font-weight: 700;
+      color: var(--cyan);
+    }
+
+    /* BUTTONS */
+    .button-group {
+      display: flex;
+      gap: 12px;
+      justify-content: center;
+      margin-top: 24px;
+    }
+
+    .btn {
+      padding: 12px 24px;
+      border: none;
+      border-radius: 8px;
+      font-size: 14px;
+      font-weight: 700;
+      font-family: inherit;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+    }
+
+    .btn-primary {
+      background: linear-gradient(135deg, var(--cyan), var(--pink));
+      color: var(--bg);
+      box-shadow: 0 4px 12px var(--glow);
+    }
+
+    .btn-primary:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 6px 16px var(--glow);
+    }
+
+    .btn-primary:active {
+      transform: translateY(0);
+    }
+
+    .btn-secondary {
+      background: var(--card);
+      color: var(--text);
+      border: 1px solid var(--border);
+    }
+
+    .btn-secondary:hover {
+      background: var(--bg2);
+      color: var(--text2);
+    }
+
+    /* PRACTICE MODE */
+    .practice-container {
+      display: flex;
+      flex-direction: column;
+      gap: 24px;
+    }
+
+    .question-card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 24px;
+      margin-bottom: 16px;
+    }
+
+    .question-text {
+      font-size: 16px;
+      font-weight: 600;
+      color: var(--text);
+      margin-bottom: 20px;
+    }
+
+    .question-objects {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 12px;
+      margin-bottom: 24px;
+    }
+
+    .answer-options {
+      display: flex;
+      gap: 12px;
+      flex-wrap: wrap;
+    }
+
+    .answer-btn {
+      padding: 10px 16px;
+      border: 2px solid var(--border);
+      border-radius: 8px;
+      background: transparent;
+      color: var(--text);
+      font-size: 14px;
+      font-weight: 600;
+      font-family: inherit;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      min-width: 60px;
+    }
+
+    .answer-btn:hover {
+      border-color: var(--cyan);
+      color: var(--cyan);
+      background: rgba(0, 212, 255, 0.05);
+    }
+
+    .answer-btn.selected {
+      border-color: var(--cyan);
+      background: rgba(0, 212, 255, 0.1);
+      color: var(--cyan);
+    }
+
+    .answer-btn.correct {
+      border-color: var(--green);
+      background: rgba(34, 197, 94, 0.1);
+      color: var(--green);
+    }
+
+    .answer-btn.incorrect {
+      border-color: #ef4444;
+      background: rgba(239, 68, 68, 0.1);
+      color: #ef4444;
+    }
+
+    .feedback {
+      margin-top: 16px;
+      padding: 12px;
+      border-radius: 8px;
+      font-size: 14px;
+      font-weight: 500;
+    }
+
+    .feedback.correct {
+      background: rgba(34, 197, 94, 0.1);
+      color: var(--green);
+      border: 1px solid rgba(34, 197, 94, 0.3);
+    }
+
+    .feedback.incorrect {
+      background: rgba(239, 68, 68, 0.1);
+      color: #ef4444;
+      border: 1px solid rgba(239, 68, 68, 0.3);
+    }
+
+    /* PLAY MODE */
+    .play-container {
+      display: flex;
+      flex-direction: column;
+      gap: 24px;
+      align-items: center;
+    }
+
+    .score-display {
+      font-size: 36px;
+      font-weight: 900;
+      color: var(--cyan);
+    }
+
+    .timer-bar {
+      width: 100%;
+      height: 12px;
+      background: var(--card);
+      border-radius: 6px;
+      overflow: hidden;
+      border: 1px solid var(--border);
+    }
+
+    .timer-fill {
+      height: 100%;
+      background: linear-gradient(90deg, var(--green), var(--yellow), #ef4444);
+      width: 100%;
+      transition: width 0.1s linear;
+    }
+
+    .play-bins {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+      gap: 16px;
+      width: 100%;
+      margin: 32px 0;
+    }
+
+    .play-bin {
+      padding: 20px;
+      border: 3px solid;
+      border-radius: 12px;
+      text-align: center;
+      cursor: pointer;
+      transition: all 0.1s ease;
+      font-weight: 600;
+      user-select: none;
+    }
+
+    .play-bin:hover {
+      transform: scale(1.05);
+    }
+
+    .play-bin.correct {
+      animation: correctFlash 0.4s ease;
+    }
+
+    .play-bin.incorrect {
+      animation: incorrectFlash 0.4s ease;
+    }
+
+    @keyframes correctFlash {
+      0% {
+        box-shadow: 0 0 20px rgba(34, 197, 94, 0.6);
+      }
+      100% {
+        box-shadow: none;
+      }
+    }
+
+    @keyframes incorrectFlash {
+      0% {
+        box-shadow: 0 0 20px rgba(239, 68, 68, 0.6);
+      }
+      100% {
+        box-shadow: none;
+      }
+    }
+
+    .current-object {
+      font-size: 64px;
+      margin: 24px 0;
+      animation: bounce 0.6s ease;
+    }
+
+    @keyframes bounce {
+      0%, 100% {
+        transform: translateY(0);
+      }
+      50% {
+        transform: translateY(-10px);
+      }
+    }
+
+    .streak-display {
+      font-size: 20px;
+      color: var(--yellow);
+      font-weight: 700;
+      margin-top: 16px;
+    }
+
+    .game-over {
+      text-align: center;
+      padding: 40px;
+      background: var(--card);
+      border-radius: 12px;
+      margin: 24px 0;
+    }
+
+    .game-over-title {
+      font-size: 28px;
+      font-weight: 900;
+      color: var(--cyan);
+      margin-bottom: 16px;
+    }
+
+    .final-score {
+      font-size: 56px;
+      font-weight: 900;
+      color: var(--yellow);
+      margin: 16px 0;
+    }
+
+    .star-rating {
+      font-size: 40px;
+      margin: 16px 0;
+    }
+
+    /* FOCUS VISIBLE */
+    *:focus-visible {
+      outline: 2px solid var(--cyan);
+      outline-offset: 2px;
+      border-radius: 4px;
+    }
+
+    /* SR ONLY */
+    .sr-only {
+      position: absolute;
+      width: 1px;
+      height: 1px;
+      padding: 0;
+      margin: -1px;
+      overflow: hidden;
+      clip: rect(0, 0, 0, 0);
+      white-space: nowrap;
+      border-width: 0;
+    }
+
+    /* CELEBRATION */
+    @keyframes confetti {
+      0% {
+        opacity: 1;
+        transform: translateY(0) rotateZ(0deg);
+      }
+      100% {
+        opacity: 0;
+        transform: translateY(400px) rotateZ(720deg);
+      }
+    }
+
+    .confetti {
+      position: fixed;
+      pointer-events: none;
+      font-size: 24px;
+      animation: confetti 2s ease-out forwards;
+    }
+
+    /* RESPONSIVE */
+    @media (max-width: 768px) {
+      .header {
+        flex-direction: column;
+        gap: 12px;
+        padding: 12px;
+      }
+
+      .mode-tabs {
+        padding: 8px 12px;
+        gap: 8px;
+      }
+
+      .mode-tab {
+        padding: 6px 12px;
+        font-size: 12px;
+      }
+
+      .diff-btn {
+        padding: 4px 10px;
+        font-size: 10px;
+      }
+
+      .main {
+        padding: 12px;
+      }
+
+      .scatter-zone {
+        min-height: 200px;
+        padding: 12px;
+      }
+
+      .bins-container {
+        grid-template-columns: 1fr;
+        gap: 12px;
+      }
+
+      .object {
+        width: 40px;
+        height: 40px;
+        font-size: 20px;
+      }
+
+      .chart {
+        height: 140px;
+      }
+
+      .chart-bar-wrapper {
+        max-width: 80px;
+      }
+
+      .chart-bar {
+        width: 40px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <!-- HEADER -->
+  <div class="header">
+    <div class="header-left">
+      <button class="back-btn" onclick="window.location.href='../../VINCULUM-Hub.html'" aria-label="Back to Hub">← Hub</button>
+      <div class="header-title"><span>Classify & Count</span></div>
+      <span class="header-badge">K</span>
+    </div>
+    <div class="std-tags">
+      <span class="std-tag">K.MD.3</span>
+    </div>
+  </div>
+
+  <!-- MODE TABS -->
+  <div class="mode-tabs">
+    <button class="mode-tab active-explore" onclick="switchMode('explore')">🔍 Explore</button>
+    <button class="mode-tab" onclick="switchMode('practice')">✏️ Practice</button>
+    <button class="mode-tab" onclick="switchMode('play')">🎮 Play</button>
+    <span style="flex:1"></span>
+    <button class="diff-btn active" data-diff="emergent" onclick="setDiff('emergent')">Emergent</button>
+    <button class="diff-btn" data-diff="proficient" onclick="setDiff('proficient')">Proficient</button>
+    <button class="diff-btn" data-diff="advanced" onclick="setDiff('advanced')">Advanced</button>
+  </div>
+
+  <!-- MAIN CONTENT -->
+  <div class="main">
+    <div class="workspace" id="workspace"></div>
+  </div>
+
+  <div class="feedback" id="feedback"></div>
+
+  <!-- SCRIPT -->
+  <script src="../../vinculum-core.js"></script>
+  <script>
+    // Standard feedback function
+    function showFB(text, className) {
+      const f = document.getElementById('feedback');
+      f.textContent = text;
+      f.className = 'feedback ' + className + ' show';
+      setTimeout(() => f.classList.remove('show'), 1200);
+    }
+  </script>
+  <script>
+    // STATE MANAGEMENT
+    const state = {
+      mode: 'explore',
+      difficulty: 'emergent',
+      score: 0,
+      total: 0,
+      timer: null,
+      timeLeft: 60,
+      streak: 0,
+      objects: [],
+      categories: [],
+      sorted: {},
+      draggedObject: null,
+      startX: 0,
+      startY: 0,
+      currentQuestion: 0,
+      questions: [],
+      gameOver: false,
+      currentPlayObject: null,
+      playIndex: 0
+    };
+
+    // OBJECT DATA
+    const objectTypes = {
+      colors: {
+        red: { emoji: '🔴', bg: 'rgba(239, 68, 68, 0.3)' },
+        blue: { emoji: '🔵', bg: 'rgba(59, 130, 246, 0.3)' },
+        green: { emoji: '🟢', bg: 'rgba(34, 197, 94, 0.3)' },
+        yellow: { emoji: '🟡', bg: 'rgba(234, 179, 8, 0.3)' }
+      },
+      shapes: {
+        circle: { emoji: '⭕', bg: 'rgba(0, 212, 255, 0.3)' },
+        square: { emoji: '⬜', bg: 'rgba(236, 72, 153, 0.3)' },
+        triangle: { emoji: '🔺', bg: 'rgba(34, 197, 94, 0.3)' }
+      },
+      sizes: {
+        big: { emoji: '⭐', bg: 'rgba(168, 85, 247, 0.3)' },
+        small: { emoji: '✨', bg: 'rgba(59, 130, 246, 0.3)' }
+      },
+      animals: {
+        cat: { emoji: '🐱', bg: 'rgba(249, 115, 22, 0.3)' },
+        dog: { emoji: '🐶', bg: 'rgba(249, 115, 22, 0.3)' },
+        fish: { emoji: '🐟', bg: 'rgba(249, 115, 22, 0.3)' },
+        bird: { emoji: '🐦', bg: 'rgba(249, 115, 22, 0.3)' }
+      },
+      fruits: {
+        apple: { emoji: '🍎', bg: 'rgba(234, 179, 8, 0.3)' },
+        banana: { emoji: '🍌', bg: 'rgba(234, 179, 8, 0.3)' },
+        orange: { emoji: '🍊', bg: 'rgba(234, 179, 8, 0.3)' },
+        grapes: { emoji: '🍇', bg: 'rgba(234, 179, 8, 0.3)' }
+      },
+      vehicles: {
+        car: { emoji: '🚗', bg: 'rgba(236, 72, 153, 0.3)' },
+        bus: { emoji: '🚌', bg: 'rgba(236, 72, 153, 0.3)' },
+        bike: { emoji: '🚲', bg: 'rgba(236, 72, 153, 0.3)' },
+        plane: { emoji: '✈️', bg: 'rgba(236, 72, 153, 0.3)' }
+      }
+    };
+
+    // INITIALIZE ON LOAD
+    window.addEventListener('load', () => {
+      generateObjects();
+      renderMode();
+    });
+
+    // SWITCH MODE
+    function switchMode(mode) {
+      state.mode = mode;
+      state.gameOver = false;
+      if (mode === 'play') {
+        state.timeLeft = 60;
+        state.score = 0;
+        state.streak = 0;
+        state.playIndex = 0;
+      }
+      generateObjects();
+      updateTabs();
+      renderMode();
+    }
+
+    // SWITCH DIFFICULTY
+    function setDiff(diff) {
+      state.difficulty = diff;
+      generateObjects();
+      updateDiffBtns();
+      renderMode();
+    }
+
+    function updateTabs() {
+      document.querySelectorAll('.mode-tab').forEach(btn => {
+        btn.classList.remove('active-explore', 'active-practice', 'active-play');
+      });
+      const mode = state.mode;
+      document.querySelector(`.mode-tab[onclick="switchMode('${mode}')"]`)?.classList.add(`active-${mode}`);
+    }
+
+    function updateDiffBtns() {
+      document.querySelectorAll('.diff-btn').forEach(btn => {
+        btn.classList.toggle('active', btn.dataset.diff === state.difficulty);
+      });
+    }
+
+    // GENERATE OBJECTS
+    function generateObjects() {
+      const diffConfig = {
+        emergent: { categories: 2, minTotal: 3, maxTotal: 6, attributes: ['color', 'shape'] },
+        proficient: { categories: 3, minTotal: 6, maxTotal: 10, attributes: ['color', 'shape', 'size'] },
+        advanced: { categories: 4, minTotal: 8, maxTotal: 12, attributes: ['color', 'shape', 'size', 'type'] }
+      };
+
+      const config = diffConfig[state.difficulty];
+      const total = Math.floor(Math.random() * (config.maxTotal - config.minTotal + 1)) + config.minTotal;
+
+      // Select attribute for sorting
+      let sortBy = config.attributes[Math.floor(Math.random() * config.attributes.length)];
+      if (state.difficulty === 'advanced') {
+        sortBy = config.attributes[Math.floor(Math.random() * config.attributes.length)];
+      }
+
+      state.objects = [];
+      state.categories = [];
+      state.sorted = {};
+
+      let categoryCount = config.categories;
+      if (sortBy === 'color') {
+        state.categories = ['red', 'blue', 'green', 'yellow'].slice(0, categoryCount);
+        for (let i = 0; i < total; i++) {
+          const cat = state.categories[Math.floor(Math.random() * state.categories.length)];
+          const obj = { ...objectTypes.colors[cat], type: cat, category: cat };
+          state.objects.push(obj);
+          if (!state.sorted[cat]) state.sorted[cat] = [];
+          state.sorted[cat].push(obj);
+        }
+      } else if (sortBy === 'shape') {
+        state.categories = ['circle', 'square', 'triangle'].slice(0, categoryCount);
+        for (let i = 0; i < total; i++) {
+          const cat = state.categories[Math.floor(Math.random() * state.categories.length)];
+          const obj = { ...objectTypes.shapes[cat], type: cat, category: cat };
+          state.objects.push(obj);
+          if (!state.sorted[cat]) state.sorted[cat] = [];
+          state.sorted[cat].push(obj);
+        }
+      } else if (sortBy === 'size') {
+        state.categories = ['big', 'small'];
+        for (let i = 0; i < total; i++) {
+          const cat = state.categories[Math.floor(Math.random() * state.categories.length)];
+          const obj = { ...objectTypes.sizes[cat], type: cat, category: cat };
+          state.objects.push(obj);
+          if (!state.sorted[cat]) state.sorted[cat] = [];
+          state.sorted[cat].push(obj);
+        }
+      } else if (sortBy === 'type') {
+        const types = ['animals', 'fruits', 'vehicles'];
+        state.categories = types.slice(0, categoryCount);
+        for (let i = 0; i < total; i++) {
+          const typeKey = state.categories[Math.floor(Math.random() * state.categories.length)];
+          const typeObjs = Object.keys(objectTypes[typeKey]);
+          const key = typeObjs[Math.floor(Math.random() * typeObjs.length)];
+          const obj = { ...objectTypes[typeKey][key], type: key, category: typeKey, typeKey };
+          state.objects.push(obj);
+          if (!state.sorted[typeKey]) state.sorted[typeKey] = [];
+          state.sorted[typeKey].push(obj);
+        }
+      }
+
+      // Shuffle objects for display
+      state.objects = state.objects.sort(() => Math.random() - 0.5);
+
+      // Generate practice questions
+      generateQuestions();
+    }
+
+    // GENERATE PRACTICE QUESTIONS
+    function generateQuestions() {
+      state.questions = [];
+      const questionTypes = ['count', 'compare', 'identify'];
+
+      const catList = Object.keys(state.sorted);
+
+      // Question 1: Count objects in a category
+      if (catList.length > 0) {
+        const cat = catList[Math.floor(Math.random() * catList.length)];
+        const count = state.sorted[cat].length;
+        state.questions.push({
+          type: 'count',
+          text: `How many ${cat}s are there?`,
+          category: cat,
+          answer: count,
+          options: [count - 1, count, count + 1].filter(x => x >= 0).sort(() => Math.random() - 0.5)
+        });
+      }
+
+      // Question 2: Compare categories
+      if (catList.length >= 2) {
+        const cats = catList.slice(0, 2);
+        const counts = cats.map(c => state.sorted[c].length);
+        const maxCat = cats[counts.indexOf(Math.max(...counts))];
+        state.questions.push({
+          type: 'compare',
+          text: 'Which group has the most?',
+          objects: cats.map(c => ({ cat: c, items: state.sorted[c] })),
+          answer: maxCat,
+          options: cats.sort(() => Math.random() - 0.5)
+        });
+      }
+
+      // Question 3: Total count
+      state.questions.push({
+        type: 'count',
+        text: 'How many objects are there in total?',
+        answer: state.objects.length,
+        options: [state.objects.length - 1, state.objects.length, state.objects.length + 1].filter(x => x >= 0).sort(() => Math.random() - 0.5)
+      });
+    }
+
+    // RENDER MODES
+    function renderMode() {
+      const workspace = document.getElementById('workspace');
+      workspace.innerHTML = '';
+
+      if (state.mode === 'explore') {
+        renderExplore(workspace);
+      } else if (state.mode === 'practice') {
+        renderPractice(workspace);
+      } else if (state.mode === 'play') {
+        renderPlay(workspace);
+      }
+
+      updateTabs();
+      updateDiffBtns();
+    }
+
+    // EXPLORE MODE
+    function renderExplore(workspace) {
+      const html = `
+        <div class="explore-container">
+          <div class="instruction-box">🎯 Drag or click objects into the matching groups. Watch the chart grow!</div>
+
+          <div class="scatter-zone" id="scatterZone"></div>
+
+          <div class="chart-container">
+            <div class="chart-title">📊 Count by Category</div>
+            <div class="chart" id="chart"></div>
+          </div>
+
+          <div class="bins-container" id="binsContainer"></div>
+
+          <div class="button-group">
+            <button class="btn btn-primary" onclick="generateObjects(); renderExplore(document.getElementById('workspace').parentElement.querySelector('.workspace'))">✨ New Set</button>
+          </div>
+        </div>
+      `;
+      workspace.innerHTML = html;
+
+      // Render scatter zone
+      const scatterZone = document.getElementById('scatterZone');
+      state.objects.forEach((obj, idx) => {
+        const div = document.createElement('div');
+        div.className = 'object';
+        div.innerHTML = obj.emoji;
+        div.style.background = obj.bg;
+        div.draggable = true;
+        div.dataset.index = idx;
+        div.dataset.category = obj.category;
+        div.onclick = () => moveToFirstBin(idx);
+        div.ondragstart = (e) => startDrag(e, idx);
+        div.ondragend = endDrag;
+
+        const x = Math.random() * (scatterZone.offsetWidth - 60);
+        const y = Math.random() * (scatterZone.offsetHeight - 60);
+        div.style.left = x + 'px';
+        div.style.top = y + 'px';
+
+        scatterZone.appendChild(div);
+      });
+
+      // Render bins
+      const binsContainer = document.getElementById('binsContainer');
+      state.categories.forEach(cat => {
+        const binDiv = document.createElement('div');
+        const binClass = `bin bin-${cat}`;
+        binDiv.className = binClass;
+        binDiv.id = `bin-${cat}`;
+        binDiv.ondrop = (e) => drop(e, cat);
+        binDiv.ondragover = (e) => dragover(e);
+        binDiv.ondragleave = dragleave;
+
+        const label = document.createElement('div');
+        label.className = 'bin-label';
+        label.textContent = cat;
+
+        const count = document.createElement('div');
+        count.className = 'bin-count';
+        count.textContent = '0';
+
+        const itemsDiv = document.createElement('div');
+        itemsDiv.className = 'bin-items';
+        itemsDiv.id = `items-${cat}`;
+
+        binDiv.appendChild(label);
+        binDiv.appendChild(count);
+        binDiv.appendChild(itemsDiv);
+        binsContainer.appendChild(binDiv);
+      });
+
+      updateChartDisplay();
+    }
+
+    function moveToFirstBin(idx) {
+      const obj = state.objects[idx];
+      const cat = obj.category;
+      const binItems = document.getElementById(`items-${cat}`);
+      if (binItems) {
+        const itemDiv = document.createElement('div');
+        itemDiv.className = 'bin-item';
+        itemDiv.innerHTML = obj.emoji;
+        itemDiv.style.background = obj.bg;
+        binItems.appendChild(itemDiv);
+
+        const objEl = document.querySelector(`[data-index="${idx}"]`);
+        objEl.style.display = 'none';
+
+        updateCounts();
+        updateChartDisplay();
+      }
+    }
+
+    function startDrag(e, idx) {
+      state.draggedObject = idx;
+      e.dataTransfer.effectAllowed = 'move';
+      e.target.classList.add('dragging');
+    }
+
+    function endDrag(e) {
+      e.target.classList.remove('dragging');
+    }
+
+    function dragover(e) {
+      e.preventDefault();
+      e.dataTransfer.dropEffect = 'move';
+      { const b = e.target.closest('.bin'); if(b) b.style.opacity = '0.8'; }
+    }
+
+    function dragleave(e) {
+      { const b = e.target.closest('.bin'); if(b) b.style.opacity = '1'; }
+    }
+
+    function drop(e, cat) {
+      e.preventDefault();
+      e.target.closest('.bin').style.opacity = '1';
+
+      if (state.draggedObject !== null) {
+        const obj = state.objects[state.draggedObject];
+        const binItems = document.getElementById(`items-${cat}`);
+
+        const itemDiv = document.createElement('div');
+        itemDiv.className = 'bin-item';
+        itemDiv.innerHTML = obj.emoji;
+        itemDiv.style.background = obj.bg;
+        binItems.appendChild(itemDiv);
+
+        const objEl = document.querySelector(`[data-index="${state.draggedObject}"]`);
+        objEl.style.display = 'none';
+
+        updateCounts();
+        updateChartDisplay();
+        state.draggedObject = null;
+      }
+    }
+
+    function updateCounts() {
+      state.categories.forEach(cat => {
+        const count = document.getElementById(`items-${cat}`).children.length;
+        const countEl = document.getElementById(`bin-${cat}`).querySelector('.bin-count');
+        countEl.textContent = count;
+      });
+    }
+
+    function updateChartDisplay() {
+      const chart = document.getElementById('chart');
+      if (!chart) return;
+
+      chart.innerHTML = '';
+      const counts = state.categories.map(cat => document.getElementById(`items-${cat}`).children.length);
+      const maxCount = Math.max(...counts, 1);
+
+      state.categories.forEach((cat, idx) => {
+        const count = counts[idx];
+        const height = (count / maxCount) * 160;
+
+        const wrapper = document.createElement('div');
+        wrapper.className = 'chart-bar-wrapper';
+
+        const bar = document.createElement('div');
+        bar.className = 'chart-bar';
+        bar.style.height = height + 'px';
+
+        const label = document.createElement('div');
+        label.className = 'chart-label';
+        label.textContent = cat;
+
+        const value = document.createElement('div');
+        value.className = 'chart-value';
+        value.textContent = count;
+
+        wrapper.appendChild(value);
+        wrapper.appendChild(bar);
+        wrapper.appendChild(label);
+        chart.appendChild(wrapper);
+      });
+    }
+
+    // PRACTICE MODE
+    function renderPractice(workspace) {
+      const html = `
+        <div class="practice-container">
+          <div class="instruction-box">📝 Answer the questions to practice classifying and counting!</div>
+          <div id="practiceContent"></div>
+        </div>
+      `;
+      workspace.innerHTML = html;
+
+      const content = document.getElementById('practiceContent');
+      if (state.questions.length === 0) {
+        content.innerHTML = '<p style="text-align: center; color: var(--text2);">No questions available.</p>';
+        return;
+      }
+
+      const q = state.questions[state.currentQuestion];
+      let qHtml = `
+        <div class="question-card">
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+            <div class="question-text">${q.text}</div>
+            <div style="font-size: 14px; color: var(--muted);">Q${state.currentQuestion + 1}/${state.questions.length}</div>
+          </div>
+      `;
+
+      if (q.type === 'count') {
+        qHtml += `<div class="question-objects" id="questionObjs"></div>`;
+      } else if (q.type === 'compare') {
+        qHtml += `<div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 24px;">`;
+        q.objects.forEach(obj => {
+          qHtml += `
+            <div style="background: var(--card); padding: 12px; border-radius: 8px;">
+              <div style="font-size: 12px; font-weight: 600; color: var(--muted); margin-bottom: 8px; text-transform: capitalize;">${obj.cat}</div>
+              <div style="display: flex; flex-wrap: wrap; gap: 8px;">
+                ${obj.items.map(item => `<span style="font-size: 24px;">${item.emoji}</span>`).join('')}
+              </div>
+              <div style="font-size: 14px; font-weight: 700; color: var(--cyan); margin-top: 8px;">${obj.items.length} items</div>
+            </div>
+          `;
+        });
+        qHtml += `</div>`;
+      }
+
+      qHtml += `<div class="answer-options" id="answerOpts"></div></div>`;
+
+      content.innerHTML = qHtml;
+
+      // Populate question objects for count type
+      if (q.type === 'count') {
+        const objDiv = document.getElementById('questionObjs');
+        if (state.sorted[q.category]) {
+          state.sorted[q.category].forEach(obj => {
+            const span = document.createElement('span');
+            span.style.fontSize = '32px';
+            span.textContent = obj.emoji;
+            objDiv.appendChild(span);
+          });
+        }
+      }
+
+      // Populate answer options
+      const answerDiv = document.getElementById('answerOpts');
+      q.options.forEach(opt => {
+        const btn = document.createElement('button');
+        btn.className = 'answer-btn';
+        btn.textContent = opt;
+        btn.onclick = () => checkAnswer(opt, q.answer);
+        answerDiv.appendChild(btn);
+      });
+    }
+
+    function checkAnswer(selected, correct) {
+      const isCorrect = selected === correct;
+      const allBtns = document.querySelectorAll('.answer-btn');
+      allBtns.forEach(btn => {
+        btn.disabled = true;
+        if (parseInt(btn.textContent) === correct) {
+          btn.classList.add('correct');
+        } else if (parseInt(btn.textContent) === selected && !isCorrect) {
+          btn.classList.add('incorrect');
+        }
+      });
+
+      showFB(isCorrect ? '✓ Great job!' : 'Try again!', isCorrect ? 'correct' : 'incorrect');
+
+      setTimeout(() => {
+        state.currentQuestion++;
+        if (state.currentQuestion >= state.questions.length) {
+          state.currentQuestion = 0;
+        }
+        renderPractice(document.getElementById('workspace'));
+      }, 2000);
+    }
+
+    // PLAY MODE
+    function renderPlay(workspace) {
+      const workspace_el = document.getElementById('workspace');
+
+      if (state.gameOver) {
+        const stars = Math.min(Math.floor(state.score / 5), 5);
+        const starDisplay = '⭐'.repeat(stars) + '☆'.repeat(5 - stars);
+
+        const html = `
+          <div class="play-container">
+            <div class="game-over">
+              <div class="game-over-title">Game Over!</div>
+              <div class="final-score">${state.score}</div>
+              <div class="star-rating">${starDisplay}</div>
+              <div style="color: var(--text2); font-size: 14px; margin: 16px 0;">
+                Great work! You sorted ${state.score} objects correctly.
+              </div>
+              <button class="btn btn-primary" onclick="switchMode('play')">Play Again</button>
+            </div>
+          </div>
+        `;
+        workspace.innerHTML = html;
+        return;
+      }
+
+      const html = `
+        <div class="play-container">
+          <div style="font-size: 24px; font-weight: 700; color: var(--text2);">⏱️ ${Math.ceil(state.timeLeft)}s</div>
+          <div class="timer-bar">
+            <div class="timer-fill" style="width: ${(state.timeLeft / 60) * 100}%"></div>
+          </div>
+          <div class="score-display">Score: ${state.score}</div>
+          <div class="current-object" id="currentObject">${state.objects.length > 0 ? state.objects[0].emoji : '🎮'}</div>
+          <div class="play-bins" id="playBins"></div>
+          <div class="streak-display">Streak: ${state.streak}</div>
+        </div>
+      `;
+      workspace.innerHTML = html;
+
+      // Render bins for play mode
+      const playBins = document.getElementById('playBins');
+      state.categories.forEach(cat => {
+        const btn = document.createElement('button');
+        btn.className = `play-bin bin-${cat}`;
+        btn.textContent = cat;
+        btn.onclick = () => checkPlayAnswer(cat);
+        playBins.appendChild(btn);
+      });
+
+      // Start timer
+      if (!state.timer) {
+        state.timer = setInterval(() => {
+          state.timeLeft -= 0.1;
+          const timerBar = document.querySelector('.timer-fill');
+          if (timerBar) {
+            timerBar.style.width = `${Math.max(0, (state.timeLeft / 60) * 100)}%`;
+          }
+          const timeDisplay = document.querySelector('[style*="color: var(--text2)"]');
+          if (timeDisplay) {
+            timeDisplay.textContent = `⏱️ ${Math.ceil(state.timeLeft)}s`;
+          }
+
+          if (state.timeLeft <= 0) {
+            clearInterval(state.timer);
+            state.timer = null;
+            state.gameOver = true;
+            renderPlay(workspace_el);
+          }
+        }, 100);
+      }
+    }
+
+    function checkPlayAnswer(selectedCat) {
+      if (state.gameOver) return;
+
+      const obj = state.objects[state.playIndex];
+      const isCorrect = selectedCat === obj.category;
+
+      const binBtn = document.querySelector(`.play-bin.bin-${selectedCat}`);
+      if (isCorrect) {
+        binBtn.classList.add('correct');
+        state.score++;
+        state.streak++;
+        createConfetti();
+        showFB('✓ Correct!', 'correct');
+      } else {
+        binBtn.classList.add('incorrect');
+        state.streak = 0;
+        showFB('Try again!', 'incorrect');
+      }
+
+      state.playIndex++;
+      if (state.playIndex >= state.objects.length) {
+        state.playIndex = 0;
+        generateObjects();
+      }
+
+      setTimeout(() => {
+        document.getElementById('currentObject').textContent = state.objects[state.playIndex].emoji;
+        document.querySelectorAll('.play-bin').forEach(btn => {
+          btn.classList.remove('correct', 'incorrect');
+        });
+      }, 1200);
+    }
+
+    function createConfetti() {
+      const confetti = document.createElement('div');
+      confetti.className = 'confetti';
+      confetti.textContent = ['🎉', '🎊', '⭐', '✨'][Math.floor(Math.random() * 4)];
+      confetti.style.left = Math.random() * window.innerWidth + 'px';
+      confetti.style.top = '0px';
+      document.body.appendChild(confetti);
+      setTimeout(() => confetti.remove(), 2000);
+    }
+  </script>
+</body>
+</html>

@@ -1,0 +1,1297 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Shape Sorter Explore Mode - Option Comparison</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        :root {
+            --bg: #0a0e1a;
+            --bg2: #111827;
+            --card: #1a2236;
+            --card2: #1f2a42;
+            --border: #2a3654;
+            --text: #e8edf5;
+            --text2: #8b9cc0;
+            --muted: #5a6b8f;
+            --cyan: #00d4ff;
+            --pink: #ff3b8b;
+            --green: #00e676;
+            --purple: #b388ff;
+            --orange: #ff9100;
+            --yellow: #ffc107;
+        }
+
+        body {
+            background-color: var(--bg);
+            color: var(--text);
+            font-family: 'Inter', sans-serif;
+            height: 100vh;
+            overflow: hidden;
+        }
+
+        .container {
+            display: flex;
+            flex-direction: column;
+            height: 100vh;
+        }
+
+        .tabs {
+            display: flex;
+            background-color: var(--bg2);
+            border-bottom: 2px solid var(--border);
+            padding: 0;
+        }
+
+        .tab-btn {
+            flex: 1;
+            padding: 16px 20px;
+            background: none;
+            border: none;
+            color: var(--text2);
+            font-weight: 600;
+            font-size: 14px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            border-bottom: 4px solid transparent;
+            text-align: center;
+            white-space: nowrap;
+        }
+
+        .tab-btn:hover {
+            color: var(--cyan);
+            background-color: rgba(0, 212, 255, 0.05);
+        }
+
+        .tab-btn.active {
+            color: var(--cyan);
+            border-bottom-color: var(--cyan);
+            background-color: rgba(0, 212, 255, 0.1);
+        }
+
+        .content {
+            flex: 1;
+            overflow: hidden;
+            position: relative;
+        }
+
+        .option {
+            display: none;
+            width: 100%;
+            height: 100%;
+            opacity: 0;
+            transition: opacity 0.3s ease;
+        }
+
+        .option.active {
+            display: flex;
+            opacity: 1;
+        }
+
+        /* ===== OPTION A: GUIDED TOUR ===== */
+        .option-a {
+            flex-direction: row;
+            gap: 20px;
+            padding: 20px;
+            background: linear-gradient(135deg, #0a0e1a 0%, #111827 100%);
+        }
+
+        .shape-list {
+            width: 200px;
+            background-color: var(--card);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            overflow-y: auto;
+            padding: 16px;
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+
+        .shape-item {
+            padding: 12px 16px;
+            background-color: var(--card2);
+            border: 2px solid var(--border);
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-weight: 600;
+            text-align: center;
+        }
+
+        .shape-item:hover {
+            background-color: rgba(0, 212, 255, 0.1);
+            border-color: var(--cyan);
+            color: var(--cyan);
+        }
+
+        .shape-item.selected {
+            background-color: rgba(0, 212, 255, 0.2);
+            border-color: var(--cyan);
+            color: var(--cyan);
+        }
+
+        .main-area {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+
+        .stage {
+            flex: 1;
+            background-color: var(--card);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+            min-height: 300px;
+        }
+
+        .stage-shape {
+            position: relative;
+            width: 300px;
+            height: 300px;
+        }
+
+        .stage-title {
+            position: absolute;
+            top: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            font-size: 28px;
+            font-weight: 700;
+            color: var(--cyan);
+            opacity: 0;
+            text-align: center;
+            white-space: nowrap;
+        }
+
+        .teaching-panel {
+            background-color: var(--card2);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 20px;
+            min-height: 120px;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            gap: 12px;
+        }
+
+        .teaching-step {
+            font-size: 16px;
+            color: var(--text2);
+            opacity: 0;
+            transition: opacity 0.3s ease;
+        }
+
+        .teaching-step.active {
+            opacity: 1;
+            color: var(--text);
+        }
+
+        .counter {
+            font-size: 48px;
+            font-weight: 700;
+            color: var(--cyan);
+            text-align: center;
+            opacity: 0;
+            transition: opacity 0.3s ease;
+        }
+
+        .counter.active {
+            opacity: 1;
+        }
+
+        .summary-card {
+            background: linear-gradient(135deg, rgba(0, 212, 255, 0.1) 0%, rgba(255, 59, 139, 0.1) 100%);
+            border: 2px solid var(--cyan);
+            border-radius: 12px;
+            padding: 16px;
+            text-align: center;
+            opacity: 0;
+            transform: translateY(20px);
+            transition: all 0.5s ease;
+        }
+
+        .summary-card.active {
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+        .real-world {
+            color: var(--text2);
+            font-size: 14px;
+            margin-top: 12px;
+        }
+
+        .controls {
+            display: flex;
+            gap: 12px;
+            justify-content: center;
+            flex-wrap: wrap;
+        }
+
+        .btn {
+            padding: 12px 24px;
+            border: none;
+            border-radius: 8px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-size: 14px;
+            font-family: 'Inter', sans-serif;
+        }
+
+        .btn-primary {
+            background-color: var(--cyan);
+            color: var(--bg);
+        }
+
+        .btn-primary:hover {
+            background-color: #00b8d4;
+            transform: translateY(-2px);
+        }
+
+        .btn-secondary {
+            background-color: var(--card2);
+            color: var(--cyan);
+            border: 2px solid var(--cyan);
+        }
+
+        .btn-secondary:hover {
+            background-color: rgba(0, 212, 255, 0.1);
+        }
+
+        /* ===== OPTION B: INTERACTIVE DISCOVERY ===== */
+        .option-b {
+            padding: 20px;
+            gap: 20px;
+        }
+
+        .discovery-layout {
+            display: flex;
+            gap: 20px;
+            height: 100%;
+        }
+
+        .shape-selector {
+            width: 180px;
+            background-color: var(--card);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 16px;
+            overflow-y: auto;
+        }
+
+        .stage-large {
+            flex: 0 0 400px;
+            background-color: var(--card);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+        }
+
+        .discovery-cards {
+            flex: 1;
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 16px;
+            overflow-y: auto;
+            padding-right: 8px;
+        }
+
+        .discovery-card {
+            background-color: var(--card2);
+            border: 2px solid var(--border);
+            border-radius: 12px;
+            padding: 20px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            gap: 12px;
+            min-height: 140px;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .discovery-card:hover {
+            background-color: rgba(0, 212, 255, 0.1);
+            border-color: var(--cyan);
+            transform: translateY(-4px);
+        }
+
+        .discovery-card.locked {
+            opacity: 0.6;
+            cursor: not-allowed;
+        }
+
+        .discovery-card.revealed {
+            background: linear-gradient(135deg, rgba(0, 212, 255, 0.15) 0%, rgba(255, 59, 139, 0.15) 100%);
+            border-color: var(--cyan);
+        }
+
+        .card-icon {
+            font-size: 32px;
+        }
+
+        .card-label {
+            font-size: 14px;
+            color: var(--text2);
+            font-weight: 600;
+        }
+
+        .card-content {
+            text-align: center;
+            opacity: 0;
+            transform: scale(0.8);
+            transition: all 0.4s ease;
+        }
+
+        .discovery-card.revealed .card-content {
+            opacity: 1;
+            transform: scale(1);
+        }
+
+        .starburst {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+        }
+
+        .star {
+            position: absolute;
+            font-size: 24px;
+        }
+
+        .expert-badge {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            background: linear-gradient(135deg, var(--cyan) 0%, var(--pink) 100%);
+            padding: 20px 30px;
+            border-radius: 50px;
+            color: var(--bg);
+            font-weight: 700;
+            font-size: 16px;
+            opacity: 0;
+            transform: scale(0);
+            transition: all 0.5s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+            box-shadow: 0 8px 32px rgba(0, 212, 255, 0.3);
+            z-index: 100;
+        }
+
+        .expert-badge.show {
+            opacity: 1;
+            transform: scale(1);
+        }
+
+        /* ===== OPTION C: COMPARISON PLAYGROUND ===== */
+        .option-c {
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+
+        .comparison-stages {
+            display: flex;
+            gap: 30px;
+            justify-content: center;
+            align-items: flex-end;
+            flex: 0 0 350px;
+            background-color: var(--card);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 40px;
+        }
+
+        .shape-slot {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .slot-label {
+            font-size: 12px;
+            color: var(--text2);
+            text-transform: uppercase;
+            font-weight: 600;
+            letter-spacing: 1px;
+        }
+
+        .shape-slot svg {
+            width: 180px;
+            height: 180px;
+        }
+
+        .comparison-info {
+            flex: 1;
+            background-color: var(--card);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 30px;
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+
+        .comparison-row {
+            background-color: var(--card2);
+            border-radius: 8px;
+            padding: 16px;
+        }
+
+        .comparison-label {
+            font-size: 14px;
+            color: var(--text2);
+            margin-bottom: 12px;
+            font-weight: 600;
+        }
+
+        .bar-chart {
+            display: flex;
+            align-items: flex-end;
+            gap: 20px;
+            height: 60px;
+        }
+
+        .bar {
+            flex: 0 0 60px;
+            background: linear-gradient(180deg, var(--cyan) 0%, var(--pink) 100%);
+            border-radius: 6px 6px 0 0;
+            display: flex;
+            align-items: flex-end;
+            justify-content: center;
+            color: var(--bg);
+            font-weight: 700;
+            font-size: 18px;
+            padding-bottom: 8px;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .bar::after {
+            content: attr(data-count);
+            position: absolute;
+            opacity: 0;
+            animation: countUp 1s ease-out forwards;
+        }
+
+        @keyframes countUp {
+            from {
+                opacity: 0;
+                transform: translateY(10px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .comparison-text {
+            color: var(--text);
+            font-size: 15px;
+            line-height: 1.6;
+        }
+
+        .highlight-same {
+            color: var(--green);
+            font-weight: 600;
+        }
+
+        .highlight-diff {
+            color: var(--pink);
+            font-weight: 600;
+        }
+
+        .shape-picker {
+            background-color: var(--card2);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 12px;
+            display: flex;
+            gap: 12px;
+            overflow-x: auto;
+            flex: 0 0 auto;
+        }
+
+        .picker-item {
+            flex: 0 0 100px;
+            height: 80px;
+            background-color: var(--card);
+            border: 2px solid var(--border);
+            border-radius: 8px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.3s ease;
+        }
+
+        .picker-item:hover {
+            border-color: var(--cyan);
+            background-color: rgba(0, 212, 255, 0.1);
+            transform: translateY(-4px);
+        }
+
+        .picker-item.selected {
+            border-color: var(--cyan);
+            background-color: rgba(0, 212, 255, 0.2);
+        }
+
+        /* Animations */
+        @keyframes drawStroke {
+            from {
+                stroke-dashoffset: 1000;
+            }
+            to {
+                stroke-dashoffset: 0;
+            }
+        }
+
+        @keyframes pulse {
+            0%, 100% {
+                r: 10;
+                opacity: 1;
+            }
+            50% {
+                r: 16;
+                opacity: 0.6;
+            }
+        }
+
+        @keyframes slideIn {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        @keyframes flip {
+            from {
+                transform: rotateY(180deg);
+                opacity: 0;
+            }
+            to {
+                transform: rotateY(0);
+                opacity: 1;
+            }
+        }
+
+        @keyframes scaleIn {
+            from {
+                transform: scale(0);
+                opacity: 0;
+            }
+            to {
+                transform: scale(1);
+                opacity: 1;
+            }
+        }
+
+        .drawing {
+            stroke-dasharray: 1000;
+            animation: drawStroke 1s ease-out forwards;
+        }
+
+        .pulsing {
+            animation: pulse 0.8s ease-in-out;
+        }
+
+        ::-webkit-scrollbar {
+            width: 8px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: transparent;
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: var(--border);
+            border-radius: 4px;
+        }
+
+        ::-webkit-scrollbar-thumb:hover {
+            background: var(--cyan);
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="tabs">
+            <button class="tab-btn active" data-option="a">Option A: Guided Tour</button>
+            <button class="tab-btn" data-option="b">Option B: Interactive Discovery</button>
+            <button class="tab-btn" data-option="c">Option C: Comparison Playground</button>
+        </div>
+
+        <div class="content">
+            <!-- OPTION A: GUIDED TOUR -->
+            <div class="option option-a active" data-option="a">
+                <div class="shape-list">
+                    <div class="shape-item selected" data-shape="triangle">Triangle</div>
+                    <div class="shape-item" data-shape="square">Square</div>
+                </div>
+
+                <div class="main-area">
+                    <div class="stage">
+                        <div class="stage-title"></div>
+                        <div class="stage-shape" id="stage-a-shape"></div>
+                    </div>
+
+                    <div class="teaching-panel">
+                        <div class="teaching-step" id="step-title"></div>
+                        <div class="counter" id="counter"></div>
+                        <div class="summary-card" id="summary-card">
+                            <div id="summary-text"></div>
+                            <div class="real-world" id="real-world"></div>
+                        </div>
+                    </div>
+
+                    <div class="controls">
+                        <button class="btn btn-secondary" id="replay-btn">Replay</button>
+                        <button class="btn btn-primary" id="next-btn">Next Shape →</button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- OPTION B: INTERACTIVE DISCOVERY -->
+            <div class="option option-b" data-option="b">
+                <div class="discovery-layout">
+                    <div class="shape-selector">
+                        <div class="shape-item selected" data-shape="triangle">Triangle</div>
+                        <div class="shape-item" data-shape="square">Square</div>
+                    </div>
+
+                    <div class="stage-large" id="stage-b-shape"></div>
+
+                    <div class="discovery-cards">
+                        <div class="discovery-card" id="card-sides">
+                            <div class="card-icon">🔍</div>
+                            <div class="card-label">Sides</div>
+                            <div class="card-content">
+                                <div style="font-size: 28px; font-weight: 700; color: var(--cyan);">3 sides!</div>
+                                <div class="starburst" id="starburst-sides"></div>
+                            </div>
+                        </div>
+
+                        <div class="discovery-card" id="card-corners">
+                            <div class="card-icon">🔍</div>
+                            <div class="card-label">Corners</div>
+                            <div class="card-content">
+                                <div style="font-size: 28px; font-weight: 700; color: var(--pink);">3 corners!</div>
+                                <div class="starburst" id="starburst-corners"></div>
+                            </div>
+                        </div>
+
+                        <div class="discovery-card locked" id="card-looks">
+                            <div class="card-icon">🔍</div>
+                            <div class="card-label">What Does It Look Like?</div>
+                            <div class="card-content">
+                                <div style="font-size: 20px;">🍕 ⚠️ 🏠</div>
+                            </div>
+                        </div>
+
+                        <div class="discovery-card locked" id="card-fact">
+                            <div class="card-icon">🔍</div>
+                            <div class="card-label">Fun Fact</div>
+                            <div class="card-content">
+                                <div style="font-size: 13px;">The word 'triangle' means 3 angles!</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="expert-badge" id="expert-badge">🌟 Shape Expert! 🌟</div>
+            </div>
+
+            <!-- OPTION C: COMPARISON PLAYGROUND -->
+            <div class="option option-c" data-option="c">
+                <div class="shape-picker">
+                    <div class="picker-item selected" data-shape="triangle" style="font-size: 24px;">△</div>
+                    <div class="picker-item" data-shape="square" style="font-size: 24px;">□</div>
+                </div>
+
+                <div class="comparison-stages">
+                    <div class="shape-slot">
+                        <div class="slot-label">Shape 1</div>
+                        <div id="stage-c-shape1"></div>
+                    </div>
+                    <div class="shape-slot">
+                        <div class="slot-label">Shape 2</div>
+                        <div id="stage-c-shape2"></div>
+                    </div>
+                </div>
+
+                <div class="comparison-info">
+                    <div class="comparison-row">
+                        <div class="comparison-label">Sides</div>
+                        <div class="bar-chart" id="sides-chart"></div>
+                    </div>
+
+                    <div class="comparison-row">
+                        <div class="comparison-label">Corners</div>
+                        <div class="bar-chart" id="corners-chart"></div>
+                    </div>
+
+                    <div class="comparison-row">
+                        <div class="comparison-label">What's the Same?</div>
+                        <div class="comparison-text" id="same-text"></div>
+                    </div>
+
+                    <div class="comparison-row">
+                        <div class="comparison-label">What's Different?</div>
+                        <div class="comparison-text" id="diff-text"></div>
+                    </div>
+
+                    <div class="comparison-row">
+                        <div class="comparison-label">Quick Comparison</div>
+                        <div class="comparison-text" id="quick-text"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Data
+        const shapes = {
+            triangle: {
+                name: 'Triangle',
+                sides: 3,
+                corners: 3,
+                vertices: [[100, 16], [184, 172], [16, 172]],
+                realWorld: '🍕 pizza slices, ⚠️ warning signs, 🏠 rooftops',
+                fact: 'The word "triangle" means 3 angles!'
+            },
+            square: {
+                name: 'Square',
+                sides: 4,
+                corners: 4,
+                vertices: [[30, 30], [170, 30], [170, 170], [30, 170]],
+                realWorld: '📦 boxes, 🪟 windows, 🎨 picture frames',
+                fact: 'All four sides of a square are the same length!'
+            }
+        };
+
+        const sideColors = ['#00d4ff', '#00e676', '#b388ff', '#ff9100', '#ff3b8b', '#ffc107'];
+
+        // Utility function to create SVG shape
+        function createShapeSVG(shapeKey, width = 200, height = 200) {
+            const shape = shapes[shapeKey];
+            const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+            svg.setAttribute('viewBox', '0 0 200 200');
+            svg.setAttribute('width', width);
+            svg.setAttribute('height', height);
+
+            // Draw sides
+            for (let i = 0; i < shape.vertices.length; i++) {
+                const start = shape.vertices[i];
+                const end = shape.vertices[(i + 1) % shape.vertices.length];
+                const line = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+                line.setAttribute('x1', start[0]);
+                line.setAttribute('y1', start[1]);
+                line.setAttribute('x2', end[0]);
+                line.setAttribute('y2', end[1]);
+                line.setAttribute('stroke', sideColors[i % sideColors.length]);
+                line.setAttribute('stroke-width', '4');
+                line.setAttribute('stroke-linecap', 'round');
+                line.classList.add('shape-side');
+                line.dataset.index = i;
+                svg.appendChild(line);
+            }
+
+            // Draw corners
+            for (let i = 0; i < shape.vertices.length; i++) {
+                const vertex = shape.vertices[i];
+                const circle = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+                circle.setAttribute('cx', vertex[0]);
+                circle.setAttribute('cy', vertex[1]);
+                circle.setAttribute('r', '10');
+                circle.setAttribute('fill', '#ff3b8b');
+                circle.classList.add('shape-corner');
+                circle.dataset.index = i;
+                svg.appendChild(circle);
+
+                // Corner label
+                const text = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+                text.setAttribute('x', vertex[0]);
+                text.setAttribute('y', vertex[1]);
+                text.setAttribute('text-anchor', 'middle');
+                text.setAttribute('dy', '0.3em');
+                text.setAttribute('fill', 'white');
+                text.setAttribute('font-weight', '700');
+                text.setAttribute('font-size', '12');
+                text.setAttribute('font-family', 'Inter');
+                text.classList.add('corner-label');
+                text.dataset.index = i;
+                text.textContent = i + 1;
+                svg.appendChild(text);
+            }
+
+            return svg;
+        }
+
+        // Tab switching
+        document.querySelectorAll('.tab-btn').forEach(btn => {
+            btn.addEventListener('click', () => {
+                const option = btn.dataset.option;
+                document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+                document.querySelectorAll('.option').forEach(o => o.classList.remove('active'));
+                btn.classList.add('active');
+                document.querySelector(`.option[data-option="${option}"]`).classList.add('active');
+
+                // Reset states
+                if (option === 'a') {
+                    resetOptionA();
+                } else if (option === 'b') {
+                    resetOptionB();
+                } else if (option === 'c') {
+                    resetOptionC();
+                }
+            });
+        });
+
+        // ===== OPTION A: GUIDED TOUR =====
+        let currentShapeA = 'triangle';
+        let isAnimatingA = false;
+
+        function resetOptionA() {
+            isAnimatingA = false;
+            const items = document.querySelectorAll('.option-a .shape-item');
+            items.forEach(item => item.classList.remove('selected'));
+            items.forEach(item => {
+                if (item.dataset.shape === 'triangle') item.classList.add('selected');
+            });
+            currentShapeA = 'triangle';
+            startGuidedTour('triangle');
+        }
+
+        document.querySelectorAll('.option-a .shape-item').forEach(item => {
+            item.addEventListener('click', () => {
+                document.querySelectorAll('.option-a .shape-item').forEach(i => i.classList.remove('selected'));
+                item.classList.add('selected');
+                currentShapeA = item.dataset.shape;
+                startGuidedTour(item.dataset.shape);
+            });
+        });
+
+        function startGuidedTour(shapeKey) {
+            if (isAnimatingA) return;
+            isAnimatingA = true;
+
+            const shape = shapes[shapeKey];
+            const stageShape = document.getElementById('stage-a-shape');
+            const stageTitle = document.querySelector('.stage-title');
+            const stepTitle = document.getElementById('step-title');
+            const counter = document.getElementById('counter');
+            const summaryCard = document.getElementById('summary-card');
+            const summaryText = document.getElementById('summary-text');
+            const realWorld = document.getElementById('real-world');
+
+            stageShape.innerHTML = '';
+            stageShape.appendChild(createShapeSVG(shapeKey, 250, 250));
+
+            // Reset animations
+            summaryCard.classList.remove('active');
+            stepTitle.textContent = '';
+            counter.textContent = '';
+            counter.classList.remove('active');
+            stageTitle.style.opacity = '0';
+
+            let delay = 0;
+
+            // 1. Draw shape
+            const lines = stageShape.querySelectorAll('line');
+            lines.forEach(line => {
+                line.classList.add('drawing');
+            });
+            delay += 1000;
+
+            // 2. Show title
+            setTimeout(() => {
+                stageTitle.textContent = `Let's learn about the ${shape.name}!`;
+                stageTitle.style.transition = 'opacity 0.5s ease';
+                stageTitle.style.opacity = '1';
+            }, delay);
+            delay += 800;
+
+            // 3. Count sides
+            setTimeout(() => {
+                stepTitle.textContent = 'Count the sides!';
+                stepTitle.classList.add('active');
+                counter.classList.add('active');
+                let sideCount = 0;
+
+                const sideInterval = setInterval(() => {
+                    sideCount++;
+                    counter.textContent = sideCount + '... ';
+
+                    const line = stageShape.querySelector(`line[data-index="${sideCount - 1}"]`);
+                    if (line) {
+                        line.style.transition = 'stroke-width 0.3s ease';
+                        line.style.strokeWidth = '8';
+                        setTimeout(() => {
+                            line.style.strokeWidth = '4';
+                        }, 300);
+                    }
+
+                    if (sideCount >= shape.sides) {
+                        clearInterval(sideInterval);
+                        counter.textContent = `${shape.sides}!`;
+                    }
+                }, 1000);
+            }, delay);
+            delay += shape.sides * 1000 + 500;
+
+            // 4. Count corners
+            setTimeout(() => {
+                stepTitle.textContent = 'Count the corners!';
+                counter.textContent = '';
+                let cornerCount = 0;
+
+                const cornerInterval = setInterval(() => {
+                    cornerCount++;
+                    counter.textContent = cornerCount + '... ';
+
+                    const circle = stageShape.querySelector(`circle[data-index="${cornerCount - 1}"]`);
+                    if (circle) {
+                        circle.classList.add('pulsing');
+                        setTimeout(() => circle.classList.remove('pulsing'), 800);
+                    }
+
+                    if (cornerCount >= shape.corners) {
+                        clearInterval(cornerInterval);
+                        counter.textContent = `${shape.corners}!`;
+                    }
+                }, 800);
+            }, delay);
+            delay += shape.corners * 800 + 500;
+
+            // 5. Show summary
+            setTimeout(() => {
+                stepTitle.classList.remove('active');
+                counter.classList.remove('active');
+                stageTitle.style.opacity = '0';
+                summaryText.textContent = `A ${shape.name} has ${shape.sides} sides and ${shape.corners} corners!`;
+                realWorld.textContent = `You can find ${shape.name.toLowerCase()}s on: ${shape.realWorld}`;
+                summaryCard.classList.add('active');
+                isAnimatingA = false;
+            }, delay);
+        }
+
+        document.getElementById('replay-btn').addEventListener('click', () => {
+            startGuidedTour(currentShapeA);
+        });
+
+        document.getElementById('next-btn').addEventListener('click', () => {
+            const nextShape = currentShapeA === 'triangle' ? 'square' : 'triangle';
+            document.querySelectorAll('.option-a .shape-item').forEach(i => i.classList.remove('selected'));
+            document.querySelector(`.option-a .shape-item[data-shape="${nextShape}"]`).classList.add('selected');
+            currentShapeA = nextShape;
+            startGuidedTour(nextShape);
+        });
+
+        // Initialize Option A
+        startGuidedTour('triangle');
+
+        // ===== OPTION B: INTERACTIVE DISCOVERY =====
+        let currentShapeB = 'triangle';
+        let revealedCardsB = new Set();
+
+        function resetOptionB() {
+            currentShapeB = 'triangle';
+            revealedCardsB.clear();
+            const items = document.querySelectorAll('.option-b .shape-item');
+            items.forEach(item => item.classList.remove('selected'));
+            items.forEach(item => {
+                if (item.dataset.shape === 'triangle') item.classList.add('selected');
+            });
+            displayShapeB('triangle');
+            resetDiscoveryCards();
+        }
+
+        document.querySelectorAll('.option-b .shape-item').forEach(item => {
+            item.addEventListener('click', () => {
+                document.querySelectorAll('.option-b .shape-item').forEach(i => i.classList.remove('selected'));
+                item.classList.add('selected');
+                currentShapeB = item.dataset.shape;
+                displayShapeB(item.dataset.shape);
+                resetDiscoveryCards();
+            });
+        });
+
+        function displayShapeB(shapeKey) {
+            const stageShape = document.getElementById('stage-b-shape');
+            stageShape.innerHTML = '';
+            stageShape.appendChild(createShapeSVG(shapeKey, 300, 300));
+        }
+
+        function resetDiscoveryCards() {
+            revealedCardsB.clear();
+            const badges = document.querySelectorAll('.discovery-card');
+            badges.forEach(card => {
+                card.classList.remove('revealed');
+                const isLocked = card.id === 'card-looks' || card.id === 'card-fact';
+                if (isLocked) {
+                    card.classList.add('locked');
+                } else {
+                    card.classList.remove('locked');
+                }
+            });
+            document.getElementById('expert-badge').classList.remove('show');
+        }
+
+        document.getElementById('card-sides').addEventListener('click', function() {
+            if (this.classList.contains('locked')) return;
+            if (revealedCardsB.has('sides')) return;
+            revealedCardsB.add('sides');
+
+            this.classList.add('revealed');
+            const shape = shapes[currentShapeB];
+
+            // Animate sides
+            const sides = document.getElementById('stage-b-shape').querySelectorAll('line');
+            sides.forEach((line, index) => {
+                setTimeout(() => {
+                    line.style.transition = 'stroke-width 0.3s ease, opacity 0.3s ease';
+                    line.style.strokeWidth = '8';
+                    line.style.opacity = '1';
+                }, index * 250);
+            });
+
+            // Create starburst
+            createStarburst('starburst-sides');
+
+            // Check if all revealed
+            checkAllRevealed();
+        });
+
+        document.getElementById('card-corners').addEventListener('click', function() {
+            if (this.classList.contains('locked')) return;
+            if (revealedCardsB.has('corners')) return;
+            revealedCardsB.add('corners');
+
+            this.classList.add('revealed');
+
+            // Animate corners
+            const corners = document.getElementById('stage-b-shape').querySelectorAll('circle');
+            corners.forEach((circle, index) => {
+                setTimeout(() => {
+                    circle.classList.add('pulsing');
+                    setTimeout(() => circle.classList.remove('pulsing'), 800);
+                }, index * 250);
+            });
+
+            // Create starburst
+            createStarburst('starburst-corners');
+
+            // Unlock next cards
+            if (revealedCardsB.has('sides')) {
+                document.getElementById('card-looks').classList.remove('locked');
+                document.getElementById('card-fact').classList.remove('locked');
+            }
+
+            checkAllRevealed();
+        });
+
+        document.getElementById('card-looks').addEventListener('click', function() {
+            if (this.classList.contains('locked')) return;
+            if (revealedCardsB.has('looks')) return;
+            revealedCardsB.add('looks');
+            this.classList.add('revealed');
+            checkAllRevealed();
+        });
+
+        document.getElementById('card-fact').addEventListener('click', function() {
+            if (this.classList.contains('locked')) return;
+            if (revealedCardsB.has('fact')) return;
+            revealedCardsB.add('fact');
+            this.classList.add('revealed');
+            checkAllRevealed();
+        });
+
+        function createStarburst(elementId) {
+            const container = document.getElementById(elementId);
+            container.innerHTML = '';
+            const emojis = ['✨', '⭐', '🌟'];
+            for (let i = 0; i < 6; i++) {
+                const star = document.createElement('div');
+                star.classList.add('star');
+                star.textContent = emojis[Math.floor(Math.random() * emojis.length)];
+                const angle = (i / 6) * Math.PI * 2;
+                const distance = 60;
+                star.style.left = `calc(50% + ${Math.cos(angle) * distance}px)`;
+                star.style.top = `calc(50% + ${Math.sin(angle) * distance}px)`;
+                star.style.animation = `scaleIn 0.6s ease-out forwards`;
+                container.appendChild(star);
+            }
+        }
+
+        function checkAllRevealed() {
+            if (revealedCardsB.size === 4) {
+                setTimeout(() => {
+                    document.getElementById('expert-badge').classList.add('show');
+                }, 400);
+            }
+        }
+
+        displayShapeB('triangle');
+
+        // ===== OPTION C: COMPARISON PLAYGROUND =====
+        let shape1C = 'triangle';
+        let shape2C = null;
+
+        function resetOptionC() {
+            shape1C = 'triangle';
+            shape2C = null;
+            document.querySelectorAll('.option-c .picker-item').forEach(item => {
+                item.classList.remove('selected');
+                if (item.dataset.shape === 'triangle') item.classList.add('selected');
+            });
+            document.getElementById('stage-c-shape1').innerHTML = '';
+            document.getElementById('stage-c-shape2').innerHTML = '';
+            document.getElementById('stage-c-shape1').appendChild(createShapeSVG('triangle', 200, 200));
+            updateComparisonInfo();
+        }
+
+        document.querySelectorAll('.option-c .picker-item').forEach(item => {
+            item.addEventListener('click', () => {
+                if (item.classList.contains('selected')) {
+                    // Clicking selected shape sets shape2
+                    if (shape1C === item.dataset.shape) {
+                        if (shape2C === item.dataset.shape) {
+                            shape2C = null;
+                            document.getElementById('stage-c-shape2').innerHTML = '';
+                        } else {
+                            shape2C = item.dataset.shape;
+                            document.getElementById('stage-c-shape2').innerHTML = '';
+                            document.getElementById('stage-c-shape2').appendChild(createShapeSVG(item.dataset.shape, 200, 200));
+                            updateComparisonInfo();
+                        }
+                    }
+                } else {
+                    // Clicking unselected shape sets shape1
+                    document.querySelectorAll('.option-c .picker-item').forEach(i => i.classList.remove('selected'));
+                    item.classList.add('selected');
+                    shape1C = item.dataset.shape;
+                    shape2C = null;
+                    document.getElementById('stage-c-shape1').innerHTML = '';
+                    document.getElementById('stage-c-shape1').appendChild(createShapeSVG(item.dataset.shape, 200, 200));
+                    document.getElementById('stage-c-shape2').innerHTML = '';
+                    updateComparisonInfo();
+                }
+            });
+        });
+
+        function updateComparisonInfo() {
+            const shape1 = shapes[shape1C];
+
+            if (!shape2C) {
+                document.getElementById('sides-chart').innerHTML = '';
+                document.getElementById('corners-chart').innerHTML = '';
+                document.getElementById('same-text').textContent = 'Select a second shape to compare!';
+                document.getElementById('diff-text').textContent = '';
+                document.getElementById('quick-text').textContent = '';
+                return;
+            }
+
+            const shape2 = shapes[shape2C];
+
+            // Sides chart
+            const sidesChart = document.getElementById('sides-chart');
+            sidesChart.innerHTML = '';
+            const sideBar1 = document.createElement('div');
+            sideBar1.classList.add('bar');
+            sideBar1.style.height = (shape1.sides * 40) + 'px';
+            sideBar1.setAttribute('data-count', shape1.sides);
+            sideBar1.textContent = shape1.sides;
+            sidesChart.appendChild(sideBar1);
+
+            const sideBar2 = document.createElement('div');
+            sideBar2.classList.add('bar');
+            sideBar2.style.height = (shape2.sides * 40) + 'px';
+            sideBar2.style.animationDelay = '0.3s';
+            sideBar2.setAttribute('data-count', shape2.sides);
+            sideBar2.textContent = shape2.sides;
+            sidesChart.appendChild(sideBar2);
+
+            // Corners chart
+            const cornersChart = document.getElementById('corners-chart');
+            cornersChart.innerHTML = '';
+            const cornerBar1 = document.createElement('div');
+            cornerBar1.classList.add('bar');
+            cornerBar1.style.height = (shape1.corners * 40) + 'px';
+            cornerBar1.setAttribute('data-count', shape1.corners);
+            cornerBar1.textContent = shape1.corners;
+            cornersChart.appendChild(cornerBar1);
+
+            const cornerBar2 = document.createElement('div');
+            cornerBar2.classList.add('bar');
+            cornerBar2.style.height = (shape2.corners * 40) + 'px';
+            cornerBar2.style.animationDelay = '0.3s';
+            cornerBar2.setAttribute('data-count', shape2.corners);
+            cornerBar2.textContent = shape2.corners;
+            cornersChart.appendChild(cornerBar2);
+
+            // Comparison text
+            document.getElementById('same-text').innerHTML = `<span class="highlight-same">Both have straight sides</span> and <span class="highlight-same">have corners (vertices)</span>`;
+
+            const sideDiff = shape1.sides !== shape2.sides;
+            const cornerDiff = shape1.corners !== shape2.corners;
+
+            let diffText = 'A ' + shape1.name.toLowerCase() + ' has ';
+            if (sideDiff) {
+                diffText += `<span class="highlight-diff">${shape1.sides} sides</span>`;
+            } else {
+                diffText += `${shape1.sides} sides`;
+            }
+            diffText += ' while a ' + shape2.name.toLowerCase() + ' has ';
+            if (sideDiff) {
+                diffText += `<span class="highlight-diff">${shape2.sides} sides</span>`;
+            } else {
+                diffText += `${shape2.sides} sides`;
+            }
+            diffText += '.';
+
+            document.getElementById('diff-text').innerHTML = diffText;
+
+            // Quick comparison
+            const moreShapes = shape1.sides > shape2.sides ? shape1.name : shape2.name;
+            const moreCount = shape1.sides > shape2.sides ? shape1.sides : shape2.sides;
+            const lessCount = shape1.sides < shape2.sides ? shape1.sides : shape2.sides;
+
+            if (shape1.sides === shape2.sides) {
+                document.getElementById('quick-text').textContent = `Both shapes have the same number of sides and corners!`;
+            } else {
+                document.getElementById('quick-text').textContent = `${moreShapes} has MORE sides (${moreCount}) than the ${shape1.sides === lessCount ? shape2.name.toLowerCase() : shape1.name.toLowerCase()} (${lessCount})`;
+            }
+        }
+
+        resetOptionC();
+    </script>
+</body>
+</html>

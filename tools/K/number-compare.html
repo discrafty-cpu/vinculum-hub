@@ -1,0 +1,1139 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>VINCULUM — Number Compare</title>
+  <link rel="stylesheet" href="../../vinculum-core.css">
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;600&display=swap');
+
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: 'Inter', sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      overflow-x: hidden;
+    }
+
+    .sr-only {
+      position: absolute;
+      width: 1px;
+      height: 1px;
+      padding: 0;
+      margin: -1px;
+      overflow: hidden;
+      clip: rect(0, 0, 0, 0);
+      white-space: nowrap;
+      border-width: 0;
+    }
+
+    *:focus-visible {
+      outline: 2px solid var(--cyan);
+      outline-offset: 2px;
+      border-radius: 4px;
+    }
+
+    /* Header */
+    .header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 20px 32px;
+      background: var(--card);
+      border-bottom: 1px solid var(--border);
+    }
+
+    .header-left {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+    }
+
+    .back-btn {
+      padding: 8px 14px;
+      border: 1px solid var(--border);
+      background: transparent;
+      color: var(--text2);
+      border-radius: 8px;
+      font-size: 14px;
+      font-weight: 600;
+      font-family: inherit;
+      cursor: pointer;
+      transition: all 0.2s ease;
+    }
+
+    .back-btn:hover {
+      background: var(--bg2);
+      border-color: var(--cyan);
+      color: var(--cyan);
+    }
+
+    .header-title {
+      font-size: 24px;
+      font-weight: 700;
+      color: var(--text);
+    }
+
+    .header-badge {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 32px;
+      height: 32px;
+      border-radius: 50%;
+      background: rgba(0, 212, 255, 0.1);
+      color: var(--cyan);
+      font-weight: 700;
+      font-size: 14px;
+      border: 1px solid rgba(0, 212, 255, 0.3);
+    }
+
+    .std-tags {
+      display: flex;
+      gap: 8px;
+    }
+
+    .std-tag {
+      padding: 6px 12px;
+      background: var(--bg2);
+      color: var(--text2);
+      border-radius: 6px;
+      font-size: 12px;
+      font-weight: 600;
+      border: 1px solid var(--border);
+    }
+
+    /* Mode Tabs */
+    .mode-tabs {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 12px 32px;
+      background: var(--bg2);
+      border-bottom: 1px solid var(--border);
+      flex-wrap: wrap;
+    }
+
+    .mode-tab {
+      padding: 10px 18px;
+      border: 1px solid var(--border);
+      background: transparent;
+      color: var(--text2);
+      border-radius: 8px;
+      font-size: 14px;
+      font-weight: 600;
+      font-family: inherit;
+      cursor: pointer;
+      transition: all 0.2s ease;
+    }
+
+    .mode-tab:hover {
+      background: var(--card);
+      border-color: var(--text2);
+    }
+
+    .mode-tab.active-explore,
+    .mode-tab.active-practice,
+    .mode-tab.active-play {
+      background: rgba(0, 212, 255, 0.1);
+      color: var(--cyan);
+      border-color: rgba(0, 212, 255, 0.3);
+    }
+
+    .diff-btn {
+      padding: 6px 14px;
+      border-radius: 8px;
+      border: 1px solid var(--border);
+      background: transparent;
+      color: var(--muted);
+      font-size: 11px;
+      font-weight: 700;
+      font-family: inherit;
+      cursor: pointer;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      transition: all 0.2s ease;
+    }
+
+    .diff-btn:hover {
+      color: var(--text2);
+      background: var(--card);
+    }
+
+    .diff-btn.active {
+      background: rgba(0, 212, 255, 0.1);
+      color: var(--cyan);
+      border-color: rgba(0, 212, 255, 0.3);
+    }
+
+    /* Main Content */
+    .main {
+      flex: 1;
+      overflow-y: auto;
+      padding: 32px;
+    }
+
+    .workspace {
+      max-width: 1000px;
+      margin: 0 auto;
+    }
+
+    /* Explore Mode */
+    .explore-container {
+      display: flex;
+      flex-direction: column;
+      gap: 32px;
+      align-items: center;
+    }
+
+    .explore-instruction {
+      text-align: center;
+      color: var(--text2);
+      font-size: 18px;
+      font-weight: 500;
+      margin-bottom: 20px;
+    }
+
+    .comparison-display {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 40px;
+      margin: 40px 0;
+      width: 100%;
+    }
+
+    .group-container {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 16px;
+    }
+
+    .dots-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(50px, 1fr));
+      gap: 12px;
+      padding: 20px;
+      background: var(--card);
+      border: 2px solid var(--border);
+      border-radius: 12px;
+      min-width: 200px;
+      justify-items: center;
+    }
+
+    .dot {
+      width: 40px;
+      height: 40px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 700;
+      font-size: 18px;
+      animation: popIn 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+      box-shadow: 0 4px 12px rgba(0, 212, 255, 0.2);
+      transition: transform 0.2s ease;
+    }
+
+    .dot:hover {
+      transform: scale(1.1);
+    }
+
+    .dot.cyan {
+      background: var(--cyan);
+      color: var(--bg);
+    }
+
+    .dot.pink {
+      background: var(--pink);
+      color: var(--bg);
+    }
+
+    @keyframes popIn {
+      0% {
+        transform: scale(0);
+        opacity: 0;
+      }
+      75% {
+        transform: scale(1.1);
+      }
+      100% {
+        transform: scale(1);
+        opacity: 1;
+      }
+    }
+
+    .group-label {
+      font-size: 14px;
+      color: var(--muted);
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    .comparison-symbol {
+      font-size: 64px;
+      font-weight: 900;
+      color: var(--cyan);
+      animation: symbolGlow 2s ease-in-out infinite;
+      min-width: 80px;
+      text-align: center;
+    }
+
+    @keyframes symbolGlow {
+      0%, 100% {
+        text-shadow: 0 0 8px rgba(0, 212, 255, 0.4);
+        transform: scale(1);
+      }
+      50% {
+        text-shadow: 0 0 20px rgba(0, 212, 255, 0.8);
+        transform: scale(1.05);
+      }
+    }
+
+    .control-panel {
+      display: flex;
+      flex-direction: column;
+      gap: 20px;
+      width: 100%;
+      max-width: 500px;
+    }
+
+    .slider-group {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+
+    .slider-label {
+      font-size: 14px;
+      font-weight: 600;
+      color: var(--text2);
+    }
+
+    .slider-display {
+      font-size: 48px;
+      font-weight: 900;
+      color: var(--cyan);
+      text-align: center;
+      margin: 10px 0;
+    }
+
+    input[type="range"] {
+      width: 100%;
+      height: 8px;
+      border-radius: 4px;
+      background: var(--bg2);
+      outline: none;
+      -webkit-appearance: none;
+      appearance: none;
+      cursor: pointer;
+    }
+
+    input[type="range"]::-webkit-slider-thumb {
+      -webkit-appearance: none;
+      appearance: none;
+      width: 24px;
+      height: 24px;
+      border-radius: 50%;
+      background: var(--cyan);
+      cursor: pointer;
+      box-shadow: 0 2px 8px rgba(0, 212, 255, 0.3);
+      transition: all 0.2s ease;
+    }
+
+    input[type="range"]::-webkit-slider-thumb:hover {
+      transform: scale(1.2);
+      box-shadow: 0 4px 12px rgba(0, 212, 255, 0.5);
+    }
+
+    input[type="range"]::-moz-range-thumb {
+      width: 24px;
+      height: 24px;
+      border-radius: 50%;
+      background: var(--cyan);
+      cursor: pointer;
+      border: none;
+      box-shadow: 0 2px 8px rgba(0, 212, 255, 0.3);
+      transition: all 0.2s ease;
+    }
+
+    input[type="range"]::-moz-range-thumb:hover {
+      transform: scale(1.2);
+      box-shadow: 0 4px 12px rgba(0, 212, 255, 0.5);
+    }
+
+    /* Practice Mode */
+    .practice-container {
+      display: flex;
+      flex-direction: column;
+      gap: 32px;
+      align-items: center;
+    }
+
+    .score-display {
+      font-size: 16px;
+      font-weight: 600;
+      color: var(--text2);
+      padding: 12px 20px;
+      background: var(--bg2);
+      border-radius: 8px;
+      border: 1px solid var(--border);
+    }
+
+    .question-container {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 32px;
+      width: 100%;
+    }
+
+    .question-visual {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 40px;
+      width: 100%;
+    }
+
+    .numeral-display {
+      font-size: 72px;
+      font-weight: 900;
+      color: var(--cyan);
+      padding: 20px 40px;
+      background: var(--card);
+      border: 2px solid var(--border);
+      border-radius: 12px;
+      min-width: 140px;
+      text-align: center;
+      animation: popIn 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+    }
+
+    .answer-buttons {
+      display: flex;
+      gap: 12px;
+      justify-content: center;
+      flex-wrap: wrap;
+    }
+
+    .answer-btn {
+      padding: 14px 24px;
+      border: 2px solid var(--border);
+      background: var(--card);
+      color: var(--text);
+      border-radius: 12px;
+      font-size: 18px;
+      font-weight: 600;
+      font-family: inherit;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      min-width: 120px;
+    }
+
+    .answer-btn:hover {
+      border-color: var(--cyan);
+      color: var(--cyan);
+      transform: translateY(-2px);
+      box-shadow: 0 4px 12px rgba(0, 212, 255, 0.2);
+    }
+
+    .answer-btn:active {
+      transform: translateY(0);
+    }
+
+    .answer-btn.selected {
+      background: rgba(0, 212, 255, 0.1);
+      border-color: var(--cyan);
+      color: var(--cyan);
+    }
+
+    /* Feedback Popup */
+    .feedback-popup {
+      position: fixed;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      background: var(--card);
+      border: 2px solid var(--border);
+      border-radius: 16px;
+      padding: 32px;
+      max-width: 400px;
+      text-align: center;
+      z-index: 1000;
+      box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+      animation: slideUp 0.3s ease;
+    }
+
+    @keyframes slideUp {
+      from {
+        transform: translate(-50%, -40%);
+        opacity: 0;
+      }
+      to {
+        transform: translate(-50%, -50%);
+        opacity: 1;
+      }
+    }
+
+    .feedback-icon {
+      font-size: 64px;
+      margin-bottom: 16px;
+    }
+
+    .feedback-text {
+      font-size: 20px;
+      font-weight: 700;
+      margin-bottom: 8px;
+      color: var(--text);
+    }
+
+    .feedback-description {
+      font-size: 16px;
+      color: var(--text2);
+      margin-bottom: 20px;
+      line-height: 1.5;
+    }
+
+    .feedback-btn {
+      padding: 12px 28px;
+      background: var(--cyan);
+      color: var(--bg);
+      border: none;
+      border-radius: 8px;
+      font-size: 16px;
+      font-weight: 700;
+      font-family: inherit;
+      cursor: pointer;
+      transition: all 0.2s ease;
+    }
+
+    .feedback-btn:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 4px 12px rgba(0, 212, 255, 0.3);
+    }
+
+    .overlay {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: rgba(0, 0, 0, 0.5);
+      z-index: 999;
+    }
+
+    /* Play Mode */
+    .play-container {
+      display: flex;
+      flex-direction: column;
+      gap: 32px;
+      align-items: center;
+    }
+
+    .game-header {
+      display: flex;
+      gap: 40px;
+      justify-content: center;
+      align-items: center;
+      margin-bottom: 20px;
+    }
+
+    .timer-display {
+      font-size: 48px;
+      font-weight: 900;
+      color: var(--pink);
+      padding: 20px 40px;
+      background: var(--card);
+      border: 2px solid var(--border);
+      border-radius: 12px;
+      min-width: 200px;
+      text-align: center;
+      font-family: 'JetBrains Mono', monospace;
+    }
+
+    .score-counter {
+      font-size: 48px;
+      font-weight: 900;
+      color: var(--cyan);
+      padding: 20px 40px;
+      background: var(--card);
+      border: 2px solid var(--border);
+      border-radius: 12px;
+      min-width: 200px;
+      text-align: center;
+    }
+
+    .streak-display {
+      font-size: 18px;
+      font-weight: 700;
+      color: var(--yellow);
+      text-align: center;
+      margin-top: 16px;
+      animation: streakPulse 0.6s ease;
+    }
+
+    @keyframes streakPulse {
+      0%, 100% {
+        transform: scale(1);
+      }
+      50% {
+        transform: scale(1.1);
+      }
+    }
+
+    .hidden {
+      display: none !important;
+    }
+
+    /* Game Over Screen */
+    .game-over-screen {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 24px;
+      text-align: center;
+      padding: 40px;
+      background: var(--card);
+      border: 2px solid var(--border);
+      border-radius: 16px;
+    }
+
+    .final-score {
+      font-size: 64px;
+      font-weight: 900;
+      color: var(--cyan);
+      margin: 20px 0;
+    }
+
+    .star-rating {
+      font-size: 48px;
+      letter-spacing: 8px;
+      margin: 20px 0;
+    }
+
+    .game-message {
+      font-size: 20px;
+      color: var(--text2);
+      line-height: 1.6;
+    }
+
+    .restart-btn {
+      padding: 14px 32px;
+      background: var(--cyan);
+      color: var(--bg);
+      border: none;
+      border-radius: 8px;
+      font-size: 18px;
+      font-weight: 700;
+      font-family: inherit;
+      cursor: pointer;
+      margin-top: 20px;
+      transition: all 0.2s ease;
+    }
+
+    .restart-btn:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 4px 12px rgba(0, 212, 255, 0.3);
+    }
+
+    .correct-pulse {
+      animation: correctPulse 0.6s ease;
+    }
+
+    @keyframes correctPulse {
+      0% {
+        transform: scale(1);
+      }
+      50% {
+        transform: scale(1.05);
+      }
+      100% {
+        transform: scale(1);
+      }
+    }
+
+    @media (max-width: 768px) {
+      .header {
+        padding: 16px;
+        flex-direction: column;
+        gap: 12px;
+        align-items: flex-start;
+      }
+
+      .comparison-display {
+        gap: 20px;
+      }
+
+      .dots-grid {
+        min-width: 150px;
+      }
+
+      .dot {
+        width: 32px;
+        height: 32px;
+        font-size: 14px;
+      }
+
+      .comparison-symbol {
+        font-size: 48px;
+      }
+
+      .mode-tabs {
+        padding: 12px 16px;
+        gap: 6px;
+      }
+
+      .mode-tab {
+        padding: 8px 12px;
+        font-size: 12px;
+      }
+
+      .main {
+        padding: 16px;
+      }
+
+      .game-header {
+        gap: 20px;
+      }
+
+      .timer-display,
+      .score-counter {
+        font-size: 36px;
+        padding: 12px 24px;
+        min-width: 140px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <!-- Header -->
+  <div class="header">
+    <div class="header-left">
+      <button class="back-btn" onclick="window.location.href='../../VINCULUM-Hub.html'" aria-label="Back to Hub">← Hub</button>
+      <div class="header-title"><span>Number Compare</span></div>
+      <span class="header-badge">K</span>
+    </div>
+    <div class="std-tags">
+      <span class="std-tag">K.CC.6</span>
+      <span class="std-tag">K.CC.7</span>
+    </div>
+  </div>
+
+  <!-- Mode Tabs -->
+  <div class="mode-tabs">
+    <button class="mode-tab active-explore" onclick="switchMode('explore')">🔍 Explore</button>
+    <button class="mode-tab" onclick="switchMode('practice')">✏️ Practice</button>
+    <button class="mode-tab" onclick="switchMode('play')">🎮 Play</button>
+    <span style="flex:1"></span>
+    <button class="diff-btn active" data-diff="emergent" onclick="setDiff('emergent')">Emergent</button>
+    <button class="diff-btn" data-diff="proficient" onclick="setDiff('proficient')">Proficient</button>
+    <button class="diff-btn" data-diff="advanced" onclick="setDiff('advanced')">Advanced</button>
+  </div>
+
+  <!-- Main Content -->
+  <div class="main">
+    <div class="workspace" id="workspace"></div>
+  </div>
+
+  <div class="feedback" id="feedback"></div>
+
+  <script>
+    // Standard feedback function
+    function showFB(text, className) {
+      const f = document.getElementById('feedback');
+      f.textContent = text;
+      f.className = 'feedback ' + className + ' show';
+      setTimeout(() => f.classList.remove('show'), 1200);
+    }
+
+    // State Management
+    const state = {
+      mode: 'explore',
+      difficulty: 'emergent',
+      score: 0,
+      total: 0,
+      timer: null,
+      timeLeft: 60,
+      streak: 0,
+      currentQuestion: null,
+      gameActive: false,
+      leftValue: 3,
+      rightValue: 5
+    };
+
+    // Mode Switching
+    function switchMode(mode) {
+      state.mode = mode;
+      state.score = 0;
+      state.total = 0;
+      state.streak = 0;
+      state.timeLeft = 60;
+
+      // Update tab styles
+      document.querySelectorAll('.mode-tab').forEach(tab => {
+        tab.classList.remove('active-explore', 'active-practice', 'active-play');
+      });
+      event.target.classList.add(`active-${mode}`);
+
+      if (mode === 'play' && state.gameActive) {
+        endGame();
+      }
+
+      render();
+    }
+
+    // Difficulty Setting
+    function setDiff(difficulty) {
+      state.difficulty = difficulty;
+      state.score = 0;
+      state.total = 0;
+      state.streak = 0;
+
+      // Update button styles
+      document.querySelectorAll('.diff-btn').forEach(btn => {
+        btn.classList.remove('active');
+      });
+      document.querySelector(`.diff-btn[data-diff="${difficulty}"]`).classList.add('active');
+
+      render();
+    }
+
+    // Generate Question based on Difficulty
+    function generateQuestion() {
+      let maxNum;
+      if (state.difficulty === 'emergent') {
+        maxNum = 5;
+      } else if (state.difficulty === 'proficient') {
+        maxNum = 10;
+      } else {
+        maxNum = 10;
+      }
+
+      const left = Math.floor(Math.random() * maxNum) + 1;
+      const right = Math.floor(Math.random() * maxNum) + 1;
+
+      return {
+        leftCount: left,
+        rightCount: right
+      };
+    }
+
+    // Get Comparison Symbol
+    function getComparisonSymbol(left, right) {
+      if (left > right) return '>';
+      if (left < right) return '<';
+      return '=';
+    }
+
+    // Check Answer
+    function checkAnswer(answer) {
+      if (!state.currentQuestion) return false;
+
+      const correct = getComparisonSymbol(state.currentQuestion.leftCount, state.currentQuestion.rightCount);
+      const isCorrect = answer === correct;
+
+      state.total++;
+      if (isCorrect) {
+        state.score++;
+        state.streak++;
+      } else {
+        state.streak = 0;
+      }
+
+      showFB(isCorrect ? '✓ Correct!' : 'Try again!', isCorrect ? 'correct' : 'incorrect');
+      setTimeout(afterFeedback, 1200);
+      return isCorrect;
+    }
+
+    // Auto-advance after feedback
+    function afterFeedback() {
+      if (state.mode === 'practice') {
+        state.currentQuestion = generateQuestion();
+        render();
+      }
+    }
+
+    // Timer for Play Mode
+    function startTimer() {
+      state.gameActive = true;
+      state.timeLeft = 60;
+      state.score = 0;
+      state.total = 0;
+      state.streak = 0;
+
+      state.timer = setInterval(() => {
+        state.timeLeft--;
+        updateGameDisplay();
+
+        if (state.timeLeft <= 0) {
+          endGame();
+        }
+      }, 1000);
+
+      state.currentQuestion = generateQuestion();
+      render();
+    }
+
+    // Update Game Display
+    function updateGameDisplay() {
+      const timerEl = document.querySelector('.timer-display');
+      const scoreEl = document.querySelector('.score-counter');
+      if (timerEl) timerEl.textContent = `${state.timeLeft}s`;
+      if (scoreEl) scoreEl.textContent = state.score;
+    }
+
+    // End Game
+    function endGame() {
+      state.gameActive = false;
+      if (state.timer) {
+        clearInterval(state.timer);
+        state.timer = null;
+      }
+      render();
+    }
+
+    // Get Star Rating
+    function getStarRating() {
+      if (state.total === 0) return '⭐';
+      const percentage = (state.score / state.total) * 100;
+      if (percentage >= 80) return '⭐⭐⭐';
+      if (percentage >= 60) return '⭐⭐';
+      return '⭐';
+    }
+
+    // Render Functions
+    function renderExplore() {
+      const maxNum = state.difficulty === 'emergent' ? 5 : 10;
+      const colors = ['cyan', 'pink'];
+
+      const dotsLeft = Array.from({ length: state.leftValue }, (_, i) => `
+        <div class="dot ${colors[i % 2]}">${i + 1}</div>
+      `).join('');
+
+      const dotsRight = Array.from({ length: state.rightValue }, (_, i) => `
+        <div class="dot ${colors[(i + 1) % 2]}">${i + 1}</div>
+      `).join('');
+
+      const comparison = getComparisonSymbol(state.leftValue, state.rightValue);
+
+      document.getElementById('workspace').innerHTML = `
+        <div class="explore-container">
+          <div class="explore-instruction">👇 Change the groups and see which has more, less, or the same!</div>
+
+          <div class="comparison-display">
+            <div class="group-container">
+              <div class="dots-grid">${dotsLeft}</div>
+              <div class="group-label">Group A</div>
+              <div class="slider-display">${state.leftValue}</div>
+            </div>
+
+            <div class="comparison-symbol">${comparison}</div>
+
+            <div class="group-container">
+              <div class="dots-grid">${dotsRight}</div>
+              <div class="group-label">Group B</div>
+              <div class="slider-display">${state.rightValue}</div>
+            </div>
+          </div>
+
+          <div class="control-panel">
+            <div class="slider-group">
+              <label class="slider-label">Group A Count</label>
+              <input type="range" min="1" max="${maxNum}" value="${state.leftValue}"
+                     onchange="state.leftValue = parseInt(this.value); renderExplore()">
+            </div>
+
+            <div class="slider-group">
+              <label class="slider-label">Group B Count</label>
+              <input type="range" min="1" max="${maxNum}" value="${state.rightValue}"
+                     onchange="state.rightValue = parseInt(this.value); renderExplore()">
+            </div>
+          </div>
+        </div>
+      `;
+    }
+
+    function renderPractice() {
+      if (!state.currentQuestion) {
+        state.currentQuestion = generateQuestion();
+      }
+
+      const maxNum = state.difficulty === 'emergent' ? 5 : 10;
+      const useNumerals = state.difficulty === 'proficient' || state.difficulty === 'advanced';
+      const colors = ['cyan', 'pink'];
+
+      let visualLeft = '';
+      let visualRight = '';
+
+      if (!useNumerals) {
+        visualLeft = Array.from({ length: state.currentQuestion.leftCount }, (_, i) => `
+          <div class="dot ${colors[i % 2]}"></div>
+        `).join('');
+
+        visualRight = Array.from({ length: state.currentQuestion.rightCount }, (_, i) => `
+          <div class="dot ${colors[(i + 1) % 2]}"></div>
+        `).join('');
+      }
+
+      const leftDisplay = useNumerals
+        ? `<div class="numeral-display">${state.currentQuestion.leftCount}</div>`
+        : `<div class="dots-grid" style="min-width: 180px;">${visualLeft}</div>`;
+
+      const rightDisplay = useNumerals
+        ? `<div class="numeral-display">${state.currentQuestion.rightCount}</div>`
+        : `<div class="dots-grid" style="min-width: 180px;">${visualRight}</div>`;
+
+      document.getElementById('workspace').innerHTML = `
+        <div class="practice-container">
+          <div class="score-display">Score: ${state.score} of ${state.total}</div>
+
+          <div class="question-container">
+            <div class="explore-instruction">Which is greater, less, or equal?</div>
+
+            <div class="question-visual">
+              ${leftDisplay}
+              <div style="min-width: 60px; text-align: center;">?</div>
+              ${rightDisplay}
+            </div>
+
+            <div class="answer-buttons">
+              <button class="answer-btn" onclick="checkAnswer('>')">Greater ></button>
+              <button class="answer-btn" onclick="checkAnswer('<')">Less <</button>
+              <button class="answer-btn" onclick="checkAnswer('=')">Equal =</button>
+            </div>
+          </div>
+        </div>
+      `;
+    }
+
+    function renderPlay() {
+      if (!state.gameActive) {
+        document.getElementById('workspace').innerHTML = `
+          <div class="play-container">
+            <div class="game-over-screen">
+              <h2 style="font-size: 28px; color: var(--text);">Game Over!</h2>
+              <div class="final-score">${state.score}</div>
+              <p style="color: var(--text2); font-size: 18px;">Correct out of ${state.total}</p>
+              <div class="star-rating">${getStarRating()}</div>
+              <div class="game-message">
+                ${state.total === 0 ? 'Ready to play?' : state.score === state.total ? 'Perfect score! Amazing work!' : 'Keep practicing to improve!'}
+              </div>
+              <button class="restart-btn" onclick="startTimer()">Play Again</button>
+            </div>
+          </div>
+        `;
+      } else {
+        if (!state.currentQuestion) {
+          state.currentQuestion = generateQuestion();
+        }
+
+        const useNumerals = state.difficulty === 'proficient' || state.difficulty === 'advanced';
+        const colors = ['cyan', 'pink'];
+
+        let visualLeft = '';
+        let visualRight = '';
+
+        if (!useNumerals) {
+          visualLeft = Array.from({ length: state.currentQuestion.leftCount }, (_, i) => `
+            <div class="dot ${colors[i % 2]}"></div>
+          `).join('');
+
+          visualRight = Array.from({ length: state.currentQuestion.rightCount }, (_, i) => `
+            <div class="dot ${colors[(i + 1) % 2]}"></div>
+          `).join('');
+        }
+
+        const leftDisplay = useNumerals
+          ? `<div class="numeral-display" style="min-width: 100px;">${state.currentQuestion.leftCount}</div>`
+          : `<div class="dots-grid" style="min-width: 160px; grid-template-columns: repeat(3, 1fr);">${visualLeft}</div>`;
+
+        const rightDisplay = useNumerals
+          ? `<div class="numeral-display" style="min-width: 100px;">${state.currentQuestion.rightCount}</div>`
+          : `<div class="dots-grid" style="min-width: 160px; grid-template-columns: repeat(3, 1fr);">${visualRight}</div>`;
+
+        document.getElementById('workspace').innerHTML = `
+          <div class="play-container">
+            <div class="game-header">
+              <div class="timer-display">${state.timeLeft}s</div>
+              <div class="score-counter">${state.score}</div>
+            </div>
+            ${state.streak > 0 ? `<div class="streak-display">🔥 Streak: ${state.streak}</div>` : ''}
+
+            <div class="question-container" style="margin-top: 20px;">
+              <div class="question-visual">
+                ${leftDisplay}
+                <div style="min-width: 60px; text-align: center;">?</div>
+                ${rightDisplay}
+              </div>
+
+              <div class="answer-buttons">
+                <button class="answer-btn" onclick="playCheckAnswer('>')">></button>
+                <button class="answer-btn" onclick="playCheckAnswer('<')"><</button>
+                <button class="answer-btn" onclick="playCheckAnswer('=')">=</button>
+              </div>
+            </div>
+          </div>
+        `;
+      }
+    }
+
+    function playCheckAnswer(answer) {
+      if (!state.gameActive) return;
+
+      const correct = getComparisonSymbol(state.currentQuestion.leftCount, state.currentQuestion.rightCount);
+      const isCorrect = answer === correct;
+
+      state.total++;
+      if (isCorrect) {
+        state.score++;
+        state.streak++;
+        showFB('✓ Correct!', 'correct');
+      } else {
+        state.streak = 0;
+        showFB('Try again!', 'incorrect');
+      }
+
+      setTimeout(() => {
+        state.currentQuestion = generateQuestion();
+        updateGameDisplay();
+        render();
+      }, 1200);
+    }
+
+    // Main Render
+    function render() {
+      if (state.mode === 'explore') {
+        renderExplore();
+      } else if (state.mode === 'practice') {
+        renderPractice();
+      } else if (state.mode === 'play') {
+        renderPlay();
+      }
+    }
+
+    // Initialize
+    window.addEventListener('load', () => {
+      render();
+    });
+
+    // Keyboard Support
+    window.addEventListener('keydown', (e) => {
+      if (state.mode === 'play' && state.gameActive) {
+        if (e.key === '>') playCheckAnswer('>');
+        if (e.key === '<') playCheckAnswer('<');
+        if (e.key === '=') playCheckAnswer('=');
+      }
+    });
+  </script>
+
+  <script src="../../vinculum-core.js"></script>
+</body>
+</html>

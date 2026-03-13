@@ -1,0 +1,1283 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>VINCULUM — Add & Subtract</title>
+  <link rel="stylesheet" href="../../vinculum-core.css">
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;600&display=swap');
+
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      line-height: 1.6;
+      overflow-x: hidden;
+    }
+
+    *:focus-visible {
+      outline: 2px solid var(--cyan);
+      outline-offset: 2px;
+      border-radius: 4px;
+    }
+
+    .sr-only {
+      position: absolute;
+      width: 1px;
+      height: 1px;
+      padding: 0;
+      margin: -1px;
+      overflow: hidden;
+      clip: rect(0,0,0,0);
+      white-space: nowrap;
+      border-width: 0;
+    }
+
+    .header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 20px 24px;
+      background: var(--card);
+      border-bottom: 1px solid var(--border);
+      flex-wrap: wrap;
+      gap: 16px;
+    }
+
+    .header-left {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .back-btn {
+      background: transparent;
+      border: 1px solid var(--border);
+      color: var(--text2);
+      padding: 8px 12px;
+      border-radius: 6px;
+      cursor: pointer;
+      font-family: inherit;
+      font-size: 14px;
+      font-weight: 500;
+      transition: all 0.2s ease;
+    }
+
+    .back-btn:hover {
+      background: var(--bg2);
+      color: var(--text);
+    }
+
+    .header-title {
+      font-size: 24px;
+      font-weight: 700;
+      color: var(--text);
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .header-badge {
+      background: var(--cyan);
+      color: var(--bg);
+      padding: 4px 10px;
+      border-radius: 4px;
+      font-size: 12px;
+      font-weight: 700;
+    }
+
+    .std-tags {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+
+    .std-tag {
+      background: rgba(0, 212, 255, 0.1);
+      color: var(--cyan);
+      padding: 4px 10px;
+      border-radius: 4px;
+      font-size: 11px;
+      font-weight: 600;
+      border: 1px solid rgba(0, 212, 255, 0.2);
+    }
+
+    .mode-tabs {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 12px 24px;
+      background: var(--card);
+      border-bottom: 1px solid var(--border);
+      flex-wrap: wrap;
+    }
+
+    .mode-tab {
+      padding: 8px 16px;
+      border-radius: 8px;
+      border: 1px solid var(--border);
+      background: transparent;
+      color: var(--muted);
+      font-family: inherit;
+      font-size: 14px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      white-space: nowrap;
+    }
+
+    .mode-tab:hover {
+      background: var(--bg2);
+      color: var(--text2);
+    }
+
+    .mode-tab.active-explore,
+    .mode-tab.active-practice,
+    .mode-tab.active-play {
+      background: rgba(0, 212, 255, 0.1);
+      color: var(--cyan);
+      border-color: rgba(0, 212, 255, 0.3);
+    }
+
+    .diff-btn {
+      padding: 6px 14px;
+      border-radius: 8px;
+      border: 1px solid var(--border);
+      background: transparent;
+      color: var(--muted);
+      font-size: 11px;
+      font-weight: 700;
+      font-family: inherit;
+      cursor: pointer;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      transition: all 0.2s ease;
+    }
+
+    .diff-btn:hover {
+      color: var(--text2);
+      background: var(--card);
+    }
+
+    .diff-btn.active {
+      background: rgba(0, 212, 255, 0.1);
+      color: var(--cyan);
+      border-color: rgba(0, 212, 255, 0.3);
+    }
+
+    .main {
+      flex: 1;
+      overflow: auto;
+      padding: 24px;
+    }
+
+    .workspace {
+      max-width: 800px;
+      margin: 0 auto;
+    }
+
+    /* EXPLORE MODE */
+    .explore-container {
+      display: flex;
+      flex-direction: column;
+      gap: 32px;
+      padding: 24px;
+      background: var(--card);
+      border-radius: 12px;
+      border: 1px solid var(--border);
+    }
+
+    .explore-header {
+      text-align: center;
+      font-size: 18px;
+      font-weight: 600;
+      color: var(--text2);
+    }
+
+    .operation-display {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 16px;
+      margin-bottom: 24px;
+      flex-wrap: wrap;
+    }
+
+    .op-toggle {
+      padding: 12px 24px;
+      background: linear-gradient(135deg, var(--cyan), var(--pink));
+      border: none;
+      color: white;
+      border-radius: 8px;
+      font-size: 16px;
+      font-weight: 700;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      min-width: 120px;
+    }
+
+    .op-toggle:hover {
+      transform: scale(1.05);
+      box-shadow: 0 4px 12px var(--glow);
+    }
+
+    .op-toggle:active {
+      transform: scale(0.95);
+    }
+
+    .objects-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-around;
+      flex-wrap: wrap;
+      gap: 16px;
+      padding: 20px;
+      background: rgba(0, 212, 255, 0.05);
+      border-radius: 8px;
+    }
+
+    .objects-group {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 16px;
+    }
+
+    .objects-display {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 12px;
+      justify-content: center;
+      min-height: 50px;
+      align-items: center;
+    }
+
+    .object {
+      width: 32px;
+      height: 32px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 700;
+      color: white;
+      font-size: 16px;
+      box-shadow: 0 2px 8px var(--glow);
+      animation: pop 0.3s ease;
+      cursor: grab;
+    }
+
+    .object.left {
+      background: linear-gradient(135deg, var(--cyan), #00d4ff);
+    }
+
+    .object.right {
+      background: linear-gradient(135deg, var(--pink), #ff4081);
+    }
+
+    @keyframes pop {
+      0% {
+        transform: scale(0.5);
+        opacity: 0;
+      }
+      50% {
+        transform: scale(1.15);
+      }
+      100% {
+        transform: scale(1);
+        opacity: 1;
+      }
+    }
+
+    .controls {
+      display: flex;
+      gap: 12px;
+      justify-content: center;
+    }
+
+    .control-btn {
+      width: 48px;
+      height: 48px;
+      border-radius: 50%;
+      border: none;
+      background: var(--bg2);
+      color: var(--text);
+      font-size: 20px;
+      font-weight: 700;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .control-btn:hover {
+      background: var(--bg);
+      transform: scale(1.1);
+    }
+
+    .control-btn:active {
+      transform: scale(0.9);
+    }
+
+    .equation-display {
+      text-align: center;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 48px;
+      font-weight: 600;
+      color: var(--cyan);
+      padding: 24px;
+      background: linear-gradient(135deg, rgba(0, 212, 255, 0.1), rgba(255, 64, 129, 0.1));
+      border-radius: 12px;
+      border: 2px solid var(--border);
+      letter-spacing: 2px;
+    }
+
+    /* PRACTICE MODE */
+    .practice-container {
+      display: flex;
+      flex-direction: column;
+      gap: 24px;
+      padding: 24px;
+      background: var(--card);
+      border-radius: 12px;
+      border: 1px solid var(--border);
+    }
+
+    .problem-display {
+      text-align: center;
+      font-size: 18px;
+      font-weight: 600;
+      color: var(--text2);
+      margin-bottom: 16px;
+    }
+
+    .problem-objects {
+      display: flex;
+      justify-content: center;
+      gap: 12px;
+      flex-wrap: wrap;
+      min-height: 50px;
+      margin-bottom: 24px;
+      padding: 16px;
+      background: rgba(0, 212, 255, 0.05);
+      border-radius: 8px;
+    }
+
+    .equation-problem {
+      text-align: center;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 36px;
+      font-weight: 600;
+      color: var(--text);
+      margin-bottom: 24px;
+      letter-spacing: 1px;
+    }
+
+    .equation-problem .blank {
+      display: inline-block;
+      width: 60px;
+      height: 50px;
+      border: 2px solid var(--border);
+      border-radius: 6px;
+      vertical-align: middle;
+      background: var(--bg2);
+    }
+
+    .answer-input {
+      display: flex;
+      gap: 12px;
+      justify-content: center;
+      margin-bottom: 20px;
+    }
+
+    .answer-input input {
+      width: 80px;
+      height: 60px;
+      font-size: 28px;
+      font-weight: 700;
+      text-align: center;
+      border: 2px solid var(--border);
+      border-radius: 8px;
+      background: var(--bg2);
+      color: var(--text);
+      font-family: 'JetBrains Mono', monospace;
+      padding: 8px;
+    }
+
+    .answer-input input:focus {
+      border-color: var(--cyan);
+      background: var(--bg);
+    }
+
+    .answer-choices {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(70px, 1fr));
+      gap: 12px;
+      margin-bottom: 20px;
+    }
+
+    .answer-btn {
+      padding: 16px;
+      border-radius: 8px;
+      border: 2px solid var(--border);
+      background: var(--bg2);
+      color: var(--text);
+      font-size: 20px;
+      font-weight: 700;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      min-height: 60px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .answer-btn:hover {
+      background: var(--border);
+      transform: scale(1.05);
+    }
+
+    .answer-btn:active {
+      transform: scale(0.95);
+    }
+
+    .answer-btn.correct {
+      background: linear-gradient(135deg, var(--green), #66bb6a);
+      border-color: var(--green);
+      color: white;
+      animation: celebrate 0.6s ease;
+    }
+
+    .answer-btn.incorrect {
+      background: var(--orange);
+      border-color: var(--orange);
+      color: white;
+      animation: shake 0.4s ease;
+    }
+
+    @keyframes celebrate {
+      0%, 100% {
+        transform: scale(1) rotate(0deg);
+      }
+      50% {
+        transform: scale(1.2) rotate(5deg);
+      }
+    }
+
+    @keyframes shake {
+      0%, 100% {
+        transform: translateX(0);
+      }
+      25% {
+        transform: translateX(-10px);
+      }
+      75% {
+        transform: translateX(10px);
+      }
+    }
+
+    .feedback {
+      padding: 16px;
+      border-radius: 8px;
+      margin-top: 16px;
+      font-size: 14px;
+      font-weight: 500;
+      display: none;
+    }
+
+    .feedback.show {
+      display: block;
+    }
+
+    .feedback.correct {
+      background: rgba(102, 187, 106, 0.1);
+      color: var(--green);
+      border: 1px solid var(--green);
+    }
+
+    .feedback.incorrect {
+      background: rgba(255, 152, 0, 0.1);
+      color: var(--orange);
+      border: 1px solid var(--orange);
+    }
+
+    .submit-btn {
+      width: 100%;
+      padding: 14px 24px;
+      background: linear-gradient(135deg, var(--cyan), var(--pink));
+      border: none;
+      color: white;
+      border-radius: 8px;
+      font-size: 16px;
+      font-weight: 700;
+      cursor: pointer;
+      transition: all 0.2s ease;
+    }
+
+    .submit-btn:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 4px 12px var(--glow);
+    }
+
+    .submit-btn:active {
+      transform: translateY(0);
+    }
+
+    .score-display {
+      text-align: center;
+      font-size: 16px;
+      font-weight: 600;
+      color: var(--text2);
+      margin-bottom: 20px;
+      padding: 12px;
+      background: rgba(0, 212, 255, 0.1);
+      border-radius: 8px;
+    }
+
+    .score-display strong {
+      color: var(--cyan);
+      font-size: 20px;
+    }
+
+    /* PLAY MODE */
+    .play-container {
+      display: flex;
+      flex-direction: column;
+      gap: 24px;
+      padding: 24px;
+      background: var(--card);
+      border-radius: 12px;
+      border: 1px solid var(--border);
+    }
+
+    .play-header {
+      display: flex;
+      justify-content: space-around;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 16px;
+      padding: 16px;
+      background: linear-gradient(135deg, rgba(0, 212, 255, 0.1), rgba(255, 64, 129, 0.1));
+      border-radius: 8px;
+    }
+
+    .play-stat {
+      text-align: center;
+    }
+
+    .play-stat-label {
+      font-size: 12px;
+      font-weight: 600;
+      color: var(--muted);
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      margin-bottom: 4px;
+    }
+
+    .play-stat-value {
+      font-size: 32px;
+      font-weight: 700;
+      color: var(--cyan);
+    }
+
+    .timer-bar {
+      width: 100%;
+      height: 8px;
+      background: var(--bg2);
+      border-radius: 4px;
+      overflow: hidden;
+      margin-bottom: 20px;
+    }
+
+    .timer-fill {
+      height: 100%;
+      background: linear-gradient(90deg, var(--green), var(--yellow), var(--orange));
+      width: 100%;
+      transition: width 0.1s linear;
+    }
+
+    .play-problem {
+      text-align: center;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 48px;
+      font-weight: 600;
+      color: var(--text);
+      padding: 32px;
+      background: linear-gradient(135deg, rgba(0, 212, 255, 0.05), rgba(255, 64, 129, 0.05));
+      border-radius: 12px;
+      border: 2px solid var(--border);
+      margin-bottom: 24px;
+      letter-spacing: 2px;
+    }
+
+    .number-pad {
+      display: grid;
+      grid-template-columns: repeat(5, 1fr);
+      gap: 12px;
+      margin-bottom: 20px;
+    }
+
+    .number-btn {
+      aspect-ratio: 1;
+      padding: 12px;
+      border-radius: 8px;
+      border: 2px solid var(--border);
+      background: var(--bg2);
+      color: var(--text);
+      font-size: 24px;
+      font-weight: 700;
+      cursor: pointer;
+      transition: all 0.15s ease;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 60px;
+    }
+
+    .number-btn:hover {
+      background: var(--border);
+      transform: scale(1.05);
+    }
+
+    .number-btn:active {
+      transform: scale(0.9);
+    }
+
+    .number-btn.correct {
+      background: linear-gradient(135deg, var(--green), #66bb6a);
+      border-color: var(--green);
+      color: white;
+      animation: celebrate 0.6s ease;
+    }
+
+    .number-btn.incorrect {
+      background: var(--orange);
+      border-color: var(--orange);
+      color: white;
+      animation: shake 0.4s ease;
+    }
+
+    .answer-display {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 32px;
+      font-weight: 700;
+      text-align: center;
+      height: 50px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: var(--cyan);
+      margin-bottom: 20px;
+      min-height: 50px;
+    }
+
+    .game-over {
+      display: none;
+      text-align: center;
+      padding: 32px;
+      background: linear-gradient(135deg, rgba(0, 212, 255, 0.1), rgba(255, 64, 129, 0.1));
+      border-radius: 12px;
+      border: 2px solid var(--border);
+    }
+
+    .game-over.show {
+      display: block;
+      animation: slideIn 0.4s ease;
+    }
+
+    @keyframes slideIn {
+      from {
+        opacity: 0;
+        transform: translateY(20px);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    .game-over-title {
+      font-size: 32px;
+      font-weight: 700;
+      color: var(--cyan);
+      margin-bottom: 16px;
+    }
+
+    .game-over-score {
+      font-size: 48px;
+      font-weight: 700;
+      color: var(--text);
+      margin-bottom: 16px;
+    }
+
+    .stars {
+      font-size: 40px;
+      margin-bottom: 20px;
+      letter-spacing: 4px;
+    }
+
+    .restart-btn {
+      padding: 14px 32px;
+      background: linear-gradient(135deg, var(--cyan), var(--pink));
+      border: none;
+      color: white;
+      border-radius: 8px;
+      font-size: 16px;
+      font-weight: 700;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      margin-top: 16px;
+    }
+
+    .restart-btn:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 4px 12px var(--glow);
+    }
+
+    .restart-btn:active {
+      transform: translateY(0);
+    }
+
+    .hidden {
+      display: none !important;
+    }
+
+    @media (max-width: 600px) {
+      .header {
+        padding: 16px;
+      }
+
+      .header-title {
+        font-size: 20px;
+      }
+
+      .equation-display {
+        font-size: 36px;
+      }
+
+      .play-problem {
+        font-size: 36px;
+        padding: 24px;
+      }
+
+      .number-pad {
+        grid-template-columns: repeat(4, 1fr);
+      }
+
+      .number-btn {
+        font-size: 20px;
+        min-height: 50px;
+      }
+
+      .answer-choices {
+        grid-template-columns: repeat(2, 1fr);
+      }
+
+      .main {
+        padding: 16px;
+      }
+
+      .explore-container,
+      .practice-container,
+      .play-container {
+        padding: 16px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="header">
+    <div class="header-left">
+      <button class="back-btn" onclick="window.location.href='../../VINCULUM-Hub.html'" aria-label="Back to Hub">← Hub</button>
+      <div class="header-title"><span>Add & Subtract</span></div>
+      <span class="header-badge">K</span>
+    </div>
+    <div class="std-tags">
+      <span class="std-tag">K.OA.1</span>
+      <span class="std-tag">K.OA.2</span>
+      <span class="std-tag">K.OA.5</span>
+    </div>
+  </div>
+
+  <div class="mode-tabs">
+    <button class="mode-tab active-explore" onclick="switchMode('explore')">🔍 Explore</button>
+    <button class="mode-tab" onclick="switchMode('practice')">✏️ Practice</button>
+    <button class="mode-tab" onclick="switchMode('play')">🎮 Play</button>
+    <span style="flex:1"></span>
+    <button class="diff-btn active" data-diff="emergent" onclick="setDiff('emergent')">Emergent</button>
+    <button class="diff-btn" data-diff="proficient" onclick="setDiff('proficient')">Proficient</button>
+    <button class="diff-btn" data-diff="advanced" onclick="setDiff('advanced')">Advanced</button>
+  </div>
+
+  <div class="main">
+    <div class="workspace" id="workspace"></div>
+  </div>
+
+  <div class="feedback" id="feedback"></div>
+
+  <script src="../../vinculum-core.js"></script>
+  <script>
+    // Standard feedback function
+    function showFB(text, className) {
+      const f = document.getElementById('feedback');
+      f.textContent = text;
+      f.className = 'feedback ' + className + ' show';
+      setTimeout(() => f.classList.remove('show'), 1200);
+    }
+  </script>
+  <script>
+    const state = {
+      mode: 'explore',
+      difficulty: 'emergent',
+      operation: 'add',
+      leftCount: 2,
+      rightCount: 1,
+      score: 0,
+      total: 0,
+      timer: null,
+      timeLeft: 60,
+      streak: 0,
+      currentProblem: null,
+      currentAnswer: null,
+      answered: false
+    };
+
+    const difficultyLimits = {
+      emergent: { max: 5, showObjects: true },
+      proficient: { max: 10, showObjects: true },
+      advanced: { max: 10, showObjects: false }
+    };
+
+    function getMaxNumber() {
+      return difficultyLimits[state.difficulty].max;
+    }
+
+    function switchMode(mode) {
+      if (state.timer) clearInterval(state.timer);
+      state.mode = mode;
+      state.answered = false;
+
+      // Update tab styles
+      document.querySelectorAll('.mode-tab').forEach(tab => {
+        tab.classList.remove('active-explore', 'active-practice', 'active-play');
+      });
+      document.querySelector(`[onclick="switchMode('${mode}')"]`).classList.add(`active-${mode}`);
+
+      render();
+    }
+
+    function setDiff(diff) {
+      state.difficulty = diff;
+      state.answered = false;
+
+      // Update button styles
+      document.querySelectorAll('.diff-btn').forEach(btn => {
+        btn.classList.remove('active');
+      });
+      document.querySelector(`[data-diff="${diff}"]`).classList.add('active');
+
+      if (state.mode === 'practice' || state.mode === 'play') {
+        generateProblem();
+      }
+      render();
+    }
+
+    function generateProblem() {
+      const max = getMaxNumber();
+      let num1, num2, op;
+
+      if (state.difficulty === 'advanced') {
+        const type = Math.random();
+        if (type < 0.5) {
+          // Missing addend: a + ? = c
+          num1 = Math.floor(Math.random() * (max - 1)) + 1;
+          const sum = Math.floor(Math.random() * (max - num1 + 1)) + num1;
+          num2 = sum - num1;
+          op = 'missing';
+          state.currentProblem = { type: 'missing', num1, num2, sum, question: `${num1} + ? = ${num1 + num2}` };
+        } else {
+          // Word problem
+          num1 = Math.floor(Math.random() * max) + 1;
+          num2 = Math.floor(Math.random() * (max - num1 + 1));
+          op = Math.random() < 0.5 ? 'add' : 'subtract';
+          const answer = op === 'add' ? num1 + num2 : num1 - num2;
+          const action = op === 'add' ? 'gets' : 'gives away';
+          state.currentProblem = {
+            type: 'word',
+            num1,
+            num2,
+            op,
+            answer,
+            question: `Sam has ${num1} apple${num1 !== 1 ? 's' : ''}. He ${action} ${num2} more. How many now?`
+          };
+        }
+      } else {
+        num1 = Math.floor(Math.random() * max) + 1;
+        num2 = Math.floor(Math.random() * max) + 1;
+        if (num1 + num2 > max && state.operation === 'add') {
+          num2 = max - num1;
+        }
+        op = state.operation;
+        const result = op === 'add' ? num1 + num2 : Math.max(0, num1 - num2);
+        state.currentProblem = {
+          type: 'basic',
+          num1,
+          num2,
+          op,
+          answer: result,
+          question: `${num1} ${op === 'add' ? '+' : '−'} ${num2} = ?`
+        };
+      }
+
+      state.currentAnswer = null;
+      state.answered = false;
+    }
+
+    function addObjectExplore(side) {
+      const max = getMaxNumber();
+      if (side === 'left' && state.leftCount < max) {
+        state.leftCount++;
+      } else if (side === 'right' && state.rightCount < max) {
+        state.rightCount++;
+      }
+      render();
+    }
+
+    function removeObjectExplore(side) {
+      if (side === 'left' && state.leftCount > 0) {
+        state.leftCount--;
+      } else if (side === 'right' && state.rightCount > 0) {
+        state.rightCount--;
+      }
+      render();
+    }
+
+    function toggleOperation() {
+      state.operation = state.operation === 'add' ? 'subtract' : 'add';
+      render();
+    }
+
+    function selectAnswer(answer) {
+      if (state.answered) return;
+      state.answered = true;
+      state.currentAnswer = answer;
+      const isCorrect = answer === state.currentProblem.answer;
+      state.total++;
+
+      if (isCorrect) {
+        state.score++;
+        state.streak++;
+        showFB('✓ Correct!', 'correct');
+      } else {
+        state.streak = 0;
+        showFB('Try again!', 'incorrect');
+      }
+
+      render();
+      setTimeout(() => {
+        generateProblem();
+        state.answered = false;
+        render();
+      }, 1500);
+    }
+
+    function submitAnswer(answer) {
+      if (state.answered) return;
+      state.answered = true;
+      state.currentAnswer = answer;
+      const isCorrect = answer === state.currentProblem.answer;
+      state.total++;
+
+      if (isCorrect) {
+        state.score++;
+        showFB('✓ Correct!', 'correct');
+      } else {
+        showFB('Try again!', 'incorrect');
+      }
+
+      render();
+      setTimeout(() => {
+        generateProblem();
+        state.answered = false;
+        render();
+      }, 1500);
+    }
+
+    function startGame() {
+      state.score = 0;
+      state.total = 0;
+      state.timeLeft = 60;
+      state.streak = 0;
+      generateProblem();
+      render();
+
+      state.timer = setInterval(() => {
+        state.timeLeft--;
+        const fillPercent = (state.timeLeft / 60) * 100;
+        const fillEl = document.querySelector('.timer-fill');
+        if (fillEl) fillEl.style.width = fillPercent + '%';
+
+        if (state.timeLeft <= 0) {
+          clearInterval(state.timer);
+          state.timer = null;
+          render();
+        }
+      }, 1000);
+    }
+
+    function restartGame() {
+      startGame();
+    }
+
+    function handlePlayAnswer(answer) {
+      if (state.timeLeft <= 0 || state.answered) return;
+      state.answered = true;
+      state.currentAnswer = answer;
+      const isCorrect = answer === state.currentProblem.answer;
+      state.total++;
+
+      if (isCorrect) {
+        state.score++;
+        state.streak++;
+        showFB('✓ Correct!', 'correct');
+      } else {
+        state.streak = 0;
+        showFB('Try again!', 'incorrect');
+      }
+
+      render();
+      setTimeout(() => {
+        if (state.timeLeft > 0) {
+          generateProblem();
+          state.answered = false;
+          render();
+        }
+      }, 1200);
+    }
+
+    function getAnswerChoices(correct, difficulty) {
+      const choices = [correct];
+      const max = getMaxNumber();
+
+      while (choices.length < 4) {
+        let choice = Math.floor(Math.random() * (max + 1));
+        if (!choices.includes(choice)) {
+          choices.push(choice);
+        }
+      }
+
+      return choices.sort(() => Math.random() - 0.5);
+    }
+
+    function renderExplore() {
+      const html = `
+        <div class="explore-container">
+          <div class="explore-header">Click + and − to build groups, then watch the equation update!</div>
+
+          <div class="operation-display">
+            <button class="op-toggle" onclick="toggleOperation()">
+              ${state.operation === 'add' ? '➕ Adding' : '➖ Subtracting'}
+            </button>
+          </div>
+
+          <div class="objects-row">
+            <div class="objects-group">
+              <div class="objects-display">
+                ${Array(state.leftCount).fill('').map(() => '<div class="object left">●</div>').join('')}
+              </div>
+              <div class="controls">
+                <button class="control-btn" onclick="addObjectExplore('left')" aria-label="Add object to left group">+</button>
+                <button class="control-btn" onclick="removeObjectExplore('left')" aria-label="Remove object from left group">−</button>
+              </div>
+            </div>
+
+            <div style="font-size: 36px; font-weight: 700; color: var(--text2); display: flex; align-items: center;">
+              ${state.operation === 'add' ? '+' : '−'}
+            </div>
+
+            <div class="objects-group">
+              <div class="objects-display">
+                ${Array(state.rightCount).fill('').map(() => '<div class="object right">●</div>').join('')}
+              </div>
+              <div class="controls">
+                <button class="control-btn" onclick="addObjectExplore('right')" aria-label="Add object to right group">+</button>
+                <button class="control-btn" onclick="removeObjectExplore('right')" aria-label="Remove object from right group">−</button>
+              </div>
+            </div>
+          </div>
+
+          <div class="equation-display">
+            ${state.leftCount} ${state.operation === 'add' ? '+' : '−'} ${state.rightCount} = ${
+              state.operation === 'add' ? state.leftCount + state.rightCount : Math.max(0, state.leftCount - state.rightCount)
+            }
+          </div>
+        </div>
+      `;
+      document.getElementById('workspace').innerHTML = html;
+    }
+
+    function renderPractice() {
+      if (!state.currentProblem) {
+        generateProblem();
+      }
+
+      let problemHtml = '';
+      const isCorrect = state.answered && state.currentAnswer === state.currentProblem.answer;
+
+      if (state.difficulty === 'advanced') {
+        if (state.currentProblem.type === 'word') {
+          problemHtml = `
+            <div class="problem-display">${state.currentProblem.question}</div>
+          `;
+        } else {
+          problemHtml = `
+            <div class="equation-problem">${state.currentProblem.question}</div>
+          `;
+        }
+      } else {
+        problemHtml = `
+          <div class="problem-objects">
+            ${Array(state.currentProblem.num1).fill('').map(() => '<div class="object left">●</div>').join('')}
+            ${state.currentProblem.op === 'add' ? '' : '<span style="font-size: 24px; color: var(--muted);">✕</span>'}
+            ${state.currentProblem.op === 'subtract' ? Array(state.currentProblem.num2).fill('').map(() => '<div class="object left" style="opacity: 0.5;">●</div>').join('') : ''}
+          </div>
+          <div class="equation-problem">${state.currentProblem.question}</div>
+        `;
+      }
+
+      let answerHtml = '';
+      if (state.difficulty === 'emergent' || state.difficulty === 'proficient') {
+        const choices = getAnswerChoices(state.currentProblem.answer, state.difficulty);
+        answerHtml = `
+          <div class="answer-choices">
+            ${choices.map(choice => `
+              <button class="answer-btn ${state.answered && choice === state.currentAnswer ? (isCorrect ? 'correct' : 'incorrect') : ''}"
+                      onclick="selectAnswer(${choice})"
+                      ${state.answered ? 'disabled' : ''}>
+                ${choice}
+              </button>
+            `).join('')}
+          </div>
+        `;
+      } else {
+        answerHtml = `
+          <div class="answer-input">
+            <input type="number" id="answer-input" min="0" max="${getMaxNumber()}" placeholder="?"
+                   ${state.answered ? 'disabled' : ''}>
+            <button class="submit-btn" onclick="submitAnswer(parseInt(document.getElementById('answer-input').value))"
+                    ${state.answered ? 'disabled' : ''}>Check</button>
+          </div>
+        `;
+      }
+
+      const html = `
+        <div class="practice-container">
+          <div class="score-display">Score: <strong>${state.score}</strong> / ${state.total}</div>
+          ${problemHtml}
+          ${answerHtml}
+        </div>
+      `;
+      document.getElementById('workspace').innerHTML = html;
+
+      if (!state.answered && state.difficulty === 'advanced' && state.currentProblem.type === 'basic') {
+        setTimeout(() => document.getElementById('answer-input')?.focus(), 100);
+      }
+    }
+
+    function renderPlay() {
+      if (state.timeLeft === 60 && !state.currentProblem) {
+        startGame();
+      }
+
+      if (state.timeLeft <= 0) {
+        const percentage = state.total > 0 ? Math.round((state.score / state.total) * 100) : 0;
+        let stars = '⭐';
+        if (percentage >= 80) stars = '⭐⭐⭐';
+        else if (percentage >= 60) stars = '⭐⭐';
+
+        const html = `
+          <div class="play-container">
+            <div class="game-over show">
+              <div class="game-over-title">Time's Up!</div>
+              <div class="game-over-score">${state.score} / ${state.total}</div>
+              <div class="stars">${stars}</div>
+              <div style="font-size: 16px; color: var(--text2); margin-bottom: 20px;">
+                ${percentage}% Correct
+              </div>
+              <button class="restart-btn" onclick="restartGame()">Play Again</button>
+            </div>
+          </div>
+        `;
+        document.getElementById('workspace').innerHTML = html;
+        return;
+      }
+
+      if (!state.currentProblem) {
+        generateProblem();
+      }
+
+      const fillPercent = (state.timeLeft / 60) * 100;
+      const choices = Array.from({ length: 11 }, (_, i) => i);
+
+      const html = `
+        <div class="play-container">
+          <div class="play-header">
+            <div class="play-stat">
+              <div class="play-stat-label">Score</div>
+              <div class="play-stat-value">${state.score}</div>
+            </div>
+            <div class="play-stat">
+              <div class="play-stat-label">Streak</div>
+              <div class="play-stat-value">${state.streak}</div>
+            </div>
+            <div class="play-stat">
+              <div class="play-stat-label">Time</div>
+              <div class="play-stat-value">${state.timeLeft}s</div>
+            </div>
+          </div>
+
+          <div class="timer-bar">
+            <div class="timer-fill" style="width: ${fillPercent}%"></div>
+          </div>
+
+          <div class="play-problem">${state.currentProblem.question}</div>
+
+          <div class="answer-display" id="answer-display"></div>
+
+          <div class="number-pad">
+            ${choices.map(num => `
+              <button class="number-btn ${state.answered && num === state.currentAnswer ? (num === state.currentProblem.answer ? 'correct' : 'incorrect') : ''}"
+                      onclick="handlePlayAnswer(${num})"
+                      ${state.answered ? 'disabled' : ''}>
+                ${num}
+              </button>
+            `).join('')}
+          </div>
+        </div>
+      `;
+      document.getElementById('workspace').innerHTML = html;
+    }
+
+    function render() {
+      if (state.mode === 'explore') {
+        renderExplore();
+      } else if (state.mode === 'practice') {
+        renderPractice();
+      } else if (state.mode === 'play') {
+        renderPlay();
+      }
+    }
+
+    // Initial render
+    render();
+  </script>
+</body>
+</html>
