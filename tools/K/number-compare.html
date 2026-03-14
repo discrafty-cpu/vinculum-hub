@@ -720,6 +720,7 @@
       <button class="back-btn" onclick="window.location.href='../../VINCULUM-Hub.html'" aria-label="Back to Hub">← Hub</button>
       <div class="header-title"><span>Number Compare</span></div>
       <span class="header-badge">K</span>
+      <button class="back-btn" id="readAloudBtn" onclick="toggleReadAloud()" aria-label="Read Aloud" title="Read instructions aloud">🔊 Read to Me</button>
     </div>
     <div class="std-tags">
       <span class="std-tag">K.CC.6</span>
@@ -768,6 +769,24 @@
       leftValue: 3,
       rightValue: 5
     };
+
+    /* ── Read-Aloud + Story Banner ── */
+    function toggleReadAloud() {
+      if (window.VinculumStories && VinculumStories.isReading()) {
+        VinculumStories.stopReading();
+        document.getElementById('readAloudBtn').textContent = '🔊 Read to Me';
+      } else {
+        const fb = document.getElementById('feedback');
+        const storyEl = document.getElementById('storyBanner');
+        const text = storyEl ? storyEl.textContent : (fb ? fb.textContent : 'Welcome to this math tool!');
+        if (window.VinculumStories) {
+          VinculumStories.readAloud(text, { rate: 0.85, onComplete: () => {
+            document.getElementById('readAloudBtn').textContent = '🔊 Read to Me';
+          }});
+          document.getElementById('readAloudBtn').textContent = '⏹ Stop';
+        }
+      }
+    }
 
     // Misconception Database
     const MISCONCEPTIONS_COMPARE = {
@@ -962,6 +981,17 @@
       const maxNum = state.difficulty === 'emergent' ? 5 : 10;
       const colors = ['cyan', 'pink'];
 
+      let storyBannerHTML = '';
+
+      // Story banner for Explore mode
+      if (window.VinculumStories) {
+        const toolName = window.location.pathname.split('/').pop().replace('.html','');
+        const storyData = VinculumStories.getStory(toolName, {a: state.leftValue || 5, b: state.rightValue || 3, total: Math.max(state.leftValue, state.rightValue) || 7, n: (state.leftValue + state.rightValue) || 8, ones: Math.abs(state.leftValue - state.rightValue) || 2});
+        if (storyData && storyData.story) {
+          storyBannerHTML = '<div id="storyBanner" style="background:var(--card2,#1a1f2e);border:1px solid var(--border);border-radius:12px;padding:16px 20px;margin-bottom:16px;font-size:15px;line-height:1.6;color:var(--text);position:relative;"><span style="font-size:12px;color:var(--cyan);font-weight:700;text-transform:uppercase;letter-spacing:1px;">📖 Story</span><br>' + storyData.story + '<br><em style="color:var(--yellow);font-weight:600;">' + storyData.question + '</em><button onclick="toggleReadAloud()" style="position:absolute;top:12px;right:12px;background:none;border:1px solid var(--border);border-radius:8px;padding:4px 10px;color:var(--cyan);cursor:pointer;font-size:14px;" title="Read story aloud">🔊</button></div>';
+        }
+      }
+
       const dotsLeft = Array.from({ length: state.leftValue }, (_, i) => `
         <div class="dot ${colors[i % 2]}">${i + 1}</div>
       `).join('');
@@ -974,6 +1004,7 @@
 
       document.getElementById('workspace').innerHTML = `
         <div class="explore-container">
+          ${storyBannerHTML}
           <div class="explore-instruction">👇 Change the groups and see which has more, less, or the same!</div>
 
           <div class="comparison-display">
@@ -1202,5 +1233,7 @@
 
   <script src="../../vinculum-core.js"></script>
   <script src="../../vinculum-data.js"></script>
+  <script src="../../vinculum-stories.js"></script>
+  <script src="../../vinculum-feedback.js"></script>
 </body>
 </html>

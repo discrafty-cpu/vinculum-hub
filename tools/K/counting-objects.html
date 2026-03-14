@@ -539,6 +539,7 @@ body {
     <a class="back-btn" href="../../VINCULUM-Hub.html" style="text-decoration:none;">◀ Hub</a>
     <div class="header-title"><span>VINCULUM</span> Counting Objects Lab</div>
     <span class="header-badge">K.CC</span>
+    <button class="back-btn" id="readAloudBtn" onclick="toggleReadAloud()" aria-label="Read Aloud" title="Read instructions aloud">🔊 Read to Me</button>
   </div>
   <div class="std-tags">
     <span class="std-tag">K.CC.4</span>
@@ -601,6 +602,26 @@ let state = {
   playTotal: 10,
   tenFrame: new Array(10).fill(false)
 };
+
+// ════════════════════════════════════════
+// READ-ALOUD + STORY BANNER
+// ════════════════════════════════════════
+function toggleReadAloud() {
+  if (window.VinculumStories && VinculumStories.isReading()) {
+    VinculumStories.stopReading();
+    document.getElementById('readAloudBtn').textContent = '🔊 Read to Me';
+  } else {
+    const fb = document.getElementById('feedback');
+    const storyEl = document.getElementById('storyBanner');
+    const text = storyEl ? storyEl.textContent : (fb ? fb.textContent : 'Welcome to this math tool!');
+    if (window.VinculumStories) {
+      VinculumStories.readAloud(text, { rate: 0.85, onComplete: () => {
+        document.getElementById('readAloudBtn').textContent = '🔊 Read to Me';
+      }});
+      document.getElementById('readAloudBtn').textContent = '⏹ Stop';
+    }
+  }
+}
 
 // ════════════════════════════════════════
 // MISCONCEPTIONS DATABASE
@@ -688,6 +709,17 @@ function render() {
 // ─── EXPLORE MODE ───
 function renderExplore(ws, sp) {
   let html = '';
+
+  // Story banner for Explore mode
+  if (window.VinculumStories) {
+    const toolName = window.location.pathname.split('/').pop().replace('.html','');
+    const storyData = VinculumStories.getStory(toolName, {a: state.counted.size || 5, b: state.objects.length || 3, total: state.counted.size || 7, n: state.objects.length || 8, ones: (state.objects.length || 13) % 10});
+    if (storyData && storyData.story) {
+      const bannerHTML = '<div id="storyBanner" style="background:var(--card2,#1a1f2e);border:1px solid var(--border);border-radius:12px;padding:16px 20px;margin-bottom:16px;font-size:15px;line-height:1.6;color:var(--text);position:relative;"><span style="font-size:12px;color:var(--cyan);font-weight:700;text-transform:uppercase;letter-spacing:1px;">📖 Story</span><br>' + storyData.story + '<br><em style="color:var(--yellow);font-weight:600;">' + storyData.question + '</em><button onclick="toggleReadAloud()" style="position:absolute;top:12px;right:12px;background:none;border:1px solid var(--border);border-radius:8px;padding:4px 10px;color:var(--cyan);cursor:pointer;font-size:14px;" title="Read story aloud">🔊</button></div>';
+      html += bannerHTML;
+    }
+  }
+
   html += '<div class="count-display"><div class="count-number" id="countNum">' + state.counted.size + '</div><div class="count-label">objects counted</div></div>';
 
   html += '<div style="height:80px;"></div>';
@@ -1063,6 +1095,8 @@ render();
 </script>
 <script src="../../vinculum-core.js"></script>
 <script src="../../vinculum-data.js"></script>
+<script src="../../vinculum-stories.js"></script>
+<script src="../../vinculum-feedback.js"></script>
 <!-- Foundation loaded from vinculum-core.js -->
 </body>
 </html>

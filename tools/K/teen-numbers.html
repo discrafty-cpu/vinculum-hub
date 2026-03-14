@@ -117,6 +117,7 @@ body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);heigh
     <div class="header-title"><span>VINCULUM</span> Teen Numbers</div>
     <span class="header-badge">K.NBT</span>
   </div>
+  <button class="back-btn" id="readAloudBtn" onclick="toggleReadAloud()" aria-label="Read Aloud" title="Read instructions aloud">🔊 Read to Me</button>
   <div class="std-tags">
     <span class="std-tag">K.NBT.1</span>
     <span class="std-tag mn">MN K.1.1.3</span>
@@ -164,6 +165,24 @@ let S = {
   score:0, streak:0, best:0, round:0, total:10,
   playNum:0, playMissing:'ones', playChoices:[]
 };
+
+/* ── Read-Aloud + Story Banner ── */
+function toggleReadAloud() {
+  if (window.VinculumStories && VinculumStories.isReading()) {
+    VinculumStories.stopReading();
+    document.getElementById('readAloudBtn').textContent = '🔊 Read to Me';
+  } else {
+    const storyEl = document.getElementById('storyBanner');
+    const fb = document.getElementById('feedback');
+    const text = storyEl ? storyEl.textContent : (fb ? fb.textContent : 'Welcome to this math tool!');
+    if (window.VinculumStories) {
+      VinculumStories.readAloud(text, { rate: 0.85, onComplete: () => {
+        document.getElementById('readAloudBtn').textContent = '🔊 Read to Me';
+      }});
+      document.getElementById('readAloudBtn').textContent = '⏹ Stop';
+    }
+  }
+}
 
 function rand(a,b){return Math.floor(Math.random()*(b-a+1))+a;}
 function showFB(t,c){const f=document.getElementById('feedback');f.textContent=t;f.className='feedback '+c+' show';setTimeout(()=>f.classList.remove('show'),1200);}
@@ -266,6 +285,16 @@ function renderExplore(ws, sp){
   const tens = Math.floor(n / 10);
   const ones = n % 10;
   let h = '';
+
+  /* Inject story banner */
+  if (window.VinculumStories) {
+    const toolName = window.location.pathname.split('/').pop().replace('.html','');
+    const storyData = VinculumStories.getStory(toolName, {a: S.a || S.num || 5, b: S.b || 3, total: S.total || S.num || 7, n: S.num || 8, ones: (S.num || 13) % 10});
+    if (storyData && storyData.story) {
+      const bannerHTML = '<div id="storyBanner" style="background:var(--card2,#1a1f2e);border:1px solid var(--border);border-radius:12px;padding:16px 20px;margin-bottom:16px;font-size:15px;line-height:1.6;color:var(--text);position:relative;"><span style="font-size:12px;color:var(--cyan);font-weight:700;text-transform:uppercase;letter-spacing:1px;">📖 Story</span><br>' + storyData.story + '<br><em style="color:var(--yellow);font-weight:600;">' + storyData.question + '</em><button onclick="toggleReadAloud()" style="position:absolute;top:12px;right:12px;background:none;border:1px solid var(--border);border-radius:8px;padding:4px 10px;color:var(--cyan);cursor:pointer;font-size:14px;" title="Read story aloud">🔊</button></div>';
+      h += bannerHTML;
+    }
+  }
 
   h += `<div class="instruction-box">Pick a teen number to see how it's made of <strong style="color:var(--cyan);">ten</strong> and <strong style="color:var(--pink);">some ones</strong></div>`;
 
@@ -523,6 +552,8 @@ render();
 </script>
 <script src="../../vinculum-core.js"></script>
 <script src="../../vinculum-data.js"></script>
+<script src="../../vinculum-stories.js"></script>
+<script src="../../vinculum-feedback.js"></script>
 <!-- Foundation loaded from vinculum-core.js -->
 </body>
 </html>

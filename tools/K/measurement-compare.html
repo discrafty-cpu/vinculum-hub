@@ -704,6 +704,7 @@
         <div class="header-left">
             <button class="back-btn" onclick="window.location.href='../index.html';">← Back</button>
             <div class="header-title">VINCULUM <span>Measurement</span></div>
+            <button class="back-btn" id="readAloudBtn" onclick="toggleReadAloud()" aria-label="Read Aloud" title="Read instructions aloud">🔊 Read to Me</button>
             <div class="header-badge">K</div>
         </div>
         <div style="display: flex; align-items: center; gap: 12px;">
@@ -753,6 +754,8 @@
 
     <script src="../../vinculum-core.js"></script>
     <script src="../../vinculum-data.js"></script>
+    <script src="../../vinculum-stories.js"></script>
+    <script src="../../vinculum-feedback.js"></script>
     <script>
         // Object definitions
         const LENGTH_OBJECTS = [
@@ -815,6 +818,24 @@
         let playCurrentQuestion = null;
         let playSelectedAnswer = null;
         let playGameInterval = null;
+
+        /* ── Read-Aloud + Story Banner ── */
+        function toggleReadAloud() {
+          if (window.VinculumStories && VinculumStories.isReading()) {
+            VinculumStories.stopReading();
+            document.getElementById('readAloudBtn').textContent = '🔊 Read to Me';
+          } else {
+            const storyEl = document.getElementById('storyBanner');
+            const fb = document.querySelector('.feedback');
+            const text = storyEl ? storyEl.textContent : (fb ? fb.textContent : 'Welcome to this math tool!');
+            if (window.VinculumStories) {
+              VinculumStories.readAloud(text, { rate: 0.85, onComplete: () => {
+                document.getElementById('readAloudBtn').textContent = '🔊 Read to Me';
+              }});
+              document.getElementById('readAloudBtn').textContent = '⏹ Stop';
+            }
+          }
+        }
 
         // Standard feedback function
         function showFB(text, className) {
@@ -912,7 +933,17 @@
 
         // ============= EXPLORE MODE =============
         function renderExplore(container) {
-            let html = '<div class="explore-section">';
+            let storyBannerHTML = '';
+            // Inject story banner
+            if (window.VinculumStories) {
+              const toolName = window.location.pathname.split('/').pop().replace('.html','');
+              const storyData = VinculumStories.getStory(toolName, {a: exploreValueA || 5, b: exploreValueB || 3, total: (exploreValueA || 5) + (exploreValueB || 3)});
+              if (storyData && storyData.story) {
+                storyBannerHTML = '<div id="storyBanner" style="background:var(--card2,#1a1f2e);border:1px solid var(--border);border-radius:12px;padding:16px 20px;margin-bottom:16px;font-size:15px;line-height:1.6;color:var(--text);position:relative;"><span style="font-size:12px;color:var(--cyan);font-weight:700;text-transform:uppercase;letter-spacing:1px;">📖 Story</span><br>' + storyData.story + '<br><em style="color:var(--yellow);font-weight:600;">' + storyData.question + '</em><button onclick="toggleReadAloud()" style="position:absolute;top:12px;right:12px;background:none;border:1px solid var(--border);border-radius:8px;padding:4px 10px;color:var(--cyan);cursor:pointer;font-size:14px;" title="Read story aloud">🔊</button></div>';
+              }
+            }
+
+            let html = storyBannerHTML + '<div class="explore-section">';
             html += '<div class="explore-header">Explore Measurements</div>';
 
             // Attribute selector

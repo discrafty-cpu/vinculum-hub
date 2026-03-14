@@ -821,6 +821,7 @@
             <button class="back-btn" onclick="history.back()">←</button>
             <h1 class="header-title">Teen Number Factory</h1>
             <div class="grade-badge">K.NBT.1</div>
+            <button class="back-btn" id="readAloudBtn" onclick="toggleReadAloud()" aria-label="Read Aloud" title="Read instructions aloud">🔊 Read to Me</button>
         </header>
 
         <!-- MODE SELECTOR -->
@@ -855,6 +856,7 @@
             <div class="workspace">
                 <!-- EXPLORE MODE -->
                 <div id="explore-mode" class="mode-content">
+                    <div id="storyBanner" style="display:none;background:var(--card2,#1a1f2e);border:1px solid var(--border);border-radius:12px;padding:16px 20px;margin-bottom:16px;font-size:15px;line-height:1.6;color:var(--text);position:relative;"></div>
                     <div class="conveyor-container">
                         <div class="conveyor-belt"></div>
                         <div class="cube-area" id="cube-area"></div>
@@ -1042,6 +1044,8 @@
 
     <script src="../../vinculum-core.js"></script>
     <script src="../../vinculum-data.js"></script>
+    <script src="../../vinculum-stories.js"></script>
+    <script src="../../vinculum-feedback.js"></script>
     <script>
         // STATE
         const S = {
@@ -1061,6 +1065,24 @@
             cubeInterval: null,
             cubeCounter: 0,
         };
+
+        // ── Read-Aloud + Story Banner ──
+        function toggleReadAloud() {
+          if (window.VinculumStories && VinculumStories.isReading()) {
+            VinculumStories.stopReading();
+            document.getElementById('readAloudBtn').textContent = '🔊 Read to Me';
+          } else {
+            const fb = document.getElementById('feedback');
+            const storyEl = document.getElementById('storyBanner');
+            const text = storyEl ? storyEl.textContent : (fb ? fb.textContent : 'Welcome to this math tool!');
+            if (window.VinculumStories) {
+              VinculumStories.readAloud(text, { rate: 0.85, onComplete: () => {
+                document.getElementById('readAloudBtn').textContent = '🔊 Read to Me';
+              }});
+              document.getElementById('readAloudBtn').textContent = '⏹ Stop';
+            }
+          }
+        }
 
         // MISCONCEPTION DATABASE
         const MISCONCEPTIONS_TEEN = {
@@ -1105,6 +1127,20 @@
             document.querySelector(`[data-mode="${mode}"]`).classList.add('active');
             document.querySelectorAll('.mode-content').forEach(el => el.style.display = 'none');
             document.getElementById(`${mode}-mode`).style.display = 'block';
+
+            // Story banner for Explore mode
+            if (mode === 'explore' && window.VinculumStories) {
+              const toolName = window.location.pathname.split('/').pop().replace('.html','');
+              const storyData = VinculumStories.getStory(toolName, {a: S.bundled || 1, b: S.cubeCount || 3, total: (S.bundled * 10 + S.cubeCount) || 7, n: (S.bundled * 10 + S.cubeCount) || 8, ones: S.cubeCount || 3});
+              if (storyData && storyData.story) {
+                const bannerEl = document.getElementById('storyBanner');
+                bannerEl.innerHTML = '<span style="font-size:12px;color:var(--cyan);font-weight:700;text-transform:uppercase;letter-spacing:1px;">📖 Story</span><br>' + storyData.story + '<br><em style="color:var(--yellow);font-weight:600;">' + storyData.question + '</em><button onclick="toggleReadAloud()" style="position:absolute;top:12px;right:12px;background:none;border:1px solid var(--border);border-radius:8px;padding:4px 10px;color:var(--cyan);cursor:pointer;font-size:14px;" title="Read story aloud">🔊</button>';
+                bannerEl.style.display = 'block';
+              }
+            } else {
+              const bannerEl = document.getElementById('storyBanner');
+              if (bannerEl) bannerEl.style.display = 'none';
+            }
 
             if (mode === 'practice') {
                 resetPractice();

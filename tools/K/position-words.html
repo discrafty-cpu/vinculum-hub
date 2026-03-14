@@ -6,6 +6,8 @@
     <title>Position & Direction Words | VINCULUM K.G.1</title>
     <link rel="stylesheet" href="../../vinculum-core.css">
     <script src="../../vinculum-data.js"></script>
+    <script src="../../vinculum-stories.js"></script>
+    <script src="../../vinculum-feedback.js"></script>
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
 
@@ -505,6 +507,7 @@
                 <div class="title-text">
                     <h1>Position & Direction</h1>
                 </div>
+                <button class="back-btn" id="readAloudBtn" onclick="toggleReadAloud()" aria-label="Read Aloud" title="Read instructions aloud">🔊 Read to Me</button>
                 <div class="badge">K.G.1</div>
                 <div class="std-tags">
                     <span class="std-tag">K.G.1</span>
@@ -757,6 +760,24 @@
             problemIdx: 0,
         };
 
+        /* ── Read-Aloud + Story Banner ── */
+        function toggleReadAloud() {
+          if (window.VinculumStories && VinculumStories.isReading()) {
+            VinculumStories.stopReading();
+            document.getElementById('readAloudBtn').textContent = '🔊 Read to Me';
+          } else {
+            const storyEl = document.getElementById('storyBanner');
+            const fb = document.getElementById('feedback');
+            const text = storyEl ? storyEl.textContent : (fb ? fb.textContent : 'Welcome to this math tool!');
+            if (window.VinculumStories) {
+              VinculumStories.readAloud(text, { rate: 0.85, onComplete: () => {
+                document.getElementById('readAloudBtn').textContent = '🔊 Read to Me';
+              }});
+              document.getElementById('readAloudBtn').textContent = '⏹ Stop';
+            }
+          }
+        }
+
         // Position words with all 6
         const WORDS = {
             emergent: ['above', 'below'],
@@ -832,6 +853,21 @@
             updateInstruction();
             highlightZone(problem.zone);
             updateVocab();
+
+            // Inject story banner
+            if (S.mode === 'explore' && window.VinculumStories) {
+              const toolName = window.location.pathname.split('/').pop().replace('.html','');
+              const storyData = VinculumStories.getStory(toolName, {word: problem.word, obj: problem.obj, ref: problem.ref});
+              if (storyData && storyData.story) {
+                const bannerHTML = '<div id="storyBanner" style="background:var(--card2,#1a1f2e);border:1px solid var(--border);border-radius:12px;padding:16px 20px;margin-bottom:16px;font-size:15px;line-height:1.6;color:var(--text);position:relative;"><span style="font-size:12px;color:var(--cyan);font-weight:700;text-transform:uppercase;letter-spacing:1px;">📖 Story</span><br>' + storyData.story + '<br><em style="color:var(--yellow);font-weight:600;">' + storyData.question + '</em><button onclick="toggleReadAloud()" style="position:absolute;top:12px;right:12px;background:none;border:1px solid var(--border);border-radius:8px;padding:4px 10px;color:var(--cyan);cursor:pointer;font-size:14px;" title="Read story aloud">🔊</button></div>';
+                const ws = document.getElementById('workspace') || document.querySelector('.workspace') || document.querySelector('[class*="explore"]');
+                if (ws) {
+                  const existing = document.getElementById('storyBanner');
+                  if (existing) existing.remove();
+                  ws.insertAdjacentHTML('afterbegin', bannerHTML);
+                }
+              }
+            }
         }
 
         function updateInstruction() {
