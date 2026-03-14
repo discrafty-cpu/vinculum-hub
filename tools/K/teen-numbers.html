@@ -147,6 +147,14 @@ body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);heigh
    Compose/decompose 11–19 as ten ones and some more ones
    ════════════════════════════════════════════════════════════ */
 
+const MISCONCEPTIONS_TEEN = {
+  noTenBase: { id:'noTenBase', desc:'Does not recognize teen numbers as 10 + some ones' },
+  onesDigitOnly: { id:'onesDigitOnly', desc:'Answers with just the ones digit (e.g., 3 instead of 13)' },
+  reversedDigits: { id:'reversedDigits', desc:'Reverses digit order (e.g., 31 instead of 13)' },
+  offByOne: { id:'offByOne', desc:'Answer off by one (e.g., 14 instead of 13)' },
+  tensConfusion: { id:'tensConfusion', desc:'Confuses how many tens are in a teen number' }
+};
+
 let S = {
   mode:'explore', num: 14, difficulty:'proficient',
   // Practice
@@ -364,7 +372,22 @@ function checkPractice(){
     showFB(`✓ ${S.pNum} = 10 + ${S.pNum%10}`, 'correct');
     setTimeout(()=>{ newPractice(); render(); }, 1500);
   } else {
-    showFB('Not quite — try again!','incorrect');
+    // Diagnostic feedback based on misconception
+    let feedback = 'Remember: teen numbers = 10 + extra ones. How many extra ones do you see?';
+
+    if(val === S.pNum % 10 && S.pMissing !== 'ones'){
+      // Student answered with just the ones digit when looking for tens or total
+      feedback = `That's just the ones! Teen numbers always start with a 10. 10 + ${S.pNum % 10} = ${S.pNum}.`;
+    } else if(val === parseInt(String(S.pNum).split('').reverse().join('')) && S.pNum !== 11){
+      // Student reversed the digits (e.g., 31 instead of 13)
+      feedback = `Watch the order! In teen numbers, the 1 (for ten) comes FIRST. It's ${S.pNum}, not ${val}.`;
+    } else if(Math.abs(val - correct) === 1){
+      // Off by one
+      const direction = val < correct ? 'one more' : 'one less';
+      feedback = `So close! You said ${val} but it's ${correct}. Count ${direction} from where you are.`;
+    }
+
+    showFB(feedback, 'incorrect');
     document.getElementById('practiceAnswer').value = '';
     document.getElementById('practiceAnswer').focus();
   }
@@ -468,7 +491,21 @@ function playPick(n){
   } else {
     btn.classList.add('incorrect-flash');
     S.streak = 0;
-    showFB(`${answer} was correct`, 'incorrect');
+    // Diagnostic feedback based on misconception
+    let feedback = `${answer} was correct`;
+
+    if(n === S.playNum % 10 && S.playMissing !== 'ones'){
+      // Student answered with just the ones digit when looking for tens or total
+      feedback = `That's just the ones! Teen numbers = 10 + extra ones. ${answer} is right.`;
+    } else if(n === parseInt(String(S.playNum).split('').reverse().join('')) && S.playNum !== 11){
+      // Student reversed the digits
+      feedback = `Watch the order! The 1 (ten) comes FIRST. ${answer} is correct.`;
+    } else if(Math.abs(n - answer) === 1){
+      // Off by one
+      feedback = `So close! You said ${n} but the answer is ${answer}. Count one more or less.`;
+    }
+
+    showFB(feedback, 'incorrect');
   }
   setTimeout(()=>{
     if(S.round >= S.total){
@@ -485,6 +522,7 @@ function playPick(n){
 render();
 </script>
 <script src="../../vinculum-core.js"></script>
+<script src="../../vinculum-data.js"></script>
 <!-- Foundation loaded from vinculum-core.js -->
 </body>
 </html>

@@ -1041,6 +1041,7 @@
     </div>
 
     <script src="../../vinculum-core.js"></script>
+    <script src="../../vinculum-data.js"></script>
     <script>
         // STATE
         const S = {
@@ -1059,6 +1060,26 @@
             playProblemIndex: 0,
             cubeInterval: null,
             cubeCounter: 0,
+        };
+
+        // MISCONCEPTION DATABASE
+        const MISCONCEPTIONS_TEEN = {
+            noTenGroup: {
+                id: 'no-ten',
+                msg: (target) => `Teen numbers always have a group of TEN plus extras. ${target} = 10 + ${target - 10}`
+            },
+            onesDigitConfusion: {
+                id: 'ones-digit',
+                msg: (target) => `The ones digit tells how many EXTRA after 10. For ${target}, that's ${target - 10} extras.`
+            },
+            reversedDigits: {
+                id: 'reversed',
+                msg: (target) => `Careful! ${target} has 1 ten and ${target - 10} ones — not ${target - 10} tens and 1 one.`
+            },
+            placeValueSwap: {
+                id: 'pv-swap',
+                msg: (target, tens, ones) => `You have ${tens} tens and ${ones} ones = ${tens*10+ones}. But we need ${target}. Remember: 1 ten = 10 ones!`
+            }
         };
 
         // INITIALIZATION
@@ -1218,7 +1239,28 @@
                 fb.innerText = '✨ Perfect! You built ' + S.targetNumber + '!';
             } else {
                 fb.className = 'practice-feedback show incorrect';
-                fb.innerText = '❌ Try again! Keep going.';
+
+                // DIAGNOSTIC: Identify which misconception
+                let diagnostic = '❌ ';
+
+                // Check if student didn't bundle any tens
+                if (S.bundled === 0) {
+                    diagnostic += MISCONCEPTIONS_TEEN.noTenGroup.msg(S.targetNumber);
+                }
+                // Check if reversed digits (e.g., has 5 tens and 1 one instead of 1 ten and 5 ones)
+                else if (S.bundled > 1 || (S.bundled === 1 && S.cubeCount > 9)) {
+                    diagnostic += MISCONCEPTIONS_TEEN.reversedDigits.msg(S.targetNumber);
+                }
+                // Check if ones digit is confused (has target instead of target-10)
+                else if (S.cubeCount === S.targetNumber) {
+                    diagnostic += MISCONCEPTIONS_TEEN.onesDigitConfusion.msg(S.targetNumber);
+                }
+                // Otherwise generic place value swap
+                else {
+                    diagnostic += MISCONCEPTIONS_TEEN.placeValueSwap.msg(S.targetNumber, S.bundled, S.cubeCount);
+                }
+
+                fb.innerText = diagnostic;
             }
             document.getElementById('next-btn').style.display = 'block';
         }
@@ -1409,7 +1451,38 @@
                 showFeedback(S.playStreak > 1 ? '🔥 On fire!' : '✨ Correct!');
             } else {
                 S.playStreak = 0;
-                showFeedback('Try again next time!');
+                const problem = S.playProblems[S.playProblemIndex];
+                const target = problem.number;
+                const correctOnes = target - 10;
+
+                // Extract the clicked choice's tens and ones from the card
+                const selectedCard = document.querySelectorAll('.choice-card')[idx];
+                const cardText = selectedCard.innerText;
+                const cardLines = cardText.split('\n');
+                const selectedTens = parseInt(cardLines[0]) || 0;
+                const selectedOnes = parseInt(cardLines[1]) || 0;
+
+                // DIAGNOSTIC: Identify which misconception based on the wrong answer selected
+                let diagnostic = '❌ ';
+
+                // Check if they selected zero tens
+                if (selectedTens === 0) {
+                    diagnostic += MISCONCEPTIONS_TEEN.noTenGroup.msg(target);
+                }
+                // Check if they selected reversed digits (e.g., 5 tens and 1 one for 15)
+                else if (selectedTens > 1 || selectedOnes > 9) {
+                    diagnostic += MISCONCEPTIONS_TEEN.reversedDigits.msg(target);
+                }
+                // Check if they selected just the ones (e.g., 0 tens and 5 ones for 15)
+                else if (selectedTens === 0 && selectedOnes === target) {
+                    diagnostic += MISCONCEPTIONS_TEEN.onesDigitConfusion.msg(target);
+                }
+                // Otherwise generic place value mismatch
+                else {
+                    diagnostic += MISCONCEPTIONS_TEEN.placeValueSwap.msg(target, selectedTens, selectedOnes);
+                }
+
+                showFeedback(diagnostic);
             }
 
             document.getElementById('play-next-btn').style.display = 'block';

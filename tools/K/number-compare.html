@@ -769,6 +769,32 @@
       rightValue: 5
     };
 
+    // Misconception Database
+    const MISCONCEPTIONS_COMPARE = {
+      symbolConfusion: {
+        id: 'symbol-confusion',
+        msg: (left, right, picked, correct) =>
+          `The open end of ${correct} points to the BIGGER number. Think of it as a hungry alligator eating the bigger number!`
+      },
+      magnitudeError: {
+        id: 'magnitude',
+        msg: (left, right) =>
+          `Look carefully: ${left} and ${right}. Which group has MORE? Count them if you need to.`
+      },
+      equalConfusion: {
+        id: 'equal-vs-diff',
+        msg: (left, right) =>
+          left === right
+            ? `These are the SAME amount! When both sides are equal, use the = sign.`
+            : `These are NOT the same. ${left} and ${right} are different — which is bigger?`
+      },
+      reversedSymbol: {
+        id: 'reversed',
+        msg: (left, right, correct) =>
+          `You picked the opposite! ${left} ${correct} ${right}. The pointy end goes toward the smaller number.`
+      }
+    };
+
     // Mode Switching
     function switchMode(mode) {
       state.mode = mode;
@@ -848,7 +874,29 @@
         state.streak = 0;
       }
 
-      showFB(isCorrect ? '✓ Correct!' : 'Try again!', isCorrect ? 'correct' : 'incorrect');
+      if (isCorrect) {
+        showFB('✓ Correct!', 'correct');
+      } else {
+        // Diagnostic feedback for incorrect answers
+        let feedbackMsg = 'Try again!';
+        const left = state.currentQuestion.leftCount;
+        const right = state.currentQuestion.rightCount;
+
+        if (answer === '>' && correct === '<') {
+          feedbackMsg = MISCONCEPTIONS_COMPARE.reversedSymbol.msg(left, right, correct);
+        } else if (answer === '<' && correct === '>') {
+          feedbackMsg = MISCONCEPTIONS_COMPARE.reversedSymbol.msg(left, right, correct);
+        } else if (answer === '=' && correct !== '=') {
+          feedbackMsg = MISCONCEPTIONS_COMPARE.equalConfusion.msg(left, right);
+        } else if (answer !== '=' && correct === '=') {
+          feedbackMsg = MISCONCEPTIONS_COMPARE.equalConfusion.msg(left, right);
+        } else {
+          feedbackMsg = MISCONCEPTIONS_COMPARE.symbolConfusion.msg(left, right, answer, correct);
+        }
+
+        showFB(feedbackMsg, 'incorrect');
+      }
+
       setTimeout(afterFeedback, 1200);
       return isCorrect;
     }
@@ -1098,7 +1146,25 @@
         showFB('✓ Correct!', 'correct');
       } else {
         state.streak = 0;
-        showFB('Try again!', 'incorrect');
+
+        // Diagnostic feedback for incorrect answers
+        let feedbackMsg = 'Try again!';
+        const left = state.currentQuestion.leftCount;
+        const right = state.currentQuestion.rightCount;
+
+        if (answer === '>' && correct === '<') {
+          feedbackMsg = MISCONCEPTIONS_COMPARE.reversedSymbol.msg(left, right, correct);
+        } else if (answer === '<' && correct === '>') {
+          feedbackMsg = MISCONCEPTIONS_COMPARE.reversedSymbol.msg(left, right, correct);
+        } else if (answer === '=' && correct !== '=') {
+          feedbackMsg = MISCONCEPTIONS_COMPARE.equalConfusion.msg(left, right);
+        } else if (answer !== '=' && correct === '=') {
+          feedbackMsg = MISCONCEPTIONS_COMPARE.equalConfusion.msg(left, right);
+        } else {
+          feedbackMsg = MISCONCEPTIONS_COMPARE.symbolConfusion.msg(left, right, answer, correct);
+        }
+
+        showFB(feedbackMsg, 'incorrect');
       }
 
       setTimeout(() => {
@@ -1135,5 +1201,6 @@
   </script>
 
   <script src="../../vinculum-core.js"></script>
+  <script src="../../vinculum-data.js"></script>
 </body>
 </html>

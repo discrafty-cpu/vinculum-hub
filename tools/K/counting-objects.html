@@ -603,6 +603,32 @@ let state = {
 };
 
 // ════════════════════════════════════════
+// MISCONCEPTIONS DATABASE
+// ════════════════════════════════════════
+const MISCONCEPTIONS = {
+  skipCounting: {
+    id: 'skip-count',
+    msg: (target, actual) => `You placed ${actual} objects but need ${target}. Did you skip one? Count each one carefully!`
+  },
+  doubleCounting: {
+    id: 'double-count',
+    msg: (target, actual) => `You have ${actual} but need ${target}. Make sure you count each object only once!`
+  },
+  cardinalityError: {
+    id: 'cardinality',
+    msg: (target) => `Remember: the LAST number you say tells how many. Count again — what's the last number?`
+  },
+  offByOne: {
+    id: 'off-by-one',
+    msg: (target, actual) => `So close! You have ${actual} but need ${target}. Just ${actual < target ? 'one more' : 'take one away'}!`
+  },
+  tooManyOrFew: {
+    id: 'quantity-sense',
+    msg: (target, actual) => actual > target ? `Too many! You have ${actual} but only need ${target}. Take some away.` : `Not enough! You have ${actual} but need ${target}. Add some more.`
+  }
+};
+
+// ════════════════════════════════════════
 // HELPERS
 // ════════════════════════════════════════
 function getMaxNum() {
@@ -888,10 +914,26 @@ function practiceCheck() {
       state.objects = [];
       render();
     }, 1500);
-  } else if (state.objects.length < state.targetNumber) {
-    showFeedback('Not enough — add more!', 'try-again');
   } else {
-    showFeedback('Too many — remove some!', 'try-again');
+    const diff = Math.abs(state.objects.length - state.targetNumber);
+    let feedbackMsg;
+
+    if (diff === 1) {
+      // Off by one
+      feedbackMsg = MISCONCEPTIONS.offByOne.msg(state.targetNumber, state.objects.length);
+    } else if (diff === 2) {
+      // Could be double counting (over) or skip counting (under)
+      if (state.objects.length > state.targetNumber) {
+        feedbackMsg = MISCONCEPTIONS.doubleCounting.msg(state.targetNumber, state.objects.length);
+      } else {
+        feedbackMsg = MISCONCEPTIONS.skipCounting.msg(state.targetNumber, state.objects.length);
+      }
+    } else {
+      // Too many or too few
+      feedbackMsg = MISCONCEPTIONS.tooManyOrFew.msg(state.targetNumber, state.objects.length);
+    }
+
+    showFeedback(feedbackMsg, 'try-again');
   }
 }
 
@@ -980,7 +1022,22 @@ function playAnswer(num) {
   } else {
     btn.classList.add('incorrect-flash');
     state.playStreak = 0;
-    showFeedback(state.playTarget + ' was correct', 'incorrect');
+
+    const diff = Math.abs(num - state.playTarget);
+    let feedbackMsg;
+
+    if (diff === 1) {
+      // Off by one
+      feedbackMsg = MISCONCEPTIONS.offByOne.msg(state.playTarget, num);
+    } else if (num === Math.ceil(state.playTarget / Math.floor(state.playTarget / 2))) {
+      // Possible cardinality error (counted groups instead of items)
+      feedbackMsg = MISCONCEPTIONS.cardinalityError.msg(state.playTarget);
+    } else {
+      // Generic counting prompt
+      feedbackMsg = `Not quite. The answer was ${state.playTarget}. Count carefully — the last number you say is the total!`;
+    }
+
+    showFeedback(feedbackMsg, 'incorrect');
   }
 
   setTimeout(() => {
@@ -1005,6 +1062,7 @@ function playAnswer(num) {
 render();
 </script>
 <script src="../../vinculum-core.js"></script>
+<script src="../../vinculum-data.js"></script>
 <!-- Foundation loaded from vinculum-core.js -->
 </body>
 </html>

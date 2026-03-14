@@ -156,6 +156,15 @@ body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);heigh
 
 <script>
 const COLORS = ['#00d4ff','#ff3b8b','#ffc107','#00e676','#b388ff','#ff9100'];
+
+const MISCONCEPTIONS_NUMREC = {
+  mirrorConfusion: { id:'mirrorConfusion', desc:'Confuses visually similar numerals (6/9, 2/5, 1/7)' },
+  offByOne: { id:'offByOne', desc:'Picks the number immediately before or after the correct one' },
+  teenConfusion: { id:'teenConfusion', desc:'Confuses teen numbers (e.g., 13/31, 14/41)' },
+  quantityMismatch: { id:'quantityMismatch', desc:'Cannot match numeral to its quantity' },
+  randomGuess: { id:'randomGuess', desc:'Answer shows no pattern connection to the correct answer' }
+};
+
 let S = {
   mode:'explore', diff:'emergent', max:10,
   // Explore
@@ -294,7 +303,10 @@ function checkOrder(){
   const sorted=[...S.orderSlots].sort((a,b)=>a-b);
   const correct = S.orderSlots.every((v,i)=>v===sorted[i]);
   if(correct){showFB('✓ Perfect Order!','correct');setTimeout(()=>{generateOrder();render();},1500);}
-  else showFB('Not quite — try again!','incorrect');
+  else {
+    let fbMsg = 'The correct order is: ' + sorted.join(', ') + '. Try again!';
+    showFB(fbMsg,'incorrect');
+  }
 }
 
 function renderExploreCompare(ws,sp,h){
@@ -323,7 +335,11 @@ function renderExploreCompare(ws,sp,h){
 function checkCompare(op){
   const correct=(S.cmpA<S.cmpB&&op==='<')||(S.cmpA>S.cmpB&&op==='>')||(S.cmpA===S.cmpB&&op==='=');
   if(correct){showFB(`✓ ${S.cmpA} ${op} ${S.cmpB}`,'correct');setTimeout(newCompare,1500);}
-  else showFB('Try again!','incorrect');
+  else {
+    const correctOp = S.cmpA<S.cmpB?'<':S.cmpA>S.cmpB?'>':'=';
+    let fbMsg = 'Not quite. ' + S.cmpA + ' is ' + correctOp + ' ' + S.cmpB + '. Try again!';
+    showFB(fbMsg,'incorrect');
+  }
 }
 function newCompare(){
   S.cmpA=rand(1,S.max);S.cmpB=rand(1,S.max);
@@ -408,7 +424,10 @@ function matchSelect(type,idx){
         setTimeout(()=>{showFB('All Matched!','correct');setTimeout(()=>{generateMatch();render();},1500);},500);
       }
     } else {
-      showFB('Not a match','incorrect');
+      const numVal = S.matchPairs[numIdx].num;
+      const dotVal = S.matchPairs[dotIdx].num;
+      let fbMsg = 'Not quite! ' + numVal + ' does not match ' + dotVal + ' dots. Try again!';
+      showFB(fbMsg,'incorrect');
       S.matchSelected=null;
     }
     render();
@@ -500,7 +519,23 @@ function playPick(n){
     showFB('✓ '+S.playAnswer+'!','correct');
   } else {
     S.playStreak=0;
-    showFB('It was '+S.playAnswer,'incorrect');
+    // Determine misconception
+    const student = n;
+    const correct = S.playAnswer;
+    const mirrorPairs = [[6,9],[2,5],[1,7]];
+    const isMirror = mirrorPairs.some(p => (p[0]===correct && p[1]===student) || (p[1]===correct && p[0]===student));
+
+    let fbMsg;
+    if (isMirror) {
+      fbMsg = 'Look carefully! ' + correct + ' and ' + student + ' look similar but are different numbers. The answer was ' + correct + '.';
+    } else if (Math.abs(student - correct) === 1) {
+      fbMsg = 'So close! You picked ' + student + ' but the answer was ' + correct + '. They are neighbors on the number line!';
+    } else if (correct >= 13 && correct <= 19 && student === parseInt(String(correct).split('').reverse().join(''))) {
+      fbMsg = 'Watch the digit order! The answer was ' + correct + ', not ' + student + '. In teen numbers, the 1 comes first.';
+    } else {
+      fbMsg = 'The answer was ' + correct + '. Let\'s keep practicing — you\'ll get it!';
+    }
+    showFB(fbMsg, 'incorrect');
   }
   setTimeout(()=>{
     if(S.playRound>=S.playTotal){
@@ -518,6 +553,7 @@ function playPick(n){
 render();
 </script>
 <script src="../../vinculum-core.js"></script>
+<script src="../../vinculum-data.js"></script>
 <!-- Foundation loaded from vinculum-core.js -->
 </body>
 </html>

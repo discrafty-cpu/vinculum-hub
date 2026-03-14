@@ -1004,6 +1004,14 @@
 
         const SIDE_COLORS = ['#00d4ff', '#00e676', '#b388ff', '#ff9100', '#ff3b8b', '#ffc107'];
 
+        const MISCONCEPTIONS_SHAPESORT = {
+            sideCountError: { id: 'sideCountError', desc: 'Miscounts the number of sides on a shape' },
+            curvedStraightConfusion: { id: 'curvedStraightConfusion', desc: 'Confuses curved and straight-sided shapes' },
+            sizeNotShape: { id: 'sizeNotShape', desc: 'Sorts by size rather than shape properties' },
+            orientationTrick: { id: 'orientationTrick', desc: 'Does not recognize a rotated shape as the same shape' },
+            namePropertyGap: { id: 'namePropertyGap', desc: 'Knows shape name but not its defining properties' }
+        };
+
         const S = {
             mode: 'explore',
             difficulty: '2D Basics',
@@ -1713,6 +1721,30 @@
             }
         }
 
+        function getDiagnosticFeedback(answer) {
+            const shape = S.selectedShape;
+            const answerNum = parseInt(answer);
+
+            if (S.mode === 'practice') {
+                if (S.currentQuestion.type === 'count-corners') {
+                    return `Count the corners carefully! A ${shape.name} has ${shape.corners} corners. Try again!`;
+                } else if (S.currentQuestion.type === 'count-sides') {
+                    return `Count the sides carefully! A ${shape.name} has ${shape.sides} sides. Try again!`;
+                } else if (S.currentQuestion.type === 'name-shape') {
+                    return `Look at this shape's sides and corners. What makes it special? That tells you which group it belongs in.`;
+                }
+            } else if (S.mode === 'play') {
+                if (S.currentQuestion.type === 'name') {
+                    return `Look at this shape's sides and corners. What makes it special? That tells you which group it belongs in.`;
+                } else if (S.currentQuestion.type === 'sides') {
+                    return `Count the sides! A ${shape.name} has ${shape.sides} sides. Which group is for shapes with ${shape.sides} sides?`;
+                } else if (S.currentQuestion.type === 'corners') {
+                    return `Count the corners carefully! A ${shape.name} has ${shape.corners} corners. Try again!`;
+                }
+            }
+            return 'Look at this shape carefully. Try again!';
+        }
+
         function handleAnswer(answer) {
             let correct = false;
 
@@ -1750,7 +1782,8 @@
                     render();
                 }, 800);
             } else {
-                showFB('Try again!', 'incorrect');
+                const diagnosticMsg = getDiagnosticFeedback(answer);
+                showFB(diagnosticMsg, 'incorrect');
                 if (S.mode === 'play') {
                     S.streak = 0;
                 }
@@ -1777,6 +1810,7 @@
         runTour(S.selectedShape);
     </script>
 <script src="../../vinculum-core.js"></script>
+<script src="../../vinculum-data.js"></script>
 <!-- Foundation loaded from vinculum-core.js -->
 </body>
 </html>

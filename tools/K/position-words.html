@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Position & Direction Words | VINCULUM K.G.1</title>
     <link rel="stylesheet" href="../../vinculum-core.css">
+    <script src="../../vinculum-data.js"></script>
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
 
@@ -731,6 +732,15 @@
     </div>
 
     <script>
+        // Misconceptions registry
+        const MISCONCEPTIONS_POSITION = {
+            oppositeDirection: { id:'oppositeDirection', desc:'Picks the opposite position (above↔below, in front↔behind)' },
+            leftRightConfusion: { id:'leftRightConfusion', desc:'Confuses left and right or beside directions' },
+            betweenError: { id:'betweenError', desc:'Does not understand between requires two reference objects' },
+            relativeConfusion: { id:'relativeConfusion', desc:'Confuses whose perspective to use for position' },
+            vocabularyGap: { id:'vocabularyGap', desc:'Does not know the position word meaning' }
+        };
+
         // State
         let S = {
             mode: 'explore',
@@ -928,6 +938,55 @@
             }
         }
 
+        function getDiagnosticFeedback(word, dropX, dropY, correctZone) {
+            // Determine student's actual drop location relative to reference object
+            const zone = document.getElementById(correctZone);
+            const rect = zone.getBoundingClientRect();
+
+            // Define opposite direction mappings
+            const opposites = {
+                'above': 'below',
+                'below': 'above',
+                'in front of': 'behind',
+                'behind': 'in front of'
+            };
+
+            const definitions = {
+                'above': "'Above' means HIGHER — move the object UP.",
+                'below': "'Below' means LOWER — move the object DOWN.",
+                'beside': "'Beside' means right NEXT TO something, on its left or right side.",
+                'in front of': "'In front of' means toward the FRONT of the object.",
+                'behind': "'Behind' means at the BACK of the object.",
+                'between': "'Between' means in the MIDDLE of two things. Find the spot right in the middle!"
+            };
+
+            // Check if this might be an opposite direction error
+            if (opposites[word]) {
+                const oppositeWord = opposites[word];
+                // This is a heuristic - if dropped in roughly opposite area, suggest this
+                if (word === 'above' || word === 'below') {
+                    const yDiff = dropY - (rect.top + rect.bottom) / 2;
+                    const expectedYDiff = word === 'above' ? -100 : 100;
+                    if ((yDiff > 0) !== (expectedYDiff > 0)) {
+                        return `"${word.charAt(0).toUpperCase() + word.slice(1)}" means the opposite of "${oppositeWord}" — move the object in the other direction!`;
+                    }
+                }
+            }
+
+            // Check for between error
+            if (word === 'between') {
+                return "'Between' means in the MIDDLE of two things. Find the spot right in the middle!";
+            }
+
+            // Check for beside error
+            if (word === 'beside') {
+                return "'Beside' means right NEXT TO something, on its left or right side.";
+            }
+
+            // Fallback: vocabulary reinforcement
+            return `Think about where '${word}' means. ${definitions[word]}`;
+        }
+
         function checkDrop(x, y) {
             const problem = S.problems[S.problemIdx];
             const zone = document.getElementById(problem.zone);
@@ -955,7 +1014,8 @@
                     nextProblem();
                 }, 1200);
             } else {
-                showFB('Try again! →', 'incorrect');
+                const diagnosticMsg = getDiagnosticFeedback(problem.word, x, y, problem.zone);
+                showFB(diagnosticMsg, 'incorrect');
                 S.streak = 0;
                 updateStats();
                 S.dragObj.style.opacity = '1';

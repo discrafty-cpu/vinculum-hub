@@ -752,6 +752,7 @@
     </div>
 
     <script src="../../vinculum-core.js"></script>
+    <script src="../../vinculum-data.js"></script>
     <script>
         // Object definitions
         const LENGTH_OBJECTS = [
@@ -781,6 +782,15 @@
             { name: 'Bowl', emoji: '🥣' },
             { name: 'Mug', emoji: '☕' }
         ];
+
+        // Misconceptions
+        const MISCONCEPTIONS_MEASURE = {
+          reversedComparison: { id:'reversedComparison', desc:'Picks the opposite (e.g., shorter when asked for longer)' },
+          visualMisread: { id:'visualMisread', desc:'Misjudges visual length/weight/height comparison' },
+          vocabularyConfusion: { id:'vocabularyConfusion', desc:'Confuses measurement vocabulary (taller vs longer, etc.)' },
+          ignoresAttribute: { id:'ignoresAttribute', desc:'Compares wrong attribute (e.g., width when asked about height)' },
+          equalConfusion: { id:'equalConfusion', desc:'Thinks different-sized objects are equal or vice versa' }
+        };
 
         // State
         let currentMode = 'explore';
@@ -1182,6 +1192,42 @@
             return { question, type, objA, objB, valueA, valueB, answers, correctAnswer };
         }
 
+        function getDiagnosticFeedback(question, selectedAnswer, type) {
+            const q = practiceQuestion;
+            const correctAnswer = q.correctAnswer;
+
+            // Check if they picked the opposite
+            if (type === 'length') {
+                if (selectedAnswer === (q.valueA < q.valueB ? q.objA.name : q.objB.name) && correctAnswer === (q.valueA > q.valueB ? q.objA.name : q.objB.name)) {
+                    return "You picked the shorter one. 'Longer' means it takes up MORE space from end to end.";
+                }
+                if (selectedAnswer === (q.valueA > q.valueB ? q.objA.name : q.objB.name) && correctAnswer === (q.valueA < q.valueB ? q.objA.name : q.objB.name)) {
+                    return "You picked the longer one. 'Shorter' means it takes up LESS space from end to end.";
+                }
+            } else if (type === 'weight') {
+                if (selectedAnswer === (q.valueA < q.valueB ? q.objA.name : q.objB.name) && correctAnswer === (q.valueA > q.valueB ? q.objA.name : q.objB.name)) {
+                    return "You picked the lighter one. 'Heavier' means it would push down MORE on a scale. Which one looks heavier?";
+                }
+                if (selectedAnswer === (q.valueA > q.valueB ? q.objA.name : q.objB.name) && correctAnswer === (q.valueA < q.valueB ? q.objA.name : q.objB.name)) {
+                    return "You picked the heavier one. 'Lighter' means it would push down LESS on a scale. Which one looks lighter?";
+                }
+            } else if (type === 'capacity') {
+                if (selectedAnswer === (q.valueA < q.valueB ? q.objA.name : q.objB.name) && correctAnswer === (q.valueA > q.valueB ? q.objA.name : q.objB.name)) {
+                    return "You picked the one that holds less. 'Holds more' means it has MORE space inside. Which one is bigger?";
+                }
+                if (selectedAnswer === (q.valueA > q.valueB ? q.objA.name : q.objB.name) && correctAnswer === (q.valueA < q.valueB ? q.objA.name : q.objB.name)) {
+                    return "You picked the one that holds more. 'Holds less' means it has LESS space inside. Which one is smaller?";
+                }
+            }
+
+            // Fallback for equal confusion or other misreads
+            if (selectedAnswer === 'They are the same length' || selectedAnswer === 'They are the same weight' || selectedAnswer === 'They hold the same amount') {
+                return "Look again — compare them side by side. One is clearly different!";
+            }
+
+            return "Look again — compare them side by side. Which one is correct?";
+        }
+
         function selectPracticeAnswer(answer) {
             practiceSelectedAnswer = answer;
             const isCorrect = practiceQuestion.answers.find(a => a.text === answer).correct;
@@ -1194,7 +1240,8 @@
                     renderPractice(document.getElementById('workspace'));
                 }, 1500);
             } else {
-                showFB('✗ Try again!', 'negative');
+                const diagnosticMsg = getDiagnosticFeedback(practiceQuestion.question, answer, practiceQuestion.type);
+                showFB('✗ ' + diagnosticMsg, 'negative');
             }
 
             renderPractice(document.getElementById('workspace'));

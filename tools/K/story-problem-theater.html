@@ -605,6 +605,7 @@
   </div>
 
   <script src="../../vinculum-core.js"></script>
+  <script src="../../vinculum-data.js"></script>
   <script>
     // SCENE LIBRARY
     const SCENES = [
@@ -819,6 +820,15 @@
       </g>`;
     }
 
+    // MISCONCEPTIONS ARCHITECTURE
+    const MISCONCEPTIONS_STORY = {
+      operationConfusion: { id: 'operationConfusion', desc: 'Adds when should subtract, or vice versa' },
+      grabbedOperand: { id: 'grabbedOperand', desc: 'Picked one of the numbers from the story instead of computing' },
+      offByOne: { id: 'offByOne', desc: 'Answer is off by exactly one' },
+      countAllError: { id: 'countAllError', desc: 'Counts all mentioned numbers rather than operating on them' },
+      misreadAction: { id: 'misreadAction', desc: 'Misidentifies the action in the story (joining vs separating)' }
+    };
+
     // STATE
     let S = {
       mode: 'explore',
@@ -931,13 +941,41 @@
     }
 
     function checkAnswer() {
-      if (S.countersPlaced.length === S.currentProblem.answer) {
+      const p = S.currentProblem;
+      const studentAnswer = S.countersPlaced.length;
+
+      if (studentAnswer === p.answer) {
         showFB('✓ Correct!', 'correct');
         S.score++;
         S.streak++;
         setTimeout(nextProblem, 1500);
       } else {
-        showFB('Try again!', 'try-again');
+        // Diagnostic feedback for wrong answer
+        let feedbackText = 'Try again!';
+
+        // Check if student picked one of the operands
+        if (studentAnswer === p.num1 || studentAnswer === p.num2) {
+          const op = p.operation === 'add' ? 'add' : 'subtract';
+          const verb = p.operation === 'add' ? 'add' : 'subtract';
+          feedbackText = `You picked one of the numbers from the story. But we need to ${verb} them! What do you get when you ${op} ${p.num1} and ${p.num2}?`;
+        }
+        // Check if student answer is off by one
+        else if (Math.abs(studentAnswer - p.answer) === 1) {
+          feedbackText = "So close! You're off by one. Try counting again carefully.";
+        }
+        // Check if student confused the operation
+        else if (p.operation === 'add' && studentAnswer === (p.num1 - p.num2)) {
+          feedbackText = "Read the story again — are we putting groups TOGETHER (adding) or TAKING AWAY (subtracting)?";
+        }
+        else if (p.operation === 'subtract' && studentAnswer === (p.num1 + p.num2)) {
+          feedbackText = "Read the story again — are we putting groups TOGETHER (adding) or TAKING AWAY (subtracting)?";
+        }
+        // Fallback for other errors
+        else {
+          feedbackText = "Let's re-read the story. Find the two numbers and the action word. Are we joining or separating?";
+        }
+
+        showFB(feedbackText, 'try-again');
         S.streak = 0;
       }
     }

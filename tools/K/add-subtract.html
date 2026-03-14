@@ -824,6 +824,7 @@
   <div class="feedback" id="feedback"></div>
 
   <script src="../../vinculum-core.js"></script>
+  <script src="../../vinculum-data.js"></script>
   <script>
     // Standard feedback function
     function showFB(text, className) {
@@ -848,6 +849,14 @@
       currentProblem: null,
       currentAnswer: null,
       answered: false
+    };
+
+    const MISCONCEPTIONS = {
+      countingStartError: { id: 'count-start', msg: (p) => `Almost! When adding, start counting from ${p.num1} — don't start over at 1.` },
+      operationConfusion: { id: 'op-confusion', msg: (p) => p.op === '+' ? `This is addition — we're putting groups together, not taking away.` : `This is subtraction — we're taking away, not adding.` },
+      offByOne: { id: 'off-by-one', msg: (p, ans) => `So close! You got ${ans} but the answer is ${p.answer}. Count one more time carefully.` },
+      subtractedWrong: { id: 'subtract-dir', msg: (p) => `Remember: ${p.num1} - ${p.num2} means start with ${p.num1} and take away ${p.num2}.` },
+      guessedOperand: { id: 'guessed-operand', msg: (p, ans) => ans === p.num1 || ans === p.num2 ? `${ans} is one of the numbers in the problem, but not the answer. What do you get when you ${p.op === '+' ? 'put them together' : 'take away'}?` : `Try using the counters to help. ${p.op === '+' ? 'Put both groups together and count all of them.' : 'Start with ' + p.num1 + ' and take ' + p.num2 + ' away.'}` }
     };
 
     const difficultyLimits = {
@@ -978,7 +987,25 @@
         showFB('✓ Correct!', 'correct');
       } else {
         state.streak = 0;
-        showFB('Try again!', 'incorrect');
+        // Diagnostic feedback for incorrect answers
+        let feedbackMsg = 'Try again!';
+
+        // Check if answer is one of the operands
+        if (answer === state.currentProblem.num1 || answer === state.currentProblem.num2) {
+          feedbackMsg = MISCONCEPTIONS.guessedOperand.msg(state.currentProblem, answer);
+        }
+        // Check if answer is off by one
+        else if (Math.abs(answer - state.currentProblem.answer) === 1) {
+          feedbackMsg = MISCONCEPTIONS.offByOne.msg(state.currentProblem, answer);
+        }
+        // Check for operation confusion (added when should subtract, vice versa)
+        else if (state.currentProblem.op === 'subtract' && answer === state.currentProblem.num1 + state.currentProblem.num2) {
+          feedbackMsg = MISCONCEPTIONS.operationConfusion.msg(state.currentProblem);
+        } else if (state.currentProblem.op === 'add' && answer === state.currentProblem.num1 - state.currentProblem.num2) {
+          feedbackMsg = MISCONCEPTIONS.operationConfusion.msg(state.currentProblem);
+        }
+
+        showFB(feedbackMsg, 'incorrect');
       }
 
       render();
@@ -1050,7 +1077,25 @@
         showFB('✓ Correct!', 'correct');
       } else {
         state.streak = 0;
-        showFB('Try again!', 'incorrect');
+        // Diagnostic feedback for incorrect answers
+        let feedbackMsg = 'Try again!';
+
+        // Check if answer is one of the operands
+        if (answer === state.currentProblem.num1 || answer === state.currentProblem.num2) {
+          feedbackMsg = MISCONCEPTIONS.guessedOperand.msg(state.currentProblem, answer);
+        }
+        // Check if answer is off by one
+        else if (Math.abs(answer - state.currentProblem.answer) === 1) {
+          feedbackMsg = MISCONCEPTIONS.offByOne.msg(state.currentProblem, answer);
+        }
+        // Check for operation confusion (added when should subtract, vice versa)
+        else if (state.currentProblem.op === 'subtract' && answer === state.currentProblem.num1 + state.currentProblem.num2) {
+          feedbackMsg = MISCONCEPTIONS.operationConfusion.msg(state.currentProblem);
+        } else if (state.currentProblem.op === 'add' && answer === state.currentProblem.num1 - state.currentProblem.num2) {
+          feedbackMsg = MISCONCEPTIONS.operationConfusion.msg(state.currentProblem);
+        }
+
+        showFB(feedbackMsg, 'incorrect');
       }
 
       render();

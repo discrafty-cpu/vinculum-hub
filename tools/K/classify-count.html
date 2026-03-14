@@ -826,6 +826,7 @@
 
   <!-- SCRIPT -->
   <script src="../../vinculum-core.js"></script>
+  <script src="../../vinculum-data.js"></script>
   <script>
     // Standard feedback function
     function showFB(text, className) {
@@ -836,6 +837,15 @@
     }
   </script>
   <script>
+    // MISCONCEPTIONS
+    const MISCONCEPTIONS_CLASSIFY = {
+      wrongAttribute: { id:'wrongAttribute', desc:'Sorts by wrong attribute (e.g., by color when asked for shape)' },
+      countingError: { id:'countingError', desc:'Counts items in a category incorrectly' },
+      inclusionError: { id:'inclusionError', desc:'Includes items that don\'t belong in the category' },
+      exclusionError: { id:'exclusionError', desc:'Excludes items that should be in the category' },
+      offByOne: { id:'offByOne', desc:'Count is off by exactly one' }
+    };
+
     // STATE MANAGEMENT
     const state = {
       mode: 'explore',
@@ -1331,7 +1341,21 @@
         }
       });
 
-      showFB(isCorrect ? '✓ Great job!' : 'Try again!', isCorrect ? 'correct' : 'incorrect');
+      if (isCorrect) {
+        showFB('✓ Great job!', 'correct');
+      } else {
+        // Diagnostic feedback based on error type
+        let feedbackMsg = "Not quite — let's look at the groups again. What attribute are we sorting by?";
+        const diff = Math.abs(selected - correct);
+
+        if (diff === 1) {
+          feedbackMsg = "So close! You're off by one. Try counting each item again, touching each one.";
+        } else if (diff > 2) {
+          feedbackMsg = "Try sorting first, then count only the items in that group.";
+        }
+
+        showFB(feedbackMsg, 'incorrect');
+      }
 
       setTimeout(() => {
         state.currentQuestion++;
@@ -1430,7 +1454,8 @@
       } else {
         binBtn.classList.add('incorrect');
         state.streak = 0;
-        showFB('Try again!', 'incorrect');
+        // Diagnostic feedback for classification error
+        showFB('Look carefully at what makes this group special. What do all the items in this group have in common?', 'incorrect');
       }
 
       state.playIndex++;

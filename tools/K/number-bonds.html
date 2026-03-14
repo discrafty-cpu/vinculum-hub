@@ -175,6 +175,13 @@ let S = {
   playChoices: []
 };
 
+const MISCONCEPTIONS = {
+  partWholeConfusion: { id: 'part-whole', msg: (w, a, b) => `The whole is ${w}. You need the missing PART, not the whole!` },
+  offByOne: { id: 'off-by-one', msg: (w, a, b, ans, correct) => `Close! ${ans} is off by 1. Think: ${w} = ${a} + what?` },
+  reversedParts: { id: 'reversed-parts', msg: (w, a, b) => `You picked the OTHER part. The known part is ${a} — what's missing?` },
+  randomGuess: { id: 'random-guess', msg: () => `Look at the bond picture — the whole splits into two parts.` }
+};
+
 function rand(a, b) {
   return Math.floor(Math.random() * (b - a + 1)) + a;
 }
@@ -503,7 +510,31 @@ function checkPractice(clicked) {
     }, 1500);
   } else {
     btn.classList.add('incorrect-flash');
-    showFB('Try again!', 'try-again');
+
+    // Diagnostic feedback logic
+    let feedbackMsg = 'Try again!';
+
+    // If missing a part but clicked the whole
+    if ((S.pMissing === 'a' || S.pMissing === 'b') && clicked === S.pWhole) {
+      feedbackMsg = MISCONCEPTIONS.partWholeConfusion.msg(S.pWhole, S.pPartA, S.pPartB);
+    }
+    // If missing part B but clicked part A (or vice versa)
+    else if (S.pMissing === 'b' && clicked === S.pPartA) {
+      feedbackMsg = MISCONCEPTIONS.reversedParts.msg(S.pWhole, S.pPartA, S.pPartB);
+    }
+    else if (S.pMissing === 'a' && clicked === S.pPartB) {
+      feedbackMsg = MISCONCEPTIONS.reversedParts.msg(S.pWhole, S.pPartA, S.pPartB);
+    }
+    // If off by exactly 1
+    else if (Math.abs(clicked - correct) === 1) {
+      feedbackMsg = MISCONCEPTIONS.offByOne.msg(S.pWhole, S.pPartA, S.pPartB, clicked, correct);
+    }
+    // Random guess
+    else {
+      feedbackMsg = MISCONCEPTIONS.randomGuess.msg();
+    }
+
+    showFB(feedbackMsg, 'try-again');
     setTimeout(() => {
       btn.classList.remove('incorrect-flash');
     }, 400);
@@ -627,7 +658,31 @@ function playPick(n) {
   } else {
     btn.classList.add('incorrect-flash');
     S.streak = 0;
-    showFB(`${answer} was correct`, 'incorrect');
+
+    // Diagnostic feedback logic
+    let feedbackMsg = `${answer} was correct`;
+
+    // If missing a part but clicked the whole
+    if ((S.playMissing === 'a' || S.playMissing === 'b') && n === S.playWhole) {
+      feedbackMsg = MISCONCEPTIONS.partWholeConfusion.msg(S.playWhole, S.playPartA, S.playPartB);
+    }
+    // If missing part B but clicked part A (or vice versa)
+    else if (S.playMissing === 'b' && n === S.playPartA) {
+      feedbackMsg = MISCONCEPTIONS.reversedParts.msg(S.playWhole, S.playPartA, S.playPartB);
+    }
+    else if (S.playMissing === 'a' && n === S.playPartB) {
+      feedbackMsg = MISCONCEPTIONS.reversedParts.msg(S.playWhole, S.playPartA, S.playPartB);
+    }
+    // If off by exactly 1
+    else if (Math.abs(n - answer) === 1) {
+      feedbackMsg = MISCONCEPTIONS.offByOne.msg(S.playWhole, S.playPartA, S.playPartB, n, answer);
+    }
+    // Random guess
+    else {
+      feedbackMsg = MISCONCEPTIONS.randomGuess.msg();
+    }
+
+    showFB(feedbackMsg, 'incorrect');
   }
   setTimeout(() => {
     if (S.round >= S.total) {
@@ -647,6 +702,7 @@ function playPick(n) {
 render();
 </script>
 <script src="../../vinculum-core.js"></script>
+<script src="../../vinculum-data.js"></script>
 <!-- Foundation loaded from vinculum-core.js -->
 </body>
 </html>

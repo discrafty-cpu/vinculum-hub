@@ -629,6 +629,7 @@
     </div>
 
     <script src="../../vinculum-core.js"></script>
+    <script src="../../vinculum-data.js"></script>
     <script>
         // Shape definitions with SVG
         const SHAPES = {
@@ -686,6 +687,15 @@
                 { type: 'AABB', rule: 'A-A-B-B', items: ['purple_star', 'purple_star', 'orange_heart', 'orange_heart', 'purple_star', 'purple_star', 'orange_heart'] },
                 { type: 'Growing', rule: 'Small→Medium→Large', items: ['red_triangle', 'red_triangle', 'red_triangle', 'blue_circle', 'blue_circle', 'blue_circle', 'green_square'] }
             ]
+        };
+
+        // Misconception definitions
+        const MISCONCEPTIONS_PATTERN = {
+            repeatLastOnly: { id: 'repeatLastOnly', desc: 'Repeats only the last element instead of continuing the pattern' },
+            randomNext: { id: 'randomNext', desc: 'Picks an element that is in the pattern but not the correct next one' },
+            patternBreak: { id: 'patternBreak', desc: 'Does not see the repeating unit' },
+            wrongPatternType: { id: 'wrongPatternType', desc: 'Applies a different pattern rule (e.g., AB instead of ABC)' },
+            colorShapeConfusion: { id: 'colorShapeConfusion', desc: 'Matches color but not shape or vice versa' }
         };
 
         // Global state
@@ -802,6 +812,22 @@
             });
         }
 
+        function diagnoseMisconception(userChoice, correctShape, nextEmptyIdx) {
+            // Check if user picked the previous element in the pattern
+            if (nextEmptyIdx > 0 && S.pattern.items[nextEmptyIdx - 1] === userChoice) {
+                return "That was the previous step in the pattern. What comes NEXT? Look at the repeating group.";
+            }
+
+            // Check if user picked an element that's in the pattern but wrong position
+            if (S.pattern.items.includes(userChoice)) {
+                const patternRule = S.pattern.rule;
+                return `That element IS in the pattern, but not here. The pattern goes ${patternRule}. What comes next?`;
+            }
+
+            // Fallback message
+            return "Look at the pattern from the start. Can you find the part that repeats? Then continue it!";
+        }
+
         function onChoiceClick(shapeKey) {
             if (S.mode === 'explore') {
                 S.userPattern.push(shapeKey);
@@ -832,7 +858,8 @@
                 } else {
                     document.querySelectorAll('.slot')[nextEmpty].classList.add('shake');
                     S.streak = 0;
-                    showFB('Try again!', true);
+                    const diagnosticMessage = diagnoseMisconception(shapeKey, S.pattern.items[nextEmpty], nextEmpty);
+                    showFB(diagnosticMessage, true);
                     setTimeout(() => {
                         document.querySelectorAll('.slot')[nextEmpty].classList.remove('shake');
                     }, 400);
@@ -853,7 +880,8 @@
                     }, 600);
                 } else {
                     S.streak = 0;
-                    showFB('Oops!', true);
+                    const diagnosticMessage = diagnoseMisconception(shapeKey, S.pattern.items[S.pattern.items.length - 1], S.pattern.items.length - 1);
+                    showFB(diagnosticMessage, true);
                 }
                 updateUI();
             }
