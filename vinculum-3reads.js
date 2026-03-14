@@ -340,7 +340,12 @@
     }
   };
 
-  // Expose globally
-  window.Vinculum3Reads = Vinculum3Reads;
+  // Expose globally — disabled by default until ready for classroom testing
+  // To enable: set window.VINCULUM_3READS_ENABLED = true BEFORE this script loads
+  // Or call: Vinculum3Reads.enable() from the console
+  Vinculum3Reads.enable = function() { window.Vinculum3Reads = Vinculum3Reads; };
+  if (window.VINCULUM_3READS_ENABLED) {
+    window.Vinculum3Reads = Vinculum3Reads;
+  }
 
 })();
