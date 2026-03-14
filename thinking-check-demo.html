@@ -1,0 +1,552 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Thinking Check — Metacognitive Progression Demo | VINCULUM</title>
+<style>
+  :root {
+    --bg: #0d1117; --card: #161b22; --card2: #1a1f2e;
+    --text: #e0e0e0; --muted: #8b949e; --border: #30363d;
+    --cyan: #00d4ff; --pink: #ff6b9d; --yellow: #ffd93d;
+    --green: #4caf50; --purple: #b388ff; --orange: #ff9800;
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { background: var(--bg); color: var(--text); font-family: 'Segoe UI', system-ui, sans-serif; min-height: 100vh; }
+
+  /* Header */
+  .header { background: var(--card); border-bottom: 2px solid var(--cyan); padding: 20px 30px; text-align: center; }
+  .header h1 { font-size: 24px; color: var(--cyan); margin-bottom: 4px; }
+  .header p { font-size: 14px; color: var(--muted); }
+
+  /* Grade selector */
+  .grade-bar { display: flex; justify-content: center; gap: 12px; padding: 20px; background: var(--card2); }
+  .grade-btn { padding: 10px 28px; border: 2px solid var(--border); border-radius: 12px; background: transparent;
+    color: var(--text); font-size: 15px; cursor: pointer; font-weight: 600; transition: all 0.3s; }
+  .grade-btn:hover { border-color: var(--cyan); }
+  .grade-btn.active { background: var(--cyan); color: #000; border-color: var(--cyan); }
+  .grade-btn .sub { display: block; font-size: 11px; font-weight: 400; opacity: 0.7; margin-top: 2px; }
+
+  /* Main content */
+  .main { max-width: 900px; margin: 0 auto; padding: 24px; }
+
+  /* Dev stage info */
+  .dev-box { background: var(--card); border: 1px solid var(--border); border-radius: 16px; padding: 20px 24px;
+    margin-bottom: 24px; border-left: 4px solid var(--purple); }
+  .dev-box h3 { color: var(--purple); font-size: 14px; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 8px; }
+  .dev-box p { font-size: 14px; line-height: 1.7; color: var(--muted); }
+  .dev-box strong { color: var(--text); }
+
+  /* Simulation area */
+  .sim-area { background: var(--card); border: 1px solid var(--border); border-radius: 16px; overflow: hidden; margin-bottom: 24px; }
+  .sim-header { background: var(--card2); padding: 16px 20px; border-bottom: 1px solid var(--border);
+    display: flex; justify-content: space-between; align-items: center; }
+  .sim-header h2 { font-size: 16px; }
+  .sim-body { padding: 24px; min-height: 280px; }
+
+  /* Problem display */
+  .problem-text { font-size: 18px; text-align: center; line-height: 1.8; margin-bottom: 20px; padding: 16px;
+    background: var(--card2); border-radius: 12px; }
+  .problem-text .story { color: var(--cyan); }
+  .problem-text .question { color: var(--yellow); font-weight: 600; }
+  .problem-text .numbers { color: var(--pink); font-weight: 700; font-size: 22px; }
+
+  /* Answer area */
+  .answer-row { display: flex; justify-content: center; gap: 12px; margin-bottom: 20px; flex-wrap: wrap; }
+  .ans-btn { width: 60px; height: 60px; border-radius: 12px; border: 2px solid var(--border); background: var(--card2);
+    color: var(--text); font-size: 22px; font-weight: 700; cursor: pointer; transition: all 0.2s; }
+  .ans-btn:hover { border-color: var(--cyan); transform: scale(1.05); }
+  .ans-btn.selected { border-color: var(--cyan); background: rgba(0,212,255,0.15); }
+  .ans-btn.correct { border-color: var(--green); background: rgba(76,175,80,0.2); color: var(--green); }
+  .ans-btn.wrong { border-color: var(--pink); background: rgba(255,107,157,0.15); color: var(--pink); }
+
+  /* Thinking Check popup */
+  .thinking-check { background: linear-gradient(135deg, #1a1f2e, #1e2538); border: 2px solid var(--yellow);
+    border-radius: 16px; padding: 24px; margin: 20px 0; animation: slideUp 0.4s ease-out;
+    box-shadow: 0 0 30px rgba(255,217,61,0.1); }
+  .thinking-check .tc-icon { font-size: 32px; text-align: center; margin-bottom: 8px; }
+  .thinking-check .tc-label { font-size: 12px; color: var(--yellow); text-transform: uppercase; letter-spacing: 2px;
+    text-align: center; font-weight: 700; margin-bottom: 12px; }
+  .thinking-check .tc-prompt { font-size: 17px; text-align: center; line-height: 1.7; margin-bottom: 16px; }
+  .thinking-check .tc-options { display: flex; flex-direction: column; gap: 8px; }
+  .tc-option { padding: 12px 16px; border: 1px solid var(--border); border-radius: 10px; background: var(--card);
+    color: var(--text); font-size: 14px; cursor: pointer; transition: all 0.2s; text-align: left; display: flex;
+    align-items: center; gap: 10px; }
+  .tc-option:hover { border-color: var(--yellow); background: rgba(255,217,61,0.08); }
+  .tc-option.picked { border-color: var(--green); background: rgba(76,175,80,0.1); }
+  .tc-option .tc-emoji { font-size: 20px; flex-shrink: 0; }
+
+  /* Response from system */
+  .tc-response { background: var(--card2); border-radius: 12px; padding: 16px; margin-top: 12px;
+    border-left: 3px solid var(--green); animation: fadeIn 0.3s; }
+  .tc-response p { font-size: 14px; line-height: 1.7; }
+  .tc-response .affirm { color: var(--green); font-weight: 700; }
+
+  /* Progression timeline */
+  .timeline { display: flex; gap: 0; margin-bottom: 24px; }
+  .tl-step { flex: 1; padding: 12px 8px; text-align: center; position: relative; }
+  .tl-step::after { content: ''; position: absolute; top: 22px; right: -8px; width: 16px; height: 2px;
+    background: var(--border); }
+  .tl-step:last-child::after { display: none; }
+  .tl-step .tl-num { width: 28px; height: 28px; border-radius: 50%; background: var(--card2);
+    border: 2px solid var(--border); display: inline-flex; align-items: center; justify-content: center;
+    font-size: 13px; font-weight: 700; margin-bottom: 6px; }
+  .tl-step.active .tl-num { background: var(--yellow); color: #000; border-color: var(--yellow); }
+  .tl-step.done .tl-num { background: var(--green); color: #fff; border-color: var(--green); }
+  .tl-step .tl-label { font-size: 11px; color: var(--muted); }
+  .tl-step.active .tl-label { color: var(--yellow); font-weight: 600; }
+
+  /* Frequency indicator */
+  .freq-bar { background: var(--card); border: 1px solid var(--border); border-radius: 12px; padding: 16px 20px;
+    margin-bottom: 24px; }
+  .freq-bar h4 { font-size: 12px; color: var(--muted); text-transform: uppercase; letter-spacing: 1px; margin-bottom: 10px; }
+  .freq-visual { display: flex; gap: 4px; align-items: center; }
+  .freq-dot { width: 24px; height: 24px; border-radius: 6px; display: flex; align-items: center; justify-content: center;
+    font-size: 10px; font-weight: 700; }
+  .freq-dot.problem { background: var(--card2); border: 1px solid var(--border); color: var(--muted); }
+  .freq-dot.check { background: var(--yellow); color: #000; border: 1px solid var(--yellow); }
+  .freq-dot.current { animation: pulse 1s infinite; }
+  .freq-arrow { color: var(--muted); font-size: 12px; margin: 0 2px; }
+
+  /* Strategy cards */
+  .strategies { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 12px; margin-top: 16px; }
+  .strat-card { background: var(--card2); border: 1px solid var(--border); border-radius: 12px; padding: 14px;
+    text-align: center; }
+  .strat-card .strat-icon { font-size: 28px; margin-bottom: 6px; }
+  .strat-card .strat-name { font-size: 13px; font-weight: 700; color: var(--cyan); margin-bottom: 4px; }
+  .strat-card .strat-desc { font-size: 12px; color: var(--muted); line-height: 1.5; }
+
+  /* Mode label */
+  .mode-label { display: inline-block; padding: 3px 10px; border-radius: 6px; font-size: 11px; font-weight: 700;
+    text-transform: uppercase; letter-spacing: 1px; }
+  .mode-label.explore { background: rgba(0,212,255,0.15); color: var(--cyan); }
+  .mode-label.practice { background: rgba(255,107,157,0.15); color: var(--pink); }
+  .mode-label.play { background: rgba(255,217,61,0.15); color: var(--yellow); }
+
+  /* Info sections */
+  .info-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin: 16px 0; }
+  .info-card { background: var(--card2); border: 1px solid var(--border); border-radius: 12px; padding: 16px; }
+  .info-card h4 { font-size: 13px; color: var(--cyan); margin-bottom: 8px; }
+  .info-card p { font-size: 13px; color: var(--muted); line-height: 1.6; }
+  .info-card ul { list-style: none; padding: 0; }
+  .info-card li { font-size: 13px; color: var(--muted); line-height: 1.8; padding-left: 16px; position: relative; }
+  .info-card li::before { content: '→'; position: absolute; left: 0; color: var(--cyan); }
+
+  @keyframes slideUp { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
+  @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+  @keyframes pulse { 0%,100% { transform: scale(1); } 50% { transform: scale(1.15); } }
+
+  .next-btn { display: block; margin: 16px auto 0; padding: 10px 28px; border: none; border-radius: 10px;
+    background: var(--cyan); color: #000; font-size: 14px; font-weight: 700; cursor: pointer; }
+  .next-btn:hover { opacity: 0.9; }
+
+  .hidden { display: none; }
+</style>
+</head>
+<body>
+
+<div class="header">
+  <h1>🧠 Thinking Check — Metacognitive Progression</h1>
+  <p>How self-monitoring develops from Kindergarten through Grade 2</p>
+</div>
+
+<div class="grade-bar">
+  <button class="grade-btn active" onclick="setGrade('K')">
+    Kindergarten
+    <span class="sub">Preoperational</span>
+  </button>
+  <button class="grade-btn" onclick="setGrade('G1')">
+    Grade 1
+    <span class="sub">Transitional</span>
+  </button>
+  <button class="grade-btn" onclick="setGrade('G2')">
+    Grade 2
+    <span class="sub">Concrete Operational</span>
+  </button>
+</div>
+
+<div class="main" id="content"></div>
+
+<script>
+const GRADES = {
+  K: {
+    piaget: 'Preoperational Stage (ages 4–7)',
+    piagetDesc: 'Children are <strong>impulsive responders</strong> — they fixate on one feature and answer immediately. They can\'t reverse operations mentally. Metacognition at this stage means <strong>learning to pause and re-engage with the concrete</strong>. We\'re building the HABIT of checking, not the ability to self-reflect abstractly.',
+    checkFreq: 'Every 3rd problem',
+    freqWhy: 'K students need frequent prompts because the pause habit hasn\'t formed yet. By prompting every 3 problems, we interrupt the impulsive response cycle before it becomes automatic.',
+    modes: [
+      { name: 'Explore', tag: 'explore',
+        problem: { story: 'There are', numbers: '5', rest: 'birds sitting in a tree.', question: 'How many birds do you see?' },
+        thinkCheck: {
+          icon: '🤔',
+          prompt: 'You counted the birds. Let\'s check together!',
+          type: 'recount', // K checks are concrete re-engagement
+          options: [
+            { emoji: '👆', text: 'Touch each bird and count again', response: 'Great checking! Touching each one helps us count carefully. Did you get the same number?' },
+            { emoji: '👀', text: 'Look at the picture one more time', response: 'Good looking! Our eyes help us check. Do you still see the same number of birds?' },
+            { emoji: '🗣️', text: 'Say the number out loud', response: 'Saying it out loud is a great way to check! When we hear ourselves say the answer, we can think — does that sound right?' },
+          ]
+        },
+        afterText: 'At K Explore level, the Thinking Check gets students to <strong>physically re-engage</strong> with the manipulatives. We\'re not asking them to reflect abstractly — we\'re asking them to touch, look, and speak. This builds the neural pathways for self-monitoring.'
+      },
+      { name: 'Practice', tag: 'practice',
+        problem: { story: 'Sam had', numbers: '3', rest: 'apples. He got', numbers2: '2', rest2: 'more.', question: 'How many apples does Sam have now?' },
+        answers: [4, 5, 6, 3],
+        correct: 5,
+        thinkCheck: {
+          icon: '🎯',
+          prompt: 'The story says Sam GOT MORE apples. Does your answer make sense?',
+          type: 'sense-check',
+          options: [
+            { emoji: '📈', text: 'Yes — my answer is MORE than 3, so it makes sense', response: 'Excellent thinking! Sam started with 3 and got MORE, so the answer SHOULD be bigger than 3. You checked that it makes sense!' },
+            { emoji: '📉', text: 'Hmm — if Sam got more, the answer should be bigger than 3', response: 'Good catch! When we GET MORE, the total gets BIGGER. Check your answer — is it bigger than 3?' },
+            { emoji: '🤷', text: 'I\'m not sure — can you help me?', response: 'Let\'s think about it: Sam STARTED with 3. He GOT MORE. So should he have MORE than 3 or LESS than 3? ... More! So our answer should be a number bigger than 3.' },
+          ]
+        },
+        afterText: 'At K Practice level, we connect the check back to the <strong>story context</strong>. "Does your answer make sense IN THE STORY?" This is developmentally appropriate because K students think in narratives. We\'re teaching them that math answers should make sense in the real world.'
+      },
+      { name: 'Play', tag: 'play',
+        problem: { story: 'Quick!', numbers: '4 + 2', rest: '', question: '= ?' },
+        answers: [5, 6, 7, 8],
+        correct: 6,
+        thinkCheck: {
+          icon: '⚡',
+          prompt: 'Before we move on — show me on your fingers!',
+          type: 'embody',
+          options: [
+            { emoji: '🖐️', text: 'I can show 4 fingers and 2 more fingers', response: 'You showed 4... then 2 more... and you can SEE the answer on your hands! Fingers are a great checking tool.' },
+            { emoji: '✅', text: 'My answer matches my fingers!', response: 'When your fingers match your answer, you know it\'s right. That\'s how mathematicians check — they use more than one way!' },
+          ]
+        },
+        afterText: 'At K Play level, the check is <strong>embodied</strong> — fingers, gestures, physical objects. Even in the abstract "game" mode, we pull students back to concrete verification. This is critical at K because the abstract isn\'t fully accessible yet.'
+      }
+    ],
+    strategies: [
+      { icon: '👆', name: 'Touch & Count', desc: 'Touch each object while counting. Did I count each one exactly once?' },
+      { icon: '🖐️', name: 'Finger Check', desc: 'Show the answer on my fingers. Does it look right?' },
+      { icon: '📖', name: 'Story Match', desc: 'Does my answer make sense in the story? More or less?' },
+      { icon: '🗣️', name: 'Say It Loud', desc: 'Say my answer out loud. Does it sound right?' },
+    ]
+  },
+
+  G1: {
+    piaget: 'Transitional Stage (ages 6–8)',
+    piagetDesc: 'Children are developing <strong>reversibility</strong> — they can undo operations mentally. They\'re starting to hold two ideas at once. Metacognition at this stage means <strong>naming your strategy and estimating reasonableness</strong>. We\'re building strategy awareness, not just the checking habit.',
+    checkFreq: 'Every 5th problem',
+    freqWhy: 'G1 students have more self-regulation. We space checks further apart to build INDEPENDENT monitoring. The goal is for students to start checking without being prompted.',
+    modes: [
+      { name: 'Explore', tag: 'explore',
+        problem: { story: 'There are', numbers: '8', rest: 'red fish and', numbers2: '6', rest2: 'blue fish in the tank.', question: 'How many fish are there altogether?' },
+        thinkCheck: {
+          icon: '🔍',
+          prompt: 'Before you solve — what STRATEGY will you use?',
+          type: 'strategy-select',
+          options: [
+            { emoji: '🔢', text: 'Count on from 8: "8... 9, 10, 11, 12, 13, 14"', response: 'Counting on is efficient! You started at the BIGGER number (8) and counted up 6. That shows good number sense — starting at the bigger number saves time.' },
+            { emoji: '🧮', text: 'Make a 10: 8 + 2 = 10, then 10 + 4 = 14', response: 'Making a ten is a POWERFUL strategy! You broke 6 into 2 and 4, made a friendly 10, then added the rest. Mathematicians look for tens because they\'re easy to work with.' },
+            { emoji: '👆', text: 'Count all: draw 8, then draw 6, then count everything', response: 'Counting all works and it\'s reliable! As you get more comfortable, try starting from the bigger number to save time. But checking your work by counting all is always a smart move.' },
+          ]
+        },
+        afterText: 'At G1 Explore level, the check happens BEFORE solving — <strong>strategy selection</strong>. This teaches students that math isn\'t about "getting the answer" but about CHOOSING HOW to approach. This metacognitive shift is one of the biggest predictors of long-term math success.'
+      },
+      { name: 'Practice', tag: 'practice',
+        problem: { story: 'Mia has', numbers: '13', rest: 'stickers. She gives away', numbers2: '7', rest2: '.', question: 'How many stickers does Mia have left?' },
+        answers: [5, 6, 7, 20],
+        correct: 6,
+        thinkCheck: {
+          icon: '📐',
+          prompt: 'Your answer is 6. Let\'s check: Is 6 a REASONABLE answer?',
+          type: 'reasonableness',
+          options: [
+            { emoji: '✅', text: 'Yes — 6 is less than 13, and she gave away stickers, so it should be less', response: 'Strong reasoning! You checked: "She gave away, so the answer should be LESS." And 6 IS less than 13. That\'s how mathematicians verify — they check the direction first.' },
+            { emoji: '🔄', text: 'Let me check: 6 + 7 = 13 ✓ Yes, it works!', response: 'You used the INVERSE operation to check! If 13 - 7 = 6, then 6 + 7 should = 13. This is called "checking with the opposite." It\'s one of the most powerful math tools.' },
+            { emoji: '🤔', text: 'I\'m not sure if 6 makes sense', response: 'Let\'s think step by step: Mia STARTED with 13. She GAVE AWAY 7. So she should have LESS than 13 but MORE than 0. Is 6 between 0 and 13? Yes! Does 6 + 7 = 13? Let\'s check...' },
+          ]
+        },
+        afterText: 'At G1 Practice, we introduce <strong>reasonableness checking and inverse operations</strong>. The student learns that subtraction answers can be verified with addition. This is Piaget\'s reversibility in action — they can now mentally "undo" the operation.'
+      },
+      { name: 'Play', tag: 'play',
+        problem: { story: 'Speed Round!', numbers: '9 + 5', rest: '', question: '= ?' },
+        answers: [13, 14, 15, 12],
+        correct: 14,
+        thinkCheck: {
+          icon: '⚡',
+          prompt: 'How did you know? Quick — what strategy popped into your head?',
+          type: 'strategy-name',
+          options: [
+            { emoji: '🎯', text: 'I made a 10: 9 + 1 = 10, then + 4 = 14', response: 'You AUTOMATICALLY used make-a-ten! That means it\'s becoming a habit. When strategies are automatic, your brain is free to think about harder problems.' },
+            { emoji: '🧠', text: 'I just knew it — it\'s a fact I remember', response: 'Knowing facts by heart is called AUTOMATICITY. Your brain stored 9 + 5 = 14 because you\'ve practiced it. That frees up brainpower for bigger problems!' },
+            { emoji: '🔢', text: 'I counted up from 9', response: 'Counting on works! As you practice more, your brain will start to just "know" these facts. For now, counting on is a reliable strategy.' },
+          ]
+        },
+        afterText: 'At G1 Play, the check is about <strong>strategy fluency awareness</strong>. We ask students to notice WHAT their brain did automatically. This builds metacognitive awareness of their own learning — they can see themselves getting faster and more efficient.'
+      }
+    ],
+    strategies: [
+      { icon: '🔢', name: 'Count On', desc: 'Start at the bigger number and count up. More efficient than counting all.' },
+      { icon: '🎯', name: 'Make a Ten', desc: 'Break numbers to make a friendly ten. 8+6 → 8+2+4 → 10+4 = 14.' },
+      { icon: '🔄', name: 'Check with Opposite', desc: 'Use addition to check subtraction. If 13-7=6, then 6+7 should be 13.' },
+      { icon: '📐', name: 'Estimate First', desc: 'Before solving, guess: about how much? Then check if your answer is close.' },
+    ]
+  },
+
+  G2: {
+    piaget: 'Concrete Operational Stage (ages 7–11)',
+    piagetDesc: 'Children can <strong>classify, seriate, and think logically with concrete materials</strong>. They understand conservation. Metacognition at this stage becomes <strong>internalized self-regulation</strong> — students start to monitor without prompts and can explain their reasoning to others.',
+    checkFreq: 'Every 8th problem (fading)',
+    freqWhy: 'By G2, the checking habit should be partially internalized. We use FADING — starting with frequent prompts and gradually reducing them as students demonstrate independent self-monitoring. The goal is autonomy.',
+    modes: [
+      { name: 'Explore', tag: 'explore',
+        problem: { story: 'A farmer has', numbers: '48', rest: 'apples. He picks', numbers2: '27', rest2: 'more from the orchard.', question: 'How many apples does the farmer have now?' },
+        thinkCheck: {
+          icon: '🗺️',
+          prompt: 'Plan your approach: What will you do FIRST, SECOND, and THIRD?',
+          type: 'planning',
+          options: [
+            { emoji: '📋', text: '1. Estimate (~50+30=80) → 2. Add ones (8+7=15, regroup) → 3. Add tens (4+2+1=7) → 75', response: 'Brilliant planning! You estimated FIRST (≈80), then broke the problem into steps, and your answer (75) is close to your estimate. Planning before solving is what expert problem-solvers do.' },
+            { emoji: '🧮', text: '1. Line up the numbers → 2. Add the ones column → 3. Regroup if needed → 4. Add the tens', response: 'Clear step-by-step plan! You know the procedure. Now — can you ESTIMATE first to check if your answer will make sense? About 50 + 30 = about 80, so your answer should be near 80.' },
+            { emoji: '🤔', text: 'I\'ll start by adding... hmm, I\'m not sure of my plan yet', response: 'That\'s actually great metacognition — recognizing when you DON\'T have a plan! Try this: Estimate first (48≈50, 27≈30, so about 80). Then choose your strategy. Having a plan BEFORE you start helps your brain focus.' },
+          ]
+        },
+        afterText: 'At G2 Explore, the check is <strong>planning and estimation</strong>. Students learn to map out their approach BEFORE calculating. This is executive function + metacognition working together. The estimate provides a built-in self-check: "Is my answer close to 80?"'
+      },
+      { name: 'Practice', tag: 'practice',
+        problem: { story: 'The library has', numbers: '72', rest: 'books. Students check out', numbers2: '35', rest2: '.', question: 'How many books are left?' },
+        answers: [37, 43, 47, 107],
+        correct: 37,
+        thinkCheck: {
+          icon: '🔎',
+          prompt: 'Explain your thinking to your partner (or to yourself):',
+          type: 'explain',
+          options: [
+            { emoji: '💬', text: '"I decomposed: 72-30=42, then 42-5=37. I checked: 37+35=72 ✓"', response: 'Outstanding! You used decomposition (breaking apart), then VERIFIED with the inverse. And you could EXPLAIN each step. When you can explain your math, you truly understand it.' },
+            { emoji: '📝', text: '"I regrouped: 12-5=7 in ones, 60-30=30 in tens, so 37"', response: 'Clear explanation of regrouping! You showed WHY you borrowed — because 2<5, you needed to regroup. Explaining the WHY shows deep understanding, not just procedure.' },
+            { emoji: '❓', text: '"I got 37 but I\'m not sure how to explain it"', response: 'The fact that you got the right answer shows your brain KNOWS how. Let\'s build the explanation muscle: What did you do first? What did you do next? If you can say it in steps, that\'s an explanation!' },
+          ]
+        },
+        afterText: 'At G2 Practice, the check is <strong>mathematical explanation</strong>. Students articulate their process. This serves triple duty: it verifies understanding, builds mathematical vocabulary, and prepares for mathematical discourse with peers. If you can\'t explain it, you don\'t fully own it.'
+      },
+      { name: 'Play', tag: 'play',
+        problem: { story: 'Challenge:', numbers: '56 + 38', rest: '', question: '= ?' },
+        answers: [84, 94, 96, 104],
+        correct: 94,
+        thinkCheck: {
+          icon: '🏆',
+          prompt: 'Rate your confidence: How SURE are you?',
+          type: 'calibration',
+          options: [
+            { emoji: '💯', text: 'Very sure — I estimated (~90s) and my answer is 94 ✓', response: 'Your confidence is CALIBRATED — you can estimate, solve, and verify. When your estimate matches your answer, confidence is warranted. This self-awareness is a hallmark of mathematical maturity.' },
+            { emoji: '🤞', text: 'Pretty sure, but I should probably double-check', response: 'That\'s excellent self-awareness! Knowing when to double-check is a metacognitive superpower. Quick check: 94 - 38 = 56? Or: 56 + 38 → 56+40-2 = 94 ✓' },
+            { emoji: '😬', text: 'Not sure — I might have made an error', response: 'Recognizing uncertainty is a STRENGTH, not a weakness! Let\'s verify: 6+8=14 (write 4, carry 1). 5+3+1=9. Answer: 94. How do you feel now?' },
+          ]
+        },
+        afterText: 'At G2 Play, the check is <strong>confidence calibration</strong>. Students learn to assess their own certainty. Over-confident students who make errors learn to slow down. Under-confident students who are correct learn to trust their abilities. This is metacognition at its most sophisticated for this age.'
+      }
+    ],
+    strategies: [
+      { icon: '📋', name: 'Plan First', desc: 'Before solving: estimate, choose strategy, then calculate. Check against estimate.' },
+      { icon: '💬', name: 'Explain It', desc: 'Say your steps out loud. If you can explain it, you understand it.' },
+      { icon: '🔎', name: 'Verify', desc: 'Use inverse operations, estimation, or a different strategy to double-check.' },
+      { icon: '🎚️', name: 'Confidence Check', desc: 'Rate how sure you are. Know when to trust and when to re-check.' },
+    ]
+  }
+};
+
+let currentGrade = 'K';
+let currentMode = 0;
+let simStep = 0; // 0=problem, 1=answered, 2=thinking-check, 3=response
+
+function setGrade(g) {
+  currentGrade = g;
+  currentMode = 0;
+  simStep = 0;
+  document.querySelectorAll('.grade-btn').forEach((b,i) => {
+    b.classList.toggle('active', ['K','G1','G2'][i] === g);
+  });
+  render();
+}
+
+function setMode(i) {
+  currentMode = i;
+  simStep = 0;
+  render();
+}
+
+function render() {
+  const g = GRADES[currentGrade];
+  const m = g.modes[currentMode];
+  const tc = m.thinkCheck;
+
+  let html = '';
+
+  // Dev stage box
+  html += `<div class="dev-box">
+    <h3>🧒 ${g.piaget}</h3>
+    <p>${g.piagetDesc}</p>
+  </div>`;
+
+  // Frequency indicator
+  const dots = currentGrade === 'K' ? 3 : currentGrade === 'G1' ? 5 : 8;
+  html += `<div class="freq-bar">
+    <h4>When Does the Thinking Check Appear? — ${g.checkFreq}</h4>
+    <div class="freq-visual">`;
+  for (let i = 1; i <= dots; i++) {
+    if (i === dots) {
+      html += `<div class="freq-dot check current">🧠</div>`;
+    } else {
+      html += `<div class="freq-dot problem">${i}</div>`;
+    }
+    if (i < dots) html += `<span class="freq-arrow">→</span>`;
+  }
+  html += `</div>
+    <p style="font-size:12px;color:var(--muted);margin-top:8px;">${g.freqWhy}</p>
+  </div>`;
+
+  // Mode tabs
+  html += '<div class="timeline">';
+  g.modes.forEach((mode, i) => {
+    const cls = i === currentMode ? 'active' : (i < currentMode ? 'done' : '');
+    html += `<div class="tl-step ${cls}" onclick="setMode(${i})" style="cursor:pointer">
+      <div class="tl-num">${i+1}</div>
+      <div class="tl-label">${mode.name}</div>
+    </div>`;
+  });
+  html += '</div>';
+
+  // Simulation
+  html += `<div class="sim-area">
+    <div class="sim-header">
+      <h2><span class="mode-label ${m.tag}">${m.name} Mode</span> — Simulated Interaction</h2>
+    </div>
+    <div class="sim-body">`;
+
+  // Problem display
+  const p = m.problem;
+  html += '<div class="problem-text">';
+  html += `<span class="story">${p.story}</span> <span class="numbers">${p.numbers}</span> <span class="story">${p.rest}</span>`;
+  if (p.numbers2) html += ` <span class="numbers">${p.numbers2}</span> <span class="story">${p.rest2}</span>`;
+  html += `<br><span class="question">${p.question}</span>`;
+  html += '</div>';
+
+  // Answer buttons (for practice/play)
+  if (m.answers && simStep === 0) {
+    html += '<div class="answer-row">';
+    m.answers.forEach(a => {
+      html += `<button class="ans-btn" onclick="selectAnswer(${a})">${a}</button>`;
+    });
+    html += '</div>';
+    html += '<p style="text-align:center;font-size:13px;color:var(--muted);">Click an answer to see the Thinking Check trigger</p>';
+  } else if (m.answers && simStep >= 1) {
+    html += '<div class="answer-row">';
+    m.answers.forEach(a => {
+      const cls = a === m.correct ? 'correct' : (simStep >= 1 ? 'selected' : '');
+      html += `<button class="ans-btn ${a === m.correct ? 'correct' : ''}" disabled>${a}</button>`;
+    });
+    html += '</div>';
+  }
+
+  // Show thinking check (Explore shows immediately, Practice/Play after answer)
+  if (!m.answers && simStep === 0) {
+    // Explore mode — thinking check comes before/during
+    html += `<button class="next-btn" onclick="showCheck()">Show Thinking Check →</button>`;
+  }
+
+  if (simStep >= 1 && m.answers) {
+    html += `<p style="text-align:center;color:var(--green);font-weight:700;margin-bottom:12px;">✓ Correct!</p>`;
+  }
+
+  if ((simStep >= 2) || (!m.answers && simStep >= 1)) {
+    // Show thinking check
+    html += `<div class="thinking-check">
+      <div class="tc-icon">${tc.icon}</div>
+      <div class="tc-label">🧠 Thinking Check</div>
+      <div class="tc-prompt">${tc.prompt}</div>
+      <div class="tc-options">`;
+    tc.options.forEach((opt, i) => {
+      const picked = simStep >= 3 && i === 0 ? 'picked' : '';
+      html += `<div class="tc-option ${picked}" onclick="pickOption(${i})">
+        <span class="tc-emoji">${opt.emoji}</span>
+        <span>${opt.text}</span>
+      </div>`;
+    });
+    html += '</div>';
+
+    if (simStep >= 3) {
+      html += `<div class="tc-response">
+        <p><span class="affirm">✓ </span>${tc.options[0].response}</p>
+      </div>`;
+    }
+    html += '</div>';
+  }
+
+  if (simStep < 2 && m.answers && simStep >= 1) {
+    html += `<button class="next-btn" onclick="showCheck()">Show Thinking Check →</button>`;
+  }
+
+  html += '</div></div>';
+
+  // After-text explanation
+  if (simStep >= 3 || (!m.answers && simStep >= 3)) {
+    html += `<div class="dev-box" style="border-left-color: var(--green);">
+      <h3 style="color: var(--green);">💡 Why This Works</h3>
+      <p>${m.afterText}</p>
+    </div>`;
+  }
+
+  // Strategy cards
+  html += `<div style="margin-top:24px;">
+    <h3 style="font-size:14px;color:var(--muted);text-transform:uppercase;letter-spacing:1px;margin-bottom:4px;">
+      ${currentGrade} Self-Monitoring Strategies</h3>
+    <div class="strategies">`;
+  g.strategies.forEach(s => {
+    html += `<div class="strat-card">
+      <div class="strat-icon">${s.icon}</div>
+      <div class="strat-name">${s.name}</div>
+      <div class="strat-desc">${s.desc}</div>
+    </div>`;
+  });
+  html += '</div></div>';
+
+  // Progression comparison
+  html += `<div class="info-grid" style="margin-top:24px;">
+    <div class="info-card">
+      <h4>📊 Progression Across Grades</h4>
+      <ul>
+        <li><strong>K:</strong> "Touch it again" — re-engage concrete</li>
+        <li><strong>G1:</strong> "How did you solve it?" — name strategy</li>
+        <li><strong>G2:</strong> "Plan, explain, verify" — full self-regulation</li>
+      </ul>
+    </div>
+    <div class="info-card">
+      <h4>🔬 Check Frequency Fading</h4>
+      <ul>
+        <li><strong>K:</strong> Every 3rd problem (build habit)</li>
+        <li><strong>G1:</strong> Every 5th problem (develop independence)</li>
+        <li><strong>G2:</strong> Every 8th → self-initiated (autonomy)</li>
+      </ul>
+    </div>
+  </div>`;
+
+  document.getElementById('content').innerHTML = html;
+}
+
+function selectAnswer(a) {
+  simStep = 1;
+  render();
+}
+
+function showCheck() {
+  simStep = 2;
+  render();
+}
+
+function pickOption(i) {
+  simStep = 3;
+  render();
+}
+
+// Initial render
+render();
+</script>
+</body>
+</html>
