@@ -683,7 +683,7 @@ const S = {
   // Explore mode
   totalObjects: 12,
   totalPlates: 3,
-  distributedObjects: [],
+  distributedObjects: {},  // map of objIdx -> plateIdx
 
   // Practice mode
   questionType: null,
@@ -744,7 +744,7 @@ function toggleReadAloud() {
 // ════════════════════════════════════════
 function setMode(mode) {
   S.mode = mode;
-  S.distributedObjects = [];
+  S.distributedObjects = {};
 
   if (mode === 'practice' && S.total === 0) {
     S.score = 0;
@@ -775,7 +775,7 @@ function setDiff(diff) {
   S.playStreak = 0;
   S.playRound = 0;
   S.playBest = 0;
-  S.distributedObjects = [];
+  S.distributedObjects = {};
 
   document.querySelectorAll('.diff-btn').forEach(b => b.classList.remove('active'));
   document.getElementById('diff' + diff.charAt(0).toUpperCase()).classList.add('active');
@@ -806,7 +806,7 @@ function renderExplore(ws, sp) {
   const colors = ['color-0', 'color-1', 'color-2', 'color-3', 'color-4'];
   for (let i = 0; i < S.totalObjects; i++) {
     const colorClass = colors[i % colors.length];
-    const isDistributed = S.distributedObjects.includes(i);
+    const isDistributed = i in S.distributedObjects;
     if (!isDistributed) {
       html += `<div class="object ${colorClass}" draggable="true" onclick="selectObject(${i})" ondragstart="dragStart(event, ${i})" ondragend="dragEnd(event)"></div>`;
     }
@@ -817,22 +817,19 @@ function renderExplore(ws, sp) {
   html += '<div class="distribution-area" ondragover="dragOver(event)" ondrop="dragDrop(event)">';
 
   for (let p = 0; p < S.totalPlates; p++) {
-    const plateObjects = S.distributedObjects.filter(i => Math.floor(i / S.totalObjects * S.totalPlates) === p);
-    const isEven = S.totalObjects % S.totalPlates === 0 && S.totalObjects > 0;
-    const isUneven = !isEven && S.totalObjects > 0;
+    const distributedCount = Object.keys(S.distributedObjects).length;
+    const isEven = S.totalObjects % S.totalPlates === 0 && distributedCount > 0;
+    const isUneven = !isEven && distributedCount > 0;
 
     html += `<div class="plate ${isEven ? 'highlight-even' : (isUneven ? 'highlight-uneven' : '')}" ondrop="dropOnPlate(event, ${p})" ondragover="dragOver(event)">`;
     html += `<span class="plate-label">Plate ${p + 1}</span>`;
 
-    // Show objects on this plate
+    // Show objects assigned to this plate
     const colors = ['color-0', 'color-1', 'color-2', 'color-3', 'color-4'];
     for (let i = 0; i < S.totalObjects; i++) {
-      if (S.distributedObjects.includes(i)) {
-        const assignedPlate = Math.floor(Math.random() * S.totalPlates);
-        if (assignedPlate === p) {
-          const colorClass = colors[i % colors.length];
-          html += `<div class="object ${colorClass}" style="opacity:0.8;"></div>`;
-        }
+      if (S.distributedObjects[i] === p) {
+        const colorClass = colors[i % colors.length];
+        html += `<div class="object ${colorClass}" style="opacity:0.8;"></div>`;
       }
     }
 
@@ -908,13 +905,13 @@ function renderExplore(ws, sp) {
 
 function changeObjects(delta) {
   S.totalObjects = Math.max(1, Math.min(30, S.totalObjects + delta));
-  S.distributedObjects = [];
+  S.distributedObjects = {};
   render();
 }
 
 function changePlates(delta) {
   S.totalPlates = Math.max(2, Math.min(6, S.totalPlates + delta));
-  S.distributedObjects = [];
+  S.distributedObjects = {};
   render();
 }
 
@@ -937,26 +934,39 @@ function dragDrop(event) {
 function dropOnPlate(event, plateIdx) {
   event.preventDefault();
   const objIdx = parseInt(event.dataTransfer.getData('objIdx'));
-  if (!S.distributedObjects.includes(objIdx)) {
-    S.distributedObjects.push(objIdx);
+  if (!(objIdx in S.distributedObjects)) {
+    S.distributedObjects[objIdx] = plateIdx;
   }
   render();
 }
 
 function selectObject(idx) {
-  if (!S.distributedObjects.includes(idx)) {
-    S.distributedObjects.push(idx);
+  if (!(idx in S.distributedObjects)) {
+    // Round-robin: assign to next plate in order
+    const plateCounts = {};
+    for (let p = 0; p < S.totalPlates; p++) plateCounts[p] = 0;
+    for (const key in S.distributedObjects) {
+      plateCounts[S.distributedObjects[key]]++;
+    }
+    let minPlate = 0, minCount = Infinity;
+    for (let p = 0; p < S.totalPlates; p++) {
+      if (plateCounts[p] < minCount) { minCount = plateCounts[p]; minPlate = p; }
+    }
+    S.distributedObjects[idx] = minPlate;
   }
   render();
 }
 
 function autoDistribute() {
-  S.distributedObjects = Array.from({length: S.totalObjects}, (_, i) => i);
+  S.distributedObjects = {};
+  for (let i = 0; i < S.totalObjects; i++) {
+    S.distributedObjects[i] = i % S.totalPlates;
+  }
   render();
 }
 
 function clearDistribution() {
-  S.distributedObjects = [];
+  S.distributedObjects = {};
   render();
 }
 
