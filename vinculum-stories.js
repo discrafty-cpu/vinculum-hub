@@ -191,77 +191,133 @@
     // add-subtract: Addition and subtraction within 10/20
     // -------------------------------------------------------------------------
     'add-subtract': [
+      // === ADDITION STORIES (op: 'add') ===
       {
         character: 'Kai',
         setting: 'playroom',
+        op: 'add',
         template: 'Kai had {a} toy dinosaurs. His friend gave him {b} more! How many dinosaurs does Kai have now?',
         followUp: 'How many dinosaurs altogether?'
       },
       {
-        character: 'Priya',
-        setting: 'kitchen',
-        template: 'Priya had {a} strawberries on her plate. She ate {b} of them. How many strawberries are left?',
-        followUp: 'How many strawberries remain?'
-      },
-      {
         character: 'Noah',
         setting: 'playground',
+        op: 'add',
         template: 'Noah found {a} smooth pebbles. Then he found {b} more! How many pebbles does he have?',
         followUp: 'What\'s the total?'
       },
       {
         character: 'Luna',
         setting: 'bakery',
+        op: 'add',
         template: 'Luna made {a} brownies and then baked {b} more. How many brownies did she make altogether?',
         followUp: 'How many total brownies?'
       },
       {
         character: 'Zara',
         setting: 'beach',
+        op: 'add',
         template: 'Zara had {a} pretty shells in her bucket. The waves brought {b} more shells to shore! How many does she have now?',
         followUp: 'What\'s her new total?'
       },
       {
         character: 'Marcus',
         setting: 'pet store',
+        op: 'add',
         template: 'Marcus had {a} goldfish in his tank. His family got {b} more goldfish. How many goldfish are swimming now?',
         followUp: 'How many fish total?'
       },
       {
         character: 'Sofia',
         setting: 'classroom',
+        op: 'add',
         template: 'Sofia colored {a} pictures on Monday and {b} pictures on Tuesday. How many pictures did she color?',
         followUp: 'What\'s the total?'
       },
       {
         character: 'Tomás',
         setting: 'farm',
+        op: 'add',
         template: 'Farmer Tomás had {a} apples. He picked {b} more from the tree. How many apples does he have?',
         followUp: 'How many apples total?'
       },
       {
         character: 'Amara',
         setting: 'garden',
+        op: 'add',
         template: 'Amara planted {a} flower seeds. She planted {b} more yesterday. How many seeds did she plant?',
         followUp: 'How many seeds in total?'
       },
       {
         character: 'Yuki',
         setting: 'library',
+        op: 'add',
         template: 'Yuki checked out {a} books from the library. Then she got {b} more books. How many books does she have?',
         followUp: 'How many books altogether?'
+      },
+      // === SUBTRACTION STORIES (op: 'subtract') ===
+      {
+        character: 'Priya',
+        setting: 'kitchen',
+        op: 'subtract',
+        template: 'Priya had {a} strawberries on her plate. She ate {b} of them. How many strawberries are left?',
+        followUp: 'How many strawberries remain?'
       },
       {
         character: 'Leo',
         setting: 'kitchen',
+        op: 'subtract',
         template: 'Chef Leo had {a} eggs. He used {b} eggs to make breakfast. How many eggs are left?',
         followUp: 'How many eggs remain?'
       },
       {
         character: 'Maya',
         setting: 'playroom',
+        op: 'subtract',
         template: 'Maya had {a} colorful ribbons. Her sister took away {b} ribbons. How many ribbons does Maya have left?',
         followUp: 'How many ribbons now?'
+      },
+      {
+        character: 'Kai',
+        setting: 'playground',
+        op: 'subtract',
+        template: 'Kai had {a} toy cars at the playground. He gave {b} to his friend. How many toy cars does Kai have left?',
+        followUp: 'How many cars remain?'
+      },
+      {
+        character: 'Noah',
+        setting: 'bedroom',
+        op: 'subtract',
+        template: 'Noah had {a} action figures on his shelf. He packed {b} into a box. How many are still on the shelf?',
+        followUp: 'How many figures are left?'
+      },
+      {
+        character: 'Luna',
+        setting: 'bakery',
+        op: 'subtract',
+        template: 'Luna baked {a} cookies and shared {b} with her neighbors. How many cookies does Luna have left?',
+        followUp: 'How many cookies remain?'
+      },
+      {
+        character: 'Zara',
+        setting: 'park',
+        op: 'subtract',
+        template: 'Zara had {a} stickers. She gave {b} stickers to her classmates. How many stickers does Zara have now?',
+        followUp: 'How many stickers are left?'
+      },
+      {
+        character: 'Sofia',
+        setting: 'classroom',
+        op: 'subtract',
+        template: 'Sofia had {a} pencils in her pencil box. She lent {b} pencils to her friends. How many pencils are still in the box?',
+        followUp: 'How many pencils remain?'
+      },
+      {
+        character: 'Tomás',
+        setting: 'farm',
+        op: 'subtract',
+        template: 'Farmer Tomás had {a} oranges. He sold {b} at the market. How many oranges does he have left?',
+        followUp: 'How many oranges remain?'
       }
     ],
 
@@ -1440,7 +1496,15 @@
         return null;
       }
 
-      const templates = STORIES[toolName];
+      let templates = STORIES[toolName];
+
+      // Filter by operation type if specified (e.g., 'add' or 'subtract')
+      // Stories without an op tag are treated as universal (match any operation)
+      if (params.op) {
+        const filtered = templates.filter(t => !t.op || t.op === params.op);
+        if (filtered.length > 0) templates = filtered;
+      }
+
       const template = randomElement(templates);
       return buildStory(template, params);
     },
