@@ -1,0 +1,303 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Function Machine</title>
+    <link rel="stylesheet" href="../../vinculum-core.css">
+    <style>
+        :root { --bg: #0f0f1e; --bg2: #1a1a2e; --card: #16213e; --text: #e0e0e0; --cyan: #00d9ff; --green: #00ff88; --pink: #ff006e; --orange: #ffa500; --grad: linear-gradient(135deg, #00d9ff, #00ff88); }
+        [data-theme="ocean"] { --bg: #0a1628; --card: #0f2847; --cyan: #4dd0e1; --green: #4cd964; }
+        [data-theme="forest"] { --bg: #1a2818; --card: #2d4a2b; --cyan: #1abc9c; --green: #52c41a; }
+        [data-theme="sunset"] { --bg: #2d1b1f; --card: #4a2835; --cyan: #ff6b9d; --pink: #ffa360; }
+        [data-theme="space"] { --bg: #0a0e27; --card: #1a1a3e; --cyan: #7c3aed; --green: #ec4899; }
+        body { background: var(--bg); color: var(--text); font-family: 'Segoe UI', sans-serif; margin: 0; padding: 0; }
+        .container { max-width: 1200px; margin: 0 auto; padding: 20px; }
+        .vinculum-header { display: flex; justify-content: space-between; align-items: center; padding: 20px; background: var(--card); border-bottom: 2px solid var(--cyan); border-radius: 8px; margin-bottom: 30px; }
+        .vinculum-header-left { display: flex; align-items: center; gap: 15px; }
+        .vinculum-back-btn { background: transparent; border: none; color: var(--cyan); cursor: pointer; padding: 8px; display: flex; transition: 0.3s; }
+        .vinculum-back-btn:hover { transform: translateX(-3px); color: var(--green); }
+        .vinculum-title-group h1 { margin: 0; font-size: 28px; background: var(--grad); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; }
+        .vinculum-badges { display: flex; gap: 8px; margin-top: 5px; }
+        .badge, .tag { font-size: 11px; padding: 4px 8px; border-radius: 4px; background: rgba(0, 217, 255, 0.2); color: var(--cyan); border: 1px solid var(--cyan); }
+        .tag { background: rgba(0, 255, 136, 0.2); color: var(--green); border-color: var(--green); }
+        .tabs { display: flex; gap: 10px; margin-bottom: 30px; border-bottom: 2px solid var(--card); }
+        .tab-btn { padding: 12px 20px; background: transparent; border: none; color: var(--text); cursor: pointer; font-size: 16px; transition: 0.3s; border-bottom: 3px solid transparent; }
+        .tab-btn.active { color: var(--cyan); border-bottom-color: var(--cyan); }
+        .tab-content { display: none; }
+        .tab-content.active { display: block; }
+        .card { background: var(--card); padding: 20px; border-radius: 8px; border-left: 4px solid var(--cyan); margin-bottom: 20px; }
+        .machine { background: var(--bg2); padding: 20px; border-radius: 8px; border: 3px dashed var(--cyan); margin: 20px 0; text-align: center; }
+        .controls { display: flex; gap: 15px; margin: 20px 0; flex-wrap: wrap; }
+        .control-group { display: flex; flex-direction: column; gap: 5px; }
+        .control-group label { font-size: 12px; text-transform: uppercase; color: var(--cyan); font-weight: 600; }
+        input[type="text"], select { padding: 10px; background: var(--bg); color: var(--text); border: 1px solid var(--cyan); border-radius: 4px; font-size: 14px; }
+        button { padding: 10px 20px; background: var(--cyan); color: var(--bg); border: none; border-radius: 4px; cursor: pointer; font-weight: 600; transition: 0.3s; }
+        button:hover { background: var(--green); transform: translateY(-2px); }
+        .feedback { padding: 15px; border-radius: 6px; margin: 20px 0; display: none; border-left: 4px solid var(--green); background: rgba(0, 255, 136, 0.1); }
+        .feedback.show { display: block; }
+        .feedback.error { border-left-color: var(--pink); background: rgba(255, 0, 110, 0.1); color: var(--pink); }
+        .table { width: 100%; border-collapse: collapse; margin: 20px 0; }
+        .table th, .table td { padding: 10px; text-align: center; border: 1px solid var(--cyan); }
+        .table th { background: var(--bg2); color: var(--cyan); }
+        .table td { background: var(--bg); }
+        .difficulty-selector { display: flex; gap: 10px; margin: 20px 0; }
+        .difficulty-btn { padding: 10px 20px; background: var(--bg2); border: 2px solid var(--text); color: var(--text); cursor: pointer; border-radius: 4px; transition: 0.3s; }
+        .difficulty-btn.active { border-color: var(--cyan); color: var(--cyan); background: var(--card); }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="vinculum-header">
+            <div class="vinculum-header-left">
+                <a href="../../VINCULUM-Hub.html" class="vinculum-back-btn" aria-label="Back to Hub">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>
+                </a>
+                <div class="vinculum-title-group">
+                    <h1 class="vinculum-title">Function Machine</h1>
+                    <div class="vinculum-badges"><span class="badge">8.F.1</span><span class="tag">8.F.3</span></div>
+                </div>
+            </div>
+            <div class="vinculum-header-right">
+                <select class="vinculum-theme-select" onchange="document.body.setAttribute('data-theme', this.value)">
+                    <option value="">Theme</option><option value="ocean">Ocean</option><option value="forest">Forest</option><option value="sunset">Sunset</option><option value="space">Space</option>
+                </select>
+            </div>
+        </div>
+
+        <div class="tabs">
+            <button class="tab-btn active" onclick="switchTab('explore')">Explore</button>
+            <button class="tab-btn" onclick="switchTab('practice')">Practice</button>
+            <button class="tab-btn" onclick="switchTab('play')">Play</button>
+        </div>
+
+        <div id="explore" class="tab-content active">
+            <div class="card">
+                <h2>What is a Function?</h2>
+                <p>A function is a relationship where each input has exactly one output. Think of it as a machine: you put something in, and get something out.</p>
+            </div>
+
+            <div class="card">
+                <h3>Function Machine</h3>
+                <div class="machine">
+                    <p style="font-size: 20px; font-weight: bold; color: var(--cyan);">🔧 FUNCTION MACHINE 🔧</p>
+                    <p style="color: var(--green); margin: 10px 0;">Rule: y = 2x + 3</p>
+                    <div class="controls">
+                        <div class="control-group">
+                            <label>Input (x)</label>
+                            <input type="text" id="exploreInput" value="5" placeholder="Enter x">
+                        </div>
+                        <button onclick="runMachine()">Run</button>
+                    </div>
+                    <p id="machineOutput" style="font-size: 18px; color: var(--orange); margin-top: 10px;"></p>
+                </div>
+
+                <h3>Input/Output Table</h3>
+                <table class="table">
+                    <thead>
+                        <tr><th>Input (x)</th><th>Output (y)</th></tr>
+                    </thead>
+                    <tbody>
+                        <tr><td>0</td><td>3</td></tr>
+                        <tr><td>1</td><td>5</td></tr>
+                        <tr><td>2</td><td>7</td></tr>
+                        <tr><td>3</td><td>9</td></tr>
+                        <tr><td>5</td><td>13</td></tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <div class="card">
+                <h3>Is it a Function?</h3>
+                <p>A relation is a function if each input has exactly ONE output. Use the vertical line test on a graph: if a vertical line crosses the graph more than once, it's not a function.</p>
+            </div>
+        </div>
+
+        <div id="practice" class="tab-content">
+            <div class="card">
+                <h2>Practice: Function or Not?</h2>
+                <div class="difficulty-selector">
+                    <button class="difficulty-btn active" onclick="setPractice('easy')">Easy</button>
+                    <button class="difficulty-btn" onclick="setPractice('medium')">Medium</button>
+                    <button class="difficulty-btn" onclick="setPractice('hard')">Hard</button>
+                </div>
+
+                <div id="practiceCard" class="card" style="background: var(--bg2); border-left-color: var(--green);">
+                    <h3>Is this a function?</h3>
+                    <table class="table" id="practiceTable">
+                        <thead><tr><th>x</th><th>y</th></tr></thead>
+                        <tbody id="tableBody"></tbody>
+                    </table>
+                </div>
+
+                <div class="controls">
+                    <button onclick="answerPractice('yes')">Yes, it's a function</button>
+                    <button onclick="answerPractice('no')">No, it's not a function</button>
+                </div>
+
+                <div id="feedback" class="feedback"></div>
+                <button onclick="nextPracticeQuestion()" style="width: 100%; margin-top: 20px;">Next Question</button>
+            </div>
+        </div>
+
+        <div id="play" class="tab-content">
+            <div class="card">
+                <h2>Play: Discover the Rule</h2>
+                <p>Find the pattern! What's the function rule?</p>
+
+                <table class="table">
+                    <thead>
+                        <tr><th>Input (x)</th><th>Output (y)</th></tr>
+                    </thead>
+                    <tbody id="gameTable">
+                        <tr><td>1</td><td id="y1">?</td></tr>
+                        <tr><td>2</td><td id="y2">?</td></tr>
+                        <tr><td>3</td><td id="y3">?</td></tr>
+                        <tr><td>4</td><td id="y4">?</td></tr>
+                        <tr><td>5</td><td id="y5">?</td></tr>
+                    </tbody>
+                </table>
+
+                <div class="controls">
+                    <div class="control-group">
+                        <label>What's the rule? (e.g., y=3x+1)</label>
+                        <input type="text" id="guessRule" placeholder="y = ">
+                    </div>
+                    <button onclick="checkRule()">Check</button>
+                </div>
+
+                <div id="feedback" class="feedback"></div>
+                <button onclick="newGameRound()" style="width: 100%; margin-top: 20px;">New Round</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="../../vinculum-feedback.js"></script>
+    <script src="../../vinculum-input.js"></script>
+    <script>
+        let currentDifficulty = 'easy';
+        let currentQuestion = null;
+        let gameRule = null;
+
+        function switchTab(tabName) {
+            document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
+            document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+            document.getElementById(tabName).classList.add('active');
+            event.target.classList.add('active');
+
+            if (tabName === 'practice') nextPracticeQuestion();
+            else if (tabName === 'play') newGameRound();
+        }
+
+        function runMachine() {
+            const input = parseFloat(document.getElementById('exploreInput').value);
+            if (isNaN(input)) {
+                document.getElementById('machineOutput').textContent = 'Please enter a number';
+                document.getElementById('machineOutput').style.color = 'var(--pink)';
+                return;
+            }
+            const output = 2 * input + 3;
+            document.getElementById('machineOutput').textContent = `Output (y) = ${output}`;
+            document.getElementById('machineOutput').style.color = 'var(--orange)';
+        }
+
+        function setPractice(level) {
+            currentDifficulty = level;
+            document.querySelectorAll('.difficulty-btn').forEach(b => b.classList.remove('active'));
+            event.target.classList.add('active');
+            nextPracticeQuestion();
+        }
+
+        function generatePracticeQuestion() {
+            const isFunction = Math.random() > 0.3;
+            const baseData = {
+                easy: [[1, 2], [2, 4], [3, 6], [4, 8]],
+                medium: [[1, 1], [2, 3], [3, 5], [4, 7], [5, 9]],
+                hard: [[0, 0], [1, 1], [2, 4], [3, 9], [4, 16]]
+            };
+
+            let data = baseData[currentDifficulty].map(p => [...p]);
+
+            if (!isFunction && Math.random() > 0.5) {
+                const idx = Math.floor(Math.random() * data.length);
+                data[idx][1] = data[idx][1] + Math.floor(Math.random() * 5) + 1;
+            }
+
+            return { data, isFunction, correct: isFunction };
+        }
+
+        function nextPracticeQuestion() {
+            currentQuestion = generatePracticeQuestion();
+            const tbody = document.getElementById('tableBody');
+            tbody.innerHTML = '';
+
+            currentQuestion.data.forEach(([x, y]) => {
+                const row = document.createElement('tr');
+                row.innerHTML = `<td>${x}</td><td>${y}</td>`;
+                tbody.appendChild(row);
+            });
+
+            clearFeedback();
+        }
+
+        function answerPractice(answer) {
+            const correct = (answer === 'yes') === currentQuestion.correct;
+            if (correct) {
+                showFeedback('Correct! ' + (currentQuestion.correct ? 'Each input has exactly one output.' : 'This input maps to multiple outputs.'), 'success');
+            } else {
+                showFeedback('Not quite. ' + (currentQuestion.correct ? 'This IS a function.' : 'This is NOT a function.'), 'error');
+            }
+            setTimeout(() => nextPracticeQuestion(), 1500);
+        }
+
+        function newGameRound() {
+            const rules = [
+                { formula: (x) => 2 * x + 1, display: 'y = 2x + 1' },
+                { formula: (x) => x * x, display: 'y = x²' },
+                { formula: (x) => 3 * x, display: 'y = 3x' },
+                { formula: (x) => x + 5, display: 'y = x + 5' },
+                { formula: (x) => 2 * x - 3, display: 'y = 2x - 3' }
+            ];
+
+            gameRule = rules[Math.floor(Math.random() * rules.length)];
+
+            for (let i = 1; i <= 5; i++) {
+                const y = gameRule.formula(i);
+                document.getElementById(`y${i}`).textContent = y;
+            }
+
+            document.getElementById('guessRule').value = '';
+            clearFeedback();
+        }
+
+        function checkRule() {
+            const guess = document.getElementById('guessRule').value.toLowerCase().replace(/\s/g, '');
+            const actualRule = gameRule.display.toLowerCase().replace(/\s/g, '');
+
+            if (guess === actualRule) {
+                showFeedback(`Correct! The rule is ${gameRule.display}`, 'success');
+            } else if (guess.includes('x')) {
+                showFeedback(`Not quite. The rule is ${gameRule.display}`, 'error');
+            } else {
+                showFeedback('Please enter a rule using x (e.g., y=2x+1)', 'error');
+            }
+
+            setTimeout(() => newGameRound(), 1500);
+        }
+
+        function showFeedback(message, type) {
+            const fb = document.getElementById('feedback');
+            fb.textContent = message;
+            fb.classList.remove('error', 'success');
+            if (type) fb.classList.add(type);
+            fb.classList.add('show');
+        }
+
+        function clearFeedback() {
+            document.getElementById('feedback').classList.remove('show');
+        }
+
+        window.addEventListener('load', () => nextPracticeQuestion());
+    </script>
+</body>
+</html>

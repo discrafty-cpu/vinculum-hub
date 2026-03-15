@@ -1,0 +1,765 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Expression Builder - VINCULUM</title>
+  <link rel="stylesheet" href="../../vinculum-core.css">
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      background-color: var(--bg);
+      color: var(--text);
+      padding: 20px;
+      transition: background-color 0.3s, color 0.3s;
+    }
+
+    .container {
+      max-width: 900px;
+      margin: 0 auto;
+    }
+
+    .vinculum-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 30px;
+      padding: 20px;
+      background-color: var(--card);
+      border-radius: 12px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    }
+
+    .vinculum-header-left {
+      display: flex;
+      align-items: center;
+      gap: 20px;
+    }
+
+    .vinculum-back-btn {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      width: 40px;
+      height: 40px;
+      background-color: var(--bg2);
+      border-radius: 8px;
+      cursor: pointer;
+      transition: background-color 0.2s;
+      color: var(--text);
+      text-decoration: none;
+    }
+
+    .vinculum-back-btn:hover {
+      background-color: var(--cyan);
+      color: white;
+    }
+
+    .vinculum-title-group {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    .vinculum-title {
+      font-size: 28px;
+      font-weight: 700;
+      margin: 0;
+    }
+
+    .vinculum-badges {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+
+    .badge, .tag {
+      display: inline-block;
+      padding: 4px 12px;
+      border-radius: 20px;
+      font-size: 12px;
+      font-weight: 600;
+    }
+
+    .badge {
+      background-color: var(--cyan);
+      color: white;
+    }
+
+    .tag {
+      background-color: var(--pink);
+      color: white;
+    }
+
+    .vinculum-header-right {
+      display: flex;
+      gap: 12px;
+    }
+
+    .vinculum-theme-select {
+      padding: 8px 16px;
+      border: 2px solid var(--border);
+      border-radius: 8px;
+      background-color: var(--card2);
+      color: var(--text);
+      cursor: pointer;
+      font-weight: 500;
+    }
+
+    .mode-tabs {
+      display: flex;
+      gap: 12px;
+      margin-bottom: 30px;
+      border-bottom: 2px solid var(--border);
+    }
+
+    .mode-tab {
+      padding: 12px 24px;
+      background: none;
+      border: none;
+      color: var(--text2);
+      font-size: 16px;
+      font-weight: 600;
+      cursor: pointer;
+      border-bottom: 3px solid transparent;
+      transition: all 0.3s;
+    }
+
+    .mode-tab.active {
+      color: var(--cyan);
+      border-bottom-color: var(--cyan);
+    }
+
+    .mode-content {
+      display: none;
+    }
+
+    .mode-content.active {
+      display: block;
+      animation: fadeIn 0.3s ease-in;
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; }
+      to { opacity: 1; }
+    }
+
+    .content-section {
+      background-color: var(--card);
+      border-radius: 12px;
+      padding: 24px;
+      margin-bottom: 20px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    }
+
+    .content-section h2 {
+      margin-bottom: 20px;
+      color: var(--text);
+      font-size: 22px;
+    }
+
+    .difficulty-selector {
+      margin-bottom: 20px;
+      display: flex;
+      gap: 12px;
+      align-items: center;
+    }
+
+    .difficulty-selector label {
+      font-weight: 600;
+      color: var(--text2);
+    }
+
+    .difficulty-btn {
+      padding: 8px 16px;
+      border: 2px solid var(--border);
+      border-radius: 8px;
+      background-color: var(--bg2);
+      color: var(--text);
+      cursor: pointer;
+      transition: all 0.3s;
+      font-weight: 600;
+    }
+
+    .difficulty-btn.active {
+      background-color: var(--cyan);
+      border-color: var(--cyan);
+      color: white;
+    }
+
+    .algebra-workspace {
+      background-color: var(--bg2);
+      padding: 24px;
+      border-radius: 8px;
+      margin: 20px 0;
+      min-height: 200px;
+      border: 2px dashed var(--border);
+    }
+
+    .tile-container {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 12px;
+      margin: 20px 0;
+      min-height: 80px;
+    }
+
+    .tile {
+      padding: 12px 20px;
+      border-radius: 8px;
+      font-weight: 700;
+      font-size: 16px;
+      cursor: pointer;
+      transition: all 0.3s;
+      border: 2px solid var(--border);
+    }
+
+    .tile.x-tile {
+      background: linear-gradient(135deg, var(--cyan), var(--green));
+      color: white;
+      border-color: var(--cyan);
+    }
+
+    .tile.unit-tile {
+      background-color: var(--orange);
+      color: white;
+      border-color: var(--orange);
+    }
+
+    .tile:hover {
+      transform: scale(1.05);
+    }
+
+    .button-group {
+      display: flex;
+      gap: 12px;
+      margin-top: 20px;
+      flex-wrap: wrap;
+    }
+
+    button {
+      padding: 12px 24px;
+      border: none;
+      border-radius: 8px;
+      font-size: 16px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.3s;
+    }
+
+    .btn-primary {
+      background-color: var(--cyan);
+      color: white;
+    }
+
+    .btn-primary:hover {
+      opacity: 0.9;
+      transform: translateY(-2px);
+    }
+
+    .btn-secondary {
+      background-color: var(--card2);
+      color: var(--text);
+      border: 2px solid var(--border);
+    }
+
+    .btn-secondary:hover {
+      background-color: var(--border);
+    }
+
+    #feedback {
+      margin-top: 20px;
+      padding: 16px;
+      border-radius: 8px;
+      display: none;
+      font-weight: 600;
+    }
+
+    .feedback.success {
+      background-color: rgba(50, 200, 100, 0.2);
+      color: var(--green);
+      border: 2px solid var(--green);
+      display: block;
+    }
+
+    .feedback.error {
+      background-color: rgba(255, 100, 150, 0.2);
+      color: var(--pink);
+      border: 2px solid var(--pink);
+      display: block;
+    }
+
+    .info-box {
+      background-color: var(--bg2);
+      border-left: 4px solid var(--cyan);
+      padding: 16px;
+      border-radius: 6px;
+      margin-bottom: 20px;
+    }
+
+    .info-box p {
+      margin: 0;
+      color: var(--text);
+      font-size: 14px;
+    }
+
+    .expression-display {
+      background-color: var(--bg2);
+      padding: 20px;
+      border-radius: 8px;
+      margin: 20px 0;
+      text-align: center;
+      font-size: 24px;
+      font-weight: 700;
+      color: var(--cyan);
+      min-height: 60px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .grid-input {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 16px;
+      margin-bottom: 20px;
+    }
+
+    .input-field {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    .input-field label {
+      font-weight: 600;
+      color: var(--text2);
+    }
+
+    .input-field input {
+      padding: 12px;
+      border: 2px solid var(--border);
+      border-radius: 8px;
+      font-size: 16px;
+      background-color: var(--bg2);
+      color: var(--text);
+    }
+
+    .input-field input:focus {
+      outline: none;
+      border-color: var(--cyan);
+    }
+
+    .progress-bar {
+      width: 100%;
+      height: 8px;
+      background-color: var(--border);
+      border-radius: 4px;
+      overflow: hidden;
+      margin: 20px 0;
+    }
+
+    .progress-fill {
+      height: 100%;
+      background: linear-gradient(90deg, var(--cyan), var(--green));
+      width: 0%;
+      transition: width 0.3s;
+    }
+
+    .problem-display {
+      background-color: var(--bg2);
+      padding: 20px;
+      border-radius: 8px;
+      margin: 20px 0;
+      text-align: center;
+      font-size: 18px;
+      font-weight: 600;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <!-- Header -->
+    <div class="vinculum-header">
+      <div class="vinculum-header-left">
+        <a href="../../VINCULUM-Hub.html" class="vinculum-back-btn" aria-label="Back to Hub">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>
+        </a>
+        <div class="vinculum-title-group">
+          <h1 class="vinculum-title">Expression Builder</h1>
+          <div class="vinculum-badges">
+            <span class="badge">6.EE</span>
+            <span class="tag">6.EE.1</span>
+            <span class="tag">6.EE.2</span>
+          </div>
+        </div>
+      </div>
+      <div class="vinculum-header-right">
+        <select class="vinculum-theme-select" onchange="document.body.setAttribute('data-theme', this.value)">
+          <option value="">Theme</option>
+          <option value="ocean">Ocean</option>
+          <option value="forest">Forest</option>
+          <option value="sunset">Sunset</option>
+          <option value="space">Space</option>
+        </select>
+      </div>
+    </div>
+
+    <!-- Mode Tabs -->
+    <div class="mode-tabs">
+      <button class="mode-tab active" onclick="switchMode('explore')">Explore</button>
+      <button class="mode-tab" onclick="switchMode('practice')">Practice</button>
+      <button class="mode-tab" onclick="switchMode('play')">Play</button>
+    </div>
+
+    <!-- EXPLORE MODE -->
+    <div id="explore" class="mode-content active">
+      <div class="content-section">
+        <h2>🔍 Explore: Build Expressions with Algebra Tiles</h2>
+        <div class="info-box">
+          <p>Drag tiles to build expressions. Green x-tiles represent the variable x. Orange unit tiles represent 1. Combine them to write expressions!</p>
+        </div>
+
+        <button class="btn-secondary" onclick="addExploreXTile()">Add x tile</button>
+        <button class="btn-secondary" onclick="addExploreUnitTile()">Add unit tile</button>
+        <button class="btn-secondary" onclick="clearExploreWorkspace()">Clear</button>
+
+        <div class="algebra-workspace">
+          <div class="tile-container" id="explore-workspace"></div>
+        </div>
+
+        <div class="expression-display" id="explore-expression">
+          Expression: (empty)
+        </div>
+
+        <div class="grid-input">
+          <div class="input-field">
+            <label>Evaluate when x =</label>
+            <input type="number" id="explore-value" value="5">
+          </div>
+          <div class="input-field">
+            <label>Result</label>
+            <div class="expression-display" id="explore-result" style="font-size: 20px; margin: 0; background: rgba(0,200,200,0.1);"></div>
+          </div>
+        </div>
+
+        <button class="btn-primary" onclick="exploreEvaluate()">Evaluate Expression</button>
+      </div>
+    </div>
+
+    <!-- PRACTICE MODE -->
+    <div id="practice" class="mode-content">
+      <div class="content-section">
+        <h2>📝 Practice: Write & Evaluate Expressions</h2>
+
+        <div class="difficulty-selector">
+          <label>Difficulty:</label>
+          <button class="difficulty-btn active" onclick="setPracticeDifficulty('easy')">Easy</button>
+          <button class="difficulty-btn" onclick="setPracticeDifficulty('medium')">Medium</button>
+          <button class="difficulty-btn" onclick="setPracticeDifficulty('hard')">Hard</button>
+        </div>
+
+        <div class="problem-display" id="practice-problem"></div>
+
+        <div class="grid-input">
+          <div class="input-field">
+            <label>Write the Expression (use x for variable)</label>
+            <input type="text" id="practice-expression" placeholder="e.g., 2x+5">
+          </div>
+        </div>
+
+        <div class="grid-input">
+          <div class="input-field">
+            <label>Then evaluate at given value</label>
+            <input type="number" id="practice-answer" placeholder="Answer">
+          </div>
+        </div>
+
+        <div class="button-group">
+          <button class="btn-primary" onclick="checkPracticeAnswer()">Check Answer</button>
+          <button class="btn-secondary" onclick="newPracticeProblem()">Next Problem</button>
+        </div>
+
+        <div id="feedback" class="feedback"></div>
+      </div>
+    </div>
+
+    <!-- PLAY MODE -->
+    <div id="play" class="mode-content">
+      <div class="content-section">
+        <h2>🏁 Play: Expression Evaluator</h2>
+        <div class="info-box">
+          <p>Evaluate expressions for given values. Score points for correct answers!</p>
+        </div>
+
+        <div class="difficulty-selector">
+          <label>Difficulty:</label>
+          <button class="difficulty-btn active" onclick="setPlayDifficulty('easy')">Easy</button>
+          <button class="difficulty-btn" onclick="setPlayDifficulty('medium')">Medium</button>
+          <button class="difficulty-btn" onclick="setPlayDifficulty('hard')">Hard</button>
+        </div>
+
+        <div class="progress-bar">
+          <div class="progress-fill" id="play-progress"></div>
+        </div>
+
+        <p style="text-align: center; font-size: 18px; margin-bottom: 20px;">
+          Problem <span id="play-count">1</span> / 10 | Score: <span id="play-score">0</span>
+        </p>
+
+        <div style="background-color: var(--bg2); padding: 24px; border-radius: 8px; margin-bottom: 20px;">
+          <p id="play-problem" style="text-align: center; font-size: 18px; font-weight: 600; margin-bottom: 20px;"></p>
+          <div class="input-field">
+            <label>Answer</label>
+            <input type="number" id="play-answer" placeholder="Answer">
+          </div>
+        </div>
+
+        <div class="button-group">
+          <button class="btn-primary" onclick="checkPlayAnswer()">Submit</button>
+          <button class="btn-secondary" onclick="skipPlay()">Skip</button>
+        </div>
+
+        <div id="feedback" class="feedback"></div>
+      </div>
+    </div>
+  </div>
+
+  <script src="../../vinculum-feedback.js"></script>
+  <script src="../../vinculum-input.js"></script>
+
+  <script>
+    let currentMode = 'explore';
+    let practiceDifficulty = 'easy';
+    let playDifficulty = 'easy';
+    let playScore = 0;
+    let playCurrent = 0;
+    let playProblems = [];
+
+    let exploreTiles = [];
+
+    function switchMode(mode) {
+      currentMode = mode;
+      document.querySelectorAll('.mode-content').forEach(el => el.classList.remove('active'));
+      document.querySelectorAll('.mode-tab').forEach(el => el.classList.remove('active'));
+      document.getElementById(mode).classList.add('active');
+
+      if (mode === 'practice') {
+        newPracticeProblem();
+      } else if (mode === 'play') {
+        generatePlayProblems();
+        nextPlayProblem();
+      }
+    }
+
+    document.querySelectorAll('.mode-tab').forEach((btn, idx) => {
+      btn.addEventListener('click', function() {
+        document.querySelectorAll('.mode-tab').forEach(b => b.classList.remove('active'));
+        this.classList.add('active');
+      });
+    });
+
+    // Helper to evaluate expressions
+    function evaluateExpression(expr, xValue) {
+      try {
+        return eval(expr.replace(/x/g, `(${xValue})`));
+      } catch (e) {
+        return NaN;
+      }
+    }
+
+    // EXPLORE MODE
+    function addExploreXTile() {
+      exploreTiles.push({ type: 'x' });
+      renderExploreWorkspace();
+    }
+
+    function addExploreUnitTile() {
+      exploreTiles.push({ type: 'unit' });
+      renderExploreWorkspace();
+    }
+
+    function renderExploreWorkspace() {
+      const workspace = document.getElementById('explore-workspace');
+      workspace.innerHTML = '';
+
+      exploreTiles.forEach((tile, idx) => {
+        const tileEl = document.createElement('div');
+        tileEl.className = `tile ${tile.type === 'x' ? 'x-tile' : 'unit-tile'}`;
+        tileEl.textContent = tile.type === 'x' ? 'x' : '1';
+        tileEl.onclick = () => {
+          exploreTiles.splice(idx, 1);
+          renderExploreWorkspace();
+        };
+        workspace.appendChild(tileEl);
+      });
+
+      updateExploreExpression();
+    }
+
+    function updateExploreExpression() {
+      let xCount = exploreTiles.filter(t => t.type === 'x').length;
+      let unitCount = exploreTiles.filter(t => t.type === 'unit').length;
+
+      let expr = '';
+      if (xCount > 0) expr = xCount === 1 ? 'x' : `${xCount}x`;
+      if (unitCount > 0) {
+        expr += (expr ? ' + ' : '') + unitCount;
+      }
+      if (!expr) expr = '0';
+
+      document.getElementById('explore-expression').textContent = `Expression: ${expr}`;
+    }
+
+    function exploreEvaluate() {
+      const xValue = parseInt(document.getElementById('explore-value').value);
+      let xCount = exploreTiles.filter(t => t.type === 'x').length;
+      let unitCount = exploreTiles.filter(t => t.type === 'unit').length;
+
+      const result = (xCount * xValue) + unitCount;
+      document.getElementById('explore-result').textContent = result;
+    }
+
+    function clearExploreWorkspace() {
+      exploreTiles = [];
+      renderExploreWorkspace();
+      document.getElementById('explore-result').textContent = '';
+    }
+
+    // PRACTICE MODE
+    function generatePracticeProblem() {
+      const ranges = {
+        easy: { xCoeff: [1, 3], const: [0, 10] },
+        medium: { xCoeff: [1, 5], const: [0, 20] },
+        hard: { xCoeff: [2, 8], const: [0, 30] }
+      };
+
+      const range = ranges[practiceDifficulty];
+      const xCoeff = Math.floor(Math.random() * (range.xCoeff[1] - range.xCoeff[0] + 1)) + range.xCoeff[0];
+      const constant = Math.floor(Math.random() * (range.const[1] - range.const[0] + 1)) + range.const[0];
+      const xValue = Math.floor(Math.random() * 10) + 1;
+
+      let expr = xCoeff === 1 ? 'x' : `${xCoeff}x`;
+      if (constant > 0) expr += ` + ${constant}`;
+
+      const result = (xCoeff * xValue) + constant;
+
+      return { expr, xValue, result };
+    }
+
+    function newPracticeProblem() {
+      const problem = generatePracticeProblem();
+      document.getElementById('practice-problem').textContent = `Write and evaluate: ${problem.expr} when x = ${problem.xValue}`;
+      document.getElementById('practice-expression').value = '';
+      document.getElementById('practice-answer').value = '';
+      document.getElementById('feedback').innerHTML = '';
+    }
+
+    function checkPracticeAnswer() {
+      const problem = generatePracticeProblem();
+      const answer = parseInt(document.getElementById('practice-answer').value);
+
+      if (answer === problem.result) {
+        showFeedback('feedback', 'success', `Correct! ${problem.expr} when x=${problem.xValue} equals ${problem.result}`);
+      } else {
+        showFeedback('feedback', 'error', `Incorrect. Answer: ${problem.result}`);
+      }
+    }
+
+    function setPracticeDifficulty(level) {
+      practiceDifficulty = level;
+      document.querySelectorAll('#practice .difficulty-btn').forEach((btn, idx) => {
+        btn.classList.toggle('active', ['easy', 'medium', 'hard'][idx] === level);
+      });
+      newPracticeProblem();
+    }
+
+    // PLAY MODE
+    function generatePlayProblems() {
+      const ranges = {
+        easy: { xCoeff: [1, 3], const: [0, 10] },
+        medium: { xCoeff: [1, 5], const: [0, 20] },
+        hard: { xCoeff: [2, 8], const: [0, 30] }
+      };
+
+      const range = ranges[playDifficulty];
+      playProblems = [];
+
+      for (let i = 0; i < 10; i++) {
+        const xCoeff = Math.floor(Math.random() * (range.xCoeff[1] - range.xCoeff[0] + 1)) + range.xCoeff[0];
+        const constant = Math.floor(Math.random() * (range.const[1] - range.const[0] + 1)) + range.const[0];
+        const xValue = Math.floor(Math.random() * 10) + 1;
+
+        let expr = xCoeff === 1 ? 'x' : `${xCoeff}x`;
+        if (constant > 0) expr += ` + ${constant}`;
+
+        const result = (xCoeff * xValue) + constant;
+
+        playProblems.push({ expr, xValue, result });
+      }
+    }
+
+    function nextPlayProblem() {
+      playCurrent++;
+      const problem = playProblems[playCurrent - 1];
+
+      document.getElementById('play-count').textContent = playCurrent;
+      document.getElementById('play-problem').textContent = `Evaluate: ${problem.expr} when x = ${problem.xValue}`;
+      document.getElementById('play-answer').value = '';
+      document.getElementById('play-progress').style.width = ((playCurrent - 1) / 10) * 100 + '%';
+      document.getElementById('feedback').innerHTML = '';
+    }
+
+    function checkPlayAnswer() {
+      const problem = playProblems[playCurrent - 1];
+      const answer = parseInt(document.getElementById('play-answer').value);
+
+      if (answer === problem.result) {
+        playScore++;
+        showFeedback('feedback', 'success', 'Correct! 🎉');
+      } else {
+        showFeedback('feedback', 'error', `Incorrect. Answer: ${problem.result}`);
+      }
+
+      document.getElementById('play-score').textContent = playScore;
+
+      if (playCurrent < 10) {
+        setTimeout(nextPlayProblem, 1500);
+      } else {
+        document.getElementById('play-progress').style.width = '100%';
+      }
+    }
+
+    function skipPlay() {
+      if (playCurrent < 10) {
+        nextPlayProblem();
+      } else {
+        document.getElementById('play-progress').style.width = '100%';
+      }
+    }
+
+    function setPlayDifficulty(level) {
+      playDifficulty = level;
+      playScore = 0;
+      playCurrent = 0;
+      document.querySelectorAll('#play .difficulty-btn').forEach((btn, idx) => {
+        btn.classList.toggle('active', ['easy', 'medium', 'hard'][idx] === level);
+      });
+      generatePlayProblems();
+      nextPlayProblem();
+    }
+
+    function showFeedback(elementId, type, message) {
+      const el = document.getElementById(elementId);
+      el.className = `feedback ${type}`;
+      el.textContent = message;
+    }
+  </script>
+</body>
+</html>

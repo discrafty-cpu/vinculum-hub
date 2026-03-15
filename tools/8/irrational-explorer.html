@@ -1,0 +1,601 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Irrational Number Explorer</title>
+    <link rel="stylesheet" href="../../vinculum-core.css">
+    <style>
+        :root {
+            --bg: #0f0f1e;
+            --bg2: #1a1a2e;
+            --card: #16213e;
+            --text: #e0e0e0;
+            --cyan: #00d9ff;
+            --green: #00ff88;
+            --pink: #ff006e;
+            --orange: #ffa500;
+            --grad: linear-gradient(135deg, #00d9ff, #00ff88);
+        }
+
+        [data-theme="ocean"] { --bg: #0a1628; --card: #0f2847; --cyan: #4dd0e1; --green: #4cd964; }
+        [data-theme="forest"] { --bg: #1a2818; --card: #2d4a2b; --cyan: #1abc9c; --green: #52c41a; }
+        [data-theme="sunset"] { --bg: #2d1b1f; --card: #4a2835; --cyan: #ff6b9d; --pink: #ffa360; }
+        [data-theme="space"] { --bg: #0a0e27; --card: #1a1a3e; --cyan: #7c3aed; --green: #ec4899; }
+
+        body { background: var(--bg); color: var(--text); font-family: 'Segoe UI', sans-serif; margin: 0; padding: 0; overflow-x: hidden; }
+        .container { max-width: 1200px; margin: 0 auto; padding: 20px; }
+
+        .vinculum-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 20px;
+            background: var(--card);
+            border-bottom: 2px solid var(--cyan);
+            border-radius: 8px;
+            margin-bottom: 30px;
+        }
+
+        .vinculum-header-left {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+
+        .vinculum-back-btn {
+            background: transparent;
+            border: none;
+            color: var(--cyan);
+            cursor: pointer;
+            padding: 8px;
+            display: flex;
+            align-items: center;
+            transition: all 0.3s ease;
+        }
+
+        .vinculum-back-btn:hover { transform: translateX(-3px); color: var(--green); }
+
+        .vinculum-title-group h1 {
+            margin: 0;
+            font-size: 28px;
+            background: var(--grad);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .vinculum-badges {
+            display: flex;
+            gap: 8px;
+            margin-top: 5px;
+        }
+
+        .badge, .tag {
+            font-size: 11px;
+            padding: 4px 8px;
+            border-radius: 4px;
+            background: rgba(0, 217, 255, 0.2);
+            color: var(--cyan);
+            border: 1px solid var(--cyan);
+        }
+
+        .tag { background: rgba(0, 255, 136, 0.2); color: var(--green); border-color: var(--green); }
+
+        .vinculum-header-right select {
+            background: var(--bg);
+            color: var(--text);
+            border: 1px solid var(--cyan);
+            padding: 8px 12px;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+
+        .tabs {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 30px;
+            border-bottom: 2px solid var(--card);
+        }
+
+        .tab-btn {
+            padding: 12px 20px;
+            background: transparent;
+            border: none;
+            color: var(--text);
+            cursor: pointer;
+            font-size: 16px;
+            transition: all 0.3s ease;
+            border-bottom: 3px solid transparent;
+        }
+
+        .tab-btn.active {
+            color: var(--cyan);
+            border-bottom-color: var(--cyan);
+        }
+
+        .tab-content { display: none; }
+        .tab-content.active { display: block; }
+
+        .card {
+            background: var(--card);
+            padding: 20px;
+            border-radius: 8px;
+            border-left: 4px solid var(--cyan);
+            margin-bottom: 20px;
+        }
+
+        .canvas-container {
+            width: 100%;
+            height: 400px;
+            background: var(--bg);
+            border: 2px solid var(--cyan);
+            border-radius: 8px;
+            margin: 20px 0;
+            position: relative;
+        }
+
+        canvas { display: block; border-radius: 6px; }
+
+        .controls {
+            display: flex;
+            gap: 15px;
+            margin: 20px 0;
+            flex-wrap: wrap;
+        }
+
+        .control-group {
+            display: flex;
+            flex-direction: column;
+            gap: 5px;
+        }
+
+        .control-group label {
+            font-size: 12px;
+            text-transform: uppercase;
+            color: var(--cyan);
+            font-weight: 600;
+        }
+
+        input[type="range"], input[type="text"], select {
+            padding: 10px;
+            background: var(--bg);
+            color: var(--text);
+            border: 1px solid var(--cyan);
+            border-radius: 4px;
+            font-size: 14px;
+        }
+
+        input[type="range"] { width: 150px; }
+
+        button {
+            padding: 10px 20px;
+            background: var(--cyan);
+            color: var(--bg);
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-weight: 600;
+            transition: all 0.3s ease;
+        }
+
+        button:hover { background: var(--green); transform: translateY(-2px); }
+
+        .feedback {
+            padding: 15px;
+            border-radius: 6px;
+            margin: 20px 0;
+            display: none;
+            border-left: 4px solid var(--green);
+            background: rgba(0, 255, 136, 0.1);
+        }
+
+        .feedback.show { display: block; }
+        .feedback.error { border-left-color: var(--pink); background: rgba(255, 0, 110, 0.1); color: var(--pink); }
+        .feedback.success { color: var(--green); }
+
+        .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 20px; }
+
+        .difficulty-selector {
+            display: flex;
+            gap: 10px;
+            margin: 20px 0;
+        }
+
+        .difficulty-btn {
+            padding: 10px 20px;
+            background: var(--bg2);
+            border: 2px solid var(--text);
+            color: var(--text);
+            cursor: pointer;
+            border-radius: 4px;
+            transition: all 0.3s ease;
+        }
+
+        .difficulty-btn.active {
+            border-color: var(--cyan);
+            color: var(--cyan);
+            background: var(--card);
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="vinculum-header">
+            <div class="vinculum-header-left">
+                <a href="../../VINCULUM-Hub.html" class="vinculum-back-btn" aria-label="Back to Hub">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>
+                </a>
+                <div class="vinculum-title-group">
+                    <h1 class="vinculum-title">Irrational Number Explorer</h1>
+                    <div class="vinculum-badges"><span class="badge">8.NS.1</span><span class="tag">8.NS.2</span></div>
+                </div>
+            </div>
+            <div class="vinculum-header-right">
+                <select class="vinculum-theme-select" onchange="document.body.setAttribute('data-theme', this.value)">
+                    <option value="">Theme</option><option value="ocean">Ocean</option><option value="forest">Forest</option><option value="sunset">Sunset</option><option value="space">Space</option>
+                </select>
+            </div>
+        </div>
+
+        <div class="tabs">
+            <button class="tab-btn active" onclick="switchTab('explore')">Explore</button>
+            <button class="tab-btn" onclick="switchTab('practice')">Practice</button>
+            <button class="tab-btn" onclick="switchTab('play')">Play</button>
+        </div>
+
+        <div id="explore" class="tab-content active">
+            <div class="card">
+                <h2>What are Irrational Numbers?</h2>
+                <p>Irrational numbers are numbers that cannot be expressed as a fraction of two integers. They have non-repeating, non-terminating decimal expansions. Examples: √2, π, e</p>
+            </div>
+
+            <div class="card">
+                <h3>Approximate √2 on the Number Line</h3>
+                <div class="controls">
+                    <div class="control-group">
+                        <label>Root Value</label>
+                        <input type="range" id="rootValue" min="2" max="5" value="2" step="0.1" onchange="updateRootExplore()">
+                        <span id="rootDisplay">√2 ≈ 1.414</span>
+                    </div>
+                </div>
+                <div class="canvas-container" id="exploreCanvas"></div>
+            </div>
+
+            <div class="card">
+                <h3>Famous Irrational Numbers</h3>
+                <div class="grid">
+                    <div style="padding: 15px; background: var(--bg); border-radius: 6px;">
+                        <h4 style="color: var(--cyan); margin-top: 0;">√2</h4>
+                        <p>≈ 1.41421356...</p>
+                        <p style="font-size: 12px; color: var(--text);">Golden ratio in geometry</p>
+                    </div>
+                    <div style="padding: 15px; background: var(--bg); border-radius: 6px;">
+                        <h4 style="color: var(--green); margin-top: 0;">π (Pi)</h4>
+                        <p>≈ 3.14159265...</p>
+                        <p style="font-size: 12px; color: var(--text);">Ratio of circumference to diameter</p>
+                    </div>
+                    <div style="padding: 15px; background: var(--bg); border-radius: 6px;">
+                        <h4 style="color: var(--orange); margin-top: 0;">e (Euler)</h4>
+                        <p>≈ 2.71828182...</p>
+                        <p style="font-size: 12px; color: var(--text);">Base of natural logarithms</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div id="practice" class="tab-content">
+            <div class="card">
+                <h2>Practice: Classify Numbers</h2>
+                <div class="difficulty-selector">
+                    <button class="difficulty-btn active" onclick="setPractice('easy')">Easy</button>
+                    <button class="difficulty-btn" onclick="setPractice('medium')">Medium</button>
+                    <button class="difficulty-btn" onclick="setPractice('hard')">Hard</button>
+                </div>
+
+                <div id="practiceQuestion" class="card" style="background: var(--bg2); border-left-color: var(--green);">
+                    <h3>Is this number rational or irrational?</h3>
+                    <p id="questionText" style="font-size: 20px; font-weight: bold; color: var(--cyan);">Loading...</p>
+                </div>
+
+                <div class="controls">
+                    <button onclick="answerPractice('rational')">Rational</button>
+                    <button onclick="answerPractice('irrational')">Irrational</button>
+                </div>
+
+                <div id="feedback" class="feedback"></div>
+
+                <button onclick="nextPracticeQuestion()" style="width: 100%; margin-top: 20px;">Next Question</button>
+            </div>
+        </div>
+
+        <div id="play" class="tab-content">
+            <div class="card">
+                <h2>Play: Guess the Square Root</h2>
+                <div class="controls">
+                    <div class="control-group">
+                        <label>Guess the root:</label>
+                        <input type="text" id="guessInput" placeholder="Enter decimal value" maxlength="10">
+                    </div>
+                    <button onclick="submitGuess()">Check Guess</button>
+                </div>
+
+                <div class="canvas-container" id="gameCanvas"></div>
+
+                <div id="feedback" class="feedback"></div>
+
+                <div id="gameInfo" class="card" style="background: var(--bg2);">
+                    <p id="infoText">Try to guess a number as close as possible to a random irrational square root!</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="../../vinculum-feedback.js"></script>
+    <script src="../../vinculum-input.js"></script>
+    <script>
+        let currentDifficulty = 'easy';
+        let currentAnswer = null;
+        let practiceScore = 0;
+        let practiceTotal = 0;
+        let gameNumber = null;
+
+        function switchTab(tabName) {
+            document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
+            document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+            document.getElementById(tabName).classList.add('active');
+            event.target.classList.add('active');
+
+            if (tabName === 'explore') {
+                setTimeout(drawExploreCanvas, 100);
+            } else if (tabName === 'practice') {
+                nextPracticeQuestion();
+            } else if (tabName === 'play') {
+                setTimeout(drawGameCanvas, 100);
+                initializeGame();
+            }
+        }
+
+        function updateRootExplore() {
+            const value = parseFloat(document.getElementById('rootValue').value);
+            const sqrt = Math.sqrt(value);
+            document.getElementById('rootDisplay').textContent = `√${value.toFixed(1)} ≈ ${sqrt.toFixed(6)}`;
+            drawExploreCanvas();
+        }
+
+        function drawExploreCanvas() {
+            const container = document.getElementById('exploreCanvas');
+            container.innerHTML = '';
+            const canvas = document.createElement('canvas');
+            canvas.width = container.clientWidth;
+            canvas.height = container.clientHeight;
+            container.appendChild(canvas);
+
+            const ctx = canvas.getContext('2d');
+            const value = parseFloat(document.getElementById('rootValue').value);
+            const sqrt = Math.sqrt(value);
+
+            const padding = 40;
+            const width = canvas.width - 2 * padding;
+            const height = canvas.height - 2 * padding;
+
+            ctx.fillStyle = getComputedStyle(document.documentElement).getPropertyValue('--bg');
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+            // Draw number line
+            ctx.strokeStyle = getComputedStyle(document.documentElement).getPropertyValue('--cyan');
+            ctx.lineWidth = 2;
+            ctx.beginPath();
+            ctx.moveTo(padding, height + padding - 20);
+            ctx.lineTo(padding + width, height + padding - 20);
+            ctx.stroke();
+
+            // Draw tick marks and labels
+            ctx.fillStyle = getComputedStyle(document.documentElement).getPropertyValue('--text');
+            ctx.font = '12px Arial';
+            ctx.textAlign = 'center';
+
+            for (let i = 0; i <= 3; i++) {
+                const x = padding + (i / 3) * width;
+                ctx.beginPath();
+                ctx.moveTo(x, height + padding - 20);
+                ctx.lineTo(x, height + padding - 10);
+                ctx.stroke();
+                ctx.fillText(i.toString(), x, canvas.height - 10);
+            }
+
+            // Draw point at sqrt
+            const sqrtX = padding + (sqrt / 3) * width;
+            ctx.fillStyle = getComputedStyle(document.documentElement).getPropertyValue('--green');
+            ctx.beginPath();
+            ctx.arc(sqrtX, height + padding - 20, 8, 0, 2 * Math.PI);
+            ctx.fill();
+
+            ctx.fillStyle = getComputedStyle(document.documentElement).getPropertyValue('--green');
+            ctx.font = 'bold 14px Arial';
+            ctx.textAlign = 'center';
+            ctx.fillText(`√${value.toFixed(1)}`, sqrtX, height + padding - 40);
+        }
+
+        function setPractice(level) {
+            currentDifficulty = level;
+            document.querySelectorAll('.difficulty-btn').forEach(b => b.classList.remove('active'));
+            event.target.classList.add('active');
+            nextPracticeQuestion();
+        }
+
+        function generatePracticeQuestion() {
+            const questions = {
+                easy: [
+                    { num: '3/4', type: 'rational', display: '3/4' },
+                    { num: '√4', type: 'rational', display: '√4 = 2' },
+                    { num: '√3', type: 'irrational', display: '√3' },
+                    { num: '0.5', type: 'rational', display: '0.5' },
+                    { num: '√2', type: 'irrational', display: '√2' },
+                    { num: 'π', type: 'irrational', display: 'π' },
+                    { num: '5', type: 'rational', display: '5' }
+                ],
+                medium: [
+                    { num: '√7', type: 'irrational', display: '√7' },
+                    { num: '2.5', type: 'rational', display: '2.5' },
+                    { num: 'π/2', type: 'irrational', display: 'π/2' },
+                    { num: '√9', type: 'rational', display: '√9 = 3' },
+                    { num: '0.333...', type: 'rational', display: '0.333... = 1/3' },
+                    { num: '√10', type: 'irrational', display: '√10' },
+                    { num: '7/8', type: 'rational', display: '7/8' }
+                ],
+                hard: [
+                    { num: '∛2', type: 'irrational', display: '∛2 (cube root)' },
+                    { num: '2π', type: 'irrational', display: '2π' },
+                    { num: '√(1/4)', type: 'rational', display: '√(1/4) = 1/2' },
+                    { num: 'e', type: 'irrational', display: 'e (Euler\'s number)' },
+                    { num: '√2 + √3', type: 'irrational', display: '√2 + √3' },
+                    { num: '1/√2', type: 'irrational', display: '1/√2' },
+                    { num: '(√4)/(√9)', type: 'rational', display: '(√4)/(√9) = 2/3' }
+                ]
+            };
+
+            const qList = questions[currentDifficulty];
+            return qList[Math.floor(Math.random() * qList.length)];
+        }
+
+        function nextPracticeQuestion() {
+            const q = generatePracticeQuestion();
+            currentAnswer = q.type;
+            document.getElementById('questionText').textContent = q.display;
+            clearFeedback();
+        }
+
+        function answerPractice(answer) {
+            practiceTotal++;
+            const correct = answer === currentAnswer;
+            if (correct) {
+                practiceScore++;
+                showFeedback('Correct! ' + (currentAnswer === 'rational' ? 'This can be expressed as a fraction.' : 'This cannot be expressed as a fraction.'), 'success');
+            } else {
+                showFeedback('Not quite. This number is ' + currentAnswer + '.', 'error');
+            }
+
+            setTimeout(() => {
+                nextPracticeQuestion();
+            }, 1500);
+        }
+
+        function initializeGame() {
+            const sqrtValues = [2, 3, 5, 7, 11, 13];
+            gameNumber = sqrtValues[Math.floor(Math.random() * sqrtValues.length)];
+            document.getElementById('guessInput').value = '';
+            document.getElementById('infoText').textContent = `Find √${gameNumber}. The actual value is ${Math.sqrt(gameNumber).toFixed(6)}`;
+            clearFeedback();
+        }
+
+        function submitGuess() {
+            const guess = parseFloat(document.getElementById('guessInput').value);
+            const actual = Math.sqrt(gameNumber);
+
+            if (isNaN(guess)) {
+                showFeedback('Please enter a valid number.', 'error');
+                return;
+            }
+
+            const difference = Math.abs(guess - actual);
+            if (difference < 0.001) {
+                showFeedback(`Excellent! You got it! √${gameNumber} = ${actual.toFixed(6)}`, 'success');
+            } else if (difference < 0.01) {
+                showFeedback(`Very close! You were off by ${difference.toFixed(6)}. Try again!`, 'success');
+            } else if (difference < 0.1) {
+                showFeedback(`Good try! Off by ${difference.toFixed(3)}. You're on the right track.`, 'success');
+            } else {
+                showFeedback(`Your guess was ${guess}, but √${gameNumber} ≈ ${actual.toFixed(6)}`, 'error');
+            }
+            drawGameCanvas();
+        }
+
+        function drawGameCanvas() {
+            const container = document.getElementById('gameCanvas');
+            container.innerHTML = '';
+            const canvas = document.createElement('canvas');
+            canvas.width = container.clientWidth;
+            canvas.height = container.clientHeight;
+            container.appendChild(canvas);
+
+            const ctx = canvas.getContext('2d');
+            const actual = Math.sqrt(gameNumber);
+            const guess = parseFloat(document.getElementById('guessInput').value) || 0;
+
+            ctx.fillStyle = getComputedStyle(document.documentElement).getPropertyValue('--bg');
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+            const padding = 40;
+            const width = canvas.width - 2 * padding;
+            const height = canvas.height - 2 * padding;
+
+            // Draw number line
+            ctx.strokeStyle = getComputedStyle(document.documentElement).getPropertyValue('--cyan');
+            ctx.lineWidth = 2;
+            ctx.beginPath();
+            ctx.moveTo(padding, height + padding - 20);
+            ctx.lineTo(padding + width, height + padding - 20);
+            ctx.stroke();
+
+            // Draw tick marks
+            ctx.fillStyle = getComputedStyle(document.documentElement).getPropertyValue('--text');
+            ctx.font = '12px Arial';
+            ctx.textAlign = 'center';
+
+            const maxVal = 5;
+            for (let i = 0; i <= maxVal; i++) {
+                const x = padding + (i / maxVal) * width;
+                ctx.beginPath();
+                ctx.moveTo(x, height + padding - 20);
+                ctx.lineTo(x, height + padding - 10);
+                ctx.stroke();
+                ctx.fillText(i.toString(), x, canvas.height - 10);
+            }
+
+            // Draw actual point
+            const actualX = padding + (actual / maxVal) * width;
+            ctx.fillStyle = getComputedStyle(document.documentElement).getPropertyValue('--green');
+            ctx.beginPath();
+            ctx.arc(actualX, height + padding - 20, 8, 0, 2 * Math.PI);
+            ctx.fill();
+
+            // Draw guess point if exists
+            if (guess > 0) {
+                const guessX = padding + (guess / maxVal) * width;
+                ctx.fillStyle = getComputedStyle(document.documentElement).getPropertyValue('--pink');
+                ctx.beginPath();
+                ctx.arc(guessX, height + padding - 20, 6, 0, 2 * Math.PI);
+                ctx.fill();
+            }
+
+            ctx.fillStyle = getComputedStyle(document.documentElement).getPropertyValue('--green');
+            ctx.font = 'bold 12px Arial';
+            ctx.fillText(`√${gameNumber}`, actualX, height + padding - 40);
+        }
+
+        function showFeedback(message, type) {
+            const fb = document.getElementById('feedback');
+            fb.textContent = message;
+            fb.classList.remove('error', 'success');
+            if (type) fb.classList.add(type);
+            fb.classList.add('show');
+        }
+
+        function clearFeedback() {
+            const fb = document.getElementById('feedback');
+            fb.classList.remove('show');
+        }
+
+        document.addEventListener('keypress', (e) => {
+            if (document.getElementById('play').classList.contains('active') && e.key === 'Enter') {
+                submitGuess();
+            }
+        });
+
+        window.addEventListener('load', () => {
+            setTimeout(drawExploreCanvas, 100);
+        });
+    </script>
+</body>
+</html>
