@@ -1,6 +1,6 @@
 /* ═══════════════════════════════════════════════════════════
    VINCULUM ADAPTIVE HOOK — Auto-wires VinculumData into tools
-   v1.0 — March 2026
+   v1.1 — March 2026
 
    Non-invasive adapter: uses MutationObserver on the feedback
    element to detect correct/incorrect answers without modifying
@@ -9,10 +9,17 @@
    Provides:
    - Automatic AdaptiveEngine initialization
    - DOM-based answer detection (watches #feedback element)
-   - Difficulty recommendation prompts
+   - Silent auto-adjust: difficulty changes invisibly (no popup)
+   - Non-blocking scaffold hints for struggling students
    - Session logging on page unload
    - Misconception forwarding to VinculumData
    - Response time tracking
+
+   v1.1 change: Replaced popup "Level Up!" prompt with silent
+   auto-adjust. Students stay in flow — the platform quietly
+   adjusts difficulty when they hit 85% or drop below 40%.
+   Scaffold hints appear briefly at bottom of screen and fade
+   automatically (no buttons, no decisions required).
 
    Loads AFTER vinculum-data.js. Falls back gracefully if
    VinculumData is not available.
@@ -31,8 +38,7 @@
   var lastAnswerTime = Date.now();
   var sessionStartTime = Date.now();
   var currentDifficulty = 'emergent';
-  var promptShown = false;
-  var promptCooldown = 0; // Prevent rapid re-prompting
+  var promptCooldown = 0; // Prevent rapid re-adjusting
 
   // ── Detect initial difficulty from common state patterns ──
   function detectDifficulty() {
@@ -63,90 +69,79 @@
     return null;
   }
 
-  // ── Show adaptive recommendation prompt ──
-  function showRecommendation(rec) {
-    if (promptShown || Date.now() < promptCooldown) return;
+  // ── Silent auto-adjust: apply difficulty changes without interrupting the student ──
+  // Research: K students should stay in flow. The adaptive engine detects when
+  // problems are too easy (>85%) or too hard (<40%) and adjusts silently.
+  // No popups, no decisions — just the right challenge level, automatically.
+  function applyRecommendation(rec) {
+    if (Date.now() < promptCooldown) return;
     if (rec.action === 'stay') return;
 
-    promptShown = true;
-    promptCooldown = Date.now() + 15000; // 15s cooldown between prompts
+    // For up/down: silently change the difficulty
+    if ((rec.action === 'up' || rec.action === 'down') && rec.nextDiff) {
+      promptCooldown = Date.now() + 20000; // 20s cooldown between adjustments
 
-    var prompt = document.createElement('div');
-    prompt.id = 'adaptivePrompt';
-    prompt.style.cssText = 'position:fixed;top:20px;left:50%;transform:translateX(-50%);' +
-      'background:var(--card2,#1a1f2e);border:2px solid var(--cyan,#00d4ff);border-radius:16px;' +
-      'padding:16px 24px;z-index:10000;color:var(--text,#e0e0e0);font-size:15px;' +
-      'box-shadow:0 8px 32px rgba(0,0,0,0.4);max-width:400px;text-align:center;' +
-      'animation:slideDown 0.3s ease-out;';
+      var newDiff = rec.nextDiff;
 
-    var message = rec.message || '';
-    var html = '<div style="font-weight:700;margin-bottom:8px;color:var(--cyan,#00d4ff);">';
+      // Update state through common tool patterns
+      if (window.state && 'difficulty' in window.state) {
+        window.state.difficulty = newDiff;
+      } else if (window.S && 'difficulty' in window.S) {
+        window.S.difficulty = newDiff;
+      } else if (window.S && 'diff' in window.S) {
+        window.S.diff = newDiff;
+      }
+      if (typeof window.currentDifficulty !== 'undefined') {
+        window.currentDifficulty = newDiff;
+      }
 
-    if (rec.action === 'up') {
-      html += '🌟 Level Up!</div>';
-      html += '<div>' + message + '</div>';
-      html += '<div style="margin-top:12px;">';
-      html += '<button onclick="window._vAdaptiveAccept(\'' + (rec.nextDiff || '') + '\')" style="background:var(--cyan,#00d4ff);color:#000;border:none;border-radius:8px;padding:8px 16px;margin:0 4px;cursor:pointer;font-weight:700;">Yes!</button>';
-      html += '<button onclick="window._vAdaptiveDismiss()" style="background:transparent;border:1px solid var(--border,#333);color:var(--text,#e0e0e0);border-radius:8px;padding:8px 16px;margin:0 4px;cursor:pointer;">Stay Here</button>';
-      html += '</div>';
-    } else if (rec.action === 'down') {
-      html += '💪 Let\'s Build Up</div>';
-      html += '<div>' + message + '</div>';
-      html += '<div style="margin-top:12px;">';
-      html += '<button onclick="window._vAdaptiveAccept(\'' + (rec.nextDiff || '') + '\')" style="background:var(--pink,#ff6b9d);color:#fff;border:none;border-radius:8px;padding:8px 16px;margin:0 4px;cursor:pointer;font-weight:700;">OK</button>';
-      html += '<button onclick="window._vAdaptiveDismiss()" style="background:transparent;border:1px solid var(--border,#333);color:var(--text,#e0e0e0);border-radius:8px;padding:8px 16px;margin:0 4px;cursor:pointer;">Keep Trying</button>';
-      html += '</div>';
-    } else if (rec.action === 'scaffold') {
-      html += '🤔 Thinking Time</div>';
-      html += '<div>' + message + '</div>';
-      html += '<div style="margin-top:12px;">';
-      html += '<button onclick="window._vAdaptiveDismiss()" style="background:var(--yellow,#ffd93d);color:#000;border:none;border-radius:8px;padding:8px 16px;cursor:pointer;font-weight:700;">Got It!</button>';
-      html += '</div>';
+      // Click the matching difficulty button if it exists (triggers tool's own render)
+      var btn = document.querySelector('[data-diff="' + newDiff + '"], .diff-btn[onclick*="' + newDiff + '"]');
+      if (btn) btn.click();
+      else if (typeof window.render === 'function') window.render();
+
+      // Update engine tracking
+      currentDifficulty = newDiff;
+      if (engine) engine.diff = newDiff;
+
+      // Log the silent adjustment for teacher visibility
+      if (window.VinculumData && window.VinculumData.logEvent) {
+        VinculumData.logEvent(toolName, 'adaptive-adjust', {
+          action: rec.action,
+          from: currentDifficulty,
+          to: newDiff,
+          accuracy: engine ? engine.getWindowAccuracy() : null
+        });
+      }
     }
 
-    prompt.innerHTML = html;
-    document.body.appendChild(prompt);
-
-    // Auto-dismiss after 8 seconds
-    setTimeout(function() {
-      window._vAdaptiveDismiss();
-    }, 8000);
+    // For scaffold: show a brief, non-blocking hint (no buttons, fades on its own)
+    if (rec.action === 'scaffold') {
+      promptCooldown = Date.now() + 30000; // 30s cooldown for scaffold hints
+      showScaffoldHint(rec.message || 'Take your time!');
+    }
   }
 
-  // ── Accept difficulty change ──
-  window._vAdaptiveAccept = function(newDiff) {
-    if (!newDiff) { window._vAdaptiveDismiss(); return; }
+  // ── Non-blocking scaffold hint (no buttons, auto-fades) ──
+  function showScaffoldHint(message) {
+    var existing = document.getElementById('adaptiveHint');
+    if (existing) existing.remove();
 
-    // Try to change difficulty through common state patterns
-    if (window.state && 'difficulty' in window.state) {
-      window.state.difficulty = newDiff;
-    } else if (window.S && 'difficulty' in window.S) {
-      window.S.difficulty = newDiff;
-    } else if (window.S && 'diff' in window.S) {
-      window.S.diff = newDiff;
-    }
-    if (typeof window.currentDifficulty !== 'undefined') {
-      window.currentDifficulty = newDiff;
-    }
+    var hint = document.createElement('div');
+    hint.id = 'adaptiveHint';
+    hint.style.cssText = 'position:fixed;bottom:80px;left:50%;transform:translateX(-50%);' +
+      'background:rgba(255,217,61,0.95);border-radius:12px;' +
+      'padding:10px 20px;z-index:9999;color:#333;font-size:14px;font-weight:600;' +
+      'box-shadow:0 4px 16px rgba(0,0,0,0.15);text-align:center;pointer-events:none;' +
+      'animation:hintFade 4s ease-out forwards;';
+    hint.textContent = '\uD83D\uDCA1 ' + message;
+    document.body.appendChild(hint);
 
-    // Click the matching difficulty button if it exists
-    var btn = document.querySelector('[data-diff="' + newDiff + '"], .diff-btn[onclick*="' + newDiff + '"]');
-    if (btn) btn.click();
-    else if (typeof window.render === 'function') window.render();
-
-    // Update engine
-    currentDifficulty = newDiff;
-    if (engine) engine.diff = newDiff;
-
-    window._vAdaptiveDismiss();
-  };
-
-  // ── Dismiss prompt ──
-  window._vAdaptiveDismiss = function() {
-    var el = document.getElementById('adaptivePrompt');
-    if (el) el.remove();
-    promptShown = false;
-  };
+    // Remove after animation
+    setTimeout(function() {
+      if (hint.parentNode) hint.remove();
+    }, 4000);
+  }
 
   // ── Watch #feedback element for class changes ──
   function setupObserver() {
@@ -180,7 +175,7 @@
           var mode = detectMode();
           if (mode !== 'explore') {
             var rec = engine.recommend();
-            showRecommendation(rec);
+            applyRecommendation(rec);
           }
         }
       });
@@ -218,7 +213,7 @@
 
   // ── Add slideDown animation ──
   var style = document.createElement('style');
-  style.textContent = '@keyframes slideDown{from{opacity:0;transform:translateX(-50%) translateY(-20px);}to{opacity:1;transform:translateX(-50%) translateY(0);}}';
+  style.textContent = '@keyframes hintFade{0%{opacity:0;transform:translateX(-50%) translateY(10px);}10%{opacity:1;transform:translateX(-50%) translateY(0);}80%{opacity:1;}100%{opacity:0;transform:translateX(-50%) translateY(-10px);}}';
   document.head.appendChild(style);
 
   // ── Start observer when DOM is ready ──
