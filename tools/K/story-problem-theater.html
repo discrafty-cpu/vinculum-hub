@@ -523,9 +523,9 @@
       <button class="back-btn" onclick="window.location.href='../../VINCULUM-Hub.html'">◀</button>
       <div class="title-group">
         <h1>Story Problem Theater</h1>
-        <button class="back-btn" id="readAloudBtn" onclick="toggleReadAloud()" aria-label="Read Aloud" title="Read instructions aloud">🔊 Read to Me</button>
         <div class="grade-badge">K.OA.2</div>
       </div>
+      <button class="back-btn" id="readAloudBtn" onclick="toggleReadAloud()" aria-label="Read Aloud" title="Read instructions aloud" style="padding:6px 12px;font-size:13px;white-space:nowrap;">🔊 Read to Me</button>
     </div>
     <div class="header-right">
       <div class="mode-tabs">
@@ -1058,13 +1058,38 @@
       const narration = document.getElementById('narration');
       const sceneSvg = document.getElementById('sceneSvg');
 
+      // Proper, teacher-quality story sentences using counter type (not scene name)
+      const counterWord1 = pluralize(scene.counter, p.num1);
+      const counterWord2 = pluralize(scene.counter, p.num2);
+      const storyTemplates = {
+        add: {
+          Pond: `There are ${p.num1} ${counterWord1} on the pond. ${p.num2} more ${counterWord2} swim over. How many ducks are there now?`,
+          Tree: `There are ${p.num1} ${counterWord1} on the tree. ${p.num2} more ${counterWord2} grow. How many apples are there in all?`,
+          Park: `${p.num1} ${counterWord1} are playing in the park. ${p.num2} more ${counterWord2} run over to join them. How many dogs are there altogether?`,
+          Bus: `There are ${p.num1} ${counterWord1} on the bus. ${p.num2} more ${counterWord2} get on at the next stop. How many kids are on the bus now?`,
+          Garden: `${p.num1} ${counterWord1} are blooming in the garden. ${p.num2} more ${counterWord2} open up. How many flowers are there now?`,
+          Plate: `There are ${p.num1} ${counterWord1} on the plate. Someone puts ${p.num2} more ${counterWord2} on the plate. How many cookies are there in all?`
+        },
+        subtract: {
+          Pond: `There are ${p.num1} ${counterWord1} on the pond. ${p.num2} ${counterWord2} fly away. How many ducks are left?`,
+          Tree: `There are ${p.num1} ${counterWord1} on the tree. ${p.num2} ${counterWord2} fall off. How many apples are left on the tree?`,
+          Park: `${p.num1} ${counterWord1} are playing in the park. ${p.num2} ${counterWord2} go home. How many dogs are still in the park?`,
+          Bus: `There are ${p.num1} ${counterWord1} on the bus. ${p.num2} ${counterWord2} get off at the next stop. How many kids are still on the bus?`,
+          Garden: `There are ${p.num1} ${counterWord1} in the garden. ${p.num2} ${counterWord2} get picked. How many flowers are left?`,
+          Plate: `There are ${p.num1} ${counterWord1} on the plate. Someone eats ${p.num2} ${counterWord2}. How many cookies are left?`
+        }
+      };
+
       const stories = {
-        add: `${p.num1} ${pluralize(scene.name.toLowerCase(), p.num1)}. ${p.num2} more ${pluralize(scene.name.toLowerCase(), p.num2)} come!`,
-        subtract: `${p.num1} ${pluralize(scene.name.toLowerCase(), p.num1)} are here. ${p.num2} go away.`
+        add: storyTemplates.add[scene.name] || `There are ${p.num1} ${counterWord1}. ${p.num2} more ${counterWord2} come. How many are there now?`,
+        subtract: storyTemplates.subtract[scene.name] || `There are ${p.num1} ${counterWord1}. ${p.num2} ${counterWord2} go away. How many are left?`
       };
 
       narration.textContent = stories[p.operation];
-      sceneSvg.innerHTML = scene.svg + scene[`generate${scene.name}s`](p.num1, p.num2) + scene.makePart2(p.num2);
+      // Build function name from counter type, not scene name
+      // e.g. counter='duck' → 'generateDucks', counter='kid' → 'generateKids'
+      var fnName = 'generate' + scene.counter.charAt(0).toUpperCase() + scene.counter.slice(1) + 's';
+      sceneSvg.innerHTML = scene.svg + (scene[fnName] ? scene[fnName](p.num1, p.num2) : '') + scene.makePart2(p.num2);
 
       const equation = document.getElementById('equationDisplay');
       const text = document.getElementById('equationText');
@@ -1078,21 +1103,16 @@
     }
 
     function pluralize(word, count) {
-      const plurals = {
-        duck: count === 1 ? 'duck' : 'ducks',
-        apple: count === 1 ? 'apple' : 'apples',
-        dog: count === 1 ? 'dog' : 'dogs',
-        kid: count === 1 ? 'kid' : 'kids',
-        flower: count === 1 ? 'flower' : 'flowers',
-        cookie: count === 1 ? 'cookie' : 'cookies',
-        pond: 'pond',
-        tree: 'tree',
-        park: 'park',
-        bus: 'bus',
-        garden: 'garden',
-        plate: 'plate'
+      const singulars = {
+        duck: 'duck', apple: 'apple', dog: 'dog',
+        kid: 'kid', flower: 'flower', cookie: 'cookie'
       };
-      return plurals[word] || word;
+      const plurals = {
+        duck: 'ducks', apple: 'apples', dog: 'dogs',
+        kid: 'kids', flower: 'flowers', cookie: 'cookies'
+      };
+      if (count === 1) return singulars[word] || word;
+      return plurals[word] || word + 's';
     }
 
     // EVENT LISTENERS
