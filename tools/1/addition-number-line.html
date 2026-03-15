@@ -172,7 +172,6 @@ const NL_W = W - PAD_L - PAD_R;
 function nx(n, max){ return PAD_L + (n / max) * NL_W; }
 
 function rand(a,b){return Math.floor(Math.random()*(b-a+1))+a;}
-function showFB(t,c){const f=document.getElementById('feedback');f.textContent=t;f.className='feedback '+c+' show';setTimeout(()=>f.classList.remove('show'),1200);}
 
 function setMode(m){
   S.mode=m; S.phase='ready'; S.clickedA=null; S.clickedR=null; S.stepCurrent=null; S.stepsCompleted=[];
@@ -791,8 +790,7 @@ function renderPractice(ws, sp){
   // Answer input only shows AFTER both arrows are placed
   if(S.phase === 'answer'){
     h += '<div class="input-row">';
-    h += `<input type="number" class="num-input" id="practiceAnswer" min="0" max="${max}" placeholder="?" autofocus>`;
-    h += `<button class="ctrl-btn primary" onclick="checkPractice()">✓ Check</button>`;
+    h += '<div id="vi-container"></div>';
     h += '</div>';
   }
 
@@ -802,6 +800,14 @@ function renderPractice(ws, sp){
   h += '</div>';
 
   ws.innerHTML = h;
+
+  // Initialize VinculumInput for answer
+  if(S.phase === 'answer'){
+    const correctAns = S.pMissing==='result'? (S.pOp==='+'?S.pA+S.pB:S.pA-S.pB) : S.pB;
+    const vc = document.getElementById('vi-container');
+    vc.innerHTML = '';
+    VinculumInput.create(vc, { type:'auto', answer: correctAns, onSubmit: function(v){ checkPractice(v); } });
+  }
 
   // Side panel — scaffold stays visible
   const correctAns = S.pMissing==='result'? correctResult : S.pB;
@@ -825,9 +831,7 @@ function renderPractice(ws, sp){
     <div class="panel-text">Touch each tick mark on the number line and count: "one, two, three..." as you go. The arrows show exactly how far you jumped!</div></div>`;
 }
 
-function checkPractice(){
-  const input = document.getElementById('practiceAnswer');
-  const val = parseInt(input.value);
+function checkPractice(val){
   const correctAns = S.pMissing==='result'? (S.pOp==='+'?S.pA+S.pB:S.pA-S.pB) : S.pB;
   if(isNaN(val)){showFB('Type a number!','try-again');return;}
   if(val === correctAns){
@@ -835,8 +839,6 @@ function checkPractice(){
     setTimeout(()=>{ newPractice(); render(); }, 1500);
   } else {
     showFB('Not quite — try again!','incorrect');
-    input.value='';
-    input.focus();
   }
 }
 

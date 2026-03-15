@@ -643,7 +643,6 @@ body {
 
 <script src="../../vinculum-input.js"></script>
 <script>
-function showFB(t,c){var f=document.getElementById("feedback");if(!f)return;f.textContent=t;f.className="feedback "+c+" show";setTimeout(function(){f.classList.remove("show");},1200);}
 
 // ════════════════════════════════════════
 // STATE
@@ -945,7 +944,7 @@ function renderPractice(ws, sp) {
     html += `<div class="practice-question">
       <div class="question-text">How many objects are <strong>${targetKey}</strong> inches?</div>
       <div class="input-group">
-        <input type="number" class="number-input" id="answerInput" placeholder="?" />
+        <div id="vi-container"></div>
         <button class="play-btn primary" onclick="submitPracticeAnswer(${count})">✓ Check</button>
       </div>
     </div>`;
@@ -976,7 +975,7 @@ function renderPractice(ws, sp) {
     html += `<div class="practice-question">
       <div class="question-text">How many total objects were measured?</div>
       <div class="input-group">
-        <input type="number" class="number-input" id="answerInput" placeholder="?" />
+        <div id="vi-container"></div>
         <button class="play-btn primary" onclick="submitPracticeAnswer(${total})">✓ Check</button>
       </div>
     </div>`;
@@ -1041,7 +1040,7 @@ function renderPractice(ws, sp) {
     html += `<div class="practice-question">
       <div class="question-text">How many more objects are <strong>${keys[keys.length - 1]}"</strong> than <strong>${keys[0]}"</strong>?</div>
       <div class="input-group">
-        <input type="number" class="number-input" id="answerInput" placeholder="?" />
+        <div id="vi-container"></div>
         <button class="play-btn primary" onclick="submitPracticeAnswer(${diff})">✓ Check</button>
       </div>
     </div>`;
@@ -1050,7 +1049,28 @@ function renderPractice(ws, sp) {
   html += '</div>';
   ws.innerHTML = html;
 
-  setTimeout(() => document.getElementById('answerInput')?.focus(), 100);
+  setTimeout(() => {
+    let correctAnswer;
+    if (types === 'read-plot') {
+      const keys = Object.keys(S.plotData);
+      const targetKey = keys[Math.floor(Math.random() * keys.length)];
+      correctAnswer = S.plotData[targetKey];
+    } else if (types === 'count-data') {
+      correctAnswer = Object.values(S.plotData).reduce((a, b) => a + b, 0);
+    } else if (types === 'compare-plot') {
+      const keys = Object.keys(S.plotData).sort();
+      const val1 = S.plotData[keys[0]];
+      const val2 = S.plotData[keys[keys.length - 1]];
+      correctAnswer = Math.abs(val1 - val2);
+    }
+    if (correctAnswer !== undefined && types !== 'find-mode') {
+      var vi = VinculumInput.create(document.getElementById('vi-container'), {
+        type: 'auto',
+        answer: correctAnswer,
+        onSubmit: function(value) { submitPracticeAnswer(correctAnswer, value); }
+      });
+    }
+  }, 50);
 
   // Side panel
   sp.innerHTML = `
@@ -1105,9 +1125,8 @@ function newPracticeQuestion() {
   S.userAnswers = {};
 }
 
-function submitPracticeAnswer(correct) {
-  const input = document.getElementById('answerInput');
-  const val = parseInt(input?.value || 0);
+function submitPracticeAnswer(correct, value) {
+  const val = value !== undefined ? value : parseInt(document.getElementById('answerInput')?.value || 0);
 
   if (val === correct) {
     showFB('✓ Correct!', 'correct');
@@ -1203,7 +1222,7 @@ function renderPlay(ws, sp) {
     html += `<div class="practice-question">
       <div class="question-text">How many objects are <strong>${q}</strong> inches?</div>
       <div class="input-group">
-        <input type="number" class="number-input" id="answerInput" placeholder="?" />
+        <div id="vi-play-container"></div>
         <button class="play-btn primary" onclick="submitPlayAnswer(${answer})">✓ Check</button>
       </div>
     </div>`;
@@ -1213,7 +1232,16 @@ function renderPlay(ws, sp) {
   ws.innerHTML = html;
 
   if (!S.gameEnded) {
-    setTimeout(() => document.getElementById('answerInput')?.focus(), 100);
+    setTimeout(() => {
+      const keys = Object.keys(challengeData).filter(k => challengeData[k] > 0);
+      const q = keys[0];
+      const answer = challengeData[q];
+      var vi = VinculumInput.create(document.getElementById('vi-play-container'), {
+        type: 'auto',
+        answer: answer,
+        onSubmit: function(value) { submitPlayAnswer(answer, value); }
+      });
+    }, 50);
   }
 
   // Side panel
@@ -1246,9 +1274,8 @@ function renderPlay(ws, sp) {
   `;
 }
 
-function submitPlayAnswer(correct) {
-  const input = document.getElementById('answerInput');
-  const val = parseInt(input?.value || 0);
+function submitPlayAnswer(correct, value) {
+  const val = value !== undefined ? value : parseInt(document.getElementById('answerInput')?.value || 0);
 
   if (val === correct) {
     showFB('✓ Yes!', 'correct');

@@ -168,7 +168,6 @@ function toggleReadAloud() {
 }
 
 function rand(a,b){return Math.floor(Math.random()*(b-a+1))+a;}
-function showFB(t,c){const f=document.getElementById('feedback');f.textContent=t;f.className='feedback '+c+' show';setTimeout(()=>f.classList.remove('show'),1200);}
 
 function setMode(m){
   S.mode=m;
@@ -361,13 +360,34 @@ function renderPractice(ws, sp){
   h += buildPV(n, showT, showO, showTot);
 
   // Answer input
-  h += '<div class="input-row">';
-  h += `<input type="number" class="num-input" id="practiceAnswer" min="0" max="19" placeholder="?" autofocus>`;
-  h += `<button class="ctrl-btn primary" onclick="checkPractice()">✓ Check</button>`;
+  h += '<div id="vi-container" style="margin-top:16px;"></div>';
+  h += `<div style="margin-top:12px;">`;
   h += `<button class="ctrl-btn" onclick="newPractice();render();" style="opacity:0.6;font-size:11px;">Skip →</button>`;
   h += '</div>';
 
   ws.innerHTML = h;
+
+  // Create Smart Context input for practice answer
+  setTimeout(() => {
+    const vc = document.getElementById('vi-container');
+    if (vc && window.VinculumInput) {
+      vc.innerHTML = '';
+      let correctAnswer;
+      if (S.pMissing === 'ones') correctAnswer = S.pNum % 10;
+      else if (S.pMissing === 'tens') correctAnswer = 10;
+      else correctAnswer = S.pNum;
+
+      VinculumInput.create(vc, {
+        type: 'auto',
+        answer: correctAnswer,
+        min: 0,
+        max: 19,
+        onSubmit: function(val) {
+          checkPracticeWithValue(val);
+        }
+      });
+    }
+  }, 50);
 
   sp.innerHTML = `
     <div class="panel-section"><div class="panel-title">Scaffold</div>
@@ -380,8 +400,7 @@ function renderPractice(ws, sp){
     11 = 10 + 1<br>12 = 10 + 2<br>13 = 10 + 3<br>...<br>19 = 10 + 9</div></div>`;
 }
 
-function checkPractice(){
-  const val = parseInt(document.getElementById('practiceAnswer').value);
+function checkPracticeWithValue(val){
   let correct;
   if(S.pMissing === 'ones') correct = S.pNum % 10;
   else if(S.pMissing === 'tens') correct = 10;
@@ -408,8 +427,6 @@ function checkPractice(){
     }
 
     showFB(feedback, 'incorrect');
-    document.getElementById('practiceAnswer').value = '';
-    document.getElementById('practiceAnswer').focus();
   }
 }
 

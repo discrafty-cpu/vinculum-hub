@@ -627,7 +627,6 @@ body {
 
 <script src="../../vinculum-input.js"></script>
 <script>
-function showFB(t,c){var f=document.getElementById("feedback");if(!f)return;f.textContent=t;f.className="feedback "+c+" show";setTimeout(function(){f.classList.remove("show");},1200);}
 
 // ════════════════════════════════════════
 // STATE
@@ -904,16 +903,21 @@ function renderPractice(ws, sp) {
   html += `<div class="fluency-card">
     <div style="font-size:12px;color:var(--muted);margin-bottom:4px;">What is the answer?</div>
     <div class="fluency-equation">${fact.a} ${fact.op} ${fact.b}</div>
-    <div>
-      <input type="number" class="fluency-input" id="practiceInput" placeholder="?" min="0" max="999" />
-    </div>
+    <div id="vi-container"></div>
     <button class="btn btn-primary" style="margin-top:12px;width:100%;" onclick="submitPracticeAnswer()">Check</button>
   </div>`;
 
   html += '</div>';
   ws.innerHTML = html;
 
-  setTimeout(() => document.getElementById('practiceInput')?.focus(), 100);
+  setTimeout(() => {
+    const fact = S.currentFact;
+    var vi = VinculumInput.create(document.getElementById('vi-container'), {
+      type: 'auto',
+      answer: fact.answer,
+      onSubmit: function(value) { submitPracticeAnswer(value); }
+    });
+  }, 50);
 
   // Side panel with mastery
   sp.innerHTML = `
@@ -955,10 +959,9 @@ function renderPractice(ws, sp) {
   `;
 }
 
-function submitPracticeAnswer() {
-  const input = document.getElementById('practiceInput');
-  const answer = parseInt(input?.value || 0);
+function submitPracticeAnswer(value) {
   const fact = S.currentFact;
+  const answer = value !== undefined ? value : parseInt(document.getElementById('practiceInput')?.value || 0);
 
   const elapsed = (Date.now() - S.timeStart) / 1000;
 
@@ -1048,9 +1051,7 @@ function renderPlay(ws, sp) {
     html += `<div class="fluency-card">
       <div style="font-size:12px;color:var(--muted);margin-bottom:4px;">What is the answer?</div>
       <div class="fluency-equation">${fact.a} ${fact.op} ${fact.b}</div>
-      <div>
-        <input type="number" class="fluency-input" id="playInput" placeholder="?" min="0" max="999" />
-      </div>
+      <div id="vi-play-container"></div>
       <button class="btn btn-primary" style="margin-top:12px;width:100%;" onclick="submitPlayAnswer()">✓</button>
     </div>`;
   }
@@ -1059,7 +1060,14 @@ function renderPlay(ws, sp) {
   ws.innerHTML = html;
 
   if (S.roundNumber <= S.roundTotal) {
-    setTimeout(() => document.getElementById('playInput')?.focus(), 100);
+    setTimeout(() => {
+      const fact = S.currentFact;
+      var vi = VinculumInput.create(document.getElementById('vi-play-container'), {
+        type: 'auto',
+        answer: fact.answer,
+        onSubmit: function(value) { submitPlayAnswer(value); }
+      });
+    }, 50);
   }
 
   // Side panel
@@ -1085,10 +1093,9 @@ function renderPlay(ws, sp) {
   `;
 }
 
-function submitPlayAnswer() {
-  const input = document.getElementById('playInput');
-  const answer = parseInt(input?.value || 0);
+function submitPlayAnswer(value) {
   const fact = S.currentFact;
+  const answer = value !== undefined ? value : parseInt(document.getElementById('playInput')?.value || 0);
 
   const elapsed = (Date.now() - S.timeStart) / 1000;
 

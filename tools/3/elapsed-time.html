@@ -713,7 +713,6 @@ body {
 
 <script src="../../vinculum-input.js"></script>
 <script>
-function showFB(t,c){var f=document.getElementById("feedback");if(!f)return;f.textContent=t;f.className="feedback "+c+" show";setTimeout(function(){f.classList.remove("show");},1200);}
 
 // ════════════════════════════════════════
 // STATE
@@ -1072,10 +1071,7 @@ function renderPractice(ws, sp) {
     html += `<div class="practice-question">
       <div class="question-text">How much time has passed?</div>
       <div class="input-group">
-        <input type="number" class="time-input hours" id="ansH" min="0" max="12" placeholder="h" />
-        <span style="font-weight:700;color:var(--text2);">h</span>
-        <input type="number" class="time-input minutes" id="ansM" min="0" max="59" placeholder="m" />
-        <span style="font-weight:700;color:var(--text2);">m</span>
+        <div id="vi-container"></div>
         <button class="play-btn primary" onclick="submitElapsed()">✓ Check</button>
       </div>
     </div>`;
@@ -1089,9 +1085,7 @@ function renderPractice(ws, sp) {
     html += `<div style="margin:8px 0;font-size:13px;color:var(--text2);">Plus <strong>${elapsedStr}</strong></div>`;
     html += `<div style="margin-top:12px;font-size:13px;color:var(--muted);">What time is it?</div>`;
     html += `<div class="input-group">
-      <input type="number" class="time-input hours" id="endH" min="1" max="12" placeholder="h" />
-      <span style="font-weight:700;">:</span>
-      <input type="number" class="time-input minutes" id="endM" min="0" max="59" placeholder="mm" />
+      <div id="vi-container-end"></div>
       <button class="play-btn primary" onclick="submitEndTime()">✓ Check</button>
     </div>`;
     html += '</div>';
@@ -1105,9 +1099,7 @@ function renderPractice(ws, sp) {
     html += `<div style="margin:8px 0;font-size:13px;color:var(--text2);">Minus <strong>${elapsedStr}</strong></div>`;
     html += `<div style="margin-top:12px;font-size:13px;color:var(--muted);">What time did it start?</div>`;
     html += `<div class="input-group">
-      <input type="number" class="time-input hours" id="startH" min="1" max="12" placeholder="h" />
-      <span style="font-weight:700;">:</span>
-      <input type="number" class="time-input minutes" id="startM" min="0" max="59" placeholder="mm" />
+      <div id="vi-container-start"></div>
       <button class="play-btn primary" onclick="submitStartTime()">✓ Check</button>
     </div>`;
     html += '</div>';
@@ -1117,9 +1109,29 @@ function renderPractice(ws, sp) {
   ws.innerHTML = html;
 
   setTimeout(() => {
-    const first = document.querySelector('.time-input');
-    if (first) first.focus();
-  }, 100);
+    if (S.questionType === 'find-elapsed') {
+      const elapsedMinutes = S.targetElapsed.h * 60 + S.targetElapsed.m;
+      var vi = VinculumInput.create(document.getElementById('vi-container'), {
+        type: 'auto',
+        answer: elapsedMinutes,
+        onSubmit: function(value) { submitElapsed(value); }
+      });
+    } else if (S.questionType === 'find-end-time') {
+      const endMinutes = S.targetEnd.h * 60 + S.targetEnd.m;
+      var vi = VinculumInput.create(document.getElementById('vi-container-end'), {
+        type: 'auto',
+        answer: endMinutes,
+        onSubmit: function(value) { submitEndTime(value); }
+      });
+    } else if (S.questionType === 'find-start-time') {
+      const startMinutes = S.targetStart.h * 60 + S.targetStart.m;
+      var vi = VinculumInput.create(document.getElementById('vi-container-start'), {
+        type: 'auto',
+        answer: startMinutes,
+        onSubmit: function(value) { submitStartTime(value); }
+      });
+    }
+  }, 50);
 
   sp.innerHTML = `
     <div class="score-display">
@@ -1182,9 +1194,15 @@ function newPracticeQuestion() {
   }
 }
 
-function submitElapsed() {
-  const h = parseInt(document.getElementById('ansH')?.value || 0);
-  const m = parseInt(document.getElementById('ansM')?.value || 0);
+function submitElapsed(value) {
+  let h, m;
+  if (value !== undefined) {
+    h = Math.floor(value / 60);
+    m = value % 60;
+  } else {
+    h = parseInt(document.getElementById('ansH')?.value || 0);
+    m = parseInt(document.getElementById('ansM')?.value || 0);
+  }
 
   if (h === S.targetElapsed.h && m === S.targetElapsed.m) {
     showFB('✓ Correct!', 'correct');
@@ -1198,9 +1216,15 @@ function submitElapsed() {
   }
 }
 
-function submitEndTime() {
-  const h = parseInt(document.getElementById('endH')?.value || 0);
-  const m = parseInt(document.getElementById('endM')?.value || 0);
+function submitEndTime(value) {
+  let h, m;
+  if (value !== undefined) {
+    h = Math.floor(value / 60);
+    m = value % 60;
+  } else {
+    h = parseInt(document.getElementById('endH')?.value || 0);
+    m = parseInt(document.getElementById('endM')?.value || 0);
+  }
 
   if (h === S.targetEnd.h && m === S.targetEnd.m) {
     showFB('✓ Correct!', 'correct');
@@ -1214,9 +1238,15 @@ function submitEndTime() {
   }
 }
 
-function submitStartTime() {
-  const h = parseInt(document.getElementById('startH')?.value || 0);
-  const m = parseInt(document.getElementById('startM')?.value || 0);
+function submitStartTime(value) {
+  let h, m;
+  if (value !== undefined) {
+    h = Math.floor(value / 60);
+    m = value % 60;
+  } else {
+    h = parseInt(document.getElementById('startH')?.value || 0);
+    m = parseInt(document.getElementById('startM')?.value || 0);
+  }
 
   if (h === S.targetStart.h && m === S.targetStart.m) {
     showFB('✓ Correct!', 'correct');
@@ -1266,9 +1296,7 @@ function renderPlay(ws, sp) {
       <div style="margin:8px 0;font-size:14px;color:var(--text2);">Plus: <strong>${formatDuration(elapsed.h, elapsed.m)}</strong></div>
       <div style="margin-top:12px;font-size:13px;color:var(--muted);">What time is it?</div>
       <div class="input-group">
-        <input type="number" class="time-input hours" id="playH" min="1" max="12" placeholder="h" />
-        <span style="font-weight:700;">:</span>
-        <input type="number" class="time-input minutes" id="playM" min="0" max="59" placeholder="mm" />
+        <div id="vi-play-container"></div>
         <button class="play-btn primary" onclick="submitPlayAnswer()">✓</button>
       </div>
     </div>`;
@@ -1278,7 +1306,14 @@ function renderPlay(ws, sp) {
   ws.innerHTML = html;
 
   if (!S.gameEnded) {
-    setTimeout(() => document.getElementById('playH')?.focus(), 100);
+    setTimeout(() => {
+      const endMinutes = S.targetEnd.h * 60 + S.targetEnd.m;
+      var vi = VinculumInput.create(document.getElementById('vi-play-container'), {
+        type: 'auto',
+        answer: endMinutes,
+        onSubmit: function(value) { submitPlayAnswer(value); }
+      });
+    }, 50);
   }
 
   sp.innerHTML = `
@@ -1322,9 +1357,15 @@ function startPlayChallenge() {
   render();
 }
 
-function submitPlayAnswer() {
-  const h = parseInt(document.getElementById('playH')?.value || 0);
-  const m = parseInt(document.getElementById('playM')?.value || 0);
+function submitPlayAnswer(value) {
+  let h, m;
+  if (value !== undefined) {
+    h = Math.floor(value / 60);
+    m = value % 60;
+  } else {
+    h = parseInt(document.getElementById('playH')?.value || 0);
+    m = parseInt(document.getElementById('playM')?.value || 0);
+  }
 
   if (h === S.targetEnd.h && m === S.targetEnd.m) {
     showFB('✓ Yes!', 'correct');

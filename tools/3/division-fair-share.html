@@ -669,7 +669,6 @@ body {
 
 <script src="../../vinculum-input.js"></script>
 <script>
-function showFB(t,c){var f=document.getElementById("feedback");if(!f)return;f.textContent=t;f.className="feedback "+c+" show";setTimeout(function(){f.classList.remove("show");},1200);}
 
 // ════════════════════════════════════════
 // STATE
@@ -1210,7 +1209,7 @@ function renderPlay(ws, sp) {
 
       html += `<div class="practice-question">
         <div class="question-text">Share ${S.playDividend} items among ${S.playDivisor} groups.<br>How many per group?</div>
-        <input type="number" id="playAnswer" class="number-input" placeholder="?" min="1" max="50" />
+        <div id="vi-play-container"></div>
         <button class="play-btn primary" style="margin-top:12px;" onclick="submitPlayAnswer()">Submit</button>
       </div>`;
     }
@@ -1219,8 +1218,15 @@ function renderPlay(ws, sp) {
   html += '</div>';
   ws.innerHTML = html;
 
-  if (!S.gameEnded && document.getElementById('playAnswer')) {
-    setTimeout(() => document.getElementById('playAnswer').focus(), 100);
+  if (!S.gameEnded) {
+    setTimeout(() => {
+      const correct = Math.floor(S.playDividend / S.playDivisor);
+      var vi = VinculumInput.create(document.getElementById('vi-play-container'), {
+        type: 'auto',
+        answer: correct,
+        onSubmit: function(value) { submitPlayAnswer(value); }
+      });
+    }, 50);
   }
 
   // Side panel
@@ -1262,10 +1268,9 @@ function newPlayRound() {
   S.playDivisor = divisor;
 }
 
-function submitPlayAnswer() {
-  const input = document.getElementById('playAnswer');
-  const ans = parseInt(input?.value || 0);
+function submitPlayAnswer(value) {
   const correct = Math.floor(S.playDividend / S.playDivisor);
+  const ans = value !== undefined ? value : parseInt(document.getElementById('playAnswer')?.value || 0);
 
   if (ans === correct) {
     showFB('✓ Right!', 'correct');

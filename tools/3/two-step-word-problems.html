@@ -585,7 +585,6 @@ body {
 
 <script src="../../vinculum-input.js"></script>
 <script>
-function showFB(t,c){var f=document.getElementById("feedback");if(!f)return;f.textContent=t;f.className="feedback "+c+" show";setTimeout(function(){f.classList.remove("show");},1200);}
 
 // ════════════════════════════════════════
 // STATE
@@ -956,15 +955,28 @@ function renderPractice(ws, sp) {
   html += '<div class="step-item"><div class="step-label">Write the equation</div>';
   html += `<div style="text-align:center;margin:12px 0;font-size:14px;color:var(--text2);">`;
   html += `${p.step1.a} <select id="opSelect1" style="padding:4px 8px;border-radius:4px;border:1px solid var(--border);background:var(--card);color:var(--text);font-weight:600;min-width:180px;"><option value="">op</option><option>+</option><option>−</option><option>×</option><option>÷</option></select>`;
-  html += ` ${p.step1.b} <span style="color:var(--cyan);font-weight:700;"> = </span> <input type="number" class="number-input" id="step1Result" placeholder="?" style="width:60px;" /> <br>`;
+  html += ` ${p.step1.b} <span style="color:var(--cyan);font-weight:700;"> = </span> <div id="vi-container-step1"></div> <br>`;
   html += `(result) <select id="opSelect2" style="padding:4px 8px;border-radius:4px;border:1px solid var(--border);background:var(--card);color:var(--text);font-weight:600;margin-top:8px;min-width:180px;"><option value="">op</option><option>+</option><option>−</option><option>×</option><option>÷</option></select>`;
-  html += ` ${p.step2.op === '+' || p.step2.op === '−' ? p.step2.b : (p.step2.a === p.step1.result ? p.step2.b : p.step2.a)} <span style="color:var(--cyan);font-weight:700;"> = </span> <input type="number" class="number-input" id="finalAnswer" placeholder="?" style="width:60px;" />`;
+  html += ` ${p.step2.op === '+' || p.step2.op === '−' ? p.step2.b : (p.step2.a === p.step1.result ? p.step2.b : p.step2.a)} <span style="color:var(--cyan);font-weight:700;"> = </span> <div id="vi-container-final"></div>`;
   html += `</div>`;
   html += '<div style="text-align:center;margin-top:12px;"><button class="play-btn primary" onclick="submitPracticeAnswer()">✓ Check Answer</button></div>';
   html += '</div>';
 
   html += '</div>';
   ws.innerHTML = html;
+
+  setTimeout(() => {
+    var vi1 = VinculumInput.create(document.getElementById('vi-container-step1'), {
+      type: 'auto',
+      answer: p.step1.result,
+      onSubmit: function(value) { saveStep1(value); }
+    });
+    var vi2 = VinculumInput.create(document.getElementById('vi-container-final'), {
+      type: 'auto',
+      answer: p.step2.result,
+      onSubmit: function(value) { saveFinal(value); }
+    });
+  }, 50);
 
   // Side panel
   sp.innerHTML = `
@@ -999,14 +1011,22 @@ function selectOp2(op) {
   render();
 }
 
+function saveStep1(value) {
+  S.step1Value = value;
+}
+
+function saveFinal(value) {
+  S.finalValue = value;
+}
+
 function submitPracticeAnswer() {
   const problems = PROBLEMS[S.diff];
   const p = problems[S.problemIndex % problems.length];
 
   S.total = (S.total || 0) + 1;
 
-  const step1 = parseInt(document.getElementById('step1Result')?.value || 0);
-  const finalAns = parseInt(document.getElementById('finalAnswer')?.value || 0);
+  const step1 = S.step1Value !== undefined ? S.step1Value : parseInt(document.getElementById('step1Result')?.value || 0);
+  const finalAns = S.finalValue !== undefined ? S.finalValue : parseInt(document.getElementById('finalAnswer')?.value || 0);
 
   if (step1 === p.step1.result && finalAns === p.step2.result) {
     showFB('✓ Correct!', 'correct');

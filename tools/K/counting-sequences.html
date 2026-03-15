@@ -521,7 +521,6 @@ body {
 
   <script src="../../vinculum-input.js"></script>
 <script>
-function showFB(t,c){var f=document.getElementById("feedback");if(!f)return;f.textContent=t;f.className="feedback "+c+" show";setTimeout(function(){f.classList.remove("show");},1200);}
 
 // ════════════════════════════════════════
 // STATE
@@ -839,9 +838,7 @@ function renderPractice(ws, sp) {
     html += '<div class="sequence-fill">';
     S.targetSequence.forEach((num, idx) => {
       if (S.blanks.includes(idx)) {
-        html += `<div class="fill-item blank" onclick="focusBlank(${idx})">
-          <input type="number" id="blank-${idx}" class="blank-input" min="1" max="100" onchange="checkBlank(${idx})" />
-        </div>`;
+        html += `<div class="fill-item blank" id="vi-container-${idx}" onclick="focusBlank(${idx})"></div>`;
       } else {
         html += `<div class="fill-item">${num}</div>`;
       }
@@ -855,9 +852,7 @@ function renderPractice(ws, sp) {
     html += '<div class="sequence-fill">';
     S.targetSequence.forEach((num, idx) => {
       if (S.blanks.includes(idx)) {
-        html += `<div class="fill-item blank" onclick="focusBlank(${idx})">
-          <input type="number" id="blank-${idx}" class="blank-input" min="1" max="100" onchange="checkBlank(${idx})" />
-        </div>`;
+        html += `<div class="fill-item blank" id="vi-container-${idx}" onclick="focusBlank(${idx})"></div>`;
       } else {
         html += `<div class="fill-item">${num}</div>`;
       }
@@ -899,7 +894,24 @@ function renderPractice(ws, sp) {
   ws.innerHTML = html;
 
   if (['fill-ones', 'fill-tens'].includes(S.questionType)) {
-    setTimeout(() => document.getElementById('blank-0')?.focus(), 100);
+    setTimeout(() => {
+      S.blanks.forEach((idx) => {
+        const container = document.getElementById(`vi-container-${idx}`);
+        if (container && window.VinculumInput) {
+          container.innerHTML = '';
+          VinculumInput.create(container, {
+            type: 'auto',
+            answer: S.targetSequence[idx],
+            min: 1,
+            max: 100,
+            onSubmit: function(val) {
+              checkBlank(idx, val);
+            }
+          });
+        }
+      });
+      document.querySelector('[id^="vi-container-"]')?.querySelector('button')?.focus();
+    }, 100);
   }
 
   // Side panel
@@ -929,14 +941,9 @@ function focusBlank(idx) {
   if (input) input.focus();
 }
 
-function checkBlank(idx) {
-  const input = document.getElementById(`blank-${idx}`);
-  const val = parseInt(input?.value);
+function checkBlank(idx, val) {
   if (val === S.targetSequence[idx]) {
     showFB('✓ Correct!', 'correct');
-    input.style.borderColor = 'var(--green)';
-    input.style.color = 'var(--green)';
-    input.disabled = true;
   } else {
     showFB('✗ Try again', 'incorrect');
   }

@@ -362,12 +362,7 @@
             <div class="card">
                 <div class="question" id="practiceQuestion"></div>
                 <div class="visual-section" id="practiceVisual"></div>
-                <div class="input-group">
-                    <span>Numerator:</span>
-                    <input type="number" id="practiceNum" min="1" max="20" placeholder="?">
-                    <span style="color: var(--text2);">/</span>
-                    <span id="practiceDenShow"></span>
-                </div>
+                <div id="vi-practice"></div>
                 <div class="button-group">
                     <button class="btn btn-primary" id="checkBtn">Check Answer</button>
                     <button class="btn btn-secondary" id="nextBtn" style="display: none;">Next Problem</button>
@@ -423,13 +418,6 @@
     <script>
         const S = { mode: 'explore', diff: 'emergent', score: 0, total: 0, streak: 0, answers: [] };
 
-        function showFB(t, c) {
-            const f = document.getElementById("feedback");
-            if (!f) return;
-            f.textContent = t;
-            f.className = "feedback " + c + " show";
-            setTimeout(function() { f.classList.remove("show"); }, 1200);
-        }
 
         // Tab switching
         document.querySelectorAll('.vinculum-mode-tab').forEach(function(tab) {
@@ -520,38 +508,47 @@
             const mul = Math.floor(p.targetDen / p.den);
             const targetNum = p.num * mul;
             document.getElementById('practiceQuestion').textContent = `Find a fraction equivalent to ${p.num}/${p.den} with denominator ${p.targetDen}.`;
-            document.getElementById('practiceDenShow').textContent = p.targetDen;
-            document.getElementById('practiceNum').value = '';
-            document.getElementById('practiceNum').focus();
-            document.getElementById('checkBtn').style.display = 'inline-block';
-            document.getElementById('nextBtn').style.display = 'none';
 
             const visual = drawFractionBar(p.num, p.den) + '<strong style="margin: 0 1rem; color: var(--text2);">=</strong><span style="color: var(--text2);">? / ' + p.targetDen + '</span>';
             document.getElementById('practiceVisual').innerHTML = visual;
 
+            // Initialize VinculumInput
+            var vi = VinculumInput.create(document.getElementById('vi-practice'), {
+                type: 'auto',
+                answer: targetNum,
+                onSubmit: function(value) { checkPracticeAnswer(value, targetNum); }
+            });
+
+            document.getElementById('checkBtn').style.display = 'inline-block';
+            document.getElementById('nextBtn').style.display = 'none';
+
             document.getElementById('checkBtn').onclick = function() {
-                const ans = parseInt(document.getElementById('practiceNum').value);
-                if (ans === targetNum) {
-                    showFB('✓ Correct!', 'correct');
-                    S.score++;
-                    S.streak++;
-                    S.answers.push(1);
-                } else {
-                    showFB('✗ Try again! The answer is ' + targetNum, 'incorrect');
-                    S.streak = 0;
-                    S.answers.push(0);
-                }
-                S.total++;
-                updatePracticeStats();
-                adaptDifficulty();
-                document.getElementById('checkBtn').style.display = 'none';
-                document.getElementById('nextBtn').style.display = 'inline-block';
+                checkPracticeAnswer(S.lastPracticeInput, targetNum);
             };
 
             document.getElementById('nextBtn').onclick = function() {
                 practiceProblemIdx++;
                 generatePracticeProblem();
             };
+        }
+
+        function checkPracticeAnswer(ans, targetNum) {
+            S.lastPracticeInput = ans;
+            if (ans === targetNum) {
+                showFB('✓ Correct!', 'correct');
+                S.score++;
+                S.streak++;
+                S.answers.push(1);
+            } else {
+                showFB('✗ Try again! The answer is ' + targetNum, 'incorrect');
+                S.streak = 0;
+                S.answers.push(0);
+            }
+            S.total++;
+            updatePracticeStats();
+            adaptDifficulty();
+            document.getElementById('checkBtn').style.display = 'none';
+            document.getElementById('nextBtn').style.display = 'inline-block';
         }
 
         function updatePracticeStats() {
@@ -623,20 +620,6 @@
         }
 
         // Adaptive difficulty
-        function adaptDifficulty() {
-            if (S.answers.length < 8) return;
-            const recent = S.answers.slice(-8);
-            const correct = recent.filter(x => x).length;
-            if (correct >= 7 && S.diff === 'emergent') {
-                S.diff = 'developing';
-            } else if (correct >= 7 && S.diff === 'developing') {
-                S.diff = 'proficient';
-            } else if (correct <= 3 && S.diff === 'proficient') {
-                S.diff = 'developing';
-            } else if (correct <= 3 && S.diff === 'developing') {
-                S.diff = 'emergent';
-            }
-        }
 
         updateExplore();
     </script>

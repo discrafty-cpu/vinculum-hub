@@ -283,11 +283,7 @@
                 <div class="ruler-tick major"></div>
             </div>
 
-            <div class="input-group">
-                <input type="number" id="answerInput" placeholder="Your answer" min="0" step="1">
-                <span id="unitLabel" style="color: var(--text2); font-weight: 500;">inches</span>
-                <button class="submit-btn" onclick="checkAnswer()">Check</button>
-            </div>
+            <div id="vi-practice"></div>
         </div>
 
         <div class="stats">
@@ -310,11 +306,7 @@
         <div class="word-problem">
             <div class="word-problem-text" id="wordProblem">A rope is 3 meters long. How many centimeters is that?</div>
 
-            <div class="input-group">
-                <input type="number" id="playInput" placeholder="Your answer" min="0" step="1">
-                <span id="playUnit" style="color: var(--text2); font-weight: 500;">cm</span>
-                <button class="submit-btn" onclick="checkPlayAnswer()">Check</button>
-            </div>
+            <div id="vi-play"></div>
         </div>
 
         <div class="indigenous-context">
@@ -372,9 +364,13 @@
         function generatePracticeProblem() {
             currentProblem = problems[Math.floor(Math.random() * problems.length)];
             document.getElementById('practiceQuestion').textContent = currentProblem.q;
-            document.getElementById('unitLabel').textContent = currentProblem.u;
-            document.getElementById('answerInput').value = '';
-            document.getElementById('answerInput').focus();
+
+            // Initialize VinculumInput for practice
+            var vi = VinculumInput.create(document.getElementById('vi-practice'), {
+                type: 'auto',
+                answer: currentProblem.a,
+                onSubmit: function(value) { checkAnswer(value); }
+            });
         }
 
         function generatePlayProblem() {
@@ -386,13 +382,16 @@
             ];
             playProblem = wordProblems[Math.floor(Math.random() * wordProblems.length)];
             document.getElementById('wordProblem').textContent = playProblem.q;
-            document.getElementById('playUnit').textContent = playProblem.u;
-            document.getElementById('playInput').value = '';
-            document.getElementById('playInput').focus();
+
+            // Initialize VinculumInput for play
+            var vi = VinculumInput.create(document.getElementById('vi-play'), {
+                type: 'auto',
+                answer: playProblem.a,
+                onSubmit: function(value) { checkPlayAnswer(value); }
+            });
         }
 
-        function checkAnswer() {
-            const answer = parseInt(document.getElementById('answerInput').value);
+        function checkAnswer(answer) {
             const correct = answer === currentProblem.a;
 
             S.recent.push(correct ? 1 : 0);
@@ -414,8 +413,7 @@
             setTimeout(generatePracticeProblem, 1200);
         }
 
-        function checkPlayAnswer() {
-            const answer = parseInt(document.getElementById('playInput').value);
+        function checkPlayAnswer(answer) {
             const correct = answer === playProblem.a;
 
             S.total++;
@@ -450,27 +448,11 @@
             document.getElementById('playStreakDisplay').textContent = S.streak;
         }
 
-        function showFB(t, c) {
-            const f = document.getElementById('feedback');
-            if (!f) return;
-            f.textContent = t;
-            f.className = 'feedback ' + c + ' show';
-            document.getElementById('ariaStatus').textContent = t;
-            setTimeout(() => f.classList.remove('show'), 1200);
-        }
 
         document.getElementById('conversionSlider').addEventListener('input', (e) => {
             const val = parseInt(e.target.value);
             document.getElementById('sourceVal').textContent = val;
             document.getElementById('targetVal').textContent = val * 12;
-        });
-
-        document.getElementById('answerInput').addEventListener('keypress', (e) => {
-            if (e.key === 'Enter') checkAnswer();
-        });
-
-        document.getElementById('playInput').addEventListener('keypress', (e) => {
-            if (e.key === 'Enter') checkPlayAnswer();
         });
     </script>
 </body>

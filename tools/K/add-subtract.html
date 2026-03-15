@@ -676,6 +676,8 @@
     </div>
   </div>
 
+  </div>
+
   <div class="vinculum-mode-tabs">
     <button class="vinculum-mode-tab active-explore" data-mode="explore">🔍 Explore</button>
     <button class="vinculum-mode-tab" data-mode="practice">✏️ Practice</button>
@@ -701,12 +703,6 @@
   <script src="../../vinculum-feedback.js"></script>
   <script>
     // Standard feedback function
-    function showFB(text, className) {
-      const f = document.getElementById('feedback');
-      f.textContent = text;
-      f.className = 'feedback ' + className + ' show';
-      setTimeout(() => f.classList.remove('show'), 1200);
-    }
   </script>
   <script>
     const state = {
@@ -840,6 +836,25 @@
 
       state.currentAnswer = null;
       state.answered = false;
+
+      // Create Smart Context input after problem generation
+      setTimeout(() => {
+        const vc = document.getElementById('vi-container');
+        if (vc && state.mode === 'practice' && state.difficulty === 'advanced') {
+          vc.innerHTML = '';
+          if (window.VinculumInput) {
+            VinculumInput.create(vc, {
+              type: 'auto',
+              answer: state.currentProblem.answer,
+              min: 0,
+              max: getMaxNumber(),
+              onSubmit: function(val) {
+                submitAnswer(val);
+              }
+            });
+          }
+        }
+      }, 50);
     }
 
     function addObjectExplore(side) {
@@ -910,6 +925,7 @@
 
     function submitAnswer(answer) {
       if (state.answered) return;
+      if (isNaN(answer)) return;
       state.answered = true;
       state.currentAnswer = answer;
       const isCorrect = answer === state.currentProblem.answer;
@@ -1127,12 +1143,7 @@
         `;
       } else {
         answerHtml = `
-          <div class="answer-input">
-            <input type="number" id="answer-input" min="0" max="${getMaxNumber()}" placeholder="?"
-                   ${state.answered ? 'disabled' : ''}>
-            <button class="submit-btn" onclick="submitAnswer(parseInt(document.getElementById('answer-input').value))"
-                    ${state.answered ? 'disabled' : ''}>Check</button>
-          </div>
+          <div id="vi-container"></div>
         `;
       }
 

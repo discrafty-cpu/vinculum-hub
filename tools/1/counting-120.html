@@ -681,6 +681,7 @@
                             </div>
                         </div>
                         <div class="play-grid" id="play-grid"></div>
+                        <div id="vi-container"></div>
                         <div style="display: flex; gap: 8px;">
                             <button class="btn" onclick="startPlayRound()">Start Game</button>
                             <button class="btn" onclick="resetPlayRound()">Reset</button>
@@ -727,12 +728,9 @@
         </div>
     </div>
 
-    <input type="number" id="play-input">
-
 <div class="feedback" id="feedback"></div>
         <script src="../../vinculum-input.js"></script>
     <script>
-function showFB(t,c){var f=document.getElementById("feedback");if(!f)return;f.textContent=t;f.className="feedback "+c+" show";setTimeout(function(){f.classList.remove("show");},1200);}
         // State Management
         const S = {
             mode: 'explore',
@@ -1036,16 +1034,16 @@ function showFB(t,c){var f=document.getElementById("feedback");if(!f)return;f.te
             S.playCurrentCell = idx;
             document.querySelectorAll('.play-cell').forEach(c => c.style.borderColor = 'var(--border)');
             document.querySelectorAll('.play-cell')[idx].style.borderColor = 'var(--cyan)';
-            document.getElementById('play-input').focus();
+
+            // Create VinculumInput for this cell
+            const correctNum = idx + 1;
+            const vc = document.getElementById('vi-container');
+            vc.innerHTML = '';
+            VinculumInput.create(vc, { type:'auto', answer: correctNum, onSubmit: function(v){ handlePlayAnswer(v, correctNum); } });
         }
 
-        function handlePlayInput(e) {
+        function handlePlayAnswer(num, correctNum) {
             if (!S.playGameRunning || S.playCurrentCell === null) return;
-            if (e.key !== 'Enter') return;
-
-            const input = document.getElementById('play-input');
-            const num = parseInt(input.value);
-            const correctNum = S.playCurrentCell + 1;
 
             if (num === correctNum) {
                 const cell = document.querySelectorAll('.play-cell')[S.playCurrentCell];
@@ -1057,16 +1055,19 @@ function showFB(t,c){var f=document.getElementById("feedback");if(!f)return;f.te
                 S.playScore.streak++;
                 document.getElementById('play-correct').textContent = `${S.playScore.correct}/15`;
                 document.getElementById('play-streak').textContent = S.playScore.streak;
+                showFB('✓ Correct!','correct');
 
                 if (S.playFilledCount === 15) {
                     endPlayRound();
+                } else {
+                    // Clear container for next cell
+                    document.getElementById('vi-container').innerHTML = '';
                 }
             } else {
                 S.playScore.streak = 0;
                 document.getElementById('play-streak').textContent = '0';
+                showFB('Try again!','incorrect');
             }
-
-            input.value = '';
         }
 
         function updatePlayTimer() {
@@ -1087,7 +1088,7 @@ function showFB(t,c){var f=document.getElementById("feedback");if(!f)return;f.te
         function resetPlayRound() {
             S.playGameRunning = false;
             S.playCurrentCell = null;
-            document.getElementById('play-input').value = '';
+            document.getElementById('vi-container').innerHTML = '';
             document.getElementById('play-timer').textContent = '00:00';
             document.getElementById('play-correct').textContent = '0/15';
             document.getElementById('play-streak').textContent = '0';
@@ -1101,8 +1102,6 @@ function showFB(t,c){var f=document.getElementById("feedback");if(!f)return;f.te
             factBox.textContent = fact;
         }
 
-        // Play input listener
-        document.addEventListener('keydown', handlePlayInput);
     </script>
 <script src="../../vinculum-core.js"></script>
 <script src="../../vinculum-data.js"></script>
