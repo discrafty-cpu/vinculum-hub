@@ -1,0 +1,688 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Logic Puzzle Solver - VINCULUM Hub</title>
+    <link rel="stylesheet" href="../../vinculum-core.css">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+        .container {
+            max-width: 1000px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 15px;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.2);
+            padding: 30px;
+        }
+        .vinculum-header {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+        .vinculum-header h1 {
+            font-size: 2.5em;
+            margin-bottom: 10px;
+            color: #00f2fe;
+        }
+        .vinculum-header p {
+            font-size: 1.1em;
+            color: #666;
+        }
+        .controls {
+            display: flex;
+            gap: 20px;
+            margin-bottom: 30px;
+            flex-wrap: wrap;
+            align-items: center;
+            justify-content: center;
+        }
+        .mode-buttons {
+            display: flex;
+            gap: 10px;
+        }
+        button {
+            padding: 10px 20px;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 1em;
+            font-weight: bold;
+            transition: all 0.3s;
+        }
+        .mode-btn {
+            background: #e0e0e0;
+            color: #333;
+        }
+        .mode-btn.active {
+            background: #00f2fe;
+            color: #333;
+            transform: scale(1.05);
+        }
+        .difficulty-selector {
+            display: flex;
+            gap: 5px;
+            align-items: center;
+        }
+        .difficulty-selector label {
+            font-weight: bold;
+            color: #333;
+            margin-right: 10px;
+        }
+        .difficulty-btn {
+            padding: 8px 15px;
+            background: #f0f0f0;
+            color: #333;
+            border: 2px solid transparent;
+        }
+        .difficulty-btn.active {
+            background: #4facfe;
+            color: white;
+            border-color: #00f2fe;
+        }
+        .content-area {
+            min-height: 400px;
+        }
+        .puzzle-description {
+            background: #f5f5f5;
+            padding: 20px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+            border-left: 5px solid #00f2fe;
+        }
+        .puzzle-description h3 {
+            color: #00f2fe;
+            margin-bottom: 10px;
+        }
+        .clue {
+            background: white;
+            padding: 12px;
+            margin: 8px 0;
+            border-radius: 6px;
+            border-left: 3px solid #4facfe;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        .clue-number {
+            background: #4facfe;
+            color: white;
+            width: 28px;
+            height: 28px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            flex-shrink: 0;
+        }
+        .logic-grid {
+            background: white;
+            border: 2px solid #ddd;
+            border-radius: 8px;
+            overflow: hidden;
+            margin-bottom: 20px;
+        }
+        .grid-header {
+            display: grid;
+            grid-template-columns: 100px repeat(auto-fit, minmax(80px, 1fr));
+            gap: 0;
+            background: #4facfe;
+            color: white;
+            font-weight: bold;
+            padding: 0;
+        }
+        .grid-header-cell {
+            padding: 12px 8px;
+            text-align: center;
+            border-right: 1px solid rgba(255,255,255,0.3);
+            font-size: 0.85em;
+        }
+        .grid-row {
+            display: grid;
+            grid-template-columns: 100px repeat(auto-fit, minmax(80px, 1fr));
+            gap: 0;
+            border-bottom: 1px solid #ddd;
+        }
+        .grid-row:last-child {
+            border-bottom: none;
+        }
+        .grid-cell {
+            padding: 12px 8px;
+            text-align: center;
+            border-right: 1px solid #eee;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .grid-cell.label {
+            background: #f5f5f5;
+            font-weight: bold;
+            text-align: left;
+            padding-left: 12px;
+        }
+        .cell-checkbox {
+            cursor: pointer;
+            font-size: 1.5em;
+            width: 40px;
+            height: 40px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 4px;
+            transition: all 0.2s;
+        }
+        .cell-checkbox:hover {
+            background: #f0f0f0;
+        }
+        .cell-checkbox.checked {
+            background: #4facfe;
+            color: white;
+        }
+        .cell-checkbox.eliminated {
+            background: #ffebee;
+            color: #c62828;
+        }
+        .feedback {
+            margin-top: 20px;
+            padding: 15px;
+            border-radius: 8px;
+            font-weight: bold;
+            text-align: center;
+            display: none;
+        }
+        .feedback.success {
+            background: #e8f5e9;
+            color: #2e7d32;
+            display: block;
+            border: 2px solid #4caf50;
+        }
+        .feedback.error {
+            background: #ffebee;
+            color: #c62828;
+            display: block;
+            border: 2px solid #f44336;
+        }
+        .action-buttons {
+            display: flex;
+            gap: 15px;
+            justify-content: center;
+            margin-top: 20px;
+        }
+        button.primary {
+            background: #00f2fe;
+            color: #333;
+            padding: 12px 30px;
+            font-weight: bold;
+        }
+        button.primary:hover {
+            background: #4facfe;
+            transform: scale(1.05);
+        }
+        button.secondary {
+            background: #f0f0f0;
+            color: #333;
+            padding: 12px 30px;
+        }
+        button.secondary:hover {
+            background: #e0e0e0;
+        }
+        .hint-box {
+            background: #e3f2fd;
+            border: 2px solid #4facfe;
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            color: #1565c0;
+        }
+        .hint-box strong {
+            color: #00f2fe;
+        }
+        .score-board {
+            text-align: center;
+            padding: 15px;
+            background: #f5f5f5;
+            border-radius: 8px;
+            margin-bottom: 20px;
+        }
+        .score-board h3 {
+            color: #00f2fe;
+            margin-bottom: 10px;
+        }
+        .timer {
+            font-size: 2em;
+            color: #4facfe;
+            font-weight: bold;
+        }
+        @media (max-width: 600px) {
+            .grid-header, .grid-row {
+                grid-template-columns: 80px repeat(auto-fit, minmax(60px, 1fr));
+            }
+            .grid-header-cell, .grid-cell {
+                font-size: 0.75em;
+                padding: 8px 4px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="vinculum-header">
+            <h1>🧩 Logic Puzzle Solver</h1>
+            <p>Use clues to deduce who or what goes with what!</p>
+        </div>
+
+        <div class="controls">
+            <div class="mode-buttons">
+                <button class="mode-btn active" data-mode="explore">🔍 Explore</button>
+                <button class="mode-btn" data-mode="practice">📝 Practice</button>
+                <button class="mode-btn" data-mode="play">🎮 Play</button>
+            </div>
+            <div class="difficulty-selector">
+                <label>Difficulty:</label>
+                <button class="difficulty-btn active" data-difficulty="easy">Easy</button>
+                <button class="difficulty-btn" data-difficulty="medium">Medium</button>
+                <button class="difficulty-btn" data-difficulty="hard">Hard</button>
+            </div>
+        </div>
+
+        <div id="feedback" class="feedback"></div>
+
+        <div class="content-area">
+            <div id="explore-mode">
+                <div class="puzzle-description">
+                    <h3>🎯 The Puzzle</h3>
+                    <div id="explore-puzzle-text"></div>
+                    <h3 style="margin-top: 15px;">📋 Clues:</h3>
+                    <div id="explore-clues"></div>
+                </div>
+                <div class="logic-grid" id="explore-grid"></div>
+                <div class="action-buttons">
+                    <button class="primary" onclick="loadExploreMode()">Load New Puzzle</button>
+                </div>
+            </div>
+
+            <div id="practice-mode" style="display: none;">
+                <div class="puzzle-description">
+                    <h3>🎯 The Puzzle</h3>
+                    <div id="practice-puzzle-text"></div>
+                    <h3 style="margin-top: 15px;">📋 Clues:</h3>
+                    <div id="practice-clues"></div>
+                </div>
+                <div class="hint-box" id="practice-hint" style="display: none;"></div>
+                <div class="logic-grid" id="practice-grid"></div>
+                <div class="action-buttons">
+                    <button class="primary" onclick="checkPracticeSolution()">Check Solution</button>
+                    <button class="secondary" onclick="showHint()">Show Hint</button>
+                    <button class="secondary" onclick="loadPracticeMode()">New Puzzle</button>
+                </div>
+            </div>
+
+            <div id="play-mode" style="display: none;">
+                <div class="score-board">
+                    <h3>⏱️ Logic Master Challenge</h3>
+                    <div class="timer">Time: <span id="timer">0</span>s</div>
+                    <p>Solve as fast as you can!</p>
+                </div>
+                <div class="puzzle-description">
+                    <h3>🎯 The Puzzle</h3>
+                    <div id="play-puzzle-text"></div>
+                    <h3 style="margin-top: 15px;">📋 Clues:</h3>
+                    <div id="play-clues"></div>
+                </div>
+                <div class="logic-grid" id="play-grid"></div>
+                <div class="action-buttons">
+                    <button class="primary" onclick="checkPlaySolution()">Submit Solution</button>
+                    <button class="secondary" onclick="resetPlay()">Reset</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="../../vinculum-feedback.js"></script>
+    <script src="../../vinculum-input.js"></script>
+
+    <script>
+        const puzzles = {
+            easy: [
+                {
+                    title: "Pet Homes",
+                    text: "Three friends each have a different pet.",
+                    categories: {
+                        "Person": ["Alex", "Bailey", "Casey"],
+                        "Pet": ["Dog", "Cat", "Fish"]
+                    },
+                    clues: [
+                        "Alex has a dog.",
+                        "Bailey does not have a fish.",
+                        "Casey has either a cat or fish."
+                    ],
+                    solution: {
+                        "Alex": "Dog",
+                        "Bailey": "Cat",
+                        "Casey": "Fish"
+                    },
+                    hint: "Start with clue 1: Alex has a dog. Then use clues 2 and 3 to figure out the rest."
+                }
+            ],
+            medium: [
+                {
+                    title: "Favorite Colors",
+                    text: "Three students each prefer a different color: red, blue, or green.",
+                    categories: {
+                        "Student": ["Sam", "Jordan", "Morgan"],
+                        "Color": ["Red", "Blue", "Green"]
+                    },
+                    clues: [
+                        "Sam does not like red.",
+                        "Jordan likes blue.",
+                        "Morgan does not like blue."
+                    ],
+                    solution: {
+                        "Sam": "Green",
+                        "Jordan": "Blue",
+                        "Morgan": "Red"
+                    },
+                    hint: "Clue 2 tells you Jordan's color immediately. Use the other clues to eliminate possibilities."
+                }
+            ],
+            hard: [
+                {
+                    title: "Mystery Lunch",
+                    text: "Three friends brought sandwiches with different fillings: turkey, ham, and peanut butter.",
+                    categories: {
+                        "Friend": ["Dakota", "River", "Sky"],
+                        "Sandwich": ["Turkey", "Ham", "Peanut Butter"]
+                    },
+                    clues: [
+                        "Dakota's sandwich is not peanut butter.",
+                        "River brought either ham or turkey.",
+                        "Sky did not bring ham.",
+                        "The friend with peanut butter is not River."
+                    ],
+                    solution: {
+                        "Dakota": "Ham",
+                        "River": "Turkey",
+                        "Sky": "Peanut Butter"
+                    },
+                    hint: "Use clues 4 and 1 together: Sky must have peanut butter. Then work through the remaining clues."
+                }
+            ]
+        };
+
+        let currentMode = 'explore';
+        let currentDifficulty = 'easy';
+        let currentPuzzle = null;
+        let userSolution = {};
+        let playTimer = 0;
+        let playTimerInterval = null;
+
+        function getRandomPuzzle(difficulty) {
+            const list = puzzles[difficulty];
+            return JSON.parse(JSON.stringify(list[Math.floor(Math.random() * list.length)]));
+        }
+
+        function renderGrid(modeId, puzzle, editable = false) {
+            const gridContainer = document.getElementById(`${modeId}-grid`);
+            gridContainer.innerHTML = '';
+
+            const categories = puzzle.categories;
+            const firstCategory = Object.keys(categories)[0];
+            const secondCategory = Object.keys(categories)[1];
+            const items1 = categories[firstCategory];
+            const items2 = categories[secondCategory];
+
+            let html = '<div class="grid-header">';
+            html += '<div class="grid-header-cell"></div>';
+            items2.forEach(item => {
+                html += `<div class="grid-header-cell">${item}</div>`;
+            });
+            html += '</div>';
+
+            items1.forEach(item1 => {
+                html += '<div class="grid-row">';
+                html += `<div class="grid-cell label">${item1}</div>`;
+                items2.forEach(item2 => {
+                    const key = `${item1}-${item2}`;
+                    const cellContent = editable ?
+                        `<div class="cell-checkbox" onclick="toggleCell('${modeId}', '${item1}', '${item2}')">?</div>` :
+                        `<div class="cell-checkbox">?</div>`;
+                    html += `<div class="grid-cell" data-key="${key}">${cellContent}</div>`;
+                });
+                html += '</div>';
+            });
+
+            gridContainer.innerHTML = html;
+        }
+
+        function toggleCell(modeId, item1, item2) {
+            const solution = puzzle.solution || currentPuzzle.solution;
+            const correct = solution[item1] === item2;
+            const key = `${item1}-${item2}`;
+            const cell = document.querySelector(`[data-key="${key}"] .cell-checkbox`);
+
+            if (!cell) return;
+
+            if (cell.textContent === '?') {
+                cell.textContent = '✓';
+                cell.classList.add('checked');
+                userSolution[item1] = item2;
+            } else if (cell.textContent === '✓') {
+                cell.textContent = '✗';
+                cell.classList.remove('checked');
+                cell.classList.add('eliminated');
+            } else {
+                cell.textContent = '?';
+                cell.classList.remove('checked', 'eliminated');
+                delete userSolution[item1];
+            }
+        }
+
+        function loadExploreMode() {
+            currentPuzzle = getRandomPuzzle(currentDifficulty);
+            document.getElementById('explore-puzzle-text').textContent = currentPuzzle.text;
+
+            const cluesDiv = document.getElementById('explore-clues');
+            cluesDiv.innerHTML = '';
+            currentPuzzle.clues.forEach((clue, index) => {
+                const clueEl = document.createElement('div');
+                clueEl.className = 'clue';
+                clueEl.innerHTML = `<div class="clue-number">${index + 1}</div><div>${clue}</div>`;
+                cluesDiv.appendChild(clueEl);
+            });
+
+            renderSolutionGrid('explore');
+            document.getElementById('feedback').style.display = 'none';
+        }
+
+        function renderSolutionGrid(modeId) {
+            const gridContainer = document.getElementById(`${modeId}-grid`);
+            gridContainer.innerHTML = '';
+
+            const categories = currentPuzzle.categories;
+            const firstCategory = Object.keys(categories)[0];
+            const secondCategory = Object.keys(categories)[1];
+            const items1 = categories[firstCategory];
+            const items2 = categories[secondCategory];
+
+            let html = '<div class="grid-header">';
+            html += '<div class="grid-header-cell"></div>';
+            items2.forEach(item => {
+                html += `<div class="grid-header-cell">${item}</div>`;
+            });
+            html += '</div>';
+
+            items1.forEach(item1 => {
+                html += '<div class="grid-row">';
+                html += `<div class="grid-cell label">${item1}</div>`;
+                items2.forEach(item2 => {
+                    const isCorrect = currentPuzzle.solution[item1] === item2;
+                    const checkmark = isCorrect ? '✓' : '✗';
+                    const cssClass = isCorrect ? 'checked' : 'eliminated';
+                    html += `<div class="grid-cell"><div class="cell-checkbox ${cssClass}">${checkmark}</div></div>`;
+                });
+                html += '</div>';
+            });
+
+            gridContainer.innerHTML = html;
+        }
+
+        function loadPracticeMode() {
+            currentPuzzle = getRandomPuzzle(currentDifficulty);
+            userSolution = {};
+            document.getElementById('practice-puzzle-text').textContent = currentPuzzle.text;
+            document.getElementById('practice-hint').style.display = 'none';
+
+            const cluesDiv = document.getElementById('practice-clues');
+            cluesDiv.innerHTML = '';
+            currentPuzzle.clues.forEach((clue, index) => {
+                const clueEl = document.createElement('div');
+                clueEl.className = 'clue';
+                clueEl.innerHTML = `<div class="clue-number">${index + 1}</div><div>${clue}</div>`;
+                cluesDiv.appendChild(clueEl);
+            });
+
+            renderGrid('practice', currentPuzzle, true);
+            document.getElementById('feedback').style.display = 'none';
+        }
+
+        function showHint() {
+            const hintBox = document.getElementById('practice-hint');
+            hintBox.style.display = 'block';
+            hintBox.innerHTML = `<strong>💡 Hint:</strong> ${currentPuzzle.hint}`;
+        }
+
+        function checkPracticeSolution() {
+            const keys = Object.keys(currentPuzzle.solution);
+            let correct = keys.length > 0 && keys.every(k => userSolution[k] === currentPuzzle.solution[k]);
+
+            renderGrid('practice', currentPuzzle, true);
+            const cells = document.querySelectorAll('#practice-grid [data-key] .cell-checkbox');
+            cells.forEach(cell => {
+                cell.textContent = '?';
+                cell.classList.remove('checked', 'eliminated');
+            });
+
+            const categories = currentPuzzle.categories;
+            const firstCategory = Object.keys(categories)[0];
+            const items1 = categories[firstCategory];
+
+            items1.forEach(item1 => {
+                if (userSolution[item1]) {
+                    const item2 = userSolution[item1];
+                    const key = `${item1}-${item2}`;
+                    const cell = document.querySelector(`[data-key="${key}"] .cell-checkbox`);
+                    if (cell) {
+                        const isCorrect = currentPuzzle.solution[item1] === item2;
+                        cell.textContent = isCorrect ? '✓' : '✗';
+                        cell.classList.add(isCorrect ? 'checked' : 'eliminated');
+                    }
+                }
+            });
+
+            const feedback = document.getElementById('feedback');
+            if (correct) {
+                feedback.className = 'feedback success';
+                feedback.textContent = '✅ Excellent! You solved the puzzle!';
+            } else {
+                feedback.className = 'feedback error';
+                feedback.textContent = '❌ Not quite! Use the clues to eliminate possibilities.';
+            }
+        }
+
+        function loadPlayMode() {
+            playTimer = 0;
+            if (playTimerInterval) clearInterval(playTimerInterval);
+            playTimerInterval = setInterval(() => {
+                playTimer++;
+                document.getElementById('timer').textContent = playTimer;
+            }, 1000);
+
+            currentPuzzle = getRandomPuzzle(currentDifficulty);
+            userSolution = {};
+            document.getElementById('play-puzzle-text').textContent = currentPuzzle.text;
+
+            const cluesDiv = document.getElementById('play-clues');
+            cluesDiv.innerHTML = '';
+            currentPuzzle.clues.forEach((clue, index) => {
+                const clueEl = document.createElement('div');
+                clueEl.className = 'clue';
+                clueEl.innerHTML = `<div class="clue-number">${index + 1}</div><div>${clue}</div>`;
+                cluesDiv.appendChild(clueEl);
+            });
+
+            renderGrid('play', currentPuzzle, true);
+            document.getElementById('feedback').style.display = 'none';
+        }
+
+        function checkPlaySolution() {
+            clearInterval(playTimerInterval);
+            const keys = Object.keys(currentPuzzle.solution);
+            let correct = keys.length > 0 && keys.every(k => userSolution[k] === currentPuzzle.solution[k]);
+
+            const feedback = document.getElementById('feedback');
+            if (correct) {
+                feedback.className = 'feedback success';
+                feedback.textContent = `✅ Amazing! Solved in ${playTimer} seconds!`;
+            } else {
+                feedback.className = 'feedback error';
+                feedback.textContent = '❌ Not quite right. Try again!';
+            }
+        }
+
+        function resetPlay() {
+            loadPlayMode();
+        }
+
+        document.querySelectorAll('.mode-btn').forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                document.querySelectorAll('.mode-btn').forEach(b => b.classList.remove('active'));
+                e.target.classList.add('active');
+                currentMode = e.target.dataset.mode;
+
+                document.getElementById('explore-mode').style.display = 'none';
+                document.getElementById('practice-mode').style.display = 'none';
+                document.getElementById('play-mode').style.display = 'none';
+
+                if (currentMode === 'explore') {
+                    document.getElementById('explore-mode').style.display = 'block';
+                    loadExploreMode();
+                } else if (currentMode === 'practice') {
+                    document.getElementById('practice-mode').style.display = 'block';
+                    loadPracticeMode();
+                } else if (currentMode === 'play') {
+                    document.getElementById('play-mode').style.display = 'block';
+                    loadPlayMode();
+                }
+            });
+        });
+
+        document.querySelectorAll('.difficulty-btn').forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                document.querySelectorAll('.difficulty-btn').forEach(b => b.classList.remove('active'));
+                e.target.classList.add('active');
+                currentDifficulty = e.target.dataset.difficulty;
+
+                if (currentMode === 'explore') {
+                    loadExploreMode();
+                } else if (currentMode === 'practice') {
+                    loadPracticeMode();
+                } else if (currentMode === 'play') {
+                    loadPlayMode();
+                }
+            });
+        });
+
+        loadExploreMode();
+    </script>
+</body>
+</html>

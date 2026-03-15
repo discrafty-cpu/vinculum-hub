@@ -1,0 +1,727 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Recipe Multiplier</title>
+    <link rel="stylesheet" href="../../vinculum-core.css">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #8b4513 0%, #d2691e 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1100px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 15px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            padding: 30px;
+        }
+
+        .vinculum-header {
+            text-align: center;
+            margin-bottom: 30px;
+            padding-bottom: 20px;
+            border-bottom: 3px solid #d2691e;
+        }
+
+        .vinculum-header h1 {
+            color: #333;
+            font-size: 2.5em;
+            margin-bottom: 10px;
+        }
+
+        .vinculum-header p {
+            color: #666;
+            font-size: 1.1em;
+        }
+
+        .mode-selector {
+            display: flex;
+            justify-content: center;
+            gap: 10px;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+        }
+
+        .mode-btn {
+            padding: 10px 20px;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 1em;
+            font-weight: bold;
+            transition: all 0.3s;
+            background: #e0e0e0;
+            color: #333;
+        }
+
+        .mode-btn.active {
+            background: #d2691e;
+            color: white;
+            transform: scale(1.05);
+        }
+
+        .difficulty-selector {
+            display: flex;
+            justify-content: center;
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+
+        .diff-btn {
+            padding: 8px 16px;
+            border: 2px solid #ccc;
+            border-radius: 6px;
+            background: white;
+            cursor: pointer;
+            font-weight: bold;
+            transition: all 0.3s;
+        }
+
+        .diff-btn.active {
+            background: #d2691e;
+            color: white;
+            border-color: #d2691e;
+        }
+
+        .mode-content {
+            display: none;
+        }
+
+        .mode-content.active {
+            display: block;
+        }
+
+        /* Explore Mode */
+        .explore-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 30px;
+            margin-bottom: 20px;
+        }
+
+        .recipe-card {
+            background: #fffaf0;
+            padding: 20px;
+            border-radius: 10px;
+            border: 2px solid #d2691e;
+        }
+
+        .recipe-card h3 {
+            color: #d2691e;
+            margin-bottom: 15px;
+            text-align: center;
+            font-size: 1.4em;
+        }
+
+        .ingredient {
+            padding: 10px 0;
+            border-bottom: 1px solid #f0f0f0;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .ingredient:last-child {
+            border-bottom: none;
+        }
+
+        .ingredient-name {
+            font-weight: bold;
+            color: #333;
+        }
+
+        .ingredient-amount {
+            color: #d2691e;
+            font-weight: bold;
+            font-size: 1.1em;
+        }
+
+        .multiplier-section {
+            background: #fff8f0;
+            padding: 20px;
+            border-radius: 10px;
+            border: 2px solid #d2691e;
+        }
+
+        .multiplier-section h3 {
+            color: #d2691e;
+            margin-bottom: 15px;
+        }
+
+        .multiplier-input {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+            align-items: center;
+        }
+
+        .multiplier-input label {
+            font-weight: bold;
+            color: #333;
+        }
+
+        .multiplier-input input {
+            padding: 10px;
+            border: 2px solid #ccc;
+            border-radius: 6px;
+            font-size: 1.1em;
+            width: 100px;
+        }
+
+        .multiplier-input input:focus {
+            outline: none;
+            border-color: #d2691e;
+            box-shadow: 0 0 5px rgba(210, 105, 30, 0.3);
+        }
+
+        .slider-container {
+            margin-bottom: 15px;
+        }
+
+        .slider-label {
+            display: block;
+            font-weight: bold;
+            color: #333;
+            margin-bottom: 8px;
+        }
+
+        input[type="range"] {
+            width: 100%;
+            height: 8px;
+            border-radius: 5px;
+            background: #ddd;
+            outline: none;
+            -webkit-appearance: none;
+        }
+
+        input[type="range"]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 25px;
+            height: 25px;
+            border-radius: 50%;
+            background: #d2691e;
+            cursor: pointer;
+        }
+
+        input[type="range"]::-moz-range-thumb {
+            width: 25px;
+            height: 25px;
+            border-radius: 50%;
+            background: #d2691e;
+            cursor: pointer;
+            border: none;
+        }
+
+        .multiplier-display {
+            text-align: center;
+            font-size: 1.3em;
+            font-weight: bold;
+            color: #d2691e;
+            margin-bottom: 15px;
+        }
+
+        /* Practice Mode */
+        .problem {
+            background: #fffaf0;
+            padding: 20px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+            border-left: 5px solid #d2691e;
+        }
+
+        .problem h4 {
+            color: #d2691e;
+            margin-bottom: 15px;
+        }
+
+        .problem p {
+            color: #555;
+            margin-bottom: 10px;
+            line-height: 1.6;
+        }
+
+        .answer-group {
+            display: flex;
+            gap: 10px;
+            margin: 15px 0;
+        }
+
+        .answer-group input {
+            flex: 1;
+            padding: 10px;
+            border: 2px solid #ccc;
+            border-radius: 6px;
+        }
+
+        .answer-group button {
+            padding: 10px 20px;
+            background: #d2691e;
+            color: white;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-weight: bold;
+        }
+
+        .answer-group button:hover {
+            background: #8b4513;
+        }
+
+        .feedback-box {
+            padding: 15px;
+            border-radius: 6px;
+            margin-top: 10px;
+            display: none;
+            border-left: 4px solid;
+        }
+
+        .feedback-box.show {
+            display: block;
+        }
+
+        .feedback-box.correct {
+            background: #d4edda;
+            color: #155724;
+            border-color: #4caf50;
+        }
+
+        .feedback-box.incorrect {
+            background: #f8d7da;
+            color: #721c24;
+            border-color: #f44336;
+        }
+
+        /* Play Mode */
+        .challenge-container {
+            background: #fffaf0;
+            padding: 20px;
+            border-radius: 10px;
+            border: 2px solid #d2691e;
+            margin-bottom: 20px;
+        }
+
+        .challenge-info {
+            background: #fff8f0;
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 15px;
+            border-left: 4px solid #d2691e;
+        }
+
+        .recipe-items {
+            margin: 15px 0;
+        }
+
+        .recipe-item {
+            display: flex;
+            justify-content: space-between;
+            padding: 10px 0;
+            border-bottom: 1px solid #f0f0f0;
+            align-items: center;
+        }
+
+        .recipe-item:last-child {
+            border-bottom: none;
+        }
+
+        .item-question {
+            font-weight: bold;
+            color: #333;
+        }
+
+        .item-input {
+            width: 120px;
+            padding: 8px;
+            border: 2px solid #ccc;
+            border-radius: 6px;
+        }
+
+        .submit-btn {
+            display: block;
+            margin: 20px auto 0;
+            padding: 12px 30px;
+            background: #d2691e;
+            color: white;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-weight: bold;
+            font-size: 1.05em;
+        }
+
+        .submit-btn:hover {
+            background: #8b4513;
+        }
+
+        .score {
+            background: #d2691e;
+            color: white;
+            padding: 20px;
+            border-radius: 10px;
+            text-align: center;
+            font-size: 1.5em;
+            font-weight: bold;
+            margin-top: 20px;
+        }
+
+        #feedback {
+            margin-top: 15px;
+            padding: 15px;
+            border-radius: 6px;
+            font-weight: bold;
+            display: none;
+        }
+
+        #feedback.show {
+            display: block;
+        }
+
+        #feedback.success {
+            background: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+
+        #feedback.error {
+            background: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+
+        @media (max-width: 768px) {
+            .explore-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .recipe-item {
+                flex-direction: column;
+                align-items: flex-start;
+            }
+
+            .item-input {
+                width: 100%;
+                margin-top: 8px;
+            }
+
+            .vinculum-header h1 {
+                font-size: 1.8em;
+            }
+
+            .container {
+                padding: 15px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="vinculum-header">
+            <h1>🍳 Recipe Multiplier</h1>
+            <p>Scale recipes by adjusting ingredient amounts</p>
+        </div>
+
+        <div class="mode-selector">
+            <button class="mode-btn active" data-mode="explore">🔍 Explore</button>
+            <button class="mode-btn" data-mode="practice">✏️ Practice</button>
+            <button class="mode-btn" data-mode="play">🎮 Play</button>
+        </div>
+
+        <div class="difficulty-selector">
+            <button class="diff-btn active" data-difficulty="easy">Easy</button>
+            <button class="diff-btn" data-difficulty="medium">Medium</button>
+            <button class="diff-btn" data-difficulty="hard">Hard</button>
+        </div>
+
+        <!-- EXPLORE MODE -->
+        <div class="mode-content active" id="explore">
+            <h3>Explore: Scale a Recipe</h3>
+            <div class="explore-grid">
+                <div id="recipe-display"></div>
+
+                <div class="multiplier-section">
+                    <h3>Multiply Recipe</h3>
+                    <div class="slider-container">
+                        <label class="slider-label" for="multiplier-slider">Serving Multiplier</label>
+                        <input type="range" id="multiplier-slider" min="0.5" max="4" step="0.5" value="1">
+                    </div>
+                    <div class="multiplier-display">
+                        <span id="multiplier-value">1</span>x Recipe
+                    </div>
+
+                    <div id="scaled-recipe"></div>
+                </div>
+            </div>
+            <div id="feedback" class="feedback"></div>
+        </div>
+
+        <!-- PRACTICE MODE -->
+        <div class="mode-content" id="practice">
+            <h3>Practice: Calculate Scaled Ingredients</h3>
+            <div id="practice-container"></div>
+            <div id="feedback" class="feedback"></div>
+        </div>
+
+        <!-- PLAY MODE -->
+        <div class="mode-content" id="play">
+            <h3>Chef Challenge: Scale Recipes Correctly</h3>
+            <div class="challenge-container">
+                <div class="challenge-info">
+                    <h4 id="challenge-title">Recipe Challenge</h4>
+                    <p id="challenge-desc"></p>
+                </div>
+                <div class="recipe-items" id="recipe-inputs"></div>
+                <button class="submit-btn" onclick="submitRecipe()">Check Recipe</button>
+                <div id="feedback" class="feedback"></div>
+                <div class="score" id="score" style="display: none;"></div>
+            </div>
+        </div>
+    </div>
+
+    <script src="../../vinculum-feedback.js"></script>
+    <script src="../../vinculum-input.js"></script>
+
+    <script>
+        let currentDifficulty = 'easy';
+        let currentMode = 'explore';
+        let gameScore = 0;
+        let currentChallenge = null;
+
+        const recipes = {
+            easy: {
+                name: 'Simple Cookie Recipe',
+                servings: 12,
+                ingredients: [
+                    { name: 'Flour', amount: 2, unit: 'cups' },
+                    { name: 'Sugar', amount: 1, unit: 'cup' },
+                    { name: 'Butter', amount: 1, unit: 'cup' },
+                    { name: 'Eggs', amount: 2, unit: 'each' }
+                ]
+            },
+            medium: {
+                name: 'Brownie Mix',
+                servings: 24,
+                ingredients: [
+                    { name: 'Cocoa Powder', amount: 0.75, unit: 'cup' },
+                    { name: 'Flour', amount: 1.25, unit: 'cups' },
+                    { name: 'Sugar', amount: 1.5, unit: 'cups' },
+                    { name: 'Butter', amount: 0.5, unit: 'cup' },
+                    { name: 'Eggs', amount: 3, unit: 'each' }
+                ]
+            },
+            hard: {
+                name: 'Soufflé Recipe',
+                servings: 6,
+                ingredients: [
+                    { name: 'Milk', amount: 1, unit: 'cup' },
+                    { name: 'Flour', amount: 0.25, unit: 'cup' },
+                    { name: 'Butter', amount: 0.33, unit: 'cup' },
+                    { name: 'Cheese', amount: 1, unit: 'cup' },
+                    { name: 'Eggs', amount: 5, unit: 'each' },
+                    { name: 'Salt', amount: 0.25, unit: 'tsp' }
+                ]
+            }
+        };
+
+        function init() {
+            setupModeButtons();
+            setupDifficultyButtons();
+            loadExplore();
+        }
+
+        function setupModeButtons() {
+            document.querySelectorAll('.mode-btn[data-mode]').forEach(btn => {
+                btn.addEventListener('click', (e) => {
+                    document.querySelectorAll('.mode-btn[data-mode]').forEach(b => b.classList.remove('active'));
+                    e.target.classList.add('active');
+                    currentMode = e.target.dataset.mode;
+                    document.querySelectorAll('.mode-content').forEach(m => m.classList.remove('active'));
+                    document.getElementById(currentMode).classList.add('active');
+
+                    if (currentMode === 'practice') loadPractice();
+                    if (currentMode === 'play') loadPlay();
+                });
+            });
+        }
+
+        function setupDifficultyButtons() {
+            document.querySelectorAll('.diff-btn').forEach(btn => {
+                btn.addEventListener('click', (e) => {
+                    document.querySelectorAll('.diff-btn').forEach(b => b.classList.remove('active'));
+                    e.target.classList.add('active');
+                    currentDifficulty = e.target.dataset.difficulty;
+
+                    if (currentMode === 'explore') loadExplore();
+                    if (currentMode === 'practice') loadPractice();
+                    if (currentMode === 'play') loadPlay();
+                });
+            });
+        }
+
+        function loadExplore() {
+            const recipe = recipes[currentDifficulty];
+
+            let recipeHtml = `<div class="recipe-card"><h3>${recipe.name}</h3><div style="color: #999; margin-bottom: 15px;">Makes ${recipe.servings} servings</div>`;
+            recipe.ingredients.forEach(ing => {
+                recipeHtml += `
+                    <div class="ingredient">
+                        <span class="ingredient-name">${ing.name}</span>
+                        <span class="ingredient-amount">${ing.amount} ${ing.unit}</span>
+                    </div>
+                `;
+            });
+            recipeHtml += '</div>';
+            document.getElementById('recipe-display').innerHTML = recipeHtml;
+
+            document.getElementById('multiplier-slider').addEventListener('input', updateScale);
+            updateScale();
+        }
+
+        function updateScale() {
+            const multiplier = parseFloat(document.getElementById('multiplier-slider').value);
+            const recipe = recipes[currentDifficulty];
+
+            document.getElementById('multiplier-value').textContent = multiplier;
+
+            let scaledHtml = `<div class="recipe-card"><h3>Scaled Recipe</h3><div style="color: #999; margin-bottom: 15px;">Makes ${(recipe.servings * multiplier).toFixed(0)} servings</div>`;
+            recipe.ingredients.forEach(ing => {
+                const scaledAmount = ing.amount * multiplier;
+                scaledHtml += `
+                    <div class="ingredient">
+                        <span class="ingredient-name">${ing.name}</span>
+                        <span class="ingredient-amount">${scaledAmount} ${ing.unit}</span>
+                    </div>
+                `;
+            });
+            scaledHtml += '</div>';
+            document.getElementById('scaled-recipe').innerHTML = scaledHtml;
+        }
+
+        function loadPractice() {
+            const recipe = recipes[currentDifficulty];
+            const multiplier = currentDifficulty === 'easy' ? 2 : currentDifficulty === 'medium' ? 1.5 : 0.5;
+
+            const problem = {
+                recipe: recipe.name,
+                multiplier: multiplier,
+                servings: recipe.servings * multiplier,
+                ingredients: recipe.ingredients.map(ing => ({
+                    ...ing,
+                    scaledAmount: ing.amount * multiplier
+                }))
+            };
+
+            const container = document.getElementById('practice-container');
+            const ingredient = problem.ingredients[Math.floor(Math.random() * problem.ingredients.length)];
+
+            container.innerHTML = `
+                <div class="problem">
+                    <h4>${problem.recipe}</h4>
+                    <p><strong>Scale:</strong> Original makes ${problem.recipe.servings} servings. Multiply by ${problem.multiplier}x</p>
+                    <p><strong>Original amount:</strong> ${ingredient.amount} ${ingredient.unit} of ${ingredient.name}</p>
+                    <p><strong>Question:</strong> How much ${ingredient.name} for the scaled recipe?</p>
+                    <div class="answer-group">
+                        <input type="number" id="answer-input" placeholder="Enter amount" step="0.01">
+                        <button onclick="checkPracticeAnswer(${ingredient.scaledAmount})">Check</button>
+                    </div>
+                    <div class="feedback-box" id="practice-feedback"></div>
+                </div>
+            `;
+
+            document.getElementById('answer-input').focus();
+        }
+
+        function checkPracticeAnswer(correct) {
+            const input = document.getElementById('answer-input');
+            const answer = parseFloat(input.value);
+            const feedback = document.getElementById('practice-feedback');
+
+            if (isNaN(answer)) {
+                feedback.classList.add('show', 'incorrect');
+                feedback.innerHTML = '❌ Please enter a number!';
+                return;
+            }
+
+            const isCorrect = Math.abs(answer - correct) < 0.01;
+            feedback.classList.add('show', isCorrect ? 'correct' : 'incorrect');
+            feedback.innerHTML = isCorrect ?
+                `✅ Correct! ${correct}` :
+                `❌ Not quite. Correct answer: ${correct}`;
+        }
+
+        function loadPlay() {
+            gameScore = 0;
+            const recipe = recipes[currentDifficulty];
+            const multiplier = currentDifficulty === 'easy' ? 2 : currentDifficulty === 'medium' ? 1.5 : 0.33;
+
+            currentChallenge = {
+                recipe: recipe,
+                multiplier: multiplier,
+                newServings: recipe.servings * multiplier
+            };
+
+            document.getElementById('challenge-title').textContent = recipe.name;
+            document.getElementById('challenge-desc').innerHTML = `<strong>Scale this recipe to make ${currentChallenge.newServings.toFixed(0)} servings</strong> (multiply by ${multiplier}x)`;
+
+            let inputsHtml = '';
+            recipe.ingredients.forEach((ing, idx) => {
+                const scaledAmount = ing.amount * multiplier;
+                inputsHtml += `
+                    <div class="recipe-item">
+                        <span class="item-question">${ing.name} (original: ${ing.amount} ${ing.unit})</span>
+                        <input type="number" class="item-input" id="ing-${idx}" placeholder="Amount" step="0.01" data-correct="${scaledAmount}">
+                    </div>
+                `;
+            });
+            document.getElementById('recipe-inputs').innerHTML = inputsHtml;
+            document.getElementById('feedback').innerHTML = '';
+            document.getElementById('score').style.display = 'none';
+        }
+
+        function submitRecipe() {
+            const recipe = recipes[currentDifficulty];
+            let correct = 0;
+
+            recipe.ingredients.forEach((ing, idx) => {
+                const input = document.getElementById(`ing-${idx}`);
+                const answer = parseFloat(input.value);
+                const expected = parseFloat(input.dataset.correct);
+
+                if (!isNaN(answer) && Math.abs(answer - expected) < 0.1) {
+                    correct++;
+                }
+            });
+
+            gameScore = (correct / recipe.ingredients.length) * 5;
+
+            const feedback = document.getElementById('feedback');
+            feedback.classList.add('show');
+
+            if (correct === recipe.ingredients.length) {
+                feedback.classList.add('success');
+                feedback.innerHTML = `✅ Perfect! All ingredients scaled correctly! ${gameScore.toFixed(0)} points`;
+            } else {
+                feedback.classList.add('error');
+                feedback.innerHTML = `❌ ${correct}/${recipe.ingredients.length} correct. Check your math!`;
+            }
+
+            document.getElementById('score').style.display = 'block';
+            document.getElementById('score').innerHTML = `Score: ${gameScore.toFixed(0)}/5`;
+        }
+
+        init();
+    </script>
+</body>
+</html>

@@ -1,0 +1,615 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Algorithm Sorter - VINCULUM Hub</title>
+    <link rel="stylesheet" href="../../vinculum-core.css">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+        .container {
+            max-width: 900px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 15px;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.2);
+            padding: 30px;
+        }
+        .vinculum-header {
+            text-align: center;
+            margin-bottom: 30px;
+            color: #333;
+        }
+        .vinculum-header h1 {
+            font-size: 2.5em;
+            margin-bottom: 10px;
+            color: #667eea;
+        }
+        .vinculum-header p {
+            font-size: 1.1em;
+            color: #666;
+        }
+        .controls {
+            display: flex;
+            gap: 20px;
+            margin-bottom: 30px;
+            flex-wrap: wrap;
+            align-items: center;
+            justify-content: center;
+        }
+        .mode-buttons {
+            display: flex;
+            gap: 10px;
+        }
+        button {
+            padding: 10px 20px;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 1em;
+            font-weight: bold;
+            transition: all 0.3s;
+        }
+        .mode-btn {
+            background: #e0e0e0;
+            color: #333;
+        }
+        .mode-btn.active {
+            background: #667eea;
+            color: white;
+            transform: scale(1.05);
+        }
+        .difficulty-selector {
+            display: flex;
+            gap: 5px;
+            align-items: center;
+        }
+        .difficulty-selector label {
+            font-weight: bold;
+            color: #333;
+            margin-right: 10px;
+        }
+        .difficulty-btn {
+            padding: 8px 15px;
+            background: #f0f0f0;
+            color: #333;
+            border: 2px solid transparent;
+        }
+        .difficulty-btn.active {
+            background: #764ba2;
+            color: white;
+            border-color: #667eea;
+        }
+        .content-area {
+            min-height: 400px;
+        }
+        .algorithm-steps {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+        .step-card {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 20px;
+            border-radius: 10px;
+            cursor: grab;
+            user-select: none;
+            transition: all 0.3s;
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            box-shadow: 0 4px 15px rgba(102, 126, 234, 0.3);
+        }
+        .step-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(102, 126, 234, 0.5);
+        }
+        .step-card.dragging {
+            opacity: 0.5;
+            cursor: grabbing;
+        }
+        .step-number {
+            background: rgba(255,255,255,0.3);
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            font-size: 1.2em;
+            flex-shrink: 0;
+        }
+        .step-text {
+            font-size: 1.1em;
+            flex-grow: 1;
+        }
+        .solution-area {
+            background: #f5f5f5;
+            border: 2px dashed #667eea;
+            border-radius: 10px;
+            padding: 20px;
+            min-height: 200px;
+            margin-bottom: 20px;
+        }
+        .solution-area h3 {
+            color: #667eea;
+            margin-bottom: 15px;
+        }
+        .solution-steps {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 10px;
+        }
+        .solution-step {
+            background: white;
+            padding: 15px;
+            border-left: 4px solid #764ba2;
+            border-radius: 5px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        .solution-step.correct {
+            border-left-color: #4caf50;
+            background: #e8f5e9;
+        }
+        .solution-step.incorrect {
+            border-left-color: #f44336;
+            background: #ffebee;
+        }
+        .step-index {
+            background: #667eea;
+            color: white;
+            width: 30px;
+            height: 30px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            flex-shrink: 0;
+        }
+        .action-buttons {
+            display: flex;
+            gap: 15px;
+            justify-content: center;
+            margin-top: 20px;
+        }
+        button.primary {
+            background: #667eea;
+            color: white;
+            padding: 12px 30px;
+        }
+        button.primary:hover {
+            background: #5568d3;
+            transform: scale(1.05);
+        }
+        button.secondary {
+            background: #f0f0f0;
+            color: #333;
+            padding: 12px 30px;
+        }
+        button.secondary:hover {
+            background: #e0e0e0;
+        }
+        .feedback {
+            margin-top: 20px;
+            padding: 15px;
+            border-radius: 8px;
+            font-weight: bold;
+            text-align: center;
+            display: none;
+        }
+        .feedback.success {
+            background: #e8f5e9;
+            color: #2e7d32;
+            display: block;
+            border: 2px solid #4caf50;
+        }
+        .feedback.error {
+            background: #ffebee;
+            color: #c62828;
+            display: block;
+            border: 2px solid #f44336;
+        }
+        .score-board {
+            text-align: center;
+            padding: 15px;
+            background: #f5f5f5;
+            border-radius: 8px;
+            margin-bottom: 20px;
+        }
+        .score-board h3 {
+            color: #667eea;
+            margin-bottom: 10px;
+        }
+        .score {
+            font-size: 2em;
+            color: #764ba2;
+            font-weight: bold;
+        }
+        @media (max-width: 600px) {
+            .controls {
+                flex-direction: column;
+            }
+            .vinculum-header h1 {
+                font-size: 1.8em;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="vinculum-header">
+            <h1>🎯 Algorithm Sorter</h1>
+            <p>Arrange steps in the correct order to solve problems!</p>
+        </div>
+
+        <div class="controls">
+            <div class="mode-buttons">
+                <button class="mode-btn active" data-mode="explore">🔍 Explore</button>
+                <button class="mode-btn" data-mode="practice">📝 Practice</button>
+                <button class="mode-btn" data-mode="play">🎮 Play</button>
+            </div>
+            <div class="difficulty-selector">
+                <label>Difficulty:</label>
+                <button class="difficulty-btn active" data-difficulty="easy">Easy</button>
+                <button class="difficulty-btn" data-difficulty="medium">Medium</button>
+                <button class="difficulty-btn" data-difficulty="hard">Hard</button>
+            </div>
+        </div>
+
+        <div id="feedback" class="feedback"></div>
+
+        <div class="content-area">
+            <div id="explore-mode">
+                <div class="score-board">
+                    <h3>Learn Algorithm Steps</h3>
+                    <p>Watch and understand the correct order of steps</p>
+                </div>
+                <div class="solution-area">
+                    <h3>✨ Correct Solution:</h3>
+                    <div id="explore-solution" class="solution-steps"></div>
+                </div>
+                <div class="action-buttons">
+                    <button class="primary" onclick="showExploreMode()">Reload Instructions</button>
+                </div>
+            </div>
+
+            <div id="practice-mode" style="display: none;">
+                <div class="algorithm-steps" id="practice-steps"></div>
+                <div class="solution-area">
+                    <h3>📋 Your Solution:</h3>
+                    <div id="practice-solution" class="solution-steps"></div>
+                </div>
+                <div class="action-buttons">
+                    <button class="primary" onclick="checkPracticeSolution()">Check Solution</button>
+                    <button class="secondary" onclick="resetPractice()">Reset</button>
+                </div>
+            </div>
+
+            <div id="play-mode" style="display: none;">
+                <div class="score-board">
+                    <h3>⏱️ Step Racer</h3>
+                    <p>Order the steps as fast as you can!</p>
+                    <div class="score">Time: <span id="timer">0</span>s | Score: <span id="play-score">0</span></div>
+                </div>
+                <div class="algorithm-steps" id="play-steps"></div>
+                <div class="solution-area">
+                    <h3>📋 Your Solution:</h3>
+                    <div id="play-solution" class="solution-steps"></div>
+                </div>
+                <div class="action-buttons">
+                    <button class="primary" onclick="checkPlaySolution()">Submit</button>
+                    <button class="secondary" onclick="resetPlay()">Reset</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="../../vinculum-feedback.js"></script>
+    <script src="../../vinculum-input.js"></script>
+
+    <script>
+        const algorithms = {
+            easy: {
+                sandwich: {
+                    title: "Making a Sandwich",
+                    steps: [
+                        "Get two pieces of bread",
+                        "Spread peanut butter on first bread",
+                        "Spread jelly on second bread",
+                        "Press bread together",
+                        "Cut diagonally"
+                    ]
+                },
+                simple_addition: {
+                    title: "Adding Two Numbers",
+                    steps: [
+                        "Write the first number",
+                        "Write the second number below it",
+                        "Add the ones place",
+                        "Add the tens place",
+                        "Write the answer"
+                    ]
+                }
+            },
+            medium: {
+                two_digit_addition: {
+                    title: "Two-Digit Addition with Regrouping",
+                    steps: [
+                        "Write numbers in columns",
+                        "Add the ones place",
+                        "If sum is 10 or more, carry the tens",
+                        "Add the tens place with the carry",
+                        "Write the final answer"
+                    ]
+                },
+                plant_growth: {
+                    title: "Growing a Plant",
+                    steps: [
+                        "Choose a seed",
+                        "Fill pot with soil",
+                        "Plant seed in soil",
+                        "Water the plant",
+                        "Place in sunlight",
+                        "Wait for growth"
+                    ]
+                }
+            },
+            hard: {
+                long_division: {
+                    title: "Long Division",
+                    steps: [
+                        "Set up the division problem",
+                        "Divide the first digits",
+                        "Multiply the quotient by divisor",
+                        "Subtract to find remainder",
+                        "Bring down the next digit",
+                        "Repeat steps 2-5",
+                        "Write the final answer"
+                    ]
+                },
+                fraction_addition: {
+                    title: "Adding Fractions",
+                    steps: [
+                        "Find the least common denominator",
+                        "Convert first fraction",
+                        "Convert second fraction",
+                        "Add the numerators",
+                        "Keep the same denominator",
+                        "Simplify if needed"
+                    ]
+                }
+            }
+        };
+
+        let currentMode = 'explore';
+        let currentDifficulty = 'easy';
+        let currentAlgorithm = null;
+        let playTimer = 0;
+        let playTimerInterval = null;
+        let playScore = 0;
+
+        function getRandomAlgorithm(difficulty) {
+            const algList = Object.values(algorithms[difficulty]);
+            return algList[Math.floor(Math.random() * algList.length)];
+        }
+
+        function showExploreMode() {
+            currentAlgorithm = getRandomAlgorithm(currentDifficulty);
+            const exploreSolution = document.getElementById('explore-solution');
+            exploreSolution.innerHTML = '';
+            currentAlgorithm.steps.forEach((step, index) => {
+                const stepEl = document.createElement('div');
+                stepEl.className = 'solution-step correct';
+                stepEl.innerHTML = `<div class="step-index">${index + 1}</div><div>${step}</div>`;
+                exploreSolution.appendChild(stepEl);
+            });
+        }
+
+        function initPracticeMode() {
+            currentAlgorithm = getRandomAlgorithm(currentDifficulty);
+            const practiceSteps = document.getElementById('practice-steps');
+            practiceSteps.innerHTML = '';
+
+            let shuffled = [...currentAlgorithm.steps].sort(() => Math.random() - 0.5);
+            shuffled.forEach((step, index) => {
+                const stepCard = document.createElement('div');
+                stepCard.className = 'step-card';
+                stepCard.draggable = true;
+                stepCard.innerHTML = `
+                    <div class="step-number">${index + 1}</div>
+                    <div class="step-text">${step}</div>
+                `;
+                stepCard.addEventListener('dragstart', dragStart);
+                practiceSteps.appendChild(stepCard);
+            });
+
+            document.getElementById('practice-solution').innerHTML = '';
+        }
+
+        function initPlayMode() {
+            playTimer = 0;
+            playScore = 0;
+            document.getElementById('timer').textContent = '0';
+            document.getElementById('play-score').textContent = '0';
+
+            if (playTimerInterval) clearInterval(playTimerInterval);
+            playTimerInterval = setInterval(() => {
+                playTimer++;
+                document.getElementById('timer').textContent = playTimer;
+            }, 1000);
+
+            initPracticeMode();
+            const playSteps = document.getElementById('play-steps');
+            playSteps.innerHTML = document.getElementById('practice-steps').innerHTML;
+            playSteps.querySelectorAll('.step-card').forEach(card => {
+                card.addEventListener('dragstart', dragStart);
+            });
+            document.getElementById('play-solution').innerHTML = '';
+        }
+
+        function dragStart(e) {
+            e.dataTransfer.effectAllowed = 'move';
+            e.target.classList.add('dragging');
+            e.dataTransfer.setData('text/html', e.target.innerHTML);
+        }
+
+        function setupDragAndDrop(modeId) {
+            const solutionArea = document.getElementById(`${modeId}-solution`);
+            solutionArea.addEventListener('dragover', (e) => {
+                e.preventDefault();
+                e.dataTransfer.dropEffect = 'move';
+                solutionArea.style.background = '#e3f2fd';
+            });
+            solutionArea.addEventListener('dragleave', (e) => {
+                solutionArea.style.background = '#f5f5f5';
+            });
+            solutionArea.addEventListener('drop', (e) => {
+                e.preventDefault();
+                solutionArea.style.background = '#f5f5f5';
+                const stepCard = document.querySelector('.step-card.dragging');
+                if (stepCard) {
+                    const stepIndex = Array.from(document.querySelectorAll(`.${modeId}-mode .step-card`)).indexOf(stepCard);
+                    const stepText = currentAlgorithm.steps[stepIndex] || stepCard.querySelector('.step-text').textContent;
+
+                    const solutionStep = document.createElement('div');
+                    solutionStep.className = 'solution-step';
+                    solutionStep.innerHTML = `
+                        <div class="step-index">${solutionArea.children.length + 1}</div>
+                        <div>${stepCard.querySelector('.step-text')?.textContent || stepText}</div>
+                    `;
+                    solutionArea.appendChild(solutionStep);
+                    stepCard.remove();
+                    stepCard.classList.remove('dragging');
+                }
+            });
+        }
+
+        function checkSolution(modeId) {
+            const solutionSteps = document.getElementById(`${modeId}-solution`).children;
+            let correct = true;
+            let score = 100;
+
+            Array.from(solutionSteps).forEach((step, index) => {
+                const stepText = step.querySelector('div:last-child').textContent.trim();
+                if (stepText === currentAlgorithm.steps[index]) {
+                    step.classList.add('correct');
+                    step.classList.remove('incorrect');
+                } else {
+                    step.classList.add('incorrect');
+                    step.classList.remove('correct');
+                    correct = false;
+                    score -= 20;
+                }
+            });
+
+            if (solutionSteps.length !== currentAlgorithm.steps.length) {
+                correct = false;
+                score -= 10;
+            }
+
+            return { correct, score };
+        }
+
+        function checkPracticeSolution() {
+            const result = checkSolution('practice');
+            const feedback = document.getElementById('feedback');
+            if (result.correct) {
+                feedback.className = 'feedback success';
+                feedback.textContent = '✅ Perfect! All steps in correct order!';
+            } else {
+                feedback.className = 'feedback error';
+                feedback.textContent = '❌ Not quite right. Check the order of steps.';
+            }
+        }
+
+        function checkPlaySolution() {
+            clearInterval(playTimerInterval);
+            const result = checkSolution('play');
+            playScore = Math.max(0, result.score - Math.floor(playTimer / 2));
+            document.getElementById('play-score').textContent = playScore;
+
+            const feedback = document.getElementById('feedback');
+            if (result.correct) {
+                feedback.className = 'feedback success';
+                feedback.textContent = `✅ Awesome! Score: ${playScore} points!`;
+            } else {
+                feedback.className = 'feedback error';
+                feedback.textContent = `❌ Not quite! Score: ${playScore} points. Try again!`;
+            }
+        }
+
+        function resetPractice() {
+            document.getElementById('practice-solution').innerHTML = '';
+            initPracticeMode();
+            document.getElementById('feedback').style.display = 'none';
+        }
+
+        function resetPlay() {
+            clearInterval(playTimerInterval);
+            document.getElementById('play-solution').innerHTML = '';
+            initPlayMode();
+            document.getElementById('feedback').style.display = 'none';
+        }
+
+        document.querySelectorAll('.mode-btn').forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                document.querySelectorAll('.mode-btn').forEach(b => b.classList.remove('active'));
+                e.target.classList.add('active');
+                currentMode = e.target.dataset.mode;
+
+                document.getElementById('explore-mode').style.display = 'none';
+                document.getElementById('practice-mode').style.display = 'none';
+                document.getElementById('play-mode').style.display = 'none';
+                document.getElementById('feedback').style.display = 'none';
+
+                if (currentMode === 'explore') {
+                    document.getElementById('explore-mode').style.display = 'block';
+                    showExploreMode();
+                } else if (currentMode === 'practice') {
+                    document.getElementById('practice-mode').style.display = 'block';
+                    initPracticeMode();
+                    setupDragAndDrop('practice');
+                } else if (currentMode === 'play') {
+                    document.getElementById('play-mode').style.display = 'block';
+                    initPlayMode();
+                    setupDragAndDrop('play');
+                }
+            });
+        });
+
+        document.querySelectorAll('.difficulty-btn').forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                document.querySelectorAll('.difficulty-btn').forEach(b => b.classList.remove('active'));
+                e.target.classList.add('active');
+                currentDifficulty = e.target.dataset.difficulty;
+
+                if (currentMode === 'explore') {
+                    showExploreMode();
+                } else if (currentMode === 'practice') {
+                    initPracticeMode();
+                } else if (currentMode === 'play') {
+                    initPlayMode();
+                }
+            });
+        });
+
+        showExploreMode();
+    </script>
+</body>
+</html>

@@ -1,0 +1,726 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Needs vs Wants</title>
+    <link rel="stylesheet" href="../../vinculum-core.css">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1000px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 15px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            padding: 30px;
+        }
+
+        .vinculum-header {
+            text-align: center;
+            margin-bottom: 30px;
+            padding-bottom: 20px;
+            border-bottom: 3px solid #667eea;
+        }
+
+        .vinculum-header h1 {
+            color: #333;
+            font-size: 2.5em;
+            margin-bottom: 10px;
+        }
+
+        .vinculum-header p {
+            color: #666;
+            font-size: 1.1em;
+        }
+
+        .mode-selector {
+            display: flex;
+            justify-content: center;
+            gap: 10px;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+        }
+
+        .mode-btn {
+            padding: 10px 20px;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 1em;
+            font-weight: bold;
+            transition: all 0.3s;
+            background: #e0e0e0;
+            color: #333;
+        }
+
+        .mode-btn.active {
+            background: #667eea;
+            color: white;
+            transform: scale(1.05);
+        }
+
+        .difficulty-selector {
+            display: flex;
+            justify-content: center;
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+
+        .diff-btn {
+            padding: 8px 16px;
+            border: 2px solid #ccc;
+            border-radius: 6px;
+            background: white;
+            cursor: pointer;
+            font-weight: bold;
+            transition: all 0.3s;
+        }
+
+        .diff-btn.active {
+            background: #667eea;
+            color: white;
+            border-color: #667eea;
+        }
+
+        .mode-content {
+            display: none;
+        }
+
+        .mode-content.active {
+            display: block;
+        }
+
+        /* Explore Mode */
+        .explore-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 30px;
+            margin-bottom: 30px;
+        }
+
+        .category {
+            background: #f5f5f5;
+            border: 3px dashed #667eea;
+            border-radius: 10px;
+            padding: 20px;
+            min-height: 400px;
+        }
+
+        .category h3 {
+            color: #667eea;
+            margin-bottom: 20px;
+            font-size: 1.3em;
+        }
+
+        .category.needs {
+            background: linear-gradient(135deg, rgba(102, 126, 234, 0.1), rgba(102, 126, 234, 0.05));
+        }
+
+        .category.wants {
+            background: linear-gradient(135deg, rgba(118, 75, 162, 0.1), rgba(118, 75, 162, 0.05));
+        }
+
+        .item {
+            background: white;
+            padding: 12px;
+            margin: 8px 0;
+            border-radius: 6px;
+            cursor: move;
+            border: 2px solid #999;
+            font-weight: bold;
+            transition: all 0.3s;
+            user-select: none;
+        }
+
+        .item:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
+        }
+
+        .item.dragging {
+            opacity: 0.5;
+        }
+
+        .items-pool {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            margin-bottom: 20px;
+            min-height: 50px;
+            padding: 15px;
+            background: #fff9e6;
+            border-radius: 8px;
+            border: 2px solid #ffc107;
+        }
+
+        .pool-item {
+            background: #ffc107;
+            color: #333;
+            padding: 10px 15px;
+            border-radius: 6px;
+            cursor: move;
+            font-weight: bold;
+            border: 2px solid #ff9800;
+            transition: all 0.3s;
+        }
+
+        .pool-item:hover {
+            transform: scale(1.05);
+        }
+
+        /* Practice Mode */
+        .scenario {
+            background: #f0f4ff;
+            padding: 20px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+            border-left: 5px solid #667eea;
+        }
+
+        .scenario h4 {
+            color: #667eea;
+            margin-bottom: 10px;
+        }
+
+        .scenario p {
+            color: #555;
+            margin-bottom: 15px;
+            font-size: 1.05em;
+        }
+
+        .answer-options {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 15px;
+        }
+
+        .answer-btn {
+            flex: 1;
+            padding: 12px;
+            border: 2px solid #ddd;
+            border-radius: 6px;
+            background: white;
+            cursor: pointer;
+            font-weight: bold;
+            transition: all 0.3s;
+        }
+
+        .answer-btn:hover {
+            border-color: #667eea;
+            background: #f0f4ff;
+        }
+
+        .answer-btn.correct {
+            background: #4caf50;
+            color: white;
+            border-color: #4caf50;
+        }
+
+        .answer-btn.incorrect {
+            background: #f44336;
+            color: white;
+            border-color: #f44336;
+        }
+
+        .explanation {
+            background: #fff3cd;
+            padding: 15px;
+            border-radius: 6px;
+            margin-top: 10px;
+            border-left: 4px solid #ffc107;
+            display: none;
+        }
+
+        .explanation.show {
+            display: block;
+        }
+
+        /* Play Mode */
+        .budget-display {
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            color: white;
+            padding: 20px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+            text-align: center;
+        }
+
+        .budget-amount {
+            font-size: 2em;
+            font-weight: bold;
+        }
+
+        .budget-status {
+            font-size: 1.1em;
+            margin-top: 10px;
+        }
+
+        .purchases-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+
+        .purchase-item {
+            background: #f5f5f5;
+            padding: 15px;
+            border-radius: 8px;
+            text-align: center;
+            cursor: pointer;
+            border: 2px solid #ddd;
+            transition: all 0.3s;
+        }
+
+        .purchase-item:hover {
+            border-color: #667eea;
+            transform: translateY(-5px);
+            box-shadow: 0 10px 20px rgba(102, 126, 234, 0.3);
+        }
+
+        .purchase-item.disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        .purchase-item h4 {
+            color: #667eea;
+            margin-bottom: 5px;
+        }
+
+        .purchase-price {
+            font-size: 1.2em;
+            font-weight: bold;
+            color: #333;
+        }
+
+        .score {
+            background: #4caf50;
+            color: white;
+            padding: 20px;
+            border-radius: 10px;
+            text-align: center;
+            font-size: 1.5em;
+            font-weight: bold;
+            margin-top: 20px;
+        }
+
+        #feedback {
+            margin-top: 20px;
+            padding: 15px;
+            border-radius: 6px;
+            font-weight: bold;
+        }
+
+        .feedback.success {
+            background: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+
+        .feedback.error {
+            background: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+
+        @media (max-width: 768px) {
+            .explore-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .vinculum-header h1 {
+                font-size: 1.8em;
+            }
+
+            .container {
+                padding: 15px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="vinculum-header">
+            <h1>💰 Needs vs Wants</h1>
+            <p>Learn to distinguish between what we need and what we want</p>
+        </div>
+
+        <div class="mode-selector">
+            <button class="mode-btn active" data-mode="explore">🔍 Explore</button>
+            <button class="mode-btn" data-mode="practice">✏️ Practice</button>
+            <button class="mode-btn" data-mode="play">🎮 Play</button>
+        </div>
+
+        <div class="difficulty-selector">
+            <button class="diff-btn active" data-difficulty="easy">Easy</button>
+            <button class="diff-btn" data-difficulty="medium">Medium</button>
+            <button class="diff-btn" data-difficulty="hard">Hard</button>
+        </div>
+
+        <!-- EXPLORE MODE -->
+        <div class="mode-content active" id="explore">
+            <h3>Explore Mode: Sort Items into Categories</h3>
+            <div class="items-pool" id="items-pool"></div>
+            <div class="explore-grid">
+                <div class="category needs">
+                    <h3>✅ Needs</h3>
+                    <div class="drop-zone" data-category="needs" id="needs-zone"></div>
+                </div>
+                <div class="category wants">
+                    <h3>⭐ Wants</h3>
+                    <div class="drop-zone" data-category="wants" id="wants-zone"></div>
+                </div>
+            </div>
+            <button class="mode-btn" onclick="checkExplore()">Check My Answer</button>
+            <div id="feedback" class="feedback"></div>
+        </div>
+
+        <!-- PRACTICE MODE -->
+        <div class="mode-content" id="practice">
+            <h3>Practice Mode: Answer Questions</h3>
+            <div id="practice-container"></div>
+            <button class="mode-btn" onclick="loadPracticeQuestion()">Next Question</button>
+            <div id="feedback" class="feedback"></div>
+        </div>
+
+        <!-- PLAY MODE -->
+        <div class="mode-content" id="play">
+            <h3>Budget Builder: Make Smart Choices!</h3>
+            <div class="budget-display">
+                <div>Money Remaining:</div>
+                <div class="budget-amount" id="budget-remaining">$0</div>
+                <div class="budget-status" id="budget-status"></div>
+            </div>
+            <div class="purchases-grid" id="purchases-grid"></div>
+            <div id="feedback" class="feedback"></div>
+            <div class="score" id="score" style="display: none;"></div>
+        </div>
+    </div>
+
+    <script src="../../vinculum-feedback.js"></script>
+    <script src="../../vinculum-input.js"></script>
+
+    <script>
+        const items = {
+            easy: {
+                needs: ['Food', 'Water', 'Bed', 'Clothes', 'Shoes'],
+                wants: ['Candy', 'Toy', 'Video Game', 'Comic Book', 'Sticker']
+            },
+            medium: {
+                needs: ['Shelter', 'Bread', 'Medicine', 'Backpack', 'Pencil'],
+                wants: ['Designer Jeans', 'Phone', 'Pizza', 'Sports Equipment', 'Book Series']
+            },
+            hard: {
+                needs: ['Mortgage', 'Car Insurance', 'Groceries', 'Electricity Bill', 'Healthcare'],
+                wants: ['Vacation', 'New Laptop', 'Streaming Service', 'Restaurant Dinner', 'Concert Ticket']
+            }
+        };
+
+        const practiceQuestions = {
+            easy: [
+                {
+                    question: 'Is a sandwich a need or a want?',
+                    answer: 'need',
+                    explanation: 'A sandwich is food, and we need food to survive and be healthy.'
+                },
+                {
+                    question: 'Is a video game a need or a want?',
+                    answer: 'want',
+                    explanation: 'Video games are fun, but we don\'t need them to survive. They are wants.'
+                },
+                {
+                    question: 'Is a coat a need or a want?',
+                    answer: 'need',
+                    explanation: 'A coat keeps us warm and protects us. Clothing is a need.'
+                }
+            ],
+            medium: [
+                {
+                    question: 'Is a house a need or a want?',
+                    answer: 'need',
+                    explanation: 'A house is shelter. We need shelter to protect us from weather.'
+                },
+                {
+                    question: 'Is a bicycle a need or a want?',
+                    answer: 'want',
+                    explanation: 'While bikes are useful, we can get around other ways. A bike is a want.'
+                },
+                {
+                    question: 'Is a textbook for school a need or a want?',
+                    answer: 'need',
+                    explanation: 'School textbooks help us learn. Education is a need.'
+                }
+            ],
+            hard: [
+                {
+                    question: 'Is car insurance a need or a want?',
+                    answer: 'need',
+                    explanation: 'Car insurance is required by law and protects you financially. It\'s a need.'
+                },
+                {
+                    question: 'Is a luxury vacation a need or a want?',
+                    answer: 'want',
+                    explanation: 'While relaxation is important, expensive vacations are wants. Rest can be a need but luxury isn\'t.'
+                },
+                {
+                    question: 'Is internet service a need or a want in modern times?',
+                    answer: 'need',
+                    explanation: 'In today\'s world, internet is essential for school, work, and communication.'
+                }
+            ]
+        };
+
+        let currentDifficulty = 'easy';
+        let currentMode = 'explore';
+        let practiceIndex = 0;
+        let budget = 100;
+        let spent = 0;
+        let score = 0;
+
+        function init() {
+            loadExplore();
+            setupModeButtons();
+            setupDifficultyButtons();
+        }
+
+        function setupModeButtons() {
+            document.querySelectorAll('.mode-btn').forEach(btn => {
+                if (btn.dataset.mode) {
+                    btn.addEventListener('click', (e) => {
+                        document.querySelectorAll('.mode-btn[data-mode]').forEach(b => b.classList.remove('active'));
+                        e.target.classList.add('active');
+                        currentMode = e.target.dataset.mode;
+                        document.querySelectorAll('.mode-content').forEach(m => m.classList.remove('active'));
+                        document.getElementById(currentMode).classList.add('active');
+
+                        if (currentMode === 'practice') loadPracticeQuestion();
+                        if (currentMode === 'play') loadPlay();
+                    });
+                }
+            });
+        }
+
+        function setupDifficultyButtons() {
+            document.querySelectorAll('.diff-btn').forEach(btn => {
+                btn.addEventListener('click', (e) => {
+                    document.querySelectorAll('.diff-btn').forEach(b => b.classList.remove('active'));
+                    e.target.classList.add('active');
+                    currentDifficulty = e.target.dataset.difficulty;
+
+                    if (currentMode === 'explore') loadExplore();
+                    if (currentMode === 'practice') loadPracticeQuestion();
+                    if (currentMode === 'play') loadPlay();
+                });
+            });
+        }
+
+        function loadExplore() {
+            const itemData = items[currentDifficulty];
+            const allItems = [...itemData.needs, ...itemData.wants].sort(() => Math.random() - 0.5);
+
+            document.getElementById('needs-zone').innerHTML = '';
+            document.getElementById('wants-zone').innerHTML = '';
+
+            const pool = document.getElementById('items-pool');
+            pool.innerHTML = '';
+
+            allItems.forEach(item => {
+                const div = document.createElement('div');
+                div.className = 'pool-item';
+                div.textContent = item;
+                div.draggable = true;
+                div.dataset.item = item;
+                div.dataset.correct = itemData.needs.includes(item) ? 'needs' : 'wants';
+
+                div.addEventListener('dragstart', (e) => {
+                    e.dataTransfer.effectAllowed = 'move';
+                    e.dataTransfer.setData('text/plain', item);
+                });
+
+                pool.appendChild(div);
+            });
+
+            document.querySelectorAll('.drop-zone').forEach(zone => {
+                zone.addEventListener('dragover', (e) => {
+                    e.preventDefault();
+                    e.dataTransfer.dropEffect = 'move';
+                    zone.style.background = 'rgba(102, 126, 234, 0.1)';
+                });
+
+                zone.addEventListener('dragleave', () => {
+                    zone.style.background = 'transparent';
+                });
+
+                zone.addEventListener('drop', (e) => {
+                    e.preventDefault();
+                    zone.style.background = 'transparent';
+                    const item = e.dataTransfer.getData('text/plain');
+                    const poolItem = document.querySelector(`[data-item="${item}"]`);
+                    const sourcePool = document.getElementById('items-pool');
+
+                    if (poolItem) {
+                        zone.appendChild(poolItem);
+                        poolItem.draggable = false;
+                        poolItem.style.cursor = 'default';
+                    }
+                });
+            });
+        }
+
+        function checkExplore() {
+            const needsZone = document.getElementById('needs-zone');
+            const wantsZone = document.getElementById('wants-zone');
+            let correct = 0;
+            let total = 0;
+
+            needsZone.querySelectorAll('.pool-item').forEach(item => {
+                total++;
+                if (item.dataset.correct === 'needs') {
+                    correct++;
+                }
+            });
+
+            wantsZone.querySelectorAll('.pool-item').forEach(item => {
+                total++;
+                if (item.dataset.correct === 'wants') {
+                    correct++;
+                }
+            });
+
+            const feedback = document.getElementById('feedback');
+            if (correct === total && total > 0) {
+                feedback.className = 'feedback success';
+                feedback.textContent = `Perfect! You sorted all ${total} items correctly! ✅`;
+            } else {
+                feedback.className = 'feedback error';
+                feedback.textContent = `You got ${correct} out of ${total} correct. Try again! 🤔`;
+            }
+        }
+
+        function loadPracticeQuestion() {
+            const questions = practiceQuestions[currentDifficulty];
+            const q = questions[practiceIndex % questions.length];
+            practiceIndex++;
+
+            const container = document.getElementById('practice-container');
+            container.innerHTML = `
+                <div class="scenario">
+                    <h4>Question</h4>
+                    <p>${q.question}</p>
+                    <div class="answer-options">
+                        <button class="answer-btn" onclick="checkPractice(this, 'need', '${q.answer}')">
+                            ✅ Need
+                        </button>
+                        <button class="answer-btn" onclick="checkPractice(this, 'want', '${q.answer}')">
+                            ⭐ Want
+                        </button>
+                    </div>
+                    <div class="explanation" id="explanation">${q.explanation}</div>
+                </div>
+            `;
+            document.getElementById('feedback').innerHTML = '';
+        }
+
+        function checkPractice(btn, answer, correct) {
+            const isCorrect = answer === correct;
+            btn.classList.add(isCorrect ? 'correct' : 'incorrect');
+            document.getElementById('explanation').classList.add('show');
+            document.getElementById('feedback').className = 'feedback ' + (isCorrect ? 'success' : 'error');
+            document.getElementById('feedback').textContent = isCorrect ? 'Great job! 🎉' : 'Not quite. Try again! 💪';
+
+            document.querySelectorAll('.answer-btn').forEach(b => b.disabled = true);
+        }
+
+        function loadPlay() {
+            budget = currentDifficulty === 'easy' ? 100 : currentDifficulty === 'medium' ? 150 : 200;
+            spent = 0;
+            score = 0;
+            document.getElementById('score').style.display = 'none';
+
+            const purchases = {
+                easy: [
+                    { name: 'Apple', price: 2, need: true },
+                    { name: 'Toy', price: 15, need: false },
+                    { name: 'Shoes', price: 30, need: true },
+                    { name: 'Candy', price: 5, need: false },
+                    { name: 'Bread', price: 3, need: true },
+                    { name: 'Game', price: 20, need: false }
+                ],
+                medium: [
+                    { name: 'Lunch', price: 8, need: true },
+                    { name: 'Movie', price: 12, need: false },
+                    { name: 'Shirt', price: 25, need: true },
+                    { name: 'Coffee', price: 5, need: false },
+                    { name: 'Backpack', price: 35, need: true },
+                    { name: 'Concert', price: 50, need: false }
+                ],
+                hard: [
+                    { name: 'Groceries', price: 50, need: true },
+                    { name: 'Car Gas', price: 40, need: true },
+                    { name: 'Electric Bill', price: 80, need: true },
+                    { name: 'Phone Bill', price: 50, need: true },
+                    { name: 'Vacation', price: 300, need: false },
+                    { name: 'Restaurant', price: 60, need: false },
+                    { name: 'New Shoes', price: 120, need: false }
+                ]
+            };
+
+            const grid = document.getElementById('purchases-grid');
+            grid.innerHTML = '';
+
+            purchases[currentDifficulty].forEach(item => {
+                const div = document.createElement('div');
+                div.className = 'purchase-item';
+                div.innerHTML = `<h4>${item.name}</h4><div class="purchase-price">$${item.price}</div>`;
+                div.onclick = () => buyItem(item, div);
+                grid.appendChild(div);
+            });
+
+            updateBudget();
+        }
+
+        function buyItem(item, element) {
+            if (spent + item.price <= budget) {
+                spent += item.price;
+                if (item.need) score += 2;
+                else score += 1;
+                element.style.opacity = '0.5';
+                element.style.cursor = 'not-allowed';
+                element.onclick = null;
+                updateBudget();
+
+                if (spent >= budget * 0.8) {
+                    setTimeout(endGame, 500);
+                }
+            }
+        }
+
+        function updateBudget() {
+            document.getElementById('budget-remaining').textContent = '$' + (budget - spent);
+            document.getElementById('budget-status').textContent = spent >= budget * 0.8 ? '⚠️ Budget almost full!' : 'Smart shopping!';
+        }
+
+        function endGame() {
+            document.getElementById('purchases-grid').style.opacity = '0.5';
+            document.getElementById('score').style.display = 'block';
+            document.getElementById('score').textContent = `🏆 Game Over! Score: ${score} points`;
+        }
+
+        init();
+    </script>
+</body>
+</html>

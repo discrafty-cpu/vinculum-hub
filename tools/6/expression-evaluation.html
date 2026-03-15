@@ -1,0 +1,730 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Expression Evaluation Explorer - VINCULUM</title>
+  <link rel="stylesheet" href="../../vinculum-core.css">
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      background-color: var(--bg);
+      color: var(--text);
+      padding: 20px;
+    }
+
+    .container {
+      max-width: 1000px;
+      margin: 0 auto;
+    }
+
+    .vinculum-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 30px;
+      padding: 20px;
+      background-color: var(--card);
+      border-radius: 12px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    }
+
+    .vinculum-header-left {
+      display: flex;
+      align-items: center;
+      gap: 20px;
+    }
+
+    .vinculum-back-btn {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      width: 40px;
+      height: 40px;
+      background-color: var(--bg2);
+      border-radius: 8px;
+      cursor: pointer;
+      transition: background-color 0.2s;
+      color: var(--text);
+      text-decoration: none;
+    }
+
+    .vinculum-back-btn:hover {
+      background-color: var(--cyan);
+      color: white;
+    }
+
+    .vinculum-title {
+      font-size: 28px;
+      font-weight: 700;
+    }
+
+    .badge, .tag {
+      display: inline-block;
+      padding: 4px 12px;
+      border-radius: 20px;
+      font-size: 12px;
+      font-weight: 600;
+    }
+
+    .badge {
+      background-color: var(--cyan);
+      color: white;
+    }
+
+    .tag {
+      background-color: var(--pink);
+      color: white;
+    }
+
+    .mode-tabs {
+      display: flex;
+      gap: 12px;
+      margin-bottom: 30px;
+      border-bottom: 2px solid var(--border);
+    }
+
+    .mode-tab {
+      padding: 12px 24px;
+      background: none;
+      border: none;
+      color: var(--text2);
+      font-size: 16px;
+      font-weight: 600;
+      cursor: pointer;
+      border-bottom: 3px solid transparent;
+      transition: all 0.3s;
+    }
+
+    .mode-tab.active {
+      color: var(--cyan);
+      border-bottom-color: var(--cyan);
+    }
+
+    .mode-content {
+      display: none;
+    }
+
+    .mode-content.active {
+      display: block;
+    }
+
+    .content-section {
+      background-color: var(--card);
+      border-radius: 12px;
+      padding: 24px;
+      margin-bottom: 20px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    }
+
+    .content-section h2 {
+      margin-bottom: 20px;
+      font-size: 22px;
+    }
+
+    .difficulty-selector {
+      margin-bottom: 20px;
+      display: flex;
+      gap: 12px;
+      align-items: center;
+    }
+
+    .difficulty-btn {
+      padding: 8px 16px;
+      border: 2px solid var(--border);
+      border-radius: 8px;
+      background-color: var(--bg2);
+      color: var(--text);
+      cursor: pointer;
+      transition: all 0.3s;
+      font-weight: 600;
+    }
+
+    .difficulty-btn.active {
+      background-color: var(--cyan);
+      border-color: var(--cyan);
+      color: white;
+    }
+
+    .expression-box {
+      background-color: var(--bg2);
+      padding: 25px;
+      border-radius: 8px;
+      margin: 20px 0;
+      text-align: center;
+      border: 2px solid var(--cyan);
+    }
+
+    .expression-text {
+      font-size: 28px;
+      font-weight: 700;
+      color: var(--cyan);
+      margin-bottom: 15px;
+    }
+
+    .variable-sliders {
+      display: flex;
+      flex-direction: column;
+      gap: 20px;
+      margin: 20px 0;
+    }
+
+    .slider-group {
+      display: flex;
+      align-items: center;
+      gap: 15px;
+    }
+
+    .slider-label {
+      min-width: 80px;
+      font-weight: 600;
+    }
+
+    input[type="range"] {
+      flex: 1;
+      height: 8px;
+      border-radius: 4px;
+      outline: none;
+      -webkit-appearance: none;
+      background: var(--border);
+    }
+
+    input[type="range"]::-webkit-slider-thumb {
+      -webkit-appearance: none;
+      appearance: none;
+      width: 20px;
+      height: 20px;
+      border-radius: 50%;
+      background: var(--cyan);
+      cursor: pointer;
+    }
+
+    input[type="range"]::-moz-range-thumb {
+      width: 20px;
+      height: 20px;
+      border-radius: 50%;
+      background: var(--cyan);
+      cursor: pointer;
+      border: none;
+    }
+
+    .slider-value {
+      min-width: 60px;
+      text-align: right;
+      font-weight: 600;
+      font-size: 18px;
+    }
+
+    .result-display {
+      background: linear-gradient(135deg, var(--cyan), var(--primary));
+      color: white;
+      padding: 30px;
+      border-radius: 8px;
+      text-align: center;
+      margin: 20px 0;
+    }
+
+    .result-label {
+      font-size: 16px;
+      opacity: 0.9;
+      margin-bottom: 10px;
+    }
+
+    .result-value {
+      font-size: 48px;
+      font-weight: 700;
+    }
+
+    .equation-display {
+      background-color: var(--bg2);
+      padding: 20px;
+      border-radius: 8px;
+      margin: 20px 0;
+      text-align: center;
+    }
+
+    .practice-problem {
+      background-color: var(--bg2);
+      padding: 20px;
+      border-radius: 8px;
+      margin-bottom: 15px;
+      border-left: 4px solid var(--cyan);
+    }
+
+    .practice-problem.correct {
+      border-left-color: var(--success);
+      background-color: rgba(76, 175, 80, 0.1);
+    }
+
+    .practice-problem.incorrect {
+      border-left-color: var(--error);
+      background-color: rgba(244, 67, 54, 0.1);
+    }
+
+    .problem-text {
+      font-size: 18px;
+      margin-bottom: 10px;
+      font-weight: 600;
+    }
+
+    .input-group {
+      display: flex;
+      gap: 10px;
+      margin-top: 10px;
+    }
+
+    input[type="text"], input[type="number"] {
+      flex: 1;
+      padding: 10px;
+      border: 2px solid var(--border);
+      border-radius: 6px;
+      background-color: var(--bg);
+      color: var(--text);
+      font-size: 16px;
+    }
+
+    input[type="text"]:focus, input[type="number"]:focus {
+      outline: none;
+      border-color: var(--cyan);
+    }
+
+    .button-group {
+      display: flex;
+      gap: 12px;
+      margin-top: 20px;
+      flex-wrap: wrap;
+    }
+
+    button {
+      padding: 12px 24px;
+      border: none;
+      border-radius: 8px;
+      font-size: 16px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.3s;
+    }
+
+    .btn-primary {
+      background-color: var(--cyan);
+      color: white;
+    }
+
+    .btn-primary:hover {
+      opacity: 0.9;
+      transform: translateY(-2px);
+    }
+
+    .btn-secondary {
+      background-color: var(--bg2);
+      color: var(--text);
+      border: 2px solid var(--border);
+    }
+
+    .score-display {
+      background-color: var(--bg2);
+      padding: 15px 20px;
+      border-radius: 8px;
+      margin-top: 20px;
+      font-weight: 600;
+      display: flex;
+      justify-content: space-between;
+    }
+
+    #feedback {
+      margin-top: 20px;
+    }
+
+    @media (max-width: 768px) {
+      .vinculum-header {
+        flex-direction: column;
+        gap: 15px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="vinculum-header">
+      <div class="vinculum-header-left">
+        <a href="../../VINCULUM-Hub.html" class="vinculum-back-btn">←</a>
+        <div>
+          <h1 class="vinculum-title">Expression Evaluation Explorer</h1>
+          <div style="margin-top: 8px;">
+            <span class="badge">Grade 6</span>
+            <span class="tag">6.EE.B.5-6</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="mode-tabs">
+      <button class="mode-tab active" data-mode="explore">Explore</button>
+      <button class="mode-tab" data-mode="practice">Practice</button>
+      <button class="mode-tab" data-mode="play">Play</button>
+    </div>
+
+    <!-- EXPLORE MODE -->
+    <div id="explore" class="mode-content active">
+      <div class="content-section">
+        <h2>Explore: Substitute Values and See Results</h2>
+        <div class="difficulty-selector">
+          <label>Difficulty:</label>
+          <button class="difficulty-btn active" data-difficulty="easy">Easy</button>
+          <button class="difficulty-btn" data-difficulty="medium">Medium</button>
+          <button class="difficulty-btn" data-difficulty="hard">Hard</button>
+        </div>
+
+        <div class="expression-box">
+          <div class="expression-text" id="exploreExpr">3x + 2</div>
+          <p style="color: var(--text2); margin-bottom: 10px;">Adjust the sliders to change variable values</p>
+        </div>
+
+        <div class="variable-sliders" id="exploreSliders"></div>
+
+        <div class="result-display">
+          <div class="result-label">Result</div>
+          <div class="result-value" id="exploreResult">0</div>
+        </div>
+
+        <div class="button-group">
+          <button class="btn-primary" onclick="exploreMode.generateNew()">New Expression</button>
+          <button class="btn-secondary" onclick="exploreMode.resetSliders()">Reset Sliders</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- PRACTICE MODE -->
+    <div id="practice" class="mode-content">
+      <div class="content-section">
+        <h2>Practice: Evaluate Expressions</h2>
+        <div class="difficulty-selector">
+          <label>Difficulty:</label>
+          <button class="difficulty-btn active" data-difficulty="easy">Easy</button>
+          <button class="difficulty-btn" data-difficulty="medium">Medium</button>
+          <button class="difficulty-btn" data-difficulty="hard">Hard</button>
+        </div>
+
+        <div id="practiceContainer"></div>
+
+        <div class="button-group">
+          <button class="btn-primary" onclick="practiceMode.checkAnswers()">Check Answers</button>
+          <button class="btn-secondary" onclick="practiceMode.reset()">New Problems</button>
+        </div>
+
+        <div class="score-display">
+          <span>Correct:</span>
+          <span id="practiceScore">0/0</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- PLAY MODE: Expression Machine -->
+    <div id="play" class="mode-content">
+      <div class="content-section">
+        <h2>Play: Expression Machine</h2>
+        <div class="difficulty-selector">
+          <label>Difficulty:</label>
+          <button class="difficulty-btn active" data-difficulty="easy">Easy</button>
+          <button class="difficulty-btn" data-difficulty="medium">Medium</button>
+          <button class="difficulty-btn" data-difficulty="hard">Hard</button>
+        </div>
+
+        <div class="expression-box">
+          <div class="expression-text" id="machineExpr">Expression</div>
+          <p style="color: var(--text2);">Input goes in, predict the output!</p>
+        </div>
+
+        <div class="variable-sliders" id="machineSliders"></div>
+
+        <div style="background-color: var(--bg2); padding: 20px; border-radius: 8px; margin: 20px 0; text-align: center;">
+          <div style="font-size: 14px; color: var(--text2); margin-bottom: 10px;">Your Prediction</div>
+          <input type="number" id="machineGuess" placeholder="Enter your answer" style="width: 120px; text-align: center; font-size: 20px; font-weight: 700;">
+        </div>
+
+        <div class="button-group">
+          <button class="btn-primary" onclick="playMode.submit()">Submit Guess</button>
+          <button class="btn-secondary" onclick="playMode.nextProblem()">Next Problem</button>
+        </div>
+
+        <div class="score-display">
+          <span>Score:</span>
+          <span id="playScore">0</span>
+          <span>Streak:</span>
+          <span id="playStreak">0</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div id="feedback" class="feedback"></div>
+
+  <script src="../../vinculum-feedback.js"></script>
+  <script src="../../vinculum-input.js"></script>
+
+  <script>
+    const EXPRESSIONS = {
+      easy: [
+        { expr: '3x + 2', vars: ['x'], min: -5, max: 5, eval: (x) => 3*x + 2 },
+        { expr: '2x - 1', vars: ['x'], min: -5, max: 5, eval: (x) => 2*x - 1 },
+        { expr: 'x + 5', vars: ['x'], min: -5, max: 5, eval: (x) => x + 5 },
+        { expr: '10 - x', vars: ['x'], min: -5, max: 5, eval: (x) => 10 - x }
+      ],
+      medium: [
+        { expr: '2x + 3y', vars: ['x', 'y'], min: -5, max: 5, eval: (x,y) => 2*x + 3*y },
+        { expr: 'x² + 2', vars: ['x'], min: -5, max: 5, eval: (x) => x*x + 2 },
+        { expr: '3x - 2y + 1', vars: ['x', 'y'], min: -5, max: 5, eval: (x,y) => 3*x - 2*y + 1 },
+        { expr: '(x + y) × 2', vars: ['x', 'y'], min: -5, max: 5, eval: (x,y) => (x + y) * 2 }
+      ],
+      hard: [
+        { expr: 'x² + 2x - 3', vars: ['x'], min: -5, max: 5, eval: (x) => x*x + 2*x - 3 },
+        { expr: '(x + 2)²', vars: ['x'], min: -5, max: 5, eval: (x) => (x + 2)*(x + 2) },
+        { expr: '2x² - 3x + 1', vars: ['x'], min: -5, max: 5, eval: (x) => 2*x*x - 3*x + 1 },
+        { expr: 'x² + y² + 1', vars: ['x', 'y'], min: -5, max: 5, eval: (x,y) => x*x + y*y + 1 }
+      ]
+    };
+
+    const PRACTICE_PROBLEMS = {
+      easy: [
+        { expr: '5x', values: { x: 3 }, answer: 15 },
+        { expr: 'x + 7', values: { x: 2 }, answer: 9 },
+        { expr: '2x - 1', values: { x: 4 }, answer: 7 },
+        { expr: '10 - x', values: { x: 3 }, answer: 7 },
+        { expr: '3x + 2', values: { x: 1 }, answer: 5 }
+      ],
+      medium: [
+        { expr: '2x + 3y', values: { x: 2, y: 1 }, answer: 7 },
+        { expr: 'x² + 1', values: { x: 3 }, answer: 10 },
+        { expr: '4x - 2y', values: { x: 3, y: 2 }, answer: 8 },
+        { expr: '(x + y) × 3', values: { x: 2, y: 1 }, answer: 9 },
+        { expr: '2x² - 1', values: { x: 2 }, answer: 7 }
+      ],
+      hard: [
+        { expr: 'x² + 2x + 1', values: { x: 2 }, answer: 9 },
+        { expr: '2x² - 3x + 2', values: { x: 3 }, answer: 11 },
+        { expr: 'x² + y² + xy', values: { x: 2, y: 1 }, answer: 7 },
+        { expr: '(x + 1)²', values: { x: 3 }, answer: 16 },
+        { expr: '3x² - 2x', values: { x: 2 }, answer: 8 }
+      ]
+    };
+
+    // EXPLORE MODE
+    const exploreMode = {
+      currentDifficulty: 'easy',
+      currentExpr: null,
+      values: {},
+
+      init() {
+        document.querySelectorAll('#explore .difficulty-btn').forEach(btn => {
+          btn.addEventListener('click', (e) => {
+            document.querySelectorAll('#explore .difficulty-btn').forEach(b => b.classList.remove('active'));
+            e.target.classList.add('active');
+            this.currentDifficulty = e.target.dataset.difficulty;
+            this.generateNew();
+          });
+        });
+        this.generateNew();
+      },
+
+      generateNew() {
+        const exprs = EXPRESSIONS[this.currentDifficulty];
+        this.currentExpr = exprs[Math.floor(Math.random() * exprs.length)];
+        this.values = {};
+        this.currentExpr.vars.forEach(v => this.values[v] = 0);
+        this.render();
+      },
+
+      render() {
+        document.getElementById('exploreExpr').textContent = this.currentExpr.expr;
+        const sliderContainer = document.getElementById('exploreSliders');
+        sliderContainer.innerHTML = '';
+
+        this.currentExpr.vars.forEach(v => {
+          const div = document.createElement('div');
+          div.className = 'slider-group';
+          div.innerHTML = `
+            <label class="slider-label">${v} =</label>
+            <input type="range" min="${this.currentExpr.min}" max="${this.currentExpr.max}" value="0"
+                   onchange="exploreMode.updateValue('${v}', this.value)"
+                   oninput="exploreMode.updateValue('${v}', this.value)">
+            <div class="slider-value" id="val-${v}">0</div>
+          `;
+          sliderContainer.appendChild(div);
+          this.values[v] = 0;
+        });
+
+        this.updateResult();
+      },
+
+      updateValue(varName, value) {
+        this.values[varName] = parseInt(value);
+        document.getElementById(`val-${varName}`).textContent = value;
+        this.updateResult();
+      },
+
+      updateResult() {
+        const result = this.currentExpr.eval(...this.currentExpr.vars.map(v => this.values[v]));
+        document.getElementById('exploreResult').textContent = result;
+      },
+
+      resetSliders() {
+        this.values = {};
+        this.currentExpr.vars.forEach(v => {
+          this.values[v] = 0;
+          const slider = document.querySelector(`input[type="range"][value]`);
+          if (slider) slider.value = 0;
+        });
+        this.render();
+      }
+    };
+
+    // PRACTICE MODE
+    const practiceMode = {
+      currentDifficulty: 'easy',
+      problems: [],
+
+      init() {
+        document.querySelectorAll('#practice .difficulty-btn').forEach(btn => {
+          btn.addEventListener('click', (e) => {
+            document.querySelectorAll('#practice .difficulty-btn').forEach(b => b.classList.remove('active'));
+            e.target.classList.add('active');
+            this.currentDifficulty = e.target.dataset.difficulty;
+            this.reset();
+          });
+        });
+        this.reset();
+      },
+
+      reset() {
+        this.problems = PRACTICE_PROBLEMS[this.currentDifficulty];
+        this.render();
+      },
+
+      render() {
+        const container = document.getElementById('practiceContainer');
+        container.innerHTML = '';
+
+        this.problems.forEach((problem, idx) => {
+          const div = document.createElement('div');
+          div.className = 'practice-problem';
+          const valuesStr = Object.entries(problem.values).map(([k, v]) => `${k} = ${v}`).join(', ');
+          div.innerHTML = `
+            <div class="problem-text">${problem.expr}</div>
+            <div style="color: var(--text2); margin-bottom: 10px;">Given: ${valuesStr}</div>
+            <div class="input-group">
+              <input type="number" placeholder="Answer" data-idx="${idx}" data-answer="${problem.answer}">
+            </div>
+          `;
+          container.appendChild(div);
+        });
+      },
+
+      checkAnswers() {
+        const inputs = document.querySelectorAll('#practiceContainer input');
+        let correct = 0;
+
+        inputs.forEach(input => {
+          const answer = parseInt(input.dataset.answer);
+          const userAnswer = parseInt(input.value);
+          const problemDiv = input.closest('.practice-problem');
+
+          if (userAnswer === answer) {
+            problemDiv.classList.add('correct');
+            problemDiv.classList.remove('incorrect');
+            correct++;
+          } else {
+            problemDiv.classList.add('incorrect');
+            problemDiv.classList.remove('correct');
+          }
+        });
+
+        const total = inputs.length;
+        document.getElementById('practiceScore').textContent = `${correct}/${total}`;
+        showFeedback(`${correct} out of ${total} correct!`, correct === total ? 'success' : 'info');
+      }
+    };
+
+    // PLAY MODE
+    const playMode = {
+      currentDifficulty: 'easy',
+      currentExpr: null,
+      values: {},
+      score: 0,
+      streak: 0,
+
+      init() {
+        document.querySelectorAll('#play .difficulty-btn').forEach(btn => {
+          btn.addEventListener('click', (e) => {
+            document.querySelectorAll('#play .difficulty-btn').forEach(b => b.classList.remove('active'));
+            e.target.classList.add('active');
+            this.currentDifficulty = e.target.dataset.difficulty;
+            this.nextProblem();
+          });
+        });
+        this.nextProblem();
+      },
+
+      nextProblem() {
+        const exprs = EXPRESSIONS[this.currentDifficulty];
+        this.currentExpr = exprs[Math.floor(Math.random() * exprs.length)];
+        this.values = {};
+        this.currentExpr.vars.forEach(v => {
+          this.values[v] = Math.floor(Math.random() * (this.currentExpr.max - this.currentExpr.min + 1)) + this.currentExpr.min;
+        });
+        document.getElementById('machineGuess').value = '';
+        this.render();
+      },
+
+      render() {
+        document.getElementById('machineExpr').textContent = this.currentExpr.expr;
+        const sliderContainer = document.getElementById('machineSliders');
+        sliderContainer.innerHTML = '';
+
+        this.currentExpr.vars.forEach(v => {
+          const div = document.createElement('div');
+          div.className = 'slider-group';
+          div.innerHTML = `
+            <label class="slider-label">${v} =</label>
+            <div style="flex: 1; text-align: center; font-weight: 600; font-size: 18px;">${this.values[v]}</div>
+            <div class="slider-value"></div>
+          `;
+          sliderContainer.appendChild(div);
+        });
+      },
+
+      submit() {
+        const guess = parseInt(document.getElementById('machineGuess').value);
+        if (isNaN(guess)) {
+          showFeedback('Please enter a number', 'error');
+          return;
+        }
+
+        const correct = this.currentExpr.eval(...this.currentExpr.vars.map(v => this.values[v]));
+
+        if (guess === correct) {
+          this.score += 10;
+          this.streak++;
+          showFeedback('Correct! 🎉', 'success');
+        } else {
+          this.streak = 0;
+          showFeedback(`Incorrect. The answer is ${correct}`, 'error');
+        }
+
+        document.getElementById('playScore').textContent = this.score;
+        document.getElementById('playStreak').textContent = this.streak;
+      }
+    };
+
+    // Initialize
+    exploreMode.init();
+    practiceMode.init();
+    playMode.init();
+  </script>
+</body>
+</html>

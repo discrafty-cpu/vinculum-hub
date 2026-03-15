@@ -1,0 +1,765 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Transformation Explorer</title>
+    <link rel="stylesheet" href="../../vinculum-core.css">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #a8edea 0%, #fed6e3 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .vinculum-header {
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+            text-align: center;
+        }
+
+        .vinculum-header h1 {
+            color: #a8edea;
+            margin-bottom: 10px;
+        }
+
+        .vinculum-header p {
+            color: #666;
+            font-size: 14px;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        .mode-selector {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+            justify-content: center;
+            flex-wrap: wrap;
+        }
+
+        .mode-btn {
+            padding: 12px 24px;
+            border: none;
+            border-radius: 25px;
+            cursor: pointer;
+            font-weight: bold;
+            transition: all 0.3s;
+            background: white;
+            color: #a8edea;
+            border: 2px solid #a8edea;
+        }
+
+        .mode-btn.active {
+            background: #a8edea;
+            color: white;
+        }
+
+        .mode-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+        }
+
+        .difficulty-selector {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+            justify-content: center;
+        }
+
+        .difficulty-btn {
+            padding: 10px 20px;
+            border: none;
+            border-radius: 20px;
+            cursor: pointer;
+            background: #f0f0f0;
+            color: #333;
+            transition: all 0.3s;
+        }
+
+        .difficulty-btn.active {
+            background: #fed6e3;
+            color: #333;
+        }
+
+        .mode-content {
+            display: none;
+            background: white;
+            padding: 30px;
+            border-radius: 15px;
+            box-shadow: 0 8px 20px rgba(0,0,0,0.15);
+        }
+
+        .mode-content.active {
+            display: block;
+        }
+
+        .feedback {
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            display: none;
+            font-weight: bold;
+        }
+
+        .feedback.show {
+            display: block;
+        }
+
+        .feedback.correct {
+            background: #d4edda;
+            color: #155724;
+            border: 2px solid #28a745;
+        }
+
+        .feedback.incorrect {
+            background: #f8d7da;
+            color: #721c24;
+            border: 2px solid #f5c6cb;
+        }
+
+        .grid-area {
+            background: linear-gradient(0deg, #f0f0f0 1px, transparent 1px) 0 0 / 40px 40px,
+                        linear-gradient(90deg, #f0f0f0 1px, transparent 1px) 0 0 / 40px 40px;
+            padding: 20px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+            position: relative;
+            width: 100%;
+            max-width: 500px;
+            margin-left: auto;
+            margin-right: auto;
+            aspect-ratio: 1;
+            border: 2px solid #a8edea;
+        }
+
+        .shape {
+            position: absolute;
+            cursor: move;
+            font-size: 30px;
+            user-select: none;
+        }
+
+        .control-panel {
+            background: #f8f9fa;
+            padding: 20px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+            border: 2px solid #a8edea;
+        }
+
+        .control-panel h3 {
+            color: #a8edea;
+            margin-bottom: 15px;
+        }
+
+        .button-row {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+            margin-bottom: 15px;
+        }
+
+        .transform-btn {
+            padding: 12px 20px;
+            background: #a8edea;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-weight: bold;
+            transition: all 0.3s;
+        }
+
+        .transform-btn:hover {
+            background: #fed6e3;
+            color: #333;
+            transform: translateY(-2px);
+        }
+
+        .transform-btn.active {
+            background: #fed6e3;
+            color: #333;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.15);
+        }
+
+        .slider-group {
+            margin-bottom: 15px;
+        }
+
+        .slider-group label {
+            display: block;
+            color: #333;
+            font-weight: bold;
+            margin-bottom: 8px;
+        }
+
+        .slider-group input[type="range"] {
+            width: 100%;
+            height: 8px;
+            border-radius: 5px;
+            background: #ddd;
+            outline: none;
+            -webkit-appearance: none;
+        }
+
+        .slider-group input[type="range"]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            background: #a8edea;
+            cursor: pointer;
+        }
+
+        .slider-group input[type="range"]::-moz-range-thumb {
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            background: #a8edea;
+            cursor: pointer;
+        }
+
+        .value-display {
+            color: #a8edea;
+            font-weight: bold;
+            margin-left: 10px;
+        }
+
+        .question {
+            background: #f0f7ff;
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 15px;
+            border-left: 4px solid #a8edea;
+        }
+
+        .question-text {
+            font-weight: bold;
+            color: #333;
+            margin-bottom: 15px;
+        }
+
+        .options {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .option-btn {
+            padding: 12px;
+            text-align: left;
+            border: 2px solid #ddd;
+            background: white;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .option-btn:hover {
+            border-color: #a8edea;
+            background: #f8f9fa;
+        }
+
+        .option-btn.selected {
+            background: #a8edea;
+            color: white;
+            border-color: #a8edea;
+        }
+
+        .button-group {
+            display: flex;
+            gap: 10px;
+            justify-content: center;
+            flex-wrap: wrap;
+            margin-top: 20px;
+        }
+
+        .btn {
+            padding: 12px 24px;
+            background: #a8edea;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-weight: bold;
+            transition: all 0.3s;
+        }
+
+        .btn:hover {
+            background: #fed6e3;
+            color: #333;
+            transform: translateY(-2px);
+        }
+
+        .btn.secondary {
+            background: #f0f0f0;
+            color: #333;
+        }
+
+        .btn.secondary:hover {
+            background: #e0e0e0;
+        }
+
+        .score-display {
+            background: #a8edea;
+            color: white;
+            padding: 20px;
+            border-radius: 10px;
+            text-align: center;
+            margin-bottom: 20px;
+        }
+
+        .timer {
+            font-size: 32px;
+            font-weight: bold;
+            text-align: center;
+            margin-bottom: 20px;
+            color: #a8edea;
+        }
+
+        .two-column {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+            margin-bottom: 20px;
+        }
+
+        .grid-container {
+            text-align: center;
+        }
+
+        .grid-container h4 {
+            color: #a8edea;
+            margin-bottom: 10px;
+        }
+
+        #playResults {
+            display: none;
+            text-align: center;
+            margin-top: 30px;
+        }
+
+        #playResults h3 {
+            color: #a8edea;
+            margin-bottom: 15px;
+        }
+
+        #playResults p {
+            font-size: 24px;
+            color: #a8edea;
+            margin: 20px 0;
+        }
+
+        @media (max-width: 900px) {
+            .two-column {
+                grid-template-columns: 1fr;
+            }
+
+            .grid-area {
+                max-width: 100%;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="vinculum-header">
+            <h1>🔄 Transformation Explorer</h1>
+            <p>Move, flip, and turn shapes on a grid | MN 2022 Spatial Relationships Strand</p>
+        </div>
+
+        <div class="mode-selector">
+            <button class="mode-btn active" onclick="setMode('explore')">Explore</button>
+            <button class="mode-btn" onclick="setMode('practice')">Practice</button>
+            <button class="mode-btn" onclick="setMode('play')">Play</button>
+        </div>
+
+        <div id="feedback" class="feedback"></div>
+
+        <!-- EXPLORE MODE -->
+        <div id="explore" class="mode-content active">
+            <h2>Explore: Transform Shapes</h2>
+            <p style="margin-bottom: 20px; color: #666;">Drag the shape and apply transformations to see how it moves!</p>
+
+            <div style="text-align: center;">
+                <div class="grid-area" id="exploreGrid">
+                    <div class="shape" id="exploreShape" style="left: 100px; top: 100px;">🟩</div>
+                </div>
+            </div>
+
+            <div class="control-panel">
+                <h3>Transformations</h3>
+                <div class="button-row">
+                    <button class="transform-btn" onclick="applySlide('explore')">Slide →</button>
+                    <button class="transform-btn" onclick="applyFlip('explore')">Flip ↔</button>
+                    <button class="transform-btn" onclick="applyTurn('explore')">Turn ↻</button>
+                </div>
+
+                <div class="slider-group">
+                    <label>Slide Horizontal: <span class="value-display" id="exploreSlideX">0</span>px</label>
+                    <input type="range" id="exploreSliderX" min="-200" max="200" value="0"
+                           oninput="updateExploreSlide()">
+                </div>
+
+                <div class="slider-group">
+                    <label>Rotate: <span class="value-display" id="exploreRotate">0</span>°</label>
+                    <input type="range" id="exploreSliderRotate" min="0" max="360" value="0"
+                           oninput="updateExploreRotate()">
+                </div>
+
+                <button class="btn secondary" onclick="resetExplore()" style="width: 100%;">Reset Shape</button>
+            </div>
+        </div>
+
+        <!-- PRACTICE MODE -->
+        <div id="practice" class="mode-content">
+            <h2>Practice: Identify Transformations</h2>
+
+            <div class="difficulty-selector">
+                <button class="difficulty-btn active" onclick="setPracticeDifficulty('easy')">Easy</button>
+                <button class="difficulty-btn" onclick="setPracticeDifficulty('medium')">Medium</button>
+                <button class="difficulty-btn" onclick="setPracticeDifficulty('hard')">Hard</button>
+            </div>
+
+            <div class="two-column" style="margin-bottom: 20px;">
+                <div class="grid-container">
+                    <h4>Original</h4>
+                    <div class="grid-area" id="practiceGridBefore">
+                        <div class="shape" id="practiceShapeBefore" style="left: 150px; top: 100px;">🟦</div>
+                    </div>
+                </div>
+
+                <div class="grid-container">
+                    <h4>After Transformation</h4>
+                    <div class="grid-area" id="practiceGridAfter">
+                        <div class="shape" id="practiceShapeAfter" style="left: 150px; top: 100px;">🟦</div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="question">
+                <div class="question-text">What transformation was applied?</div>
+                <div class="options">
+                    <button class="option-btn" onclick="selectOption(this)">Slide (Translation)</button>
+                    <button class="option-btn" onclick="selectOption(this)">Flip (Reflection)</button>
+                    <button class="option-btn" onclick="selectOption(this)">Turn (Rotation)</button>
+                </div>
+            </div>
+
+            <div class="button-group">
+                <button class="btn" onclick="checkPracticeAnswer()">Submit Answer</button>
+                <button class="btn secondary" onclick="nextPracticeQuestion()">Next Question</button>
+            </div>
+        </div>
+
+        <!-- PLAY MODE -->
+        <div id="play" class="mode-content">
+            <h2>Play: Transform It!</h2>
+            <p style="margin-bottom: 20px; color: #666;">Apply the correct transformation to match the target in 60 seconds!</p>
+
+            <div class="score-display">
+                <div class="timer" id="timer">60</div>
+                <div style="font-size: 16px;">Score: <span id="playScore">0</span>/10</div>
+            </div>
+
+            <div class="two-column" style="margin-bottom: 20px;">
+                <div class="grid-container">
+                    <h4>Your Shape</h4>
+                    <div class="grid-area" id="playGridUser">
+                        <div class="shape" id="playShapeUser" style="left: 150px; top: 100px;">🟨</div>
+                    </div>
+                </div>
+
+                <div class="grid-container">
+                    <h4>Target</h4>
+                    <div class="grid-area" id="playGridTarget">
+                        <div class="shape" id="playShapeTarget" style="left: 150px; top: 100px;">🟨</div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="control-panel">
+                <h3 id="playInstruction">Apply the transformation</h3>
+                <div class="button-row">
+                    <button class="transform-btn" onclick="applyPlayTransform('slide')">Slide</button>
+                    <button class="transform-btn" onclick="applyPlayTransform('flip')">Flip</button>
+                    <button class="transform-btn" onclick="applyPlayTransform('turn')">Turn</button>
+                </div>
+
+                <div style="text-align: center; margin-top: 15px;">
+                    <button class="btn" onclick="checkPlayTransformation()">Check Match</button>
+                    <button class="btn secondary" onclick="nextPlayRound()">Next Challenge</button>
+                </div>
+            </div>
+
+            <div id="playResults">
+                <h3>Challenge Complete!</h3>
+                <p>Final Score: <span id="finalScore">0</span></p>
+                <button class="btn" onclick="startPlay()">Play Again</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="../../vinculum-feedback.js"></script>
+    <script src="../../vinculum-input.js"></script>
+    <script>
+        let exploreState = { x: 0, y: 0, rotation: 0, flipped: false };
+        let practiceQuestion = null;
+        let playScore = 0;
+        let playTimeLeft = 60;
+        let playActive = false;
+        let playState = { x: 0, y: 0, rotation: 0, flipped: false };
+        let playTarget = { x: 0, y: 0, rotation: 0, flipped: false };
+
+        // MODE MANAGEMENT
+        function setMode(mode) {
+            document.querySelectorAll('.mode-content').forEach(el => el.classList.remove('active'));
+            document.querySelectorAll('.mode-btn').forEach(el => el.classList.remove('active'));
+            document.getElementById(mode).classList.add('active');
+            event.target.classList.add('active');
+
+            if (mode === 'play') {
+                startPlay();
+            }
+        }
+
+        // EXPLORE MODE
+        function updateExploreSlide() {
+            exploreState.x = parseInt(document.getElementById('exploreSliderX').value);
+            document.getElementById('exploreSlideX').textContent = exploreState.x;
+            renderExplore();
+        }
+
+        function updateExploreRotate() {
+            exploreState.rotation = parseInt(document.getElementById('exploreSliderRotate').value);
+            document.getElementById('exploreRotate').textContent = exploreState.rotation;
+            renderExplore();
+        }
+
+        function applySlide(mode) {
+            if (mode === 'explore') {
+                exploreState.x += 50;
+                document.getElementById('exploreSliderX').value = exploreState.x;
+                document.getElementById('exploreSlideX').textContent = exploreState.x;
+                renderExplore();
+            }
+        }
+
+        function applyFlip(mode) {
+            if (mode === 'explore') {
+                exploreState.flipped = !exploreState.flipped;
+                renderExplore();
+            }
+        }
+
+        function applyTurn(mode) {
+            if (mode === 'explore') {
+                exploreState.rotation = (exploreState.rotation + 90) % 360;
+                document.getElementById('exploreSliderRotate').value = exploreState.rotation;
+                document.getElementById('exploreRotate').textContent = exploreState.rotation;
+                renderExplore();
+            }
+        }
+
+        function renderExplore() {
+            const shape = document.getElementById('exploreShape');
+            const transform = `translateX(${exploreState.x}px) scaleX(${exploreState.flipped ? -1 : 1}) rotate(${exploreState.rotation}deg)`;
+            shape.style.transform = transform;
+        }
+
+        function resetExplore() {
+            exploreState = { x: 0, y: 0, rotation: 0, flipped: false };
+            document.getElementById('exploreSliderX').value = 0;
+            document.getElementById('exploreSliderRotate').value = 0;
+            document.getElementById('exploreSlideX').textContent = 0;
+            document.getElementById('exploreRotate').textContent = 0;
+            renderExplore();
+        }
+
+        // PRACTICE MODE
+        const transformations = {
+            easy: [
+                { type: 'slide', x: 50, name: 'Slide (Translation)' },
+                { type: 'flip', flipped: true, name: 'Flip (Reflection)' },
+                { type: 'turn', rotation: 90, name: 'Turn (Rotation)' }
+            ],
+            medium: [
+                { type: 'slide', x: 80, name: 'Slide (Translation)' },
+                { type: 'flip', flipped: true, name: 'Flip (Reflection)' },
+                { type: 'turn', rotation: 180, name: 'Turn (Rotation)' }
+            ],
+            hard: [
+                { type: 'slide+turn', x: 60, rotation: 90, name: 'Slide + Turn' },
+                { type: 'flip+slide', flipped: true, x: 40, name: 'Flip + Slide' }
+            ]
+        };
+
+        function setPracticeDifficulty(level) {
+            document.querySelectorAll('.difficulty-btn').forEach(el => el.classList.remove('active'));
+            event.target.classList.add('active');
+            nextPracticeQuestion(level);
+        }
+
+        function nextPracticeQuestion(level = 'easy') {
+            const list = transformations[level] || transformations.easy;
+            practiceQuestion = list[Math.floor(Math.random() * list.length)];
+
+            const after = document.getElementById('practiceShapeAfter');
+            let transform = '';
+            if (practiceQuestion.x !== undefined) {
+                transform += `translateX(${practiceQuestion.x}px) `;
+            }
+            if (practiceQuestion.flipped) {
+                transform += 'scaleX(-1) ';
+            }
+            if (practiceQuestion.rotation !== undefined) {
+                transform += `rotate(${practiceQuestion.rotation}deg)`;
+            }
+            after.style.transform = transform;
+
+            document.querySelectorAll('.option-btn').forEach(b => b.classList.remove('selected'));
+            clearFeedback();
+        }
+
+        function selectOption(el) {
+            document.querySelectorAll('.option-btn').forEach(b => b.classList.remove('selected'));
+            el.classList.add('selected');
+        }
+
+        function checkPracticeAnswer() {
+            const selected = document.querySelector('.option-btn.selected');
+            if (!selected) {
+                showFeedback('Please select an answer!', false);
+                return;
+            }
+
+            const correct = selected.textContent === practiceQuestion.name;
+            showFeedback(correct ? 'Correct!' : `Incorrect. The transformation was: ${practiceQuestion.name}`, correct);
+        }
+
+        // PLAY MODE
+        function startPlay() {
+            playScore = 0;
+            playTimeLeft = 60;
+            playActive = true;
+            document.getElementById('playResults').style.display = 'none';
+            document.getElementById('playScore').textContent = '0';
+
+            const timer = setInterval(() => {
+                playTimeLeft--;
+                document.getElementById('timer').textContent = playTimeLeft;
+                if (playTimeLeft <= 0) {
+                    clearInterval(timer);
+                    endPlay();
+                }
+            }, 1000);
+
+            nextPlayRound();
+        }
+
+        function nextPlayRound() {
+            if (!playActive) return;
+
+            playState = { x: 0, y: 0, rotation: 0, flipped: false };
+            const allTransforms = [...transformations.easy, ...transformations.medium, ...transformations.hard];
+            playTarget = allTransforms[Math.floor(Math.random() * allTransforms.length)];
+
+            const target = document.getElementById('playShapeTarget');
+            let transform = '';
+            if (playTarget.x !== undefined) {
+                transform += `translateX(${playTarget.x}px) `;
+            }
+            if (playTarget.flipped) {
+                transform += 'scaleX(-1) `;
+            }
+            if (playTarget.rotation !== undefined) {
+                transform += `rotate(${playTarget.rotation}deg)`;
+            }
+            target.style.transform = transform;
+
+            document.getElementById('playShapeUser').style.transform = '';
+            document.getElementById('playInstruction').textContent = `Match the target! (${playTarget.name})`;
+        }
+
+        function applyPlayTransform(type) {
+            if (!playActive) return;
+
+            if (type === 'slide') {
+                playState.x += 50;
+            } else if (type === 'flip') {
+                playState.flipped = !playState.flipped;
+            } else if (type === 'turn') {
+                playState.rotation = (playState.rotation + 90) % 360;
+            }
+
+            const user = document.getElementById('playShapeUser');
+            let transform = '';
+            if (playState.x !== 0) {
+                transform += `translateX(${playState.x}px) `;
+            }
+            if (playState.flipped) {
+                transform += 'scaleX(-1) `;
+            }
+            if (playState.rotation !== 0) {
+                transform += `rotate(${playState.rotation}deg)`;
+            }
+            user.style.transform = transform;
+        }
+
+        function checkPlayTransformation() {
+            if (!playActive) return;
+
+            const userMatches = playState.x === (playTarget.x || 0) &&
+                               playState.flipped === (playTarget.flipped || false) &&
+                               playState.rotation === (playTarget.rotation || 0);
+
+            if (userMatches) {
+                playScore++;
+                document.getElementById('playScore').textContent = playScore;
+                showFeedback('Perfect match!', true);
+                setTimeout(() => nextPlayRound(), 1500);
+            } else {
+                showFeedback('Not quite right. Try again!', false);
+            }
+        }
+
+        function endPlay() {
+            playActive = false;
+            document.getElementById('finalScore').textContent = playScore;
+            document.getElementById('playResults').style.display = 'block';
+        }
+
+        function showFeedback(msg, isCorrect) {
+            const fb = document.getElementById('feedback');
+            fb.textContent = msg;
+            fb.classList.add('show');
+            fb.classList.toggle('correct', isCorrect);
+            fb.classList.toggle('incorrect', !isCorrect);
+        }
+
+        function clearFeedback() {
+            const fb = document.getElementById('feedback');
+            fb.classList.remove('show', 'correct', 'incorrect');
+        }
+
+        // Initialize
+        renderExplore();
+        nextPracticeQuestion('easy');
+    </script>
+</body>
+</html>

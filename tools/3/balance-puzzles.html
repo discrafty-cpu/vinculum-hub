@@ -1,0 +1,651 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Balance Puzzle Equations</title>
+    <link rel="stylesheet" href="../../vinculum-core.css">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .vinculum-header {
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+            text-align: center;
+        }
+
+        .vinculum-header h1 {
+            color: #f5576c;
+            margin-bottom: 10px;
+        }
+
+        .vinculum-header p {
+            color: #666;
+            font-size: 14px;
+        }
+
+        .container {
+            max-width: 1000px;
+            margin: 0 auto;
+        }
+
+        .mode-selector {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+            justify-content: center;
+            flex-wrap: wrap;
+        }
+
+        .mode-btn {
+            padding: 12px 24px;
+            border: none;
+            border-radius: 25px;
+            cursor: pointer;
+            font-weight: bold;
+            transition: all 0.3s;
+            background: white;
+            color: #f5576c;
+            border: 2px solid #f5576c;
+        }
+
+        .mode-btn.active {
+            background: #f5576c;
+            color: white;
+        }
+
+        .mode-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+        }
+
+        .difficulty-selector {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+            justify-content: center;
+        }
+
+        .difficulty-btn {
+            padding: 10px 20px;
+            border: none;
+            border-radius: 20px;
+            cursor: pointer;
+            background: #f0f0f0;
+            color: #333;
+            transition: all 0.3s;
+        }
+
+        .difficulty-btn.active {
+            background: #f093fb;
+            color: white;
+        }
+
+        .mode-content {
+            display: none;
+            background: white;
+            padding: 30px;
+            border-radius: 15px;
+            box-shadow: 0 8px 20px rgba(0,0,0,0.15);
+        }
+
+        .mode-content.active {
+            display: block;
+        }
+
+        .feedback {
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            display: none;
+            font-weight: bold;
+        }
+
+        .feedback.show {
+            display: block;
+        }
+
+        .feedback.correct {
+            background: #d4edda;
+            color: #155724;
+            border: 2px solid #28a745;
+        }
+
+        .feedback.incorrect {
+            background: #f8d7da;
+            color: #721c24;
+            border: 2px solid #f5c6cb;
+        }
+
+        .scale-area {
+            background: linear-gradient(180deg, #f0f0f0 0%, #e0e0e0 100%);
+            padding: 40px;
+            border-radius: 10px;
+            margin-bottom: 30px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 250px;
+        }
+
+        .scale {
+            position: relative;
+            width: 100%;
+            max-width: 500px;
+            height: 200px;
+        }
+
+        .fulcrum {
+            position: absolute;
+            bottom: 0;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 80px;
+            height: 80px;
+            background: linear-gradient(135deg, #8B4513 0%, #654321 100%);
+            clip-path: polygon(20% 0%, 80% 0%, 100% 100%, 0% 100%);
+            z-index: 5;
+        }
+
+        .beam {
+            position: absolute;
+            top: 40px;
+            left: 10%;
+            right: 10%;
+            height: 20px;
+            background: linear-gradient(180deg, #FFD700 0%, #FFA500 100%);
+            border-radius: 10px;
+            border: 2px solid #FF8C00;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            z-index: 4;
+        }
+
+        .pan {
+            width: 100px;
+            height: 50px;
+            background: linear-gradient(135deg, #c0c0c0 0%, #a9a9a9 100%);
+            border: 2px solid #808080;
+            border-radius: 5px;
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            align-content: center;
+            gap: 5px;
+            padding: 10px;
+            position: relative;
+            top: 70px;
+        }
+
+        .weight {
+            width: 30px;
+            height: 30px;
+            background: linear-gradient(135deg, #FF6B6B 0%, #FF5252 100%);
+            border: 2px solid #CC0000;
+            border-radius: 3px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-weight: bold;
+            font-size: 14px;
+            cursor: grab;
+        }
+
+        .weight.dragging {
+            cursor: grabbing;
+            opacity: 0.7;
+        }
+
+        .weight-box {
+            width: 100%;
+            margin-top: 30px;
+            padding: 20px;
+            background: #f8f9fa;
+            border-radius: 10px;
+            border: 2px dashed #f5576c;
+        }
+
+        .weight-box h3 {
+            color: #f5576c;
+            margin-bottom: 15px;
+        }
+
+        .available-weights {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(60px, 1fr));
+            gap: 10px;
+        }
+
+        .weight-btn {
+            padding: 10px;
+            background: #FFE5B4;
+            border: 2px solid #FF8C00;
+            border-radius: 5px;
+            cursor: pointer;
+            font-weight: bold;
+            transition: all 0.3s;
+        }
+
+        .weight-btn:hover {
+            background: #FFD700;
+            transform: scale(1.05);
+        }
+
+        .problem-section {
+            background: #f8f9fa;
+            padding: 20px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+            text-align: center;
+        }
+
+        .problem-text {
+            font-size: 18px;
+            color: #333;
+            margin-bottom: 20px;
+            font-weight: bold;
+        }
+
+        .input-group {
+            display: flex;
+            gap: 10px;
+            justify-content: center;
+            margin-bottom: 20px;
+        }
+
+        .input-group input {
+            padding: 12px;
+            border: 2px solid #ddd;
+            border-radius: 5px;
+            width: 150px;
+            font-size: 16px;
+            text-align: center;
+        }
+
+        .button-group {
+            display: flex;
+            gap: 10px;
+            justify-content: center;
+            flex-wrap: wrap;
+        }
+
+        .btn {
+            padding: 12px 24px;
+            background: #f5576c;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-weight: bold;
+            transition: all 0.3s;
+        }
+
+        .btn:hover {
+            background: #f093fb;
+            transform: translateY(-2px);
+        }
+
+        .btn.secondary {
+            background: #f0f0f0;
+            color: #333;
+        }
+
+        .btn.secondary:hover {
+            background: #e0e0e0;
+        }
+
+        .score-display {
+            background: #f5576c;
+            color: white;
+            padding: 20px;
+            border-radius: 10px;
+            text-align: center;
+            margin-bottom: 20px;
+        }
+
+        .score-display h3 {
+            font-size: 24px;
+            margin-bottom: 10px;
+        }
+
+        .timer {
+            font-size: 32px;
+            font-weight: bold;
+            text-align: center;
+            margin-bottom: 20px;
+            color: #f5576c;
+        }
+
+        .question {
+            background: #fff3f5;
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 15px;
+            border-left: 4px solid #f5576c;
+        }
+
+        .question-text {
+            font-weight: bold;
+            color: #333;
+            margin-bottom: 15px;
+        }
+
+        #playResults {
+            display: none;
+            text-align: center;
+            margin-top: 30px;
+        }
+
+        #playResults h3 {
+            color: #f5576c;
+            margin-bottom: 15px;
+        }
+
+        #playResults p {
+            font-size: 24px;
+            color: #f5576c;
+            margin: 20px 0;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="vinculum-header">
+            <h1>⚖️ Balance Puzzle Equations</h1>
+            <p>Find the unknown weight that balances the scale | MN 2022 Patterns & Algebra Strand</p>
+        </div>
+
+        <div class="mode-selector">
+            <button class="mode-btn active" onclick="setMode('explore')">Explore</button>
+            <button class="mode-btn" onclick="setMode('practice')">Practice</button>
+            <button class="mode-btn" onclick="setMode('play')">Play</button>
+        </div>
+
+        <div id="feedback" class="feedback"></div>
+
+        <!-- EXPLORE MODE -->
+        <div id="explore" class="mode-content active">
+            <h2>Explore: Balance the Scale</h2>
+            <p style="margin-bottom: 20px; color: #666;">Add weights to both sides of the scale to balance it!</p>
+
+            <div class="scale-area">
+                <div class="scale">
+                    <div class="fulcrum"></div>
+                    <div class="beam">
+                        <div class="pan" id="leftPan"></div>
+                        <div class="pan" id="rightPan"></div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="problem-section">
+                <div style="font-size: 16px; margin-bottom: 15px;">
+                    <span id="leftTotal">Left: 0</span> | <span id="rightTotal">Right: 0</span> |
+                    <span id="balanceStatus" style="color: #f5576c; font-weight: bold;">Not Balanced</span>
+                </div>
+            </div>
+
+            <div class="weight-box">
+                <h3>Available Weights:</h3>
+                <div class="available-weights">
+                    <button class="weight-btn" onclick="addToSide(1, 'left')">1</button>
+                    <button class="weight-btn" onclick="addToSide(2, 'left')">2</button>
+                    <button class="weight-btn" onclick="addToSide(5, 'left')">5</button>
+                    <button class="weight-btn" onclick="addToSide(1, 'right')">1</button>
+                    <button class="weight-btn" onclick="addToSide(2, 'right')">2</button>
+                    <button class="weight-btn" onclick="addToSide(5, 'right')">5</button>
+                </div>
+            </div>
+
+            <div class="button-group">
+                <button class="btn secondary" onclick="clearScale()">Clear Scale</button>
+            </div>
+        </div>
+
+        <!-- PRACTICE MODE -->
+        <div id="practice" class="mode-content">
+            <h2>Practice: Solve for the Unknown</h2>
+
+            <div class="difficulty-selector">
+                <button class="difficulty-btn active" onclick="setPracticeDifficulty('easy')">Easy</button>
+                <button class="difficulty-btn" onclick="setPracticeDifficulty('medium')">Medium</button>
+                <button class="difficulty-btn" onclick="setPracticeDifficulty('hard')">Hard</button>
+            </div>
+
+            <div class="question">
+                <div class="question-text" id="problemText"></div>
+                <div style="margin: 15px 0;">
+                    <p style="margin-bottom: 10px; color: #666;">Find the value of X:</p>
+                </div>
+                <div class="input-group">
+                    <input type="number" id="practiceAnswer" placeholder="Enter your answer">
+                </div>
+            </div>
+
+            <div class="button-group">
+                <button class="btn" onclick="checkPracticeAnswer()">Check Answer</button>
+                <button class="btn secondary" onclick="nextPracticeQuestion()">Next Question</button>
+            </div>
+        </div>
+
+        <!-- PLAY MODE -->
+        <div id="play" class="mode-content">
+            <h2>Play: Balance Master</h2>
+            <p style="margin-bottom: 20px; color: #666;">Solve as many balance equations as you can in 60 seconds!</p>
+
+            <div class="score-display">
+                <div class="timer" id="timer">60</div>
+                <div style="font-size: 16px;">Score: <span id="playScore">0</span>/10</div>
+            </div>
+
+            <div class="question">
+                <div class="question-text" id="playProblemText"></div>
+                <div class="input-group">
+                    <input type="number" id="playAnswer" placeholder="Enter X value">
+                </div>
+            </div>
+
+            <div class="button-group">
+                <button class="btn" onclick="checkPlayAnswer()">Submit</button>
+            </div>
+
+            <div id="playResults">
+                <h3>Game Over!</h3>
+                <p>Final Score: <span id="finalScore">0</span></p>
+                <button class="btn" onclick="startPlay()">Play Again</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="../../vinculum-feedback.js"></script>
+    <script src="../../vinculum-input.js"></script>
+    <script>
+        let exploreLeft = [];
+        let exploreRight = [];
+        let practiceQuestion = null;
+        let playScore = 0;
+        let playTimeLeft = 60;
+        let playActive = false;
+
+        // MODE MANAGEMENT
+        function setMode(mode) {
+            document.querySelectorAll('.mode-content').forEach(el => el.classList.remove('active'));
+            document.querySelectorAll('.mode-btn').forEach(el => el.classList.remove('active'));
+            document.getElementById(mode).classList.add('active');
+            event.target.classList.add('active');
+
+            if (mode === 'play') {
+                startPlay();
+            }
+        }
+
+        // EXPLORE MODE
+        function addToSide(weight, side) {
+            if (side === 'left') {
+                exploreLeft.push(weight);
+            } else {
+                exploreRight.push(weight);
+            }
+            updateScaleDisplay();
+        }
+
+        function updateScaleDisplay() {
+            const leftSum = exploreLeft.reduce((a, b) => a + b, 0);
+            const rightSum = exploreRight.reduce((a, b) => a + b, 0);
+
+            document.getElementById('leftTotal').textContent = `Left: ${leftSum}`;
+            document.getElementById('rightTotal').textContent = `Right: ${rightSum}`;
+
+            let status = leftSum === rightSum && leftSum > 0 ? '✓ Balanced!' : 'Not Balanced';
+            let color = leftSum === rightSum && leftSum > 0 ? '#28a745' : '#f5576c';
+
+            document.getElementById('balanceStatus').textContent = status;
+            document.getElementById('balanceStatus').style.color = color;
+
+            let leftHtml = exploreLeft.map(w => `<div class="weight">${w}</div>`).join('');
+            let rightHtml = exploreRight.map(w => `<div class="weight">${w}</div>`).join('');
+
+            document.getElementById('leftPan').innerHTML = leftHtml;
+            document.getElementById('rightPan').innerHTML = rightHtml;
+        }
+
+        function clearScale() {
+            exploreLeft = [];
+            exploreRight = [];
+            updateScaleDisplay();
+        }
+
+        // PRACTICE MODE
+        const practiceQuestions = {
+            easy: [
+                { text: 'X + 3 = 8', answer: 5 },
+                { text: '2 + X = 7', answer: 5 },
+                { text: 'X + 1 = 6', answer: 5 }
+            ],
+            medium: [
+                { text: 'X + 5 = 12', answer: 7 },
+                { text: '2X = 10', answer: 5 },
+                { text: 'X + 4 = 13', answer: 9 }
+            ],
+            hard: [
+                { text: '2X + 3 = 17', answer: 7 },
+                { text: '3X - 2 = 10', answer: 4 },
+                { text: '2X + 5 = 21', answer: 8 }
+            ]
+        };
+
+        function setPracticeDifficulty(level) {
+            document.querySelectorAll('.difficulty-btn').forEach(el => el.classList.remove('active'));
+            event.target.classList.add('active');
+            nextPracticeQuestion(level);
+        }
+
+        function nextPracticeQuestion(level = 'easy') {
+            const questions = practiceQuestions[level] || practiceQuestions.easy;
+            practiceQuestion = questions[Math.floor(Math.random() * questions.length)];
+            document.getElementById('problemText').textContent = practiceQuestion.text;
+            document.getElementById('practiceAnswer').value = '';
+            clearFeedback();
+        }
+
+        function checkPracticeAnswer() {
+            const input = parseInt(document.getElementById('practiceAnswer').value);
+            if (isNaN(input)) {
+                showFeedback('Please enter a number!', false);
+                return;
+            }
+
+            const correct = input === practiceQuestion.answer;
+            showFeedback(correct ? 'Correct!' : `Incorrect. The answer is ${practiceQuestion.answer}`, correct);
+        }
+
+        // PLAY MODE
+        function startPlay() {
+            playScore = 0;
+            playTimeLeft = 60;
+            playActive = true;
+            document.getElementById('playResults').style.display = 'none';
+            document.getElementById('playScore').textContent = '0';
+
+            const timer = setInterval(() => {
+                playTimeLeft--;
+                document.getElementById('timer').textContent = playTimeLeft;
+                if (playTimeLeft <= 0) {
+                    clearInterval(timer);
+                    endPlay();
+                }
+            }, 1000);
+
+            nextPlayQuestion();
+        }
+
+        function nextPlayQuestion() {
+            if (!playActive) return;
+
+            const allQuestions = [
+                ...practiceQuestions.easy,
+                ...practiceQuestions.medium,
+                ...practiceQuestions.hard
+            ];
+            const q = allQuestions[Math.floor(Math.random() * allQuestions.length)];
+            window.currentPlayQuestion = q;
+
+            document.getElementById('playProblemText').textContent = q.text;
+            document.getElementById('playAnswer').value = '';
+        }
+
+        function checkPlayAnswer() {
+            if (!playActive) return;
+
+            const input = parseInt(document.getElementById('playAnswer').value);
+            if (isNaN(input)) return;
+
+            if (input === window.currentPlayQuestion.answer) {
+                playScore++;
+                document.getElementById('playScore').textContent = playScore;
+            }
+
+            nextPlayQuestion();
+        }
+
+        function endPlay() {
+            playActive = false;
+            document.getElementById('finalScore').textContent = playScore;
+            document.getElementById('playResults').style.display = 'block';
+        }
+
+        function showFeedback(msg, isCorrect) {
+            const fb = document.getElementById('feedback');
+            fb.textContent = msg;
+            fb.classList.add('show');
+            fb.classList.toggle('correct', isCorrect);
+            fb.classList.toggle('incorrect', !isCorrect);
+        }
+
+        function clearFeedback() {
+            const fb = document.getElementById('feedback');
+            fb.classList.remove('show', 'correct', 'incorrect');
+        }
+
+        // Initialize
+        updateScaleDisplay();
+        nextPracticeQuestion('easy');
+    </script>
+</body>
+</html>

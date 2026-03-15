@@ -1,0 +1,773 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Negative Numbers Deep Dive - VINCULUM</title>
+  <link rel="stylesheet" href="../../vinculum-core.css">
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      background-color: var(--bg);
+      color: var(--text);
+      padding: 20px;
+    }
+
+    .container {
+      max-width: 1000px;
+      margin: 0 auto;
+    }
+
+    .vinculum-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 30px;
+      padding: 20px;
+      background-color: var(--card);
+      border-radius: 12px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    }
+
+    .vinculum-header-left {
+      display: flex;
+      align-items: center;
+      gap: 20px;
+    }
+
+    .vinculum-back-btn {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      width: 40px;
+      height: 40px;
+      background-color: var(--bg2);
+      border-radius: 8px;
+      cursor: pointer;
+      transition: background-color 0.2s;
+      color: var(--text);
+      text-decoration: none;
+    }
+
+    .vinculum-back-btn:hover {
+      background-color: var(--cyan);
+      color: white;
+    }
+
+    .vinculum-title {
+      font-size: 28px;
+      font-weight: 700;
+    }
+
+    .badge, .tag {
+      display: inline-block;
+      padding: 4px 12px;
+      border-radius: 20px;
+      font-size: 12px;
+      font-weight: 600;
+    }
+
+    .badge {
+      background-color: var(--cyan);
+      color: white;
+    }
+
+    .tag {
+      background-color: var(--pink);
+      color: white;
+    }
+
+    .mode-tabs {
+      display: flex;
+      gap: 12px;
+      margin-bottom: 30px;
+      border-bottom: 2px solid var(--border);
+    }
+
+    .mode-tab {
+      padding: 12px 24px;
+      background: none;
+      border: none;
+      color: var(--text2);
+      font-size: 16px;
+      font-weight: 600;
+      cursor: pointer;
+      border-bottom: 3px solid transparent;
+      transition: all 0.3s;
+    }
+
+    .mode-tab.active {
+      color: var(--cyan);
+      border-bottom-color: var(--cyan);
+    }
+
+    .mode-content {
+      display: none;
+    }
+
+    .mode-content.active {
+      display: block;
+    }
+
+    .content-section {
+      background-color: var(--card);
+      border-radius: 12px;
+      padding: 24px;
+      margin-bottom: 20px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    }
+
+    .content-section h2 {
+      margin-bottom: 20px;
+      font-size: 22px;
+    }
+
+    .difficulty-selector {
+      margin-bottom: 20px;
+      display: flex;
+      gap: 12px;
+      align-items: center;
+    }
+
+    .difficulty-btn {
+      padding: 8px 16px;
+      border: 2px solid var(--border);
+      border-radius: 8px;
+      background-color: var(--bg2);
+      color: var(--text);
+      cursor: pointer;
+      transition: all 0.3s;
+      font-weight: 600;
+    }
+
+    .difficulty-btn.active {
+      background-color: var(--cyan);
+      border-color: var(--cyan);
+      color: white;
+    }
+
+    .number-line {
+      background-color: var(--bg2);
+      padding: 40px 20px;
+      border-radius: 8px;
+      margin: 30px 0;
+      position: relative;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      min-height: 120px;
+      overflow-x: auto;
+    }
+
+    .number-line-item {
+      text-align: center;
+      cursor: pointer;
+      transition: all 0.3s;
+      padding: 10px;
+      border-radius: 8px;
+    }
+
+    .number-line-item:hover {
+      background-color: var(--cyan);
+      color: white;
+      transform: scale(1.1);
+    }
+
+    .number-line-item.selected {
+      background-color: var(--cyan);
+      color: white;
+      font-weight: 700;
+    }
+
+    .number-value {
+      font-size: 20px;
+      font-weight: 700;
+      margin-bottom: 5px;
+    }
+
+    .number-label {
+      font-size: 12px;
+      color: var(--text2);
+    }
+
+    .comparison-box {
+      background-color: var(--bg2);
+      padding: 20px;
+      border-radius: 8px;
+      margin: 20px 0;
+      text-align: center;
+    }
+
+    .comparison-display {
+      font-size: 28px;
+      font-weight: 700;
+      color: var(--cyan);
+      margin: 15px 0;
+      font-family: 'Courier New', monospace;
+    }
+
+    .absolute-value-display {
+      background: linear-gradient(135deg, var(--primary), var(--cyan));
+      color: white;
+      padding: 25px;
+      border-radius: 8px;
+      text-align: center;
+      margin: 20px 0;
+    }
+
+    .abs-value-label {
+      font-size: 14px;
+      margin-bottom: 10px;
+    }
+
+    .abs-value {
+      font-size: 40px;
+      font-weight: 700;
+    }
+
+    .practice-item {
+      background-color: var(--bg2);
+      padding: 20px;
+      border-radius: 8px;
+      margin-bottom: 15px;
+      border-left: 4px solid var(--cyan);
+    }
+
+    .practice-item.correct {
+      border-left-color: var(--success);
+      background-color: rgba(76, 175, 80, 0.1);
+    }
+
+    .practice-item.incorrect {
+      border-left-color: var(--error);
+      background-color: rgba(244, 67, 54, 0.1);
+    }
+
+    .question-text {
+      font-weight: 600;
+      margin-bottom: 10px;
+      font-size: 16px;
+    }
+
+    .input-group {
+      display: flex;
+      gap: 10px;
+      margin-top: 10px;
+    }
+
+    input[type="text"], input[type="number"] {
+      flex: 1;
+      min-width: 80px;
+      padding: 10px;
+      border: 2px solid var(--border);
+      border-radius: 6px;
+      background-color: var(--bg);
+      color: var(--text);
+      font-size: 16px;
+    }
+
+    input[type="text"]:focus, input[type="number"]:focus {
+      outline: none;
+      border-color: var(--cyan);
+    }
+
+    .game-board {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(80px, 1fr));
+      gap: 10px;
+      margin: 20px 0;
+    }
+
+    .game-tile {
+      aspect-ratio: 1;
+      background-color: var(--bg2);
+      border: 2px solid var(--border);
+      border-radius: 8px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 700;
+      font-size: 18px;
+      transition: all 0.3s;
+    }
+
+    .game-tile:hover {
+      background-color: var(--cyan);
+      color: white;
+      transform: scale(1.05);
+    }
+
+    .game-tile.active {
+      background-color: var(--cyan);
+      color: white;
+      border-color: var(--cyan);
+    }
+
+    .game-tile.correct {
+      background-color: var(--success);
+      color: white;
+      border-color: var(--success);
+    }
+
+    .game-tile.incorrect {
+      background-color: var(--error);
+      color: white;
+      border-color: var(--error);
+    }
+
+    .button-group {
+      display: flex;
+      gap: 12px;
+      margin-top: 20px;
+      flex-wrap: wrap;
+    }
+
+    button {
+      padding: 12px 24px;
+      border: none;
+      border-radius: 8px;
+      font-size: 16px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.3s;
+    }
+
+    .btn-primary {
+      background-color: var(--cyan);
+      color: white;
+    }
+
+    .btn-primary:hover {
+      opacity: 0.9;
+      transform: translateY(-2px);
+    }
+
+    .btn-secondary {
+      background-color: var(--bg2);
+      color: var(--text);
+      border: 2px solid var(--border);
+    }
+
+    .score-display {
+      background-color: var(--bg2);
+      padding: 15px;
+      border-radius: 8px;
+      margin-top: 20px;
+      font-weight: 600;
+      display: flex;
+      justify-content: space-between;
+    }
+
+    #feedback {
+      margin-top: 20px;
+    }
+
+    @media (max-width: 768px) {
+      .vinculum-header {
+        flex-direction: column;
+        gap: 15px;
+      }
+
+      .number-line {
+        flex-direction: column;
+        min-height: auto;
+      }
+
+      .game-board {
+        grid-template-columns: repeat(auto-fit, minmax(60px, 1fr));
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="vinculum-header">
+      <div class="vinculum-header-left">
+        <a href="../../VINCULUM-Hub.html" class="vinculum-back-btn">←</a>
+        <div>
+          <h1 class="vinculum-title">Negative Numbers Deep Dive</h1>
+          <div style="margin-top: 8px;">
+            <span class="badge">Grade 6</span>
+            <span class="tag">6.NS.C.6-8</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="mode-tabs">
+      <button class="mode-tab active" data-mode="explore">Explore</button>
+      <button class="mode-tab" data-mode="practice">Practice</button>
+      <button class="mode-tab" data-mode="play">Play</button>
+    </div>
+
+    <!-- EXPLORE MODE -->
+    <div id="explore" class="mode-content active">
+      <div class="content-section">
+        <h2>Explore: Interactive Number Line</h2>
+        <div class="difficulty-selector">
+          <label>Range:</label>
+          <button class="difficulty-btn active" data-difficulty="easy">-10 to 10</button>
+          <button class="difficulty-btn" data-difficulty="medium">-20 to 20</button>
+          <button class="difficulty-btn" data-difficulty="hard">-50 to 50</button>
+        </div>
+
+        <p style="margin-bottom: 15px; color: var(--text2);">Click numbers on the line to see distance from zero</p>
+
+        <div class="number-line" id="exploreNumberLine"></div>
+
+        <div class="comparison-box">
+          <div style="color: var(--text2); font-size: 14px; margin-bottom: 10px;">Selected Numbers</div>
+          <div class="comparison-display" id="exploreComparison">Click two numbers to compare</div>
+          <div style="color: var(--text2); font-size: 14px; margin-top: 10px;" id="exploreDistance"></div>
+        </div>
+
+        <div class="absolute-value-display">
+          <div class="abs-value-label">Absolute Value (Distance from Zero)</div>
+          <div class="abs-value" id="exploreAbsValue">|0| = 0</div>
+        </div>
+
+        <div class="button-group">
+          <button class="btn-primary" onclick="exploreMode.reset()">Reset Selection</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- PRACTICE MODE -->
+    <div id="practice" class="mode-content">
+      <div class="content-section">
+        <h2>Practice: Compare, Order & Absolute Values</h2>
+        <div class="difficulty-selector">
+          <label>Difficulty:</label>
+          <button class="difficulty-btn active" data-difficulty="easy">Easy</button>
+          <button class="difficulty-btn" data-difficulty="medium">Medium</button>
+          <button class="difficulty-btn" data-difficulty="hard">Hard</button>
+        </div>
+
+        <div id="practiceContainer"></div>
+
+        <div class="button-group">
+          <button class="btn-primary" onclick="practiceMode.checkAnswers()">Check Answers</button>
+          <button class="btn-secondary" onclick="practiceMode.reset()">New Problems</button>
+        </div>
+
+        <div class="score-display">
+          <span>Correct:</span>
+          <span id="practiceScore">0/0</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- PLAY MODE: Number Line Jumper -->
+    <div id="play" class="mode-content">
+      <div class="content-section">
+        <h2>Play: Number Line Jumper</h2>
+        <div class="difficulty-selector">
+          <label>Difficulty:</label>
+          <button class="difficulty-btn active" data-difficulty="easy">Easy</button>
+          <button class="difficulty-btn" data-difficulty="medium">Medium</button>
+          <button class="difficulty-btn" data-difficulty="hard">Hard</button>
+        </div>
+
+        <div style="background-color: var(--bg2); padding: 20px; border-radius: 8px; margin: 20px 0; text-align: center;">
+          <div style="font-size: 14px; color: var(--text2); margin-bottom: 10px;">Land on:</div>
+          <div style="font-size: 32px; font-weight: 700; color: var(--cyan);" id="gameTarget">-5</div>
+        </div>
+
+        <div class="game-board" id="gameBoard"></div>
+
+        <div style="background-color: var(--bg2); padding: 20px; border-radius: 8px; margin: 20px 0; display: flex; justify-content: space-around; text-align: center;">
+          <div>
+            <div style="font-size: 12px; color: var(--text2);">Score</div>
+            <div style="font-size: 28px; font-weight: 700; color: var(--cyan);" id="gameScore">0</div>
+          </div>
+          <div>
+            <div style="font-size: 12px; color: var(--text2);">Correct</div>
+            <div style="font-size: 28px; font-weight: 700; color: var(--cyan);" id="gameCorrect">0/10</div>
+          </div>
+        </div>
+
+        <div class="button-group">
+          <button class="btn-primary" onclick="playMode.nextRound()">New Target</button>
+          <button class="btn-secondary" onclick="playMode.reset()">Reset Game</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div id="feedback" class="feedback"></div>
+
+  <script src="../../vinculum-feedback.js"></script>
+  <script src="../../vinculum-input.js"></script>
+
+  <script>
+    const PRACTICE_QUESTIONS = {
+      easy: [
+        { q: 'Which is greater: -5 or -2?', answer: '-2', opts: ['-5', '-2'] },
+        { q: 'Which is less: 3 or -3?', answer: '-3', opts: ['3', '-3'] },
+        { q: '|-7| = ?', answer: '7', opts: ['7', '-7'] },
+        { q: 'Order from least to greatest: 2, -1, 0', answer: '-1,0,2', opts: ['-1,0,2', '2,0,-1'] },
+        { q: '|-4| = ?', answer: '4', opts: ['4', '-4'] }
+      ],
+      medium: [
+        { q: 'Which is greater: -15 or -8?', answer: '-8', opts: ['-15', '-8'] },
+        { q: 'Order: -10, 5, -3, 8, 0', answer: '-10,-3,0,5,8', opts: ['-10,-3,0,5,8', '8,5,0,-3,-10'] },
+        { q: '|-12| + |5| = ?', answer: '17', opts: ['7', '17'] },
+        { q: 'Which has greatest absolute value: -20 or 18?', answer: '-20', opts: ['-20', '18'] },
+        { q: '|6| - |-4| = ?', answer: '2', opts: ['2', '10'] }
+      ],
+      hard: [
+        { q: 'Order: -12, 3, -8, 15, -1, 0', answer: '-12,-8,-1,0,3,15', opts: ['-12,-8,-1,0,3,15', '15,3,0,-1,-8,-12'] },
+        { q: '|-25| - |15| + |-5| = ?', answer: '15', opts: ['15', '45'] },
+        { q: 'Which is true: |-9| > |8|?', answer: 'true', opts: ['true', 'false'] },
+        { q: 'Opposite of -(-7) = ?', answer: '-7', opts: ['-7', '7'] },
+        { q: 'Distance between -8 and 4 = ?', answer: '12', opts: ['4', '12'] }
+      ]
+    };
+
+    // EXPLORE MODE
+    const exploreMode = {
+      currentDifficulty: 'easy',
+      range: 10,
+      selected: [],
+
+      init() {
+        document.querySelectorAll('#explore .difficulty-btn').forEach(btn => {
+          btn.addEventListener('click', (e) => {
+            document.querySelectorAll('#explore .difficulty-btn').forEach(b => b.classList.remove('active'));
+            e.target.classList.add('active');
+            this.currentDifficulty = e.target.dataset.difficulty;
+            this.range = parseInt(e.target.textContent.match(/\d+/)[0]);
+            this.render();
+          });
+        });
+        this.render();
+      },
+
+      render() {
+        const line = document.getElementById('exploreNumberLine');
+        line.innerHTML = '';
+        const step = Math.max(1, Math.floor(this.range / 10));
+
+        for (let i = -this.range; i <= this.range; i += step) {
+          const item = document.createElement('div');
+          item.className = 'number-line-item';
+          item.dataset.value = i;
+          item.innerHTML = `<div class="number-value">${i}</div><div class="number-label">|${Math.abs(i)}|</div>`;
+          item.addEventListener('click', () => this.selectNumber(i));
+          line.appendChild(item);
+        }
+      },
+
+      selectNumber(num) {
+        if (this.selected.length === 2) {
+          this.selected = [num];
+        } else if (this.selected.includes(num)) {
+          this.selected = this.selected.filter(n => n !== num);
+        } else {
+          this.selected.push(num);
+        }
+
+        document.querySelectorAll('#exploreNumberLine .number-line-item').forEach(item => {
+          if (this.selected.includes(parseInt(item.dataset.value))) {
+            item.classList.add('selected');
+          } else {
+            item.classList.remove('selected');
+          }
+        });
+
+        document.getElementById('exploreAbsValue').textContent = `|${this.selected[0] || 0}| = ${Math.abs(this.selected[0] || 0)}`;
+
+        if (this.selected.length === 2) {
+          const comparison = this.selected[0] > this.selected[1] ? `${this.selected[0]} > ${this.selected[1]}` : `${this.selected[0]} < ${this.selected[1]}`;
+          document.getElementById('exploreComparison').textContent = comparison;
+          const distance = Math.abs(this.selected[0] - this.selected[1]);
+          document.getElementById('exploreDistance').textContent = `Distance: ${distance}`;
+        } else {
+          document.getElementById('exploreComparison').textContent = 'Click another number to compare';
+          document.getElementById('exploreDistance').textContent = '';
+        }
+      },
+
+      reset() {
+        this.selected = [];
+        document.querySelectorAll('#exploreNumberLine .number-line-item').forEach(item => item.classList.remove('selected'));
+        document.getElementById('exploreComparison').textContent = 'Click two numbers to compare';
+        document.getElementById('exploreDistance').textContent = '';
+        document.getElementById('exploreAbsValue').textContent = '|0| = 0';
+      }
+    };
+
+    // PRACTICE MODE
+    const practiceMode = {
+      currentDifficulty: 'easy',
+      questions: [],
+
+      init() {
+        document.querySelectorAll('#practice .difficulty-btn').forEach(btn => {
+          btn.addEventListener('click', (e) => {
+            document.querySelectorAll('#practice .difficulty-btn').forEach(b => b.classList.remove('active'));
+            e.target.classList.add('active');
+            this.currentDifficulty = e.target.dataset.difficulty;
+            this.reset();
+          });
+        });
+        this.reset();
+      },
+
+      reset() {
+        const all = PRACTICE_QUESTIONS[this.currentDifficulty];
+        this.questions = all.slice(0, 3);
+        this.render();
+      },
+
+      render() {
+        const container = document.getElementById('practiceContainer');
+        container.innerHTML = '';
+
+        this.questions.forEach((q, idx) => {
+          const div = document.createElement('div');
+          div.className = 'practice-item';
+          div.innerHTML = `
+            <div class="question-text">${q.q}</div>
+            <div class="input-group">
+              <select data-idx="${idx}" data-answer="${q.answer}" style="flex: 1; padding: 10px; border: 2px solid var(--border); border-radius: 6px; background-color: var(--bg); color: var(--text); font-size: 16px;">
+                <option value="">Select answer</option>
+                ${q.opts.map(opt => `<option value="${opt}">${opt}</option>`).join('')}
+              </select>
+            </div>
+          `;
+          container.appendChild(div);
+        });
+      },
+
+      checkAnswers() {
+        const selects = document.querySelectorAll('#practiceContainer select');
+        let correct = 0;
+
+        selects.forEach(select => {
+          const answer = select.dataset.answer;
+          const userAnswer = select.value;
+          const itemDiv = select.closest('.practice-item');
+
+          if (userAnswer === answer) {
+            itemDiv.classList.add('correct');
+            itemDiv.classList.remove('incorrect');
+            correct++;
+          } else {
+            itemDiv.classList.add('incorrect');
+            itemDiv.classList.remove('correct');
+          }
+        });
+
+        document.getElementById('practiceScore').textContent = `${correct}/${selects.length}`;
+      }
+    };
+
+    // PLAY MODE
+    const playMode = {
+      currentDifficulty: 'easy',
+      target: -5,
+      range: 10,
+      score: 0,
+      correct: 0,
+      round: 0,
+      maxRounds: 10,
+
+      init() {
+        document.querySelectorAll('#play .difficulty-btn').forEach(btn => {
+          btn.addEventListener('click', (e) => {
+            document.querySelectorAll('#play .difficulty-btn').forEach(b => b.classList.remove('active'));
+            e.target.classList.add('active');
+            this.currentDifficulty = e.target.dataset.difficulty;
+            this.reset();
+          });
+        });
+        this.nextRound();
+      },
+
+      reset() {
+        this.score = 0;
+        this.correct = 0;
+        this.round = 0;
+        document.getElementById('gameScore').textContent = '0';
+        document.getElementById('gameCorrect').textContent = '0/10';
+        this.range = this.currentDifficulty === 'easy' ? 10 : this.currentDifficulty === 'medium' ? 20 : 50;
+        this.nextRound();
+      },
+
+      nextRound() {
+        if (this.round >= this.maxRounds) {
+          showFeedback(`Game Complete! Final Score: ${this.score}`, 'info');
+          return;
+        }
+
+        this.target = Math.floor(Math.random() * (2 * this.range + 1)) - this.range;
+        document.getElementById('gameTarget').textContent = this.target;
+        this.round++;
+        this.renderBoard();
+      },
+
+      renderBoard() {
+        const board = document.getElementById('gameBoard');
+        board.innerHTML = '';
+        const numbers = [];
+        const step = Math.max(1, Math.floor(this.range / 5));
+
+        for (let i = -this.range; i <= this.range; i += step) {
+          numbers.push(i);
+        }
+
+        numbers.forEach(num => {
+          const tile = document.createElement('div');
+          tile.className = 'game-tile';
+          tile.textContent = num;
+          tile.addEventListener('click', () => this.selectNumber(num, tile));
+          board.appendChild(tile);
+        });
+      },
+
+      selectNumber(num, tile) {
+        const tiles = document.querySelectorAll('.game-tile');
+        tiles.forEach(t => t.classList.remove('active', 'correct', 'incorrect'));
+
+        if (num === this.target) {
+          tile.classList.add('correct');
+          this.score += 10;
+          this.correct++;
+          showFeedback('Correct!', 'success');
+          setTimeout(() => this.nextRound(), 1000);
+        } else {
+          tile.classList.add('incorrect');
+          showFeedback(`Wrong! Target was ${this.target}`, 'error');
+          setTimeout(() => this.nextRound(), 1500);
+        }
+
+        document.getElementById('gameScore').textContent = this.score;
+        document.getElementById('gameCorrect').textContent = `${this.correct}/10`;
+      }
+    };
+
+    // Mode switching
+    document.querySelectorAll('.mode-tab').forEach(tab => {
+      tab.addEventListener('click', (e) => {
+        document.querySelectorAll('.mode-tab').forEach(t => t.classList.remove('active'));
+        document.querySelectorAll('.mode-content').forEach(c => c.classList.remove('active'));
+        e.target.classList.add('active');
+        document.getElementById(e.target.dataset.mode).classList.add('active');
+      });
+    });
+
+    // Initialize
+    exploreMode.init();
+    practiceMode.init();
+    playMode.init();
+  </script>
+</body>
+</html>

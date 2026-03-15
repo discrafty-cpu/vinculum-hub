@@ -1,0 +1,723 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="VINCULUM Learning Hub - Probability Predictions">
+    <meta name="author" content="VINCULUM">
+    <title>Probability Predictions — VINCULUM Hub</title>
+
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+
+    <link rel="stylesheet" href="../../vinculum-core.css">
+
+    <style>
+        :root {
+            --color-explore: #FF6B9D;
+            --color-correct: #2ECC71;
+            --color-incorrect: #E74C3C;
+        }
+
+        .marble-bag {
+            display: inline-flex;
+            gap: 0.5rem;
+            margin: 1rem 0;
+            padding: 1.5rem;
+            background: white;
+            border-radius: 8px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+
+        .marble {
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.5rem;
+            box-shadow: inset -2px -2px 5px rgba(0,0,0,0.2), 0 2px 5px rgba(0,0,0,0.1);
+            cursor: grab;
+            transition: transform 0.2s;
+        }
+
+        .marble:hover {
+            transform: scale(1.1);
+        }
+
+        .marble-red {
+            background: linear-gradient(135deg, #FF6B6B 0%, #FF8E8E 100%);
+        }
+
+        .marble-blue {
+            background: linear-gradient(135deg, #4ECDC4 0%, #44A08D 100%);
+        }
+
+        .marble-yellow {
+            background: linear-gradient(135deg, #FFD700 0%, #FFF700 100%);
+        }
+
+        .marble-green {
+            background: linear-gradient(135deg, #95E1D3 0%, #6BCB77 100%);
+        }
+
+        .marble-purple {
+            background: linear-gradient(135deg, #A29BFE 0%, #6C5CE7 100%);
+        }
+
+        .draw-zone {
+            min-height: 150px;
+            background: #f8f9fa;
+            border: 2px dashed #ddd;
+            border-radius: 8px;
+            padding: 1.5rem;
+            margin: 1.5rem 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 600;
+            color: #999;
+            position: relative;
+        }
+
+        .draw-result {
+            display: inline-block;
+            padding: 1rem 2rem;
+            background: white;
+            border-radius: 8px;
+            font-size: 1.5rem;
+            margin: 0.5rem;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+            animation: popIn 0.3s ease;
+        }
+
+        @keyframes popIn {
+            0% { transform: scale(0.5); opacity: 0; }
+            100% { transform: scale(1); opacity: 1; }
+        }
+
+        .composition-display {
+            background: white;
+            border-radius: 8px;
+            padding: 1.5rem;
+            margin: 1rem 0;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+
+        .composition-row {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            margin: 0.5rem 0;
+            font-weight: 600;
+        }
+
+        .marble-count {
+            display: inline-flex;
+            gap: 0.25rem;
+        }
+
+        .marble-small {
+            width: 25px;
+            height: 25px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.7rem;
+            box-shadow: inset -1px -1px 3px rgba(0,0,0,0.2);
+        }
+
+        .prediction-card {
+            background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+            border: 2px solid #ddd;
+            border-radius: 8px;
+            padding: 1.5rem;
+            margin: 1rem 0;
+            cursor: pointer;
+            transition: all 0.2s;
+            text-align: center;
+        }
+
+        .prediction-card:hover {
+            border-color: var(--color-explore);
+            box-shadow: 0 4px 12px rgba(255, 107, 157, 0.2);
+            transform: translateY(-2px);
+        }
+
+        .prediction-card.selected {
+            background: linear-gradient(135deg, #FFE5EE 0%, #FFD4E5 100%);
+            border-color: var(--color-explore);
+            box-shadow: 0 4px 12px rgba(255, 107, 157, 0.3);
+        }
+
+        .prediction-card h3 {
+            margin: 0 0 0.5rem 0;
+            color: #333;
+            font-size: 1.1rem;
+        }
+
+        .prediction-card p {
+            margin: 0;
+            color: #666;
+            font-size: 0.95rem;
+        }
+
+        .draw-button {
+            padding: 0.75rem 1.5rem;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-weight: 600;
+            cursor: pointer;
+            font-size: 1rem;
+            transition: all 0.2s;
+        }
+
+        .draw-button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+        }
+
+        .draw-button:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 1rem;
+            margin: 1.5rem 0;
+        }
+
+        .stat-box {
+            background: white;
+            padding: 1rem;
+            border-radius: 8px;
+            text-align: center;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+            border-top: 4px solid var(--color-explore);
+        }
+
+        .stat-label {
+            font-size: 0.85rem;
+            color: #666;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-bottom: 0.5rem;
+        }
+
+        .stat-value {
+            font-size: 2rem;
+            font-weight: 700;
+            color: #333;
+            font-family: 'JetBrains Mono', monospace;
+        }
+
+        .prediction-ratio {
+            font-size: 0.85rem;
+            color: #999;
+            margin-top: 0.5rem;
+        }
+
+        .challenge-title {
+            font-size: 1.3rem;
+            font-weight: 700;
+            color: #333;
+            margin-bottom: 1rem;
+        }
+
+        .challenge-desc {
+            background: #f0f4ff;
+            border-left: 4px solid #667eea;
+            padding: 1rem;
+            border-radius: 4px;
+            margin: 1rem 0;
+            color: #333;
+        }
+
+        .score-badge {
+            display: inline-block;
+            background: linear-gradient(135deg, #2ECC71 0%, #27AE60 100%);
+            color: white;
+            padding: 0.75rem 1.5rem;
+            border-radius: 20px;
+            font-weight: 700;
+            font-size: 1.1rem;
+            margin: 0.5rem;
+        }
+
+        .tool-section {
+            background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+            border-left: 5px solid var(--color-explore);
+            padding: 1.5rem;
+            border-radius: 12px;
+            margin: 1.5rem 0;
+        }
+
+        .controls-group {
+            display: flex;
+            gap: 1rem;
+            flex-wrap: wrap;
+            margin: 1rem 0;
+        }
+    </style>
+</head>
+<body>
+    <div class="vinculum-header">
+        <h1 slot="title">Probability Predictions</h1>
+        <span slot="grade">Grades 2-3</span>
+        <span slot="ccss">2.MD.A.1, 3.MD.B.3</span>
+        <span slot="minnesota">2.4.1.1, 3.4.1.1</span>
+    </div>
+
+    <div class="vinculum-mode-tabs">
+        <button class="vinculum-mode-tab" data-mode="explore">Explore</button>
+        <button class="vinculum-mode-tab" data-mode="practice">Practice</button>
+        <button class="vinculum-mode-tab" data-mode="play">Play</button>
+
+        <div class="difficulty-selector">
+            <label for="difficulty-select">Difficulty:</label>
+            <select id="difficulty-select" class="vinculum-diff-button">
+                <option value="easy">Easy</option>
+                <option value="medium" selected>Medium</option>
+                <option value="hard">Hard</option>
+            </select>
+        </div>
+    </div>
+
+    <!-- EXPLORE MODE -->
+    <div class="vinculum-mode-content" data-mode="explore">
+        <div class="card">
+            <h2>Explore: Draw Marbles from the Bag!</h2>
+            <p>Look inside! How many of each color? Now let's see what you draw!</p>
+
+            <div class="tool-section">
+                <h3>🎒 Bag Composition</h3>
+                <div class="composition-display" id="composition-display">
+                    <!-- Filled by JavaScript -->
+                </div>
+
+                <h3>Draw Marbles</h3>
+                <div class="controls-group">
+                    <button class="draw-button" id="draw-btn">Draw 1 Marble</button>
+                    <button class="draw-button" id="draw-multi">Draw 10 Marbles</button>
+                    <button class="draw-button" id="reset-explore" style="background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);">Reset</button>
+                </div>
+
+                <div class="draw-zone" id="draw-zone">
+                    Click "Draw" to pull marbles!
+                </div>
+
+                <div class="stats-grid" id="explore-stats">
+                    <!-- Filled by JavaScript -->
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- PRACTICE MODE -->
+    <div class="vinculum-mode-content" data-mode="practice">
+        <div class="card">
+            <h2>Practice: Predict What You'll Draw</h2>
+            <p>Look at the bag. What color will you draw most often? Make a prediction first!</p>
+
+            <div class="tool-section">
+                <div class="composition-display" id="practice-composition">
+                    <!-- Filled by JavaScript -->
+                </div>
+
+                <div class="challenge-desc" id="practice-challenge">
+                    Which color do you think will be drawn most?
+                </div>
+
+                <div id="practice-predictions">
+                    <!-- Prediction cards filled by JavaScript -->
+                </div>
+
+                <div class="controls-group">
+                    <button class="draw-button" id="test-prediction">Test My Prediction!</button>
+                </div>
+
+                <div id="practice-results"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- PLAY MODE -->
+    <div class="vinculum-mode-content" data-mode="play">
+        <div class="card">
+            <h2>Play: Prediction Challenge</h2>
+            <div class="challenge-desc">
+                <p><strong>Challenge:</strong> Predict what will be drawn from different bags!
+                The better your prediction, the more points you earn!</p>
+            </div>
+
+            <div id="play-score-display" style="text-align: center; margin: 1rem 0;">
+                <div class="score-badge">Score: <span id="play-score">0</span></div>
+                <div class="score-badge" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);">Round <span id="play-round">1</span>/<span id="play-total-rounds">5</span></div>
+            </div>
+
+            <div class="tool-section">
+                <div class="composition-display" id="play-composition">
+                    <!-- Filled by JavaScript -->
+                </div>
+
+                <div id="play-predictions">
+                    <!-- Prediction cards filled by JavaScript -->
+                </div>
+
+                <div class="controls-group">
+                    <button class="draw-button" id="submit-prediction">Submit Prediction!</button>
+                </div>
+
+                <div id="play-feedback"></div>
+                <div class="controls-group">
+                    <button class="draw-button" id="next-round" style="display: none; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);">Next Bag</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div id="feedback" class="feedback"></div>
+    <div id="sr-announcements" class="sr-only" aria-live="polite" aria-atomic="true"></div>
+
+    <script src="../../vinculum-feedback.js"></script>
+    <script src="../../vinculum-input.js"></script>
+
+    <script>
+        // Bag configurations
+        const bags = {
+            easy: [
+                { red: 5, blue: 1, yellow: 0, green: 0 },
+                { red: 4, blue: 3, yellow: 0, green: 0 },
+                { red: 3, blue: 3, yellow: 0, green: 0 }
+            ],
+            medium: [
+                { red: 6, blue: 2, yellow: 1, green: 0 },
+                { red: 4, blue: 4, yellow: 2, green: 0 },
+                { red: 3, blue: 3, yellow: 3, green: 0 }
+            ],
+            hard: [
+                { red: 5, blue: 3, yellow: 2, green: 1 },
+                { red: 4, blue: 4, yellow: 4, green: 1 },
+                { red: 3, blue: 3, yellow: 3, green: 3 }
+            ]
+        };
+
+        const state = {
+            currentDifficulty: 'medium',
+            currentBagIndex: 0,
+            exploreDraws: { red: 0, blue: 0, yellow: 0, green: 0 },
+            practiceDraws: { red: 0, blue: 0, yellow: 0, green: 0 },
+            playDraws: { red: 0, blue: 0, yellow: 0, green: 0 },
+            playScore: 0,
+            playRound: 0,
+            selectedPrediction: null
+        };
+
+        function getCurrentBag() {
+            return bags[state.currentDifficulty][state.currentBagIndex];
+        }
+
+        function getTotalMarbles(bag) {
+            return Object.values(bag).reduce((a, b) => a + b, 0);
+        }
+
+        function showComposition(bag, elementId) {
+            const el = document.getElementById(elementId);
+            const colors = { red: '#FF6B6B', blue: '#4ECDC4', yellow: '#FFD700', green: '#6BCB77' };
+            let html = '';
+            for (const [color, count] of Object.entries(bag)) {
+                if (count > 0) {
+                    html += `<div class="composition-row">
+                        <span>${color.charAt(0).toUpperCase() + color.slice(1)}:</span>
+                        <div class="marble-count">`;
+                    for (let i = 0; i < count; i++) {
+                        html += `<div class="marble-small" style="background: linear-gradient(135deg, ${colors[color]} 0%, ${colors[color]} 100%);"></div>`;
+                    }
+                    html += `</div>
+                        <span>${count}</span>
+                    </div>`;
+                }
+            }
+            el.innerHTML = html;
+        }
+
+        function createPredictionCards(containerId, bagColors) {
+            const el = document.getElementById(containerId);
+            const colors = Object.keys(bagColors).filter(c => bagColors[c] > 0);
+            let html = '';
+            colors.forEach(color => {
+                const percentage = (bagColors[color] / getTotalMarbles(bagColors)) * 100;
+                html += `<div class="prediction-card" data-color="${color}">
+                    <h3>${color.charAt(0).toUpperCase() + color.slice(1)}</h3>
+                    <p>${percentage.toFixed(0)}% chance</p>
+                </div>`;
+            });
+            el.innerHTML = html;
+
+            el.querySelectorAll('.prediction-card').forEach(card => {
+                card.addEventListener('click', function() {
+                    el.querySelectorAll('.prediction-card').forEach(c => c.classList.remove('selected'));
+                    this.classList.add('selected');
+                    state.selectedPrediction = this.getAttribute('data-color');
+                });
+            });
+        }
+
+        function updateStats(type) {
+            const draws = state[type + 'Draws'];
+            const total = Object.values(draws).reduce((a, b) => a + b, 0);
+            const statEl = document.getElementById(type + '-stats');
+            if (!statEl) return;
+
+            let html = '';
+            const colors = ['red', 'blue', 'yellow', 'green'];
+            colors.forEach(color => {
+                const count = draws[color];
+                const percent = total > 0 ? ((count / total) * 100).toFixed(0) : 0;
+                html += `<div class="stat-box">
+                    <div class="stat-label">${color}</div>
+                    <div class="stat-value">${count}</div>
+                    <div class="prediction-ratio">${percent}%</div>
+                </div>`;
+            });
+            statEl.innerHTML = html;
+        }
+
+        function drawMarble(bag) {
+            const colors = Object.entries(bag);
+            let random = Math.random() * getTotalMarbles(bag);
+            for (const [color, count] of colors) {
+                random -= count;
+                if (random < 0) return color;
+            }
+            return colors[colors.length - 1][0];
+        }
+
+        // ─────────────────────────────────────────────────────
+        // EXPLORE MODE
+        // ─────────────────────────────────────────────────────
+
+        function renderExplore() {
+            state.currentBagIndex = 0;
+            state.exploreDraws = { red: 0, blue: 0, yellow: 0, green: 0 };
+            const bag = getCurrentBag();
+
+            showComposition(bag, 'composition-display');
+            updateStats('explore');
+
+            document.getElementById('draw-btn').addEventListener('click', () => {
+                const color = drawMarble(bag);
+                state.exploreDraws[color]++;
+                const zone = document.getElementById('draw-zone');
+                const result = document.createElement('div');
+                result.className = 'draw-result';
+                result.style.background = color === 'red' ? '#FF6B6B' : color === 'blue' ? '#4ECDC4' : color === 'yellow' ? '#FFD700' : '#6BCB77';
+                result.style.color = 'white';
+                result.textContent = color.toUpperCase();
+                zone.appendChild(result);
+                updateStats('explore');
+            });
+
+            document.getElementById('draw-multi').addEventListener('click', () => {
+                for (let i = 0; i < 10; i++) {
+                    const color = drawMarble(bag);
+                    state.exploreDraws[color]++;
+                }
+                const zone = document.getElementById('draw-zone');
+                zone.innerHTML += '<p>Drew 10 marbles! Check the stats below.</p>';
+                updateStats('explore');
+            });
+
+            document.getElementById('reset-explore').addEventListener('click', () => {
+                state.exploreDraws = { red: 0, blue: 0, yellow: 0, green: 0 };
+                document.getElementById('draw-zone').innerHTML = 'Click "Draw" to pull marbles!';
+                updateStats('explore');
+            });
+        }
+
+        // ─────────────────────────────────────────────────────
+        // PRACTICE MODE
+        // ─────────────────────────────────────────────────────
+
+        function renderPractice() {
+            state.currentBagIndex = 0;
+            state.practiceDraws = { red: 0, blue: 0, yellow: 0, green: 0 };
+            state.selectedPrediction = null;
+            const bag = getCurrentBag();
+
+            showComposition(bag, 'practice-composition');
+            createPredictionCards('practice-predictions', bag);
+
+            document.getElementById('test-prediction').addEventListener('click', () => {
+                if (!state.selectedPrediction) {
+                    showFeedback('Choose a color first!', 'warning');
+                    return;
+                }
+                const trials = 20;
+                const draws = { red: 0, blue: 0, yellow: 0, green: 0 };
+                for (let i = 0; i < trials; i++) {
+                    const color = drawMarble(bag);
+                    draws[color]++;
+                }
+
+                let html = `<div style="background: #f0f4ff; border-left: 4px solid #667eea; padding: 1rem; border-radius: 4px; margin: 1rem 0;">`;
+                const results = Object.entries(draws).filter(([_, c]) => c > 0);
+                results.forEach(([color, count]) => {
+                    html += `<p><strong>${color}:</strong> ${count} times</p>`;
+                });
+
+                const mostDrawn = Object.entries(draws).reduce((a, b) => a[1] > b[1] ? a : b)[0];
+                if (mostDrawn === state.selectedPrediction) {
+                    html += `<p style="color: var(--color-correct); font-weight: 700;">✓ Great prediction! You chose the most likely color!</p>`;
+                } else {
+                    html += `<p style="color: #333;">Good try! This time ${mostDrawn} was most common, but keep trying!</p>`;
+                }
+                html += '</div>';
+                document.getElementById('practice-results').innerHTML = html;
+            });
+        }
+
+        // ─────────────────────────────────────────────────────
+        // PLAY MODE
+        // ─────────────────────────────────────────────────────
+
+        function renderPlay() {
+            state.playScore = 0;
+            state.playRound = 0;
+            state.currentBagIndex = 0;
+            showPlayRound();
+        }
+
+        function showPlayRound() {
+            const difficulty = state.currentDifficulty;
+            const maxRounds = bags[difficulty].length;
+
+            if (state.playRound >= maxRounds) {
+                endPlayMode();
+                return;
+            }
+
+            state.currentBagIndex = state.playRound;
+            state.playDraws = { red: 0, blue: 0, yellow: 0, green: 0 };
+            state.selectedPrediction = null;
+            const bag = getCurrentBag();
+
+            document.getElementById('play-round').textContent = state.playRound + 1;
+            document.getElementById('play-total-rounds').textContent = maxRounds;
+            showComposition(bag, 'play-composition');
+            createPredictionCards('play-predictions', bag);
+            document.getElementById('play-feedback').innerHTML = '';
+            document.getElementById('submit-prediction').style.display = 'inline-block';
+            document.getElementById('next-round').style.display = 'none';
+        }
+
+        document.addEventListener('DOMContentLoaded', () => {
+            document.getElementById('submit-prediction').addEventListener('click', () => {
+                if (!state.selectedPrediction) {
+                    showFeedback('Choose a color first!', 'warning');
+                    return;
+                }
+
+                const bag = getCurrentBag();
+                const trials = 15;
+                const draws = { red: 0, blue: 0, yellow: 0, green: 0 };
+                for (let i = 0; i < trials; i++) {
+                    const color = drawMarble(bag);
+                    draws[color]++;
+                }
+
+                const mostDrawn = Object.entries(draws).reduce((a, b) => a[1] > b[1] ? a : b)[0];
+                const isCorrect = mostDrawn === state.selectedPrediction;
+
+                let points = 0;
+                if (isCorrect) {
+                    points = state.currentDifficulty === 'easy' ? 10 : state.currentDifficulty === 'medium' ? 15 : 20;
+                } else {
+                    points = 2;
+                }
+                state.playScore += points;
+
+                let html = `<div style="background: ${isCorrect ? '#d4edda' : '#fff3cd'}; border-left: 4px solid ${isCorrect ? 'var(--color-correct)' : '#FFC107'}; padding: 1rem; border-radius: 4px; margin: 1rem 0;">`;
+                html += `<p style="font-weight: 700; color: ${isCorrect ? 'var(--color-correct)' : '#333'};"><strong>+${points} points!</strong></p>`;
+                html += `<p>Results: `;
+                Object.entries(draws).filter(([_, c]) => c > 0).forEach(([color, count]) => {
+                    html += `${color}: ${count}x, `;
+                });
+                html = html.slice(0, -2) + '</p>';
+                if (isCorrect) {
+                    html += `<p style="color: var(--color-correct);">✓ Correct! ${mostDrawn} was drawn most!</p>`;
+                } else {
+                    html += `<p>Close! ${mostDrawn} was most common this time.</p>`;
+                }
+                html += '</div>';
+                document.getElementById('play-feedback').innerHTML = html;
+                document.getElementById('play-score').textContent = state.playScore;
+                document.getElementById('submit-prediction').style.display = 'none';
+                document.getElementById('next-round').style.display = 'inline-block';
+            });
+
+            document.getElementById('next-round').addEventListener('click', () => {
+                state.playRound++;
+                showPlayRound();
+            });
+        });
+
+        function endPlayMode() {
+            document.getElementById('play-feedback').innerHTML = `<div style="background: linear-gradient(135deg, #d4edda 0%, #c3e6cb 100%); border: 2px solid var(--color-correct); padding: 2rem; border-radius: 8px; text-align: center;">
+                <h2 style="color: var(--color-correct); margin: 0 0 1rem 0;">Game Over!</h2>
+                <div class="score-badge" style="font-size: 1.5rem; padding: 1rem 2rem;">Final Score: ${state.playScore}</div>
+                <p>Great job! You're becoming a probability expert!</p>
+            </div>`;
+            document.getElementById('next-round').style.display = 'none';
+            document.getElementById('submit-prediction').style.display = 'none';
+        }
+
+        // ─────────────────────────────────────────────────────
+        // Mode switching
+        // ─────────────────────────────────────────────────────
+
+        document.querySelectorAll('.vinculum-mode-tab').forEach(tab => {
+            tab.addEventListener('click', function() {
+                const mode = this.getAttribute('data-mode');
+                switchMode(mode);
+            });
+        });
+
+        document.getElementById('difficulty-select').addEventListener('change', function() {
+            state.currentDifficulty = this.value;
+        });
+
+        function switchMode(mode) {
+            document.querySelectorAll('.vinculum-mode-content').forEach(el => {
+                el.style.display = 'none';
+            });
+            document.querySelectorAll('.vinculum-mode-tab').forEach(tab => {
+                tab.classList.remove('active');
+            });
+
+            const content = document.querySelector(`[data-mode="${mode}"]`);
+            if (content) content.style.display = 'block';
+            document.querySelector(`.vinculum-mode-tab[data-mode="${mode}"]`).classList.add('active');
+
+            if (mode === 'explore') renderExplore();
+            else if (mode === 'practice') renderPractice();
+            else if (mode === 'play') renderPlay();
+        }
+
+        function showFeedback(msg, type = 'info') {
+            const fb = document.getElementById('feedback');
+            fb.innerHTML = `<div class="${type}">${msg}</div>`;
+            setTimeout(() => fb.innerHTML = '', 3000);
+        }
+
+        switchMode('explore');
+    </script>
+</body>
+</html>
