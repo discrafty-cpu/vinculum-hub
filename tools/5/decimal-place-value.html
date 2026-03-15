@@ -1,0 +1,722 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>VINCULUM — Decimal Place Value</title>
+  <link rel="stylesheet" href="../../vinculum-core.css">
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap');
+
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      font-family: 'Inter', sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      height: 100vh;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+      user-select: none;
+    }
+
+    .vinculum-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 12px 24px;
+      background: var(--bg2);
+      border-bottom: 1px solid var(--border);
+      flex-shrink: 0;
+    }
+    .vinculum-header-left {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+    }
+    .vinculum-back-btn {
+      padding: 6px 12px;
+      border-radius: 8px;
+      border: 1px solid var(--border);
+      background: transparent;
+      color: var(--text2);
+      font-size: 13px;
+      font-family: inherit;
+      cursor: pointer;
+      transition: all 0.2s;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .vinculum-back-btn:hover { background: var(--card); color: var(--cyan); }
+    .vinculum-title-group {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+    .vinculum-title {
+      font-size: 20px;
+      font-weight: 800;
+      background: var(--grad);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+    .vinculum-badges {
+      display: flex;
+      gap: 8px;
+    }
+    .badge {
+      font-size: 10px;
+      font-weight: 700;
+      padding: 4px 10px;
+      border-radius: 6px;
+      background: rgba(0,212,255,0.1);
+      color: var(--cyan);
+      border: 1px solid rgba(0,212,255,0.2);
+    }
+    .tag {
+      font-size: 10px;
+      font-weight: 600;
+      padding: 4px 8px;
+      border-radius: 5px;
+      background: rgba(0,212,255,0.08);
+      color: var(--cyan);
+      font-family: 'JetBrains Mono', monospace;
+    }
+    .vinculum-header-right {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+    .vinculum-theme-select {
+      padding: 6px 12px;
+      border-radius: 8px;
+      border: 1px solid var(--border);
+      background: var(--card);
+      color: var(--text2);
+      font-size: 12px;
+      font-family: inherit;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+
+    .vinculum-mode-tabs {
+      display: flex;
+      gap: 4px;
+      padding: 8px 24px;
+      background: var(--bg2);
+      border-bottom: 1px solid var(--border);
+      flex-shrink: 0;
+      align-items: center;
+    }
+    .vinculum-mode-tab {
+      padding: 8px 20px;
+      border-radius: 8px;
+      border: 1px solid transparent;
+      background: transparent;
+      color: var(--muted);
+      font-size: 13px;
+      font-weight: 600;
+      font-family: inherit;
+      cursor: pointer;
+      transition: all 0.2s;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .vinculum-mode-tab:hover { color: var(--text2); background: var(--card); }
+    .vinculum-mode-tab.active-explore { background: rgba(0,212,255,0.1); color: var(--cyan); border-color: rgba(0,212,255,0.3); }
+    .vinculum-mode-tab.active-practice { background: rgba(0,230,118,0.1); color: var(--green); border-color: rgba(0,230,118,0.3); }
+    .vinculum-mode-tab.active-play { background: rgba(255,59,139,0.1); color: var(--pink); border-color: rgba(255,59,139,0.3); }
+
+    .vinculum-diff-selector {
+      margin-left: auto;
+      display: flex;
+      gap: 4px;
+      align-items: center;
+    }
+    .vinculum-diff-label {
+      font-size: 11px;
+      color: var(--muted);
+      margin-right: 8px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+    }
+    .vinculum-diff-btn {
+      padding: 5px 12px;
+      border-radius: 6px;
+      border: 1px solid var(--border);
+      background: transparent;
+      color: var(--muted);
+      font-size: 11px;
+      font-weight: 600;
+      font-family: inherit;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+    .vinculum-diff-btn:hover { color: var(--text2); }
+    .vinculum-diff-btn.active { background: rgba(0,212,255,0.1); color: var(--cyan); border-color: rgba(0,212,255,0.3); }
+
+    .main {
+      flex: 1;
+      overflow-y: auto;
+      padding: 24px;
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 20px;
+    }
+    .main::-webkit-scrollbar { width: 8px; }
+    .main::-webkit-scrollbar-track { background: var(--bg); }
+    .main::-webkit-scrollbar-thumb {
+      background: var(--border);
+      border-radius: 4px;
+    }
+    .main::-webkit-scrollbar-thumb:hover { background: var(--muted); }
+
+    .mode { display: none; }
+    .mode.active { display: block; }
+
+    /* EXPLORE MODE */
+    .explore-section {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 24px;
+    }
+    .explore-title {
+      font-size: 14px;
+      font-weight: 700;
+      color: var(--cyan);
+      margin-bottom: 20px;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+    .place-value-chart {
+      display: grid;
+      grid-template-columns: repeat(7, 1fr);
+      gap: 8px;
+      margin-bottom: 20px;
+    }
+    .place-cell {
+      background: var(--bg);
+      border: 2px solid var(--border);
+      border-radius: 8px;
+      padding: 12px;
+      text-align: center;
+      font-weight: 600;
+    }
+    .place-cell.ones {
+      border-color: var(--green);
+      background: rgba(0,230,118,0.08);
+    }
+    .place-cell.tens {
+      border-color: var(--cyan);
+      background: rgba(0,212,255,0.08);
+    }
+    .place-cell.hundreds {
+      border-color: var(--pink);
+      background: rgba(255,59,139,0.08);
+    }
+    .place-cell.tenths {
+      border-color: var(--orange);
+      background: rgba(255,145,0,0.08);
+    }
+    .place-cell.hundredths {
+      border-color: var(--yellow);
+      background: rgba(255,193,7,0.08);
+    }
+    .place-cell.thousandths {
+      border-color: var(--purple);
+      background: rgba(179,136,255,0.08);
+    }
+    .place-name {
+      font-size: 11px;
+      color: var(--muted);
+      margin-bottom: 4px;
+    }
+    .place-digit {
+      font-size: 24px;
+      font-weight: 800;
+      color: var(--text);
+    }
+
+    .decimal-input-group {
+      display: flex;
+      align-items: flex-end;
+      gap: 12px;
+      margin-bottom: 20px;
+    }
+    .decimal-input-group input {
+      flex: 1;
+      padding: 12px;
+      border-radius: 8px;
+      border: 2px solid var(--border);
+      background: var(--bg);
+      color: var(--text);
+      font-size: 18px;
+      font-weight: 600;
+      font-family: 'JetBrains Mono', monospace;
+    }
+    .decimal-input-group input:focus {
+      outline: none;
+      border-color: var(--cyan);
+    }
+    .decompose-btn {
+      padding: 10px 20px;
+      border-radius: 8px;
+      border: 1px solid var(--cyan);
+      background: rgba(0,212,255,0.1);
+      color: var(--cyan);
+      font-size: 13px;
+      font-weight: 600;
+      font-family: inherit;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+    .decompose-btn:hover {
+      background: rgba(0,212,255,0.2);
+      transform: translateY(-2px);
+    }
+
+    .decomposition {
+      background: var(--bg2);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 16px;
+      margin-bottom: 16px;
+    }
+    .decomposition-row {
+      display: flex;
+      justify-content: space-between;
+      padding: 8px 0;
+      border-bottom: 1px solid var(--border);
+      font-size: 14px;
+    }
+    .decomposition-row:last-child {
+      border-bottom: none;
+    }
+
+    /* PRACTICE MODE */
+    .practice-container {
+      max-width: 700px;
+    }
+    .problem-card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 24px;
+      margin-bottom: 20px;
+    }
+    .problem-statement {
+      font-size: 16px;
+      font-weight: 600;
+      color: var(--text);
+      margin-bottom: 20px;
+    }
+    input[type="number"], input[type="text"], select {
+      padding: 10px 12px;
+      border-radius: 8px;
+      border: 1px solid var(--border);
+      background: var(--bg);
+      color: var(--text);
+      font-size: 14px;
+      font-family: inherit;
+      transition: all 0.2s;
+      width: 100%;
+      margin-bottom: 16px;
+    }
+    input:focus, select:focus {
+      outline: none;
+      border-color: var(--cyan);
+      background: var(--card2);
+    }
+    .submit-btn {
+      padding: 12px 24px;
+      border-radius: 8px;
+      border: 1px solid var(--green);
+      background: rgba(0,230,118,0.1);
+      color: var(--green);
+      font-size: 14px;
+      font-weight: 600;
+      font-family: inherit;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+    .submit-btn:hover {
+      background: rgba(0,230,118,0.2);
+      transform: translateY(-2px);
+    }
+
+    /* PLAY MODE */
+    .game-container {
+      max-width: 600px;
+      margin: 0 auto;
+    }
+    .game-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 20px;
+    }
+    .score-display {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 12px 20px;
+      font-size: 14px;
+      font-weight: 600;
+    }
+    .game-card {
+      background: var(--card);
+      border: 2px solid var(--border);
+      border-radius: 12px;
+      padding: 32px;
+      text-align: center;
+      margin-bottom: 20px;
+    }
+    .game-question {
+      font-size: 18px;
+      font-weight: 600;
+      color: var(--text);
+      margin-bottom: 20px;
+    }
+    .decimal-compare {
+      display: grid;
+      grid-template-columns: 1fr auto 1fr;
+      gap: 16px;
+      align-items: center;
+      margin-bottom: 20px;
+    }
+    .decimal-box {
+      background: var(--bg);
+      border: 2px solid var(--border);
+      border-radius: 8px;
+      padding: 16px;
+      font-size: 28px;
+      font-weight: 800;
+      color: var(--cyan);
+    }
+    .compare-sign {
+      font-size: 32px;
+      font-weight: 800;
+      color: var(--text2);
+    }
+    .game-btn {
+      padding: 12px 28px;
+      border-radius: 8px;
+      border: none;
+      background: var(--grad);
+      color: #fff;
+      font-size: 14px;
+      font-weight: 700;
+      font-family: inherit;
+      cursor: pointer;
+      transition: all 0.2s;
+      margin-right: 8px;
+    }
+    .game-btn:hover { transform: translateY(-2px); }
+    .game-btn:active { transform: translateY(0); }
+
+    #feedback {
+      position: fixed;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%) scale(0.8);
+      padding: 24px 48px;
+      border-radius: 20px;
+      font-size: 28px;
+      font-weight: 800;
+      pointer-events: none;
+      opacity: 0;
+      z-index: 9999;
+      transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275), opacity 0.3s;
+      text-align: center;
+      font-family: inherit;
+      backdrop-filter: blur(12px);
+    }
+    #feedback.show {
+      opacity: 1;
+      transform: translate(-50%, -50%) scale(1);
+    }
+    #feedback.correct {
+      background: rgba(0,230,118,0.2);
+      border: 2px solid var(--green);
+      color: var(--green);
+    }
+    #feedback.incorrect {
+      background: rgba(255,59,139,0.2);
+      border: 2px solid var(--pink);
+      color: var(--pink);
+    }
+  </style>
+</head>
+<body>
+
+<div class="vinculum-header">
+  <div class="vinculum-header-left">
+    <a href="../../VINCULUM-Hub.html" class="vinculum-back-btn" aria-label="Back to Hub">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>
+    </a>
+    <div class="vinculum-title-group">
+      <h1 class="vinculum-title">Decimal Place Value</h1>
+      <div class="vinculum-badges">
+        <span class="badge">5.NBT.3, 5.NBT.4</span>
+        <span class="tag">5.1.1.2</span>
+      </div>
+    </div>
+  </div>
+  <div class="vinculum-header-right">
+    <select class="vinculum-theme-select" onchange="document.body.setAttribute('data-theme', this.value)">
+      <option value="">Theme</option>
+      <option value="bright">Bright</option>
+      <option value="redlaser">Red Laser</option>
+      <option value="storm">Storm</option>
+      <option value="frost">Frost</option>
+      <option value="emerald">Emerald</option>
+    </select>
+  </div>
+</div>
+
+<div class="vinculum-mode-tabs">
+  <button class="vinculum-mode-tab active-explore" onclick="switchMode('explore')">📊 Explore</button>
+  <button class="vinculum-mode-tab" onclick="switchMode('practice')">✏️ Practice</button>
+  <button class="vinculum-mode-tab" onclick="switchMode('play')">⚔️ Play</button>
+  <div class="vinculum-diff-selector">
+    <span class="vinculum-diff-label">Level</span>
+    <button class="vinculum-diff-btn active" data-diff="easy" onclick="setDifficulty('easy')">Easy</button>
+    <button class="vinculum-diff-btn" data-diff="medium" onclick="setDifficulty('medium')">Medium</button>
+    <button class="vinculum-diff-btn" data-diff="hard" onclick="setDifficulty('hard')">Hard</button>
+  </div>
+</div>
+
+<div class="main">
+  <!-- EXPLORE MODE -->
+  <div class="mode active" id="explore-mode">
+    <div class="explore-section">
+      <div class="explore-title">📍 Place Value Chart</div>
+      <p style="color: var(--text2); font-size: 14px; margin-bottom: 16px;">Each digit has a place value. Decimals show parts of a whole!</p>
+      <div class="decimal-input-group">
+        <input type="number" id="explore-input" placeholder="Type a decimal (e.g., 45.678)" step="0.001" min="0" max="999">
+        <button class="decompose-btn" onclick="decomposeDecimal()">Decompose</button>
+      </div>
+      <div id="place-chart"></div>
+    </div>
+
+    <div class="explore-section">
+      <div class="explore-title">🔍 Decomposition</div>
+      <div id="decomposition-display"></div>
+    </div>
+  </div>
+
+  <!-- PRACTICE MODE -->
+  <div class="mode" id="practice-mode">
+    <div class="practice-container">
+      <div class="problem-card">
+        <div class="problem-statement" id="practice-statement">Read and write decimals in different forms</div>
+        <input type="text" id="practice-answer" placeholder="Your answer">
+        <button class="submit-btn" onclick="checkPracticeAnswer()">Check</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- PLAY MODE -->
+  <div class="mode" id="play-mode">
+    <div class="game-container">
+      <div class="game-header">
+        <div class="score-display">Score: <span id="game-score">0</span>/5</div>
+      </div>
+      <div class="game-card">
+        <div class="game-question" id="game-question">Which is larger?</div>
+        <div class="decimal-compare">
+          <div class="decimal-box" id="decimal1">2.5</div>
+          <div class="compare-sign">?</div>
+          <div class="decimal-box" id="decimal2">2.45</div>
+        </div>
+        <div>
+          <button class="game-btn" onclick="submitAnswer('<')">&lt;</button>
+          <button class="game-btn" onclick="submitAnswer('=')">=</button>
+          <button class="game-btn" onclick="submitAnswer('>')">&gt;</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div id="feedback"></div>
+
+<script src="../../vinculum-feedback.js"></script>
+<script src="../../vinculum-input.js"></script>
+<script>
+  let difficulty = 'easy';
+  let currentMode = 'explore';
+  let gameScore = 0;
+  let currentGameProblem = null;
+  let currentPracticeProblem = null;
+
+  function decomposeDecimal() {
+    const input = parseFloat(document.getElementById('explore-input').value);
+    if (isNaN(input)) {
+      VinculumFB.show('Enter a valid number', 'incorrect', 1500);
+      return;
+    }
+
+    const str = input.toString();
+    const [whole, decimal] = str.split('.');
+    const wholeDigits = whole.padStart(3, '0').split('');
+    const decimalDigits = (decimal || '000').padEnd(3, '0').split('');
+
+    // Place value chart
+    const chart = document.getElementById('place-chart');
+    let chartHTML = '<div class="place-value-chart">';
+
+    // Whole numbers
+    chartHTML += `<div class="place-cell hundreds"><div class="place-name">Hundreds</div><div class="place-digit">${wholeDigits[0]}</div></div>`;
+    chartHTML += `<div class="place-cell tens"><div class="place-name">Tens</div><div class="place-digit">${wholeDigits[1]}</div></div>`;
+    chartHTML += `<div class="place-cell ones"><div class="place-name">Ones</div><div class="place-digit">${wholeDigits[2]}</div></div>`;
+    chartHTML += `<div style="font-size: 20px; font-weight: 800; color: var(--text); display: flex; align-items: center; justify-content: center;">.</div>`;
+
+    // Decimals
+    chartHTML += `<div class="place-cell tenths"><div class="place-name">Tenths</div><div class="place-digit">${decimalDigits[0]}</div></div>`;
+    chartHTML += `<div class="place-cell hundredths"><div class="place-name">Hundredths</div><div class="place-digit">${decimalDigits[1]}</div></div>`;
+    chartHTML += `<div class="place-cell thousandths"><div class="place-name">Thousandths</div><div class="place-digit">${decimalDigits[2]}</div></div>`;
+    chartHTML += '</div>';
+    chart.innerHTML = chartHTML;
+
+    // Decomposition
+    const decomp = document.getElementById('decomposition-display');
+    decomp.innerHTML = `
+      <div class="decomposition">
+        <div class="decomposition-row">
+          <span><strong>Standard Form:</strong></span>
+          <span style="font-family: 'JetBrains Mono', monospace; font-weight: 600;">${input}</span>
+        </div>
+        <div class="decomposition-row">
+          <span><strong>Expanded Form:</strong></span>
+          <span style="font-family: 'JetBrains Mono', monospace; font-weight: 600;">
+            ${wholeDigits[0]} × 100 + ${wholeDigits[1]} × 10 + ${wholeDigits[2]} × 1 + ${decimalDigits[0]} × 0.1 + ${decimalDigits[1]} × 0.01 + ${decimalDigits[2]} × 0.001
+          </span>
+        </div>
+        <div class="decomposition-row">
+          <span><strong>Word Form:</strong></span>
+          <span>${wholeDigits[0] !== '0' ? wholeDigits[0] + ' hundred' : ''} ${wholeDigits[1] !== '0' ? wholeDigits[1] + ' tens' : ''} ${wholeDigits[2]} and ${decimalDigits[0]} tenths ${decimalDigits[1] !== '0' ? decimalDigits[1] + ' hundredths' : ''} ${decimalDigits[2] !== '0' ? decimalDigits[2] + ' thousandths' : ''}</span>
+        </div>
+      </div>
+    `;
+  }
+
+  function switchMode(mode) {
+    currentMode = mode;
+    document.querySelectorAll('.mode').forEach(el => el.classList.remove('active'));
+    document.getElementById(mode + '-mode').classList.add('active');
+    document.querySelectorAll('.vinculum-mode-tab').forEach(btn => btn.classList.remove('active-explore', 'active-practice', 'active-play'));
+    event.target.classList.add('active-' + mode);
+
+    if (mode === 'explore') {
+      decomposeDecimal();
+    } else if (mode === 'practice') {
+      generatePracticeProblem();
+    } else if (mode === 'play') {
+      generateGameProblem();
+    }
+  }
+
+  function setDifficulty(diff) {
+    difficulty = diff;
+    document.querySelectorAll('.vinculum-diff-btn').forEach(btn => btn.classList.remove('active'));
+    event.target.classList.add('active');
+
+    if (currentMode === 'practice') {
+      generatePracticeProblem();
+    } else if (currentMode === 'play') {
+      generateGameProblem();
+    }
+  }
+
+  const practiceProblems = {
+    easy: [
+      { question: 'What is 3.45 in word form?', answer: 'three and forty-five hundredths', forms: ['standard', 'word'] },
+      { question: 'Write "five and two tenths" as a decimal', answer: '5.2', forms: ['word', 'standard'] },
+      { question: 'What digit is in the tenths place of 7.236?', answer: '2', forms: ['place'] }
+    ],
+    medium: [
+      { question: 'Write 4.567 in expanded form', answer: '4×1 + 5×0.1 + 6×0.01 + 7×0.001', forms: ['expanded'] },
+      { question: 'Round 6.847 to the nearest tenth', answer: '6.8', forms: ['rounding'] },
+      { question: 'Compare: 3.42 ___ 3.420', answer: '=', forms: ['compare'] }
+    ],
+    hard: [
+      { question: 'Write 12.3045 in expanded form with place values', answer: '1×10 + 2×1 + 3×0.1 + 0×0.01 + 4×0.001 + 5×0.0001', forms: ['expanded'] },
+      { question: 'Round 9.8749 to the nearest thousandth', answer: '9.875', forms: ['rounding'] }
+    ]
+  };
+
+  function generatePracticeProblem() {
+    const problems = practiceProblems[difficulty];
+    currentPracticeProblem = problems[Math.floor(Math.random() * problems.length)];
+    document.getElementById('practice-statement').textContent = currentPracticeProblem.question;
+    document.getElementById('practice-answer').value = '';
+    document.getElementById('practice-answer').focus();
+  }
+
+  function checkPracticeAnswer() {
+    const userAnswer = document.getElementById('practice-answer').value.trim().toLowerCase();
+    const correct = userAnswer === currentPracticeProblem.answer.toLowerCase();
+
+    if (correct) {
+      VinculumFB.show('🎉 Correct!', 'correct', 2000);
+      setTimeout(() => generatePracticeProblem(), 2000);
+    } else {
+      VinculumFB.show(`Answer: ${currentPracticeProblem.answer}`, 'incorrect', 2000);
+    }
+  }
+
+  const compareProblems = {
+    easy: [
+      { a: 2.5, b: 2.3, answer: '>' },
+      { a: 1.2, b: 1.20, answer: '=' },
+      { a: 4.7, b: 4.8, answer: '<' }
+    ],
+    medium: [
+      { a: 3.45, b: 3.54, answer: '<' },
+      { a: 5.8, b: 5.08, answer: '>' },
+      { a: 2.34, b: 2.304, answer: '>' }
+    ],
+    hard: [
+      { a: 0.345, b: 0.354, answer: '<' },
+      { a: 7.203, b: 7.230, answer: '<' },
+      { a: 1.5, b: 1.50, answer: '=' }
+    ]
+  };
+
+  function generateGameProblem() {
+    const problems = compareProblems[difficulty];
+    currentGameProblem = problems[Math.floor(Math.random() * problems.length)];
+    document.getElementById('decimal1').textContent = currentGameProblem.a;
+    document.getElementById('decimal2').textContent = currentGameProblem.b;
+  }
+
+  function submitAnswer(sign) {
+    if (!currentGameProblem) return;
+    const correct = sign === currentGameProblem.answer;
+
+    if (correct) {
+      gameScore++;
+      document.getElementById('game-score').textContent = gameScore;
+      VinculumFB.show('✓ Correct!', 'correct', 800);
+      if (gameScore >= 5) {
+        VinculumFB.show('🏆 Perfect!', 'correct', 2000);
+        gameScore = 0;
+        document.getElementById('game-score').textContent = '0';
+      }
+      setTimeout(() => generateGameProblem(), 800);
+    } else {
+      VinculumFB.show('✗ Try again', 'incorrect', 800);
+    }
+  }
+
+  // Initialize on load
+  decomposeDecimal();
+</script>
+
+</body>
+</html>

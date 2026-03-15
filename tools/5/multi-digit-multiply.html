@@ -1,0 +1,644 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>VINCULUM — Multi-Digit Multiplication</title>
+  <link rel="stylesheet" href="../../vinculum-core.css">
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;600&display=swap');
+
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      font-family: 'Inter', sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      height: 100vh;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+      user-select: none;
+    }
+
+    .vinculum-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 12px 24px;
+      background: var(--bg2);
+      border-bottom: 1px solid var(--border);
+      flex-shrink: 0;
+    }
+    .vinculum-header-left {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+    }
+    .vinculum-back-btn {
+      padding: 6px 12px;
+      border-radius: 8px;
+      border: 1px solid var(--border);
+      background: transparent;
+      color: var(--text2);
+      font-size: 13px;
+      font-family: inherit;
+      cursor: pointer;
+      transition: all 0.2s;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .vinculum-back-btn:hover { background: var(--card); color: var(--cyan); }
+    .vinculum-title-group {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+    .vinculum-title {
+      font-size: 20px;
+      font-weight: 800;
+      background: var(--grad);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+    .vinculum-badges {
+      display: flex;
+      gap: 8px;
+    }
+    .badge {
+      font-size: 10px;
+      font-weight: 700;
+      padding: 4px 10px;
+      border-radius: 6px;
+      background: rgba(0,212,255,0.1);
+      color: var(--cyan);
+      border: 1px solid rgba(0,212,255,0.2);
+    }
+    .tag {
+      font-size: 10px;
+      font-weight: 600;
+      padding: 4px 8px;
+      border-radius: 5px;
+      background: rgba(0,212,255,0.08);
+      color: var(--cyan);
+      font-family: 'JetBrains Mono', monospace;
+    }
+    .vinculum-header-right {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+    .vinculum-theme-select {
+      padding: 6px 12px;
+      border-radius: 8px;
+      border: 1px solid var(--border);
+      background: var(--card);
+      color: var(--text2);
+      font-size: 12px;
+      font-family: inherit;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+
+    .vinculum-mode-tabs {
+      display: flex;
+      gap: 4px;
+      padding: 8px 24px;
+      background: var(--bg2);
+      border-bottom: 1px solid var(--border);
+      flex-shrink: 0;
+      align-items: center;
+    }
+    .vinculum-mode-tab {
+      padding: 8px 20px;
+      border-radius: 8px;
+      border: 1px solid transparent;
+      background: transparent;
+      color: var(--muted);
+      font-size: 13px;
+      font-weight: 600;
+      font-family: inherit;
+      cursor: pointer;
+      transition: all 0.2s;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .vinculum-mode-tab:hover { color: var(--text2); background: var(--card); }
+    .vinculum-mode-tab.active-explore { background: rgba(0,212,255,0.1); color: var(--cyan); border-color: rgba(0,212,255,0.3); }
+    .vinculum-mode-tab.active-practice { background: rgba(0,230,118,0.1); color: var(--green); border-color: rgba(0,230,118,0.3); }
+    .vinculum-mode-tab.active-play { background: rgba(255,59,139,0.1); color: var(--pink); border-color: rgba(255,59,139,0.3); }
+
+    .vinculum-diff-selector {
+      margin-left: auto;
+      display: flex;
+      gap: 4px;
+      align-items: center;
+    }
+    .vinculum-diff-label {
+      font-size: 11px;
+      color: var(--muted);
+      margin-right: 8px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+    }
+    .vinculum-diff-btn {
+      padding: 5px 12px;
+      border-radius: 6px;
+      border: 1px solid var(--border);
+      background: transparent;
+      color: var(--muted);
+      font-size: 11px;
+      font-weight: 600;
+      font-family: inherit;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+    .vinculum-diff-btn:hover { color: var(--text2); }
+    .vinculum-diff-btn.active { background: rgba(0,212,255,0.1); color: var(--cyan); border-color: rgba(0,212,255,0.3); }
+
+    .main {
+      flex: 1;
+      overflow-y: auto;
+      padding: 24px;
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 20px;
+    }
+    .main::-webkit-scrollbar { width: 8px; }
+    .main::-webkit-scrollbar-track { background: var(--bg); }
+    .main::-webkit-scrollbar-thumb {
+      background: var(--border);
+      border-radius: 4px;
+    }
+
+    .mode { display: none; }
+    .mode.active { display: block; }
+
+    /* EXPLORE MODE */
+    .explore-section {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 24px;
+    }
+    .explore-title {
+      font-size: 14px;
+      font-weight: 700;
+      color: var(--cyan);
+      margin-bottom: 20px;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+    .area-model {
+      display: grid;
+      gap: 2px;
+      margin-bottom: 20px;
+    }
+    .area-grid {
+      display: grid;
+      grid-template-columns: auto auto auto;
+      gap: 2px;
+    }
+    .area-cell {
+      background: var(--bg);
+      border: 2px solid var(--border);
+      padding: 16px;
+      text-align: center;
+      border-radius: 6px;
+      font-weight: 600;
+    }
+    .area-cell.header {
+      background: var(--bg2);
+      border-color: var(--cyan);
+      color: var(--cyan);
+      font-size: 12px;
+    }
+    .area-cell.label {
+      background: var(--bg2);
+      border-color: var(--border);
+      color: var(--text2);
+      font-size: 12px;
+    }
+    .area-cell.product {
+      background: rgba(0,212,255,0.08);
+      border-color: var(--cyan);
+      color: var(--text);
+      font-size: 18px;
+    }
+
+    /* PRACTICE MODE */
+    .practice-container {
+      max-width: 700px;
+    }
+    .problem-card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 24px;
+      margin-bottom: 20px;
+    }
+    .problem-statement {
+      font-size: 16px;
+      font-weight: 600;
+      color: var(--text);
+      margin-bottom: 20px;
+    }
+    .multiplication-work {
+      background: var(--bg);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 16px;
+      margin-bottom: 16px;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 14px;
+      white-space: pre;
+      line-height: 1.8;
+    }
+    input[type="number"] {
+      padding: 10px 12px;
+      border-radius: 8px;
+      border: 1px solid var(--border);
+      background: var(--bg);
+      color: var(--text);
+      font-size: 14px;
+      font-family: inherit;
+      width: 100%;
+      margin-bottom: 16px;
+    }
+    input:focus {
+      outline: none;
+      border-color: var(--cyan);
+    }
+    .submit-btn {
+      padding: 12px 24px;
+      border-radius: 8px;
+      border: 1px solid var(--green);
+      background: rgba(0,230,118,0.1);
+      color: var(--green);
+      font-size: 14px;
+      font-weight: 600;
+      font-family: inherit;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+    .submit-btn:hover {
+      background: rgba(0,230,118,0.2);
+      transform: translateY(-2px);
+    }
+
+    /* PLAY MODE */
+    .game-container {
+      max-width: 600px;
+      margin: 0 auto;
+    }
+    .game-header {
+      display: flex;
+      justify-content: space-between;
+      margin-bottom: 20px;
+    }
+    .score-display {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 12px 20px;
+      font-size: 14px;
+      font-weight: 600;
+    }
+    .game-card {
+      background: var(--card);
+      border: 2px solid var(--border);
+      border-radius: 12px;
+      padding: 32px;
+      text-align: center;
+      margin-bottom: 20px;
+    }
+    .game-problem {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      gap: 16px;
+      margin-bottom: 20px;
+      font-size: 24px;
+      font-weight: 800;
+    }
+    .game-problem span {
+      color: var(--cyan);
+    }
+    .game-input {
+      padding: 12px 16px;
+      border-radius: 8px;
+      border: 2px solid var(--border);
+      background: var(--bg);
+      color: var(--text);
+      font-size: 18px;
+      font-weight: 600;
+      font-family: 'JetBrains Mono', monospace;
+      text-align: center;
+      margin-bottom: 16px;
+      width: 100%;
+    }
+    .game-input:focus {
+      outline: none;
+      border-color: var(--cyan);
+    }
+    .game-btn {
+      padding: 14px 32px;
+      border-radius: 8px;
+      border: none;
+      background: var(--grad);
+      color: #fff;
+      font-size: 16px;
+      font-weight: 700;
+      font-family: inherit;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+    .game-btn:hover { transform: translateY(-2px); }
+
+    #feedback {
+      position: fixed;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%) scale(0.8);
+      padding: 24px 48px;
+      border-radius: 20px;
+      font-size: 28px;
+      font-weight: 800;
+      pointer-events: none;
+      opacity: 0;
+      z-index: 9999;
+      transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275), opacity 0.3s;
+      text-align: center;
+      font-family: inherit;
+      backdrop-filter: blur(12px);
+    }
+    #feedback.show {
+      opacity: 1;
+      transform: translate(-50%, -50%) scale(1);
+    }
+    #feedback.correct {
+      background: rgba(0,230,118,0.2);
+      border: 2px solid var(--green);
+      color: var(--green);
+    }
+    #feedback.incorrect {
+      background: rgba(255,59,139,0.2);
+      border: 2px solid var(--pink);
+      color: var(--pink);
+    }
+  </style>
+</head>
+<body>
+
+<div class="vinculum-header">
+  <div class="vinculum-header-left">
+    <a href="../../VINCULUM-Hub.html" class="vinculum-back-btn" aria-label="Back to Hub">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>
+    </a>
+    <div class="vinculum-title-group">
+      <h1 class="vinculum-title">Multi-Digit Multiplication</h1>
+      <div class="vinculum-badges">
+        <span class="badge">5.NBT.5</span>
+        <span class="tag">5.1.2.2</span>
+      </div>
+    </div>
+  </div>
+  <div class="vinculum-header-right">
+    <select class="vinculum-theme-select" onchange="document.body.setAttribute('data-theme', this.value)">
+      <option value="">Theme</option>
+      <option value="bright">Bright</option>
+      <option value="redlaser">Red Laser</option>
+      <option value="storm">Storm</option>
+      <option value="frost">Frost</option>
+      <option value="emerald">Emerald</option>
+    </select>
+  </div>
+</div>
+
+<div class="vinculum-mode-tabs">
+  <button class="vinculum-mode-tab active-explore" onclick="switchMode('explore')">📊 Explore</button>
+  <button class="vinculum-mode-tab" onclick="switchMode('practice')">✏️ Practice</button>
+  <button class="vinculum-mode-tab" onclick="switchMode('play')">🧩 Play</button>
+  <div class="vinculum-diff-selector">
+    <span class="vinculum-diff-label">Level</span>
+    <button class="vinculum-diff-btn active" data-diff="easy" onclick="setDifficulty('easy')">Easy</button>
+    <button class="vinculum-diff-btn" data-diff="medium" onclick="setDifficulty('medium')">Medium</button>
+    <button class="vinculum-diff-btn" data-diff="hard" onclick="setDifficulty('hard')">Hard</button>
+  </div>
+</div>
+
+<div class="main">
+  <!-- EXPLORE MODE -->
+  <div class="mode active" id="explore-mode">
+    <div class="explore-section">
+      <div class="explore-title">🔲 Area Model for Multiplication</div>
+      <p style="color: var(--text2); font-size: 14px; margin-bottom: 20px;">Break apart numbers to see how multiplication works. 23 × 14 breaks into 4 parts!</p>
+      <div class="area-grid" id="area-model"></div>
+    </div>
+
+    <div class="explore-section">
+      <div class="explore-title">📐 Partial Products</div>
+      <div id="partial-products" style="font-family: 'JetBrains Mono', monospace; line-height: 2; font-size: 14px;"></div>
+    </div>
+  </div>
+
+  <!-- PRACTICE MODE -->
+  <div class="mode" id="practice-mode">
+    <div class="practice-container">
+      <div class="problem-card">
+        <div class="problem-statement" id="practice-statement">Multiply 23 × 14</div>
+        <div class="multiplication-work" id="work-display"></div>
+        <input type="number" id="practice-answer" placeholder="Enter your answer" min="0">
+        <button class="submit-btn" onclick="checkPracticeAnswer()">Check Answer</button>
+      </div>
+      <div id="hint-area" style="display:none;"></div>
+    </div>
+  </div>
+
+  <!-- PLAY MODE -->
+  <div class="mode" id="play-mode">
+    <div class="game-container">
+      <div class="game-header">
+        <div class="score-display">Score: <span id="game-score">0</span>/5</div>
+      </div>
+      <div class="game-card">
+        <div class="game-problem">
+          <span id="game-num1">23</span>
+          <span>×</span>
+          <span id="game-num2">14</span>
+        </div>
+        <input type="number" class="game-input" id="game-input" placeholder="Answer" min="0" onkeydown="if(event.key==='Enter') submitGameAnswer()">
+        <button class="game-btn" onclick="submitGameAnswer()">Submit</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div id="feedback"></div>
+
+<script src="../../vinculum-feedback.js"></script>
+<script src="../../vinculum-input.js"></script>
+<script>
+  let difficulty = 'easy';
+  let currentMode = 'explore';
+  let gameScore = 0;
+  let currentGameProblem = null;
+  let currentPracticeProblem = null;
+
+  function drawAreaModel(a, b) {
+    const tensA = Math.floor(a / 10);
+    const onesA = a % 10;
+    const tensB = Math.floor(b / 10);
+    const onesB = b % 10;
+
+    const html = `
+      <div class="area-cell header"></div>
+      <div class="area-cell header">${tensB}0</div>
+      <div class="area-cell header">${onesB}</div>
+
+      <div class="area-cell label">${tensA}0</div>
+      <div class="area-cell product">${tensA * tensB * 100}</div>
+      <div class="area-cell product">${tensA * onesB * 10}</div>
+
+      <div class="area-cell label">${onesA}</div>
+      <div class="area-cell product">${onesA * tensB * 10}</div>
+      <div class="area-cell product">${onesA * onesB}</div>
+    `;
+    document.getElementById('area-model').innerHTML = html;
+
+    const partials = `
+${tensA * tensB * 100} (${tensA}0 × ${tensB}0)
+${tensA * onesB * 10} (${tensA}0 × ${onesB})
+${onesA * tensB * 10} (${onesA} × ${tensB}0)
+${onesA * onesB} (${onesA} × ${onesB})
+──────
+${a * b} (Total)
+    `;
+    document.getElementById('partial-products').textContent = partials;
+  }
+
+  function switchMode(mode) {
+    currentMode = mode;
+    document.querySelectorAll('.mode').forEach(el => el.classList.remove('active'));
+    document.getElementById(mode + '-mode').classList.add('active');
+    document.querySelectorAll('.vinculum-mode-tab').forEach(btn => btn.classList.remove('active-explore', 'active-practice', 'active-play'));
+    event.target.classList.add('active-' + mode);
+
+    if (mode === 'explore') {
+      drawAreaModel(23, 14);
+    } else if (mode === 'practice') {
+      generatePracticeProblem();
+    } else if (mode === 'play') {
+      generateGameProblem();
+    }
+  }
+
+  function setDifficulty(diff) {
+    difficulty = diff;
+    document.querySelectorAll('.vinculum-diff-btn').forEach(btn => btn.classList.remove('active'));
+    event.target.classList.add('active');
+
+    if (currentMode === 'practice') {
+      generatePracticeProblem();
+    } else if (currentMode === 'play') {
+      generateGameProblem();
+    }
+  }
+
+  const problems = {
+    easy: [
+      { a: 12, b: 11, answer: 132 },
+      { a: 13, b: 12, answer: 156 },
+      { a: 11, b: 14, answer: 154 },
+      { a: 15, b: 12, answer: 180 },
+      { a: 21, b: 13, answer: 273 }
+    ],
+    medium: [
+      { a: 23, b: 14, answer: 322 },
+      { a: 32, b: 15, answer: 480 },
+      { a: 24, b: 16, answer: 384 },
+      { a: 31, b: 18, answer: 558 },
+      { a: 27, b: 13, answer: 351 }
+    ],
+    hard: [
+      { a: 45, b: 23, answer: 1035 },
+      { a: 52, b: 34, answer: 1768 },
+      { a: 43, b: 26, answer: 1118 },
+      { a: 38, b: 47, answer: 1786 }
+    ]
+  };
+
+  function generatePracticeProblem() {
+    const problemList = problems[difficulty];
+    currentPracticeProblem = problemList[Math.floor(Math.random() * problemList.length)];
+    document.getElementById('practice-statement').textContent = `Multiply ${currentPracticeProblem.a} × ${currentPracticeProblem.b}`;
+    document.getElementById('practice-answer').value = '';
+    document.getElementById('practice-answer').focus();
+    drawAreaModel(currentPracticeProblem.a, currentPracticeProblem.b);
+
+    const workHTML = `
+      ${currentPracticeProblem.a}
+    × ${currentPracticeProblem.b}
+    ─────
+    [Show your work above]
+    `;
+    document.getElementById('work-display').textContent = workHTML;
+  }
+
+  function checkPracticeAnswer() {
+    const userAnswer = parseInt(document.getElementById('practice-answer').value);
+    if (isNaN(userAnswer)) {
+      VinculumFB.show('Enter a number!', 'incorrect', 1500);
+      return;
+    }
+
+    if (userAnswer === currentPracticeProblem.answer) {
+      VinculumFB.show('🎉 Correct!', 'correct', 2000);
+      setTimeout(() => generatePracticeProblem(), 2000);
+    } else {
+      VinculumFB.show(`Answer: ${currentPracticeProblem.answer}`, 'incorrect', 2000);
+    }
+  }
+
+  function generateGameProblem() {
+    const problemList = problems[difficulty];
+    currentGameProblem = problemList[Math.floor(Math.random() * problemList.length)];
+    document.getElementById('game-num1').textContent = currentGameProblem.a;
+    document.getElementById('game-num2').textContent = currentGameProblem.b;
+    document.getElementById('game-input').value = '';
+    document.getElementById('game-input').focus();
+  }
+
+  function submitGameAnswer() {
+    if (!currentGameProblem) return;
+    const userAnswer = parseInt(document.getElementById('game-input').value);
+
+    if (isNaN(userAnswer)) {
+      VinculumFB.show('Enter a number!', 'incorrect', 800);
+      return;
+    }
+
+    if (userAnswer === currentGameProblem.answer) {
+      gameScore++;
+      document.getElementById('game-score').textContent = gameScore;
+      VinculumFB.show('✓ Correct!', 'correct', 800);
+      if (gameScore >= 5) {
+        VinculumFB.show('🏆 Perfect Score!', 'correct', 2000);
+        gameScore = 0;
+        document.getElementById('game-score').textContent = '0';
+      }
+      setTimeout(() => generateGameProblem(), 800);
+    } else {
+      VinculumFB.show('✗ Try again', 'incorrect', 800);
+      document.getElementById('game-input').value = '';
+    }
+  }
+
+  // Initialize on load
+  drawAreaModel(23, 14);
+</script>
+
+</body>
+</html>

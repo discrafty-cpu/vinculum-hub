@@ -1,0 +1,685 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>VINCULUM — Line Plots with Fractions</title>
+  <link rel="stylesheet" href="../../vinculum-core.css">
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap');
+
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      font-family: 'Inter', sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      height: 100vh;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+      user-select: none;
+    }
+
+    .vinculum-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 12px 24px;
+      background: var(--bg2);
+      border-bottom: 1px solid var(--border);
+      flex-shrink: 0;
+    }
+    .vinculum-header-left {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+    }
+    .vinculum-back-btn {
+      padding: 6px 12px;
+      border-radius: 8px;
+      border: 1px solid var(--border);
+      background: transparent;
+      color: var(--text2);
+      font-size: 13px;
+      font-family: inherit;
+      cursor: pointer;
+      transition: all 0.2s;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .vinculum-back-btn:hover { background: var(--card); color: var(--cyan); }
+    .vinculum-title-group {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+    .vinculum-title {
+      font-size: 20px;
+      font-weight: 800;
+      background: var(--grad);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+    .vinculum-badges {
+      display: flex;
+      gap: 8px;
+    }
+    .badge {
+      font-size: 10px;
+      font-weight: 700;
+      padding: 4px 10px;
+      border-radius: 6px;
+      background: rgba(0,212,255,0.1);
+      color: var(--cyan);
+      border: 1px solid rgba(0,212,255,0.2);
+    }
+    .tag {
+      font-size: 10px;
+      font-weight: 600;
+      padding: 4px 8px;
+      border-radius: 5px;
+      background: rgba(0,212,255,0.08);
+      color: var(--cyan);
+      font-family: 'JetBrains Mono', monospace;
+    }
+    .vinculum-header-right {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+    .vinculum-theme-select {
+      padding: 6px 12px;
+      border-radius: 8px;
+      border: 1px solid var(--border);
+      background: var(--card);
+      color: var(--text2);
+      font-size: 12px;
+      font-family: inherit;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+
+    .vinculum-mode-tabs {
+      display: flex;
+      gap: 4px;
+      padding: 8px 24px;
+      background: var(--bg2);
+      border-bottom: 1px solid var(--border);
+      flex-shrink: 0;
+      align-items: center;
+    }
+    .vinculum-mode-tab {
+      padding: 8px 20px;
+      border-radius: 8px;
+      border: 1px solid transparent;
+      background: transparent;
+      color: var(--muted);
+      font-size: 13px;
+      font-weight: 600;
+      font-family: inherit;
+      cursor: pointer;
+      transition: all 0.2s;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .vinculum-mode-tab:hover { color: var(--text2); background: var(--card); }
+    .vinculum-mode-tab.active-explore { background: rgba(0,212,255,0.1); color: var(--cyan); border-color: rgba(0,212,255,0.3); }
+    .vinculum-mode-tab.active-practice { background: rgba(0,230,118,0.1); color: var(--green); border-color: rgba(0,230,118,0.3); }
+    .vinculum-mode-tab.active-play { background: rgba(255,59,139,0.1); color: var(--pink); border-color: rgba(255,59,139,0.3); }
+
+    .vinculum-diff-selector {
+      margin-left: auto;
+      display: flex;
+      gap: 4px;
+      align-items: center;
+    }
+    .vinculum-diff-label {
+      font-size: 11px;
+      color: var(--muted);
+      margin-right: 8px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+    }
+    .vinculum-diff-btn {
+      padding: 5px 12px;
+      border-radius: 6px;
+      border: 1px solid var(--border);
+      background: transparent;
+      color: var(--muted);
+      font-size: 11px;
+      font-weight: 600;
+      font-family: inherit;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+    .vinculum-diff-btn:hover { color: var(--text2); }
+    .vinculum-diff-btn.active { background: rgba(0,212,255,0.1); color: var(--cyan); border-color: rgba(0,212,255,0.3); }
+
+    .main {
+      flex: 1;
+      overflow-y: auto;
+      padding: 24px;
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 20px;
+    }
+    .main::-webkit-scrollbar { width: 8px; }
+    .main::-webkit-scrollbar-track { background: var(--bg); }
+    .main::-webkit-scrollbar-thumb {
+      background: var(--border);
+      border-radius: 4px;
+    }
+    .main::-webkit-scrollbar-thumb:hover { background: var(--muted); }
+
+    .mode { display: none; }
+    .mode.active { display: block; }
+
+    /* EXPLORE MODE */
+    .explore-section {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 24px;
+    }
+    .explore-title {
+      font-size: 14px;
+      font-weight: 700;
+      color: var(--cyan);
+      margin-bottom: 20px;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+    .line-plot-canvas {
+      background: var(--bg);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 20px;
+      margin-bottom: 16px;
+    }
+    svg { width: 100%; height: auto; }
+
+    .fraction-strip {
+      display: flex;
+      gap: 2px;
+      margin: 20px 0;
+      align-items: center;
+    }
+    .strip-label {
+      font-size: 12px;
+      font-weight: 600;
+      color: var(--text2);
+      min-width: 40px;
+    }
+    .fraction-segment {
+      height: 40px;
+      background: var(--grad);
+      border: 1px solid var(--border);
+      border-radius: 4px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: white;
+      font-size: 11px;
+      font-weight: 600;
+      flex: 1;
+    }
+
+    /* PRACTICE MODE */
+    .practice-container {
+      max-width: 700px;
+    }
+    .problem-card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 24px;
+      margin-bottom: 20px;
+    }
+    .problem-statement {
+      font-size: 16px;
+      font-weight: 600;
+      color: var(--text);
+      margin-bottom: 20px;
+    }
+    .answer-options {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+      margin-bottom: 20px;
+    }
+    .option-btn {
+      padding: 12px 16px;
+      border-radius: 8px;
+      border: 1px solid var(--border);
+      background: var(--bg);
+      color: var(--text);
+      font-size: 14px;
+      font-weight: 600;
+      font-family: inherit;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+    .option-btn:hover {
+      background: var(--card2);
+      border-color: var(--cyan);
+      color: var(--cyan);
+    }
+    .option-btn.selected {
+      background: rgba(0,212,255,0.2);
+      border-color: var(--cyan);
+      color: var(--cyan);
+    }
+
+    /* PLAY MODE */
+    .game-container {
+      max-width: 700px;
+      margin: 0 auto;
+    }
+    .game-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 20px;
+    }
+    .score-display {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 12px 20px;
+      font-size: 14px;
+      font-weight: 600;
+    }
+    .game-card {
+      background: var(--card);
+      border: 2px solid var(--border);
+      border-radius: 12px;
+      padding: 24px;
+      margin-bottom: 20px;
+    }
+    .game-question {
+      font-size: 16px;
+      font-weight: 600;
+      color: var(--text);
+      margin-bottom: 20px;
+    }
+    .answer-input {
+      padding: 12px 16px;
+      border-radius: 8px;
+      border: 1px solid var(--border);
+      background: var(--bg);
+      color: var(--text);
+      font-size: 14px;
+      font-family: inherit;
+      margin-bottom: 16px;
+      width: 100%;
+    }
+    .answer-input:focus {
+      outline: none;
+      border-color: var(--cyan);
+    }
+    .game-btn {
+      padding: 14px 32px;
+      border-radius: 8px;
+      border: none;
+      background: var(--grad);
+      color: #fff;
+      font-size: 16px;
+      font-weight: 700;
+      font-family: inherit;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+    .game-btn:hover { transform: translateY(-2px); }
+    .game-btn:active { transform: translateY(0); }
+
+    #feedback {
+      position: fixed;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%) scale(0.8);
+      padding: 24px 48px;
+      border-radius: 20px;
+      font-size: 28px;
+      font-weight: 800;
+      pointer-events: none;
+      opacity: 0;
+      z-index: 9999;
+      transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275), opacity 0.3s;
+      text-align: center;
+      font-family: inherit;
+      backdrop-filter: blur(12px);
+    }
+    #feedback.show {
+      opacity: 1;
+      transform: translate(-50%, -50%) scale(1);
+    }
+    #feedback.correct {
+      background: rgba(0,230,118,0.2);
+      border: 2px solid var(--green);
+      color: var(--green);
+    }
+    #feedback.incorrect {
+      background: rgba(255,59,139,0.2);
+      border: 2px solid var(--pink);
+      color: var(--pink);
+    }
+  </style>
+</head>
+<body>
+
+<div class="vinculum-header">
+  <div class="vinculum-header-left">
+    <a href="../../VINCULUM-Hub.html" class="vinculum-back-btn" aria-label="Back to Hub">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>
+    </a>
+    <div class="vinculum-title-group">
+      <h1 class="vinculum-title">Line Plots with Fractions</h1>
+      <div class="vinculum-badges">
+        <span class="badge">5.MD.2</span>
+        <span class="tag">5.3.3.1</span>
+      </div>
+    </div>
+  </div>
+  <div class="vinculum-header-right">
+    <select class="vinculum-theme-select" onchange="document.body.setAttribute('data-theme', this.value)">
+      <option value="">Theme</option>
+      <option value="bright">Bright</option>
+      <option value="redlaser">Red Laser</option>
+      <option value="storm">Storm</option>
+      <option value="frost">Frost</option>
+      <option value="emerald">Emerald</option>
+    </select>
+  </div>
+</div>
+
+<div class="vinculum-mode-tabs">
+  <button class="vinculum-mode-tab active-explore" onclick="switchMode('explore')">📊 Explore</button>
+  <button class="vinculum-mode-tab" onclick="switchMode('practice')">✏️ Practice</button>
+  <button class="vinculum-mode-tab" onclick="switchMode('play')">🕵️ Play</button>
+  <div class="vinculum-diff-selector">
+    <span class="vinculum-diff-label">Level</span>
+    <button class="vinculum-diff-btn active" data-diff="easy" onclick="setDifficulty('easy')">Easy</button>
+    <button class="vinculum-diff-btn" data-diff="medium" onclick="setDifficulty('medium')">Medium</button>
+    <button class="vinculum-diff-btn" data-diff="hard" onclick="setDifficulty('hard')">Hard</button>
+  </div>
+</div>
+
+<div class="main">
+  <!-- EXPLORE MODE -->
+  <div class="mode active" id="explore-mode">
+    <div class="explore-section">
+      <div class="explore-title">📏 Understanding Line Plots</div>
+      <p style="color: var(--text2); font-size: 14px; margin-bottom: 20px;">A line plot uses an X to show data. Each X represents one measurement.</p>
+      <div class="line-plot-canvas" id="explore-plot"></div>
+    </div>
+
+    <div class="explore-section">
+      <div class="explore-title">🔢 Fraction Segments</div>
+      <p style="color: var(--text2); font-size: 14px; margin-bottom: 20px;">Data is often measured in fractions. Here are common fractions:</p>
+      <div id="fraction-strips"></div>
+    </div>
+  </div>
+
+  <!-- PRACTICE MODE -->
+  <div class="mode" id="practice-mode">
+    <div class="practice-container">
+      <div class="problem-card">
+        <div class="problem-statement" id="practice-statement">What is the total of all measurements?</div>
+        <div id="practice-plot" class="line-plot-canvas" style="margin-bottom: 20px;"></div>
+        <div class="answer-options" id="practice-options"></div>
+        <button class="option-btn" style="grid-column: 1/-1; background: rgba(0,230,118,0.1); border-color: var(--green); color: var(--green);" onclick="checkPracticeAnswer()">Check Answer</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- PLAY MODE -->
+  <div class="mode" id="play-mode">
+    <div class="game-container">
+      <div class="game-header">
+        <div class="score-display">Score: <span id="game-score">0</span>/5</div>
+      </div>
+      <div class="game-card">
+        <div class="game-question" id="game-question">Find the total</div>
+        <div id="game-plot" class="line-plot-canvas" style="margin-bottom: 20px;"></div>
+        <input type="text" class="answer-input" id="game-input" placeholder="Your answer (e.g., 2 1/4)" onkeydown="if(event.key==='Enter') submitGameAnswer()">
+        <button class="game-btn" onclick="submitGameAnswer()">Submit</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div id="feedback"></div>
+
+<script src="../../vinculum-feedback.js"></script>
+<script src="../../vinculum-input.js"></script>
+<script>
+  let difficulty = 'easy';
+  let currentMode = 'explore';
+  let gameScore = 0;
+  let currentGameProblem = null;
+  let selectedAnswer = null;
+
+  function drawLinePlot(containerId, data, title) {
+    const container = document.getElementById(containerId);
+    if (!container) return;
+
+    const width = 600;
+    const height = 150;
+    const margin = { top: 20, right: 20, bottom: 40, left: 40 };
+    const plotWidth = width - margin.left - margin.right;
+    const plotHeight = height - margin.top - margin.bottom;
+
+    let svgContent = `<svg viewBox="0 0 ${width} ${height}" xmlns="http://www.w3.org/2000/svg">`;
+    svgContent += `<style>
+      text { font-family: 'Inter', sans-serif; font-size: 12px; fill: var(--text2); }
+      .tick-label { font-size: 11px; }
+      .title { font-size: 14px; font-weight: 600; fill: var(--text); }
+    </style>`;
+
+    // Background
+    svgContent += `<rect width="${width}" height="${height}" fill="var(--bg)" />`;
+
+    // Axes
+    svgContent += `<line x1="${margin.left}" y1="${height - margin.bottom}" x2="${width - margin.right}" y2="${height - margin.bottom}" stroke="var(--border)" stroke-width="2" />`;
+    svgContent += `<line x1="${margin.left}" y1="${margin.top}" x2="${margin.left}" y2="${height - margin.bottom}" stroke="var(--border)" stroke-width="2" />`;
+
+    // Tick marks and labels
+    const maxValue = Math.max(...data.map(d => typeof d === 'number' ? d : parseFloat(d))) + 0.5;
+    const tickCount = 8;
+    const tickInterval = maxValue / tickCount;
+
+    for (let i = 0; i <= tickCount; i++) {
+      const x = margin.left + (i / tickCount) * plotWidth;
+      const value = (i * tickInterval).toFixed(2);
+      svgContent += `<line x1="${x}" y1="${height - margin.bottom}" x2="${x}" y2="${height - margin.bottom + 5}" stroke="var(--muted)" stroke-width="1" />`;
+      svgContent += `<text x="${x}" y="${height - margin.bottom + 20}" text-anchor="middle" class="tick-label">${parseFloat(value).toString()}</text>`;
+    }
+
+    // Plot data points as X's
+    data.forEach((value, index) => {
+      const numValue = typeof value === 'number' ? value : parseFloat(value);
+      const x = margin.left + (numValue / maxValue) * plotWidth;
+      const y = height - margin.bottom - 20 - (index % 4) * 20;
+
+      // Draw X
+      const size = 10;
+      svgContent += `<line x1="${x - size}" y1="${y - size}" x2="${x + size}" y2="${y + size}" stroke="var(--cyan)" stroke-width="2" />`;
+      svgContent += `<line x1="${x - size}" y1="${y + size}" x2="${x + size}" y2="${y - size}" stroke="var(--cyan)" stroke-width="2" />`;
+    });
+
+    svgContent += `</svg>`;
+    container.innerHTML = svgContent;
+  }
+
+  const problems = {
+    easy: [
+      { data: [0.5, 0.5, 0.5, 1], answer: 2.5, question: 'What is the total of all measurements?' },
+      { data: [0.25, 0.25, 0.25, 0.25], answer: 1, question: 'Find the sum' },
+      { data: [0.5, 1, 1.5], answer: 3, question: 'Add all the values' }
+    ],
+    medium: [
+      { data: [0.25, 0.75, 1.25, 0.5, 1], answer: 3.75, question: 'What is the total?' },
+      { data: [0.5, 1.5, 2, 0.75], answer: 4.75, question: 'Find the sum' },
+      { data: [0.125, 0.25, 0.375, 0.5], answer: 1.25, question: 'Add the measurements' }
+    ],
+    hard: [
+      { data: [0.125, 0.375, 0.625, 1.125, 0.75], answer: 3, question: 'Calculate the total' },
+      { data: [1.25, 0.875, 1.625, 0.75], answer: 4.5, question: 'What is the sum?' }
+    ]
+  };
+
+  function switchMode(mode) {
+    currentMode = mode;
+    document.querySelectorAll('.mode').forEach(el => el.classList.remove('active'));
+    document.getElementById(mode + '-mode').classList.add('active');
+    document.querySelectorAll('.vinculum-mode-tab').forEach(btn => btn.classList.remove('active-explore', 'active-practice', 'active-play'));
+    event.target.classList.add('active-' + mode);
+
+    if (mode === 'explore') {
+      initExplore();
+    } else if (mode === 'practice') {
+      generatePracticeProblem();
+    } else if (mode === 'play') {
+      resetGame();
+      generateGameProblem();
+    }
+  }
+
+  function setDifficulty(diff) {
+    difficulty = diff;
+    document.querySelectorAll('.vinculum-diff-btn').forEach(btn => btn.classList.remove('active'));
+    event.target.classList.add('active');
+
+    if (currentMode === 'practice') {
+      generatePracticeProblem();
+    } else if (currentMode === 'play') {
+      generateGameProblem();
+    }
+  }
+
+  function initExplore() {
+    drawLinePlot('explore-plot', [0.5, 1, 1.5, 2], 'Sample Line Plot');
+
+    const fractionStrips = document.getElementById('fraction-strips');
+    fractionStrips.innerHTML = `
+      <div class="fraction-strip">
+        <div class="strip-label">1/4:</div>
+        <div class="fraction-segment">1/4</div>
+        <div class="fraction-segment">1/4</div>
+        <div class="fraction-segment">1/4</div>
+        <div class="fraction-segment">1/4</div>
+        <div style="color: var(--text2); font-size: 12px; margin-left: 12px;">= 1 whole</div>
+      </div>
+      <div class="fraction-strip">
+        <div class="strip-label">1/2:</div>
+        <div class="fraction-segment" style="flex: 2;">1/2</div>
+        <div class="fraction-segment" style="flex: 2;">1/2</div>
+        <div style="color: var(--text2); font-size: 12px; margin-left: 12px;">= 1 whole</div>
+      </div>
+      <div class="fraction-strip">
+        <div class="strip-label">1/8:</div>
+        <div class="fraction-segment">1/8</div>
+        <div class="fraction-segment">1/8</div>
+        <div class="fraction-segment">1/8</div>
+        <div class="fraction-segment">1/8</div>
+        <div class="fraction-segment">1/8</div>
+        <div class="fraction-segment">1/8</div>
+        <div class="fraction-segment">1/8</div>
+        <div class="fraction-segment">1/8</div>
+        <div style="color: var(--text2); font-size: 12px; margin-left: 12px;">= 1 whole</div>
+      </div>
+    `;
+  }
+
+  function generatePracticeProblem() {
+    const problemList = problems[difficulty];
+    const problem = problemList[Math.floor(Math.random() * problemList.length)];
+    document.getElementById('practice-statement').textContent = problem.question;
+    drawLinePlot('practice-plot', problem.data);
+
+    const options = document.getElementById('practice-options');
+    const answers = [problem.answer];
+    for (let i = 0; i < 3; i++) {
+      answers.push(problem.answer + (Math.random() - 0.5) * 2);
+    }
+    answers.sort(() => Math.random() - 0.5);
+
+    options.innerHTML = answers.map((ans, idx) => `
+      <button class="option-btn" onclick="selectAnswer(${ans}, ${problem.answer})">
+        ${ans.toFixed(2)}
+      </button>
+    `).join('');
+
+    document.getElementById('practice-options').dataset.correct = problem.answer;
+    selectedAnswer = null;
+  }
+
+  function selectAnswer(value, correct) {
+    selectedAnswer = value;
+    document.querySelectorAll('.option-btn').forEach(btn => btn.classList.remove('selected'));
+    event.target.classList.add('selected');
+  }
+
+  function checkPracticeAnswer() {
+    if (selectedAnswer === null) {
+      VinculumFB.show('Select an answer!', 'incorrect', 1500);
+      return;
+    }
+    const correct = parseFloat(document.getElementById('practice-options').dataset.correct);
+    if (Math.abs(selectedAnswer - correct) < 0.01) {
+      VinculumFB.show('🎉 Correct!', 'correct', 2000);
+      setTimeout(() => generatePracticeProblem(), 2000);
+    } else {
+      VinculumFB.show('Try again!', 'incorrect', 1500);
+    }
+  }
+
+  function generateGameProblem() {
+    const problemList = problems[difficulty];
+    currentGameProblem = problemList[Math.floor(Math.random() * problemList.length)];
+    document.getElementById('game-question').textContent = currentGameProblem.question;
+    drawLinePlot('game-plot', currentGameProblem.data);
+    document.getElementById('game-input').value = '';
+    document.getElementById('game-input').focus();
+  }
+
+  function submitGameAnswer() {
+    if (!currentGameProblem) return;
+    const userInput = document.getElementById('game-input').value.trim();
+    const userAnswer = parseFloat(userInput);
+
+    if (isNaN(userAnswer)) {
+      VinculumFB.show('Invalid input', 'incorrect', 1000);
+      return;
+    }
+
+    if (Math.abs(userAnswer - currentGameProblem.answer) < 0.01) {
+      gameScore++;
+      document.getElementById('game-score').textContent = gameScore;
+      VinculumFB.show('✓ Correct!', 'correct', 800);
+      if (gameScore >= 5) {
+        VinculumFB.show('🏆 All correct!', 'correct', 2000);
+        resetGame();
+      } else {
+        setTimeout(() => generateGameProblem(), 800);
+      }
+    } else {
+      VinculumFB.show('✗ Try again', 'incorrect', 800);
+      document.getElementById('game-input').value = '';
+    }
+  }
+
+  function resetGame() {
+    gameScore = 0;
+    document.getElementById('game-score').textContent = '0';
+  }
+
+  // Initialize on load
+  initExplore();
+</script>
+
+</body>
+</html>
