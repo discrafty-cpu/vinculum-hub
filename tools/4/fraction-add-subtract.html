@@ -1,0 +1,746 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Fraction Add & Subtract</title>
+    <link rel="stylesheet" href="../../vinculum-core.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700;900&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+    <style>
+        * { box-sizing: border-box; }
+        body {
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+            background: var(--bg);
+            color: var(--text);
+            font-family: 'Inter', sans-serif;
+            user-select: none;
+            margin: 0;
+            padding: 0;
+        }
+        .header {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            padding: 1.5rem;
+            background: linear-gradient(135deg, var(--green), var(--red));
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+        .back-btn {
+            background: rgba(255,255,255,0.2);
+            border: none;
+            color: white;
+            width: 44px;
+            height: 44px;
+            border-radius: 8px;
+            font-size: 1.5rem;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.2s;
+        }
+        .back-btn:hover { background: rgba(255,255,255,0.3); }
+        .back-btn:focus-visible { outline: 2px solid white; outline-offset: 2px; }
+        .header-title {
+            flex: 1;
+            color: white;
+            font-size: 1.5rem;
+            font-weight: 700;
+            margin: 0;
+        }
+        .grade-badge {
+            background: rgba(255,255,255,0.3);
+            color: white;
+            padding: 0.4rem 0.8rem;
+            border-radius: 6px;
+            font-size: 0.85rem;
+            font-weight: 600;
+            text-transform: uppercase;
+        }
+        .tabs {
+            display: flex;
+            gap: 0.5rem;
+            padding: 1rem;
+            background: var(--bg2);
+            border-bottom: 1px solid var(--border);
+        }
+        .tab {
+            padding: 0.6rem 1.2rem;
+            background: transparent;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 0.95rem;
+            font-weight: 600;
+            color: var(--text2);
+            transition: all 0.2s;
+        }
+        .tab.active {
+            background: var(--card);
+            color: var(--cyan);
+        }
+        .tab:hover { background: var(--card); }
+        .tab:focus-visible { outline: 2px solid var(--cyan); outline-offset: 2px; }
+        .container {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            overflow-y: auto;
+            padding: 1.5rem;
+            gap: 1rem;
+        }
+        .mode { display: none; }
+        .mode.active { display: flex; flex-direction: column; gap: 1rem; }
+        .card {
+            background: var(--card);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 1.5rem;
+            box-shadow: 0 2px 6px rgba(0,0,0,0.05);
+        }
+        .label {
+            font-size: 0.95rem;
+            font-weight: 600;
+            color: var(--text);
+            margin-bottom: 0.5rem;
+        }
+        .slider-group {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            margin: 1rem 0;
+        }
+        .slider-group input[type="range"] {
+            flex: 1;
+            cursor: pointer;
+            accent-color: var(--cyan);
+        }
+        .slider-value {
+            min-width: 50px;
+            text-align: center;
+            font-weight: 600;
+            color: var(--cyan);
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 1rem;
+        }
+        .operation-type {
+            display: flex;
+            gap: 0.8rem;
+            margin: 1rem 0;
+        }
+        .op-btn {
+            padding: 0.6rem 1.2rem;
+            background: var(--bg2);
+            border: 2px solid var(--border);
+            border-radius: 6px;
+            cursor: pointer;
+            font-weight: 600;
+            font-size: 1rem;
+            transition: all 0.2s;
+        }
+        .op-btn.active {
+            background: var(--cyan);
+            color: white;
+            border-color: var(--cyan);
+        }
+        .op-btn:hover { border-color: var(--cyan); }
+        .visual-section {
+            display: flex;
+            flex-direction: column;
+            gap: 1.5rem;
+            margin: 1.5rem 0;
+            align-items: center;
+        }
+        .bar-group {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            flex-wrap: wrap;
+            justify-content: center;
+        }
+        .bar-set {
+            display: flex;
+            gap: 0.3rem;
+        }
+        .whole {
+            width: 50px;
+            height: 40px;
+            background: var(--bg2);
+            border: 2px solid var(--border);
+            border-radius: 4px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1rem;
+            font-weight: 700;
+            color: var(--text);
+            margin-right: 0.3rem;
+        }
+        .bar {
+            display: flex;
+            gap: 2px;
+        }
+        .segment {
+            width: 20px;
+            height: 40px;
+            background: var(--cyan);
+            border-radius: 2px;
+            transition: all 0.3s;
+        }
+        .segment.filled { background: var(--green); }
+        .segment.result { background: var(--red); }
+        .operation-label {
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: var(--text2);
+        }
+        .equation-section {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            justify-content: center;
+            flex-wrap: wrap;
+            font-size: 1.2rem;
+            font-weight: 600;
+            font-family: 'JetBrains Mono', monospace;
+        }
+        .equation-part {
+            color: var(--text);
+        }
+        .equation-op {
+            color: var(--text2);
+        }
+        .question {
+            font-size: 1.1rem;
+            font-weight: 600;
+            color: var(--text);
+            margin-bottom: 1rem;
+        }
+        .input-group {
+            display: flex;
+            gap: 0.8rem;
+            align-items: center;
+            margin: 1rem 0;
+            flex-wrap: wrap;
+        }
+        input[type="number"] {
+            width: 80px;
+            padding: 0.6rem;
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            font-size: 0.95rem;
+            background: var(--bg);
+            color: var(--text);
+            font-family: 'JetBrains Mono', monospace;
+        }
+        input[type="number"]:focus-visible {
+            outline: 2px solid var(--cyan);
+            outline-offset: 2px;
+        }
+        .button-group {
+            display: flex;
+            gap: 0.8rem;
+            margin-top: 1rem;
+            flex-wrap: wrap;
+        }
+        .btn {
+            padding: 0.7rem 1.4rem;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 0.95rem;
+            font-weight: 600;
+            transition: all 0.2s;
+        }
+        .btn-primary {
+            background: var(--cyan);
+            color: white;
+            flex: 1;
+            min-width: 120px;
+        }
+        .btn-primary:hover { background: var(--green); }
+        .btn-secondary {
+            background: var(--bg2);
+            color: var(--text);
+            border: 1px solid var(--border);
+            flex: 1;
+            min-width: 100px;
+        }
+        .btn-secondary:hover { background: var(--card); }
+        .btn:focus-visible { outline: 2px solid var(--cyan); outline-offset: 2px; }
+        .feedback {
+            position: fixed;
+            top: 2rem;
+            right: 2rem;
+            padding: 1rem 1.5rem;
+            background: var(--card);
+            border: 2px solid var(--border);
+            border-radius: 8px;
+            font-weight: 600;
+            opacity: 0;
+            transform: translateY(-20px);
+            transition: all 0.3s;
+            pointer-events: none;
+            z-index: 1000;
+        }
+        .feedback.show {
+            opacity: 1;
+            transform: translateY(0);
+        }
+        .feedback.correct {
+            border-color: var(--green);
+            color: var(--green);
+        }
+        .feedback.incorrect {
+            border-color: var(--red);
+            color: var(--red);
+        }
+        .stats {
+            display: flex;
+            gap: 1.5rem;
+            padding: 1rem;
+            background: var(--bg2);
+            border-radius: 8px;
+            justify-content: center;
+        }
+        .stat {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+        .stat-value {
+            font-size: 1.8rem;
+            font-weight: 700;
+            color: var(--cyan);
+            font-family: 'JetBrains Mono', monospace;
+        }
+        .stat-label {
+            font-size: 0.8rem;
+            color: var(--text2);
+            text-transform: uppercase;
+            margin-top: 0.2rem;
+        }
+        .cultural-note {
+            background: rgba(200, 100, 0, 0.1);
+            border-left: 4px solid var(--red);
+            padding: 0.8rem;
+            border-radius: 4px;
+            font-size: 0.9rem;
+            color: var(--text2);
+            margin-top: 1rem;
+        }
+        .sr-only {
+            position: absolute;
+            width: 1px;
+            height: 1px;
+            padding: 0;
+            margin: -1px;
+            overflow: hidden;
+            clip: rect(0,0,0,0);
+            border: 0;
+        }
+    </style>
+</head>
+<body>
+    <header class="header">
+        <a href="../../VINCULUM-Hub.html" class="back-btn" aria-label="Back to hub">←</a>
+        <h1 class="header-title">Fraction Add & Subtract</h1>
+        <div class="grade-badge">Grade 4</div>
+    </header>
+
+    <div class="tabs">
+        <button class="tab active" data-mode="explore">Explore</button>
+        <button class="tab" data-mode="practice">Practice</button>
+        <button class="tab" data-mode="play">Play</button>
+    </div>
+
+    <div class="container">
+        <div id="feedback" class="feedback"></div>
+
+        <!-- EXPLORE MODE -->
+        <div class="mode active" data-mode="explore">
+            <div class="card">
+                <div class="label">Choose an operation and adjust values</div>
+                <div class="operation-type">
+                    <button class="op-btn active" data-op="add">+ Addition</button>
+                    <button class="op-btn" data-op="sub">− Subtraction</button>
+                </div>
+                <div class="slider-group">
+                    <span>First Fraction</span>
+                    <input type="range" id="exploreNum1" min="1" max="4" value="2">
+                    <span class="slider-value" id="exploreNum1Val">2</span>
+                    <span>/</span>
+                    <input type="range" id="exploreDen1" min="2" max="8" value="4">
+                    <span class="slider-value" id="exploreDen1Val">4</span>
+                </div>
+                <div class="slider-group">
+                    <span>Second Fraction</span>
+                    <input type="range" id="exploreNum2" min="1" max="4" value="1">
+                    <span class="slider-value" id="exploreNum2Val">1</span>
+                    <span>/</span>
+                    <input type="range" id="exploreDen2" min="2" max="8" value="4">
+                    <span class="slider-value" id="exploreDen2Val">4</span>
+                </div>
+            </div>
+
+            <div class="card">
+                <div class="label">Visual Model</div>
+                <div class="visual-section" id="exploreVisual"></div>
+                <div class="equation-section" id="exploreEquation"></div>
+                <div class="cultural-note">
+                    🍚 <strong>Indigenous Knowledge:</strong> A wild rice recipe calls for 3/4 cup of rice and 2/4 cup of berries. How much food is that altogether? Cooking brings families together.
+                    <!-- INDIGENOUS: nation=Anishinaabe, context=recipe_scaling -->
+                </div>
+            </div>
+        </div>
+
+        <!-- PRACTICE MODE -->
+        <div class="mode" data-mode="practice">
+            <div class="card">
+                <div class="question" id="practiceQuestion"></div>
+                <div class="visual-section" id="practiceVisual"></div>
+                <div class="input-group">
+                    <span style="min-width: 60px;">Answer:</span>
+                    <input type="number" id="practiceNum" min="1" max="20" placeholder="num">
+                    <span>/</span>
+                    <input type="number" id="practiceDen" min="1" max="20" placeholder="den">
+                </div>
+                <div class="button-group">
+                    <button class="btn btn-primary" id="checkBtn">Check Answer</button>
+                    <button class="btn btn-secondary" id="nextBtn" style="display: none;">Next Problem</button>
+                </div>
+            </div>
+            <div class="stats">
+                <div class="stat">
+                    <div class="stat-value" id="practiceScore">0</div>
+                    <div class="stat-label">Correct</div>
+                </div>
+                <div class="stat">
+                    <div class="stat-value" id="practiceTotal">0</div>
+                    <div class="stat-label">Total</div>
+                </div>
+                <div class="stat">
+                    <div class="stat-value" id="practiceStreak">0</div>
+                    <div class="stat-label">Streak</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- PLAY MODE -->
+        <div class="mode" data-mode="play">
+            <div class="card">
+                <div class="question" id="playQuestion"></div>
+                <div class="visual-section" id="playVisual" style="margin: 1.5rem 0;"></div>
+                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(120px, 1fr)); gap: 0.8rem; margin: 1.5rem 0;">
+                    <button class="btn btn-secondary" id="playOpt1" style="padding: 1rem;"></button>
+                    <button class="btn btn-secondary" id="playOpt2" style="padding: 1rem;"></button>
+                    <button class="btn btn-secondary" id="playOpt3" style="padding: 1rem;"></button>
+                    <button class="btn btn-secondary" id="playOpt4" style="padding: 1rem;"></button>
+                </div>
+                <button class="btn btn-secondary" id="playSkip" style="width: 100%;">Skip</button>
+            </div>
+            <div class="stats">
+                <div class="stat">
+                    <div class="stat-value" id="playScore">0</div>
+                    <div class="stat-label">Correct</div>
+                </div>
+                <div class="stat">
+                    <div class="stat-value" id="playTotal">0</div>
+                    <div class="stat-label">Total</div>
+                </div>
+                <div class="stat">
+                    <div class="stat-value" id="playStreak">0</div>
+                    <div class="stat-label">Streak</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const S = { mode: 'explore', diff: 'emergent', score: 0, total: 0, streak: 0, answers: [], op: 'add' };
+
+        function showFB(t, c) {
+            const f = document.getElementById("feedback");
+            if (!f) return;
+            f.textContent = t;
+            f.className = "feedback " + c + " show";
+            setTimeout(function() { f.classList.remove("show"); }, 1200);
+        }
+
+        function drawBars(num, den, color) {
+            let html = '';
+            if (num > den) {
+                const wholes = Math.floor(num / den);
+                const remainder = num % den;
+                for (let w = 0; w < wholes; w++) {
+                    html += '<div class="bar-set">';
+                    for (let i = 0; i < den; i++) {
+                        html += `<div class="segment filled" style="background: ${color};"></div>`;
+                    }
+                    html += '</div>';
+                }
+                if (remainder > 0) {
+                    html += '<div class="bar-set">';
+                    for (let i = 0; i < den; i++) {
+                        html += `<div class="segment ${i < remainder ? 'filled' : ''}" style="background: ${i < remainder ? color : 'var(--bg2)'};"></div>`;
+                    }
+                    html += '</div>';
+                }
+            } else {
+                html += '<div class="bar-set">';
+                for (let i = 0; i < den; i++) {
+                    html += `<div class="segment ${i < num ? 'filled' : ''}" style="background: ${i < num ? color : 'var(--bg2)'};"></div>`;
+                }
+                html += '</div>';
+            }
+            return html;
+        }
+
+        // Tab switching
+        document.querySelectorAll('.tab').forEach(tab => {
+            tab.addEventListener('click', function() {
+                const newMode = this.dataset.mode;
+                document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+                this.classList.add('active');
+                document.querySelectorAll('.mode').forEach(m => m.classList.remove('active'));
+                document.querySelector(`.mode[data-mode="${newMode}"]`).classList.add('active');
+                S.mode = newMode;
+                if (newMode === 'practice') initPractice();
+                if (newMode === 'play') initPlay();
+            });
+        });
+
+        // Operation type switching
+        document.querySelectorAll('.op-btn').forEach(btn => {
+            btn.addEventListener('click', function() {
+                document.querySelectorAll('.op-btn').forEach(b => b.classList.remove('active'));
+                this.classList.add('active');
+                S.op = this.dataset.op;
+                updateExplore();
+            });
+        });
+
+        // EXPLORE MODE
+        const exploreInputs = ['exploreNum1', 'exploreDen1', 'exploreNum2', 'exploreDen2'];
+        exploreInputs.forEach(id => {
+            document.getElementById(id).addEventListener('input', updateExplore);
+        });
+
+        function updateExplore() {
+            const n1 = parseInt(document.getElementById('exploreNum1').value);
+            const d1 = parseInt(document.getElementById('exploreDen1').value);
+            const n2 = parseInt(document.getElementById('exploreNum2').value);
+            const d2 = parseInt(document.getElementById('exploreDen2').value);
+
+            document.getElementById('exploreNum1Val').textContent = n1;
+            document.getElementById('exploreDen1Val').textContent = d1;
+            document.getElementById('exploreNum2Val').textContent = n2;
+            document.getElementById('exploreDen2Val').textContent = d2;
+
+            let visual = '<div class="bar-group">' + drawBars(n1, d1, 'var(--cyan)') + '</div>';
+            visual += '<div class="operation-label">' + (S.op === 'add' ? '+' : '−') + '</div>';
+            visual += '<div class="bar-group">' + drawBars(n2, d2, 'var(--green)') + '</div>';
+            visual += '<div class="operation-label">=</div>';
+
+            let resultNum, resultDen;
+            if (d1 === d2) {
+                resultNum = S.op === 'add' ? n1 + n2 : n1 - n2;
+                resultDen = d1;
+            } else {
+                const lcm = (d1 * d2) / gcd(d1, d2);
+                const newN1 = n1 * (lcm / d1);
+                const newN2 = n2 * (lcm / d2);
+                resultNum = S.op === 'add' ? newN1 + newN2 : newN1 - newN2;
+                resultDen = lcm;
+            }
+
+            visual += '<div class="bar-group">' + drawBars(resultNum, resultDen, 'var(--red)') + '</div>';
+            document.getElementById('exploreVisual').innerHTML = visual;
+
+            const opStr = S.op === 'add' ? '+' : '−';
+            document.getElementById('exploreEquation').innerHTML =
+                `<span class="equation-part">${n1}/${d1}</span> <span class="equation-op">${opStr}</span> <span class="equation-part">${n2}/${d2}</span> <span class="equation-op">=</span> <span class="equation-part">${resultNum}/${resultDen}</span>`;
+        }
+
+        function gcd(a, b) {
+            return b === 0 ? a : gcd(b, a % b);
+        }
+
+        // PRACTICE MODE
+        const practiceProblems = [
+            { n1: 1, d1: 4, n2: 2, d2: 4, op: 'add' },
+            { n1: 3, d1: 4, n2: 1, d2: 4, op: 'add' },
+            { n1: 2, d1: 4, n2: 1, d2: 4, op: 'sub' },
+            { n1: 3, d1: 8, n2: 1, d2: 8, op: 'add' },
+            { n1: 5, d1: 8, n2: 2, d2: 8, op: 'sub' },
+        ];
+
+        let practiceProblemIdx = 0;
+
+        function initPractice() {
+            practiceProblemIdx = 0;
+            S.score = 0;
+            S.total = 0;
+            S.streak = 0;
+            updatePracticeStats();
+            generatePracticeProblem();
+        }
+
+        function generatePracticeProblem() {
+            const p = practiceProblems[practiceProblemIdx % practiceProblems.length];
+            const opStr = p.op === 'add' ? '+' : '−';
+            document.getElementById('practiceQuestion').textContent = `${p.n1}/${p.d1} ${opStr} ${p.n2}/${p.d2} = ?`;
+
+            let visual = '<div class="bar-group">' + drawBars(p.n1, p.d1, 'var(--cyan)') + '</div>';
+            visual += '<div class="operation-label">' + (p.op === 'add' ? '+' : '−') + '</div>';
+            visual += '<div class="bar-group">' + drawBars(p.n2, p.d2, 'var(--green)') + '</div>';
+            document.getElementById('practiceVisual').innerHTML = visual;
+
+            let resultNum;
+            if (p.op === 'add') {
+                resultNum = p.n1 + p.n2;
+            } else {
+                resultNum = p.n1 - p.n2;
+            }
+            const resultDen = p.d1;
+
+            document.getElementById('practiceNum').value = '';
+            document.getElementById('practiceDen').value = '';
+            document.getElementById('practiceNum').focus();
+            document.getElementById('checkBtn').style.display = 'inline-block';
+            document.getElementById('nextBtn').style.display = 'none';
+
+            document.getElementById('checkBtn').onclick = function() {
+                const ansNum = parseInt(document.getElementById('practiceNum').value);
+                const ansDen = parseInt(document.getElementById('practiceDen').value);
+                if (ansNum === resultNum && ansDen === resultDen) {
+                    showFB('✓ Correct!', 'correct');
+                    S.score++;
+                    S.streak++;
+                    S.answers.push(1);
+                } else {
+                    showFB('✗ Try again! The answer is ' + resultNum + '/' + resultDen, 'incorrect');
+                    S.streak = 0;
+                    S.answers.push(0);
+                }
+                S.total++;
+                updatePracticeStats();
+                adaptDifficulty();
+                document.getElementById('checkBtn').style.display = 'none';
+                document.getElementById('nextBtn').style.display = 'inline-block';
+            };
+
+            document.getElementById('nextBtn').onclick = function() {
+                practiceProblemIdx++;
+                generatePracticeProblem();
+            };
+        }
+
+        function updatePracticeStats() {
+            document.getElementById('practiceScore').textContent = S.score;
+            document.getElementById('practiceTotal').textContent = S.total;
+            document.getElementById('practiceStreak').textContent = S.streak;
+        }
+
+        // PLAY MODE
+        let playProblemIdx = 0;
+        const playProblems = [
+            { n1: 1, d1: 4, n2: 2, d2: 4, op: 'add', ans: '3/4' },
+            { n1: 3, d1: 8, n2: 1, d2: 8, op: 'add', ans: '4/8' },
+            { n1: 3, d1: 4, n2: 1, d2: 4, op: 'sub', ans: '2/4' },
+            { n1: 5, d1: 8, n2: 2, d2: 8, op: 'sub', ans: '3/8' },
+            { n1: 2, d1: 6, n2: 1, d2: 6, op: 'add', ans: '3/6' },
+        ];
+
+        function initPlay() {
+            playProblemIdx = 0;
+            S.score = 0;
+            S.total = 0;
+            S.streak = 0;
+            updatePlayStats();
+            generatePlayProblem();
+        }
+
+        function generatePlayProblem() {
+            const p = playProblems[playProblemIdx % playProblems.length];
+            const opStr = p.op === 'add' ? '+' : '−';
+            document.getElementById('playQuestion').textContent = `${p.n1}/${p.d1} ${opStr} ${p.n2}/${p.d2} = ?`;
+
+            let visual = '<div class="bar-group">' + drawBars(p.n1, p.d1, 'var(--cyan)') + '</div>';
+            visual += '<div class="operation-label">' + (p.op === 'add' ? '+' : '−') + '</div>';
+            visual += '<div class="bar-group">' + drawBars(p.n2, p.d2, 'var(--green)') + '</div>';
+            document.getElementById('playVisual').innerHTML = visual;
+
+            const opts = [p.ans];
+            if (p.op === 'add') {
+                opts.push((p.n1 + p.n2 - 1) + '/' + p.d1);
+                opts.push((p.n1 + p.n2 + 1) + '/' + p.d1);
+            } else {
+                opts.push((p.n1 - p.n2 + 1) + '/' + p.d1);
+                opts.push((p.n1 - p.n2 - 1) + '/' + p.d1);
+            }
+            opts.push((p.n1 + p.n2) + '/' + (p.d1 + p.d2));
+
+            const shuffled = opts.sort(() => Math.random() - 0.5);
+            ['playOpt1', 'playOpt2', 'playOpt3', 'playOpt4'].forEach((id, i) => {
+                const btn = document.getElementById(id);
+                btn.textContent = shuffled[i];
+                btn.className = 'btn btn-secondary';
+                btn.style.padding = '1rem';
+                btn.onclick = function() {
+                    if (shuffled[i] === p.ans) {
+                        showFB('✓ Correct!', 'correct');
+                        S.score++;
+                        S.streak++;
+                        btn.style.background = 'var(--green)';
+                    } else {
+                        showFB('✗ Try again!', 'incorrect');
+                        S.streak = 0;
+                        btn.style.background = 'var(--red)';
+                    }
+                    S.total++;
+                    updatePlayStats();
+                    adaptDifficulty();
+                    setTimeout(() => {
+                        playProblemIdx++;
+                        generatePlayProblem();
+                    }, 800);
+                };
+            });
+
+            document.getElementById('playSkip').onclick = function() {
+                playProblemIdx++;
+                generatePlayProblem();
+            };
+        }
+
+        function updatePlayStats() {
+            document.getElementById('playScore').textContent = S.score;
+            document.getElementById('playTotal').textContent = S.total;
+            document.getElementById('playStreak').textContent = S.streak;
+        }
+
+        function adaptDifficulty() {
+            if (S.answers.length < 8) return;
+            const recent = S.answers.slice(-8);
+            const correct = recent.filter(x => x).length;
+            if (correct >= 7 && S.diff === 'emergent') {
+                S.diff = 'developing';
+            } else if (correct >= 7 && S.diff === 'developing') {
+                S.diff = 'proficient';
+            } else if (correct <= 3 && S.diff === 'proficient') {
+                S.diff = 'developing';
+            } else if (correct <= 3 && S.diff === 'developing') {
+                S.diff = 'emergent';
+            }
+        }
+
+        updateExplore();
+    </script>
+</body>
+</html>

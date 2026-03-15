@@ -1,0 +1,500 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Angle Explorer - Grade 4</title>
+    <link rel="stylesheet" href="../../vinculum-core.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body {
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+            user-select: none;
+            background: var(--bg);
+            color: var(--text);
+            font-family: 'Inter', sans-serif;
+        }
+
+        header {
+            padding: 1rem 1.5rem;
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            border-bottom: 1px solid var(--border);
+            background: var(--bg);
+        }
+
+        .back-btn {
+            width: 44px; height: 44px; border-radius: 8px; border: none;
+            background: var(--card); color: var(--text); font-size: 1.5rem;
+            cursor: pointer; display: flex; align-items: center; justify-content: center;
+            transition: all 0.2s; font-family: 'Inter', sans-serif;
+        }
+        .back-btn:hover { background: var(--border); }
+        .back-btn:focus-visible { outline: 2px solid var(--cyan); }
+
+        .title-group { flex: 1; }
+        .title {
+            font-size: 1.8rem; font-weight: 700;
+            background: var(--grad); -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+            background-clip: text; margin: 0;
+        }
+
+        .grade-badge {
+            display: inline-block; background: var(--cyan); color: white;
+            padding: 0.25rem 0.75rem; border-radius: 12px; font-size: 0.75rem;
+            font-weight: 600; letter-spacing: 0.5px;
+        }
+
+        .tabs {
+            display: flex; gap: 0.5rem; padding: 1rem 1.5rem 0; border-bottom: 1px solid var(--border);
+            background: var(--bg);
+        }
+
+        .tab {
+            padding: 0.75rem 1.25rem; border: none; background: transparent; color: var(--text2);
+            font-size: 0.95rem; font-weight: 500; cursor: pointer;
+            border-bottom: 2px solid transparent; transition: all 0.3s;
+            font-family: 'Inter', sans-serif;
+        }
+        .tab:hover { color: var(--text); }
+        .tab.active { color: var(--cyan); border-bottom-color: var(--cyan); }
+        .tab:focus-visible { outline: 2px solid var(--cyan); }
+
+        .content {
+            flex: 1; overflow-y: auto; padding: 1.5rem;
+            display: none; flex-direction: column; gap: 1.5rem;
+        }
+        .content.active { display: flex; }
+
+        .explore-canvas {
+            background: var(--card); border: 1px solid var(--border); border-radius: 12px;
+            padding: 1.5rem; display: flex; flex-direction: column; gap: 1rem;
+            flex: 1;
+        }
+
+        canvas {
+            width: 100%; height: 350px; border: 2px solid var(--border);
+            border-radius: 8px; background: var(--bg2); cursor: crosshair;
+            display: block;
+        }
+
+        .angle-info {
+            background: var(--bg2); padding: 1.5rem; border-radius: 8px;
+            text-align: center;
+        }
+
+        .angle-value {
+            font-size: 2rem; font-weight: 700; color: var(--cyan);
+            font-family: 'JetBrains Mono', monospace;
+        }
+
+        .angle-label {
+            font-size: 0.9rem; color: var(--text2); margin-top: 0.5rem;
+        }
+
+        .angle-type {
+            font-size: 1.1rem; font-weight: 600; color: var(--green); margin-top: 1rem;
+        }
+
+        .classification-grid {
+            display: grid; grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+            gap: 1rem; margin-top: 1rem;
+        }
+
+        .classification-badge {
+            padding: 0.75rem; border-radius: 8px; text-align: center;
+            font-size: 0.9rem; font-weight: 600; border: 2px solid;
+            transition: all 0.3s;
+        }
+
+        .badge-acute { color: #1E88E5; border-color: #1E88E5; background: #1E88E510; }
+        .badge-right { color: #43A047; border-color: #43A047; background: #43A04710; }
+        .badge-obtuse { color: #FB8C00; border-color: #FB8C00; background: #FB8C0010; }
+        .badge-straight { color: #E53935; border-color: #E53935; background: #E5393510; }
+
+        .classification-badge.active {
+            transform: scale(1.1);
+            box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+        }
+
+        .practice-grid {
+            display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 1.5rem; flex: 1;
+        }
+
+        .practice-card {
+            background: var(--card); border: 1px solid var(--border); border-radius: 12px;
+            padding: 1.5rem; display: flex; flex-direction: column; gap: 1rem;
+        }
+
+        .protractor-canvas {
+            width: 100%; height: 250px; border: 2px solid var(--border);
+            border-radius: 8px; background: var(--bg2);
+        }
+
+        .input-group {
+            display: flex; gap: 0.5rem; align-items: center;
+        }
+
+        input[type="number"] {
+            flex: 1; padding: 0.75rem; font-size: 1rem;
+            border: 2px solid var(--border); border-radius: 8px;
+            background: var(--bg2); color: var(--text);
+            font-family: 'JetBrains Mono', monospace;
+        }
+
+        input[type="number"]:focus {
+            outline: none; border-color: var(--cyan);
+        }
+
+        .submit-btn {
+            padding: 0.75rem 1.5rem; background: var(--cyan); color: white;
+            border: none; border-radius: 8px; font-weight: 600; cursor: pointer;
+            font-family: 'Inter', sans-serif; transition: all 0.2s;
+        }
+
+        .submit-btn:hover { opacity: 0.9; }
+        .submit-btn:focus-visible { outline: 2px solid var(--cyan); }
+
+        .feedback {
+            position: fixed; bottom: -100px; left: 50%; transform: translateX(-50%);
+            padding: 1rem 2rem; border-radius: 8px; font-weight: 600;
+            transition: bottom 0.3s; z-index: 1000;
+            font-family: 'Inter', sans-serif;
+        }
+
+        .feedback.show { bottom: 2rem; }
+        .feedback.correct { background: var(--green); color: white; }
+        .feedback.incorrect { background: var(--red); color: white; }
+
+        .indigenous-context {
+            background: linear-gradient(135deg, #FFE5CC, #E5F5FF);
+            padding: 1.5rem; border-radius: 8px; border-left: 4px solid var(--cyan);
+            color: #333; font-size: 0.95rem; line-height: 1.6;
+        }
+
+        .indigenous-label {
+            font-weight: 600; color: var(--cyan); display: inline-block;
+            margin-bottom: 0.75rem;
+        }
+
+        .stats {
+            display: flex; gap: 1rem; justify-content: center; padding: 1rem;
+            background: var(--bg2); border-radius: 8px;
+        }
+
+        .stat-item {
+            text-align: center;
+        }
+
+        .stat-value {
+            font-size: 1.5rem; font-weight: 700; color: var(--cyan);
+            font-family: 'JetBrains Mono', monospace;
+        }
+
+        .stat-label {
+            font-size: 0.8rem; color: var(--text2); font-weight: 500;
+        }
+
+        .sr-only {
+            position: absolute; width: 1px; height: 1px; padding: 0;
+            margin: -1px; overflow: hidden; clip: rect(0,0,0,0);
+            white-space: nowrap; border-width: 0;
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <button class="back-btn" onclick="window.location.href='../../VINCULUM-Hub.html'" aria-label="Back to VINCULUM Hub">←</button>
+        <div class="title-group">
+            <h1 class="title">Angle Explorer</h1>
+            <span class="grade-badge">GRADE 4</span>
+        </div>
+    </header>
+
+    <div class="tabs">
+        <button class="tab active" onclick="switchMode('explore')">Explore</button>
+        <button class="tab" onclick="switchMode('practice')">Practice</button>
+        <button class="tab" onclick="switchMode('play')">Play</button>
+    </div>
+
+    <div id="explore" class="content active">
+        <div class="explore-canvas">
+            <h2 style="color: var(--text); font-size: 1.3rem;">Create & Measure Angles</h2>
+            <canvas id="exploreCanvas"></canvas>
+
+            <div class="angle-info">
+                <div class="angle-value" id="exploreAngleValue">45°</div>
+                <div class="angle-label">Drag to create an angle</div>
+                <div class="angle-type" id="exploreAngleType">Acute Angle</div>
+            </div>
+
+            <div>
+                <div style="font-size: 0.9rem; color: var(--text2); margin-bottom: 0.75rem;">Angle Types</div>
+                <div class="classification-grid">
+                    <div class="classification-badge badge-acute">Acute<br><span style="font-size: 0.8rem;"><0 90°</span></div>
+                    <div class="classification-badge badge-right">Right<br><span style="font-size: 0.8rem;">= 90°</span></div>
+                    <div class="classification-badge badge-obtuse">Obtuse<br><span style="font-size: 0.8rem;">>90°</span></div>
+                    <div class="classification-badge badge-straight">Straight<br><span style="font-size: 0.8rem;">= 180°</span></div>
+                </div>
+            </div>
+
+            <div class="indigenous-context">
+                <div class="indigenous-label">INDIGENOUS: Dakota/Lakota star knowledge</div>
+                <p><strong>Star Navigation:</strong> Dakota and Lakota peoples use angles to track star positions in the night sky. The North Star sits at a specific angle above the horizon. If you turn 90° (a quarter turn) from facing north, which direction do you face? Understanding angles connects to celestial navigation and seasonal knowledge.</p>
+            </div>
+        </div>
+    </div>
+
+    <div id="practice" class="content">
+        <div class="practice-grid">
+            <div class="practice-card">
+                <h3 style="color: var(--text); font-size: 1rem;">Measure the Angle</h3>
+                <canvas class="protractor-canvas" id="practiceCanvas1"></canvas>
+                <div class="input-group">
+                    <input type="number" id="practiceInput1" placeholder="Degrees" min="0" max="180" step="1">
+                    <span style="color: var(--text2);">°</span>
+                    <button class="submit-btn" onclick="checkPractice(1)">Check</button>
+                </div>
+            </div>
+
+            <div class="practice-card">
+                <h3 style="color: var(--text); font-size: 1rem;">Identify Type</h3>
+                <canvas class="protractor-canvas" id="practiceCanvas2"></canvas>
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.5rem;">
+                    <button class="submit-btn" onclick="checkType(1, 'acute')">Acute</button>
+                    <button class="submit-btn" onclick="checkType(1, 'right')">Right</button>
+                    <button class="submit-btn" onclick="checkType(1, 'obtuse')">Obtuse</button>
+                    <button class="submit-btn" onclick="checkType(1, 'straight')">Straight</button>
+                </div>
+            </div>
+        </div>
+
+        <div class="stats">
+            <div class="stat-item">
+                <div class="stat-value" id="practiceScoreDisplay">0</div>
+                <div class="stat-label">Correct</div>
+            </div>
+            <div class="stat-item">
+                <div class="stat-value" id="practiceTotalDisplay">0</div>
+                <div class="stat-label">Total</div>
+            </div>
+        </div>
+    </div>
+
+    <div id="play" class="content">
+        <div style="display: flex; flex-direction: column; gap: 1.5rem; flex: 1;">
+            <div class="practice-card">
+                <h3 style="color: var(--text); font-size: 1rem;">Additive Angle Problem</h3>
+                <p style="color: var(--text2); font-size: 0.95rem; line-height: 1.5;" id="angleWordProblem">Two angles share a side and together make 90°. One angle is 35°. What is the other?</p>
+
+                <div class="input-group">
+                    <input type="number" id="playAngleInput" placeholder="Degrees" min="0" max="180" step="1">
+                    <span style="color: var(--text2);">°</span>
+                    <button class="submit-btn" onclick="checkPlayAngle()">Check</button>
+                </div>
+            </div>
+
+            <div class="indigenous-context">
+                <div class="indigenous-label">INDIGENOUS: Multiple nations</div>
+                <p><strong>Geometric Patterns:</strong> Many Indigenous cultures use angles in beadwork, basket weaving, and architectural patterns. Understanding how angles combine helps us appreciate the mathematical precision in traditional arts and building practices.</p>
+            </div>
+
+            <div class="stats">
+                <div class="stat-item">
+                    <div class="stat-value" id="playScoreDisplay">0</div>
+                    <div class="stat-label">Solved</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div id="feedback" class="feedback"></div>
+    <span class="sr-only" role="status" aria-live="polite" id="ariaStatus"></span>
+
+    <script>
+        /* INDIGENOUS: nation=Dakota/Lakota, context=star_knowledge */
+        const S = { mode: 'explore', practiceScore: 0, practiceTotal: 0, playScore: 0, currentAngle: 45 };
+        const canvases = { explore: null, practice1: null, practice2: null };
+
+        function initCanvases() {
+            canvases.explore = document.getElementById('exploreCanvas');
+            canvases.practice1 = document.getElementById('practiceCanvas1');
+            canvases.practice2 = document.getElementById('practiceCanvas2');
+
+            canvases.explore.addEventListener('mousemove', drawExploreAngle);
+            canvases.explore.addEventListener('touchmove', drawExploreAngle);
+        }
+
+        function drawExploreAngle(e) {
+            const canvas = canvases.explore;
+            const rect = canvas.getBoundingClientRect();
+            const x = (e.clientX || e.touches?.[0].clientX) - rect.left;
+            const y = (e.clientY || e.touches?.[0].clientY) - rect.top;
+
+            const centerX = canvas.width / 2;
+            const centerY = canvas.height / 2;
+
+            const dx = x - centerX;
+            const dy = y - centerY;
+            let angle = Math.atan2(dy, dx) * 180 / Math.PI;
+            if (angle < 0) angle += 360;
+
+            S.currentAngle = Math.round(angle);
+            drawAngle(canvas, angle);
+
+            document.getElementById('exploreAngleValue').textContent = S.currentAngle + '°';
+
+            let type = 'Acute Angle';
+            if (angle === 90) type = 'Right Angle (90°)';
+            else if (angle === 180) type = 'Straight Angle (180°)';
+            else if (angle < 90) type = 'Acute Angle (< 90°)';
+            else if (angle < 180) type = 'Obtuse Angle (> 90°)';
+            else type = 'Reflex Angle (> 180°)';
+
+            document.getElementById('exploreAngleType').textContent = type;
+        }
+
+        function drawAngle(canvas, angle) {
+            const ctx = canvas.getContext('2d');
+            const w = canvas.width;
+            const h = canvas.height;
+            const centerX = w / 2;
+            const centerY = h / 2;
+            const radius = 80;
+
+            ctx.clearRect(0, 0, w, h);
+
+            // Ray 1
+            ctx.strokeStyle = 'var(--cyan)';
+            ctx.lineWidth = 3;
+            ctx.beginPath();
+            ctx.moveTo(centerX, centerY);
+            ctx.lineTo(centerX + radius, centerY);
+            ctx.stroke();
+
+            // Ray 2
+            const radians = angle * Math.PI / 180;
+            ctx.strokeStyle = 'var(--green)';
+            ctx.beginPath();
+            ctx.moveTo(centerX, centerY);
+            ctx.lineTo(centerX + radius * Math.cos(radians), centerY + radius * Math.sin(radians));
+            ctx.stroke();
+
+            // Arc
+            ctx.strokeStyle = 'var(--cyan)';
+            ctx.lineWidth = 2;
+            ctx.beginPath();
+            ctx.arc(centerX, centerY, 40, 0, radians, false);
+            ctx.stroke();
+
+            // Label
+            ctx.fillStyle = 'var(--text)';
+            ctx.font = 'bold 16px Inter';
+            ctx.fillText(Math.round(angle) + '°', centerX + 50, centerY - 10);
+        }
+
+        function switchMode(mode) {
+            S.mode = mode;
+            document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+            event.target.classList.add('active');
+            document.querySelectorAll('.content').forEach(c => c.classList.remove('active'));
+            document.getElementById(mode).classList.add('active');
+
+            if (mode === 'practice') generatePracticeProblems();
+            if (mode === 'play') generatePlayProblem();
+        }
+
+        function generatePracticeProblems() {
+            const angles = [45, 90, 120, 160, 35];
+            S.practiceAngles = angles;
+
+            drawAngle(canvases.practice1, angles[0]);
+            drawAngle(canvases.practice2, angles[1]);
+
+            S.practiceAnswer1 = angles[0];
+            S.practiceAnswer2 = angles[1] <= 90 ? 'right' : angles[1] > 90 ? 'obtuse' : 'acute';
+        }
+
+        function checkPractice(num) {
+            const answer = parseInt(document.getElementById('practiceInput' + num).value);
+            const correct = Math.abs(answer - S.practiceAnswer1) <= 2;
+
+            S.practiceTotal++;
+            if (correct) {
+                S.practiceScore++;
+                showFB('Correct! The angle is ' + S.practiceAnswer1 + '°', 'correct');
+            } else {
+                showFB('Try again! The angle is ' + S.practiceAnswer1 + '°', 'incorrect');
+            }
+
+            updateStats();
+        }
+
+        function checkType(num, type) {
+            const correct = type === S.practiceAnswer2;
+
+            S.practiceTotal++;
+            if (correct) {
+                S.practiceScore++;
+                showFB('Correct! That\'s a ' + type + ' angle!', 'correct');
+            } else {
+                showFB('Try again! It\'s a ' + S.practiceAnswer2 + ' angle.', 'incorrect');
+            }
+
+            updateStats();
+        }
+
+        function generatePlayProblem() {
+            const problems = [
+                { q: 'Two angles share a side and together make 90°. One angle is 35°. What is the other?', a: 55, total: 90 },
+                { q: 'Two angles share a side and together make 180°. One angle is 120°. What is the other?', a: 60, total: 180 },
+                { q: 'Two angles share a side and together make 90°. One angle is 28°. What is the other?', a: 62, total: 90 }
+            ];
+            S.currentPlayProblem = problems[Math.floor(Math.random() * problems.length)];
+            document.getElementById('angleWordProblem').textContent = S.currentPlayProblem.q;
+            document.getElementById('playAngleInput').value = '';
+            document.getElementById('playAngleInput').focus();
+        }
+
+        function checkPlayAngle() {
+            const answer = parseInt(document.getElementById('playAngleInput').value);
+            const correct = answer === S.currentPlayProblem.a;
+
+            if (correct) {
+                S.playScore++;
+                showFB('Correct! ' + S.currentPlayProblem.a + '° + ' + (S.currentPlayProblem.total - S.currentPlayProblem.a) + '° = ' + S.currentPlayProblem.total + '°', 'correct');
+            } else {
+                showFB('Try again! The answer is ' + S.currentPlayProblem.a + '°', 'incorrect');
+            }
+
+            updateStats();
+            setTimeout(generatePlayProblem, 1200);
+        }
+
+        function updateStats() {
+            document.getElementById('practiceScoreDisplay').textContent = S.practiceScore;
+            document.getElementById('practiceTotalDisplay').textContent = S.practiceTotal;
+            document.getElementById('playScoreDisplay').textContent = S.playScore;
+        }
+
+        function showFB(t, c) {
+            const f = document.getElementById('feedback');
+            if (!f) return;
+            f.textContent = t;
+            f.className = 'feedback ' + c + ' show';
+            document.getElementById('ariaStatus').textContent = t;
+            setTimeout(() => f.classList.remove('show'), 1200);
+        }
+
+        initCanvases();
+        generatePracticeProblems();
+        drawAngle(canvases.explore, 45);
+    </script>
+</body>
+</html>
