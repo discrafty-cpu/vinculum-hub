@@ -1,0 +1,1464 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>VINCULUM — Properties Explorer</title>
+<link rel="stylesheet" href="../../vinculum-core.css">
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;600&display=swap');
+
+/* Theme system loaded from vinculum-core.css */
+.vinculum-rtm-btn .rtm-icon{font-size:14px;}
+
+/* ═══ FOCUS VISIBLE (Keyboard Navigation) ═══ */
+*:focus-visible {
+  outline:2px solid var(--cyan);outline-offset:2px;border-radius:4px;
+}
+.sr-only {
+  position:absolute;width:1px;height:1px;padding:0;margin:-1px;
+  overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0;
+}
+
+* { margin:0; padding:0; box-sizing:border-box; }
+body {
+  font-family: 'Inter', sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  height: 100vh;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  user-select: none;
+}
+
+/* ── HEADER ── */
+.header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 24px;
+  background: var(--bg2);
+  border-bottom: 1px solid var(--border);
+  flex-shrink: 0;
+}
+.header-left {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+.back-btn {
+  padding: 6px 12px;
+  border-radius: 8px;
+  border: 1px solid var(--border);
+  background: transparent;
+  color: var(--text2);
+  font-size: 13px;
+  font-family: inherit;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+.back-btn:hover { background: var(--card); color: var(--cyan); }
+.header-title {
+  font-size: 18px;
+  font-weight: 800;
+}
+.header-title span {
+  background: var(--grad);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+.header-badge {
+  font-size: 10px;
+  font-weight: 700;
+  padding: 3px 10px;
+  border-radius: 6px;
+  background: rgba(0,212,255,0.1);
+  color: var(--cyan);
+  border: 1px solid rgba(0,212,255,0.2);
+  letter-spacing: 1px;
+}
+.std-tags {
+  display: flex;
+  gap: 6px;
+}
+.std-tag {
+  font-size: 10px;
+  font-family: 'JetBrains Mono', monospace;
+  font-weight: 600;
+  padding: 3px 8px;
+  border-radius: 5px;
+  background: rgba(0,212,255,0.08);
+  color: var(--cyan);
+}
+.std-tag.mn { background: rgba(255,145,0,0.08); color: var(--orange); }
+
+/* ── MODE TABS ── */
+.mode-tabs {
+  display: flex;
+  gap: 4px;
+  padding: 8px 24px;
+  background: var(--bg2);
+  border-bottom: 1px solid var(--border);
+  flex-shrink: 0;
+}
+.mode-tab {
+  padding: 8px 20px;
+  border-radius: 8px;
+  border: 1px solid transparent;
+  background: transparent;
+  color: var(--muted);
+  font-size: 13px;
+  font-weight: 600;
+  font-family: inherit;
+  cursor: pointer;
+  transition: all 0.2s;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.mode-tab:hover { color: var(--text2); background: var(--card); }
+.mode-tab.active-explore { background: rgba(0,212,255,0.1); color: var(--cyan); border-color: rgba(0,212,255,0.3); }
+.mode-tab.active-practice { background: rgba(0,230,118,0.1); color: var(--green); border-color: rgba(0,230,118,0.3); }
+.mode-tab.active-play { background: rgba(255,59,139,0.1); color: var(--pink); border-color: rgba(255,59,139,0.3); }
+
+/* Difficulty selector */
+.diff-selector {
+  margin-left: auto;
+  display: flex;
+  gap: 4px;
+  align-items: center;
+}
+.diff-label {
+  font-size: 11px;
+  color: var(--muted);
+  margin-right: 8px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+}
+.diff-btn {
+  padding: 5px 12px;
+  border-radius: 6px;
+  border: 1px solid var(--border);
+  background: transparent;
+  color: var(--muted);
+  font-size: 11px;
+  font-weight: 600;
+  font-family: inherit;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+.diff-btn:hover { color: var(--text2); }
+.diff-btn.active { background: rgba(0,212,255,0.1); color: var(--cyan); border-color: rgba(0,212,255,0.3); }
+
+/* ── PROPERTY TABS (within Explore) ── */
+.property-tabs {
+  display: flex;
+  gap: 4px;
+  padding: 8px 24px;
+  background: var(--card);
+  border-bottom: 1px solid var(--border);
+  flex-shrink: 0;
+}
+.property-tab {
+  padding: 6px 16px;
+  border-radius: 6px;
+  border: 1px solid transparent;
+  background: transparent;
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: 600;
+  font-family: inherit;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+.property-tab:hover { color: var(--text2); background: rgba(0,212,255,0.05); }
+.property-tab.active { background: rgba(0,212,255,0.1); color: var(--cyan); border-color: rgba(0,212,255,0.3); }
+
+/* ── MAIN AREA ── */
+.main {
+  flex: 1;
+  display: flex;
+  overflow: hidden;
+}
+
+/* ── WORKSPACE ── */
+.workspace {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+  position: relative;
+  overflow-y: auto;
+}
+
+/* ── PROPERTY CONTAINERS ── */
+.property-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 24px;
+  width: 100%;
+  max-width: 700px;
+}
+
+/* Array grids */
+.array-grid {
+  display: inline-flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 20px;
+  background: var(--card);
+  border-radius: 16px;
+  border: 2px solid var(--border);
+  justify-content: center;
+  align-items: center;
+  min-width: 200px;
+  min-height: 180px;
+  position: relative;
+}
+
+.array-row {
+  display: flex;
+  gap: 6px;
+}
+
+.array-dot {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 700;
+  font-size: 12px;
+  cursor: pointer;
+  transition: all 0.15s;
+  border: 2px solid transparent;
+  animation: pop 0.3s ease-out;
+}
+
+.array-dot:hover {
+  transform: scale(1.15);
+}
+
+.array-dot.row-0 { background: var(--cyan); color: var(--bg); }
+.array-dot.row-1 { background: var(--green); color: var(--bg); }
+.array-dot.row-2 { background: #F59E0B; color: var(--bg); }
+.array-dot.row-3 { background: #EC4899; color: var(--bg); }
+.array-dot.row-4 { background: var(--red); color: var(--bg); }
+
+.array-dot.group-a { border-color: var(--cyan); border-width: 3px; }
+.array-dot.group-b { border-color: var(--green); border-width: 3px; }
+
+/* Comparison layout for commutative */
+.comparison-row {
+  display: flex;
+  gap: 32px;
+  align-items: center;
+  justify-content: center;
+  flex-wrap: wrap;
+}
+
+.comparison-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+}
+
+.comparison-label {
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--text2);
+}
+
+.comparison-equals {
+  font-size: 24px;
+  font-weight: 800;
+  color: var(--green);
+}
+
+/* Associative grouping visualization */
+.associative-display {
+  display: flex;
+  gap: 20px;
+  align-items: center;
+  justify-content: center;
+  flex-wrap: wrap;
+}
+
+.group-box {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  padding: 16px;
+  border: 2px solid;
+  border-radius: 12px;
+  background: rgba(0,212,255,0.05);
+}
+
+.group-box.first { border-color: var(--cyan); }
+.group-box.second { border-color: var(--green); }
+
+.group-label {
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  color: var(--muted);
+}
+
+.parenthesis-label {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text2);
+  font-family: 'JetBrains Mono', monospace;
+}
+
+/* Distributive area model */
+.area-model {
+  display: flex;
+  gap: 0;
+  border: 2px solid var(--border);
+  border-radius: 12px;
+  overflow: hidden;
+  background: var(--card);
+}
+
+.area-section {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 16px;
+  align-items: center;
+  justify-content: center;
+}
+
+.area-section.part-a {
+  background: rgba(0,212,255,0.08);
+  border-right: 2px dashed var(--cyan);
+}
+
+.area-section.part-b {
+  background: rgba(0,230,118,0.08);
+}
+
+.area-label {
+  font-size: 10px;
+  font-weight: 700;
+  color: var(--muted);
+  text-transform: uppercase;
+}
+
+.area-equation {
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--cyan);
+  font-family: 'JetBrains Mono', monospace;
+}
+
+.area-equation.part-b {
+  color: var(--green);
+}
+
+/* Info display */
+.property-info {
+  text-align: center;
+  padding: 16px 20px;
+  background: rgba(0,212,255,0.05);
+  border-radius: 12px;
+  border: 1px solid var(--border);
+  width: 100%;
+}
+
+.property-equation {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 18px;
+  font-weight: 700;
+  color: var(--cyan);
+  margin: 8px 0;
+}
+
+.property-description {
+  font-size: 14px;
+  color: var(--text2);
+  margin-top: 8px;
+}
+
+/* Controls */
+.property-controls {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  width: 100%;
+  padding: 16px;
+  background: var(--card);
+  border-radius: 12px;
+}
+
+.control-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  justify-content: center;
+}
+
+.control-label {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--muted);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  min-width: 60px;
+}
+
+.control-slider {
+  flex: 1;
+  max-width: 200px;
+  height: 6px;
+  -webkit-appearance: none;
+  appearance: none;
+  background: var(--border);
+  border-radius: 3px;
+  outline: none;
+  cursor: pointer;
+}
+
+.control-slider::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background: var(--cyan);
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.control-slider::-moz-range-thumb {
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background: var(--cyan);
+  cursor: pointer;
+  border: none;
+  transition: all 0.2s;
+}
+
+.control-value {
+  font-size: 14px;
+  font-weight: 700;
+  font-family: 'JetBrains Mono', monospace;
+  color: var(--cyan);
+  min-width: 30px;
+  text-align: center;
+}
+
+/* Practice question */
+.practice-question {
+  text-align: center;
+  padding: 20px;
+  background: var(--card);
+  border-radius: 12px;
+  border: 1px solid var(--border);
+  width: 100%;
+  max-width: 500px;
+}
+
+.question-text {
+  font-size: 16px;
+  color: var(--text2);
+  margin-bottom: 12px;
+  font-weight: 600;
+}
+
+.question-highlight {
+  font-size: 24px;
+  font-weight: 800;
+  font-family: 'JetBrains Mono', monospace;
+  color: var(--green);
+  margin: 12px 0;
+}
+
+/* Input fields */
+.input-group {
+  display: flex;
+  gap: 8px;
+  justify-content: center;
+  align-items: center;
+  margin-top: 12px;
+  flex-wrap: wrap;
+}
+
+.number-input {
+  padding: 10px 16px;
+  border-radius: 8px;
+  border: 2px solid var(--border);
+  background: var(--card);
+  color: var(--text);
+  font-size: 16px;
+  font-family: 'JetBrains Mono', monospace;
+  text-align: center;
+  width: 70px;
+  transition: all 0.2s;
+}
+
+.number-input:focus {
+  border-color: var(--cyan);
+  outline: none;
+}
+
+/* Play mode game */
+.game-info {
+  display: flex;
+  gap: 20px;
+  justify-content: center;
+  align-items: center;
+  font-size: 14px;
+  color: var(--text2);
+  margin-bottom: 12px;
+}
+
+.info-item {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.info-label {
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+}
+
+.play-btn {
+  padding: 12px 24px;
+  border-radius: 10px;
+  border: 1px solid var(--border);
+  background: var(--card);
+  color: var(--text2);
+  font-size: 14px;
+  font-weight: 600;
+  font-family: inherit;
+  cursor: pointer;
+  transition: all 0.2s;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.play-btn:hover { background: rgba(0,212,255,0.1); color: var(--cyan); }
+
+.play-btn.primary {
+  background: var(--grad);
+  color: var(--bg);
+  border-color: transparent;
+  font-weight: 700;
+}
+
+.play-btn.primary:hover { opacity: 0.9; }
+
+/* ── FEEDBACK ── */
+.feedback {
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%) scale(0);
+  padding: 24px 48px;
+  border-radius: 20px;
+  font-size: 28px;
+  font-weight: 800;
+  z-index: 200;
+  pointer-events: none;
+  transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275), opacity 0.3s;
+  opacity: 0;
+}
+.feedback.show {
+  transform: translate(-50%, -50%) scale(1);
+  opacity: 1;
+}
+.feedback.correct {
+  background: rgba(0,230,118,0.15);
+  color: var(--green);
+  border: 2px solid var(--green);
+}
+.feedback.incorrect {
+  background: rgba(255,59,139,0.15);
+  color: var(--pink);
+  border: 2px solid var(--pink);
+}
+
+/* ── SIDE PANEL ── */
+.side-panel {
+  width: 280px;
+  background: var(--bg2);
+  border-left: 1px solid var(--border);
+  padding: 20px;
+  overflow-y: auto;
+  flex-shrink: 0;
+}
+.panel-section {
+  margin-bottom: 20px;
+}
+.panel-title {
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 1.5px;
+  color: var(--muted);
+  margin-bottom: 8px;
+}
+.panel-text {
+  font-size: 13px;
+  color: var(--text2);
+  line-height: 1.6;
+}
+.score-display {
+  text-align: center;
+  padding: 16px;
+  background: var(--card);
+  border-radius: 12px;
+  margin-bottom: 12px;
+}
+.score-value {
+  font-size: 36px;
+  font-weight: 900;
+  font-family: 'JetBrains Mono', monospace;
+  background: var(--grad);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+.score-label {
+  font-size: 11px;
+  color: var(--muted);
+  text-transform: uppercase;
+  letter-spacing: 1px;
+}
+.streak-bar {
+  height: 6px;
+  background: var(--card);
+  border-radius: 3px;
+  overflow: hidden;
+  margin-top: 8px;
+}
+.streak-fill {
+  height: 100%;
+  background: var(--grad);
+  border-radius: 3px;
+  transition: width 0.3s;
+}
+
+/* ── ANIMATIONS ── */
+@keyframes pop {
+  0% { transform: scale(0); opacity: 0; }
+  70% { transform: scale(1.2); }
+  100% { transform: scale(1); opacity: 1; }
+}
+
+@keyframes shake {
+  0%, 100% { transform: translateX(0); }
+  25% { transform: translateX(-8px); }
+  75% { transform: translateX(8px); }
+}
+
+@keyframes hop {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-12px); }
+}
+
+@keyframes rotate {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+.pop-in { animation: pop 0.3s ease-out forwards; }
+.shake { animation: shake 0.3s ease-in-out; }
+.hop { animation: hop 0.4s ease-in-out; }
+.rotate { animation: rotate 0.6s ease-in-out; }
+
+/* scrollbar */
+::-webkit-scrollbar { width: 6px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+
+/* Responsive */
+@media (max-width: 768px) {
+  .array-grid {
+    min-width: 160px;
+    min-height: 160px;
+    gap: 4px;
+    padding: 12px;
+  }
+  .array-dot {
+    width: 20px;
+    height: 20px;
+    font-size: 10px;
+  }
+  .side-panel {
+    width: 220px;
+  }
+  .comparison-row {
+    gap: 16px;
+  }
+}
+</style>
+</head>
+<body>
+
+<!-- ═══ HEADER ═══ -->
+<div class="header">
+  <div class="header-left">
+    <a class="back-btn" href="../../VINCULUM-Hub.html" style="text-decoration:none;">◀ Hub</a>
+    <div class="header-title"><span>VINCULUM</span> Properties Explorer</div>
+    <span class="header-badge">3 · OA</span>
+    <button class="back-btn" id="readAloudBtn" onclick="toggleReadAloud()" aria-label="Read Aloud" title="Read instructions aloud">🔊 Read to Me</button>
+  </div>
+  <div class="std-tags">
+    <span class="std-tag">3.OA.5</span>
+    <span class="std-tag mn">MN 3.1.1.3</span>
+  </div>
+</div>
+
+<!-- ═══ MODE TABS ═══ -->
+<div class="mode-tabs">
+  <button class="mode-tab active-explore" id="tabExplore" onclick="setMode('explore')">
+    <svg width="18" height="18" viewBox="0 0 48 48" fill="none"><path d="M4 24C4 24 12 12 24 12C36 12 44 24 44 24C44 24 36 36 24 36C12 36 4 24 4 24Z" stroke="currentColor" stroke-width="3" fill="none"/><circle cx="24" cy="24" r="7" stroke="currentColor" stroke-width="3" fill="none"/><circle cx="24" cy="24" r="3" fill="currentColor"/><line x1="24" y1="4" x2="24" y2="9" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" opacity="0.5"/><line x1="10" y1="8" x2="13" y2="12" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" opacity="0.5"/><line x1="38" y1="8" x2="35" y2="12" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" opacity="0.5"/></svg> Explore
+  </button>
+  <button class="mode-tab" id="tabPractice" onclick="setMode('practice')">
+    <svg width="18" height="18" viewBox="0 0 48 48" fill="none"><circle cx="24" cy="24" r="20" stroke="currentColor" stroke-width="3" fill="none" opacity="0.3"/><circle cx="24" cy="24" r="20" stroke="currentColor" stroke-width="3" fill="none" stroke-dasharray="126" stroke-dashoffset="32" stroke-linecap="round"/><polyline points="16,24 22,32 34,16" stroke="currentColor" stroke-width="4" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg> Practice
+  </button>
+  <button class="mode-tab" id="tabPlay" onclick="setMode('play')">
+    <svg width="18" height="18" viewBox="0 0 48 48" fill="none"><polygon points="28,4 12,28 22,28 18,44 36,18 26,18" fill="none" stroke="currentColor" stroke-width="3" stroke-linejoin="round"/><polygon points="27,8 15,27 23,27 20,40 34,19 26,19" fill="currentColor" opacity="0.15"/></svg> Play
+  </button>
+  <div class="diff-selector">
+    <span class="diff-label">Level</span>
+    <button class="diff-btn active" id="diffE" onclick="setDiff('emergent')" data-diff="emergent">1–5</button>
+    <button class="diff-btn" id="diffD" onclick="setDiff('developing')" data-diff="developing">1–10</button>
+    <button class="diff-btn" id="diffS" onclick="setDiff('secure')" data-diff="secure">1–12</button>
+  </div>
+</div>
+
+<!-- ═══ PROPERTY TABS (Explore mode only) ═══ -->
+<div class="property-tabs" id="propertyTabs" style="display:none;">
+  <button class="property-tab active" id="tabCommutative" onclick="setProperty('commutative')">Turn-Around</button>
+  <button class="property-tab" id="tabAssociative" onclick="setProperty('associative')">Grouping</button>
+  <button class="property-tab" id="tabDistributive" onclick="setProperty('distributive')">Break-Apart</button>
+</div>
+
+<!-- ═══ MAIN ═══ -->
+<div class="main">
+  <div class="workspace" role="main" id="workspace"></div>
+  <div class="side-panel" id="sidePanel"></div>
+</div>
+
+<!-- ═══ FEEDBACK POPUP ═══ -->
+<div class="feedback" id="feedback"></div>
+
+<script>
+function showFB(t,c){var f=document.getElementById("feedback");if(!f)return;f.textContent=t;f.className="feedback "+c+" show";setTimeout(function(){f.classList.remove("show");},1200);}
+
+// ════════════════════════════════════════
+// STATE
+// ════════════════════════════════════════
+const S = {
+  mode: 'explore',          // explore | practice | play
+  diff: 'emergent',         // emergent | developing | secure
+  property: 'commutative',  // commutative | associative | distributive (explore only)
+
+  // Explore
+  commFactor1: 3,
+  commFactor2: 4,
+  assocA: 2,
+  assocB: 3,
+  assocC: 4,
+  distFactor1: 6,
+  distSplitPos: 4,
+
+  // Practice
+  questionType: null,   // identify-property | fill-blank | rewrite-property
+  targetProperty: null,
+  targetEquation: null,
+  targetAnswer: null,
+  score: 0,
+  total: 0,
+
+  // Play
+  playScore: 0,
+  playStreak: 0,
+  playRound: 0,
+  gameEnded: false
+};
+
+// ════════════════════════════════════════
+// READ-ALOUD
+// ════════════════════════════════════════
+function toggleReadAloud() {
+  if (window.VinculumStories && VinculumStories.isReading()) {
+    VinculumStories.stopReading();
+    document.getElementById('readAloudBtn').textContent = '🔊 Read to Me';
+  } else {
+    const text = document.getElementById('sidePanel')?.textContent || 'Properties show how multiplication works.';
+    if (window.VinculumStories) {
+      VinculumStories.readAloud(text, { rate: 0.85, onComplete: () => {
+        document.getElementById('readAloudBtn').textContent = '🔊 Read to Me';
+      }});
+      document.getElementById('readAloudBtn').textContent = '⏹ Stop';
+    }
+  }
+}
+
+// ════════════════════════════════════════
+// HELPERS
+// ════════════════════════════════════════
+function getMaxFactor() {
+  return { emergent: 5, developing: 10, secure: 12 }[S.diff];
+}
+
+function randInt(min, max) {
+  return Math.floor(Math.random() * (max - min + 1)) + min;
+}
+
+function speak(text) {
+  if (!window.speechSynthesis) return;
+  const u = new SpeechSynthesisUtterance(text);
+  u.rate = 0.9;
+  speechSynthesis.speak(u);
+}
+
+// ════════════════════════════════════════
+// MODE SWITCHING
+// ════════════════════════════════════════
+function setMode(mode) {
+  S.mode = mode;
+
+  if (mode === 'practice' && S.total === 0) {
+    S.score = 0;
+    S.total = 0;
+    newPracticeQuestion();
+  }
+
+  if (mode === 'play' && S.playRound === 0) {
+    S.playScore = 0;
+    S.playStreak = 0;
+    S.playRound = 1;
+    S.gameEnded = false;
+  }
+
+  document.querySelectorAll('.mode-tab').forEach(t => t.className = 'mode-tab');
+  const tabEl = document.getElementById('tab' + mode.charAt(0).toUpperCase() + mode.slice(1));
+  tabEl.className = 'mode-tab active-' + mode;
+
+  document.getElementById('propertyTabs').style.display = mode === 'explore' ? 'flex' : 'none';
+
+  render();
+}
+
+function setProperty(prop) {
+  S.property = prop;
+  document.querySelectorAll('.property-tab').forEach(t => t.classList.remove('active'));
+  document.getElementById('tab' + prop.charAt(0).toUpperCase() + prop.slice(1)).classList.add('active');
+  render();
+}
+
+function setDiff(diff) {
+  S.diff = diff;
+  S.score = 0;
+  S.total = 0;
+  S.playScore = 0;
+  S.playStreak = 0;
+  S.playRound = 0;
+
+  document.querySelectorAll('.diff-btn').forEach(b => b.classList.remove('active'));
+  document.getElementById('diff' + diff.charAt(0).toUpperCase()).classList.add('active');
+
+  setMode(S.mode);
+}
+
+// ════════════════════════════════════════
+// RENDER MAIN
+// ════════════════════════════════════════
+function render() {
+  const ws = document.getElementById('workspace');
+  const sp = document.getElementById('sidePanel');
+
+  if (S.mode === 'explore') renderExplore(ws, sp);
+  else if (S.mode === 'practice') renderPractice(ws, sp);
+  else renderPlay(ws, sp);
+}
+
+// ─── EXPLORE MODE ───
+function renderExplore(ws, sp) {
+  let html = '<div class="property-container">';
+
+  if (S.property === 'commutative') {
+    html += renderCommutatve();
+  } else if (S.property === 'associative') {
+    html += renderAssociative();
+  } else {
+    html += renderDistributive();
+  }
+
+  html += '</div>';
+  ws.innerHTML = html;
+
+  renderSidePanel(sp);
+}
+
+function renderCommutatve() {
+  const max = getMaxFactor();
+  let html = '';
+
+  // Side-by-side arrays
+  html += '<div class="comparison-row">';
+
+  html += '<div class="comparison-item">';
+  html += '<div class="comparison-label">' + S.commFactor1 + ' × ' + S.commFactor2 + '</div>';
+  html += '<div class="array-grid">';
+  for (let r = 0; r < S.commFactor1; r++) {
+    html += '<div class="array-row">';
+    for (let c = 0; c < S.commFactor2; c++) {
+      html += `<div class="array-dot row-${r % 5}" style="animation-delay:${(r * S.commFactor2 + c) * 0.03}s;"></div>`;
+    }
+    html += '</div>';
+  }
+  html += '</div>';
+  html += '</div>';
+
+  html += '<div class="comparison-equals">↻</div>';
+
+  html += '<div class="comparison-item">';
+  html += '<div class="comparison-label">' + S.commFactor2 + ' × ' + S.commFactor1 + '</div>';
+  html += '<div class="array-grid">';
+  for (let r = 0; r < S.commFactor2; r++) {
+    html += '<div class="array-row">';
+    for (let c = 0; c < S.commFactor1; c++) {
+      html += `<div class="array-dot row-${r % 5}" style="animation-delay:${(r * S.commFactor1 + c) * 0.03}s;"></div>`;
+    }
+    html += '</div>';
+  }
+  html += '</div>';
+  html += '</div>';
+
+  html += '</div>';
+
+  // Info
+  html += `<div class="property-info">
+    <div style="color:var(--muted);font-size:12px;margin-bottom:4px;">Turn-Around Property (Commutative)</div>
+    <div class="property-equation">${S.commFactor1} × ${S.commFactor2} = ${S.commFactor2} × ${S.commFactor1} = ${S.commFactor1 * S.commFactor2}</div>
+    <div class="property-description">The order of factors doesn't change the product. You can flip the factors around!</div>
+  </div>`;
+
+  // Controls
+  html += `<div class="property-controls">
+    <div class="control-row">
+      <label class="control-label">First</label>
+      <input type="range" min="1" max="${max}" value="${S.commFactor1}" class="control-slider" oninput="updateCommFactor1(this.value)">
+      <span class="control-value">${S.commFactor1}</span>
+    </div>
+    <div class="control-row">
+      <label class="control-label">Second</label>
+      <input type="range" min="1" max="${max}" value="${S.commFactor2}" class="control-slider" oninput="updateCommFactor2(this.value)">
+      <span class="control-value">${S.commFactor2}</span>
+    </div>
+  </div>`;
+
+  return html;
+}
+
+function renderAssociative() {
+  const max = getMaxFactor();
+  let html = '';
+
+  const prod1 = S.assocA * S.assocB * S.assocC;
+
+  html += '<div class="associative-display">';
+
+  // Left grouping: (A × B) × C
+  html += '<div class="group-box first">';
+  html += '<div class="parenthesis-label">(2 × 3) × 4</div>';
+  html += '<div style="display:flex;gap:12px;align-items:center;">';
+  html += '<div>';
+  html += '<div class="group-label">Group First</div>';
+  html += '<div class="array-grid" style="min-width:140px;min-height:140px;">';
+  for (let r = 0; r < S.assocA; r++) {
+    html += '<div class="array-row">';
+    for (let c = 0; c < S.assocB; c++) {
+      html += `<div class="array-dot row-${r % 5}" style="animation-delay:${(r * S.assocB + c) * 0.03}s;"></div>`;
+    }
+    html += '</div>';
+  }
+  html += '</div>';
+  html += '<div style="font-size:12px;font-weight:700;color:var(--text2);">' + (S.assocA * S.assocB) + '</div>';
+  html += '</div>';
+  html += '<div style="font-size:18px;font-weight:700;color:var(--text2);">×</div>';
+  html += '<div style="font-size:16px;font-weight:700;color:var(--text2);">' + S.assocC + '</div>';
+  html += '</div>';
+  html += '<div class="area-equation">' + (S.assocA * S.assocB) + ' × ' + S.assocC + ' = ' + prod1 + '</div>';
+  html += '</div>';
+
+  // Right grouping: A × (B × C)
+  html += '<div class="group-box second">';
+  html += '<div class="parenthesis-label">2 × (3 × 4)</div>';
+  html += '<div style="display:flex;gap:12px;align-items:center;">';
+  html += '<div style="font-size:16px;font-weight:700;color:var(--text2);">' + S.assocA + '</div>';
+  html += '<div style="font-size:18px;font-weight:700;color:var(--text2);">×</div>';
+  html += '<div>';
+  html += '<div class="group-label">Group Last</div>';
+  html += '<div class="array-grid" style="min-width:140px;min-height:140px;">';
+  for (let r = 0; r < S.assocB; r++) {
+    html += '<div class="array-row">';
+    for (let c = 0; c < S.assocC; c++) {
+      html += `<div class="array-dot row-${r % 5}" style="animation-delay:${(r * S.assocC + c) * 0.03}s;"></div>`;
+    }
+    html += '</div>';
+  }
+  html += '</div>';
+  html += '<div style="font-size:12px;font-weight:700;color:var(--text2);">' + (S.assocB * S.assocC) + '</div>';
+  html += '</div>';
+  html += '<div class="area-equation part-b">' + S.assocA + ' × ' + (S.assocB * S.assocC) + ' = ' + prod1 + '</div>';
+  html += '</div>';
+
+  html += '</div>';
+
+  // Info
+  html += `<div class="property-info">
+    <div style="color:var(--muted);font-size:12px;margin-bottom:4px;">Grouping Property (Associative)</div>
+    <div class="property-equation">(${S.assocA} × ${S.assocB}) × ${S.assocC} = ${S.assocA} × (${S.assocB} × ${S.assocC}) = ${prod1}</div>
+    <div class="property-description">Different groupings, same product! It doesn't matter which factors you multiply first.</div>
+  </div>`;
+
+  return html;
+}
+
+function renderDistributive() {
+  const max = getMaxFactor();
+  let html = '';
+
+  const wholeProduct = S.distFactor1 * 7;
+  const part1Product = S.distFactor1 * S.distSplitPos;
+  const part2Product = S.distFactor1 * (7 - S.distSplitPos);
+
+  html += '<div style="text-align:center;margin-bottom:16px;">';
+  html += '<div style="font-size:14px;color:var(--muted);margin-bottom:8px;">Whole: ' + S.distFactor1 + ' × 7</div>';
+  html += '<div class="area-model">';
+  html += '<div class="area-section part-a">';
+  html += '<div class="area-label">Part A</div>';
+  html += '<div class="area-equation">' + S.distFactor1 + ' × ' + S.distSplitPos + '</div>';
+  html += '<div style="font-size:12px;color:var(--text2);margin-top:4px;">' + part1Product + '</div>';
+  html += '</div>';
+  html += '<div class="area-section part-b">';
+  html += '<div class="area-label">Part B</div>';
+  html += '<div class="area-equation part-b">' + S.distFactor1 + ' × ' + (7 - S.distSplitPos) + '</div>';
+  html += '<div style="font-size:12px;color:var(--text2);margin-top:4px;">' + part2Product + '</div>';
+  html += '</div>';
+  html += '</div>';
+  html += '</div>';
+
+  // Info
+  html += `<div class="property-info">
+    <div style="color:var(--muted);font-size:12px;margin-bottom:4px;">Break-Apart Property (Distributive)</div>
+    <div class="property-equation">${S.distFactor1} × 7 = ${S.distFactor1} × ${S.distSplitPos} + ${S.distFactor1} × ${7 - S.distSplitPos}</div>
+    <div class="property-description">${wholeProduct} = ${part1Product} + ${part2Product}</div>
+  </div>`;
+
+  // Controls
+  html += `<div class="property-controls">
+    <div class="control-row">
+      <label class="control-label">Split At</label>
+      <input type="range" min="1" max="6" value="${S.distSplitPos}" class="control-slider" oninput="updateDistSplit(this.value)">
+      <span class="control-value">${S.distSplitPos}</span>
+    </div>
+  </div>`;
+
+  return html;
+}
+
+function updateCommFactor1(val) {
+  S.commFactor1 = parseInt(val);
+  render();
+}
+
+function updateCommFactor2(val) {
+  S.commFactor2 = parseInt(val);
+  render();
+}
+
+function updateDistSplit(val) {
+  S.distSplitPos = parseInt(val);
+  render();
+}
+
+function renderSidePanel(sp) {
+  let panelHTML = '';
+
+  if (S.property === 'commutative') {
+    panelHTML = `
+      <div class="panel-section">
+        <div class="panel-title">Turn-Around Property</div>
+        <div class="panel-text">
+          Commutative means you can switch the factors around and get the same answer. <br><br>
+          3 × 4 = 4 × 3
+        </div>
+      </div>
+      <div class="panel-section">
+        <div class="panel-title">Why It Matters</div>
+        <div class="panel-text">
+          If you know 4 × 3, you automatically know 3 × 4! This cuts your multiplication facts in half.
+        </div>
+      </div>
+      <div class="panel-section">
+        <div class="panel-title">The Algebra Connection</div>
+        <div class="panel-text">
+          In algebra, we write this as: <strong>a × b = b × a</strong><br><br>
+          The letters work the same way as numbers!
+        </div>
+      </div>
+      <div class="panel-section">
+        <div class="panel-title">Standards</div>
+        <div class="panel-text">
+          <strong>3.OA.5</strong> — Apply properties of operations as strategies
+        </div>
+      </div>
+    `;
+  } else if (S.property === 'associative') {
+    panelHTML = `
+      <div class="panel-section">
+        <div class="panel-title">Grouping Property</div>
+        <div class="panel-text">
+          Associative means you can group factors differently. The answer stays the same. <br><br>
+          (2 × 3) × 4 = 2 × (3 × 4)
+        </div>
+      </div>
+      <div class="panel-section">
+        <div class="panel-title">Why It Matters</div>
+        <div class="panel-text">
+          Choose a grouping that's easy for you! Some groupings make mental math simpler.
+        </div>
+      </div>
+      <div class="panel-section">
+        <div class="panel-title">The Algebra Connection</div>
+        <div class="panel-text">
+          In algebra: <strong>(a × b) × c = a × (b × c)</strong><br><br>
+          Works with any values you put in for a, b, and c.
+        </div>
+      </div>
+      <div class="panel-section">
+        <div class="panel-title">Standards</div>
+        <div class="panel-text">
+          <strong>3.OA.5</strong> — Apply properties of operations as strategies
+        </div>
+      </div>
+    `;
+  } else {
+    panelHTML = `
+      <div class="panel-section">
+        <div class="panel-title">Break-Apart Property</div>
+        <div class="panel-text">
+          Distributive means you can break one factor apart and distribute the multiplication. <br><br>
+          6 × 7 = 6 × 5 + 6 × 2
+        </div>
+      </div>
+      <div class="panel-section">
+        <div class="panel-title">Why It Matters</div>
+        <div class="panel-text">
+          Break a hard fact into two easier facts! This is a powerful mental math strategy.
+        </div>
+      </div>
+      <div class="panel-section">
+        <div class="panel-title">The Algebra Connection</div>
+        <div class="panel-text">
+          In algebra: <strong>a × (b + c) = a×b + a×c</strong><br><br>
+          The multiplication distributes across the addition.
+        </div>
+      </div>
+      <div class="panel-section">
+        <div class="panel-title">Standards</div>
+        <div class="panel-text">
+          <strong>3.OA.5</strong> — Apply properties of operations as strategies
+        </div>
+      </div>
+    `;
+  }
+
+  sp.innerHTML = panelHTML;
+}
+
+// ─── PRACTICE MODE ───
+function renderPractice(ws, sp) {
+  let html = '<div class="array-container">';
+
+  html += `<div style="text-align:center;margin-bottom:12px;">
+    <div style="font-size:14px;color:var(--muted);">⭐ ${S.score}/${S.total}</div>
+  </div>`;
+
+  const max = getMaxFactor();
+
+  if (S.questionType === 'identify-property') {
+    // Show equation transformation, identify property
+    const props = ['commutative', 'associative', 'distributive'];
+    const prop = props[Math.floor(Math.random() * props.length)];
+
+    let equation1, equation2, label;
+    if (prop === 'commutative') {
+      equation1 = `3 × 4`;
+      equation2 = `4 × 3`;
+      label = 'Turn-Around (Commutative)';
+    } else if (prop === 'associative') {
+      equation1 = `(2 × 3) × 4`;
+      equation2 = `2 × (3 × 4)`;
+      label = 'Grouping (Associative)';
+    } else {
+      equation1 = `6 × 7`;
+      equation2 = `6 × 5 + 6 × 2`;
+      label = 'Break-Apart (Distributive)';
+    }
+
+    html += `<div class="practice-question">
+      <div class="question-text">Which property?</div>
+      <div style="margin:16px 0;font-size:14px;color:var(--text2);">
+        <div style="font-family:'JetBrains Mono', monospace;font-weight:700;margin-bottom:8px;color:var(--cyan);">${equation1}</div>
+        <div style="font-size:12px;margin:8px 0;">equals</div>
+        <div style="font-family:'JetBrains Mono', monospace;font-weight:700;color:var(--green);">${equation2}</div>
+      </div>
+      <div class="input-group" style="flex-direction:column;gap:8px;margin-top:16px;">
+        <button class="play-btn" onclick="submitPracticeAnswer('${prop}', 'commutative')">Turn-Around</button>
+        <button class="play-btn" onclick="submitPracticeAnswer('${prop}', 'associative')">Grouping</button>
+        <button class="play-btn" onclick="submitPracticeAnswer('${prop}', 'distributive')">Break-Apart</button>
+      </div>
+    </div>`;
+
+  } else if (S.questionType === 'fill-blank') {
+    // Fill in the blank using property
+    const prop = S.diff === 'emergent' ? 'commutative' : ['commutative', 'associative', 'distributive'][Math.floor(Math.random() * (S.diff === 'developing' ? 2 : 3))];
+
+    if (prop === 'commutative') {
+      html += `<div class="practice-question">
+        <div class="question-text">Fill in using turn-around:</div>
+        <div class="question-highlight">4 × 3 = ___ × ___</div>
+        <div class="input-group">
+          <input type="number" class="number-input" id="ans1" placeholder="?" min="1" max="12" />
+          <span style="font-weight:700;">×</span>
+          <input type="number" class="number-input" id="ans2" placeholder="?" min="1" max="12" />
+          <button class="play-btn primary" onclick="submitPracticeAnswer('commutative', null, [parseInt(document.getElementById('ans1').value), parseInt(document.getElementById('ans2').value)])">✓ Check</button>
+        </div>
+      </div>`;
+    } else if (prop === 'associative') {
+      html += `<div class="practice-question">
+        <div class="question-text">Same product, different grouping:</div>
+        <div class="question-highlight">(2 × 3) × 4 = 2 × (3 × ___)</div>
+        <div class="input-group">
+          <input type="number" class="number-input" id="ans1" placeholder="?" min="1" max="12" />
+          <button class="play-btn primary" onclick="submitPracticeAnswer('associative', null, [parseInt(document.getElementById('ans1').value)])">✓ Check</button>
+        </div>
+      </div>`;
+    } else {
+      html += `<div class="practice-question">
+        <div class="question-text">Break apart using the property:</div>
+        <div class="question-highlight">5 × 6 = 5 × 4 + 5 × ___</div>
+        <div class="input-group">
+          <input type="number" class="number-input" id="ans1" placeholder="?" min="1" max="12" />
+          <button class="play-btn primary" onclick="submitPracticeAnswer('distributive', null, [parseInt(document.getElementById('ans1').value)])">✓ Check</button>
+        </div>
+      </div>`;
+    }
+  }
+
+  html += '</div>';
+  ws.innerHTML = html;
+
+  sp.innerHTML = `
+    <div class="score-display">
+      <div class="score-value">${S.score}/${S.total}</div>
+      <div class="score-label">Score</div>
+    </div>
+    <div class="panel-section">
+      <div class="panel-title">Instructions</div>
+      <div class="panel-text">
+        ${S.questionType === 'identify-property' ? 'Look at both sides and pick which property is being used.' : ''}
+        ${S.questionType === 'fill-blank' ? 'Complete the equation using the property shown.' : ''}
+      </div>
+    </div>
+    <div class="panel-section">
+      <div class="panel-title">Remember</div>
+      <div class="panel-text">
+        <strong>Turn-Around:</strong> Switch order<br><br>
+        <strong>Grouping:</strong> Move parentheses<br><br>
+        <strong>Break-Apart:</strong> Split a factor
+      </div>
+    </div>
+  `;
+}
+
+function newPracticeQuestion() {
+  S.total = (S.total || 0) + 1;
+  const types = ['identify-property', 'fill-blank'];
+  S.questionType = types[Math.floor(Math.random() * types.length)];
+}
+
+function submitPracticeAnswer(prop, answered, values) {
+  let correct = false;
+
+  if (S.questionType === 'identify-property') {
+    correct = prop === answered;
+  } else if (S.questionType === 'fill-blank') {
+    if (prop === 'commutative') {
+      correct = values && values[0] === 3 && values[1] === 4;
+    } else if (prop === 'associative') {
+      correct = values && values[0] === 4;
+    } else if (prop === 'distributive') {
+      correct = values && values[0] === 2;
+    }
+  }
+
+  if (correct) {
+    showFB('✓ Correct!', 'correct');
+    S.score++;
+    setTimeout(() => {
+      newPracticeQuestion();
+      render();
+    }, 800);
+  } else {
+    showFB('✗ Try again', 'incorrect');
+  }
+}
+
+// ─── PLAY MODE ───
+function renderPlay(ws, sp) {
+  let html = '<div class="array-container">';
+
+  if (S.gameEnded) {
+    html += `<div style="text-align:center;padding:40px;font-size:32px;font-weight:800;">
+      Game Complete!<br>
+      <div style="font-size:48px;margin:20px 0;background:var(--grad);-webkit-background-clip:text;-webkit-text-fill-color:transparent;">
+        ${S.playScore}
+      </div>
+      <button class="play-btn primary" onclick="playAgain()" style="margin-top:20px;">▶ Play Again</button>
+    </div>`;
+  } else {
+    html += `<div class="game-info">
+      <div class="info-item">
+        <span class="info-label">Round</span>
+        <span>${S.playRound} / 8</span>
+      </div>
+      <div class="info-item">
+        <span class="info-label">⭐ Score</span>
+        <span>${S.playScore}</span>
+      </div>
+      <div class="info-item">
+        <span class="info-label">🔥 Streak</span>
+        <span>${S.playStreak}</span>
+      </div>
+    </div>`;
+
+    // Random property matching question
+    const allProps = ['commutative', 'associative', 'distributive'];
+    const targetIdx = Math.floor(Math.random() * allProps.length);
+    const targetProp = allProps[targetIdx];
+    let equation, options;
+
+    if (targetProp === 'commutative') {
+      equation = '5 × 3 = 3 × 5';
+      options = ['Turn-Around', 'Grouping', 'Break-Apart'];
+    } else if (targetProp === 'associative') {
+      equation = '(2 × 4) × 3 = 2 × (4 × 3)';
+      options = ['Break-Apart', 'Turn-Around', 'Grouping'];
+    } else {
+      equation = '4 × 6 = 4 × 5 + 4 × 1';
+      options = ['Grouping', 'Break-Apart', 'Turn-Around'];
+    }
+
+    html += `<div class="practice-question">
+      <div class="question-text">What property?</div>
+      <div style="font-family:'JetBrains Mono', monospace;font-size:16px;font-weight:700;color:var(--cyan);margin:16px 0;">${equation}</div>
+      <div class="input-group" style="flex-direction:column;gap:8px;margin-top:16px;">
+        <button class="play-btn" onclick="submitPlayAnswer('${targetProp}', '${options[0]}')"> ${options[0]}</button>
+        <button class="play-btn" onclick="submitPlayAnswer('${targetProp}', '${options[1]}')"> ${options[1]}</button>
+        <button class="play-btn" onclick="submitPlayAnswer('${targetProp}', '${options[2]}')"> ${options[2]}</button>
+      </div>
+    </div>`;
+  }
+
+  html += '</div>';
+  ws.innerHTML = html;
+
+  sp.innerHTML = `
+    <div class="score-display">
+      <div class="score-value">${S.playScore}</div>
+      <div class="score-label">Score</div>
+    </div>
+    <div class="score-display" style="background:transparent; padding:8px;">
+      <div style="font-size:18px; font-weight:700; color:var(--yellow);">🔥 ${S.playStreak}</div>
+      <div class="score-label">Streak</div>
+      <div class="streak-bar"><div class="streak-fill" style="width:${Math.min(S.playStreak * 12.5, 100)}%;"></div></div>
+    </div>
+    <div class="panel-section">
+      <div class="panel-title">How to Play</div>
+      <div class="panel-text">
+        Each round shows an <strong>equation</strong>.<br><br>
+        Pick the <strong>property</strong> it uses.<br><br>
+        Build your <strong>streak</strong>!
+      </div>
+    </div>
+    <div class="panel-section">
+      <div class="panel-title">Scoring</div>
+      <div class="panel-text">
+        Base: <strong>10 points</strong><br>
+        Streak bonus: <strong>+3 × streak</strong><br>
+        <strong>Max: 34 pts/round</strong>
+      </div>
+    </div>
+  `;
+}
+
+function submitPlayAnswer(correct, answered) {
+  if (answered === correct || (correct === 'commutative' && answered === 'Turn-Around') || (correct === 'associative' && answered === 'Grouping') || (correct === 'distributive' && answered === 'Break-Apart')) {
+    showFB('✓ Yes!', 'correct');
+    S.playScore += 10 + (S.playStreak * 3);
+    S.playStreak++;
+    S.playRound++;
+
+    if (S.playRound > 8) {
+      setTimeout(() => {
+        S.gameEnded = true;
+        render();
+      }, 800);
+    } else {
+      setTimeout(() => {
+        render();
+      }, 800);
+    }
+  } else {
+    showFB('✗ Try again', 'incorrect');
+    S.playStreak = 0;
+  }
+}
+
+function playAgain() {
+  S.playScore = 0;
+  S.playStreak = 0;
+  S.playRound = 1;
+  S.gameEnded = false;
+  render();
+}
+
+// ════════════════════════════════════════
+// INIT
+// ════════════════════════════════════════
+render();
+</script>
+<script src="../../vinculum-core.js"></script>
+<script src="../../vinculum-data.js"></script>
+<script src="../../vinculum-adaptive-hook.js"></script>
+<script src="../../vinculum-3reads.js"></script>
+<script src="../../vinculum-stories.js"></script>
+<script src="../../vinculum-feedback.js"></script>
+<!-- Foundation loaded from vinculum-core.js -->
+</body>
+</html>

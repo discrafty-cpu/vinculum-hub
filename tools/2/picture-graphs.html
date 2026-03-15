@@ -1,0 +1,1362 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>VINCULUM — Picture Graphs</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="../../vinculum-core.css">
+<style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        /* Theme system loaded from vinculum-core.css */
+.vinculum-rtm-btn .rtm-icon{font-size:14px;}
+
+/* ═══ FOCUS VISIBLE (Keyboard Navigation) ═══ */
+*:focus-visible {
+  outline:2px solid var(--cyan);outline-offset:2px;border-radius:4px;
+}
+.sr-only {
+  position:absolute;width:1px;height:1px;padding:0;margin:-1px;
+  overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0;
+}
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            height: 100vh;
+            overflow: hidden;
+        }
+
+        .container {
+            display: flex;
+            height: 100vh;
+            flex-direction: column;
+        }
+
+        /* HEADER */
+        .back-btn {
+  display:inline-block;padding:6px 12px;border-radius:8px;
+  border:1px solid var(--border);background:transparent;
+  color:var(--text2);font-size:13px;font-family:inherit;
+  cursor:pointer;transition:all 0.2s;text-decoration:none;
+}
+.back-btn:hover { background:var(--card); color:var(--cyan); }
+.header {
+            background: var(--bg2);
+            border-bottom: 1px solid var(--border);
+            padding: 20px 24px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .header-left {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+        }
+
+        .title-section h1 {
+            font-size: 24px;
+            font-weight: 700;
+            background: var(--grad);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .title-section p {
+            font-size: 12px;
+            color: var(--text2);
+            font-family: 'JetBrains Mono', monospace;
+            margin-top: 2px;
+        }
+
+        .difficulty-pill {
+            background: var(--card);
+            border: 1px solid var(--border);
+            border-radius: 20px;
+            padding: 6px 12px;
+            font-size: 12px;
+            color: var(--cyan);
+            font-weight: 500;
+        }
+
+        .difficulty-pill.proficient {
+            color: var(--green);
+        }
+
+        .difficulty-pill.advanced {
+            color: var(--purple);
+        }
+
+        /* TAB NAVIGATION */
+        .tabs {
+            display: flex;
+            gap: 8px;
+            padding: 0 24px;
+            border-bottom: 1px solid var(--border);
+            background: var(--bg);
+        }
+
+        .tab-btn {
+            padding: 12px 16px;
+            background: none;
+            border: none;
+            color: var(--text2);
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 500;
+            border-bottom: 2px solid transparent;
+            transition: all 0.2s;
+            font-family: 'Inter', sans-serif;
+        }
+
+        .tab-btn:hover {
+            color: var(--text);
+        }
+
+        .tab-btn.active {
+            color: var(--cyan);
+            border-bottom-color: var(--cyan);
+        }
+
+        /* MAIN CONTENT */
+        .content {
+            display: flex;
+            flex: 1;
+            overflow: hidden;
+        }
+
+        .workspace {
+            flex: 1;
+            padding: 24px;
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .workspace::-webkit-scrollbar {
+            width: 8px;
+        }
+
+        .workspace::-webkit-scrollbar-track {
+            background: var(--bg);
+        }
+
+        .workspace::-webkit-scrollbar-thumb {
+            background: var(--border);
+            border-radius: 4px;
+        }
+
+        .workspace::-webkit-scrollbar-thumb:hover {
+            background: var(--muted);
+        }
+
+        /* SIDE PANEL */
+        .side-panel {
+            width: 280px;
+            background: var(--card);
+            border-left: 1px solid var(--border);
+            padding: 20px;
+            overflow-y: auto;
+        }
+
+        .side-panel::-webkit-scrollbar {
+            width: 6px;
+        }
+
+        .side-panel::-webkit-scrollbar-track {
+            background: var(--card);
+        }
+
+        .side-panel::-webkit-scrollbar-thumb {
+            background: var(--border);
+            border-radius: 3px;
+        }
+
+        .panel-section {
+            margin-bottom: 24px;
+        }
+
+        .panel-section h3 {
+            font-size: 12px;
+            font-weight: 600;
+            color: var(--cyan);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-bottom: 12px;
+        }
+
+        .vocab-item {
+            margin-bottom: 12px;
+            font-size: 13px;
+            line-height: 1.5;
+        }
+
+        .vocab-term {
+            color: var(--text);
+            font-weight: 600;
+            display: block;
+            margin-bottom: 2px;
+        }
+
+        .vocab-def {
+            color: var(--text2);
+            font-size: 12px;
+        }
+
+        /* SECTIONS */
+        .section {
+            display: none;
+        }
+
+        .section.active {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .section-title {
+            font-size: 20px;
+            font-weight: 600;
+            margin-bottom: 20px;
+            color: var(--text);
+        }
+
+        /* EXPLORE: PICTURE GRAPH */
+        .picture-graph-explore {
+            display: flex;
+            gap: 32px;
+            margin-bottom: 20px;
+        }
+
+        .picture-graph-col {
+            flex: 1;
+        }
+
+        .graph-container {
+            background: var(--card);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: 24px;
+            margin-bottom: 20px;
+        }
+
+        .graph-title {
+            font-size: 14px;
+            font-weight: 600;
+            color: var(--cyan);
+            margin-bottom: 16px;
+            text-transform: uppercase;
+        }
+
+        .picture-graph-build {
+            display: flex;
+            flex-direction: column;
+            gap: 24px;
+        }
+
+        .graph-row {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+        }
+
+        .row-label {
+            min-width: 100px;
+            font-size: 14px;
+            font-weight: 500;
+            color: var(--text);
+        }
+
+        .icon-buttons {
+            display: flex;
+            gap: 8px;
+            flex-wrap: wrap;
+        }
+
+        .icon-btn {
+            width: 48px;
+            height: 48px;
+            border: 2px solid var(--border);
+            background: var(--card2);
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 24px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.2s;
+        }
+
+        .icon-btn:hover {
+            background: var(--cyan);
+            background-clip: padding-box;
+            border-color: var(--cyan);
+            transform: scale(1.1);
+        }
+
+        .icon-btn.selected {
+            background: linear-gradient(135deg, var(--cyan), var(--purple));
+            border-color: transparent;
+            color: var(--bg);
+        }
+
+        .icons-display {
+            display: flex;
+            gap: 8px;
+            flex-wrap: wrap;
+            min-height: 40px;
+            align-items: center;
+        }
+
+        .icon-single {
+            font-size: 28px;
+            cursor: pointer;
+            transition: all 0.2s;
+            padding: 4px;
+        }
+
+        .icon-single:hover {
+            transform: scale(1.2);
+            opacity: 0.7;
+        }
+
+        .graph-key {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 13px;
+            color: var(--text2);
+            margin-top: 16px;
+            padding-top: 16px;
+            border-top: 1px solid var(--border);
+        }
+
+        .key-icon {
+            font-size: 20px;
+        }
+
+        .data-table {
+            background: var(--card2);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: 16px;
+            margin-bottom: 20px;
+        }
+
+        .data-table-title {
+            font-size: 13px;
+            font-weight: 600;
+            color: var(--cyan);
+            text-transform: uppercase;
+            margin-bottom: 12px;
+        }
+
+        .table-row {
+            display: flex;
+            justify-content: space-between;
+            padding: 8px 0;
+            border-bottom: 1px solid var(--border);
+            font-size: 13px;
+        }
+
+        .table-row:last-child {
+            border-bottom: none;
+        }
+
+        .table-label {
+            font-weight: 500;
+            color: var(--text);
+        }
+
+        .table-count {
+            color: var(--cyan);
+            font-weight: 600;
+        }
+
+        .control-buttons {
+            display: flex;
+            gap: 8px;
+            margin-bottom: 20px;
+        }
+
+        .preset-data-btn {
+            background: linear-gradient(135deg, rgba(0, 212, 255, 0.1), rgba(179, 136, 255, 0.1));
+            border: 1px solid var(--border);
+            color: var(--text2);
+            padding: 8px 12px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 12px;
+            font-weight: 500;
+            transition: all 0.2s;
+        }
+
+        .preset-data-btn:hover {
+            background: linear-gradient(135deg, rgba(0, 212, 255, 0.2), rgba(179, 136, 255, 0.2));
+            color: var(--text);
+            border-color: var(--cyan);
+        }
+
+        .preset-data-btn.active {
+            background: linear-gradient(135deg, var(--cyan), var(--purple));
+            color: var(--bg);
+            border-color: transparent;
+        }
+
+        .clear-btn {
+            background: rgba(255, 59, 139, 0.1);
+            border: 1px solid var(--pink);
+            color: var(--pink);
+            padding: 8px 12px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 12px;
+            transition: all 0.2s;
+        }
+
+        .clear-btn:hover {
+            background: rgba(255, 59, 139, 0.2);
+        }
+
+        /* PRACTICE SECTION */
+        .practice-section {
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+        }
+
+        .question-card {
+            background: var(--card);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: 20px;
+        }
+
+        .question-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: start;
+            margin-bottom: 16px;
+        }
+
+        .question-text {
+            font-size: 14px;
+            font-weight: 500;
+            color: var(--text);
+            line-height: 1.5;
+            flex: 1;
+        }
+
+        .difficulty-badge {
+            background: var(--card2);
+            border: 1px solid var(--border);
+            color: var(--cyan);
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-size: 11px;
+            text-transform: uppercase;
+            font-weight: 600;
+            margin-left: 12px;
+            white-space: nowrap;
+        }
+
+        .difficulty-badge.proficient {
+            color: var(--green);
+            border-color: var(--green);
+        }
+
+        .difficulty-badge.advanced {
+            color: var(--purple);
+            border-color: var(--purple);
+        }
+
+        .answer-input {
+            background: var(--card2);
+            border: 1px solid var(--border);
+            color: var(--text);
+            padding: 8px 12px;
+            border-radius: 6px;
+            font-size: 13px;
+            font-family: inherit;
+            transition: all 0.2s;
+            flex: 1;
+        }
+
+        .answer-input:focus {
+            outline: none;
+            border-color: var(--cyan);
+            background: rgba(0, 212, 255, 0.05);
+        }
+
+        .check-btn {
+            background: var(--cyan);
+            border: none;
+            color: var(--bg);
+            padding: 8px 16px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 13px;
+            font-weight: 600;
+            transition: all 0.2s;
+        }
+
+        .check-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(0, 212, 255, 0.3);
+        }
+
+        .feedback {
+            padding: 12px;
+            border-radius: 6px;
+            font-size: 13px;
+            display: none;
+        }
+
+        .feedback.correct {
+            background: rgba(0, 230, 118, 0.1);
+            color: var(--green);
+            border-left: 3px solid var(--green);
+        }
+
+        .feedback.incorrect {
+            background: rgba(255, 59, 139, 0.1);
+            color: var(--pink);
+            border-left: 3px solid var(--pink);
+        }
+
+        .feedback.show {
+            display: block;
+        }
+
+        /* PLAY SECTION */
+        .play-section {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .quiz-container {
+            background: var(--card);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: 32px;
+            max-width: 600px;
+            width: 100%;
+        }
+
+        .quiz-header {
+            text-align: center;
+            margin-bottom: 32px;
+        }
+
+        .quiz-title {
+            font-size: 28px;
+            font-weight: 700;
+            color: var(--text);
+            margin-bottom: 8px;
+        }
+
+        .quiz-subtitle {
+            font-size: 14px;
+            color: var(--text2);
+        }
+
+        .quiz-stats {
+            display: flex;
+            justify-content: center;
+            gap: 32px;
+            margin-top: 16px;
+        }
+
+        .quiz-stat {
+            text-align: center;
+        }
+
+        .quiz-stat-label {
+            font-size: 12px;
+            color: var(--text2);
+            text-transform: uppercase;
+            font-weight: 500;
+            margin-bottom: 4px;
+        }
+
+        .quiz-stat-value {
+            font-size: 24px;
+            font-weight: 700;
+            color: var(--cyan);
+        }
+
+        .quiz-stat-value.streak {
+            color: var(--green);
+        }
+
+        .quiz-question {
+            background: var(--card2);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: 20px;
+            margin-bottom: 24px;
+        }
+
+        .quiz-question-text {
+            font-size: 16px;
+            color: var(--text);
+            margin-bottom: 20px;
+            line-height: 1.6;
+        }
+
+        .quiz-options {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 12px;
+        }
+
+        .quiz-option {
+            background: var(--card);
+            border: 2px solid var(--border);
+            color: var(--text);
+            padding: 12px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 500;
+            transition: all 0.2s;
+            text-align: center;
+        }
+
+        .quiz-option:hover {
+            border-color: var(--cyan);
+            background: rgba(0, 212, 255, 0.05);
+        }
+
+        .quiz-option.selected {
+            background: rgba(0, 212, 255, 0.2);
+            border-color: var(--cyan);
+        }
+
+        .quiz-option.correct {
+            background: rgba(0, 230, 118, 0.2);
+            border-color: var(--green);
+            color: var(--green);
+        }
+
+        .quiz-option.incorrect {
+            background: rgba(255, 59, 139, 0.2);
+            border-color: var(--pink);
+            color: var(--pink);
+        }
+
+        .quiz-option:disabled {
+            cursor: not-allowed;
+            opacity: 0.7;
+        }
+
+        .quiz-timer {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            font-size: 14px;
+            color: var(--text2);
+            margin-bottom: 20px;
+        }
+
+        .timer-bar {
+            width: 100%;
+            height: 4px;
+            background: var(--border);
+            border-radius: 2px;
+            overflow: hidden;
+            margin-bottom: 20px;
+        }
+
+        .timer-fill {
+            height: 100%;
+            background: linear-gradient(90deg, var(--cyan), var(--purple));
+            transition: width 0.1s linear;
+        }
+
+        .submit-btn {
+            background: linear-gradient(135deg, var(--cyan), var(--purple));
+            border: none;
+            color: var(--bg);
+            padding: 12px 24px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 600;
+            width: 100%;
+            transition: all 0.2s;
+        }
+
+        .submit-btn:hover:not(:disabled) {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(0, 212, 255, 0.3);
+        }
+
+        .submit-btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        .quiz-end-screen {
+            text-align: center;
+        }
+
+        .quiz-score {
+            font-size: 48px;
+            font-weight: 700;
+            color: var(--cyan);
+            margin-bottom: 8px;
+        }
+
+        .quiz-score-label {
+            font-size: 14px;
+            color: var(--text2);
+            margin-bottom: 32px;
+        }
+
+        .restart-btn {
+            background: linear-gradient(135deg, var(--cyan), var(--purple));
+            border: none;
+            color: var(--bg);
+            padding: 12px 32px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 600;
+            transition: all 0.2s;
+        }
+
+        .restart-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(0, 212, 255, 0.3);
+        }
+
+        /* UTILITY */
+        .flex-center {
+            display: flex;
+            justify-content: start;
+            gap: 8px;
+            align-items: center;
+            margin-bottom: 16px;
+            flex-wrap: wrap;
+        }
+
+        .text-center {
+            text-align: center;
+        }
+
+        .mt-20 {
+            margin-top: 20px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- HEADER -->
+        <div class="header">
+            <div class="header-left">
+                <a class="back-btn" href="../../VINCULUM-Hub.html" style="text-decoration:none;">◀ Hub</a>
+                <div class="title-section">
+                    <h1>VINCULUM — Picture Graphs</h1>
+                    <p>2.MD.10</p>
+                </div>
+            </div>
+            <div class="difficulty-pill" id="difficultyPill">Emergent</div>
+        </div>
+
+        <!-- TABS -->
+        <div class="tabs">
+            <button class="tab-btn active" data-tab="explore">Explore</button>
+            <button class="tab-btn" data-tab="practice">Practice</button>
+            <button class="tab-btn" data-tab="play">Play</button>
+        </div>
+
+        <!-- MAIN CONTENT -->
+        <div class="content">
+            <div class="workspace" role="main">
+                <!-- EXPLORE SECTION -->
+                <div class="section active" id="explore">
+                    <div class="section-title">Explore: Build a Picture Graph</div>
+
+                    <div class="picture-graph-explore">
+                        <!-- Picture Graph Building Area -->
+                        <div class="picture-graph-col" style="flex: 1.5;">
+                            <div class="graph-container">
+                                <div class="graph-title">Favorite Fruits</div>
+                                <div class="picture-graph-build" id="graphBuilder"></div>
+                                <div class="graph-key">
+                                    <span class="key-icon">📌</span>
+                                    <span>Each icon = <strong id="keyValue">1</strong> vote</span>
+                                </div>
+                            </div>
+
+                            <div class="data-table">
+                                <div class="data-table-title">Data Summary</div>
+                                <div id="dataTable"></div>
+                            </div>
+                        </div>
+
+                        <!-- Bar Graph Comparison -->
+                        <div class="picture-graph-col">
+                            <div class="graph-container">
+                                <div class="graph-title">Bar Graph (Same Data)</div>
+                                <div id="barGraphContent" style="display: flex; flex-direction: column; gap: 16px; height: 100%;"></div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="control-buttons">
+                        <button class="preset-data-btn" data-preset="fruits">Load: Fruits</button>
+                        <button class="preset-data-btn" data-preset="animals">Load: Animals</button>
+                        <button class="preset-data-btn" data-preset="sports">Load: Sports</button>
+                        <button class="clear-btn">Clear All</button>
+                    </div>
+                </div>
+
+                <!-- PRACTICE SECTION -->
+                <div class="section" id="practice">
+                    <div class="section-title">Practice: Read the Graph</div>
+                    <div class="practice-section" id="practiceContent"></div>
+                </div>
+
+                <!-- PLAY SECTION -->
+                <div class="section" id="play">
+                    <div class="play-section">
+                        <div class="quiz-container" id="playContent"></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- SIDE PANEL -->
+            <div class="side-panel">
+                <div class="panel-section">
+                    <h3>📖 Vocabulary</h3>
+                    <div class="vocab-item">
+                        <span class="vocab-term">Picture Graph</span>
+                        <span class="vocab-def">A graph that uses pictures or symbols to show data.</span>
+                    </div>
+                    <div class="vocab-item">
+                        <span class="vocab-term">Data</span>
+                        <span class="vocab-def">Information we collect, like counts or preferences.</span>
+                    </div>
+                    <div class="vocab-item">
+                        <span class="vocab-term">Key</span>
+                        <span class="vocab-def">Information showing what each symbol or picture means. Example: "Each apple = 1 vote."</span>
+                    </div>
+                    <div class="vocab-item">
+                        <span class="vocab-term">Category</span>
+                        <span class="vocab-def">A group or type of thing. In graphs: apples, oranges, and bananas are categories of fruit.</span>
+                    </div>
+                    <div class="vocab-item">
+                        <span class="vocab-term">Compare</span>
+                        <span class="vocab-def">Look at two amounts to see which is more, less, or if they are equal.</span>
+                    </div>
+                </div>
+                <div class="panel-section">
+                    <h3>🔗 About Graphs</h3>
+                    <div class="vocab-item">
+                        <span class="vocab-def">A picture graph is like a mapping system: each category (like a type of fruit) connects to a count (like how many votes it got). This is one of the first ways we represent relationships in math—a function that maps categories to quantities.</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+<div class="feedback" id="feedback"></div>
+    <script>
+function showFB(t,c){var f=document.getElementById("feedback");if(!f)return;f.textContent=t;f.className="feedback "+c+" show";setTimeout(function(){f.classList.remove("show");},1200);}
+
+        // STATE MANAGEMENT
+        const S = {
+            mode: 'explore',
+            diff: 'emergent',
+            score: 0,
+            total: 0,
+            streak: 0,
+            data: {
+                '🍎 Apple': 4,
+                '🍌 Banana': 3,
+                '🍊 Orange': 5
+            },
+            categories: ['🍎 Apple', '🍌 Banana', '🍊 Orange'],
+            key: 1,
+            difficulty: 'emergent',
+            quizMode: false,
+            quizScore: 0,
+            quizStreak: 0,
+            quizTotal: 0,
+            currentQuestion: null
+        };
+
+        const presetData = {
+            fruits: {
+                name: 'Favorite Fruits',
+                categories: ['🍎 Apple', '🍌 Banana', '🍊 Orange'],
+                data: { '🍎 Apple': 4, '🍌 Banana': 3, '🍊 Orange': 5 }
+            },
+            animals: {
+                name: 'Favorite Animals',
+                categories: ['🐶 Dog', '🐱 Cat', '🐠 Fish', '🐰 Rabbit'],
+                data: { '🐶 Dog': 5, '🐱 Cat': 4, '🐠 Fish': 2, '🐰 Rabbit': 3 }
+            },
+            sports: {
+                name: 'Favorite Sports',
+                categories: ['⚽ Soccer', '🏀 Basketball', '⚾ Baseball'],
+                data: { '⚽ Soccer': 6, '🏀 Basketball': 4, '⚾ Baseball': 5 }
+            }
+        };
+
+        // RENDER FUNCTIONS
+        function render() {
+            if (S.mode === 'explore') {
+                renderGraphBuilder();
+                renderBarGraph();
+                renderDataTable();
+            } else if (S.mode === 'practice') {
+                renderPractice();
+            } else if (S.mode === 'play') {
+                renderQuiz();
+            }
+        }
+
+        function renderGraphBuilder() {
+            const container = document.getElementById('graphBuilder');
+            container.innerHTML = '';
+
+            for (const cat of S.categories) {
+                const row = document.createElement('div');
+                row.className = 'graph-row';
+
+                const label = document.createElement('div');
+                label.className = 'row-label';
+                label.textContent = cat;
+
+                const iconsDisplay = document.createElement('div');
+                iconsDisplay.className = 'icons-display';
+                iconsDisplay.id = `icons-${cat}`;
+
+                const count = S.data[cat] || 0;
+                for (let i = 0; i < count; i++) {
+                    const icon = document.createElement('span');
+                    icon.className = 'icon-single';
+                    icon.textContent = cat.split(' ')[0];
+                    icon.addEventListener('click', () => removeIcon(cat));
+                    iconsDisplay.appendChild(icon);
+                }
+
+                const addBtn = document.createElement('button');
+                addBtn.className = 'icon-btn';
+                addBtn.textContent = '+';
+                addBtn.addEventListener('click', () => addIcon(cat));
+
+                row.appendChild(label);
+                row.appendChild(iconsDisplay);
+                row.appendChild(addBtn);
+                container.appendChild(row);
+            }
+        }
+
+        function renderBarGraph() {
+            const container = document.getElementById('barGraphContent');
+            container.innerHTML = '';
+
+            const maxVal = Math.max(...Object.values(S.data));
+
+            for (const cat of S.categories) {
+                const val = S.data[cat] || 0;
+                const barRow = document.createElement('div');
+                barRow.style.display = 'flex';
+                barRow.style.alignItems = 'center';
+                barRow.style.gap = '12px';
+
+                const catLabel = document.createElement('div');
+                catLabel.style.minWidth = '80px';
+                catLabel.style.fontSize = '13px';
+                catLabel.style.fontWeight = '500';
+                catLabel.style.color = 'var(--text)';
+                catLabel.textContent = cat;
+
+                const barWrapper = document.createElement('div');
+                barWrapper.style.flex = '1';
+                barWrapper.style.display = 'flex';
+                barWrapper.style.alignItems = 'center';
+                barWrapper.style.gap = '8px';
+
+                const bar = document.createElement('div');
+                bar.style.height = '28px';
+                bar.style.background = 'linear-gradient(90deg, var(--cyan), var(--purple))';
+                bar.style.borderRadius = '4px';
+                bar.style.width = `${(val / maxVal) * 150}px`;
+                bar.style.minWidth = val > 0 ? '20px' : '0px';
+
+                const valLabel = document.createElement('div');
+                valLabel.style.fontSize = '12px';
+                valLabel.style.fontWeight = '600';
+                valLabel.style.color = 'var(--cyan)';
+                valLabel.style.minWidth = '30px';
+                valLabel.textContent = val;
+
+                barWrapper.appendChild(bar);
+                barWrapper.appendChild(valLabel);
+                barRow.appendChild(catLabel);
+                barRow.appendChild(barWrapper);
+                container.appendChild(barRow);
+            }
+        }
+
+        function renderDataTable() {
+            const container = document.getElementById('dataTable');
+            container.innerHTML = '';
+
+            let total = 0;
+            for (const cat of S.categories) {
+                const count = S.data[cat] || 0;
+                total += count;
+
+                const row = document.createElement('div');
+                row.className = 'table-row';
+
+                const label = document.createElement('span');
+                label.className = 'table-label';
+                label.textContent = cat;
+
+                const countSpan = document.createElement('span');
+                countSpan.className = 'table-count';
+                countSpan.textContent = count;
+
+                row.appendChild(label);
+                row.appendChild(countSpan);
+                container.appendChild(row);
+            }
+
+            const totalRow = document.createElement('div');
+            totalRow.className = 'table-row';
+            totalRow.style.fontWeight = '600';
+            totalRow.style.paddingTop = '12px';
+            totalRow.style.marginTop = '12px';
+            totalRow.style.borderTop = '2px solid var(--border)';
+            totalRow.style.borderBottom = 'none';
+
+            const totalLabel = document.createElement('span');
+            totalLabel.className = 'table-label';
+            totalLabel.textContent = 'Total';
+
+            const totalCount = document.createElement('span');
+            totalCount.className = 'table-count';
+            totalCount.textContent = total;
+
+            totalRow.appendChild(totalLabel);
+            totalRow.appendChild(totalCount);
+            container.appendChild(totalRow);
+        }
+
+        function addIcon(cat) {
+            S.data[cat] = (S.data[cat] || 0) + 1;
+            render();
+        }
+
+        function removeIcon(cat) {
+            if (S.data[cat] > 0) {
+                S.data[cat]--;
+                render();
+            }
+        }
+
+        function renderPractice() {
+            const container = document.getElementById('practiceContent');
+            container.innerHTML = '';
+
+            const questions = generatePracticeQuestions();
+            for (const q of questions) {
+                const card = document.createElement('div');
+                card.className = 'question-card';
+
+                const header = document.createElement('div');
+                header.className = 'question-header';
+
+                const text = document.createElement('div');
+                text.className = 'question-text';
+                text.textContent = q.text;
+
+                const badge = document.createElement('div');
+                badge.className = `difficulty-badge ${q.difficulty}`;
+                badge.textContent = q.difficulty;
+
+                header.appendChild(text);
+                header.appendChild(badge);
+
+                const inputWrapper = document.createElement('div');
+                inputWrapper.style.display = 'flex';
+                inputWrapper.style.gap = '8px';
+                inputWrapper.style.marginBottom = '12px';
+
+                const input = document.createElement('input');
+                input.type = 'text';
+                input.className = 'answer-input';
+                input.placeholder = 'Type answer...';
+                input.dataset.qid = q.id;
+
+                const btn = document.createElement('button');
+                btn.className = 'check-btn';
+                btn.textContent = 'Check';
+                btn.addEventListener('click', () => checkAnswer(q.id));
+
+                inputWrapper.appendChild(input);
+                inputWrapper.appendChild(btn);
+
+                const fb = document.createElement('div');
+                fb.id = `fb-${q.id}`;
+                fb.className = 'feedback';
+
+                card.appendChild(header);
+                card.appendChild(inputWrapper);
+                card.appendChild(fb);
+                container.appendChild(card);
+            }
+        }
+
+        function generatePracticeQuestions() {
+            const qs = [];
+            if (S.difficulty === 'emergent') {
+                qs.push({
+                    id: 'p1',
+                    text: 'How many people chose Apple?',
+                    answer: S.data['🍎 Apple'] || 0,
+                    difficulty: 'emergent'
+                });
+            } else if (S.difficulty === 'proficient') {
+                qs.push({
+                    id: 'p1',
+                    text: 'How many more chose Orange than Banana?',
+                    answer: (S.data['🍊 Orange'] || 0) - (S.data['🍌 Banana'] || 0),
+                    difficulty: 'proficient'
+                }, {
+                    id: 'p2',
+                    text: 'What is the total number of votes?',
+                    answer: Object.values(S.data).reduce((a,b)=>a+b, 0),
+                    difficulty: 'proficient'
+                });
+            } else {
+                qs.push({
+                    id: 'p1',
+                    text: 'How many more people chose Apple and Banana combined than Orange?',
+                    answer: (S.data['🍎 Apple'] || 0) + (S.data['🍌 Banana'] || 0) - (S.data['🍊 Orange'] || 0),
+                    difficulty: 'advanced'
+                }, {
+                    id: 'p2',
+                    text: 'If 2 more people choose Banana, how many will have chosen Banana?',
+                    answer: (S.data['🍌 Banana'] || 0) + 2,
+                    difficulty: 'advanced'
+                });
+            }
+            return qs;
+        }
+
+        function checkAnswer(qid) {
+            const input = document.querySelector(`[data-qid="${qid}"]`);
+            const fb = document.getElementById(`fb-${qid}`);
+            const val = input.value.trim();
+            const q = generatePracticeQuestions().find(x => x.id === qid);
+            const correct = parseInt(val) === q.answer;
+
+            fb.className = `feedback ${correct ? 'correct' : 'incorrect'} show`;
+            fb.textContent = correct ? '✓ Correct!' : `✗ Try again. (Answer: ${q.answer})`;
+            if (correct) {
+                showFB('✓ Correct!', 'correct');
+                S.score++;
+            } else {
+                showFB('Try again!', 'incorrect');
+            }
+            S.total++;
+        }
+
+        function renderQuiz() {
+            const container = document.getElementById('playContent');
+
+            if (S.quizTotal === 0) {
+                container.innerHTML = `
+                    <div class="quiz-header">
+                        <div class="quiz-title">⚡ Graph Speed Round</div>
+                        <p class="quiz-subtitle">Read the graph quickly and answer correctly!</p>
+                    </div>
+                    <button class="restart-btn" style="width: 100%; padding: 12px;" onclick="startQuiz()">Start Challenge</button>
+                `;
+            } else if (S.quizTotal >= 5) {
+                container.innerHTML = `
+                    <div class="quiz-end-screen">
+                        <div class="quiz-score">${S.quizScore}/5</div>
+                        <div class="quiz-score-label">Challenge Complete!</div>
+                        <p style="color: var(--text2); margin-bottom: 24px;">Streak: ${S.quizStreak}</p>
+                        <button class="restart-btn" onclick="resetQuiz()">Try Again</button>
+                    </div>
+                `;
+            } else {
+                const q = S.currentQuestion;
+                container.innerHTML = `
+                    <div class="quiz-header">
+                        <div class="quiz-title">Graph Challenge</div>
+                        <div class="quiz-stats">
+                            <div class="quiz-stat">
+                                <div class="quiz-stat-label">Score</div>
+                                <div class="quiz-stat-value">${S.quizScore}/${S.quizTotal + 1}</div>
+                            </div>
+                            <div class="quiz-stat">
+                                <div class="quiz-stat-label">Streak</div>
+                                <div class="quiz-stat-value streak">${S.quizStreak}</div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="quiz-timer">⏱ Time: <span id="timerDisplay">30s</span></div>
+                    <div class="timer-bar"><div class="timer-fill" id="timerFill" style="width: 100%;"></div></div>
+                    <div class="quiz-question">
+                        <div class="quiz-question-text">${q.text}</div>
+                        <div class="quiz-options" id="quizOpts"></div>
+                    </div>
+                    <button class="submit-btn" id="submitBtn" onclick="submitQuizAnswer()" disabled>Submit</button>
+                `;
+
+                renderQuizOptions(q);
+                startTimer();
+            }
+        }
+
+        function renderQuizOptions(q) {
+            const container = document.getElementById('quizOpts');
+            container.innerHTML = '';
+            for (const opt of q.options) {
+                const btn = document.createElement('button');
+                btn.className = 'quiz-option';
+                btn.textContent = opt;
+                btn.addEventListener('click', () => selectOption(btn, opt, q));
+                container.appendChild(btn);
+            }
+        }
+
+        function selectOption(btn, opt, q) {
+            document.querySelectorAll('.quiz-option').forEach(b => b.classList.remove('selected'));
+            btn.classList.add('selected');
+            S.currentQuestion.selected = opt;
+            document.getElementById('submitBtn').disabled = false;
+        }
+
+        function submitQuizAnswer() {
+            const q = S.currentQuestion;
+            if (!q.selected) return;
+            const correct = q.selected === q.correct;
+            if (correct) {
+                S.quizScore++;
+                S.quizStreak++;
+            } else {
+                S.quizStreak = 0;
+            }
+            S.quizTotal++;
+            S.currentQuestion = null;
+            setTimeout(() => {
+                if (S.quizTotal < 5) {
+                    S.currentQuestion = generateQuizQuestion();
+                }
+                renderQuiz();
+            }, 1000);
+        }
+
+        function startTimer() {
+            let time = 30;
+            const interval = setInterval(() => {
+                time--;
+                document.getElementById('timerDisplay').textContent = `${time}s`;
+                document.getElementById('timerFill').style.width = `${(time / 30) * 100}%`;
+                if (time <= 0) {
+                    clearInterval(interval);
+                    submitQuizAnswer();
+                }
+            }, 1000);
+        }
+
+        function startQuiz() {
+            S.quizScore = 0;
+            S.quizStreak = 0;
+            S.quizTotal = 0;
+            S.quizMode = true;
+            S.currentQuestion = generateQuizQuestion();
+            renderQuiz();
+        }
+
+        function resetQuiz() {
+            S.quizScore = 0;
+            S.quizStreak = 0;
+            S.quizTotal = 0;
+            S.currentQuestion = null;
+            renderQuiz();
+        }
+
+        function generateQuizQuestion() {
+            const types = [
+                { text: 'How many chose Apple?', options: ['2', '3', '4', '5'], correct: '4' },
+                { text: 'How many chose Banana?', options: ['1', '2', '3', '4'], correct: '3' },
+                { text: 'Which has the most votes?', options: ['Apple', 'Banana', 'Orange', 'Grape'], correct: 'Orange' },
+                { text: 'How many more chose Orange than Banana?', options: ['1', '2', '3', '4'], correct: '2' },
+                { text: 'What is the total?', options: ['10', '11', '12', '13'], correct: '12' }
+            ];
+            return types[Math.floor(Math.random() * types.length)];
+        }
+
+        // EVENT LISTENERS
+        document.querySelectorAll('.tab-btn').forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+                document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
+                e.target.classList.add('active');
+                const tab = e.target.dataset.tab;
+                document.getElementById(tab).classList.add('active');
+                S.mode = tab;
+                if (tab === 'explore') {
+                    render();
+                } else if (tab === 'practice') {
+                    render();
+                } else if (tab === 'play') {
+                    renderQuiz();
+                }
+            });
+        });
+
+        document.querySelectorAll('[data-preset]').forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                const preset = e.target.dataset.preset;
+                const p = presetData[preset];
+                S.data = { ...p.data };
+                S.categories = [...p.categories];
+                render();
+            });
+        });
+
+        document.querySelector('.clear-btn').addEventListener('click', () => {
+            for (const cat of S.categories) {
+                S.data[cat] = 0;
+            }
+            render();
+        });
+
+        // INITIALIZE
+        render();
+    </script>
+<script src="../../vinculum-core.js"></script>
+<script src="../../vinculum-data.js"></script>
+<script src="../../vinculum-adaptive-hook.js"></script>
+<script src="../../vinculum-3reads.js"></script>
+<script src="../../vinculum-stories.js"></script>
+<script src="../../vinculum-feedback.js"></script>
+</body>
+</html>

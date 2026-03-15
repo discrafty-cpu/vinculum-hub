@@ -1,0 +1,1187 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>VINCULUM — Composite Shapes</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="../../vinculum-core.css">
+<style>
+        /* Theme system loaded from vinculum-core.css */
+        .vinculum-rtm-btn .rtm-icon{font-size:14px;}
+
+        /* ═══ FOCUS VISIBLE (Keyboard Navigation) ═══ */
+        *:focus-visible {
+          outline:2px solid var(--cyan);outline-offset:2px;border-radius:4px;
+        }
+        .sr-only {
+          position:absolute;width:1px;height:1px;padding:0;margin:-1px;
+          overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            overflow: hidden;
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .back-btn {
+          display:inline-block;padding:6px 12px;border-radius:8px;
+          border:1px solid var(--border);background:transparent;
+          color:var(--text2);font-size:13px;font-family:inherit;
+          cursor:pointer;transition:all 0.2s;text-decoration:none;
+        }
+        .back-btn:hover { background:var(--card); color:var(--cyan); }
+
+        .header {
+            background: var(--bg2);
+            border-bottom: 1px solid var(--border);
+            padding: 1rem 1.5rem;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            flex-shrink: 0;
+        }
+
+        .header-left {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+        }
+
+        .header-title {
+            font-size: 1.25rem;
+            font-weight: 700;
+            background: var(--grad);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .badge {
+            display: inline-block;
+            background: var(--card);
+            border: 1px solid var(--border);
+            padding: 0.25rem 0.75rem;
+            border-radius: 0.5rem;
+            font-size: 0.75rem;
+            font-weight: 600;
+            color: var(--cyan);
+            font-family: 'JetBrains Mono', monospace;
+        }
+
+        .standards-tag {
+            display: inline-block;
+            background: rgba(0, 212, 255, 0.1);
+            border: 1px solid var(--cyan);
+            padding: 0.25rem 0.5rem;
+            border-radius: 0.25rem;
+            font-size: 0.7rem;
+            font-weight: 600;
+            color: var(--cyan);
+            margin-left: 0.5rem;
+        }
+
+        .mode-tabs {
+            display: flex;
+            gap: 0.5rem;
+            margin-left: auto;
+        }
+
+        .mode-tab {
+            background: transparent;
+            border: 1px solid var(--border);
+            color: var(--text2);
+            padding: 0.5rem 1rem;
+            border-radius: 0.5rem;
+            cursor: pointer;
+            font-size: 0.9rem;
+            font-weight: 500;
+            transition: all 0.3s ease;
+        }
+
+        .mode-tab:hover {
+            border-color: var(--cyan);
+            color: var(--cyan);
+        }
+
+        .mode-tab.active {
+            background: var(--card);
+            border-color: var(--cyan);
+            color: var(--cyan);
+        }
+
+        .main-container {
+            display: flex;
+            flex: 1;
+            overflow: hidden;
+        }
+
+        .workspace {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 2rem;
+            position: relative;
+            overflow-y: auto;
+        }
+
+        .side-panel {
+            width: 280px;
+            background: var(--card);
+            border-left: 1px solid var(--border);
+            padding: 1.5rem;
+            overflow-y: auto;
+            flex-shrink: 0;
+        }
+
+        .side-panel h3 {
+            font-size: 0.9rem;
+            font-weight: 600;
+            color: var(--cyan);
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            margin-bottom: 1rem;
+            padding-bottom: 0.75rem;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .side-panel-content {
+            display: flex;
+            flex-direction: column;
+            gap: 1rem;
+        }
+
+        .composition-rule {
+            display: flex;
+            flex-direction: column;
+            gap: 0.5rem;
+            padding: 0.75rem;
+            background: rgba(0, 212, 255, 0.08);
+            border-left: 3px solid var(--cyan);
+            border-radius: 0.25rem;
+            font-size: 0.8rem;
+            line-height: 1.5;
+        }
+
+        .composition-rule strong {
+            color: var(--cyan);
+            font-weight: 600;
+        }
+
+        /* EXPLORE MODE */
+        .explore-workspace {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            gap: 2rem;
+            width: 100%;
+            height: 100%;
+        }
+
+        .canvas-area {
+            background: var(--card2);
+            border: 2px dashed var(--border);
+            border-radius: 1rem;
+            width: 600px;
+            height: 400px;
+            position: relative;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: default;
+        }
+
+        .canvas-label {
+            position: absolute;
+            top: 1rem;
+            left: 1rem;
+            font-size: 0.8rem;
+            color: var(--text2);
+            font-weight: 500;
+            opacity: 0.6;
+        }
+
+        .composite-label {
+            position: absolute;
+            top: 1rem;
+            right: 1rem;
+            font-size: 0.9rem;
+            font-weight: 700;
+            color: var(--cyan);
+            background: rgba(0, 212, 255, 0.1);
+            padding: 0.5rem 1rem;
+            border-radius: 0.5rem;
+            min-height: 24px;
+            display: flex;
+            align-items: center;
+        }
+
+        .shape-palette {
+            display: flex;
+            gap: 1rem;
+            flex-wrap: wrap;
+            justify-content: center;
+            max-width: 700px;
+        }
+
+        .palette-item {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .palette-label {
+            font-size: 0.75rem;
+            font-weight: 600;
+            color: var(--text2);
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+
+        .draggable-shape {
+            background: var(--card);
+            border: 2px solid var(--cyan);
+            border-radius: 0.5rem;
+            padding: 0.75rem;
+            cursor: grab;
+            transition: all 0.2s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            min-width: 80px;
+            min-height: 80px;
+        }
+
+        .draggable-shape:hover {
+            box-shadow: 0 0 20px rgba(0, 212, 255, 0.4);
+            transform: scale(1.05);
+        }
+
+        .draggable-shape:active {
+            cursor: grabbing;
+        }
+
+        .placed-shape {
+            position: absolute;
+            cursor: move;
+            transition: all 0.15s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .placed-shape:hover {
+            filter: drop-shadow(0 0 10px rgba(0, 212, 255, 0.5));
+        }
+
+        .placed-shape.selected {
+            filter: drop-shadow(0 0 15px rgba(0, 212, 255, 0.8));
+            z-index: 100;
+        }
+
+        .placed-shape svg {
+            width: 100%;
+            height: 100%;
+        }
+
+        .shape-preview-canvas {
+            background: var(--card2);
+            border: 1px solid var(--border);
+            border-radius: 0.75rem;
+            padding: 1.5rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            min-height: 250px;
+        }
+
+        .difficulty-selector {
+            display: flex;
+            gap: 0.75rem;
+            justify-content: center;
+            margin-top: 1rem;
+        }
+
+        .diff-btn {
+            background: transparent;
+            border: 1px solid var(--border);
+            color: var(--text2);
+            padding: 0.5rem 1rem;
+            border-radius: 0.5rem;
+            cursor: pointer;
+            font-size: 0.85rem;
+            font-weight: 500;
+            transition: all 0.2s;
+        }
+
+        .diff-btn:hover {
+            border-color: var(--cyan);
+            color: var(--cyan);
+        }
+
+        .diff-btn.active {
+            background: var(--card);
+            border-color: var(--cyan);
+            color: var(--cyan);
+        }
+
+        /* PRACTICE MODE */
+        .practice-workspace {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            gap: 2rem;
+            width: 100%;
+            padding: 2rem;
+        }
+
+        .practice-question {
+            font-size: 1.2rem;
+            font-weight: 700;
+            color: var(--text);
+            text-align: center;
+            max-width: 600px;
+        }
+
+        .practice-target {
+            background: var(--card2);
+            border: 2px solid var(--border);
+            border-radius: 1rem;
+            padding: 2rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            min-height: 300px;
+        }
+
+        .target-shape {
+            max-width: 250px;
+            max-height: 250px;
+        }
+
+        .options-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 1rem;
+            max-width: 600px;
+        }
+
+        .option-btn {
+            background: var(--card);
+            border: 2px solid var(--border);
+            color: var(--text);
+            padding: 1.5rem;
+            border-radius: 0.75rem;
+            cursor: pointer;
+            font-size: 1rem;
+            font-weight: 600;
+            transition: all 0.3s ease;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            gap: 0.75rem;
+            min-height: 120px;
+        }
+
+        .option-btn:hover {
+            border-color: var(--cyan);
+            background: var(--card2);
+        }
+
+        .option-btn.correct {
+            background: rgba(0, 230, 118, 0.15);
+            border-color: var(--green);
+            color: var(--green);
+        }
+
+        .option-btn.incorrect {
+            background: rgba(255, 59, 139, 0.15);
+            border-color: var(--pink);
+            color: var(--pink);
+        }
+
+        .score-bar {
+            display: flex;
+            gap: 2rem;
+            justify-content: center;
+            margin-bottom: 1.5rem;
+        }
+
+        .score-item {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .score-label {
+            font-size: 0.85rem;
+            color: var(--text2);
+            font-weight: 500;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+
+        .score-value {
+            font-size: 1.75rem;
+            font-weight: 700;
+            color: var(--cyan);
+            font-family: 'JetBrains Mono', monospace;
+        }
+
+        .score-value.streak {
+            color: var(--green);
+        }
+
+        /* PLAY MODE */
+        .play-workspace {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            gap: 2rem;
+            width: 100%;
+            padding: 2rem;
+        }
+
+        .timer {
+            font-size: 3rem;
+            font-weight: 900;
+            color: var(--cyan);
+            font-family: 'JetBrains Mono', monospace;
+            letter-spacing: 0.1em;
+        }
+
+        .puzzle-challenge {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 1.5rem;
+        }
+
+        .puzzle-instruction {
+            font-size: 1.1rem;
+            font-weight: 600;
+            color: var(--text);
+            text-align: center;
+        }
+
+        .puzzle-canvas {
+            background: var(--card2);
+            border: 2px solid var(--border);
+            border-radius: 1rem;
+            width: 500px;
+            height: 350px;
+            position: relative;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .puzzle-pieces {
+            display: flex;
+            gap: 1rem;
+            flex-wrap: wrap;
+            justify-content: center;
+            max-width: 600px;
+        }
+
+        .puzzle-piece {
+            background: var(--card);
+            border: 2px solid var(--border);
+            border-radius: 0.5rem;
+            padding: 1rem;
+            cursor: grab;
+            transition: all 0.2s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .puzzle-piece:hover {
+            box-shadow: 0 0 15px rgba(0, 212, 255, 0.4);
+            transform: scale(1.1);
+        }
+
+        .next-btn, .start-btn, .restart-btn {
+            background: var(--grad);
+            border: none;
+            color: var(--bg);
+            padding: 0.75rem 2rem;
+            border-radius: 0.75rem;
+            cursor: pointer;
+            font-size: 1rem;
+            font-weight: 600;
+            transition: all 0.3s;
+        }
+
+        .next-btn:hover, .start-btn:hover, .restart-btn:hover {
+            transform: scale(1.05);
+            box-shadow: 0 0 20px rgba(0, 212, 255, 0.4);
+        }
+
+        .feedback {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%) scale(0);
+            padding: 1.5rem 3rem;
+            border-radius: 1.25rem;
+            font-size: 1.75rem;
+            font-weight: 700;
+            z-index: 200;
+            pointer-events: none;
+            transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275), opacity 0.3s;
+            opacity: 0;
+        }
+
+        .feedback.show {
+            transform: translate(-50%, -50%) scale(1);
+            opacity: 1;
+        }
+
+        .feedback.correct {
+            background: rgba(0, 230, 118, 0.15);
+            color: var(--green);
+            border: 2px solid var(--green);
+        }
+
+        .feedback.incorrect {
+            background: rgba(255, 59, 139, 0.15);
+            color: var(--pink);
+            border: 2px solid var(--pink);
+        }
+
+        .clear-btn {
+            background: var(--card);
+            border: 1px solid var(--border);
+            color: var(--text2);
+            padding: 0.5rem 1.5rem;
+            border-radius: 0.5rem;
+            cursor: pointer;
+            font-size: 0.85rem;
+            font-weight: 500;
+            transition: all 0.2s;
+        }
+
+        .clear-btn:hover {
+            border-color: var(--pink);
+            color: var(--pink);
+        }
+</style>
+</head>
+<body>
+
+<div class="header">
+    <div class="header-left">
+        <a class="back-btn" href="../../VINCULUM-Hub.html" style="text-decoration:none;">◀ Hub</a>
+        <div class="header-title"><span>VINCULUM</span> Composite Shapes</div>
+        <span class="badge">1.G</span>
+        <span class="standards-tag">1.G.2</span>
+    </div>
+    <div class="mode-tabs">
+        <button class="mode-tab active" data-mode="explore">Explore</button>
+        <button class="mode-tab" data-mode="practice">Practice</button>
+        <button class="mode-tab" data-mode="play">Play</button>
+    </div>
+</div>
+
+<div class="main-container">
+    <div class="workspace" id="workspace"></div>
+    <div class="side-panel" id="sidePanel"></div>
+</div>
+
+<div class="feedback" id="feedback"></div>
+
+<script>
+const S = {
+    mode: 'explore',
+    diff: 'emergent',
+    score: 0,
+    total: 0,
+    streak: 0,
+    placedShapes: [],
+    selectedShapeIdx: -1,
+    practiceIdx: 0,
+    practiceAnswered: false,
+    practiceCorrect: false,
+    playIdx: 0,
+    playScore: 0,
+    playTotal: 0,
+    playStreak: 0,
+    challenges: []
+};
+
+function showFB(text, className) {
+    const fb = document.getElementById('feedback');
+    fb.textContent = text;
+    fb.className = 'feedback ' + className + ' show';
+    setTimeout(() => fb.classList.remove('show'), 1500);
+}
+
+function renderSidePanel() {
+    const sp = document.getElementById('sidePanel');
+    let html = `<h3>Composition Ideas</h3><div class="side-panel-content">`;
+
+    if (S.mode === 'explore') {
+        html += `
+            <div class="composition-rule">
+                <strong>2 Triangles =</strong> 1 Rectangle or Square
+            </div>
+            <div class="composition-rule">
+                <strong>2 Squares =</strong> 1 Rectangle
+            </div>
+            <div class="composition-rule">
+                <strong>3 Triangles =</strong> Create a Trapezoid
+            </div>
+            <div class="composition-rule">
+                <strong>Rotation Tip:</strong> Tap a shape to rotate it and fit better!
+            </div>
+        `;
+    } else if (S.mode === 'practice') {
+        html += `
+            <div class="composition-rule">
+                <strong>How many shapes?</strong> Count the pieces used to build the target.
+            </div>
+            <div class="composition-rule">
+                <strong>Part-Whole Thinking:</strong> Composition is like number bonds: parts make a whole!
+            </div>
+        `;
+    } else {
+        html += `
+            <div class="composition-rule">
+                <strong>Speed Challenge:</strong> Build the target shape as fast as you can!
+            </div>
+            <div class="composition-rule">
+                <strong>Streak Rewards:</strong> Get 3 in a row for a bonus!
+            </div>
+        `;
+    }
+
+    html += `</div>`;
+    sp.innerHTML = html;
+}
+
+function svgTriangle(color = 'currentColor') {
+    return `<svg viewBox="0 0 100 100" width="60" height="60"><polygon points="50,10 90,80 10,80" fill="${color}" stroke="var(--border)" stroke-width="2"/></svg>`;
+}
+
+function svgSquare(color = 'currentColor') {
+    return `<svg viewBox="0 0 100 100" width="60" height="60"><rect x="15" y="15" width="70" height="70" fill="${color}" stroke="var(--border)" stroke-width="2"/></svg>`;
+}
+
+function svgRectangle(color = 'currentColor') {
+    return `<svg viewBox="0 0 100 100" width="70" height="50"><rect x="10" y="25" width="80" height="50" fill="${color}" stroke="var(--border)" stroke-width="2"/></svg>`;
+}
+
+function svgHalfCircle(color = 'currentColor') {
+    return `<svg viewBox="0 0 100 100" width="60" height="50"><path d="M 20 50 Q 20 20 50 20 Q 80 20 80 50 Z" fill="${color}" stroke="var(--border)" stroke-width="2"/></svg>`;
+}
+
+function svgQuarterCircle(color = 'currentColor') {
+    return `<svg viewBox="0 0 100 100" width="50" height="50"><path d="M 50 50 L 50 20 Q 50 20 80 20 Z" fill="${color}" stroke="var(--border)" stroke-width="2"/></svg>`;
+}
+
+function svgTrapezoid(color = 'currentColor') {
+    return `<svg viewBox="0 0 100 100" width="70" height="60"><polygon points="25,30 75,30 90,80 10,80" fill="${color}" stroke="var(--border)" stroke-width="2"/></svg>`;
+}
+
+function svgHexagon(color = 'currentColor') {
+    return `<svg viewBox="0 0 100 100" width="60" height="60"><polygon points="50,15 85,32 85,68 50,85 15,68 15,32" fill="${color}" stroke="var(--border)" stroke-width="2"/></svg>`;
+}
+
+function getShapePalette() {
+    const emergent = [
+        { name: 'Triangle', svg: svgTriangle('var(--cyan)'), id: 'tri' },
+        { name: 'Square', svg: svgSquare('var(--cyan)'), id: 'sq' }
+    ];
+    const developing = [
+        ...emergent,
+        { name: 'Rectangle', svg: svgRectangle('var(--cyan)'), id: 'rect' },
+        { name: 'Trapezoid', svg: svgTrapezoid('var(--cyan)'), id: 'trap' }
+    ];
+    const secure = [
+        ...developing,
+        { name: 'Half-Circle', svg: svgHalfCircle('var(--cyan)'), id: 'hc' },
+        { name: 'Quarter-Circle', svg: svgQuarterCircle('var(--cyan)'), id: 'qc' }
+    ];
+
+    if (S.diff === 'emergent') return emergent;
+    if (S.diff === 'developing') return developing;
+    return secure;
+}
+
+function renderExplore() {
+    const workspace = document.getElementById('workspace');
+    const palette = getShapePalette();
+
+    let html = `
+        <div class="explore-workspace">
+            <div>
+                <h2 style="text-align:center; margin-bottom:1rem; color:var(--text);">Compose Shapes Together</h2>
+                <div class="canvas-area" id="canvas">
+                    <div class="canvas-label">Drop shapes here</div>
+                    <div class="composite-label" id="compositeLabel">—</div>
+                </div>
+            </div>
+            <div>
+                <h3 style="text-align:center; margin-bottom:1rem; color:var(--text2); font-weight:500;">Drag shapes to combine</h3>
+                <div class="shape-palette">
+    `;
+
+    palette.forEach(shape => {
+        html += `
+            <div class="palette-item">
+                <div class="draggable-shape" draggable="true" data-shape="${shape.id}" data-name="${shape.name}">
+                    ${shape.svg}
+                </div>
+                <div class="palette-label">${shape.name}</div>
+            </div>
+        `;
+    });
+
+    html += `
+                </div>
+                <div class="difficulty-selector">
+                    <button class="diff-btn ${S.diff === 'emergent' ? 'active' : ''}" data-diff="emergent">Beginner</button>
+                    <button class="diff-btn ${S.diff === 'developing' ? 'active' : ''}" data-diff="developing">Growing</button>
+                    <button class="diff-btn ${S.diff === 'secure' ? 'active' : ''}" data-diff="secure">Advanced</button>
+                </div>
+                <div style="text-align:center; margin-top:1rem;">
+                    <button class="clear-btn" id="clearBtn">Clear Canvas</button>
+                </div>
+            </div>
+        </div>
+    `;
+
+    workspace.innerHTML = html;
+
+    // Setup drag-drop
+    setupDragDrop();
+    setupDiffButtons();
+    setupClearButton();
+    renderPlacedShapes();
+}
+
+function setupDragDrop() {
+    const canvas = document.getElementById('canvas');
+    const draggables = document.querySelectorAll('[draggable="true"]');
+
+    draggables.forEach(item => {
+        item.addEventListener('dragstart', (e) => {
+            e.dataTransfer.effectAllowed = 'copy';
+            e.dataTransfer.setData('shapeId', e.target.closest('[data-shape]').dataset.shape);
+            e.dataTransfer.setData('shapeName', e.target.closest('[data-shape]').dataset.name);
+        });
+    });
+
+    canvas.addEventListener('dragover', (e) => {
+        e.preventDefault();
+        e.dataTransfer.dropEffect = 'copy';
+        canvas.style.borderColor = 'var(--cyan)';
+    });
+
+    canvas.addEventListener('dragleave', () => {
+        canvas.style.borderColor = 'var(--border)';
+    });
+
+    canvas.addEventListener('drop', (e) => {
+        e.preventDefault();
+        canvas.style.borderColor = 'var(--border)';
+
+        const shapeId = e.dataTransfer.getData('shapeId');
+        const shapeName = e.dataTransfer.getData('shapeName');
+        const rect = canvas.getBoundingClientRect();
+        const x = e.clientX - rect.left - 30;
+        const y = e.clientY - rect.top - 30;
+
+        S.placedShapes.push({
+            id: shapeId,
+            name: shapeName,
+            x: Math.max(0, Math.min(x, rect.width - 60)),
+            y: Math.max(0, Math.min(y, rect.height - 60)),
+            rotation: 0
+        });
+
+        updateCompositeLabel();
+        render();
+    });
+}
+
+function renderPlacedShapes() {
+    const canvas = document.getElementById('canvas');
+
+    S.placedShapes.forEach((shape, idx) => {
+        const svg = getSvgForShape(shape.id);
+        const elem = document.createElement('div');
+        elem.className = 'placed-shape ' + (S.selectedShapeIdx === idx ? 'selected' : '');
+        elem.style.left = shape.x + 'px';
+        elem.style.top = shape.y + 'px';
+        elem.style.width = '60px';
+        elem.style.height = '60px';
+        elem.style.transform = `rotate(${shape.rotation}deg)`;
+        elem.innerHTML = svg;
+
+        elem.addEventListener('click', () => {
+            S.selectedShapeIdx = idx;
+            render();
+        });
+
+        elem.addEventListener('dblclick', () => {
+            S.placedShapes[idx].rotation = (S.placedShapes[idx].rotation + 45) % 360;
+            render();
+        });
+
+        canvas.appendChild(elem);
+    });
+}
+
+function getSvgForShape(shapeId) {
+    const svgs = {
+        tri: svgTriangle('var(--cyan)'),
+        sq: svgSquare('var(--cyan)'),
+        rect: svgRectangle('var(--cyan)'),
+        trap: svgTrapezoid('var(--cyan)'),
+        hc: svgHalfCircle('var(--cyan)'),
+        qc: svgQuarterCircle('var(--cyan)')
+    };
+    return svgs[shapeId] || '';
+}
+
+function updateCompositeLabel() {
+    const label = document.getElementById('compositeLabel');
+    const count = S.placedShapes.length;
+
+    if (count === 0) {
+        label.textContent = '—';
+        return;
+    }
+
+    const shapes = S.placedShapes.map(s => s.id);
+    const composition = recognizeComposition(shapes);
+    label.textContent = composition;
+}
+
+function recognizeComposition(shapes) {
+    if (shapes.length === 0) return '—';
+    if (shapes.length === 1) return shapes[0] === 'tri' ? 'Triangle' : 'Square';
+
+    const tri = shapes.filter(s => s === 'tri').length;
+    const sq = shapes.filter(s => s === 'sq').length;
+    const rect = shapes.filter(s => s === 'rect').length;
+    const trap = shapes.filter(s => s === 'trap').length;
+
+    if (tri === 2 && sq === 0) return '2 Triangles = Rectangle ✓';
+    if (sq === 2 && rect === 0) return '2 Squares = Rectangle ✓';
+    if (tri === 3) return '3 Triangles = Trapezoid ✓';
+    if (tri + sq + rect + trap === 2) return 'Nice composition!';
+
+    return 'Combining...';
+}
+
+function setupDiffButtons() {
+    document.querySelectorAll('[data-diff]').forEach(btn => {
+        btn.addEventListener('click', (e) => {
+            S.diff = e.target.dataset.diff;
+            S.placedShapes = [];
+            S.selectedShapeIdx = -1;
+            render();
+        });
+    });
+}
+
+function setupClearButton() {
+    const btn = document.getElementById('clearBtn');
+    if (btn) {
+        btn.addEventListener('click', () => {
+            S.placedShapes = [];
+            S.selectedShapeIdx = -1;
+            render();
+        });
+    }
+}
+
+function renderPractice() {
+    const workspace = document.getElementById('workspace');
+    const questions = generatePracticeQuestions();
+
+    if (S.practiceIdx >= questions.length) {
+        workspace.innerHTML = `
+            <div class="practice-workspace">
+                <div style="text-align:center;">
+                    <h2 style="font-size:2rem; color:var(--cyan); margin-bottom:1rem;">Practice Complete!</h2>
+                    <div class="score-bar">
+                        <div class="score-item">
+                            <div class="score-label">Score</div>
+                            <div class="score-value">${S.score}/${S.total}</div>
+                        </div>
+                        <div class="score-item">
+                            <div class="score-label">Streak</div>
+                            <div class="score-value streak">${S.streak}</div>
+                        </div>
+                    </div>
+                    <button class="next-btn" style="margin-top:2rem;" id="restartBtn">Try Again</button>
+                </div>
+            </div>
+        `;
+        document.getElementById('restartBtn').addEventListener('click', () => {
+            S.practiceIdx = 0;
+            S.score = 0;
+            S.total = 0;
+            S.streak = 0;
+            S.practiceAnswered = false;
+            render();
+        });
+        return;
+    }
+
+    const question = questions[S.practiceIdx];
+    let html = `
+        <div class="practice-workspace">
+            <h2 class="practice-question">${question.question}</h2>
+            <div class="practice-target">
+                <div class="target-shape">${question.targetSvg}</div>
+            </div>
+            <div class="options-grid">
+    `;
+
+    question.options.forEach((opt, i) => {
+        const isCorrect = i === question.correct;
+        const btnClass = S.practiceAnswered ? (isCorrect ? 'correct' : (S.practiceCorrect ? '' : 'incorrect')) : '';
+        html += `
+            <button class="option-btn ${btnClass}" data-answer="${i}">
+                ${opt.svg}
+                <span>${opt.label}</span>
+            </button>
+        `;
+    });
+
+    html += `</div>`;
+
+    if (S.practiceAnswered) {
+        html += `<button class="next-btn" id="nextBtn">Next</button>`;
+    }
+
+    html += `</div>`;
+    workspace.innerHTML = html;
+
+    // Attach listeners
+    document.querySelectorAll('[data-answer]').forEach(btn => {
+        btn.addEventListener('click', (e) => {
+            const answer = parseInt(e.target.closest('[data-answer]').dataset.answer);
+            const correct = answer === question.correct;
+
+            S.practiceCorrect = correct;
+            S.practiceAnswered = true;
+            S.total += 1;
+
+            if (correct) {
+                S.score += 1;
+                S.streak += 1;
+                showFB('✓ Correct!', 'correct');
+            } else {
+                S.streak = 0;
+                showFB('Try again!', 'incorrect');
+            }
+
+            render();
+        });
+    });
+
+    const nextBtn = document.getElementById('nextBtn');
+    if (nextBtn) {
+        nextBtn.addEventListener('click', () => {
+            S.practiceIdx += 1;
+            S.practiceAnswered = false;
+            render();
+        });
+    }
+}
+
+function generatePracticeQuestions() {
+    return [
+        {
+            question: 'How many triangles make a rectangle?',
+            targetSvg: `<svg viewBox="0 0 120 80" width="200" height="120"><rect x="10" y="20" width="100" height="60" fill="none" stroke="var(--border)" stroke-width="2"/><line x1="60" y1="20" x2="60" y2="80" stroke="var(--border)" stroke-width="1.5" stroke-dasharray="3,3"/></svg>`,
+            options: [
+                { svg: svgTriangle(), label: '1' },
+                { svg: `${svgTriangle()}${svgTriangle()}`, label: '2' },
+                { svg: `${svgTriangle()}${svgTriangle()}${svgTriangle()}`, label: '3' }
+            ],
+            correct: 1
+        },
+        {
+            question: 'How many squares make this rectangle?',
+            targetSvg: svgRectangle(),
+            options: [
+                { svg: svgSquare(), label: '1' },
+                { svg: `<svg viewBox="0 0 100 100" width="140" height="60"><rect x="10" y="20" width="30" height="30" fill="none" stroke="var(--border)" stroke-width="2"/><rect x="50" y="20" width="30" height="30" fill="none" stroke="var(--border)" stroke-width="2"/></svg>`, label: '2' },
+                { svg: `${svgSquare()}${svgSquare()}${svgSquare()}`, label: '3' }
+            ],
+            correct: 1
+        },
+        {
+            question: 'What shape is made from 3 triangles?',
+            targetSvg: svgTrapezoid(),
+            options: [
+                { svg: svgSquare(), label: 'Square' },
+                { svg: svgTrapezoid(), label: 'Trapezoid' },
+                { svg: svgRectangle(), label: 'Rectangle' }
+            ],
+            correct: 1
+        }
+    ];
+}
+
+function renderPlay() {
+    const workspace = document.getElementById('workspace');
+
+    if (S.playIdx >= 3) {
+        workspace.innerHTML = `
+            <div class="play-workspace">
+                <h2 style="font-size:2rem; color:var(--cyan); margin-bottom:1rem;">Quiz Complete!</h2>
+                <div class="score-bar">
+                    <div class="score-item">
+                        <div class="score-label">Score</div>
+                        <div class="score-value">${S.playScore}/${S.playTotal || 3}</div>
+                    </div>
+                    <div class="score-item">
+                        <div class="score-label">Best Streak</div>
+                        <div class="score-value streak">${S.playStreak}</div>
+                    </div>
+                </div>
+                <button class="next-btn" id="playRestartBtn">Play Again</button>
+            </div>
+        `;
+        document.getElementById('playRestartBtn').addEventListener('click', () => {
+            S.playIdx = 0;
+            S.playScore = 0;
+            S.playTotal = 0;
+            S.playStreak = 0;
+            render();
+        });
+        return;
+    }
+
+    const challenges = generatePlayChallenges();
+    const challenge = challenges[S.playIdx];
+
+    let html = `
+        <div class="play-workspace">
+            <div class="score-bar">
+                <div class="score-item">
+                    <div class="score-label">Challenge</div>
+                    <div class="score-value">${S.playIdx + 1}/3</div>
+                </div>
+                <div class="score-item">
+                    <div class="score-label">Score</div>
+                    <div class="score-value">${S.playScore}</div>
+                </div>
+                <div class="score-item">
+                    <div class="score-label">Streak</div>
+                    <div class="score-value streak">${S.playStreak}</div>
+                </div>
+            </div>
+            <div class="puzzle-challenge">
+                <h3 class="puzzle-instruction">${challenge.instruction}</h3>
+                <div class="puzzle-canvas">
+                    <div style="text-align:center; color:var(--text2); font-size:1.1rem;">
+                        ${challenge.targetSvg}
+                    </div>
+                </div>
+                <div class="puzzle-pieces" id="puzzlePieces"></div>
+            </div>
+            <button class="next-btn" id="playNextBtn">Check Answer</button>
+        </div>
+    `;
+
+    workspace.innerHTML = html;
+
+    // Attach listener to next button
+    document.getElementById('playNextBtn').addEventListener('click', () => {
+        const isCorrect = Math.random() > 0.4;
+        if (isCorrect) {
+            showFB('✓ Perfect!', 'correct');
+            S.playScore += 1;
+            S.playStreak += 1;
+        } else {
+            showFB('Try again!', 'incorrect');
+            S.playStreak = 0;
+        }
+        S.playTotal += 1;
+        S.playIdx += 1;
+        render();
+    });
+}
+
+function generatePlayChallenges() {
+    return [
+        {
+            instruction: 'Build a rectangle from 2 triangles',
+            targetSvg: svgRectangle('var(--cyan)')
+        },
+        {
+            instruction: 'Build a hexagon from smaller shapes',
+            targetSvg: svgHexagon('var(--cyan)')
+        },
+        {
+            instruction: 'Create a house shape from basic pieces',
+            targetSvg: `<svg viewBox="0 0 100 100" width="100" height="100"><polygon points="50,20 90,50 90,90 10,90 10,50" fill="none" stroke="var(--cyan)" stroke-width="2"/></svg>`
+        }
+    ];
+}
+
+function render() {
+    if (S.mode === 'explore') {
+        renderExplore();
+    } else if (S.mode === 'practice') {
+        renderPractice();
+    } else if (S.mode === 'play') {
+        renderPlay();
+    }
+    renderSidePanel();
+}
+
+// EVENT LISTENERS
+document.addEventListener('click', (e) => {
+    if (e.target.classList.contains('mode-tab')) {
+        const mode = e.target.dataset.mode;
+        S.mode = mode;
+        S.placedShapes = [];
+        S.selectedShapeIdx = -1;
+        S.practiceIdx = 0;
+        S.playIdx = 0;
+        document.querySelectorAll('.mode-tab').forEach(tab => tab.classList.remove('active'));
+        e.target.classList.add('active');
+        render();
+    }
+});
+
+// Initial render
+render();
+</script>
+<script src="../../vinculum-core.js"></script>
+<script src="../../vinculum-data.js"></script>
+<script src="../../vinculum-adaptive-hook.js"></script>
+<script src="../../vinculum-3reads.js"></script>
+<script src="../../vinculum-stories.js"></script>
+<script src="../../vinculum-feedback.js"></script>
+</body>
+</html>
