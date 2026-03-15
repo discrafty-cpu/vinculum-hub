@@ -1,0 +1,1295 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>VINCULUM — Quadrilateral Sorter</title>
+<link rel="stylesheet" href="../../vinculum-core.css">
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;600&display=swap');
+
+/* Theme system loaded from vinculum-core.css */
+.vinculum-rtm-btn .rtm-icon{font-size:14px;}
+
+/* ═══ FOCUS VISIBLE (Keyboard Navigation) ═══ */
+*:focus-visible {
+  outline:2px solid var(--cyan);outline-offset:2px;border-radius:4px;
+}
+.sr-only {
+  position:absolute;width:1px;height:1px;padding:0;margin:-1px;
+  overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0;
+}
+
+* { margin:0; padding:0; box-sizing:border-box; }
+body {
+  font-family: 'Inter', sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  height: 100vh;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  user-select: none;
+}
+
+/* ── HEADER ── */
+.header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 24px;
+  background: var(--bg2);
+  border-bottom: 1px solid var(--border);
+  flex-shrink: 0;
+}
+.header-left {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+.back-btn {
+  padding: 6px 12px;
+  border-radius: 8px;
+  border: 1px solid var(--border);
+  background: transparent;
+  color: var(--text2);
+  font-size: 13px;
+  font-family: inherit;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+.back-btn:hover { background: var(--card); color: var(--cyan); }
+.header-title {
+  font-size: 18px;
+  font-weight: 800;
+}
+.header-title span {
+  background: var(--grad);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+.header-badge {
+  font-size: 10px;
+  font-weight: 700;
+  padding: 3px 10px;
+  border-radius: 6px;
+  background: rgba(0,212,255,0.1);
+  color: var(--cyan);
+  border: 1px solid rgba(0,212,255,0.2);
+  letter-spacing: 1px;
+}
+.std-tags {
+  display: flex;
+  gap: 6px;
+}
+.std-tag {
+  font-size: 10px;
+  font-family: 'JetBrains Mono', monospace;
+  font-weight: 600;
+  padding: 3px 8px;
+  border-radius: 5px;
+  background: rgba(0,212,255,0.08);
+  color: var(--cyan);
+}
+.std-tag.mn { background: rgba(255,145,0,0.08); color: var(--orange); }
+
+/* ── MODE TABS ── */
+.mode-tabs {
+  display: flex;
+  gap: 4px;
+  padding: 8px 24px;
+  background: var(--bg2);
+  border-bottom: 1px solid var(--border);
+  flex-shrink: 0;
+}
+.mode-tab {
+  padding: 8px 20px;
+  border-radius: 8px;
+  border: 1px solid transparent;
+  background: transparent;
+  color: var(--muted);
+  font-size: 13px;
+  font-weight: 600;
+  font-family: inherit;
+  cursor: pointer;
+  transition: all 0.2s;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.mode-tab:hover { color: var(--text2); background: var(--card); }
+.mode-tab.active-explore { background: rgba(0,212,255,0.1); color: var(--cyan); border-color: rgba(0,212,255,0.3); }
+.mode-tab.active-practice { background: rgba(0,230,118,0.1); color: var(--green); border-color: rgba(0,230,118,0.3); }
+.mode-tab.active-play { background: rgba(255,59,139,0.1); color: var(--pink); border-color: rgba(255,59,139,0.3); }
+
+/* Difficulty selector */
+.diff-selector {
+  margin-left: auto;
+  display: flex;
+  gap: 4px;
+  align-items: center;
+}
+.diff-label {
+  font-size: 11px;
+  color: var(--muted);
+  margin-right: 8px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+}
+.diff-btn {
+  padding: 5px 12px;
+  border-radius: 6px;
+  border: 1px solid var(--border);
+  background: transparent;
+  color: var(--muted);
+  font-size: 11px;
+  font-weight: 600;
+  font-family: inherit;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+.diff-btn:hover { color: var(--text2); }
+.diff-btn.active { background: rgba(0,212,255,0.1); color: var(--cyan); border-color: rgba(0,212,255,0.3); }
+
+/* ── MAIN AREA ── */
+.main {
+  flex: 1;
+  display: flex;
+  overflow: hidden;
+}
+
+/* ── WORKSPACE ── */
+.workspace {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+  position: relative;
+  overflow-y: auto;
+}
+
+/* ── QUAD GALLERY (EXPLORE) ── */
+.quad-gallery {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+  gap: 16px;
+  width: 100%;
+  max-width: 800px;
+}
+
+.quad-card {
+  padding: 16px;
+  background: var(--card);
+  border: 2px solid var(--border);
+  border-radius: 12px;
+  cursor: pointer;
+  transition: all 0.2s;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+}
+
+.quad-card:hover {
+  border-color: var(--cyan);
+  transform: translateY(-4px);
+  box-shadow: 0 8px 16px rgba(0,212,255,0.1);
+}
+
+.quad-canvas {
+  width: 100px;
+  height: 100px;
+  background: var(--bg);
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.quad-label {
+  font-size: 13px;
+  font-weight: 700;
+  text-align: center;
+  color: var(--text2);
+}
+
+/* ── QUAD DETAIL VIEW ── */
+.quad-detail {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 24px;
+  width: 100%;
+  max-width: 500px;
+}
+
+.detail-canvas {
+  width: 280px;
+  height: 280px;
+  background: var(--card);
+  border: 2px solid var(--border);
+  border-radius: 16px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.detail-card {
+  padding: 20px;
+  background: var(--card);
+  border-radius: 12px;
+  border: 1px solid var(--border);
+  width: 100%;
+}
+
+.detail-title {
+  font-size: 24px;
+  font-weight: 800;
+  margin-bottom: 12px;
+  background: var(--grad);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+.detail-attr {
+  font-size: 14px;
+  color: var(--text2);
+  margin-bottom: 8px;
+  padding: 8px 0;
+  border-bottom: 1px solid var(--border);
+}
+
+.detail-attr:last-child {
+  border-bottom: none;
+  margin-bottom: 0;
+}
+
+.attr-label {
+  color: var(--muted);
+  font-size: 12px;
+  text-transform: uppercase;
+  font-weight: 600;
+  letter-spacing: 0.5px;
+}
+
+/* ── PRACTICE QUESTION ── */
+.practice-question {
+  text-align: center;
+  padding: 20px;
+  background: var(--card);
+  border-radius: 12px;
+  border: 1px solid var(--border);
+  width: 100%;
+  max-width: 600px;
+}
+
+.question-text {
+  font-size: 16px;
+  color: var(--text2);
+  margin-bottom: 20px;
+  font-weight: 600;
+}
+
+/* ── SHAPE GRID (TAP ALL THAT APPLY) ── */
+.shape-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(90px, 1fr));
+  gap: 12px;
+  margin-top: 16px;
+}
+
+.shape-option {
+  padding: 12px;
+  background: var(--bg);
+  border: 2px solid var(--border);
+  border-radius: 10px;
+  cursor: pointer;
+  transition: all 0.2s;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+}
+
+.shape-option:hover {
+  border-color: var(--cyan);
+  transform: scale(1.05);
+}
+
+.shape-option.selected {
+  border-color: var(--green);
+  background: rgba(0,230,118,0.1);
+}
+
+.shape-option-canvas {
+  width: 70px;
+  height: 70px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.shape-option-label {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--muted);
+  text-align: center;
+}
+
+/* ── DRAG DROP CATEGORIES ── */
+.sort-container {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+  gap: 16px;
+  width: 100%;
+  max-width: 700px;
+  margin-top: 20px;
+}
+
+.sort-bin {
+  padding: 20px;
+  background: var(--card);
+  border: 2px dashed var(--border);
+  border-radius: 12px;
+  min-height: 200px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.sort-bin.drag-over {
+  border-color: var(--cyan);
+  background: rgba(0,212,255,0.05);
+}
+
+.bin-title {
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--cyan);
+  text-align: center;
+  padding-bottom: 12px;
+  border-bottom: 1px solid var(--border);
+}
+
+.draggable-shape {
+  padding: 12px;
+  background: var(--bg);
+  border: 2px solid var(--border);
+  border-radius: 8px;
+  cursor: grab;
+  transition: all 0.2s;
+  text-align: center;
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--text2);
+}
+
+.draggable-shape:hover {
+  border-color: var(--cyan);
+  transform: scale(1.05);
+}
+
+.draggable-shape:active {
+  cursor: grabbing;
+  opacity: 0.8;
+}
+
+/* ── GAME MODE ── */
+.game-info {
+  display: flex;
+  gap: 20px;
+  justify-content: center;
+  align-items: center;
+  font-size: 14px;
+  color: var(--text2);
+  margin-bottom: 20px;
+  width: 100%;
+}
+
+.info-item {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.info-label {
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+}
+
+.game-bins {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(100px, 1fr));
+  gap: 12px;
+  width: 100%;
+  max-width: 600px;
+  margin-top: 16px;
+}
+
+.game-bin {
+  padding: 16px;
+  background: var(--card);
+  border: 2px solid var(--border);
+  border-radius: 10px;
+  text-align: center;
+  cursor: pointer;
+  transition: all 0.2s;
+  min-height: 80px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-direction: column;
+}
+
+.game-bin:hover {
+  border-color: var(--cyan);
+  transform: translateY(-4px);
+}
+
+.game-bin.active {
+  border-color: var(--green);
+  background: rgba(0,230,118,0.1);
+}
+
+.bin-label {
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--text2);
+}
+
+/* ── PLAY MODE BUTTONS ── */
+.play-btn {
+  padding: 12px 24px;
+  border-radius: 10px;
+  border: 1px solid var(--border);
+  background: var(--card);
+  color: var(--text2);
+  font-size: 14px;
+  font-weight: 600;
+  font-family: inherit;
+  cursor: pointer;
+  transition: all 0.2s;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.play-btn:hover { background: rgba(0,212,255,0.1); color: var(--cyan); }
+
+.play-btn.primary {
+  background: var(--grad);
+  color: var(--bg);
+  border-color: transparent;
+  font-weight: 700;
+}
+
+.play-btn.primary:hover { opacity: 0.9; }
+
+/* ── FEEDBACK ── */
+.feedback {
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%) scale(0);
+  padding: 24px 48px;
+  border-radius: 20px;
+  font-size: 28px;
+  font-weight: 800;
+  z-index: 200;
+  pointer-events: none;
+  transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275), opacity 0.3s;
+  opacity: 0;
+}
+.feedback.show {
+  transform: translate(-50%, -50%) scale(1);
+  opacity: 1;
+}
+.feedback.correct {
+  background: rgba(0,230,118,0.15);
+  color: var(--green);
+  border: 2px solid var(--green);
+}
+.feedback.incorrect {
+  background: rgba(255,59,139,0.15);
+  color: var(--pink);
+  border: 2px solid var(--pink);
+}
+.feedback.try-again {
+  background: rgba(255,193,7,0.15);
+  color: var(--yellow);
+  border: 2px solid var(--yellow);
+}
+
+/* ── SIDE PANEL ── */
+.side-panel {
+  width: 280px;
+  background: var(--bg2);
+  border-left: 1px solid var(--border);
+  padding: 20px;
+  overflow-y: auto;
+  flex-shrink: 0;
+}
+.panel-section {
+  margin-bottom: 20px;
+}
+.panel-title {
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 1.5px;
+  color: var(--muted);
+  margin-bottom: 8px;
+}
+.panel-text {
+  font-size: 13px;
+  color: var(--text2);
+  line-height: 1.6;
+}
+.score-display {
+  text-align: center;
+  padding: 16px;
+  background: var(--card);
+  border-radius: 12px;
+  margin-bottom: 12px;
+}
+.score-value {
+  font-size: 36px;
+  font-weight: 900;
+  font-family: 'JetBrains Mono', monospace;
+  background: var(--grad);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+.score-label {
+  font-size: 11px;
+  color: var(--muted);
+  text-transform: uppercase;
+  letter-spacing: 1px;
+}
+.streak-bar {
+  height: 6px;
+  background: var(--card);
+  border-radius: 3px;
+  overflow: hidden;
+  margin-top: 8px;
+}
+.streak-fill {
+  height: 100%;
+  background: var(--grad);
+  border-radius: 3px;
+  transition: width 0.3s;
+}
+
+/* ── ANIMATIONS ── */
+@keyframes pop {
+  0% { transform: scale(0); opacity: 0; }
+  70% { transform: scale(1.2); }
+  100% { transform: scale(1); opacity: 1; }
+}
+
+@keyframes shake {
+  0%, 100% { transform: translateX(0); }
+  25% { transform: translateX(-8px); }
+  75% { transform: translateX(8px); }
+}
+
+@keyframes hop {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-12px); }
+}
+
+.pop-in { animation: pop 0.3s ease-out forwards; }
+.shake { animation: shake 0.3s ease-in-out; }
+.hop { animation: hop 0.4s ease-in-out; }
+
+/* scrollbar */
+::-webkit-scrollbar { width: 6px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+
+/* Responsive */
+@media (max-width: 768px) {
+  .quad-gallery {
+    grid-template-columns: repeat(2, 1fr);
+  }
+  .detail-canvas {
+    width: 200px;
+    height: 200px;
+  }
+  .side-panel {
+    width: 220px;
+  }
+  .game-bins {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+</style>
+</head>
+<body>
+
+<!-- ═══ HEADER ═══ -->
+<div class="header">
+  <div class="header-left">
+    <a class="back-btn" href="../../VINCULUM-Hub.html" style="text-decoration:none;">◀ Hub</a>
+    <div class="header-title"><span>VINCULUM</span> Quadrilateral Sorter</div>
+    <span class="header-badge">3 · G</span>
+    <button class="back-btn" id="readAloudBtn" onclick="toggleReadAloud()" aria-label="Read Aloud" title="Read instructions aloud">🔊 Read to Me</button>
+  </div>
+  <div class="std-tags">
+    <span class="std-tag">3.G.1</span>
+    <span class="std-tag mn">MN 3.4.1.1</span>
+  </div>
+</div>
+
+<!-- ═══ MODE TABS ═══ -->
+<div class="mode-tabs">
+  <button class="mode-tab active-explore" id="tabExplore" onclick="setMode('explore')">
+    <svg width="18" height="18" viewBox="0 0 48 48" fill="none"><path d="M4 24C4 24 12 12 24 12C36 12 44 24 44 24C44 24 36 36 24 36C12 36 4 24 4 24Z" stroke="currentColor" stroke-width="3" fill="none"/><circle cx="24" cy="24" r="7" stroke="currentColor" stroke-width="3" fill="none"/><circle cx="24" cy="24" r="3" fill="currentColor"/><line x1="24" y1="4" x2="24" y2="9" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" opacity="0.5"/><line x1="10" y1="8" x2="13" y2="12" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" opacity="0.5"/><line x1="38" y1="8" x2="35" y2="12" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" opacity="0.5"/></svg> Explore
+  </button>
+  <button class="mode-tab" id="tabPractice" onclick="setMode('practice')">
+    <svg width="18" height="18" viewBox="0 0 48 48" fill="none"><circle cx="24" cy="24" r="20" stroke="currentColor" stroke-width="3" fill="none" opacity="0.3"/><circle cx="24" cy="24" r="20" stroke="currentColor" stroke-width="3" fill="none" stroke-dasharray="126" stroke-dashoffset="32" stroke-linecap="round"/><polyline points="16,24 22,32 34,16" stroke="currentColor" stroke-width="4" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg> Practice
+  </button>
+  <button class="mode-tab" id="tabPlay" onclick="setMode('play')">
+    <svg width="18" height="18" viewBox="0 0 48 48" fill="none"><polygon points="28,4 12,28 22,28 18,44 36,18 26,18" fill="none" stroke="currentColor" stroke-width="3" stroke-linejoin="round"/><polygon points="27,8 15,27 23,27 20,40 34,19 26,19" fill="currentColor" opacity="0.15"/></svg> Play
+  </button>
+  <div class="diff-selector">
+    <span class="diff-label">Level</span>
+    <button class="diff-btn active" id="diffE" onclick="setDiff('emergent')" data-diff="emergent">1–2</button>
+    <button class="diff-btn" id="diffD" onclick="setDiff('developing')" data-diff="developing">1–3</button>
+    <button class="diff-btn" id="diffS" onclick="setDiff('secure')" data-diff="secure">Full</button>
+  </div>
+</div>
+
+<!-- ═══ MAIN ═══ -->
+<div class="main">
+  <div class="workspace" role="main" id="workspace"></div>
+  <div class="side-panel" id="sidePanel"></div>
+</div>
+
+<!-- ═══ FEEDBACK POPUP ═══ -->
+<div class="feedback" id="feedback"></div>
+
+<script>
+function showFB(t,c){var f=document.getElementById("feedback");if(!f)return;f.textContent=t;f.className="feedback "+c+" show";setTimeout(function(){f.classList.remove("show");},1200);}
+
+// ════════════════════════════════════════
+// QUADRILATERAL DEFINITIONS
+// ════════════════════════════════════════
+const QUADS = {
+  square: {
+    name: 'Square',
+    sides: [4, 4, 4, 4],
+    angles: [90, 90, 90, 90],
+    parallelPairs: 2,
+    attrs: ['4 equal sides', '4 right angles', '2 pairs parallel sides'],
+    notes: 'A square is a special rectangle AND rhombus!'
+  },
+  rectangle: {
+    name: 'Rectangle',
+    sides: [6, 4, 6, 4],
+    angles: [90, 90, 90, 90],
+    parallelPairs: 2,
+    attrs: ['Opposite sides equal', '4 right angles', '2 pairs parallel sides'],
+    notes: 'Rectangles have parallel opposite sides.'
+  },
+  rhombus: {
+    name: 'Rhombus',
+    sides: [5, 5, 5, 5],
+    angles: [60, 120, 60, 120],
+    parallelPairs: 2,
+    attrs: ['4 equal sides', 'Opposite angles equal', '2 pairs parallel sides'],
+    notes: 'A rhombus is like a tilted square!'
+  },
+  parallelogram: {
+    name: 'Parallelogram',
+    sides: [6, 4, 6, 4],
+    angles: [70, 110, 70, 110],
+    parallelPairs: 2,
+    attrs: ['Opposite sides equal', 'Opposite angles equal', '2 pairs parallel sides'],
+    notes: 'Parallelograms have parallel opposite sides.'
+  },
+  trapezoid: {
+    name: 'Trapezoid',
+    sides: [5, 4, 3, 5],
+    angles: [70, 110, 100, 80],
+    parallelPairs: 1,
+    attrs: ['Exactly 1 pair parallel sides', 'No equal sides', 'No right angles'],
+    notes: 'Trapezoids have only ONE pair of parallel sides.'
+  },
+  kite: {
+    name: 'Kite',
+    sides: [4, 4, 3, 3],
+    angles: [90, 70, 100, 100],
+    parallelPairs: 0,
+    attrs: ['Two pairs adjacent equal sides', '1 pair opposite angles equal', 'No parallel sides'],
+    notes: 'Kites look like flying kites with symmetric sides!'
+  },
+  irregular: {
+    name: 'Irregular Quad',
+    sides: [4, 5, 3, 6],
+    angles: [75, 95, 110, 80],
+    parallelPairs: 0,
+    attrs: ['No equal sides', 'No equal angles', 'No parallel sides'],
+    notes: 'This quadrilateral has no special properties.'
+  }
+};
+
+const QUAD_ORDER = ['square', 'rectangle', 'rhombus', 'parallelogram', 'trapezoid', 'kite', 'irregular'];
+
+// ════════════════════════════════════════
+// STATE
+// ════════════════════════════════════════
+const S = {
+  mode: 'explore',
+  diff: 'emergent',
+  selectedQuad: 'square',
+
+  // Practice
+  questionType: null,
+  score: 0,
+  total: 0,
+  userAnswers: [],
+  currentQuestion: null,
+
+  // Play
+  playScore: 0,
+  playStreak: 0,
+  playRound: 0,
+  gameEnded: false
+};
+
+// ════════════════════════════════════════
+// SVG DRAWING HELPERS
+// ════════════════════════════════════════
+function drawQuad(id, quadKey, size = 100) {
+  const quad = QUADS[quadKey];
+  const s = size / 120;
+  let svg = '';
+
+  const coords = {
+    square: [[20, 20], [100, 20], [100, 100], [20, 100]],
+    rectangle: [[15, 25], [105, 25], [105, 95], [15, 95]],
+    rhombus: [[60, 15], [105, 60], [60, 105], [15, 60]],
+    parallelogram: [[25, 30], [105, 30], [85, 90], [5, 90]],
+    trapezoid: [[30, 25], [90, 25], [100, 95], [20, 95]],
+    kite: [[60, 15], [100, 55], [60, 105], [20, 55]],
+    irregular: [[25, 20], [95, 35], [85, 100], [15, 85]]
+  };
+
+  const points = coords[quadKey];
+  if (!points) return '';
+
+  // Draw polygon
+  const polyStr = points.map(p => `${p[0]},${p[1]}`).join(' ');
+  svg += `<polygon points="${polyStr}" fill="none" stroke="var(--cyan)" stroke-width="2.5" stroke-linejoin="round"/>`;
+
+  // Draw vertices
+  points.forEach((p, i) => {
+    svg += `<circle cx="${p[0]}" cy="${p[1]}" r="3.5" fill="var(--cyan)"/>`;
+  });
+
+  // Draw right angle markers for squares/rectangles
+  if (quadKey === 'square' || quadKey === 'rectangle') {
+    const corners = [[20, 20], [100, 20], [100, 100], [20, 100]];
+    if (quadKey === 'rectangle') corners = [[15, 25], [105, 25], [105, 95], [15, 95]];
+
+    corners.forEach(corner => {
+      const size = 6;
+      svg += `<rect x="${corner[0] - size/2}" y="${corner[1] - size/2}" width="${size}" height="${size}" fill="none" stroke="var(--green)" stroke-width="1.5"/>`;
+    });
+  }
+
+  // Draw equal side markers for rhombus/square
+  if (quadKey === 'square' || quadKey === 'rhombus') {
+    for (let i = 0; i < points.length; i++) {
+      const p1 = points[i];
+      const p2 = points[(i + 1) % points.length];
+      const mid = [(p1[0] + p2[0]) / 2, (p1[1] + p2[1]) / 2];
+      svg += `<line x1="${mid[0] - 2}" y1="${mid[1] - 2}" x2="${mid[0] + 2}" y2="${mid[1] + 2}" stroke="var(--orange)" stroke-width="2" stroke-linecap="round"/>`;
+    }
+  }
+
+  // Draw parallel side arrows
+  if (quad.parallelPairs > 0) {
+    if (quadKey === 'rectangle' || quadKey === 'square' || quadKey === 'parallelogram') {
+      // Top and bottom
+      svg += `<path d="M 50 15 L 50 10 L 52 15 L 50 20" fill="none" stroke="var(--pink)" stroke-width="1.5" stroke-linecap="round"/>`;
+      svg += `<path d="M 50 105 L 50 100 L 52 105 L 50 110" fill="none" stroke="var(--pink)" stroke-width="1.5" stroke-linecap="round"/>`;
+    }
+    if (quadKey === 'trapezoid') {
+      svg += `<path d="M 60 15 L 60 10 L 62 15 L 60 20" fill="none" stroke="var(--pink)" stroke-width="1.5" stroke-linecap="round"/>`;
+      svg += `<path d="M 60 100 L 60 95 L 62 100 L 60 105" fill="none" stroke="var(--pink)" stroke-width="1.5" stroke-linecap="round"/>`;
+    }
+  }
+
+  return `<svg width="${size}" height="${size}" viewBox="0 0 120 120" style="max-width:100%;height:auto;">${svg}</svg>`;
+}
+
+// ════════════════════════════════════════
+// READ ALOUD
+// ════════════════════════════════════════
+function toggleReadAloud() {
+  if (window.VinculumStories && VinculumStories.isReading()) {
+    VinculumStories.stopReading();
+    document.getElementById('readAloudBtn').textContent = '🔊 Read to Me';
+  } else {
+    const text = document.getElementById('sidePanel')?.textContent || 'Quadrilaterals are four-sided shapes. Sort them by sides, angles, and parallel sides.';
+    if (window.VinculumStories) {
+      VinculumStories.readAloud(text, { rate: 0.85, onComplete: () => {
+        document.getElementById('readAloudBtn').textContent = '🔊 Read to Me';
+      }});
+      document.getElementById('readAloudBtn').textContent = '⏹ Stop';
+    }
+  }
+}
+
+// ════════════════════════════════════════
+// HELPERS
+// ════════════════════════════════════════
+function randInt(min, max) {
+  return Math.floor(Math.random() * (max - min + 1)) + min;
+}
+
+function getQuadsForLevel() {
+  if (S.diff === 'emergent') return ['square', 'rectangle'];
+  if (S.diff === 'developing') return ['square', 'rectangle', 'rhombus', 'parallelogram', 'trapezoid'];
+  return QUAD_ORDER;
+}
+
+// ════════════════════════════════════════
+// MODE SWITCHING
+// ════════════════════════════════════════
+function setMode(mode) {
+  S.mode = mode;
+
+  if (mode === 'practice' && S.total === 0) {
+    S.score = 0;
+    S.total = 0;
+    newPracticeQuestion();
+  }
+
+  if (mode === 'play' && S.playRound === 0) {
+    S.playScore = 0;
+    S.playStreak = 0;
+    S.playRound = 1;
+    S.gameEnded = false;
+  }
+
+  document.querySelectorAll('.mode-tab').forEach(t => t.className = 'mode-tab');
+  const tabEl = document.getElementById('tab' + mode.charAt(0).toUpperCase() + mode.slice(1));
+  tabEl.className = 'mode-tab active-' + mode;
+
+  render();
+}
+
+function setDiff(diff) {
+  S.diff = diff;
+  S.score = 0;
+  S.total = 0;
+  S.playScore = 0;
+  S.playStreak = 0;
+  S.playRound = 0;
+
+  document.querySelectorAll('.diff-btn').forEach(b => b.classList.remove('active'));
+  document.getElementById('diff' + diff.charAt(0).toUpperCase()).classList.add('active');
+
+  setMode(S.mode);
+}
+
+// ════════════════════════════════════════
+// RENDER MAIN
+// ════════════════════════════════════════
+function render() {
+  const ws = document.getElementById('workspace');
+  const sp = document.getElementById('sidePanel');
+
+  if (S.mode === 'explore') renderExplore(ws, sp);
+  else if (S.mode === 'practice') renderPractice(ws, sp);
+  else renderPlay(ws, sp);
+}
+
+// ─── EXPLORE MODE ───
+function renderExplore(ws, sp) {
+  const quadKey = S.selectedQuad;
+  const quad = QUADS[quadKey];
+  const available = getQuadsForLevel();
+
+  let html = '<div class="quad-detail">';
+
+  // Large canvas
+  html += `<div class="detail-canvas">${drawQuad('detail', quadKey, 280)}</div>`;
+
+  // Detail card
+  html += `<div class="detail-card">
+    <div class="detail-title">${quad.name}</div>`;
+
+  quad.attrs.forEach(attr => {
+    html += `<div class="detail-attr"><span class="attr-label">✓</span> ${attr}</div>`;
+  });
+
+  html += `<div style="margin-top:16px; padding-top:12px; border-top:1px solid var(--border); font-size:13px; color:var(--text2); font-style:italic;">${quad.notes}</div>`;
+  html += '</div>';
+
+  // Gallery
+  html += '<div class="quad-gallery">';
+  available.forEach(qk => {
+    const isActive = qk === quadKey ? 'style="border-color:var(--green);background:rgba(0,230,118,0.05);"' : '';
+    html += `<div class="quad-card" ${isActive} onclick="selectQuad('${qk}')">
+      <div class="quad-canvas">${drawQuad('gal-' + qk, qk, 100)}</div>
+      <div class="quad-label">${QUADS[qk].name}</div>
+    </div>`;
+  });
+  html += '</div>';
+
+  html += '</div>';
+  ws.innerHTML = html;
+
+  // Side panel
+  sp.innerHTML = `
+    <div class="panel-section">
+      <div class="panel-title">How It Works</div>
+      <div class="panel-text">
+        <strong>Tap any shape</strong> in the gallery to explore it.<br><br>
+        Look at the <strong>attributes</strong>: sides, angles, parallel sides.
+      </div>
+    </div>
+    <div class="panel-section">
+      <div class="panel-title">Key Concept</div>
+      <div class="panel-text">
+        <strong>Quadrilaterals</strong> are 4-sided shapes. We sort them by:<br>
+        • Equal sides (tick marks)<br>
+        • Right angles (squares)<br>
+        • Parallel sides (arrows)
+      </div>
+    </div>
+    <div class="panel-section">
+      <div class="panel-title">Special Rule</div>
+      <div class="panel-text">
+        A shape can belong to <strong>multiple categories</strong>. A square is ALSO a rectangle AND a rhombus!
+      </div>
+    </div>
+    <div class="panel-section">
+      <div class="panel-title">Standards</div>
+      <div class="panel-text">
+        <strong>3.G.1</strong> — Understand properties of quadrilaterals
+      </div>
+    </div>
+  `;
+}
+
+function selectQuad(key) {
+  S.selectedQuad = key;
+  render();
+}
+
+// ─── PRACTICE MODE ───
+function renderPractice(ws, sp) {
+  let html = '<div class="practice-question">';
+
+  html += `<div style="font-size:14px;color:var(--muted);margin-bottom:16px;">⭐ ${S.score}/${S.total}</div>`;
+
+  const available = getQuadsForLevel();
+
+  if (S.questionType === 'tap-shapes') {
+    // Which shapes have 4 right angles?
+    const attr = S.currentQuestion.attr;
+    const matching = S.currentQuestion.matching;
+
+    html += `<div class="question-text">${S.currentQuestion.question}</div>`;
+    html += '<div class="shape-grid">';
+
+    available.forEach(qk => {
+      const isMatching = matching.includes(qk);
+      const isSelected = S.userAnswers.includes(qk);
+      const active = isSelected ? 'selected' : '';
+
+      html += `<div class="shape-option ${active}" onclick="toggleShapeAnswer('${qk}')">
+        <div class="shape-option-canvas">${drawQuad('opt-' + qk, qk, 70)}</div>
+        <div class="shape-option-label">${QUADS[qk].name}</div>
+      </div>`;
+    });
+
+    html += '</div>';
+    html += `<button class="play-btn primary" style="margin-top:20px;width:100%;" onclick="submitTapShapes()">✓ Check</button>`;
+
+  } else if (S.questionType === 'true-false') {
+    const statement = S.currentQuestion.statement;
+    const answer = S.currentQuestion.answer;
+
+    html += `<div class="question-text">${statement}</div>`;
+    html += `<div style="display:flex;gap:12px;margin-top:20px;justify-content:center;">
+      <button class="play-btn" onclick="submitTrueFalse(true)" style="flex:1;">✓ True</button>
+      <button class="play-btn" onclick="submitTrueFalse(false)" style="flex:1;">✗ False</button>
+    </div>`;
+
+  } else if (S.questionType === 'identify') {
+    const quadKey = S.currentQuestion.quadKey;
+    const attrs = S.currentQuestion.attrs;
+
+    html += `<div class="question-text">Name this shape:</div>`;
+    html += `<div style="padding:16px;background:var(--bg);border-radius:10px;margin:16px 0;">`;
+    attrs.forEach(attr => {
+      html += `<div style="font-size:13px;color:var(--text2);margin:6px 0;">• ${attr}</div>`;
+    });
+    html += '</div>';
+    html += '<div class="shape-grid">';
+
+    available.forEach(qk => {
+      html += `<div class="shape-option" onclick="submitIdentify('${qk}')">
+        <div class="shape-option-canvas">${drawQuad('id-' + qk, qk, 70)}</div>
+        <div class="shape-option-label">${QUADS[qk].name}</div>
+      </div>`;
+    });
+
+    html += '</div>';
+  }
+
+  html += '</div>';
+  ws.innerHTML = html;
+
+  sp.innerHTML = `
+    <div class="score-display">
+      <div class="score-value">${S.score}/${S.total}</div>
+      <div class="score-label">Score</div>
+    </div>
+    <div class="panel-section">
+      <div class="panel-title">Instructions</div>
+      <div class="panel-text">
+        ${S.questionType === 'tap-shapes' ? 'Tap all shapes that match the description.' : ''}
+        ${S.questionType === 'true-false' ? 'Decide if the statement is true or false.' : ''}
+        ${S.questionType === 'identify' ? 'Choose the shape that matches these attributes.' : ''}
+      </div>
+    </div>
+    <div class="panel-section">
+      <div class="panel-title">Hint</div>
+      <div class="panel-text">
+        ${S.questionType === 'tap-shapes' ? 'Look at the corners (angles) and sides!' : ''}
+        ${S.questionType === 'true-false' ? 'Remember: squares are also rectangles!' : ''}
+        ${S.questionType === 'identify' ? 'Count the equal sides and check for right angles.' : ''}
+      </div>
+    </div>
+  `;
+}
+
+function toggleShapeAnswer(quadKey) {
+  const idx = S.userAnswers.indexOf(quadKey);
+  if (idx >= 0) {
+    S.userAnswers.splice(idx, 1);
+  } else {
+    S.userAnswers.push(quadKey);
+  }
+  render();
+}
+
+function submitTapShapes() {
+  const matching = S.currentQuestion.matching;
+  const correct = S.userAnswers.length === matching.length &&
+                  S.userAnswers.every(q => matching.includes(q));
+
+  if (correct) {
+    showFB('✓ Correct!', 'correct');
+    S.score++;
+    setTimeout(() => {
+      newPracticeQuestion();
+      render();
+    }, 800);
+  } else {
+    showFB('✗ Try again', 'incorrect');
+  }
+}
+
+function submitTrueFalse(userAnswer) {
+  const correct = userAnswer === S.currentQuestion.answer;
+
+  if (correct) {
+    showFB('✓ Correct!', 'correct');
+    S.score++;
+    setTimeout(() => {
+      newPracticeQuestion();
+      render();
+    }, 800);
+  } else {
+    showFB('✗ Try again', 'incorrect');
+  }
+}
+
+function submitIdentify(quadKey) {
+  const correct = quadKey === S.currentQuestion.quadKey;
+
+  if (correct) {
+    showFB('✓ Correct!', 'correct');
+    S.score++;
+    setTimeout(() => {
+      newPracticeQuestion();
+      render();
+    }, 800);
+  } else {
+    showFB('✗ Try again', 'incorrect');
+  }
+}
+
+function newPracticeQuestion() {
+  S.total = (S.total || 0) + 1;
+  S.userAnswers = [];
+
+  const available = getQuadsForLevel();
+  const types = ['tap-shapes', 'true-false', 'identify'];
+  if (S.diff === 'secure') types.push('true-false');
+
+  S.questionType = types[Math.floor(Math.random() * types.length)];
+
+  if (S.questionType === 'tap-shapes') {
+    const questions = [
+      { question: 'Which shapes have 4 right angles?', attr: 'right-angles', matching: ['square', 'rectangle'] },
+      { question: 'Which shapes have 4 equal sides?', attr: 'equal-sides', matching: available.filter(q => ['square', 'rhombus'].includes(q)) },
+      { question: 'Which shapes have parallel sides?', attr: 'parallel', matching: available.filter(q => ['square', 'rectangle', 'rhombus', 'parallelogram'].includes(q)) }
+    ];
+    S.currentQuestion = questions[Math.floor(Math.random() * questions.length)];
+
+  } else if (S.questionType === 'true-false') {
+    const statements = [
+      { statement: 'All squares are rectangles.', answer: true },
+      { statement: 'All rectangles are squares.', answer: false },
+      { statement: 'A rhombus has 4 equal sides.', answer: true },
+      { statement: 'Trapezoids have 2 pairs of parallel sides.', answer: false },
+      { statement: 'A square is also a rhombus.', answer: true }
+    ];
+    S.currentQuestion = statements[Math.floor(Math.random() * statements.length)];
+
+  } else if (S.questionType === 'identify') {
+    const quadKey = available[Math.floor(Math.random() * available.length)];
+    const quad = QUADS[quadKey];
+    S.currentQuestion = {
+      quadKey: quadKey,
+      attrs: quad.attrs.slice(0, 2)
+    };
+  }
+}
+
+// ─── PLAY MODE ───
+function renderPlay(ws, sp) {
+  let html = '<div class="quad-detail">';
+
+  if (S.gameEnded) {
+    html += `<div style="text-align:center;padding:40px;font-size:32px;font-weight:800;">
+      Game Complete!<br>
+      <div style="font-size:48px;margin:20px 0;background:var(--grad);-webkit-background-clip:text;-webkit-text-fill-color:transparent;">
+        ${S.playScore}
+      </div>
+      <button class="play-btn primary" onclick="playAgain()" style="margin-top:20px;">▶ Play Again</button>
+    </div>`;
+  } else {
+    const available = getQuadsForLevel();
+    const challenge = available[Math.floor(Math.random() * available.length)];
+    const quad = QUADS[challenge];
+
+    html += `<div class="game-info">
+      <div class="info-item">
+        <span class="info-label">Round</span>
+        <span>${S.playRound} / 12</span>
+      </div>
+      <div class="info-item">
+        <span class="info-label">⭐ Score</span>
+        <span>${S.playScore}</span>
+      </div>
+      <div class="info-item">
+        <span class="info-label">🔥 Streak</span>
+        <span>${S.playStreak}</span>
+      </div>
+    </div>`;
+
+    html += `<div class="detail-canvas">${drawQuad('play', challenge, 240)}</div>`;
+
+    html += `<div class="question-text">Name this shape!</div>`;
+
+    html += '<div class="game-bins">';
+    available.forEach(qk => {
+      html += `<button class="game-bin" onclick="submitPlayShape('${qk}', '${challenge}')">
+        <div class="bin-label">${QUADS[qk].name}</div>
+      </button>`;
+    });
+    html += '</div>';
+  }
+
+  html += '</div>';
+  ws.innerHTML = html;
+
+  sp.innerHTML = `
+    <div class="score-display">
+      <div class="score-value">${S.playScore}</div>
+      <div class="score-label">Score</div>
+    </div>
+    <div class="score-display" style="background:transparent; padding:8px;">
+      <div style="font-size:18px; font-weight:700; color:var(--yellow);">🔥 ${S.playStreak}</div>
+      <div class="score-label">Streak</div>
+      <div class="streak-bar"><div class="streak-fill" style="width:${Math.min(S.playStreak * 8, 100)}%;"></div></div>
+    </div>
+    <div class="panel-section">
+      <div class="panel-title">How to Play</div>
+      <div class="panel-text">
+        Look at the shape and <strong>tap its name</strong>.<br><br>
+        <strong>Speed matters</strong> — consecutive correct answers build your streak!
+      </div>
+    </div>
+    <div class="panel-section">
+      <div class="panel-title">Scoring</div>
+      <div class="panel-text">
+        Base: <strong>5 points</strong><br>
+        Streak bonus: <strong>+1 × streak</strong><br>
+        <strong>Max: 12 pts/round</strong>
+      </div>
+    </div>
+  `;
+}
+
+function submitPlayShape(selected, correct) {
+  if (selected === correct) {
+    showFB('✓ Yes!', 'correct');
+    S.playScore += 5 + S.playStreak;
+    S.playStreak++;
+    S.playRound++;
+
+    if (S.playRound > 12) {
+      setTimeout(() => {
+        S.gameEnded = true;
+        render();
+      }, 800);
+    } else {
+      setTimeout(() => {
+        render();
+      }, 800);
+    }
+  } else {
+    showFB('✗ Try again', 'incorrect');
+    S.playStreak = 0;
+  }
+}
+
+function playAgain() {
+  S.playScore = 0;
+  S.playStreak = 0;
+  S.playRound = 1;
+  S.gameEnded = false;
+  render();
+}
+
+// ════════════════════════════════════════
+// INIT
+// ════════════════════════════════════════
+render();
+</script>
+<script src="../../vinculum-core.js"></script>
+<script src="../../vinculum-data.js"></script>
+<script src="../../vinculum-adaptive-hook.js"></script>
+<script src="../../vinculum-3reads.js"></script>
+<script src="../../vinculum-stories.js"></script>
+<script src="../../vinculum-feedback.js"></script>
+<!-- Foundation loaded from vinculum-core.js -->
+</body>
+</html>

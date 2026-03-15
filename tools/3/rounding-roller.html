@@ -1,0 +1,1303 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>VINCULUM — Rounding Roller</title>
+<link rel="stylesheet" href="../../vinculum-core.css">
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;600&display=swap');
+
+.vinculum-rtm-btn .rtm-icon{font-size:14px;}
+
+/* ═══ FOCUS VISIBLE (Keyboard Navigation) ═══ */
+*:focus-visible {
+  outline:2px solid var(--cyan);outline-offset:2px;border-radius:4px;
+}
+.sr-only {
+  position:absolute;width:1px;height:1px;padding:0;margin:-1px;
+  overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0;
+}
+
+* { margin:0; padding:0; box-sizing:border-box; }
+body {
+  font-family: 'Inter', sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  height: 100vh;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  user-select: none;
+}
+
+/* ── HEADER ── */
+.header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 24px;
+  background: var(--bg2);
+  border-bottom: 1px solid var(--border);
+  flex-shrink: 0;
+}
+.header-left {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+.back-btn {
+  padding: 6px 12px;
+  border-radius: 8px;
+  border: 1px solid var(--border);
+  background: transparent;
+  color: var(--text2);
+  font-size: 13px;
+  font-family: inherit;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+.back-btn:hover { background: var(--card); color: var(--cyan); }
+.header-title {
+  font-size: 18px;
+  font-weight: 800;
+}
+.header-title span {
+  background: var(--grad);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+.header-badge {
+  font-size: 10px;
+  font-weight: 700;
+  padding: 3px 10px;
+  border-radius: 6px;
+  background: rgba(0,212,255,0.1);
+  color: var(--cyan);
+  border: 1px solid rgba(0,212,255,0.2);
+  letter-spacing: 1px;
+}
+.std-tags {
+  display: flex;
+  gap: 6px;
+}
+.std-tag {
+  font-size: 10px;
+  font-family: 'JetBrains Mono', monospace;
+  font-weight: 600;
+  padding: 3px 8px;
+  border-radius: 5px;
+  background: rgba(0,212,255,0.08);
+  color: var(--cyan);
+}
+.std-tag.mn { background: rgba(255,145,0,0.08); color: var(--orange); }
+
+/* ── MODE TABS ── */
+.mode-tabs {
+  display: flex;
+  gap: 4px;
+  padding: 8px 24px;
+  background: var(--bg2);
+  border-bottom: 1px solid var(--border);
+  flex-shrink: 0;
+}
+.mode-tab {
+  padding: 8px 20px;
+  border-radius: 8px;
+  border: 1px solid transparent;
+  background: transparent;
+  color: var(--muted);
+  font-size: 13px;
+  font-weight: 600;
+  font-family: inherit;
+  cursor: pointer;
+  transition: all 0.2s;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.mode-tab:hover { color: var(--text2); background: var(--card); }
+.mode-tab.active-explore { background: rgba(0,212,255,0.1); color: var(--cyan); border-color: rgba(0,212,255,0.3); }
+.mode-tab.active-practice { background: rgba(0,230,118,0.1); color: var(--green); border-color: rgba(0,230,118,0.3); }
+.mode-tab.active-play { background: rgba(255,59,139,0.1); color: var(--pink); border-color: rgba(255,59,139,0.3); }
+
+/* Difficulty selector */
+.diff-selector {
+  margin-left: auto;
+  display: flex;
+  gap: 4px;
+  align-items: center;
+}
+.diff-label {
+  font-size: 11px;
+  color: var(--muted);
+  margin-right: 8px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+}
+.diff-btn {
+  padding: 5px 12px;
+  border-radius: 6px;
+  border: 1px solid var(--border);
+  background: transparent;
+  color: var(--muted);
+  font-size: 11px;
+  font-weight: 600;
+  font-family: inherit;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+.diff-btn:hover { color: var(--text2); }
+.diff-btn.active { background: rgba(0,212,255,0.1); color: var(--cyan); border-color: rgba(0,212,255,0.3); }
+
+/* ── MAIN AREA ── */
+.main {
+  flex: 1;
+  display: flex;
+  overflow: hidden;
+}
+
+/* ── WORKSPACE ── */
+.workspace {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+  position: relative;
+  overflow-y: auto;
+}
+
+/* ── ROUNDING CONTAINER ── */
+.rounding-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 24px;
+  width: 100%;
+  max-width: 650px;
+}
+
+/* Number line */
+.number-line-container {
+  width: 100%;
+  padding: 24px;
+  background: var(--card);
+  border-radius: 16px;
+  border: 2px solid var(--border);
+  position: relative;
+  min-height: 160px;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+}
+
+.number-line {
+  position: relative;
+  height: 60px;
+  display: flex;
+  align-items: center;
+  margin: 20px 0;
+}
+
+.line-track {
+  position: absolute;
+  width: 100%;
+  height: 4px;
+  background: var(--border);
+  border-radius: 2px;
+  left: 0;
+  top: 50%;
+  transform: translateY(-50%);
+}
+
+.line-ticks {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  display: flex;
+  justify-content: space-between;
+  padding: 0 20px;
+}
+
+.tick {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: transform 0.2s;
+}
+
+.tick:hover { transform: scale(1.05); }
+
+.tick-mark {
+  width: 8px;
+  height: 20px;
+  background: var(--border);
+  border-radius: 1px;
+  position: relative;
+  z-index: 1;
+}
+
+.tick-mark.major {
+  height: 28px;
+  width: 3px;
+  background: var(--text2);
+}
+
+.tick-label {
+  position: absolute;
+  top: 38px;
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--text2);
+  font-family: 'JetBrains Mono', monospace;
+}
+
+/* Marker ball on the line */
+.marker {
+  position: absolute;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  background: var(--cyan);
+  border: 3px solid var(--bg);
+  z-index: 10;
+  box-shadow: 0 4px 12px rgba(0,212,255,0.3);
+  animation: bounce 0.6s ease-in-out;
+  cursor: grab;
+}
+
+.marker.active { cursor: grabbing; }
+.marker.midpoint { background: var(--yellow); box-shadow: 0 4px 12px rgba(255,193,7,0.3); }
+
+.marker-label {
+  position: absolute;
+  top: -35px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: var(--card);
+  padding: 6px 12px;
+  border-radius: 8px;
+  border: 1px solid var(--border);
+  font-size: 13px;
+  font-weight: 600;
+  white-space: nowrap;
+  z-index: 11;
+  font-family: 'JetBrains Mono', monospace;
+}
+
+/* Benchmark labels */
+.benchmark-label {
+  position: absolute;
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--cyan);
+  font-family: 'JetBrains Mono', monospace;
+}
+
+.benchmark-label.left {
+  left: 20px;
+  top: -25px;
+}
+
+.benchmark-label.right {
+  right: 20px;
+  top: -25px;
+}
+
+/* Rounding info */
+.rounding-info {
+  text-align: center;
+  padding: 16px 20px;
+  background: rgba(0,212,255,0.05);
+  border-radius: 12px;
+  border: 1px solid var(--border);
+  width: 100%;
+}
+
+.rounding-statement {
+  font-size: 15px;
+  color: var(--text2);
+  margin: 6px 0;
+  font-weight: 500;
+}
+
+.rounding-statement .highlight {
+  font-weight: 700;
+  color: var(--cyan);
+}
+
+.rounding-statement .highlight.up {
+  color: var(--green);
+}
+
+/* Control slider */
+.control-slider-container {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  width: 100%;
+  padding: 16px;
+  background: var(--card);
+  border-radius: 12px;
+}
+
+.control-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  justify-content: center;
+}
+
+.control-label {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--muted);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  min-width: 70px;
+}
+
+.control-slider {
+  flex: 1;
+  max-width: 250px;
+  height: 6px;
+  -webkit-appearance: none;
+  appearance: none;
+  background: var(--border);
+  border-radius: 3px;
+  outline: none;
+  cursor: pointer;
+}
+
+.control-slider::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background: var(--cyan);
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.control-slider::-moz-range-thumb {
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background: var(--cyan);
+  cursor: pointer;
+  border: none;
+  transition: all 0.2s;
+}
+
+.control-value {
+  font-size: 14px;
+  font-weight: 700;
+  font-family: 'JetBrains Mono', monospace;
+  color: var(--cyan);
+  min-width: 40px;
+  text-align: center;
+}
+
+/* Practice question */
+.practice-question {
+  text-align: center;
+  padding: 20px;
+  background: var(--card);
+  border-radius: 12px;
+  border: 1px solid var(--border);
+  width: 100%;
+  max-width: 500px;
+}
+
+.question-text {
+  font-size: 16px;
+  color: var(--text2);
+  margin-bottom: 12px;
+  font-weight: 600;
+}
+
+.question-highlight {
+  font-size: 28px;
+  font-weight: 800;
+  font-family: 'JetBrains Mono', monospace;
+  color: var(--green);
+  margin: 12px 0;
+}
+
+/* Input fields */
+.input-group {
+  display: flex;
+  gap: 8px;
+  justify-content: center;
+  align-items: center;
+  margin-top: 12px;
+  flex-wrap: wrap;
+}
+
+.number-input {
+  padding: 10px 16px;
+  border-radius: 8px;
+  border: 2px solid var(--border);
+  background: var(--card);
+  color: var(--text);
+  font-size: 16px;
+  font-family: 'JetBrains Mono', monospace;
+  text-align: center;
+  width: 70px;
+  transition: all 0.2s;
+}
+
+.number-input:focus {
+  border-color: var(--cyan);
+  outline: none;
+}
+
+/* Answer buttons (for practice/play) */
+.answer-buttons {
+  display: flex;
+  gap: 12px;
+  justify-content: center;
+  margin-top: 12px;
+  flex-wrap: wrap;
+}
+
+.answer-btn {
+  padding: 12px 24px;
+  border-radius: 10px;
+  border: 2px solid var(--border);
+  background: var(--card);
+  color: var(--text2);
+  font-size: 14px;
+  font-weight: 600;
+  font-family: 'JetBrains Mono', monospace;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.answer-btn:hover {
+  background: rgba(0,212,255,0.1);
+  color: var(--cyan);
+  border-color: var(--cyan);
+}
+
+.answer-btn.selected {
+  background: rgba(0,212,255,0.15);
+  color: var(--cyan);
+  border-color: var(--cyan);
+}
+
+/* Play mode */
+.game-info {
+  display: flex;
+  gap: 20px;
+  justify-content: center;
+  align-items: center;
+  font-size: 14px;
+  color: var(--text2);
+  margin-bottom: 12px;
+}
+
+.info-item {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.info-label {
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+}
+
+.play-btn {
+  padding: 12px 24px;
+  border-radius: 10px;
+  border: 1px solid var(--border);
+  background: var(--card);
+  color: var(--text2);
+  font-size: 14px;
+  font-weight: 600;
+  font-family: inherit;
+  cursor: pointer;
+  transition: all 0.2s;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.play-btn:hover { background: rgba(0,212,255,0.1); color: var(--cyan); }
+
+.play-btn.primary {
+  background: var(--grad);
+  color: var(--bg);
+  border-color: transparent;
+  font-weight: 700;
+}
+
+.play-btn.primary:hover { opacity: 0.9; }
+
+/* Conveyor belt (Play mode) */
+.conveyor-container {
+  position: relative;
+  width: 100%;
+  max-width: 600px;
+  height: 120px;
+  background: var(--card);
+  border: 2px solid var(--border);
+  border-radius: 12px;
+  overflow: hidden;
+  margin: 20px 0;
+}
+
+.conveyor-belt {
+  position: absolute;
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  padding: 0 20px;
+}
+
+.conveyor-item {
+  position: absolute;
+  padding: 16px 20px;
+  background: rgba(0,212,255,0.1);
+  border: 2px solid var(--cyan);
+  border-radius: 8px;
+  font-size: 18px;
+  font-weight: 700;
+  font-family: 'JetBrains Mono', monospace;
+  color: var(--cyan);
+  white-space: nowrap;
+  animation: moveLeft 3s linear forwards;
+}
+
+@keyframes moveLeft {
+  from { transform: translateX(120%); opacity: 1; }
+  to { transform: translateX(-120%); opacity: 0; }
+}
+
+/* ── FEEDBACK ── */
+.feedback {
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%) scale(0);
+  padding: 24px 48px;
+  border-radius: 20px;
+  font-size: 28px;
+  font-weight: 800;
+  z-index: 200;
+  pointer-events: none;
+  transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275), opacity 0.3s;
+  opacity: 0;
+}
+.feedback.show {
+  transform: translate(-50%, -50%) scale(1);
+  opacity: 1;
+}
+.feedback.correct {
+  background: rgba(0,230,118,0.15);
+  color: var(--green);
+  border: 2px solid var(--green);
+}
+.feedback.incorrect {
+  background: rgba(255,59,139,0.15);
+  color: var(--pink);
+  border: 2px solid var(--pink);
+}
+.feedback.try-again {
+  background: rgba(255,193,7,0.15);
+  color: var(--yellow);
+  border: 2px solid var(--yellow);
+}
+
+/* ── SIDE PANEL (Instructions / Score) ── */
+.side-panel {
+  width: 280px;
+  background: var(--bg2);
+  border-left: 1px solid var(--border);
+  padding: 20px;
+  overflow-y: auto;
+  flex-shrink: 0;
+}
+.panel-section {
+  margin-bottom: 20px;
+}
+.panel-title {
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 1.5px;
+  color: var(--muted);
+  margin-bottom: 8px;
+}
+.panel-text {
+  font-size: 13px;
+  color: var(--text2);
+  line-height: 1.6;
+}
+.score-display {
+  text-align: center;
+  padding: 16px;
+  background: var(--card);
+  border-radius: 12px;
+  margin-bottom: 12px;
+}
+.score-value {
+  font-size: 36px;
+  font-weight: 900;
+  font-family: 'JetBrains Mono', monospace;
+  background: var(--grad);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+.score-label {
+  font-size: 11px;
+  color: var(--muted);
+  text-transform: uppercase;
+  letter-spacing: 1px;
+}
+.streak-bar {
+  height: 6px;
+  background: var(--card);
+  border-radius: 3px;
+  overflow: hidden;
+  margin-top: 8px;
+}
+.streak-fill {
+  height: 100%;
+  background: var(--grad);
+  border-radius: 3px;
+  transition: width 0.3s;
+}
+
+/* ── ANIMATIONS ── */
+@keyframes bounce {
+  0%, 100% { transform: translate(-50%, -50%) scale(1); }
+  50% { transform: translate(-50%, -60%) scale(1.05); }
+}
+
+@keyframes shake {
+  0%, 100% { transform: translateX(0); }
+  25% { transform: translateX(-8px); }
+  75% { transform: translateX(8px); }
+}
+
+@keyframes hop {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-12px); }
+}
+
+.pop-in { animation: pop 0.3s ease-out forwards; }
+.shake { animation: shake 0.3s ease-in-out; }
+.hop { animation: hop 0.4s ease-in-out; }
+
+@keyframes pop {
+  0% { transform: scale(0); opacity: 0; }
+  70% { transform: scale(1.2); }
+  100% { transform: scale(1); opacity: 1; }
+}
+
+/* scrollbar */
+::-webkit-scrollbar { width: 6px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+
+/* Responsive */
+@media (max-width: 768px) {
+  .number-line-container {
+    min-height: 140px;
+    padding: 16px;
+  }
+  .side-panel {
+    width: 220px;
+  }
+  .control-slider {
+    max-width: 150px;
+  }
+  .rounding-container {
+    max-width: 90%;
+  }
+}
+</style>
+</head>
+<body>
+
+<!-- ═══ HEADER ═══ -->
+<div class="header">
+  <div class="header-left">
+    <a class="back-btn" href="../../VINCULUM-Hub.html" style="text-decoration:none;">◀ Hub</a>
+    <div class="header-title"><span>VINCULUM</span> Rounding Roller</div>
+    <span class="header-badge">3 · NBT</span>
+    <button class="back-btn" id="readAloudBtn" onclick="toggleReadAloud()" aria-label="Read Aloud" title="Read instructions aloud">🔊 Read to Me</button>
+  </div>
+  <div class="std-tags">
+    <span class="std-tag">3.NBT.1</span>
+  </div>
+</div>
+
+<!-- ═══ MODE TABS ═══ -->
+<div class="mode-tabs">
+  <button class="mode-tab active-explore" id="tabExplore" onclick="setMode('explore')">
+    <svg width="18" height="18" viewBox="0 0 48 48" fill="none"><path d="M4 24C4 24 12 12 24 12C36 12 44 24 44 24C44 24 36 36 24 36C12 36 4 24 4 24Z" stroke="currentColor" stroke-width="3" fill="none"/><circle cx="24" cy="24" r="7" stroke="currentColor" stroke-width="3" fill="none"/><circle cx="24" cy="24" r="3" fill="currentColor"/></svg> Explore
+  </button>
+  <button class="mode-tab" id="tabPractice" onclick="setMode('practice')">
+    <svg width="18" height="18" viewBox="0 0 48 48" fill="none"><circle cx="24" cy="24" r="20" stroke="currentColor" stroke-width="3" fill="none" opacity="0.3"/><circle cx="24" cy="24" r="20" stroke="currentColor" stroke-width="3" fill="none" stroke-dasharray="126" stroke-dashoffset="32" stroke-linecap="round"/><polyline points="16,24 22,32 34,16" stroke="currentColor" stroke-width="4" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg> Practice
+  </button>
+  <button class="mode-tab" id="tabPlay" onclick="setMode('play')">
+    <svg width="18" height="18" viewBox="0 0 48 48" fill="none"><polygon points="28,4 12,28 22,28 18,44 36,18 26,18" fill="none" stroke="currentColor" stroke-width="3" stroke-linejoin="round"/></svg> Play
+  </button>
+  <div class="diff-selector">
+    <span class="diff-label">Level</span>
+    <button class="diff-btn active" id="diffE" onclick="setDiff('emergent')" data-diff="emergent">1–10</button>
+    <button class="diff-btn" id="diffD" onclick="setDiff('developing')" data-diff="developing">1–100</button>
+    <button class="diff-btn" id="diffS" onclick="setDiff('secure')" data-diff="secure">1–1000</button>
+  </div>
+</div>
+
+<!-- ═══ MAIN ═══ -->
+<div class="main">
+  <div class="workspace" role="main" id="workspace"></div>
+  <div class="side-panel" id="sidePanel"></div>
+</div>
+
+<!-- ═══ FEEDBACK POPUP ═══ -->
+<div class="feedback" id="feedback"></div>
+
+<script>
+function showFB(t,c){var f=document.getElementById("feedback");if(!f)return;f.textContent=t;f.className="feedback "+c+" show";setTimeout(function(){f.classList.remove("show");},1200);}
+
+// ════════════════════════════════════════
+// STATE
+// ════════════════════════════════════════
+const S = {
+  mode: 'explore',      // explore | practice | play
+  diff: 'emergent',     // emergent | developing | secure
+
+  // Explore
+  roundTo: 10,          // 10 or 100
+  targetNum: 0,
+
+  // Practice
+  questionType: null,   // tap-benchmark | type-answer
+  practiceNum: 0,
+  practiceBenchmark: 0,
+  practiceRoundTo: 10,
+  score: 0,
+  total: 0,
+
+  // Play
+  playScore: 0,
+  playStreak: 0,
+  playRound: 0,
+  gameEnded: false,
+  playNum: 0,
+  playBenchmarks: [],
+  playCorrect: 0
+};
+
+// ════════════════════════════════════════
+// READ-ALOUD
+// ════════════════════════════════════════
+function toggleReadAloud() {
+  if (window.VinculumStories && VinculumStories.isReading()) {
+    VinculumStories.stopReading();
+    document.getElementById('readAloudBtn').textContent = '🔊 Read to Me';
+  } else {
+    const text = document.getElementById('sidePanel')?.textContent || 'Rounding means finding the nearest benchmark.';
+    if (window.VinculumStories) {
+      VinculumStories.readAloud(text, { rate: 0.85, onComplete: () => {
+        document.getElementById('readAloudBtn').textContent = '🔊 Read to Me';
+      }});
+      document.getElementById('readAloudBtn').textContent = '⏹ Stop';
+    }
+  }
+}
+
+// ════════════════════════════════════════
+// HELPERS
+// ════════════════════════════════════════
+function getRange() {
+  return { emergent: [10, 99], developing: [100, 999], secure: [100, 9999] }[S.diff];
+}
+
+function getRoundChoices() {
+  if (S.diff === 'emergent') return [10];
+  if (S.diff === 'developing') return [10, 100];
+  return [10, 100, 1000];
+}
+
+function randInt(min, max) {
+  return Math.floor(Math.random() * (max - min + 1)) + min;
+}
+
+function getBenchmarks(num, roundTo) {
+  const lower = Math.floor(num / roundTo) * roundTo;
+  const upper = lower + roundTo;
+  const mid = lower + roundTo / 2;
+
+  return { lower, upper, mid };
+}
+
+function getRounded(num, roundTo) {
+  const { lower, upper, mid } = getBenchmarks(num, roundTo);
+  return num < mid ? lower : upper;
+}
+
+function getCloserTo(num, roundTo) {
+  const { lower, upper, mid } = getBenchmarks(num, roundTo);
+  if (num === mid) return 'equal';
+  return num < mid ? 'lower' : 'upper';
+}
+
+function speak(text) {
+  if (!window.speechSynthesis) return;
+  const u = new SpeechSynthesisUtterance(text);
+  u.rate = 0.9;
+  speechSynthesis.speak(u);
+}
+
+// ════════════════════════════════════════
+// MODE SWITCHING
+// ════════════════════════════════════════
+function setMode(mode) {
+  S.mode = mode;
+
+  if (mode === 'practice' && S.total === 0) {
+    S.score = 0;
+    S.total = 0;
+    newPracticeQuestion();
+  }
+
+  if (mode === 'play' && S.playRound === 0) {
+    S.playScore = 0;
+    S.playStreak = 0;
+    S.playRound = 1;
+    S.gameEnded = false;
+    startPlayRound();
+  }
+
+  document.querySelectorAll('.mode-tab').forEach(t => t.className = 'mode-tab');
+  const tabEl = document.getElementById('tab' + mode.charAt(0).toUpperCase() + mode.slice(1));
+  tabEl.className = 'mode-tab active-' + mode;
+
+  render();
+}
+
+function setDiff(diff) {
+  S.diff = diff;
+  S.roundTo = 10;
+  S.targetNum = 0;
+  S.score = 0;
+  S.total = 0;
+  S.playScore = 0;
+  S.playStreak = 0;
+  S.playRound = 0;
+  S.gameEnded = false;
+
+  document.querySelectorAll('.diff-btn').forEach(b => b.classList.remove('active'));
+  document.getElementById('diff' + diff.charAt(0).toUpperCase()).classList.add('active');
+
+  setMode(S.mode);
+}
+
+// ════════════════════════════════════════
+// RENDER MAIN
+// ════════════════════════════════════════
+function render() {
+  const ws = document.getElementById('workspace');
+  const sp = document.getElementById('sidePanel');
+
+  if (S.mode === 'explore') renderExplore(ws, sp);
+  else if (S.mode === 'practice') renderPractice(ws, sp);
+  else renderPlay(ws, sp);
+}
+
+// ─── EXPLORE MODE ───
+function renderExplore(ws, sp) {
+  let html = '<div class="rounding-container">';
+
+  const { lower, upper, mid } = getBenchmarks(S.targetNum, S.roundTo);
+  const closer = getCloserTo(S.targetNum, S.roundTo);
+  const rounded = getRounded(S.targetNum, S.roundTo);
+
+  // Number line
+  html += '<div class="number-line-container">';
+  html += '<div style="font-size:14px;color:var(--muted);margin-bottom:8px;text-align:center;">Rounding to nearest ' + S.roundTo + '</div>';
+
+  html += '<div class="number-line">';
+  html += '<div class="line-track"></div>';
+
+  // Generate ticks
+  html += '<div class="line-ticks">';
+  for (let i = 0; i <= S.roundTo; i += S.roundTo / 10) {
+    const isLabel = i === 0 || i === S.roundTo;
+    html += '<div class="tick">';
+    if (isLabel) {
+      html += '<div class="tick-mark major"></div>';
+    } else {
+      html += '<div class="tick-mark"></div>';
+    }
+    if (isLabel) {
+      const label = lower + i;
+      html += '<div class="tick-label">' + label + '</div>';
+    }
+    html += '</div>';
+  }
+  html += '</div>';
+
+  // Marker position
+  const percent = ((S.targetNum - lower) / S.roundTo) * 100;
+  html += '<div class="marker' + (closer === 'equal' ? ' midpoint' : '') + '" style="left:' + (20 + percent * 0.6) + '%;">';
+  html += '<div class="marker-label">' + S.targetNum + '</div>';
+  html += '</div>';
+
+  html += '<div class="benchmark-label left">' + lower + '</div>';
+  html += '<div class="benchmark-label right">' + upper + '</div>';
+
+  html += '</div>';
+
+  // Rounding info
+  const statement = closer === 'equal' ?
+    'Right in the middle? Round UP! ' + S.targetNum + ' rounds to ' + upper + '.' :
+    (closer === 'lower' ?
+      S.targetNum + ' is closer to ' + lower + '. It rounds to ' + lower + '.' :
+      S.targetNum + ' is closer to ' + upper + '. It rounds to ' + upper + '.');
+
+  html += '<div class="rounding-info">';
+  html += '<div class="rounding-statement">' + S.targetNum + ' is between <span class="highlight">' + lower + '</span> and <span class="highlight">' + upper + '</span></div>';
+  html += '<div class="rounding-statement">Result: <span class="highlight up">' + rounded + '</span></div>';
+  html += '</div>';
+
+  // Control
+  html += '<div class="control-slider-container">';
+  html += '<div class="control-row">';
+  html += '<label class="control-label">Number</label>';
+  html += '<input type="range" min="' + lower + '" max="' + upper + '" value="' + S.targetNum + '" class="control-slider" id="numberSlider" oninput="updateNumber(this.value)">';
+  html += '<span class="control-value" id="numberValue">' + S.targetNum + '</span>';
+  html += '</div>';
+  html += '<div class="control-row">';
+  html += '<label class="control-label">Round To</label>';
+  html += '<select class="number-input" id="roundToSelect" onchange="updateRoundTo(this.value)" style="width:auto;">';
+  const choices = getRoundChoices();
+  choices.forEach(c => {
+    html += '<option value="' + c + '"' + (S.roundTo === c ? ' selected' : '') + '>' + c + '</option>';
+  });
+  html += '</select>';
+  html += '</div>';
+  html += '</div>';
+
+  html += '</div>';
+  ws.innerHTML = html;
+
+  // Side panel
+  sp.innerHTML = `
+    <div class="panel-section">
+      <div class="panel-title">How It Works</div>
+      <div class="panel-text">
+        <strong>Watch</strong> the ball move on the number line as you drag the slider.<br><br>
+        Notice which <strong>benchmark</strong> the number is closer to.<br><br>
+        The rounded answer is always the <strong>nearest benchmark</strong>!
+      </div>
+    </div>
+    <div class="panel-section">
+      <div class="panel-title">Midpoint Rule</div>
+      <div class="panel-text">
+        When a number is <strong>exactly in the middle</strong> (like 45 between 40 and 50), we always round <strong>UP</strong>!
+      </div>
+    </div>
+    <div class="panel-section">
+      <div class="panel-title">Benchmarks</div>
+      <div class="panel-text">
+        <strong>Rounding to 10:</strong> Benchmarks are 10, 20, 30, 40, etc.<br><br>
+        <strong>Rounding to 100:</strong> Benchmarks are 100, 200, 300, etc.
+      </div>
+    </div>
+    <div class="panel-section">
+      <div class="panel-title">Standard</div>
+      <div class="panel-text">
+        <strong>3.NBT.1</strong> — Use place value to round numbers to the nearest 10 or 100
+      </div>
+    </div>
+  `;
+}
+
+function updateNumber(val) {
+  S.targetNum = parseInt(val);
+  render();
+}
+
+function updateRoundTo(val) {
+  S.roundTo = parseInt(val);
+  const range = getRange();
+  const midpoint = Math.floor((range[0] + range[1]) / 2);
+  S.targetNum = randInt(range[0], range[1]);
+  render();
+}
+
+// ─── PRACTICE MODE ───
+function renderPractice(ws, sp) {
+  let html = '<div class="rounding-container">';
+
+  // Score
+  html += `<div style="text-align:center;margin-bottom:12px;">
+    <div style="font-size:14px;color:var(--muted);">⭐ ${S.score}/${S.total}</div>
+  </div>`;
+
+  const { lower, upper, mid } = getBenchmarks(S.practiceNum, S.practiceBenchmark);
+  const closer = getCloserTo(S.practiceNum, S.practiceBenchmark);
+  const rounded = getRounded(S.practiceNum, S.practiceBenchmark);
+  const percent = ((S.practiceNum - lower) / S.practiceBenchmark) * 100;
+
+  // Show number line
+  html += '<div class="number-line-container">';
+  html += '<div style="font-size:14px;color:var(--muted);margin-bottom:8px;text-align:center;">Round <strong style="color:var(--text);">' + S.practiceNum + '</strong> to nearest ' + S.practiceBenchmark + '</div>';
+
+  html += '<div class="number-line">';
+  html += '<div class="line-track"></div>';
+
+  html += '<div class="line-ticks">';
+  for (let i = 0; i <= S.practiceBenchmark; i += S.practiceBenchmark / 10) {
+    const isLabel = i === 0 || i === S.practiceBenchmark;
+    html += '<div class="tick">';
+    if (isLabel) {
+      html += '<div class="tick-mark major"></div>';
+    } else {
+      html += '<div class="tick-mark"></div>';
+    }
+    if (isLabel) {
+      const label = lower + i;
+      html += '<div class="tick-label">' + label + '</div>';
+    }
+    html += '</div>';
+  }
+  html += '</div>';
+
+  html += '<div class="marker' + (closer === 'equal' ? ' midpoint' : '') + '" style="left:' + (20 + percent * 0.6) + '%;">';
+  html += '<div class="marker-label">' + S.practiceNum + '</div>';
+  html += '</div>';
+
+  html += '<div class="benchmark-label left">' + lower + '</div>';
+  html += '<div class="benchmark-label right">' + upper + '</div>';
+
+  html += '</div>';
+
+  // Question
+  html += `<div class="practice-question">
+    <div class="question-text">Which benchmark is it closer to?</div>
+    <div class="answer-buttons">
+      <button class="answer-btn" onclick="selectBenchmark(${lower})">${lower}</button>
+      <button class="answer-btn" onclick="selectBenchmark(${upper})">${upper}</button>
+    </div>
+    <div class="question-text" style="margin-top:16px;font-size:14px;">Then type the rounded number:</div>
+    <div class="input-group">
+      <input type="number" class="number-input" id="practiceAnswer" placeholder="?" />
+      <button class="play-btn primary" onclick="submitPracticeAnswer(${rounded})">✓ Check</button>
+    </div>
+  </div>`;
+
+  html += '</div>';
+  ws.innerHTML = html;
+
+  setTimeout(() => document.getElementById('practiceAnswer')?.focus(), 100);
+
+  // Side panel
+  sp.innerHTML = `
+    <div class="score-display">
+      <div class="score-value">${S.score}/${S.total}</div>
+      <div class="score-label">Score</div>
+    </div>
+    <div class="panel-section">
+      <div class="panel-title">Instructions</div>
+      <div class="panel-text">
+        <strong>1.</strong> Look at the number line<br><br>
+        <strong>2.</strong> Click the benchmark it's closer to<br><br>
+        <strong>3.</strong> Type the rounded answer
+      </div>
+    </div>
+    <div class="panel-section">
+      <div class="panel-title">Hint</div>
+      <div class="panel-text">
+        Find the midpoint between ${lower} and ${upper}. That's ${mid}. Which side is ${S.practiceNum} closer to?
+      </div>
+    </div>
+  `;
+}
+
+function newPracticeQuestion() {
+  S.total = (S.total || 0) + 1;
+
+  const range = getRange();
+  const choices = getRoundChoices();
+  S.practiceBenchmark = choices[Math.floor(Math.random() * choices.length)];
+
+  S.practiceNum = randInt(range[0], range[1]);
+  // Make sure it's not already a benchmark
+  while (S.practiceNum % S.practiceBenchmark === 0) {
+    S.practiceNum = randInt(range[0], range[1]);
+  }
+}
+
+function selectBenchmark(benchmark) {
+  S.practiceBenchmark = benchmark;
+  render();
+}
+
+function submitPracticeAnswer(correct) {
+  const input = document.getElementById('practiceAnswer');
+  const val = parseInt(input?.value || 0);
+
+  if (val === correct) {
+    showFB('✓ Correct!', 'correct');
+    S.score++;
+    setTimeout(() => {
+      newPracticeQuestion();
+      render();
+    }, 800);
+  } else {
+    showFB('✗ Try again', 'incorrect');
+  }
+}
+
+// ─── PLAY MODE ───
+function renderPlay(ws, sp) {
+  let html = '<div class="rounding-container">';
+
+  if (S.gameEnded) {
+    html += `<div style="text-align:center;padding:40px;font-size:32px;font-weight:800;">
+      Race Complete!<br>
+      <div style="font-size:48px;margin:20px 0;background:var(--grad);-webkit-background-clip:text;-webkit-text-fill-color:transparent;">
+        ${S.playScore}
+      </div>
+      <button class="play-btn primary" onclick="playAgain()" style="margin-top:20px;">▶ Race Again</button>
+    </div>`;
+  } else {
+    html += `<div class="game-info">
+      <div class="info-item">
+        <span class="info-label">Round</span>
+        <span>${S.playRound} / 10</span>
+      </div>
+      <div class="info-item">
+        <span class="info-label">⭐ Score</span>
+        <span>${S.playScore}</span>
+      </div>
+      <div class="info-item">
+        <span class="info-label">🔥 Streak</span>
+        <span>${S.playStreak}</span>
+      </div>
+    </div>`;
+
+    const choices = getRoundChoices();
+    const roundTo = choices[Math.floor(Math.random() * choices.length)];
+    const { lower, upper } = getBenchmarks(S.playNum, roundTo);
+    const rounded = getRounded(S.playNum, roundTo);
+    const options = [lower, upper].sort(() => Math.random() - 0.5);
+
+    html += `<div class="practice-question">
+      <div class="question-text" style="margin-bottom:20px;">Round <strong style="font-size:24px;color:var(--cyan);">${S.playNum}</strong> to nearest ${roundTo}</div>
+      <div class="answer-buttons">
+        <button class="answer-btn" onclick="submitPlayAnswer(${options[0]}, ${rounded})">${options[0]}</button>
+        <button class="answer-btn" onclick="submitPlayAnswer(${options[1]}, ${rounded})">${options[1]}</button>
+      </div>
+    </div>`;
+  }
+
+  html += '</div>';
+  ws.innerHTML = html;
+
+  // Side panel
+  sp.innerHTML = `
+    <div class="score-display">
+      <div class="score-value">${S.playScore}</div>
+      <div class="score-label">Score</div>
+    </div>
+    <div class="score-display" style="background:transparent; padding:8px;">
+      <div style="font-size:18px; font-weight:700; color:var(--yellow);">🔥 ${S.playStreak}</div>
+      <div class="score-label">Streak</div>
+      <div class="streak-bar"><div class="streak-fill" style="width:${Math.min(S.playStreak * 10, 100)}%;"></div></div>
+    </div>
+    <div class="panel-section">
+      <div class="panel-title">How to Play</div>
+      <div class="panel-text">
+        Each round shows a <strong>number</strong> to round.<br><br>
+        <strong>Tap the correct answer</strong> as fast as you can!<br><br>
+        Keep your <strong>streak alive</strong> for big points!
+      </div>
+    </div>
+    <div class="panel-section">
+      <div class="panel-title">Scoring</div>
+      <div class="panel-text">
+        Base: <strong>10 points</strong><br>
+        Streak bonus: <strong>+2 × streak</strong><br>
+        <strong>Max: 30 pts/round</strong>
+      </div>
+    </div>
+  `;
+}
+
+function startPlayRound() {
+  const range = getRange();
+  S.playNum = randInt(range[0], range[1]);
+  render();
+}
+
+function submitPlayAnswer(selected, correct) {
+  if (selected === correct) {
+    showFB('✓ Yes!', 'correct');
+    S.playScore += 10 + (S.playStreak * 2);
+    S.playStreak++;
+    S.playRound++;
+
+    if (S.playRound > 10) {
+      setTimeout(() => {
+        S.gameEnded = true;
+        render();
+      }, 800);
+    } else {
+      setTimeout(() => {
+        startPlayRound();
+      }, 800);
+    }
+  } else {
+    showFB('✗ Try again', 'incorrect');
+    S.playStreak = 0;
+  }
+}
+
+function playAgain() {
+  S.playScore = 0;
+  S.playStreak = 0;
+  S.playRound = 1;
+  S.gameEnded = false;
+  startPlayRound();
+  render();
+}
+
+// ════════════════════════════════════════
+// INIT
+// ════════════════════════════════════════
+const range = getRange();
+S.targetNum = randInt(range[0], range[1]);
+render();
+</script>
+<script src="../../vinculum-core.js"></script>
+<script src="../../vinculum-data.js"></script>
+<script src="../../vinculum-adaptive-hook.js"></script>
+<script src="../../vinculum-3reads.js"></script>
+<script src="../../vinculum-stories.js"></script>
+<script src="../../vinculum-feedback.js"></script>
+<!-- Foundation loaded from vinculum-core.js -->
+</body>
+</html>

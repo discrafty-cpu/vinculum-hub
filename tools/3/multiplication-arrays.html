@@ -1,0 +1,1311 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>VINCULUM — Multiplication Array Builder</title>
+<link rel="stylesheet" href="../../vinculum-core.css">
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;600&display=swap');
+
+/* Theme system loaded from vinculum-core.css */
+.vinculum-rtm-btn .rtm-icon{font-size:14px;}
+
+/* ═══ FOCUS VISIBLE (Keyboard Navigation) ═══ */
+*:focus-visible {
+  outline:2px solid var(--cyan);outline-offset:2px;border-radius:4px;
+}
+.sr-only {
+  position:absolute;width:1px;height:1px;padding:0;margin:-1px;
+  overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0;
+}
+
+* { margin:0; padding:0; box-sizing:border-box; }
+body {
+  font-family: 'Inter', sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  height: 100vh;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  user-select: none;
+}
+
+/* ── HEADER ── */
+.header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 24px;
+  background: var(--bg2);
+  border-bottom: 1px solid var(--border);
+  flex-shrink: 0;
+}
+.header-left {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+.back-btn {
+  padding: 6px 12px;
+  border-radius: 8px;
+  border: 1px solid var(--border);
+  background: transparent;
+  color: var(--text2);
+  font-size: 13px;
+  font-family: inherit;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+.back-btn:hover { background: var(--card); color: var(--cyan); }
+.header-title {
+  font-size: 18px;
+  font-weight: 800;
+}
+.header-title span {
+  background: var(--grad);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+.header-badge {
+  font-size: 10px;
+  font-weight: 700;
+  padding: 3px 10px;
+  border-radius: 6px;
+  background: rgba(0,212,255,0.1);
+  color: var(--cyan);
+  border: 1px solid rgba(0,212,255,0.2);
+  letter-spacing: 1px;
+}
+.std-tags {
+  display: flex;
+  gap: 6px;
+}
+.std-tag {
+  font-size: 10px;
+  font-family: 'JetBrains Mono', monospace;
+  font-weight: 600;
+  padding: 3px 8px;
+  border-radius: 5px;
+  background: rgba(0,212,255,0.08);
+  color: var(--cyan);
+}
+.std-tag.mn { background: rgba(255,145,0,0.08); color: var(--orange); }
+
+/* ── MODE TABS ── */
+.mode-tabs {
+  display: flex;
+  gap: 4px;
+  padding: 8px 24px;
+  background: var(--bg2);
+  border-bottom: 1px solid var(--border);
+  flex-shrink: 0;
+}
+.mode-tab {
+  padding: 8px 20px;
+  border-radius: 8px;
+  border: 1px solid transparent;
+  background: transparent;
+  color: var(--muted);
+  font-size: 13px;
+  font-weight: 600;
+  font-family: inherit;
+  cursor: pointer;
+  transition: all 0.2s;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.mode-tab:hover { color: var(--text2); background: var(--card); }
+.mode-tab.active-explore { background: rgba(0,212,255,0.1); color: var(--cyan); border-color: rgba(0,212,255,0.3); }
+.mode-tab.active-practice { background: rgba(0,230,118,0.1); color: var(--green); border-color: rgba(0,230,118,0.3); }
+.mode-tab.active-play { background: rgba(255,59,139,0.1); color: var(--pink); border-color: rgba(255,59,139,0.3); }
+
+/* Difficulty selector */
+.diff-selector {
+  margin-left: auto;
+  display: flex;
+  gap: 4px;
+  align-items: center;
+}
+.diff-label {
+  font-size: 11px;
+  color: var(--muted);
+  margin-right: 8px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+}
+.diff-btn {
+  padding: 5px 12px;
+  border-radius: 6px;
+  border: 1px solid var(--border);
+  background: transparent;
+  color: var(--muted);
+  font-size: 11px;
+  font-weight: 600;
+  font-family: inherit;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+.diff-btn:hover { color: var(--text2); }
+.diff-btn.active { background: rgba(0,212,255,0.1); color: var(--cyan); border-color: rgba(0,212,255,0.3); }
+
+/* ── MAIN AREA ── */
+.main {
+  flex: 1;
+  display: flex;
+  overflow: hidden;
+}
+
+/* ── WORKSPACE ── */
+.workspace {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+  position: relative;
+  overflow-y: auto;
+}
+
+/* ── ARRAY BUILDER ── */
+.array-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 24px;
+  width: 100%;
+  max-width: 600px;
+}
+
+.array-grid {
+  display: inline-flex;
+  gap: 8px;
+  padding: 20px;
+  background: var(--card);
+  border-radius: 16px;
+  border: 2px solid var(--border);
+  flex-wrap: wrap;
+  justify-content: center;
+  align-items: center;
+  min-width: 240px;
+  min-height: 200px;
+  position: relative;
+}
+
+.array-row {
+  display: flex;
+  gap: 6px;
+}
+
+.array-dot {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 700;
+  font-size: 12px;
+  cursor: pointer;
+  transition: all 0.15s;
+  border: 2px solid transparent;
+  animation: pop 0.3s ease-out;
+}
+
+.array-dot:hover {
+  transform: scale(1.15);
+}
+
+.array-dot.row-0 { background: var(--cyan); color: var(--bg); }
+.array-dot.row-1 { background: var(--green); color: var(--bg); }
+.array-dot.row-2 { background: #F59E0B; color: var(--bg); }
+.array-dot.row-3 { background: #EC4899; color: var(--bg); }
+.array-dot.row-4 { background: var(--red); color: var(--bg); }
+
+/* Array display info */
+.array-info {
+  text-align: center;
+  padding: 16px 20px;
+  background: rgba(0,212,255,0.05);
+  border-radius: 12px;
+  border: 1px solid var(--border);
+  width: 100%;
+}
+
+.array-equation {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 18px;
+  font-weight: 700;
+  color: var(--cyan);
+  margin: 8px 0;
+}
+
+.array-description {
+  font-size: 14px;
+  color: var(--text2);
+  margin-top: 8px;
+}
+
+.commutative-note {
+  font-size: 12px;
+  color: var(--muted);
+  margin-top: 8px;
+  font-style: italic;
+}
+
+/* Builder controls */
+.builder-controls {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  width: 100%;
+  padding: 16px;
+  background: var(--card);
+  border-radius: 12px;
+}
+
+.control-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  justify-content: center;
+}
+
+.control-label {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--muted);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  min-width: 50px;
+}
+
+.control-slider {
+  flex: 1;
+  max-width: 200px;
+  height: 6px;
+  -webkit-appearance: none;
+  appearance: none;
+  background: var(--border);
+  border-radius: 3px;
+  outline: none;
+  cursor: pointer;
+}
+
+.control-slider::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background: var(--cyan);
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.control-slider::-moz-range-thumb {
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background: var(--cyan);
+  cursor: pointer;
+  border: none;
+  transition: all 0.2s;
+}
+
+.control-value {
+  font-size: 14px;
+  font-weight: 700;
+  font-family: 'JetBrains Mono', monospace;
+  color: var(--cyan);
+  min-width: 30px;
+  text-align: center;
+}
+
+/* Practice question */
+.practice-question {
+  text-align: center;
+  padding: 20px;
+  background: var(--card);
+  border-radius: 12px;
+  border: 1px solid var(--border);
+  width: 100%;
+  max-width: 500px;
+}
+
+.question-text {
+  font-size: 16px;
+  color: var(--text2);
+  margin-bottom: 12px;
+  font-weight: 600;
+}
+
+.question-highlight {
+  font-size: 28px;
+  font-weight: 800;
+  font-family: 'JetBrains Mono', monospace;
+  color: var(--green);
+  margin: 12px 0;
+}
+
+/* Input fields */
+.input-group {
+  display: flex;
+  gap: 8px;
+  justify-content: center;
+  align-items: center;
+  margin-top: 12px;
+  flex-wrap: wrap;
+}
+
+.number-input {
+  padding: 10px 16px;
+  border-radius: 8px;
+  border: 2px solid var(--border);
+  background: var(--card);
+  color: var(--text);
+  font-size: 16px;
+  font-family: 'JetBrains Mono', monospace;
+  text-align: center;
+  width: 70px;
+  transition: all 0.2s;
+}
+
+.number-input:focus {
+  border-color: var(--cyan);
+  outline: none;
+}
+
+/* Play mode game */
+.game-info {
+  display: flex;
+  gap: 20px;
+  justify-content: center;
+  align-items: center;
+  font-size: 14px;
+  color: var(--text2);
+  margin-bottom: 12px;
+}
+
+.info-item {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.info-label {
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+}
+
+.play-btn {
+  padding: 12px 24px;
+  border-radius: 10px;
+  border: 1px solid var(--border);
+  background: var(--card);
+  color: var(--text2);
+  font-size: 14px;
+  font-weight: 600;
+  font-family: inherit;
+  cursor: pointer;
+  transition: all 0.2s;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.play-btn:hover { background: rgba(0,212,255,0.1); color: var(--cyan); }
+
+.play-btn.primary {
+  background: var(--grad);
+  color: var(--bg);
+  border-color: transparent;
+  font-weight: 700;
+}
+
+.play-btn.primary:hover { opacity: 0.9; }
+
+/* ── FEEDBACK ── */
+.feedback {
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%) scale(0);
+  padding: 24px 48px;
+  border-radius: 20px;
+  font-size: 28px;
+  font-weight: 800;
+  z-index: 200;
+  pointer-events: none;
+  transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275), opacity 0.3s;
+  opacity: 0;
+}
+.feedback.show {
+  transform: translate(-50%, -50%) scale(1);
+  opacity: 1;
+}
+.feedback.correct {
+  background: rgba(0,230,118,0.15);
+  color: var(--green);
+  border: 2px solid var(--green);
+}
+.feedback.incorrect {
+  background: rgba(255,59,139,0.15);
+  color: var(--pink);
+  border: 2px solid var(--pink);
+}
+.feedback.try-again {
+  background: rgba(255,193,7,0.15);
+  color: var(--yellow);
+  border: 2px solid var(--yellow);
+}
+
+/* ── SIDE PANEL (Instructions / Score) ── */
+.side-panel {
+  width: 280px;
+  background: var(--bg2);
+  border-left: 1px solid var(--border);
+  padding: 20px;
+  overflow-y: auto;
+  flex-shrink: 0;
+}
+.panel-section {
+  margin-bottom: 20px;
+}
+.panel-title {
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 1.5px;
+  color: var(--muted);
+  margin-bottom: 8px;
+}
+.panel-text {
+  font-size: 13px;
+  color: var(--text2);
+  line-height: 1.6;
+}
+.score-display {
+  text-align: center;
+  padding: 16px;
+  background: var(--card);
+  border-radius: 12px;
+  margin-bottom: 12px;
+}
+.score-value {
+  font-size: 36px;
+  font-weight: 900;
+  font-family: 'JetBrains Mono', monospace;
+  background: var(--grad);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+.score-label {
+  font-size: 11px;
+  color: var(--muted);
+  text-transform: uppercase;
+  letter-spacing: 1px;
+}
+.streak-bar {
+  height: 6px;
+  background: var(--card);
+  border-radius: 3px;
+  overflow: hidden;
+  margin-top: 8px;
+}
+.streak-fill {
+  height: 100%;
+  background: var(--grad);
+  border-radius: 3px;
+  transition: width 0.3s;
+}
+
+/* ── ANIMATIONS ── */
+@keyframes pop {
+  0% { transform: scale(0); opacity: 0; }
+  70% { transform: scale(1.2); }
+  100% { transform: scale(1); opacity: 1; }
+}
+
+@keyframes shake {
+  0%, 100% { transform: translateX(0); }
+  25% { transform: translateX(-8px); }
+  75% { transform: translateX(8px); }
+}
+
+@keyframes hop {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-12px); }
+}
+
+.pop-in { animation: pop 0.3s ease-out forwards; }
+.shake { animation: shake 0.3s ease-in-out; }
+.hop { animation: hop 0.4s ease-in-out; }
+
+/* scrollbar */
+::-webkit-scrollbar { width: 6px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+
+/* Responsive */
+@media (max-width: 768px) {
+  .array-grid {
+    min-width: 180px;
+    min-height: 180px;
+    gap: 4px;
+    padding: 12px;
+  }
+  .array-dot {
+    width: 20px;
+    height: 20px;
+    font-size: 10px;
+  }
+  .side-panel {
+    width: 220px;
+  }
+  .array-equation {
+    font-size: 16px;
+  }
+}
+</style>
+</head>
+<body>
+
+<!-- ═══ HEADER ═══ -->
+<div class="header">
+  <div class="header-left">
+    <a class="back-btn" href="../../VINCULUM-Hub.html" style="text-decoration:none;">◀ Hub</a>
+    <div class="header-title"><span>VINCULUM</span> Multiplication Array Builder</div>
+    <span class="header-badge">3 · OA</span>
+    <button class="back-btn" id="readAloudBtn" onclick="toggleReadAloud()" aria-label="Read Aloud" title="Read instructions aloud">🔊 Read to Me</button>
+  </div>
+  <div class="std-tags">
+    <span class="std-tag">3.OA.1</span>
+    <span class="std-tag">3.OA.3</span>
+    <span class="std-tag mn">MN 3.1.1.1</span>
+  </div>
+</div>
+
+<!-- ═══ MODE TABS ═══ -->
+<div class="mode-tabs">
+  <button class="mode-tab active-explore" id="tabExplore" onclick="setMode('explore')">
+    <svg width="18" height="18" viewBox="0 0 48 48" fill="none"><path d="M4 24C4 24 12 12 24 12C36 12 44 24 44 24C44 24 36 36 24 36C12 36 4 24 4 24Z" stroke="currentColor" stroke-width="3" fill="none"/><circle cx="24" cy="24" r="7" stroke="currentColor" stroke-width="3" fill="none"/><circle cx="24" cy="24" r="3" fill="currentColor"/><line x1="24" y1="4" x2="24" y2="9" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" opacity="0.5"/><line x1="10" y1="8" x2="13" y2="12" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" opacity="0.5"/><line x1="38" y1="8" x2="35" y2="12" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" opacity="0.5"/></svg> Explore
+  </button>
+  <button class="mode-tab" id="tabPractice" onclick="setMode('practice')">
+    <svg width="18" height="18" viewBox="0 0 48 48" fill="none"><circle cx="24" cy="24" r="20" stroke="currentColor" stroke-width="3" fill="none" opacity="0.3"/><circle cx="24" cy="24" r="20" stroke="currentColor" stroke-width="3" fill="none" stroke-dasharray="126" stroke-dashoffset="32" stroke-linecap="round"/><polyline points="16,24 22,32 34,16" stroke="currentColor" stroke-width="4" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg> Practice
+  </button>
+  <button class="mode-tab" id="tabPlay" onclick="setMode('play')">
+    <svg width="18" height="18" viewBox="0 0 48 48" fill="none"><polygon points="28,4 12,28 22,28 18,44 36,18 26,18" fill="none" stroke="currentColor" stroke-width="3" stroke-linejoin="round"/><polygon points="27,8 15,27 23,27 20,40 34,19 26,19" fill="currentColor" opacity="0.15"/></svg> Play
+  </button>
+  <div class="diff-selector">
+    <span class="diff-label">Level</span>
+    <button class="diff-btn active" id="diffE" onclick="setDiff('emergent')" data-diff="emergent">1–5</button>
+    <button class="diff-btn" id="diffD" onclick="setDiff('developing')" data-diff="developing">1–10</button>
+    <button class="diff-btn" id="diffS" onclick="setDiff('secure')" data-diff="secure">1–12</button>
+  </div>
+</div>
+
+<!-- ═══ MAIN ═══ -->
+<div class="main">
+  <div class="workspace" role="main" id="workspace"></div>
+  <div class="side-panel" id="sidePanel"></div>
+</div>
+
+<!-- ═══ FEEDBACK POPUP ═══ -->
+<div class="feedback" id="feedback"></div>
+
+<script>
+function showFB(t,c){var f=document.getElementById("feedback");if(!f)return;f.textContent=t;f.className="feedback "+c+" show";setTimeout(function(){f.classList.remove("show");},1200);}
+
+// ════════════════════════════════════════
+// STATE
+// ════════════════════════════════════════
+const S = {
+  mode: 'explore',      // explore | practice | play
+  diff: 'emergent',     // emergent | developing | secure
+
+  // Explore
+  rows: 3,
+  cols: 4,
+
+  // Practice
+  questionType: null,   // count-dots | build-array | write-equation | find-multiple | fact-family
+  targetRows: 0,
+  targetCols: 0,
+  targetProduct: 0,
+  arrayOptions: [],
+  userRows: null,
+  userCols: null,
+  userProduct: null,
+  userEquation: null,
+  score: 0,
+  total: 0,
+
+  // Play
+  playScore: 0,
+  playStreak: 0,
+  playRound: 0,
+  playBest: 0,
+  gameEnded: false,
+  challengeRows: 0,
+  challengeCols: 0,
+  timerStart: 0
+};
+
+// ════════════════════════════════════════
+// READ-ALOUD
+// ════════════════════════════════════════
+function toggleReadAloud() {
+  if (window.VinculumStories && VinculumStories.isReading()) {
+    VinculumStories.stopReading();
+    document.getElementById('readAloudBtn').textContent = '🔊 Read to Me';
+  } else {
+    const text = document.getElementById('sidePanel')?.textContent || 'Arrays show multiplication as equal groups.';
+    if (window.VinculumStories) {
+      VinculumStories.readAloud(text, { rate: 0.85, onComplete: () => {
+        document.getElementById('readAloudBtn').textContent = '🔊 Read to Me';
+      }});
+      document.getElementById('readAloudBtn').textContent = '⏹ Stop';
+    }
+  }
+}
+
+// ════════════════════════════════════════
+// HELPERS
+// ════════════════════════════════════════
+function getMaxFactor() {
+  return { emergent: 5, developing: 10, secure: 12 }[S.diff];
+}
+
+function randInt(min, max) {
+  return Math.floor(Math.random() * (max - min + 1)) + min;
+}
+
+function speak(text) {
+  if (!window.speechSynthesis) return;
+  const u = new SpeechSynthesisUtterance(text);
+  u.rate = 0.9;
+  speechSynthesis.speak(u);
+}
+
+function getFactors(product) {
+  const factors = [];
+  for (let i = 1; i <= Math.sqrt(product); i++) {
+    if (product % i === 0) {
+      factors.push([i, product / i]);
+      if (i !== product / i) {
+        factors.push([product / i, i]);
+      }
+    }
+  }
+  return factors;
+}
+
+// ════════════════════════════════════════
+// MODE SWITCHING
+// ════════════════════════════════════════
+function setMode(mode) {
+  S.mode = mode;
+
+  if (mode === 'practice' && S.total === 0) {
+    S.score = 0;
+    S.total = 0;
+    newPracticeQuestion();
+  }
+
+  if (mode === 'play' && S.playRound === 0) {
+    S.playScore = 0;
+    S.playStreak = 0;
+    S.playRound = 1;
+    S.playBest = 0;
+    S.gameEnded = false;
+  }
+
+  document.querySelectorAll('.mode-tab').forEach(t => t.className = 'mode-tab');
+  const tabEl = document.getElementById('tab' + mode.charAt(0).toUpperCase() + mode.slice(1));
+  tabEl.className = 'mode-tab active-' + mode;
+
+  render();
+}
+
+function setDiff(diff) {
+  S.diff = diff;
+  S.rows = 3;
+  S.cols = 4;
+  S.score = 0;
+  S.total = 0;
+  S.playScore = 0;
+  S.playStreak = 0;
+  S.playRound = 0;
+  S.playBest = 0;
+
+  document.querySelectorAll('.diff-btn').forEach(b => b.classList.remove('active'));
+  document.getElementById('diff' + diff.charAt(0).toUpperCase()).classList.add('active');
+
+  setMode(S.mode);
+}
+
+// ════════════════════════════════════════
+// RENDER MAIN
+// ════════════════════════════════════════
+function render() {
+  const ws = document.getElementById('workspace');
+  const sp = document.getElementById('sidePanel');
+
+  if (S.mode === 'explore') renderExplore(ws, sp);
+  else if (S.mode === 'practice') renderPractice(ws, sp);
+  else renderPlay(ws, sp);
+}
+
+// ─── EXPLORE MODE ───
+function renderExplore(ws, sp) {
+  let html = '<div class="array-container">';
+
+  // Build array
+  html += '<div class="array-grid" id="arrayGrid">';
+  for (let r = 0; r < S.rows; r++) {
+    html += '<div class="array-row">';
+    for (let c = 0; c < S.cols; c++) {
+      html += `<div class="array-dot row-${r % 5}" style="animation-delay:${(r * S.cols + c) * 0.03}s;"></div>`;
+    }
+    html += '</div>';
+  }
+  html += '</div>';
+
+  // Info display
+  html += `<div class="array-info">
+    <div style="color:var(--muted);font-size:12px;margin-bottom:4px;">Array Structure</div>
+    <div class="array-equation">${S.rows} × ${S.cols} = ${S.rows * S.cols}</div>
+    <div class="array-description">${S.rows} rows of ${S.cols} = ${S.rows * S.cols}</div>
+    <div class="commutative-note">Also: ${S.cols} rows of ${S.rows} = ${S.rows * S.cols}</div>
+  </div>`;
+
+  // Controls
+  html += `<div class="builder-controls">
+    <div class="control-row">
+      <label class="control-label">Rows</label>
+      <input type="range" min="1" max="${getMaxFactor()}" value="${S.rows}" class="control-slider" id="rowsSlider" oninput="updateRows(this.value)">
+      <span class="control-value" id="rowsValue">${S.rows}</span>
+    </div>
+    <div class="control-row">
+      <label class="control-label">Cols</label>
+      <input type="range" min="1" max="${getMaxFactor()}" value="${S.cols}" class="control-slider" id="colsSlider" oninput="updateCols(this.value)">
+      <span class="control-value" id="colsValue">${S.cols}</span>
+    </div>
+  </div>`;
+
+  html += '</div>';
+  ws.innerHTML = html;
+
+  // Side panel
+  sp.innerHTML = `
+    <div class="panel-section">
+      <div class="panel-title">How It Works</div>
+      <div class="panel-text">
+        <strong>Drag the sliders</strong> to change the rows and columns.<br><br>
+        Watch the <strong>colored dots</strong> form the array.<br><br>
+        The <strong>equation</strong> shows the multiplication fact!
+      </div>
+    </div>
+    <div class="panel-section">
+      <div class="panel-title">Key Concept</div>
+      <div class="panel-text">
+        An <strong>array</strong> is a grid of equal groups. The first number is <strong>rows</strong>. The second number is <strong>columns</strong>. When we multiply, we're counting the <strong>total</strong> dots!
+      </div>
+    </div>
+    <div class="panel-section">
+      <div class="panel-title">Commutative Property</div>
+      <div class="panel-text">
+        Notice that 3 × 4 and 4 × 3 both equal 12. Multiplication is <strong>commutative</strong> — the order doesn't change the answer!
+      </div>
+    </div>
+    <div class="panel-section">
+      <div class="panel-title">Standards</div>
+      <div class="panel-text">
+        <strong>3.OA.1</strong> — Interpret products of whole numbers<br><br>
+        <strong>3.OA.3</strong> — Use multiplication facts
+      </div>
+    </div>
+  `;
+}
+
+function updateRows(val) {
+  S.rows = parseInt(val);
+  document.getElementById('rowsValue').textContent = S.rows;
+  render();
+}
+
+function updateCols(val) {
+  S.cols = parseInt(val);
+  document.getElementById('colsValue').textContent = S.cols;
+  render();
+}
+
+// ─── PRACTICE MODE ───
+function renderPractice(ws, sp) {
+  let html = '<div class="array-container">';
+
+  // Score
+  html += `<div style="text-align:center;margin-bottom:12px;">
+    <div style="font-size:14px;color:var(--muted);">⭐ ${S.score}/${S.total}</div>
+  </div>`;
+
+  const max = getMaxFactor();
+
+  if (S.questionType === 'count-dots') {
+    // Show array, ask how many total
+    html += '<div class="array-grid">';
+    for (let r = 0; r < S.targetRows; r++) {
+      html += '<div class="array-row">';
+      for (let c = 0; c < S.targetCols; c++) {
+        html += `<div class="array-dot row-${r % 5}"></div>`;
+      }
+      html += '</div>';
+    }
+    html += '</div>';
+
+    html += `<div class="practice-question">
+      <div class="question-text">How many dots in total?</div>
+      <div class="input-group">
+        <input type="number" class="number-input" id="answerInput" min="0" max="999" placeholder="?" />
+        <button class="play-btn primary" onclick="submitPracticeAnswer(${S.targetProduct})">✓ Check</button>
+      </div>
+    </div>`;
+
+  } else if (S.questionType === 'build-array') {
+    // Ask to build specific array
+    html += `<div class="practice-question">
+      <div class="question-text">Build an array for:</div>
+      <div class="question-highlight">${S.targetRows} × ${S.targetCols}</div>
+      <div style="margin-top:16px;font-size:13px;color:var(--text2);">Use the sliders below to build it</div>
+    </div>`;
+
+    html += '<div class="array-grid" id="arrayGrid">';
+    for (let r = 0; r < S.rows; r++) {
+      html += '<div class="array-row">';
+      for (let c = 0; c < S.cols; c++) {
+        html += `<div class="array-dot row-${r % 5}"></div>`;
+      }
+      html += '</div>';
+    }
+    html += '</div>';
+
+    const match = S.rows === S.targetRows && S.cols === S.targetCols;
+
+    html += `<div class="builder-controls">
+      <div class="control-row">
+        <label class="control-label">Rows</label>
+        <input type="range" min="1" max="${max}" value="${S.rows}" class="control-slider" oninput="updateBuildRows(this.value)">
+        <span class="control-value">${S.rows}</span>
+      </div>
+      <div class="control-row">
+        <label class="control-label">Cols</label>
+        <input type="range" min="1" max="${max}" value="${S.cols}" class="control-slider" oninput="updateBuildCols(this.value)">
+        <span class="control-value">${S.cols}</span>
+      </div>
+      <div style="text-align:center;margin-top:8px;">
+        <div style="font-size:12px;color:var(--muted);margin-bottom:6px;">Array: ${S.rows} × ${S.cols} = ${S.rows * S.cols}</div>
+        ${match ? '<button class="play-btn primary" onclick="submitBuildArray()">✓ Correct!</button>' : '<div style="color:var(--muted);font-size:12px;">Not quite yet...</div>'}
+      </div>
+    </div>`;
+
+  } else if (S.questionType === 'write-equation') {
+    // Show array, ask to write equation
+    html += '<div class="array-grid">';
+    for (let r = 0; r < S.targetRows; r++) {
+      html += '<div class="array-row">';
+      for (let c = 0; c < S.targetCols; c++) {
+        html += `<div class="array-dot row-${r % 5}"></div>`;
+      }
+      html += '</div>';
+    }
+    html += '</div>';
+
+    html += `<div class="practice-question">
+      <div class="question-text">Write the multiplication equation:</div>
+      <div class="input-group">
+        <input type="number" class="number-input" id="eqRows" placeholder="rows" min="1" max="${max}" />
+        <span style="font-weight:700;color:var(--cyan);">×</span>
+        <input type="number" class="number-input" id="eqCols" placeholder="cols" min="1" max="${max}" />
+        <span style="font-weight:700;color:var(--cyan);">=</span>
+        <input type="number" class="number-input" id="eqProduct" placeholder="?" min="1" max="999" />
+        <button class="play-btn primary" style="width:100%;" onclick="submitEquation(${S.targetRows},${S.targetCols},${S.targetProduct})">✓ Check</button>
+      </div>
+    </div>`;
+
+  } else if (S.questionType === 'find-multiple' && S.diff === 'developing') {
+    // Find arrays with same product
+    html += `<div class="practice-question">
+      <div class="question-text">Find TWO different arrays that make:</div>
+      <div class="question-highlight">${S.targetProduct}</div>
+      <div style="margin-top:16px;font-size:12px;color:var(--muted);">Factors of ${S.targetProduct}: ${getFactors(S.targetProduct).map(f => f[0]).filter((v,i,a) => a.indexOf(v) === i).join(', ')}</div>
+    </div>`;
+
+    html += `<div class="input-group" style="margin-top:20px;">
+      <div style="text-align:center;width:100%;">
+        <div style="font-size:12px;margin-bottom:8px;color:var(--text2);">First array:</div>
+        <div style="display:flex;gap:8px;justify-content:center;margin-bottom:12px;">
+          <input type="number" class="number-input" id="array1R" placeholder="rows" min="1" max="${max}" />
+          <span>×</span>
+          <input type="number" class="number-input" id="array1C" placeholder="cols" min="1" max="${max}" />
+        </div>
+        <div style="font-size:12px;margin-bottom:8px;color:var(--text2);">Second array:</div>
+        <div style="display:flex;gap:8px;justify-content:center;margin-bottom:12px;">
+          <input type="number" class="number-input" id="array2R" placeholder="rows" min="1" max="${max}" />
+          <span>×</span>
+          <input type="number" class="number-input" id="array2C" placeholder="cols" min="1" max="${max}" />
+        </div>
+        <button class="play-btn primary" style="width:100%;" onclick="submitFindMultiple(${S.targetProduct})">✓ Check</button>
+      </div>
+    </div>`;
+
+  } else if (S.questionType === 'fact-family' && S.diff === 'secure') {
+    // Fact family (multiplication and division)
+    html += `<div class="practice-question">
+      <div class="question-text">Write the fact family for:</div>
+      <div class="question-highlight">${S.targetRows} × ${S.targetCols} = ${S.targetProduct}</div>
+      <div style="margin-top:16px;font-size:12px;color:var(--muted);">Complete all four facts:</div>
+      <div class="input-group" style="flex-direction:column;margin-top:12px;">
+        <div style="display:flex;gap:6px;justify-content:center;align-items:center;">
+          <span style="font-weight:600;">${S.targetRows}</span> × <span style="font-weight:600;">${S.targetCols}</span> = <input type="number" class="number-input" id="ff1" placeholder="?" min="1" max="999" style="width:50px;" />
+        </div>
+        <div style="display:flex;gap:6px;justify-content:center;align-items:center;margin-top:8px;">
+          <span style="font-weight:600;">${S.targetCols}</span> × <span style="font-weight:600;">${S.targetRows}</span> = <input type="number" class="number-input" id="ff2" placeholder="?" min="1" max="999" style="width:50px;" />
+        </div>
+        <div style="display:flex;gap:6px;justify-content:center;align-items:center;margin-top:8px;">
+          <span style="font-weight:600;">${S.targetProduct}</span> ÷ <span style="font-weight:600;">${S.targetRows}</span> = <input type="number" class="number-input" id="ff3" placeholder="?" min="1" max="999" style="width:50px;" />
+        </div>
+        <div style="display:flex;gap:6px;justify-content:center;align-items:center;margin-top:8px;">
+          <span style="font-weight:600;">${S.targetProduct}</span> ÷ <span style="font-weight:600;">${S.targetCols}</span> = <input type="number" class="number-input" id="ff4" placeholder="?" min="1" max="999" style="width:50px;" />
+        </div>
+        <button class="play-btn primary" style="width:100%;margin-top:12px;" onclick="submitFactFamily(${S.targetProduct},${S.targetRows},${S.targetCols})">✓ Check</button>
+      </div>
+    </div>`;
+  }
+
+  html += '</div>';
+  ws.innerHTML = html;
+
+  if (S.questionType === 'count-dots') {
+    setTimeout(() => document.getElementById('answerInput')?.focus(), 100);
+  }
+
+  // Side panel
+  sp.innerHTML = `
+    <div class="score-display">
+      <div class="score-value">${S.score}/${S.total}</div>
+      <div class="score-label">Score</div>
+    </div>
+    <div class="panel-section">
+      <div class="panel-title">Instructions</div>
+      <div class="panel-text">
+        ${S.questionType === 'count-dots' ? 'Count all the dots in the array.' : ''}
+        ${S.questionType === 'build-array' ? 'Use the sliders to build the correct array.' : ''}
+        ${S.questionType === 'write-equation' ? 'Write the multiplication equation that matches the array.' : ''}
+        ${S.questionType === 'find-multiple' ? 'Find two different ways to make the same product.' : ''}
+        ${S.questionType === 'fact-family' ? 'Write all four related facts (2 multiplication, 2 division).' : ''}
+      </div>
+    </div>
+    <div class="panel-section">
+      <div class="panel-title">Hint</div>
+      <div class="panel-text">
+        ${S.questionType === 'count-dots' ? 'Count by groups! Or multiply rows × columns.' : ''}
+        ${S.questionType === 'build-array' ? 'Think about factors of the product.' : ''}
+        ${S.questionType === 'write-equation' ? 'Rows first, then columns!' : ''}
+        ${S.questionType === 'find-multiple' ? 'Look at factors: what multiplies to make this product?' : ''}
+        ${S.questionType === 'fact-family' ? 'Multiplication facts work backwards for division.' : ''}
+      </div>
+    </div>
+  `;
+}
+
+function newPracticeQuestion() {
+  S.total = (S.total || 0) + 1;
+
+  const max = getMaxFactor();
+  const types = ['count-dots', 'build-array', 'write-equation'];
+
+  if (S.diff === 'developing') types.push('find-multiple');
+  if (S.diff === 'secure') types.push('fact-family');
+
+  S.questionType = types[Math.floor(Math.random() * types.length)];
+
+  // Pick random factors
+  S.targetRows = randInt(1, Math.max(2, max - 1));
+  S.targetCols = randInt(1, Math.max(2, max));
+  S.targetProduct = S.targetRows * S.targetCols;
+
+  // For find-multiple, pick a product that has multiple factorizations
+  if (S.questionType === 'find-multiple') {
+    const products = [6, 8, 12, 16, 20, 24];
+    S.targetProduct = products[Math.floor(Math.random() * products.length)];
+  }
+
+  // Reset user input
+  S.userRows = null;
+  S.userCols = null;
+  S.userProduct = null;
+  S.rows = 2;
+  S.cols = 2;
+}
+
+function submitPracticeAnswer(correct) {
+  const input = document.getElementById('answerInput');
+  const val = parseInt(input?.value || 0);
+
+  if (val === correct) {
+    showFB('✓ Correct!', 'correct');
+    S.score++;
+    setTimeout(() => {
+      newPracticeQuestion();
+      render();
+    }, 800);
+  } else {
+    showFB('✗ Try again', 'incorrect');
+  }
+}
+
+function updateBuildRows(val) {
+  S.rows = parseInt(val);
+  render();
+}
+
+function updateBuildCols(val) {
+  S.cols = parseInt(val);
+  render();
+}
+
+function submitBuildArray() {
+  if (S.rows === S.targetRows && S.cols === S.targetCols) {
+    showFB('✓ Perfect!', 'correct');
+    S.score++;
+    setTimeout(() => {
+      newPracticeQuestion();
+      render();
+    }, 800);
+  }
+}
+
+function submitEquation(rows, cols, product) {
+  const r = parseInt(document.getElementById('eqRows')?.value || 0);
+  const c = parseInt(document.getElementById('eqCols')?.value || 0);
+  const p = parseInt(document.getElementById('eqProduct')?.value || 0);
+
+  if (r === rows && c === cols && p === product) {
+    showFB('✓ Correct!', 'correct');
+    S.score++;
+    setTimeout(() => {
+      newPracticeQuestion();
+      render();
+    }, 800);
+  } else if (r === cols && c === rows && p === product) {
+    showFB('✓ Also correct!', 'correct');
+    S.score++;
+    setTimeout(() => {
+      newPracticeQuestion();
+      render();
+    }, 800);
+  } else {
+    showFB('✗ Try again', 'incorrect');
+  }
+}
+
+function submitFindMultiple(target) {
+  const r1 = parseInt(document.getElementById('array1R')?.value || 0);
+  const c1 = parseInt(document.getElementById('array1C')?.value || 0);
+  const r2 = parseInt(document.getElementById('array2R')?.value || 0);
+  const c2 = parseInt(document.getElementById('array2C')?.value || 0);
+
+  const prod1 = r1 * c1;
+  const prod2 = r2 * c2;
+
+  if (prod1 === target && prod2 === target && (r1 !== r2 || c1 !== c2)) {
+    showFB('✓ Great!', 'correct');
+    S.score++;
+    setTimeout(() => {
+      newPracticeQuestion();
+      render();
+    }, 800);
+  } else {
+    showFB('✗ Both should equal ' + target, 'incorrect');
+  }
+}
+
+function submitFactFamily(product, rows, cols) {
+  const ff1 = parseInt(document.getElementById('ff1')?.value || 0);
+  const ff2 = parseInt(document.getElementById('ff2')?.value || 0);
+  const ff3 = parseInt(document.getElementById('ff3')?.value || 0);
+  const ff4 = parseInt(document.getElementById('ff4')?.value || 0);
+
+  if (ff1 === product && ff2 === product && ff3 === cols && ff4 === rows) {
+    showFB('✓ Perfect family!', 'correct');
+    S.score++;
+    setTimeout(() => {
+      newPracticeQuestion();
+      render();
+    }, 800);
+  } else {
+    showFB('✗ Check each fact', 'incorrect');
+  }
+}
+
+// ─── PLAY MODE ───
+function renderPlay(ws, sp) {
+  let html = '<div class="array-container">';
+
+  const max = getMaxFactor();
+
+  if (S.gameEnded) {
+    html += `<div style="text-align:center;padding:40px;font-size:32px;font-weight:800;">
+      Game Complete!<br>
+      <div style="font-size:48px;margin:20px 0;background:var(--grad);-webkit-background-clip:text;-webkit-text-fill-color:transparent;">
+        ${S.playScore}
+      </div>
+      <button class="play-btn primary" onclick="playAgain()" style="margin-top:20px;">▶ Play Again</button>
+    </div>`;
+  } else {
+    html += `<div class="game-info">
+      <div class="info-item">
+        <span class="info-label">Round</span>
+        <span>${S.playRound} / 10</span>
+      </div>
+      <div class="info-item">
+        <span class="info-label">⭐ Score</span>
+        <span>${S.playScore}</span>
+      </div>
+      <div class="info-item">
+        <span class="info-label">🔥 Streak</span>
+        <span>${S.playStreak}</span>
+      </div>
+    </div>`;
+
+    // Build the challenge array
+    html += '<div class="array-grid">';
+    for (let r = 0; r < S.challengeRows; r++) {
+      html += '<div class="array-row">';
+      for (let c = 0; c < S.challengeCols; c++) {
+        html += `<div class="array-dot row-${r % 5}"></div>`;
+      }
+      html += '</div>';
+    }
+    html += '</div>';
+
+    html += `<div class="practice-question">
+      <div class="question-text">What is the multiplication fact?</div>
+      <div style="margin-top:12px;font-size:13px;color:var(--text2);">Write the equation:</div>
+      <div class="input-group">
+        <input type="number" class="number-input" id="playR" placeholder="rows" min="1" max="${max}" />
+        <span style="font-weight:700;">×</span>
+        <input type="number" class="number-input" id="playC" placeholder="cols" min="1" max="${max}" />
+        <span style="font-weight:700;">=</span>
+        <input type="number" class="number-input" id="playP" placeholder="?" min="1" max="999" />
+        <button class="play-btn primary" onclick="submitPlayAnswer()">✓</button>
+      </div>
+    </div>`;
+  }
+
+  html += '</div>';
+  ws.innerHTML = html;
+
+  if (!S.gameEnded) {
+    setTimeout(() => document.getElementById('playR')?.focus(), 100);
+  }
+
+  // Side panel
+  sp.innerHTML = `
+    <div class="score-display">
+      <div class="score-value">${S.playScore}</div>
+      <div class="score-label">Score</div>
+    </div>
+    <div class="score-display" style="background:transparent; padding:8px;">
+      <div style="font-size:18px; font-weight:700; color:var(--yellow);">🔥 ${S.playStreak}</div>
+      <div class="score-label">Streak</div>
+      <div class="streak-bar"><div class="streak-fill" style="width:${Math.min(S.playStreak * 10, 100)}%;"></div></div>
+    </div>
+    <div class="panel-section">
+      <div class="panel-title">How to Play</div>
+      <div class="panel-text">
+        Each round shows a new <strong>array</strong>.<br><br>
+        <strong>Write the equation</strong> that matches it.<br><br>
+        Consecutive correct answers build your <strong>streak</strong>!
+      </div>
+    </div>
+    <div class="panel-section">
+      <div class="panel-title">Scoring</div>
+      <div class="panel-text">
+        Base: <strong>10 points</strong><br>
+        Streak bonus: <strong>+2 × streak</strong><br>
+        <strong>Max: 30 pts/round</strong>
+      </div>
+    </div>
+  `;
+}
+
+function startPlayChallenge() {
+  const max = getMaxFactor();
+  S.challengeRows = randInt(2, Math.max(3, max - 1));
+  S.challengeCols = randInt(2, Math.max(3, max));
+  S.timerStart = Date.now();
+  render();
+}
+
+function submitPlayAnswer() {
+  const r = parseInt(document.getElementById('playR')?.value || 0);
+  const c = parseInt(document.getElementById('playC')?.value || 0);
+  const p = parseInt(document.getElementById('playP')?.value || 0);
+
+  if ((r === S.challengeRows && c === S.challengeCols && p === S.challengeRows * S.challengeCols) ||
+      (r === S.challengeCols && c === S.challengeRows && p === S.challengeRows * S.challengeCols)) {
+    showFB('✓ Yes!', 'correct');
+    S.playScore += 10 + (S.playStreak * 2);
+    S.playStreak++;
+    S.playRound++;
+
+    if (S.playRound > 10) {
+      setTimeout(() => {
+        S.gameEnded = true;
+        S.playBest = Math.max(S.playBest, S.playStreak);
+        render();
+      }, 800);
+    } else {
+      setTimeout(() => {
+        startPlayChallenge();
+      }, 800);
+    }
+  } else {
+    showFB('✗ Try again', 'incorrect');
+    S.playStreak = 0;
+  }
+}
+
+function playAgain() {
+  S.playScore = 0;
+  S.playStreak = 0;
+  S.playRound = 1;
+  S.gameEnded = false;
+  startPlayChallenge();
+  render();
+}
+
+// ════════════════════════════════════════
+// INIT
+// ════════════════════════════════════════
+startPlayChallenge();
+render();
+</script>
+<script src="../../vinculum-core.js"></script>
+<script src="../../vinculum-data.js"></script>
+<script src="../../vinculum-adaptive-hook.js"></script>
+<script src="../../vinculum-3reads.js"></script>
+<script src="../../vinculum-stories.js"></script>
+<script src="../../vinculum-feedback.js"></script>
+<!-- Foundation loaded from vinculum-core.js -->
+</body>
+</html>

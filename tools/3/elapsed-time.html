@@ -1,0 +1,1372 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>VINCULUM — Elapsed Time</title>
+<link rel="stylesheet" href="../../vinculum-core.css">
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;600&display=swap');
+
+.vinculum-rtm-btn .rtm-icon{font-size:14px;}
+
+/* ═══ FOCUS VISIBLE (Keyboard Navigation) ═══ */
+*:focus-visible {
+  outline:2px solid var(--cyan);outline-offset:2px;border-radius:4px;
+}
+.sr-only {
+  position:absolute;width:1px;height:1px;padding:0;margin:-1px;
+  overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0;
+}
+
+* { margin:0; padding:0; box-sizing:border-box; }
+body {
+  font-family: 'Inter', sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  height: 100vh;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  user-select: none;
+}
+
+/* ── HEADER ── */
+.header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 24px;
+  background: var(--bg2);
+  border-bottom: 1px solid var(--border);
+  flex-shrink: 0;
+}
+.header-left {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+.back-btn {
+  padding: 6px 12px;
+  border-radius: 8px;
+  border: 1px solid var(--border);
+  background: transparent;
+  color: var(--text2);
+  font-size: 13px;
+  font-family: inherit;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+.back-btn:hover { background: var(--card); color: var(--cyan); }
+.header-title {
+  font-size: 18px;
+  font-weight: 800;
+}
+.header-title span {
+  background: var(--grad);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+.header-badge {
+  font-size: 10px;
+  font-weight: 700;
+  padding: 3px 10px;
+  border-radius: 6px;
+  background: rgba(0,212,255,0.1);
+  color: var(--cyan);
+  border: 1px solid rgba(0,212,255,0.2);
+  letter-spacing: 1px;
+}
+.std-tags {
+  display: flex;
+  gap: 6px;
+}
+.std-tag {
+  font-size: 10px;
+  font-family: 'JetBrains Mono', monospace;
+  font-weight: 600;
+  padding: 3px 8px;
+  border-radius: 5px;
+  background: rgba(0,212,255,0.08);
+  color: var(--cyan);
+}
+.std-tag.mn { background: rgba(255,145,0,0.08); color: var(--orange); }
+
+/* ── MODE TABS ── */
+.mode-tabs {
+  display: flex;
+  gap: 4px;
+  padding: 8px 24px;
+  background: var(--bg2);
+  border-bottom: 1px solid var(--border);
+  flex-shrink: 0;
+}
+.mode-tab {
+  padding: 8px 20px;
+  border-radius: 8px;
+  border: 1px solid transparent;
+  background: transparent;
+  color: var(--muted);
+  font-size: 13px;
+  font-weight: 600;
+  font-family: inherit;
+  cursor: pointer;
+  transition: all 0.2s;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.mode-tab:hover { color: var(--text2); background: var(--card); }
+.mode-tab.active-explore { background: rgba(0,212,255,0.1); color: var(--cyan); border-color: rgba(0,212,255,0.3); }
+.mode-tab.active-practice { background: rgba(0,230,118,0.1); color: var(--green); border-color: rgba(0,230,118,0.3); }
+.mode-tab.active-play { background: rgba(255,59,139,0.1); color: var(--pink); border-color: rgba(255,59,139,0.3); }
+
+/* Difficulty selector */
+.diff-selector {
+  margin-left: auto;
+  display: flex;
+  gap: 4px;
+  align-items: center;
+}
+.diff-label {
+  font-size: 11px;
+  color: var(--muted);
+  margin-right: 8px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+}
+.diff-btn {
+  padding: 5px 12px;
+  border-radius: 6px;
+  border: 1px solid var(--border);
+  background: transparent;
+  color: var(--muted);
+  font-size: 11px;
+  font-weight: 600;
+  font-family: inherit;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+.diff-btn:hover { color: var(--text2); }
+.diff-btn.active { background: rgba(0,212,255,0.1); color: var(--cyan); border-color: rgba(0,212,255,0.3); }
+
+/* ── MAIN AREA ── */
+.main {
+  flex: 1;
+  display: flex;
+  overflow: hidden;
+}
+
+/* ── WORKSPACE ── */
+.workspace {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+  position: relative;
+  overflow-y: auto;
+}
+
+/* ── CONTAINER ── */
+.time-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 24px;
+  width: 100%;
+  max-width: 700px;
+}
+
+/* ── ANALOG CLOCK ── */
+.clocks-row {
+  display: flex;
+  gap: 40px;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+}
+
+.clock-box {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+}
+
+.clock-label {
+  font-size: 12px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  color: var(--muted);
+}
+
+.clock {
+  width: 140px;
+  height: 140px;
+  border-radius: 50%;
+  background: var(--card);
+  border: 3px solid var(--border);
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+}
+
+.clock-face {
+  width: 100%;
+  height: 100%;
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.clock-center {
+  width: 8px;
+  height: 8px;
+  background: var(--text);
+  border-radius: 50%;
+  position: absolute;
+  z-index: 10;
+}
+
+.hour-mark {
+  position: absolute;
+  width: 2px;
+  height: 8px;
+  background: var(--text);
+  left: 50%;
+  transform: translateX(-50%);
+  transform-origin: 0 65px;
+}
+
+.hour-hand {
+  width: 4px;
+  height: 45px;
+  background: var(--text);
+  border-radius: 2px;
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  transform: translateX(-50%) translateY(-50%) rotate(0deg);
+  transform-origin: center 25px;
+  transition: transform 0.3s ease;
+  z-index: 5;
+}
+
+.minute-hand {
+  width: 3px;
+  height: 55px;
+  background: var(--cyan);
+  border-radius: 2px;
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  transform: translateX(-50%) translateY(-50%) rotate(0deg);
+  transform-origin: center 30px;
+  transition: transform 0.3s ease;
+  z-index: 6;
+}
+
+.digital-time {
+  font-size: 18px;
+  font-weight: 700;
+  font-family: 'JetBrains Mono', monospace;
+  color: var(--cyan);
+  margin-top: 8px;
+}
+
+/* ── TIME LINE (number line) ── */
+.time-line {
+  width: 100%;
+  padding: 20px;
+  background: var(--card);
+  border-radius: 12px;
+  border: 1px solid var(--border);
+}
+
+.time-line-title {
+  font-size: 12px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  color: var(--muted);
+  margin-bottom: 12px;
+  text-align: center;
+}
+
+.time-line-bar {
+  width: 100%;
+  height: 4px;
+  background: var(--border);
+  border-radius: 2px;
+  position: relative;
+  margin-bottom: 12px;
+}
+
+.time-line-fill {
+  height: 100%;
+  background: var(--grad);
+  border-radius: 2px;
+  width: 0%;
+  transition: width 0.3s;
+}
+
+.time-line-labels {
+  display: flex;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.time-label {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text2);
+  font-family: 'JetBrains Mono', monospace;
+}
+
+.elapsed-display {
+  text-align: center;
+  padding: 12px;
+  background: rgba(0,212,255,0.05);
+  border-radius: 8px;
+  border: 1px solid rgba(0,212,255,0.2);
+  margin-top: 12px;
+}
+
+.elapsed-label {
+  font-size: 11px;
+  color: var(--muted);
+  margin-bottom: 4px;
+}
+
+.elapsed-value {
+  font-size: 20px;
+  font-weight: 700;
+  color: var(--cyan);
+  font-family: 'JetBrains Mono', monospace;
+}
+
+/* ── CONTROL SLIDERS ── */
+.time-controls {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  width: 100%;
+  padding: 16px;
+  background: var(--card);
+  border-radius: 12px;
+}
+
+.control-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.control-label {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--muted);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  min-width: 80px;
+}
+
+.control-slider {
+  flex: 1;
+  height: 6px;
+  -webkit-appearance: none;
+  appearance: none;
+  background: var(--border);
+  border-radius: 3px;
+  outline: none;
+  cursor: pointer;
+}
+
+.control-slider::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background: var(--cyan);
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.control-slider::-moz-range-thumb {
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background: var(--cyan);
+  cursor: pointer;
+  border: none;
+  transition: all 0.2s;
+}
+
+.control-value {
+  font-size: 13px;
+  font-weight: 600;
+  font-family: 'JetBrains Mono', monospace;
+  color: var(--cyan);
+  min-width: 60px;
+  text-align: center;
+}
+
+/* ── PRACTICE QUESTION ── */
+.practice-question {
+  text-align: center;
+  padding: 20px;
+  background: var(--card);
+  border-radius: 12px;
+  border: 1px solid var(--border);
+  width: 100%;
+  max-width: 550px;
+}
+
+.question-text {
+  font-size: 16px;
+  color: var(--text2);
+  margin-bottom: 12px;
+  font-weight: 600;
+}
+
+.question-highlight {
+  font-size: 28px;
+  font-weight: 800;
+  font-family: 'JetBrains Mono', monospace;
+  color: var(--green);
+  margin: 12px 0;
+}
+
+/* ── INPUT GROUPS ── */
+.input-group {
+  display: flex;
+  gap: 8px;
+  justify-content: center;
+  align-items: center;
+  margin-top: 12px;
+  flex-wrap: wrap;
+}
+
+.time-input {
+  padding: 10px 12px;
+  border-radius: 8px;
+  border: 2px solid var(--border);
+  background: var(--card);
+  color: var(--text);
+  font-size: 16px;
+  font-family: 'JetBrains Mono', monospace;
+  text-align: center;
+  transition: all 0.2s;
+}
+
+.time-input:focus {
+  border-color: var(--cyan);
+  outline: none;
+}
+
+.time-input.hours {
+  width: 50px;
+}
+
+.time-input.minutes {
+  width: 50px;
+}
+
+/* ── PLAY MODE GAME ── */
+.game-info {
+  display: flex;
+  gap: 20px;
+  justify-content: center;
+  align-items: center;
+  font-size: 14px;
+  color: var(--text2);
+  margin-bottom: 12px;
+}
+
+.info-item {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.info-label {
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+}
+
+/* ── BUTTONS ── */
+.play-btn {
+  padding: 12px 24px;
+  border-radius: 10px;
+  border: 1px solid var(--border);
+  background: var(--card);
+  color: var(--text2);
+  font-size: 14px;
+  font-weight: 600;
+  font-family: inherit;
+  cursor: pointer;
+  transition: all 0.2s;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.play-btn:hover { background: rgba(0,212,255,0.1); color: var(--cyan); }
+
+.play-btn.primary {
+  background: var(--grad);
+  color: var(--bg);
+  border-color: transparent;
+  font-weight: 700;
+}
+
+.play-btn.primary:hover { opacity: 0.9; }
+
+/* ── FEEDBACK ── */
+.feedback {
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%) scale(0);
+  padding: 24px 48px;
+  border-radius: 20px;
+  font-size: 28px;
+  font-weight: 800;
+  z-index: 200;
+  pointer-events: none;
+  transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275), opacity 0.3s;
+  opacity: 0;
+}
+.feedback.show {
+  transform: translate(-50%, -50%) scale(1);
+  opacity: 1;
+}
+.feedback.correct {
+  background: rgba(0,230,118,0.15);
+  color: var(--green);
+  border: 2px solid var(--green);
+}
+.feedback.incorrect {
+  background: rgba(255,59,139,0.15);
+  color: var(--pink);
+  border: 2px solid var(--pink);
+}
+.feedback.try-again {
+  background: rgba(255,193,7,0.15);
+  color: var(--yellow);
+  border: 2px solid var(--yellow);
+}
+
+/* ── SIDE PANEL ── */
+.side-panel {
+  width: 280px;
+  background: var(--bg2);
+  border-left: 1px solid var(--border);
+  padding: 20px;
+  overflow-y: auto;
+  flex-shrink: 0;
+}
+.panel-section {
+  margin-bottom: 20px;
+}
+.panel-title {
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 1.5px;
+  color: var(--muted);
+  margin-bottom: 8px;
+}
+.panel-text {
+  font-size: 13px;
+  color: var(--text2);
+  line-height: 1.6;
+}
+.score-display {
+  text-align: center;
+  padding: 16px;
+  background: var(--card);
+  border-radius: 12px;
+  margin-bottom: 12px;
+}
+.score-value {
+  font-size: 36px;
+  font-weight: 900;
+  font-family: 'JetBrains Mono', monospace;
+  background: var(--grad);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+.score-label {
+  font-size: 11px;
+  color: var(--muted);
+  text-transform: uppercase;
+  letter-spacing: 1px;
+}
+.streak-bar {
+  height: 6px;
+  background: var(--card);
+  border-radius: 3px;
+  overflow: hidden;
+  margin-top: 8px;
+}
+.streak-fill {
+  height: 100%;
+  background: var(--grad);
+  border-radius: 3px;
+  transition: width 0.3s;
+}
+
+/* ── ANIMATIONS ── */
+@keyframes pop {
+  0% { transform: scale(0); opacity: 0; }
+  70% { transform: scale(1.2); }
+  100% { transform: scale(1); opacity: 1; }
+}
+
+@keyframes shake {
+  0%, 100% { transform: translateX(0); }
+  25% { transform: translateX(-8px); }
+  75% { transform: translateX(8px); }
+}
+
+.pop-in { animation: pop 0.3s ease-out forwards; }
+.shake { animation: shake 0.3s ease-in-out; }
+
+/* scrollbar */
+::-webkit-scrollbar { width: 6px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+
+/* Responsive */
+@media (max-width: 768px) {
+  .clocks-row {
+    gap: 20px;
+  }
+  .clock {
+    width: 100px;
+    height: 100px;
+  }
+  .side-panel {
+    width: 220px;
+  }
+  .time-container {
+    max-width: 500px;
+  }
+}
+</style>
+</head>
+<body>
+
+<!-- ═══ HEADER ═══ -->
+<div class="header">
+  <div class="header-left">
+    <a class="back-btn" href="../../VINCULUM-Hub.html" style="text-decoration:none;">◀ Hub</a>
+    <div class="header-title"><span>VINCULUM</span> Elapsed Time</div>
+    <span class="header-badge">3 · MD</span>
+    <button class="back-btn" id="readAloudBtn" onclick="toggleReadAloud()" aria-label="Read Aloud" title="Read instructions aloud">🔊 Read to Me</button>
+  </div>
+  <div class="std-tags">
+    <span class="std-tag">3.MD.1</span>
+    <span class="std-tag mn">MN 3.1.2.1</span>
+  </div>
+</div>
+
+<!-- ═══ MODE TABS ═══ -->
+<div class="mode-tabs">
+  <button class="mode-tab active-explore" id="tabExplore" onclick="setMode('explore')">
+    <svg width="18" height="18" viewBox="0 0 48 48" fill="none"><path d="M4 24C4 24 12 12 24 12C36 12 44 24 44 24C44 24 36 36 24 36C12 36 4 24 4 24Z" stroke="currentColor" stroke-width="3" fill="none"/><circle cx="24" cy="24" r="7" stroke="currentColor" stroke-width="3" fill="none"/><circle cx="24" cy="24" r="3" fill="currentColor"/></svg> Explore
+  </button>
+  <button class="mode-tab" id="tabPractice" onclick="setMode('practice')">
+    <svg width="18" height="18" viewBox="0 0 48 48" fill="none"><circle cx="24" cy="24" r="20" stroke="currentColor" stroke-width="3" fill="none" opacity="0.3"/><circle cx="24" cy="24" r="20" stroke="currentColor" stroke-width="3" fill="none" stroke-dasharray="126" stroke-dashoffset="32" stroke-linecap="round"/><polyline points="16,24 22,32 34,16" stroke="currentColor" stroke-width="4" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg> Practice
+  </button>
+  <button class="mode-tab" id="tabPlay" onclick="setMode('play')">
+    <svg width="18" height="18" viewBox="0 0 48 48" fill="none"><polygon points="28,4 12,28 22,28 18,44 36,18 26,18" fill="none" stroke="currentColor" stroke-width="3" stroke-linejoin="round"/></svg> Play
+  </button>
+  <div class="diff-selector">
+    <span class="diff-label">Level</span>
+    <button class="diff-btn active" id="diffE" onclick="setDiff('emergent')" data-diff="emergent">E</button>
+    <button class="diff-btn" id="diffD" onclick="setDiff('developing')" data-diff="developing">D</button>
+    <button class="diff-btn" id="diffS" onclick="setDiff('secure')" data-diff="secure">S</button>
+  </div>
+</div>
+
+<!-- ═══ MAIN ═══ -->
+<div class="main">
+  <div class="workspace" role="main" id="workspace"></div>
+  <div class="side-panel" id="sidePanel"></div>
+</div>
+
+<!-- ═══ FEEDBACK POPUP ═══ -->
+<div class="feedback" id="feedback"></div>
+
+<script>
+function showFB(t,c){var f=document.getElementById("feedback");if(!f)return;f.textContent=t;f.className="feedback "+c+" show";setTimeout(function(){f.classList.remove("show");},1200);}
+
+// ════════════════════════════════════════
+// STATE
+// ════════════════════════════════════════
+const S = {
+  mode: 'explore',
+  diff: 'emergent',
+
+  // Explore
+  startHour: 2,
+  startMinute: 15,
+  endHour: 3,
+  endMinute: 45,
+
+  // Practice
+  questionType: null,
+  score: 0,
+  total: 0,
+  targetStart: { h: 10, m: 30 },
+  targetEnd: { h: 11, m: 15 },
+  targetElapsed: { h: 0, m: 45 },
+  userH: null,
+  userM: null,
+
+  // Play
+  playScore: 0,
+  playStreak: 0,
+  playRound: 0,
+  gameEnded: false,
+  timerStart: 0
+};
+
+// ════════════════════════════════════════
+// READ-ALOUD
+// ════════════════════════════════════════
+function toggleReadAloud() {
+  if (window.VinculumStories && VinculumStories.isReading()) {
+    VinculumStories.stopReading();
+    document.getElementById('readAloudBtn').textContent = '🔊 Read to Me';
+  } else {
+    const text = document.getElementById('sidePanel')?.textContent || 'Elapsed time is how much time has passed.';
+    if (window.VinculumStories) {
+      VinculumStories.readAloud(text, { rate: 0.85, onComplete: () => {
+        document.getElementById('readAloudBtn').textContent = '🔊 Read to Me';
+      }});
+      document.getElementById('readAloudBtn').textContent = '⏹ Stop';
+    }
+  }
+}
+
+// ════════════════════════════════════════
+// HELPERS
+// ════════════════════════════════════════
+function timeToMinutes(h, m) {
+  return h * 60 + m;
+}
+
+function minutesToTime(mins) {
+  const h = Math.floor(mins / 60);
+  const m = mins % 60;
+  return { h, m };
+}
+
+function formatTime(h, m) {
+  return `${h}:${String(m).padStart(2, '0')}`;
+}
+
+function formatDuration(h, m) {
+  if (h === 0) return `${m} minute${m !== 1 ? 's' : ''}`;
+  if (m === 0) return `${h} hour${h !== 1 ? 's' : ''}`;
+  return `${h} hour${h !== 1 ? 's' : ''} ${m} minute${m !== 1 ? 's' : ''}`;
+}
+
+function randInt(min, max) {
+  return Math.floor(Math.random() * (max - min + 1)) + min;
+}
+
+function getMaxHour() {
+  return { emergent: 12, developing: 12, secure: 12 }[S.diff];
+}
+
+function drawClock(canvasId, h, m) {
+  const canvas = document.getElementById(canvasId);
+  if (!canvas) return;
+
+  // Already handled by HTML, update transforms
+  const hourHand = canvas.querySelector('.hour-hand');
+  const minuteHand = canvas.querySelector('.minute-hand');
+
+  if (hourHand && minuteHand) {
+    const hourDeg = (h % 12) * 30 + m * 0.5;
+    const minuteDeg = m * 6;
+    hourHand.style.transform = `translateX(-50%) translateY(-50%) rotate(${hourDeg}deg)`;
+    minuteHand.style.transform = `translateX(-50%) translateY(-50%) rotate(${minuteDeg}deg)`;
+  }
+}
+
+// ════════════════════════════════════════
+// MODE SWITCHING
+// ════════════════════════════════════════
+function setMode(mode) {
+  S.mode = mode;
+
+  if (mode === 'practice' && S.total === 0) {
+    S.score = 0;
+    S.total = 0;
+    newPracticeQuestion();
+  }
+
+  if (mode === 'play' && S.playRound === 0) {
+    S.playScore = 0;
+    S.playStreak = 0;
+    S.playRound = 1;
+    S.gameEnded = false;
+  }
+
+  document.querySelectorAll('.mode-tab').forEach(t => t.className = 'mode-tab');
+  const tabEl = document.getElementById('tab' + mode.charAt(0).toUpperCase() + mode.slice(1));
+  tabEl.className = 'mode-tab active-' + mode;
+
+  render();
+}
+
+function setDiff(diff) {
+  S.diff = diff;
+  S.score = 0;
+  S.total = 0;
+  S.playScore = 0;
+  S.playStreak = 0;
+  S.playRound = 0;
+
+  document.querySelectorAll('.diff-btn').forEach(b => b.classList.remove('active'));
+  document.getElementById('diff' + diff.charAt(0).toUpperCase()).classList.add('active');
+
+  setMode(S.mode);
+}
+
+// ════════════════════════════════════════
+// RENDER MAIN
+// ════════════════════════════════════════
+function render() {
+  const ws = document.getElementById('workspace');
+  const sp = document.getElementById('sidePanel');
+
+  if (S.mode === 'explore') renderExplore(ws, sp);
+  else if (S.mode === 'practice') renderPractice(ws, sp);
+  else renderPlay(ws, sp);
+}
+
+// ─── EXPLORE MODE ───
+function renderExplore(ws, sp) {
+  const elapsed = timeToMinutes(S.endHour, S.endMinute) - timeToMinutes(S.startHour, S.startMinute);
+  const eH = Math.floor(elapsed / 60);
+  const eM = elapsed % 60;
+
+  let html = '<div class="time-container">';
+
+  // Clocks
+  html += '<div class="clocks-row">';
+
+  html += '<div class="clock-box">';
+  html += '<div class="clock-label">Start Time</div>';
+  html += `<div class="clock" id="startClock">
+    <div class="clock-face">
+      <svg style="position:absolute;width:100%;height:100%;pointer-events:none;" viewBox="0 0 140 140">
+        <circle cx="70" cy="70" r="65" fill="none" stroke="currentColor" stroke-width="2" opacity="0.2"/>
+  `;
+  for (let i = 0; i < 12; i++) {
+    const angle = (i * 30 - 90) * Math.PI / 180;
+    const x1 = 70 + 55 * Math.cos(angle);
+    const y1 = 70 + 55 * Math.sin(angle);
+    const x2 = 70 + 62 * Math.cos(angle);
+    const y2 = 70 + 62 * Math.sin(angle);
+    html += `<line x1="${x1}" y1="${y1}" x2="${x2}" y2="${y2}" stroke="currentColor" stroke-width="2" opacity="0.3"/>`;
+  }
+  html += `</svg>
+      <div class="hour-hand" style="transform:translateX(-50%) translateY(-50%) rotate(${(S.startHour % 12) * 30 + S.startMinute * 0.5}deg);"></div>
+      <div class="minute-hand" style="transform:translateX(-50%) translateY(-50%) rotate(${S.startMinute * 6}deg);"></div>
+      <div class="clock-center"></div>
+    </div>
+  </div>`;
+  html += `<div class="digital-time">${formatTime(S.startHour, S.startMinute)}</div>`;
+  html += '</div>';
+
+  html += '<div style="font-size:24px;color:var(--muted);">→</div>';
+
+  html += '<div class="clock-box">';
+  html += '<div class="clock-label">End Time</div>';
+  html += `<div class="clock" id="endClock">
+    <div class="clock-face">
+      <svg style="position:absolute;width:100%;height:100%;pointer-events:none;" viewBox="0 0 140 140">
+        <circle cx="70" cy="70" r="65" fill="none" stroke="currentColor" stroke-width="2" opacity="0.2"/>
+  `;
+  for (let i = 0; i < 12; i++) {
+    const angle = (i * 30 - 90) * Math.PI / 180;
+    const x1 = 70 + 55 * Math.cos(angle);
+    const y1 = 70 + 55 * Math.sin(angle);
+    const x2 = 70 + 62 * Math.cos(angle);
+    const y2 = 70 + 62 * Math.sin(angle);
+    html += `<line x1="${x1}" y1="${y1}" x2="${x2}" y2="${y2}" stroke="currentColor" stroke-width="2" opacity="0.3"/>`;
+  }
+  html += `</svg>
+      <div class="hour-hand" style="transform:translateX(-50%) translateY(-50%) rotate(${(S.endHour % 12) * 30 + S.endMinute * 0.5}deg);"></div>
+      <div class="minute-hand" style="transform:translateX(-50%) translateY(-50%) rotate(${S.endMinute * 6}deg);"></div>
+      <div class="clock-center"></div>
+    </div>
+  </div>`;
+  html += `<div class="digital-time">${formatTime(S.endHour, S.endMinute)}</div>`;
+  html += '</div>';
+
+  html += '</div>';
+
+  // Time line
+  const startMins = timeToMinutes(S.startHour, S.startMinute);
+  const endMins = timeToMinutes(S.endHour, S.endMinute);
+  const fillPercent = ((endMins - startMins) / (12 * 60)) * 100;
+
+  html += `<div class="time-line">
+    <div class="time-line-title">Elapsed Time</div>
+    <div class="time-line-bar">
+      <div class="time-line-fill" style="width:${fillPercent}%;"></div>
+    </div>
+    <div class="time-line-labels">
+      <span class="time-label">${formatTime(S.startHour, S.startMinute)}</span>
+      <span class="time-label">${formatTime(S.endHour, S.endMinute)}</span>
+    </div>
+    <div class="elapsed-display">
+      <div class="elapsed-label">Elapsed Time</div>
+      <div class="elapsed-value">${formatDuration(eH, eM)}</div>
+    </div>
+  </div>`;
+
+  // Controls
+  html += `<div class="time-controls">
+    <div class="control-row">
+      <label class="control-label">Start Hour</label>
+      <input type="range" min="1" max="12" value="${S.startHour}" class="control-slider" id="startHourSlider" oninput="updateStartHour(this.value)">
+      <span class="control-value">${S.startHour}:00</span>
+    </div>
+    <div class="control-row">
+      <label class="control-label">Start Min</label>
+      <input type="range" min="0" max="55" step="5" value="${S.startMinute}" class="control-slider" id="startMinSlider" oninput="updateStartMin(this.value)">
+      <span class="control-value">${String(S.startMinute).padStart(2, '0')}</span>
+    </div>
+    <div class="control-row">
+      <label class="control-label">End Hour</label>
+      <input type="range" min="1" max="12" value="${S.endHour}" class="control-slider" id="endHourSlider" oninput="updateEndHour(this.value)">
+      <span class="control-value">${S.endHour}:00</span>
+    </div>
+    <div class="control-row">
+      <label class="control-label">End Min</label>
+      <input type="range" min="0" max="55" step="5" value="${S.endMinute}" class="control-slider" id="endMinSlider" oninput="updateEndMin(this.value)">
+      <span class="control-value">${String(S.endMinute).padStart(2, '0')}</span>
+    </div>
+  </div>`;
+
+  html += '</div>';
+  ws.innerHTML = html;
+
+  sp.innerHTML = `
+    <div class="panel-section">
+      <div class="panel-title">What is Elapsed Time?</div>
+      <div class="panel-text">
+        <strong>Elapsed time</strong> is the amount of time that passes from a start time to an end time.
+      </div>
+    </div>
+    <div class="panel-section">
+      <div class="panel-title">How to Find It</div>
+      <div class="panel-text">
+        <strong>Count forward</strong> from the start time to the end time. You can count by hours first, then by minutes.
+      </div>
+    </div>
+    <div class="panel-section">
+      <div class="panel-title">Example</div>
+      <div class="panel-text">
+        Start: 2:15<br>
+        End: 3:45<br>
+        Count: 2:15 → 3:15 (1 hour) → 3:45 (30 min)<br>
+        <strong>Elapsed: 1 hour 30 minutes</strong>
+      </div>
+    </div>
+    <div class="panel-section">
+      <div class="panel-title">Standard</div>
+      <div class="panel-text">
+        <strong>3.MD.1</strong> — Tell and write time to nearest minute
+      </div>
+    </div>
+  `;
+}
+
+function updateStartHour(val) {
+  S.startHour = parseInt(val);
+  render();
+}
+
+function updateStartMin(val) {
+  S.startMinute = parseInt(val);
+  render();
+}
+
+function updateEndHour(val) {
+  S.endHour = parseInt(val);
+  render();
+}
+
+function updateEndMin(val) {
+  S.endMinute = parseInt(val);
+  render();
+}
+
+// ─── PRACTICE MODE ───
+function renderPractice(ws, sp) {
+  let html = '<div class="time-container">';
+
+  html += `<div style="text-align:center;margin-bottom:12px;">
+    <div style="font-size:14px;color:var(--muted);">⭐ ${S.score}/${S.total}</div>
+  </div>`;
+
+  if (S.questionType === 'find-elapsed') {
+    html += '<div class="clocks-row">';
+
+    html += '<div class="clock-box">';
+    html += '<div class="clock-label">Start Time</div>';
+    html += `<div class="clock">
+      <div class="clock-face">
+        <svg style="position:absolute;width:100%;height:100%;pointer-events:none;" viewBox="0 0 140 140">
+          <circle cx="70" cy="70" r="65" fill="none" stroke="currentColor" stroke-width="2" opacity="0.2"/>
+        </svg>
+        <div class="hour-hand" style="transform:translateX(-50%) translateY(-50%) rotate(${(S.targetStart.h % 12) * 30 + S.targetStart.m * 0.5}deg);"></div>
+        <div class="minute-hand" style="transform:translateX(-50%) translateY(-50%) rotate(${S.targetStart.m * 6}deg);"></div>
+        <div class="clock-center"></div>
+      </div>
+    </div>`;
+    html += `<div class="digital-time">${formatTime(S.targetStart.h, S.targetStart.m)}</div>`;
+    html += '</div>';
+
+    html += '<div style="font-size:24px;color:var(--muted);">→</div>';
+
+    html += '<div class="clock-box">';
+    html += '<div class="clock-label">End Time</div>';
+    html += `<div class="clock">
+      <div class="clock-face">
+        <svg style="position:absolute;width:100%;height:100%;pointer-events:none;" viewBox="0 0 140 140">
+          <circle cx="70" cy="70" r="65" fill="none" stroke="currentColor" stroke-width="2" opacity="0.2"/>
+        </svg>
+        <div class="hour-hand" style="transform:translateX(-50%) translateY(-50%) rotate(${(S.targetEnd.h % 12) * 30 + S.targetEnd.m * 0.5}deg);"></div>
+        <div class="minute-hand" style="transform:translateX(-50%) translateY(-50%) rotate(${S.targetEnd.m * 6}deg);"></div>
+        <div class="clock-center"></div>
+      </div>
+    </div>`;
+    html += `<div class="digital-time">${formatTime(S.targetEnd.h, S.targetEnd.m)}</div>`;
+    html += '</div>';
+
+    html += '</div>';
+
+    html += `<div class="practice-question">
+      <div class="question-text">How much time has passed?</div>
+      <div class="input-group">
+        <input type="number" class="time-input hours" id="ansH" min="0" max="12" placeholder="h" />
+        <span style="font-weight:700;color:var(--text2);">h</span>
+        <input type="number" class="time-input minutes" id="ansM" min="0" max="59" placeholder="m" />
+        <span style="font-weight:700;color:var(--text2);">m</span>
+        <button class="play-btn primary" onclick="submitElapsed()">✓ Check</button>
+      </div>
+    </div>`;
+
+  } else if (S.questionType === 'find-end-time') {
+    const startStr = formatTime(S.targetStart.h, S.targetStart.m);
+    const elapsedStr = formatDuration(S.targetElapsed.h, S.targetElapsed.m);
+
+    html += '<div class="practice-question">';
+    html += `<div class="question-text">Start: <strong>${startStr}</strong></div>`;
+    html += `<div style="margin:8px 0;font-size:13px;color:var(--text2);">Plus <strong>${elapsedStr}</strong></div>`;
+    html += `<div style="margin-top:12px;font-size:13px;color:var(--muted);">What time is it?</div>`;
+    html += `<div class="input-group">
+      <input type="number" class="time-input hours" id="endH" min="1" max="12" placeholder="h" />
+      <span style="font-weight:700;">:</span>
+      <input type="number" class="time-input minutes" id="endM" min="0" max="59" placeholder="mm" />
+      <button class="play-btn primary" onclick="submitEndTime()">✓ Check</button>
+    </div>`;
+    html += '</div>';
+
+  } else if (S.questionType === 'find-start-time') {
+    const endStr = formatTime(S.targetEnd.h, S.targetEnd.m);
+    const elapsedStr = formatDuration(S.targetElapsed.h, S.targetElapsed.m);
+
+    html += '<div class="practice-question">';
+    html += `<div class="question-text">End: <strong>${endStr}</strong></div>`;
+    html += `<div style="margin:8px 0;font-size:13px;color:var(--text2);">Minus <strong>${elapsedStr}</strong></div>`;
+    html += `<div style="margin-top:12px;font-size:13px;color:var(--muted);">What time did it start?</div>`;
+    html += `<div class="input-group">
+      <input type="number" class="time-input hours" id="startH" min="1" max="12" placeholder="h" />
+      <span style="font-weight:700;">:</span>
+      <input type="number" class="time-input minutes" id="startM" min="0" max="59" placeholder="mm" />
+      <button class="play-btn primary" onclick="submitStartTime()">✓ Check</button>
+    </div>`;
+    html += '</div>';
+  }
+
+  html += '</div>';
+  ws.innerHTML = html;
+
+  setTimeout(() => {
+    const first = document.querySelector('.time-input');
+    if (first) first.focus();
+  }, 100);
+
+  sp.innerHTML = `
+    <div class="score-display">
+      <div class="score-value">${S.score}/${S.total}</div>
+      <div class="score-label">Score</div>
+    </div>
+    <div class="panel-section">
+      <div class="panel-title">Instructions</div>
+      <div class="panel-text">
+        ${S.questionType === 'find-elapsed' ? 'Look at both clocks. Count from start to end.' : ''}
+        ${S.questionType === 'find-end-time' ? 'Add the elapsed time to the start time.' : ''}
+        ${S.questionType === 'find-start-time' ? 'Subtract the elapsed time from the end time.' : ''}
+      </div>
+    </div>
+    <div class="panel-section">
+      <div class="panel-title">Tip</div>
+      <div class="panel-text">
+        ${S.questionType === 'find-elapsed' ? 'Count by hours first, then minutes.' : ''}
+        ${S.questionType === 'find-end-time' ? 'Count forward from the start time.' : ''}
+        ${S.questionType === 'find-start-time' ? 'Count backward from the end time.' : ''}
+      </div>
+    </div>
+  `;
+}
+
+function newPracticeQuestion() {
+  S.total = (S.total || 0) + 1;
+
+  const types = ['find-elapsed'];
+  if (S.diff === 'developing' || S.diff === 'secure') types.push('find-end-time', 'find-start-time');
+
+  S.questionType = types[Math.floor(Math.random() * types.length)];
+
+  if (S.questionType === 'find-elapsed') {
+    const startMin = randInt(1, 12) * 60 + randInt(0, 11) * 5;
+    const duration = S.diff === 'emergent' ? randInt(1, 6) * 30 : randInt(1, 20) * 5;
+    const endMin = Math.min(startMin + duration, 12 * 60);
+
+    S.targetStart = minutesToTime(startMin);
+    S.targetEnd = minutesToTime(endMin);
+    S.targetElapsed = minutesToTime(endMin - startMin);
+
+  } else if (S.questionType === 'find-end-time') {
+    const startMin = randInt(1, 12) * 60 + randInt(0, 11) * 5;
+    const duration = S.diff === 'developing' ? randInt(1, 6) * 15 : randInt(1, 20) * 5;
+    const endMin = Math.min(startMin + duration, 12 * 60);
+
+    S.targetStart = minutesToTime(startMin);
+    S.targetElapsed = minutesToTime(duration);
+    S.targetEnd = minutesToTime(endMin);
+
+  } else if (S.questionType === 'find-start-time') {
+    const endMin = randInt(2, 12) * 60 + randInt(0, 11) * 5;
+    const duration = S.diff === 'developing' ? randInt(1, 6) * 15 : randInt(1, 20) * 5;
+    const startMin = Math.max(endMin - duration, 1 * 60);
+
+    S.targetEnd = minutesToTime(endMin);
+    S.targetElapsed = minutesToTime(duration);
+    S.targetStart = minutesToTime(startMin);
+  }
+}
+
+function submitElapsed() {
+  const h = parseInt(document.getElementById('ansH')?.value || 0);
+  const m = parseInt(document.getElementById('ansM')?.value || 0);
+
+  if (h === S.targetElapsed.h && m === S.targetElapsed.m) {
+    showFB('✓ Correct!', 'correct');
+    S.score++;
+    setTimeout(() => {
+      newPracticeQuestion();
+      render();
+    }, 800);
+  } else {
+    showFB('✗ Try again', 'incorrect');
+  }
+}
+
+function submitEndTime() {
+  const h = parseInt(document.getElementById('endH')?.value || 0);
+  const m = parseInt(document.getElementById('endM')?.value || 0);
+
+  if (h === S.targetEnd.h && m === S.targetEnd.m) {
+    showFB('✓ Correct!', 'correct');
+    S.score++;
+    setTimeout(() => {
+      newPracticeQuestion();
+      render();
+    }, 800);
+  } else {
+    showFB('✗ Try again', 'incorrect');
+  }
+}
+
+function submitStartTime() {
+  const h = parseInt(document.getElementById('startH')?.value || 0);
+  const m = parseInt(document.getElementById('startM')?.value || 0);
+
+  if (h === S.targetStart.h && m === S.targetStart.m) {
+    showFB('✓ Correct!', 'correct');
+    S.score++;
+    setTimeout(() => {
+      newPracticeQuestion();
+      render();
+    }, 800);
+  } else {
+    showFB('✗ Try again', 'incorrect');
+  }
+}
+
+// ─── PLAY MODE ───
+function renderPlay(ws, sp) {
+  let html = '<div class="time-container">';
+
+  if (S.gameEnded) {
+    html += `<div style="text-align:center;padding:40px;font-size:32px;font-weight:800;">
+      Game Complete!<br>
+      <div style="font-size:48px;margin:20px 0;background:var(--grad);-webkit-background-clip:text;-webkit-text-fill-color:transparent;">
+        ${S.playScore}
+      </div>
+      <button class="play-btn primary" onclick="playAgain()" style="margin-top:20px;">▶ Play Again</button>
+    </div>`;
+  } else {
+    html += `<div class="game-info">
+      <div class="info-item">
+        <span class="info-label">Round</span>
+        <span>${S.playRound} / 10</span>
+      </div>
+      <div class="info-item">
+        <span class="info-label">⭐ Score</span>
+        <span>${S.playScore}</span>
+      </div>
+      <div class="info-item">
+        <span class="info-label">🔥 Streak</span>
+        <span>${S.playStreak}</span>
+      </div>
+    </div>`;
+
+    const start = S.targetStart;
+    const elapsed = S.targetElapsed;
+
+    html += `<div class="practice-question">
+      <div class="question-text">Start: <strong>${formatTime(start.h, start.m)}</strong></div>
+      <div style="margin:8px 0;font-size:14px;color:var(--text2);">Plus: <strong>${formatDuration(elapsed.h, elapsed.m)}</strong></div>
+      <div style="margin-top:12px;font-size:13px;color:var(--muted);">What time is it?</div>
+      <div class="input-group">
+        <input type="number" class="time-input hours" id="playH" min="1" max="12" placeholder="h" />
+        <span style="font-weight:700;">:</span>
+        <input type="number" class="time-input minutes" id="playM" min="0" max="59" placeholder="mm" />
+        <button class="play-btn primary" onclick="submitPlayAnswer()">✓</button>
+      </div>
+    </div>`;
+  }
+
+  html += '</div>';
+  ws.innerHTML = html;
+
+  if (!S.gameEnded) {
+    setTimeout(() => document.getElementById('playH')?.focus(), 100);
+  }
+
+  sp.innerHTML = `
+    <div class="score-display">
+      <div class="score-value">${S.playScore}</div>
+      <div class="score-label">Score</div>
+    </div>
+    <div class="score-display" style="background:transparent; padding:8px;">
+      <div style="font-size:18px; font-weight:700; color:var(--yellow);">🔥 ${S.playStreak}</div>
+      <div class="score-label">Streak</div>
+      <div class="streak-bar"><div class="streak-fill" style="width:${Math.min(S.playStreak * 10, 100)}%;"></div></div>
+    </div>
+    <div class="panel-section">
+      <div class="panel-title">Time Traveler</div>
+      <div class="panel-text">
+        You have 10 rounds. <strong>Add the time</strong> to find the answer.<br><br>
+        Build your <strong>streak</strong> for bonus points!
+      </div>
+    </div>
+    <div class="panel-section">
+      <div class="panel-title">Scoring</div>
+      <div class="panel-text">
+        Base: <strong>10 points</strong><br>
+        Streak bonus: <strong>+2 × streak</strong><br>
+        <strong>Max: 30 pts/round</strong>
+      </div>
+    </div>
+  `;
+}
+
+function startPlayChallenge() {
+  const startMin = randInt(1, 12) * 60 + randInt(0, 11) * 5;
+  const duration = S.diff === 'emergent' ? randInt(1, 4) * 30 : randInt(1, 15) * 5;
+  const endMin = Math.min(startMin + duration, 12 * 60);
+
+  S.targetStart = minutesToTime(startMin);
+  S.targetElapsed = minutesToTime(duration);
+  S.targetEnd = minutesToTime(endMin);
+
+  S.timerStart = Date.now();
+  render();
+}
+
+function submitPlayAnswer() {
+  const h = parseInt(document.getElementById('playH')?.value || 0);
+  const m = parseInt(document.getElementById('playM')?.value || 0);
+
+  if (h === S.targetEnd.h && m === S.targetEnd.m) {
+    showFB('✓ Yes!', 'correct');
+    S.playScore += 10 + (S.playStreak * 2);
+    S.playStreak++;
+    S.playRound++;
+
+    if (S.playRound > 10) {
+      setTimeout(() => {
+        S.gameEnded = true;
+        render();
+      }, 800);
+    } else {
+      setTimeout(() => {
+        startPlayChallenge();
+      }, 800);
+    }
+  } else {
+    showFB('✗ Try again', 'incorrect');
+    S.playStreak = 0;
+  }
+}
+
+function playAgain() {
+  S.playScore = 0;
+  S.playStreak = 0;
+  S.playRound = 1;
+  S.gameEnded = false;
+  startPlayChallenge();
+  render();
+}
+
+// ════════════════════════════════════════
+// INIT
+// ════════════════════════════════════════
+startPlayChallenge();
+render();
+</script>
+<script src="../../vinculum-core.js"></script>
+<script src="../../vinculum-data.js"></script>
+<script src="../../vinculum-adaptive-hook.js"></script>
+<script src="../../vinculum-3reads.js"></script>
+<script src="../../vinculum-stories.js"></script>
+<script src="../../vinculum-feedback.js"></script>
+</body>
+</html>
