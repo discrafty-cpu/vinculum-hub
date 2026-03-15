@@ -874,72 +874,84 @@
       {
         character: 'Sofia',
         setting: 'classroom',
+        shape: 'cube',
         template: 'Sofia is building a castle with blocks. This block has 6 flat faces and 8 pointy corners. It\'s a cube! Can you feel the corners and sides?',
         followUp: 'What shape is it?'
       },
       {
         character: 'Leo',
         setting: 'kitchen',
+        shape: 'rectangular prism',
         template: 'Chef Leo has a box of canned soup. It has rectangular flat sides, straight edges, and corners where sides meet. Can you count the faces?',
         followUp: 'How many flat faces?'
       },
       {
         character: 'Noah',
         setting: 'playground',
+        shape: 'sphere',
         template: 'Noah brought a ball to the playground. It\'s round with no flat faces, no corners, and no edges. It\'s a sphere! Can you roll it?',
         followUp: 'What shape is the ball?'
       },
       {
         character: 'Amara',
         setting: 'birthday party',
+        shape: 'cone',
         template: 'Amara\'s party hat is shaped like a cone! It has one flat circular face on the bottom and comes to a point at the top. Feel the pointy top!',
         followUp: 'What is the hat shape?'
       },
       {
         character: 'Kai',
         setting: 'art class',
+        shape: 'cone',
         template: 'Kai is stacking ice cream cones! A cone has one round face on top and comes to a point at the bottom. Can you build a tower of cones?',
         followUp: 'What\'s an ice cream cone?'
       },
       {
         character: 'Yuki',
         setting: 'classroom',
+        shape: 'cylinder',
         template: 'Yuki found a pencil that\'s shaped like a cylinder. It has two flat round faces on the ends and a curved side. Can you roll it gently?',
         followUp: 'What shape is the pencil?'
       },
       {
         character: 'Priya',
         setting: 'playroom',
+        shape: 'pyramid',
         template: 'Priya has a pyramid-shaped toy. It has a square face on the bottom and triangular faces on the sides that meet at a point. Can you count the faces?',
         followUp: 'How many faces does a pyramid have?'
       },
       {
         character: 'Marcus',
         setting: 'toy store',
+        shape: 'rectangular prism',
         template: 'Marcus is holding a rectangular prism block. It has 6 rectangular faces and lots of edges. Can you find all the corners?',
         followUp: 'How many corners?'
       },
       {
         character: 'Luna',
         setting: 'bakery',
+        shape: 'sphere',
         template: 'Luna baked a spherical cake! It\'s perfectly round like a ball. It has no flat faces and no corners. Can you spin it gently?',
         followUp: 'What shape is the cake?'
       },
       {
         character: 'Zara',
         setting: 'park',
+        shape: 'cube',
         template: 'Zara is playing with building blocks. A cube block has 6 faces, 12 edges, and 8 corners. Can you count them all?',
         followUp: 'How many edges on a cube?'
       },
       {
         character: 'Tomás',
         setting: 'farm',
+        shape: 'cylinder',
         template: 'Farmer Tomás has a barrel-shaped container. It\'s a cylinder with two round faces and a curved side. Can you roll it?',
         followUp: 'What shape is it?'
       },
       {
         character: 'Maya',
         setting: 'bedroom',
+        shape: 'triangular prism',
         template: 'Maya has a triangular prism block. It has two triangular faces and three rectangular faces. Can you feel all the sides?',
         followUp: 'How many faces are there?'
       }
@@ -1502,6 +1514,14 @@
       // Stories without an op tag are treated as universal (match any operation)
       if (params.op) {
         const filtered = templates.filter(t => !t.op || t.op === params.op);
+        if (filtered.length > 0) templates = filtered;
+      }
+
+      // Filter by shape if specified (e.g., 'cube', 'cylinder', 'sphere')
+      // Stories without a shape tag are treated as universal (match any shape)
+      if (params.shape) {
+        const shapeLower = params.shape.toLowerCase();
+        const filtered = templates.filter(t => !t.shape || t.shape.toLowerCase() === shapeLower);
         if (filtered.length > 0) templates = filtered;
       }
 

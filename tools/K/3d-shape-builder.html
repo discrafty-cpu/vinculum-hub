@@ -828,6 +828,7 @@
       if (S.mode === 'explore') {
         renderShape();
         renderFaceTray();
+        refreshStoryBanner();
       } else if (S.mode === 'practice') {
         initPractice();
       } else if (S.mode === 'play') {
@@ -1130,46 +1131,38 @@
       });
     }
 
+    // STORY BANNER — refreshes to match the current shape
+    function refreshStoryBanner() {
+      if (!window.VinculumStories) return;
+      const toolName = window.location.pathname.split('/').pop().replace('.html','');
+      const shapeName = shapes[S.currentShape] ? shapes[S.currentShape].name : S.currentShape;
+      const storyData = VinculumStories.getStory(toolName, {
+        a: S.a || S.num || 5, b: S.b || 3,
+        total: S.total || S.num || 7, n: S.num || 8,
+        ones: (S.num || 13) % 10,
+        shape: shapeName
+      });
+      if (!storyData || !storyData.story) return;
+
+      const ws = document.getElementById('workspace') || document.querySelector('.workspace') || document.querySelector('[class*="explore"]');
+      if (!ws) return;
+
+      const existing = document.getElementById('storyBanner');
+      if (existing) existing.remove();
+
+      if (window.Vinculum3Reads) {
+        ws.insertAdjacentHTML('afterbegin', Vinculum3Reads.getBannerHTML(storyData));
+      } else {
+        const bannerHTML = '<div id="storyBanner" style="background:var(--card2,#1a1f2e);border:1px solid var(--border);border-radius:12px;padding:16px 20px;margin-bottom:16px;font-size:15px;line-height:1.6;color:var(--text);position:relative;"><span style="font-size:12px;color:var(--cyan);font-weight:700;text-transform:uppercase;letter-spacing:1px;">📖 Story</span><br>' + storyData.story + '<br><em style="color:var(--yellow);font-weight:600;">' + storyData.question + '</em><button onclick="toggleReadAloud()" style="position:absolute;top:12px;right:12px;background:none;border:1px solid var(--border);border-radius:8px;padding:4px 10px;color:var(--cyan);cursor:pointer;font-size:14px;" title="Read story aloud">🔊</button></div>';
+        ws.insertAdjacentHTML('afterbegin', bannerHTML);
+      }
+    }
+
     // EXPLORE MODE
     function initExplore() {
       renderFaceTray('shape-tray', S.currentShape);
       renderShape(S.currentShape, 'shape-svg', 'info-panel');
-
-      // Inject story banner
-      if (window.VinculumStories) {
-        const toolName = window.location.pathname.split('/').pop().replace('.html','');
-        const storyData = VinculumStories.getStory(toolName, {a: S.a || S.num || 5, b: S.b || 3, total: S.total || S.num || 7, n: S.num || 8, ones: (S.num || 13) % 10});
-        if (storyData && storyData.story) {
-          if (window.Vinculum3Reads) {
-
-            const bannerHTML = Vinculum3Reads.getBannerHTML(storyData);
-
-            const ws = document.getElementById('workspace') || document.querySelector('.workspace') || document.querySelector('[class*="explore"]');
-
-            const existing = document.getElementById('storyBanner');
-
-            if (existing) existing.remove();
-
-            ws.insertAdjacentHTML('afterbegin', bannerHTML);
-
-          } else {
-
-            const bannerHTML = '<div id="storyBanner" style="background:var(--card2,#1a1f2e);border:1px solid var(--border);border-radius:12px;padding:16px 20px;margin-bottom:16px;font-size:15px;line-height:1.6;color:var(--text);position:relative;"><span style="font-size:12px;color:var(--cyan);font-weight:700;text-transform:uppercase;letter-spacing:1px;">📖 Story</span><br>' + storyData.story + '<br><em style="color:var(--yellow);font-weight:600;">' + storyData.question + '</em><button onclick="toggleReadAloud()" style="position:absolute;top:12px;right:12px;background:none;border:1px solid var(--border);border-radius:8px;padding:4px 10px;color:var(--cyan);cursor:pointer;font-size:14px;" title="Read story aloud">🔊</button></div>';
-
-            const ws = document.getElementById('workspace') || document.querySelector('.workspace') || document.querySelector('[class*="explore"]');
-
-            if (ws) {
-
-            const existing = document.getElementById('storyBanner');
-
-            if (existing) existing.remove();
-
-            ws.insertAdjacentHTML('afterbegin', bannerHTML);
-
-          }
-          }
-        }
-      }
+      refreshStoryBanner();
 
       document.getElementById('canvas-area').addEventListener('dragover', (e) => {
         e.preventDefault();
