@@ -19,52 +19,6 @@
             font-family: 'Inter', sans-serif;
         }
 
-        header {
-            padding: 1rem 1.5rem;
-            display: flex;
-            align-items: center;
-            gap: 1rem;
-            border-bottom: 1px solid var(--border);
-            background: var(--bg);
-        }
-
-        .back-btn {
-            width: 44px; height: 44px; border-radius: 8px; border: none;
-            background: var(--card); color: var(--text); font-size: 1.5rem;
-            cursor: pointer; display: flex; align-items: center; justify-content: center;
-            transition: all 0.2s; font-family: 'Inter', sans-serif;
-        }
-        .back-btn:hover { background: var(--border); }
-        .back-btn:focus-visible { outline: 2px solid var(--cyan); }
-
-        .title-group { flex: 1; }
-        .title {
-            font-size: 1.8rem; font-weight: 700;
-            background: var(--grad); -webkit-background-clip: text; -webkit-text-fill-color: transparent;
-            background-clip: text; margin: 0;
-        }
-
-        .grade-badge {
-            display: inline-block; background: var(--cyan); color: white;
-            padding: 0.25rem 0.75rem; border-radius: 12px; font-size: 0.75rem;
-            font-weight: 600; letter-spacing: 0.5px;
-        }
-
-        .tabs {
-            display: flex; gap: 0.5rem; padding: 1rem 1.5rem 0; border-bottom: 1px solid var(--border);
-            background: var(--bg);
-        }
-
-        .tab {
-            padding: 0.75rem 1.25rem; border: none; background: transparent; color: var(--text2);
-            font-size: 0.95rem; font-weight: 500; cursor: pointer;
-            border-bottom: 2px solid transparent; transition: all 0.3s;
-            font-family: 'Inter', sans-serif;
-        }
-        .tab:hover { color: var(--text); }
-        .tab.active { color: var(--cyan); border-bottom-color: var(--cyan); }
-        .tab:focus-visible { outline: 2px solid var(--cyan); }
-
         .content {
             flex: 1; overflow-y: auto; padding: 1.5rem;
             display: none; flex-direction: column; gap: 1.5rem;
@@ -244,18 +198,33 @@
     </style>
 </head>
 <body>
-    <header>
-        <button class="back-btn" onclick="window.location.href='../../VINCULUM-Hub.html'" aria-label="Back to VINCULUM Hub">←</button>
-        <div class="title-group">
-            <h1 class="title">Measurement Converter</h1>
-            <span class="grade-badge">GRADE 4</span>
+    <div class="vinculum-header">
+        <div class="vinculum-header-left">
+            <a href="../../VINCULUM-Hub.html" class="vinculum-back-btn" aria-label="Back to Hub">
+                <svg viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="2"><path d="M8 1L3 6l5 5"/></svg>
+                Hub
+            </a>
+            <div class="vinculum-header-title"><span class="brand">Measurement Conversion</span></div>
+            <span class="vinculum-header-badge">GRADE 4</span>
         </div>
-    </header>
+        <div class="vinculum-header-right">
+            <div class="vinculum-std-tags">
+                <span class="vinculum-std-tag">4.MD.1</span>
+                <span class="vinculum-std-tag mn">MN 4.3.1.1</span>
+            </div>
+        </div>
+    </div>
 
-    <div class="tabs">
-        <button class="tab active" onclick="switchMode('explore')">Explore</button>
-        <button class="tab" onclick="switchMode('practice')">Practice</button>
-        <button class="tab" onclick="switchMode('play')">Play</button>
+    <div class="vinculum-mode-tabs">
+        <button class="vinculum-mode-tab active-explore" data-mode="explore">🔍 Explore</button>
+        <button class="vinculum-mode-tab" data-mode="practice">📝 Practice</button>
+        <button class="vinculum-mode-tab" data-mode="play">🎮 Play</button>
+        <div class="vinculum-diff-selector">
+            <span class="vinculum-diff-label">Level</span>
+            <button class="vinculum-diff-btn active" data-diff="emergent">Emergent</button>
+            <button class="vinculum-diff-btn" data-diff="developing">Developing</button>
+            <button class="vinculum-diff-btn" data-diff="proficient">Proficient</button>
+        </div>
     </div>
 
     <div id="explore" class="content active">
@@ -369,6 +338,7 @@
 
     <span class="sr-only" role="status" aria-live="polite" id="ariaStatus"></span>
 
+    <script src="../../vinculum-input.js"></script>
     <script>
         /* INDIGENOUS: nation=Yup'ik/Dakota/Anishinaabe, context=body_measurement_conversion */
         const S = { mode: 'explore', diff: 'emergent', score: 0, total: 0, streak: 0, recent: [] };
@@ -383,18 +353,20 @@
         let currentProblem = problems[0];
         let playProblem = { q: 'A rope is 3 meters long. How many centimeters?', a: 300, u: 'cm' };
 
-        function switchMode(mode) {
-            S.mode = mode;
-            document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
-            event.target.classList.add('active');
-            document.querySelectorAll('.content').forEach(c => c.classList.remove('active'));
-            document.getElementById(mode).classList.add('active');
+        document.querySelectorAll('.vinculum-mode-tab').forEach(function(tab) {
+            tab.addEventListener('click', function() {
+                var mode = this.dataset.mode;
+                S.mode = mode;
+                document.querySelectorAll('.vinculum-mode-tab').forEach(function(t) { t.className = 'vinculum-mode-tab'; });
+                this.classList.add(mode === 'explore' ? 'active-explore' : mode === 'practice' ? 'active-practice' : 'active-play');
+                document.querySelectorAll('.content').forEach(function(c) { c.classList.remove('active'); });
+                document.getElementById(mode).classList.add('active');
 
-            if (mode === 'practice') generatePracticeProblem();
-            if (mode === 'play') generatePlayProblem();
-
-            updateStats();
-        }
+                if (mode === 'practice') generatePracticeProblem();
+                if (mode === 'play') generatePlayProblem();
+                updateStats();
+            });
+        });
 
         function generatePracticeProblem() {
             currentProblem = problems[Math.floor(Math.random() * problems.length)];

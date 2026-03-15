@@ -18,68 +18,6 @@
       overflow: hidden;
       user-select: none;
     }
-    header {
-      background: var(--grad);
-      padding: 1rem 1.5rem;
-      display: flex;
-      align-items: center;
-      gap: 1rem;
-      box-shadow: 0 2px 8px rgba(0,0,0,0.1);
-    }
-    .back-btn {
-      width: 40px;
-      height: 40px;
-      border-radius: 8px;
-      background: rgba(255,255,255,0.2);
-      border: none;
-      color: white;
-      font-size: 1.5rem;
-      cursor: pointer;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      transition: 0.2s;
-    }
-    .back-btn:hover { background: rgba(255,255,255,0.3); }
-    .back-btn:focus-visible { outline: 2px solid var(--cyan); }
-    h1 {
-      flex: 1;
-      color: white;
-      font-size: 1.8rem;
-      font-weight: 700;
-    }
-    .grade-badge {
-      background: rgba(255,255,255,0.3);
-      padding: 0.4rem 0.8rem;
-      border-radius: 20px;
-      color: white;
-      font-weight: 600;
-      font-size: 0.9rem;
-    }
-    .tabs {
-      display: flex;
-      gap: 0.5rem;
-      padding: 1rem 1.5rem;
-      background: var(--bg2);
-      border-bottom: 1px solid var(--border);
-    }
-    .tab {
-      padding: 0.7rem 1.2rem;
-      border: none;
-      background: transparent;
-      color: var(--text2);
-      cursor: pointer;
-      font-weight: 600;
-      border-radius: 8px;
-      transition: 0.2s;
-      font-size: 0.95rem;
-    }
-    .tab:hover { background: var(--card); }
-    .tab.active {
-      background: var(--cyan);
-      color: white;
-    }
-    .tab:focus-visible { outline: 2px solid var(--cyan); }
     .content {
       flex: 1;
       overflow-y: auto;
@@ -319,15 +257,32 @@
   </style>
 </head>
 <body>
-  <header>
-    <a href="../../VINCULUM-Hub.html" class="back-btn" aria-label="Back to VINCULUM Hub">←</a>
-    <h1>Place Value Relationships</h1>
-    <div class="grade-badge">GRADE 4</div>
-  </header>
-  <div class="tabs">
-    <button class="tab active" data-mode="explore">Explore</button>
-    <button class="tab" data-mode="practice">Practice</button>
-    <button class="tab" data-mode="play">Play</button>
+  <div class="vinculum-header">
+    <div class="vinculum-header-left">
+      <a href="../../VINCULUM-Hub.html" class="vinculum-back-btn" aria-label="Back to Hub">
+        <svg viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="2"><path d="M8 1L3 6l5 5"/></svg>
+        Hub
+      </a>
+      <div class="vinculum-header-title"><span class="brand">Place Value Relationships</span></div>
+      <span class="vinculum-header-badge">GRADE 4</span>
+    </div>
+    <div class="vinculum-header-right">
+      <div class="vinculum-std-tags">
+        <span class="vinculum-std-tag">4.NBT.1</span>
+        <span class="vinculum-std-tag mn">MN 4.1.1.1</span>
+      </div>
+    </div>
+  </div>
+  <div class="vinculum-mode-tabs">
+    <button class="vinculum-mode-tab active-explore" data-mode="explore">🔍 Explore</button>
+    <button class="vinculum-mode-tab" data-mode="practice">📝 Practice</button>
+    <button class="vinculum-mode-tab" data-mode="play">🎮 Play</button>
+    <div class="vinculum-diff-selector">
+      <span class="vinculum-diff-label">Level</span>
+      <button class="vinculum-diff-btn active" data-diff="emergent">Emergent</button>
+      <button class="vinculum-diff-btn" data-diff="developing">Developing</button>
+      <button class="vinculum-diff-btn" data-diff="proficient">Proficient</button>
+    </div>
   </div>
   <div class="content active" id="explore">
     <p class="mode-name">🔍 Explore: Interactive Discovery</p>
@@ -409,6 +364,7 @@
   </div>
   <div id="feedback" class="feedback"></div>
   <div class="sr-only" role="status" aria-live="polite" id="ariaLive"></div>
+  <script src="../../vinculum-input.js"></script>
   <script>
     const S = { mode: 'explore', diff: 'emergent', score: 0, total: 0, streak: 0, answers: [] };
 
@@ -680,13 +636,15 @@
     }
 
     // Tab switching
-    document.querySelectorAll('.tab').forEach(tab => {
+    document.querySelectorAll('.vinculum-mode-tab').forEach(tab => {
       tab.addEventListener('click', function() {
         const mode = this.dataset.mode;
         S.mode = mode;
-        document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+        document.querySelectorAll('.vinculum-mode-tab').forEach(t => {
+          t.className = 'vinculum-mode-tab';
+        });
+        this.classList.add(mode === 'explore' ? 'active-explore' : mode === 'practice' ? 'active-practice' : 'active-play');
         document.querySelectorAll('.content').forEach(c => c.classList.remove('active'));
-        this.classList.add('active');
         document.getElementById(mode).classList.add('active');
 
         if (mode === 'practice' && document.getElementById('practiceContent').innerHTML === '') {
@@ -694,6 +652,16 @@
         } else if (mode === 'play' && document.getElementById('playContent').innerHTML === '') {
           renderPlay();
         }
+      });
+    });
+
+    // Difficulty selector buttons
+    document.querySelectorAll('.vinculum-diff-btn').forEach(btn => {
+      btn.addEventListener('click', function() {
+        S.diff = this.dataset.diff;
+        document.querySelectorAll('.vinculum-diff-btn').forEach(b => b.classList.remove('active'));
+        this.classList.add('active');
+        updateDifficultyUI(S.mode === 'practice' ? 'practice' : 'play');
       });
     });
   </script>
