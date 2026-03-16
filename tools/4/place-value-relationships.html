@@ -1,653 +1,826 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Place Value Relationships - VINCULUM Grade 4</title>
-  <link rel="stylesheet" href="../../vinculum-core.css">
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700;900&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
-  <style>
-    * { margin: 0; padding: 0; box-sizing: border-box; }
-    body {
-      font-family: 'Inter', sans-serif;
-      background-color: var(--bg);
-      color: var(--text);
-      height: 100vh;
-      display: flex;
-      flex-direction: column;
-      overflow: hidden;
-      user-select: none;
-    }
-    .content {
-      flex: 1;
-      overflow-y: auto;
-      padding: 1.5rem;
-      display: none;
-    }
-    .content.active { display: block; }
-    .mode-name {
-      font-size: 0.85rem;
-      color: var(--text2);
-      margin-bottom: 1rem;
-      text-transform: uppercase;
-      letter-spacing: 0.5px;
-    }
-    .card {
-      background: var(--card);
-      border: 1px solid var(--border);
-      border-radius: 12px;
-      padding: 1.5rem;
-      margin-bottom: 1.5rem;
-    }
-    h2 {
-      color: var(--cyan);
-      font-size: 1.3rem;
-      margin-bottom: 1rem;
-    }
-    .controls {
-      display: flex;
-      gap: 1rem;
-      flex-wrap: wrap;
-      margin-bottom: 1.5rem;
-    }
-    .btn {
-      padding: 0.8rem 1.5rem;
-      border: none;
-      border-radius: 8px;
-      font-weight: 600;
-      cursor: pointer;
-      transition: 0.2s;
-      font-size: 0.95rem;
-    }
-    .btn-primary {
-      background: var(--cyan);
-      color: white;
-    }
-    .btn-primary:hover { background: #00acc1; }
-    .btn-primary:focus-visible { outline: 2px solid var(--cyan); }
-    .btn-secondary {
-      background: var(--card);
-      color: var(--text);
-      border: 1px solid var(--border);
-    }
-    .btn-secondary:hover { background: var(--bg2); }
-    .btn-secondary:focus-visible { outline: 2px solid var(--cyan); }
-    .place-value-display {
-      background: var(--bg);
-      border-radius: 8px;
-      padding: 1.5rem;
-      margin-bottom: 1.5rem;
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(80px, 1fr));
-      gap: 1rem;
-    }
-    .place-value-box {
-      background: var(--card);
-      border: 2px solid var(--border);
-      border-radius: 8px;
-      padding: 1rem;
-      text-align: center;
-      cursor: pointer;
-      transition: 0.2s;
-      min-width: 80px;
-    }
-    .place-value-box:hover {
-      border-color: var(--cyan);
-      transform: scale(1.05);
-    }
-    .place-value-box:focus-visible {
-      outline: 2px solid var(--cyan);
-    }
-    .place-value-label {
-      font-size: 0.75rem;
-      color: var(--text2);
-      text-transform: uppercase;
-      letter-spacing: 0.5px;
-      margin-bottom: 0.5rem;
-      font-weight: 600;
-    }
-    .place-value-digit {
-      font-family: 'JetBrains Mono', monospace;
-      font-size: 2rem;
-      font-weight: 700;
-      color: var(--cyan);
-    }
-    .animation-area {
-      background: var(--bg);
-      border-radius: 8px;
-      padding: 2rem;
-      margin-bottom: 1.5rem;
-      text-align: center;
-      min-height: 200px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-    }
-    .blocks {
-      display: flex;
-      gap: 1rem;
-      flex-wrap: wrap;
-      justify-content: center;
-    }
-    .block {
-      border-radius: 4px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      color: white;
-      font-weight: 600;
-      transition: all 0.6s cubic-bezier(0.34, 1.56, 0.64, 1);
-    }
-    .block-unit { width: 30px; height: 30px; background: var(--green); }
-    .block-ten { width: 60px; height: 30px; background: var(--cyan); }
-    .block-hundred { width: 60px; height: 60px; background: var(--red); }
-    .block-thousand { width: 90px; height: 90px; background: var(--green); font-size: 1.2rem; }
-    .block-scale {
-      animation: scaleBlock 0.6s ease;
-    }
-    @keyframes scaleBlock {
-      0% { transform: scale(1); }
-      50% { transform: scale(1.1); }
-      100% { transform: scale(1); }
-    }
-    .question {
-      background: var(--bg2);
-      border-left: 4px solid var(--cyan);
-      padding: 1rem;
-      border-radius: 4px;
-      margin-bottom: 1rem;
-      font-size: 0.95rem;
-    }
-    .question strong { color: var(--cyan); }
-    .answer-input {
-      padding: 0.8rem;
-      border: 1px solid var(--border);
-      border-radius: 6px;
-      background: var(--bg);
-      color: var(--text);
-      font-family: 'JetBrains Mono', monospace;
-      font-size: 1.1rem;
-      width: 120px;
-      text-align: center;
-    }
-    .answer-input:focus {
-      outline: 2px solid var(--cyan);
-    }
-    .answer-group {
-      display: flex;
-      gap: 1rem;
-      align-items: center;
-      flex-wrap: wrap;
-      margin-bottom: 1rem;
-    }
-    .feedback {
-      position: fixed;
-      top: 50%;
-      left: 50%;
-      transform: translate(-50%, -50%) scale(0.8);
-      opacity: 0;
-      transition: all 0.3s ease;
-      padding: 1.5rem 2rem;
-      border-radius: 12px;
-      font-weight: 600;
-      z-index: 1000;
-      pointer-events: none;
-    }
-    .feedback.show {
-      opacity: 1;
-      transform: translate(-50%, -50%) scale(1);
-    }
-    .feedback.correct {
-      background: var(--green);
-      color: white;
-    }
-    .feedback.incorrect {
-      background: var(--red);
-      color: white;
-    }
-    .difficulty {
-      display: flex;
-      gap: 1rem;
-      margin-bottom: 1.5rem;
-      align-items: center;
-    }
-    .diff-indicator {
-      font-size: 0.8rem;
-      color: var(--text2);
-      text-transform: uppercase;
-      letter-spacing: 0.5px;
-      font-weight: 600;
-    }
-    .diff-bar {
-      width: 150px;
-      height: 6px;
-      background: var(--border);
-      border-radius: 3px;
-      overflow: hidden;
-    }
-    .diff-fill {
-      height: 100%;
-      background: var(--cyan);
-      width: 33%;
-      transition: width 0.3s ease;
-    }
-    .stats {
-      display: flex;
-      gap: 2rem;
-      margin-top: 1rem;
-      font-size: 0.9rem;
-    }
-    .stat {
-      display: flex;
-      gap: 0.5rem;
-      color: var(--text2);
-    }
-    .stat strong { color: var(--text); }
-    .sr-only {
-      position: absolute;
-      width: 1px;
-      height: 1px;
-      padding: 0;
-      margin: -1px;
-      overflow: hidden;
-      clip: rect(0, 0, 0, 0);
-      white-space: nowrap;
-      border-width: 0;
-    }
-  </style>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>VINCULUM — Place Value Explorer</title>
+<link rel="stylesheet" href="../../vinculum-core.css">
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;600&display=swap');
+*:focus-visible{outline:2px solid var(--cyan);outline-offset:2px;border-radius:4px;}
+.sr-only{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0;}
+*{margin:0;padding:0;box-sizing:border-box;}
+body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);height:100vh;display:flex;flex-direction:column;overflow:hidden;user-select:none;}
+
+/* ── Header ── */
+.vinculum-header{display:flex;align-items:center;justify-content:space-between;padding:12px 24px;background:var(--bg2);border-bottom:1px solid var(--border);flex-shrink:0;}
+.vinculum-header-left{display:flex;align-items:center;gap:16px;}
+.vinculum-back-btn{padding:6px 12px;border-radius:8px;border:1px solid var(--border);background:transparent;color:var(--text2);font-size:13px;font-family:inherit;cursor:pointer;text-decoration:none;}
+.vinculum-back-btn:hover{background:var(--card);color:var(--cyan);}
+.vinculum-header-title{font-size:18px;font-weight:800;}
+.vinculum-header-title span{background:var(--grad);-webkit-background-clip:text;-webkit-text-fill-color:transparent;}
+.vinculum-header-badge{font-size:10px;font-weight:700;padding:3px 10px;border-radius:6px;background:rgba(0,230,118,0.1);color:var(--green);border:1px solid rgba(0,230,118,0.2);letter-spacing:1px;}
+.vinculum-std-tags{display:flex;gap:6px;}
+.vinculum-std-tag{font-size:10px;font-family:'JetBrains Mono',monospace;font-weight:600;padding:3px 8px;border-radius:5px;background:rgba(0,212,255,0.08);color:var(--cyan);}
+.vinculum-std-tag.mn{background:rgba(255,145,0,0.08);color:var(--orange);}
+
+/* ── Mode Tabs ── */
+.vinculum-mode-tabs{display:flex;gap:4px;padding:8px 24px;background:var(--bg2);border-bottom:1px solid var(--border);flex-shrink:0;}
+.vinculum-mode-tab{padding:8px 20px;border-radius:8px;border:1px solid transparent;background:transparent;color:var(--muted);font-size:13px;font-weight:600;font-family:inherit;cursor:pointer;display:flex;align-items:center;gap:6px;transition:all 0.2s;}
+.vinculum-mode-tab:hover{color:var(--text2);background:var(--card);}
+.vinculum-mode-tab.active-explore{background:rgba(0,212,255,0.1);color:var(--cyan);border-color:rgba(0,212,255,0.3);}
+.vinculum-mode-tab.active-practice{background:rgba(0,230,118,0.1);color:var(--green);border-color:rgba(0,230,118,0.3);}
+.vinculum-mode-tab.active-play{background:rgba(255,59,139,0.1);color:var(--pink);border-color:rgba(255,59,139,0.3);}
+
+/* ── View Toggle ── */
+.view-toggle{display:flex;gap:4px;margin-left:auto;}
+.view-btn{padding:5px 14px;border-radius:6px;border:1px solid var(--border);background:transparent;color:var(--muted);font-size:11px;font-weight:700;font-family:inherit;cursor:pointer;transition:all 0.2s;letter-spacing:0.5px;}
+.view-btn.active{background:rgba(0,212,255,0.12);color:var(--cyan);border-color:rgba(0,212,255,0.3);}
+
+/* ── Main Layout ── */
+.main{flex:1;display:flex;overflow:hidden;}
+.workspace{flex:1;display:flex;flex-direction:column;overflow-y:auto;padding:20px 24px;}
+.side-panel{width:280px;background:var(--bg2);border-left:1px solid var(--border);padding:20px;overflow-y:auto;flex-shrink:0;}
+.panel-section{margin-bottom:20px;}
+.panel-title{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:1.5px;color:var(--muted);margin-bottom:8px;}
+.panel-text{font-size:13px;color:var(--text2);line-height:1.6;}
+
+/* ── Block Chart ── */
+.block-chart{display:flex;background:var(--card);border:1px solid var(--border);border-radius:12px;overflow:hidden;min-height:440px;}
+.place-col{flex:1;display:flex;flex-direction:column;border-right:1px solid var(--border);}
+.place-col:last-child{border-right:none;}
+.place-col-header{padding:8px 4px;text-align:center;font-size:10px;font-weight:800;text-transform:uppercase;letter-spacing:1px;color:#fff;}
+.place-col-power{padding:4px;text-align:center;font-size:10px;font-weight:600;color:var(--muted);background:var(--bg2);border-bottom:1px solid var(--border);}
+.place-col-name{padding:4px;text-align:center;font-size:9px;font-style:italic;color:var(--muted);background:var(--bg);border-bottom:1px solid var(--border);}
+.place-col-visual{flex:1;position:relative;overflow:hidden;background:linear-gradient(to top,var(--bg2),var(--bg));padding:8px;display:flex;align-items:flex-end;justify-content:center;}
+.place-col-controls{padding:12px 8px;background:var(--bg2);border-top:1px solid var(--border);text-align:center;}
+.place-col-value{font-size:28px;font-weight:900;font-family:'JetBrains Mono',monospace;color:var(--text);margin-bottom:4px;}
+
+/* Slider */
+.pv-slider{-webkit-appearance:none;width:100%;height:6px;border-radius:3px;background:var(--border);outline:none;cursor:pointer;}
+.pv-slider::-webkit-slider-thumb{-webkit-appearance:none;width:22px;height:22px;border-radius:50%;background:var(--cyan);cursor:pointer;box-shadow:0 2px 6px rgba(0,0,0,0.3);}
+.pv-slider::-moz-range-thumb{width:22px;height:22px;border-radius:50%;background:var(--cyan);cursor:pointer;border:none;}
+
+/* Decimal point column */
+.decimal-col{display:flex;align-items:center;justify-content:center;width:30px;font-size:40px;font-weight:900;color:var(--muted);flex-shrink:0;background:var(--bg);}
+
+/* ── Stacking Blocks ── */
+.block-layer{position:absolute;transition:all 0.3s ease-out;pointer-events:none;display:flex;align-items:center;justify-content:center;}
+
+/* Whole number blocks — warm colors */
+.blk-1000{background:#b91c1c;border:1px solid #7f1d1d;box-shadow:3px -3px 0 #991b1b,6px -6px 0 #7f1d1d,9px -9px 0 #450a0a;background-image:linear-gradient(to right,rgba(255,255,255,0.08) 1px,transparent 1px),linear-gradient(to bottom,rgba(255,255,255,0.08) 1px,transparent 1px);background-size:10% 10%;}
+.blk-100{background:#ea580c;border:1px solid #9a3412;box-shadow:2px -2px 0 #9a3412;background-image:linear-gradient(to right,rgba(255,255,255,0.2) 1px,transparent 1px),linear-gradient(to bottom,rgba(255,255,255,0.2) 1px,transparent 1px);background-size:10% 10%;}
+.blk-10{background:#ca8a04;border:1px solid #854d0e;box-shadow:1px -1px 0 #854d0e;background-image:linear-gradient(to bottom,rgba(255,255,255,0.3) 1px,transparent 1px);background-size:100% 10%;}
+.blk-1{background:#16a34a;border:1px solid #064e3b;}
+
+/* Decimal blocks — cool colors (rescaled!) */
+.blk-one-flat{background:#16a34a;border:1px solid #064e3b;box-shadow:2px -2px 0 #064e3b;background-image:linear-gradient(to right,rgba(255,255,255,0.2) 1px,transparent 1px),linear-gradient(to bottom,rgba(255,255,255,0.2) 1px,transparent 1px);background-size:10% 10%;}
+.blk-tenth{background:#2563eb;border:1px solid #1e3a8a;box-shadow:1px -1px 0 #1e3a8a;background-image:linear-gradient(to bottom,rgba(255,255,255,0.3) 1px,transparent 1px);background-size:100% 10%;}
+.blk-hundredth{background:#4f46e5;border:1px solid #312e81;}
+.blk-thousandth{background:#7c3aed;border:0.5px solid #4c1d95;}
+
+/* ── Readout Cards ── */
+.readout-row{display:flex;gap:12px;margin-top:16px;}
+.readout-card{flex:1;background:var(--card);border:1px solid var(--border);border-radius:10px;padding:14px;}
+.readout-label{font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:1.5px;color:var(--muted);margin-bottom:6px;}
+.readout-value{font-family:'JetBrains Mono',monospace;font-weight:800;font-size:20px;color:var(--text);word-break:break-word;}
+.readout-sub{font-size:12px;font-weight:500;color:var(--text2);margin-top:4px;line-height:1.4;}
+
+/* ── Fraction Display ── */
+.frac-display{display:flex;align-items:center;gap:16px;}
+.frac-stack{display:flex;flex-direction:column;align-items:center;font-family:'JetBrains Mono',monospace;font-weight:800;font-size:18px;color:var(--text);}
+.frac-bar{width:100%;height:2px;background:var(--text);margin:2px 0;}
+.frac-simplify{padding:6px 14px;border-radius:6px;border:1px solid var(--cyan);background:rgba(0,212,255,0.08);color:var(--cyan);font-size:11px;font-weight:700;font-family:inherit;cursor:pointer;transition:all 0.2s;}
+.frac-simplify:hover{background:rgba(0,212,255,0.2);}
+
+/* ── Rescale Illustration ── */
+.rescale-card{background:var(--card);border:1px solid var(--border);border-radius:10px;padding:16px;margin-top:12px;}
+.rescale-row{display:flex;align-items:center;gap:8px;margin:6px 0;font-size:12px;color:var(--text2);}
+.rescale-block{border-radius:3px;display:inline-block;flex-shrink:0;}
+.rescale-arrow{color:var(--cyan);font-weight:800;font-size:14px;}
+.rescale-label{font-weight:700;font-family:'JetBrains Mono',monospace;}
+
+/* ── Controls / Challenge ── */
+.controls-row{display:flex;gap:8px;margin-top:16px;flex-wrap:wrap;justify-content:center;}
+.ctrl-btn{padding:10px 20px;border-radius:10px;border:1px solid var(--border);background:var(--card);color:var(--text2);font-size:13px;font-weight:600;font-family:inherit;cursor:pointer;transition:all 0.2s;display:flex;align-items:center;gap:6px;}
+.ctrl-btn:hover{background:var(--card2);color:var(--text);}
+.ctrl-btn.primary{background:var(--grad);color:var(--bg);border-color:transparent;font-weight:700;}
+
+/* ── Practice / Play ── */
+.question-card{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:20px;text-align:center;margin-bottom:16px;}
+.question-text{font-size:16px;font-weight:600;color:var(--text);margin-bottom:12px;}
+.answer-grid{display:flex;gap:10px;flex-wrap:wrap;justify-content:center;}
+.answer-btn{min-width:80px;padding:12px 18px;border-radius:10px;border:2px solid var(--border);background:var(--card);color:var(--text);font-size:16px;font-weight:700;font-family:'JetBrains Mono',monospace;cursor:pointer;transition:all 0.15s;}
+.answer-btn:hover{border-color:var(--cyan);transform:scale(1.05);}
+.answer-input{padding:12px 16px;border-radius:8px;border:2px solid var(--border);background:var(--bg);color:var(--text);font-size:18px;font-weight:700;font-family:'JetBrains Mono',monospace;width:180px;text-align:center;}
+.answer-input:focus{outline:none;border-color:var(--cyan);}
+
+.score-display{text-align:center;padding:16px;background:var(--card);border-radius:12px;margin-bottom:12px;}
+.score-value{font-size:36px;font-weight:900;font-family:'JetBrains Mono',monospace;background:var(--grad);-webkit-background-clip:text;-webkit-text-fill-color:transparent;}
+.score-label{font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:1px;}
+.streak-bar{height:6px;background:var(--card);border-radius:3px;overflow:hidden;margin-top:8px;}
+.streak-fill{height:100%;background:var(--grad);border-radius:3px;transition:width 0.3s;}
+
+/* ── Feedback ── */
+.feedback{position:fixed;top:50%;left:50%;transform:translate(-50%,-50%) scale(0);padding:24px 48px;border-radius:20px;font-size:28px;font-weight:800;z-index:200;pointer-events:none;transition:transform 0.3s cubic-bezier(0.175,0.885,0.32,1.275),opacity 0.3s;opacity:0;}
+.feedback.show{transform:translate(-50%,-50%) scale(1);opacity:1;}
+.feedback.correct{background:rgba(0,230,118,0.15);color:var(--green);border:2px solid var(--green);}
+.feedback.incorrect{background:rgba(255,59,139,0.15);color:var(--pink);border:2px solid var(--pink);}
+
+::-webkit-scrollbar{width:6px;}::-webkit-scrollbar-track{background:transparent;}::-webkit-scrollbar-thumb{background:var(--border);border-radius:3px;}
+</style>
 </head>
 <body>
-  <div class="vinculum-header">
-    <div class="vinculum-header-left">
-      <a href="../../VINCULUM-Hub.html" class="vinculum-back-btn" aria-label="Back to Hub">
-        <svg viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="2"><path d="M8 1L3 6l5 5"/></svg>
-        Hub
-      </a>
-      <div class="vinculum-header-title"><span class="brand">Place Value Relationships</span></div>
-      <span class="vinculum-header-badge">GRADE 4</span>
-    </div>
-    <div class="vinculum-header-right">
-      <div class="vinculum-std-tags">
-        <span class="vinculum-std-tag">4.NBT.1</span>
-        <span class="vinculum-std-tag mn">MN 4.1.1.1</span>
-      </div>
-    </div>
+
+<div class="vinculum-header">
+  <div class="vinculum-header-left">
+    <a class="vinculum-back-btn" href="../../VINCULUM-Hub.html">◀ Hub</a>
+    <div class="vinculum-header-title"><span>VINCULUM</span> Place Value Explorer</div>
+    <span class="vinculum-header-badge">4.NBT</span>
   </div>
-  <div class="vinculum-mode-tabs">
-    <button class="vinculum-mode-tab active-explore" data-mode="explore">🔍 Explore</button>
-    <button class="vinculum-mode-tab" data-mode="practice">📝 Practice</button>
-    <button class="vinculum-mode-tab" data-mode="play">🎮 Play</button>
-    <div class="vinculum-diff-selector">
-      <span class="vinculum-diff-label">Level</span>
-      <button class="vinculum-diff-btn active" data-diff="emergent">Emergent</button>
-      <button class="vinculum-diff-btn" data-diff="developing">Developing</button>
-      <button class="vinculum-diff-btn" data-diff="proficient">Proficient</button>
-    </div>
+  <div class="vinculum-std-tags">
+    <span class="vinculum-std-tag">4.NBT.1</span>
+    <span class="vinculum-std-tag">4.NBT.2</span>
+    <span class="vinculum-std-tag">4.NF.6</span>
+    <span class="vinculum-std-tag mn">MN 4.1.1.3</span>
   </div>
-  <div class="content active" id="explore">
-    <p class="mode-name">🔍 Explore: Interactive Discovery</p>
-    <div class="card">
-      <h2>Place Value Chart</h2>
-      <p style="margin-bottom: 1.5rem; color: var(--text2);">Click on a digit to see it shift left (×10) or right (÷10). Watch how place value changes!</p>
-      <div class="place-value-display" id="pvDisplay">
-        <div class="place-value-box" tabindex="0">
-          <div class="place-value-label">Millions</div>
-          <div class="place-value-digit" data-place="6">2</div>
-        </div>
-        <div class="place-value-box" tabindex="0">
-          <div class="place-value-label">Hundred Thousands</div>
-          <div class="place-value-digit" data-place="5">5</div>
-        </div>
-        <div class="place-value-box" tabindex="0">
-          <div class="place-value-label">Ten Thousands</div>
-          <div class="place-value-digit" data-place="4">0</div>
-        </div>
-        <div class="place-value-box" tabindex="0">
-          <div class="place-value-label">Thousands</div>
-          <div class="place-value-digit" data-place="3">3</div>
-        </div>
-        <div class="place-value-box" tabindex="0">
-          <div class="place-value-label">Hundreds</div>
-          <div class="place-value-digit" data-place="2">4</div>
-        </div>
-        <div class="place-value-box" tabindex="0">
-          <div class="place-value-label">Tens</div>
-          <div class="place-value-digit" data-place="1">7</div>
-        </div>
-        <div class="place-value-box" tabindex="0">
-          <div class="place-value-label">Ones</div>
-          <div class="place-value-digit" data-place="0">8</div>
-        </div>
-      </div>
-      <div class="animation-area">
-        <div class="blocks" id="blockDisplay"></div>
-      </div>
-    </div>
-    <div class="card">
-      <h2>See the Rule</h2>
-      <p style="color: var(--text2); font-style: italic; line-height: 1.6;">A digit in one place is <strong style="color: var(--cyan);">10 times</strong> what it represents in the place to its right.</p>
-    </div>
+</div>
+
+<div class="vinculum-mode-tabs">
+  <button class="vinculum-mode-tab active-explore" id="tabExplore" onclick="setMode('explore')">
+    <svg width="16" height="16" viewBox="0 0 48 48" fill="none"><path d="M4 24C4 24 12 12 24 12C36 12 44 24 44 24C44 24 36 36 24 36C12 36 4 24 4 24Z" stroke="currentColor" stroke-width="3" fill="none"/><circle cx="24" cy="24" r="7" stroke="currentColor" stroke-width="3" fill="none"/></svg> Explore
+  </button>
+  <button class="vinculum-mode-tab" id="tabPractice" onclick="setMode('practice')">
+    <svg width="16" height="16" viewBox="0 0 48 48" fill="none"><circle cx="24" cy="24" r="20" stroke="currentColor" stroke-width="3" fill="none" stroke-dasharray="126" stroke-dashoffset="32"/><polyline points="16,24 22,32 34,16" stroke="currentColor" stroke-width="4" fill="none" stroke-linecap="round"/></svg> Practice
+  </button>
+  <button class="vinculum-mode-tab" id="tabPlay" onclick="setMode('play')">
+    <svg width="16" height="16" viewBox="0 0 48 48" fill="none"><polygon points="28,4 12,28 22,28 18,44 36,18 26,18" fill="none" stroke="currentColor" stroke-width="3" stroke-linejoin="round"/></svg> Play
+  </button>
+  <div class="view-toggle">
+    <button class="view-btn active" id="viewWhole" onclick="switchView('whole')">Whole (1000–1)</button>
+    <button class="view-btn" id="viewDecimal" onclick="switchView('decimal')">Decimal (1–0.001)</button>
   </div>
-  <div class="content" id="practice">
-    <p class="mode-name">📝 Practice: Read & Write</p>
-    <div class="card">
-      <h2>Multi-Digit Numbers</h2>
-      <div class="difficulty">
-        <span class="diff-indicator">Level:</span>
-        <div class="diff-bar"><div class="diff-fill" id="diffFill"></div></div>
-        <span id="diffLabel" style="color: var(--text);">Emergent</span>
-      </div>
-      <div id="practiceContent"></div>
-      <div class="stats">
-        <div class="stat"><span>Score:</span> <strong id="score">0</strong></div>
-        <div class="stat"><span>Total:</span> <strong id="total">0</strong></div>
-        <div class="stat"><span>Streak:</span> <strong id="streak">0</strong></div>
-      </div>
+</div>
+
+<div class="main">
+  <div class="workspace" id="workspace"></div>
+  <div class="side-panel" id="sidePanel"></div>
+</div>
+<div class="feedback" id="feedback"></div>
+
+<script>
+/* ═══════════════════════════════════════════════════════════
+   VINCULUM Place Value Explorer
+   Grade 4 — 4.NBT.1, 4.NBT.2, 4.NF.6
+   Stacking base-10 blocks with rescaling concept
+   ═══════════════════════════════════════════════════════════ */
+
+const VIEWS = {
+  whole: [
+    { label:'Thousands', key:'th', color:'#b91c1c', name:'Cube (10×10×10)', power:3, w:100, h:100, cls:'blk-1000' },
+    { label:'Hundreds',  key:'h',  color:'#ea580c', name:'Flat (10×10)',    power:2, w:84,  h:84,  cls:'blk-100' },
+    { label:'Tens',      key:'t',  color:'#ca8a04', name:'Rod (10×1)',      power:1, w:14,  h:84,  cls:'blk-10' },
+    { label:'Ones',      key:'o',  color:'#16a34a', name:'Unit (1×1)',      power:0, w:14,  h:14,  cls:'blk-1' }
+  ],
+  decimal: [
+    { label:'Ones',       key:'od', color:'#16a34a', name:'Flat (1.0)',      power:0,  w:84, h:84, cls:'blk-one-flat' },
+    { label:'Tenths',     key:'d1', color:'#2563eb', name:'Rod (0.1)',       power:-1, w:10, h:84, cls:'blk-tenth' },
+    { label:'Hundredths', key:'d2', color:'#4f46e5', name:'Unit (0.01)',     power:-2, w:10, h:10, cls:'blk-hundredth' },
+    { label:'Thousandths',key:'d3', color:'#7c3aed', name:'Tiny (0.001)',    power:-3, w:4,  h:4,  cls:'blk-thousandth' }
+  ]
+};
+
+let S = {
+  mode: 'explore', view: 'whole',
+  vals: { th:0, h:0, t:0, o:0, od:0, d1:0, d2:0, d3:0 },
+  // Practice
+  pQuestion: null, pScore: 0, pStreak: 0, pBest: 0,
+  // Play
+  target: null, round: 0, total: 10, score: 0, streak: 0, best: 0
+};
+
+function setMode(m) {
+  S.mode = m;
+  document.querySelectorAll('.vinculum-mode-tab').forEach(t => t.className = 'vinculum-mode-tab');
+  const tab = document.getElementById('tab' + m.charAt(0).toUpperCase() + m.slice(1));
+  if (tab) tab.className = 'vinculum-mode-tab active-' + m;
+  S.pScore = 0; S.pStreak = 0;
+  S.round = 0; S.score = 0; S.streak = 0;
+  if (m === 'practice') newPracticeQ();
+  render();
+}
+
+function switchView(v) {
+  S.view = v;
+  document.getElementById('viewWhole').className = 'view-btn' + (v === 'whole' ? ' active' : '');
+  document.getElementById('viewDecimal').className = 'view-btn' + (v === 'decimal' ? ' active' : '');
+  // Reset slider values for the new view
+  Object.keys(S.vals).forEach(k => S.vals[k] = 0);
+  S.target = null;
+  render();
+}
+
+function getChartValue() {
+  const cols = VIEWS[S.view];
+  let total = 0;
+  cols.forEach(c => { total += (S.vals[c.key] || 0) * Math.pow(10, c.power); });
+  return parseFloat(total.toFixed(4));
+}
+
+/* ═════ RENDERING ═════ */
+function render() {
+  const ws = document.getElementById('workspace');
+  const sp = document.getElementById('sidePanel');
+  if (S.mode === 'explore') renderExplore(ws, sp);
+  else if (S.mode === 'practice') renderPractice(ws, sp);
+  else renderPlay(ws, sp);
+}
+
+function buildBlockChart(interactive) {
+  const cols = VIEWS[S.view];
+  let html = '<div class="block-chart">';
+
+  cols.forEach((col, ci) => {
+    // Insert decimal point between ones and tenths in decimal view
+    if (S.view === 'decimal' && ci === 1) {
+      html += '<div class="decimal-col">.</div>';
+    }
+
+    const val = S.vals[col.key] || 0;
+    html += `<div class="place-col">`;
+    html += `<div class="place-col-header" style="background:${col.color};">${col.label}</div>`;
+    html += `<div class="place-col-power">${col.power >= 0 ? '10<sup>' + col.power + '</sup>' : '1/' + Math.pow(10, Math.abs(col.power))}</div>`;
+    html += `<div class="place-col-name">${col.name}</div>`;
+    html += `<div class="place-col-visual" id="vis-${col.key}"></div>`;
+    html += `<div class="place-col-controls">`;
+    html += `<div class="place-col-value" id="lbl-${col.key}">${val}</div>`;
+    if (interactive) {
+      html += `<input type="range" class="pv-slider" id="sld-${col.key}" min="0" max="9" value="${val}" oninput="onSlider('${col.key}', this.value)">`;
+    }
+    html += `</div></div>`;
+  });
+
+  html += '</div>';
+  return html;
+}
+
+function onSlider(key, val) {
+  S.vals[key] = parseInt(val);
+  document.getElementById('lbl-' + key).textContent = val;
+  renderVisual(key, parseInt(val));
+  updateReadout();
+}
+
+function renderVisual(key, count) {
+  const col = [...VIEWS.whole, ...VIEWS.decimal].find(c => c.key === key);
+  const container = document.getElementById('vis-' + key);
+  if (!container || !col) return;
+  container.innerHTML = '';
+
+  for (let i = 0; i < count; i++) {
+    const el = document.createElement('div');
+    el.className = 'block-layer ' + col.cls;
+    el.style.width = col.w + 'px';
+    el.style.height = col.h + 'px';
+
+    // Stacking offsets — bigger blocks stack higher
+    let vStep, hStep;
+    if (S.view === 'whole') {
+      vStep = col.power === 3 ? 18 : col.power === 2 ? 14 : col.power === 1 ? 12 : 8;
+      hStep = col.power >= 2 ? 3 : 1;
+    } else {
+      vStep = col.power === 0 ? 16 : col.power === -1 ? 14 : col.power === -2 ? 8 : 5;
+      hStep = col.power >= -1 ? 3 : 0;
+    }
+
+    el.style.bottom = (i * vStep) + 'px';
+    el.style.left = `calc(50% - ${col.w / 2}px + ${i * hStep}px)`;
+    el.style.zIndex = i;
+    container.appendChild(el);
+  }
+}
+
+function renderAllVisuals() {
+  const cols = VIEWS[S.view];
+  cols.forEach(c => renderVisual(c.key, S.vals[c.key] || 0));
+}
+
+function updateReadout() {
+  const val = getChartValue();
+  const stdEl = document.getElementById('readout-std');
+  const wordEl = document.getElementById('readout-word');
+  const expEl = document.getElementById('readout-exp');
+  const fracNumEl = document.getElementById('frac-num');
+  const fracDenEl = document.getElementById('frac-den');
+
+  if (stdEl) stdEl.textContent = val;
+  if (wordEl) wordEl.textContent = numberToWords(val);
+  if (expEl) expEl.textContent = expandedForm(val);
+  if (fracNumEl && fracDenEl) {
+    const factor = S.view === 'decimal' ? 1000 : 1;
+    fracNumEl.textContent = Math.round(val * factor);
+    fracDenEl.textContent = factor;
+  }
+}
+
+/* ═════ EXPLORE MODE ═════ */
+function renderExplore(ws, sp) {
+  let h = buildBlockChart(true);
+
+  // Readouts
+  const val = getChartValue();
+  h += '<div class="readout-row">';
+  h += `<div class="readout-card"><div class="readout-label">Standard Form</div><div class="readout-value" id="readout-std">${val}</div></div>`;
+  h += `<div class="readout-card"><div class="readout-label">Expanded Form</div><div class="readout-sub" id="readout-exp">${expandedForm(val)}</div></div>`;
+
+  if (S.view === 'decimal') {
+    const factor = 1000;
+    const num = Math.round(val * factor);
+    h += `<div class="readout-card"><div class="readout-label">Fraction</div>
+      <div class="frac-display">
+        <div class="frac-stack"><span id="frac-num">${num}</span><div class="frac-bar"></div><span id="frac-den">${factor}</span></div>
+        <button class="frac-simplify" onclick="simplifyFrac()">Simplify</button>
+      </div></div>`;
+  }
+  h += '</div>';
+
+  h += `<div class="readout-card" style="margin-top:12px;"><div class="readout-label">Word Form</div><div class="readout-sub" id="readout-word">${numberToWords(val)}</div></div>`;
+
+  // Controls
+  h += '<div class="controls-row">';
+  h += `<button class="ctrl-btn" onclick="clearAll()">Reset</button>`;
+  h += `<button class="ctrl-btn primary" onclick="speakChallenge()">🔊 Challenge Me</button>`;
+  h += `<button class="ctrl-btn" onclick="checkChallenge()">Check Answer</button>`;
+  h += '</div>';
+
+  ws.innerHTML = h;
+  setTimeout(renderAllVisuals, 10);
+
+  // Side panel — rescaling concept
+  sp.innerHTML = buildSidePanel();
+}
+
+function buildSidePanel() {
+  let html = '';
+  html += `<div class="panel-section"><div class="panel-title">How to Use</div>
+    <div class="panel-text">
+      <strong style="color:var(--cyan);">Slide</strong> each column to add blocks.<br>
+      Watch them <strong>stack</strong> and see the number update in standard, expanded, word, and fraction form.
+    </div></div>`;
+
+  // Rescaling concept
+  html += `<div class="panel-section"><div class="panel-title">The Rescaling Secret</div>
+    <div class="panel-text" style="font-size:12px;line-height:1.7;">
+      Base-10 blocks <strong>repeat the same 3 shapes</strong> at every scale:<br><br>`;
+
+  if (S.view === 'whole') {
+    html += `<div class="rescale-row"><div class="rescale-block blk-1000" style="width:20px;height:20px;"></div> <span class="rescale-label" style="color:#b91c1c;">Cube</span> = 10 × 10 × 10</div>`;
+    html += `<div class="rescale-row"><div class="rescale-block blk-100" style="width:20px;height:20px;"></div> <span class="rescale-label" style="color:#ea580c;">Flat</span> = 10 × 10</div>`;
+    html += `<div class="rescale-row"><div class="rescale-block blk-10" style="width:8px;height:20px;"></div> <span class="rescale-label" style="color:#ca8a04;">Rod</span> = 10 × 1</div>`;
+    html += `<div class="rescale-row"><div class="rescale-block blk-1" style="width:8px;height:8px;"></div> <span class="rescale-label" style="color:#16a34a;">Unit</span> = 1</div>`;
+    html += `<br>Each shape is <strong style="color:var(--cyan);">10× bigger</strong> than the one below it.`;
+  } else {
+    html += `<div class="rescale-row"><div class="rescale-block blk-one-flat" style="width:20px;height:20px;"></div> <span class="rescale-label" style="color:#16a34a;">Flat</span> = 1.0 (the whole!)</div>`;
+    html += `<div class="rescale-row"><div class="rescale-block blk-tenth" style="width:8px;height:20px;"></div> <span class="rescale-label" style="color:#2563eb;">Rod</span> = 0.1 (1/10 of flat)</div>`;
+    html += `<div class="rescale-row"><div class="rescale-block blk-hundredth" style="width:8px;height:8px;"></div> <span class="rescale-label" style="color:#4f46e5;">Unit</span> = 0.01 (1/100)</div>`;
+    html += `<div class="rescale-row"><div class="rescale-block blk-thousandth" style="width:4px;height:4px;"></div> <span class="rescale-label" style="color:#7c3aed;">Tiny</span> = 0.001 (1/1000)</div>`;
+    html += `<br>The <span style="color:#16a34a;font-weight:700;">Unit from whole numbers</span> becomes the <span style="color:#16a34a;font-weight:700;">Flat</span> in decimals! Same shape cycle, zoomed in.`;
+  }
+
+  html += `</div></div>`;
+
+  html += `<div class="panel-section"><div class="panel-title">10× Rule (4.NBT.1)</div>
+    <div class="panel-text" style="font-size:12px;">A digit in one place represents <strong style="color:var(--cyan);">10 times</strong> what it represents in the place to its right.<br><br>
+    <em>Example:</em> The 3 in <strong>300</strong> is 10× the 3 in <strong>30</strong>.</div></div>`;
+
+  html += `<div class="panel-section"><div class="panel-title">Standards</div>
+    <div class="panel-text" style="font-size:11px;">
+      <strong style="color:var(--cyan);">4.NBT.1</strong> — 10× relationship<br>
+      <strong style="color:var(--cyan);">4.NBT.2</strong> — Read, write, compare multi-digit numbers<br>
+      <strong style="color:var(--cyan);">4.NF.6</strong> — Decimal notation for fractions with denominators 10 or 100
+    </div></div>`;
+
+  return html;
+}
+
+/* ═════ SPEECH CHALLENGE ═════ */
+function speakChallenge() {
+  const cols = VIEWS[S.view];
+  let val;
+  if (S.view === 'whole') {
+    val = Math.floor(Math.random() * 9999) + 1;
+  } else {
+    val = parseFloat((Math.random() * 9.999 + 0.001).toFixed(3));
+  }
+  S.target = val;
+  try {
+    const u = new SpeechSynthesisUtterance(String(val));
+    u.rate = 0.85;
+    window.speechSynthesis.cancel();
+    window.speechSynthesis.speak(u);
+  } catch(e) {}
+  showFB('Build: ' + val, 'correct', 2500);
+}
+
+function checkChallenge() {
+  if (S.target === null) { showFB('Press 🔊 first!', 'incorrect'); return; }
+  const current = getChartValue();
+  if (Math.abs(current - S.target) < 0.0001) {
+    showFB('Perfect! ' + S.target, 'correct');
+    S.target = null;
+  } else {
+    showFB('You have ' + current + ', need ' + S.target, 'incorrect', 3000);
+  }
+}
+
+function clearAll() {
+  Object.keys(S.vals).forEach(k => S.vals[k] = 0);
+  S.target = null;
+  render();
+}
+
+function simplifyFrac() {
+  const numEl = document.getElementById('frac-num');
+  const denEl = document.getElementById('frac-den');
+  if (!numEl || !denEl) return;
+  let n = parseInt(numEl.textContent), d = parseInt(denEl.textContent);
+  if (n === 0) return;
+  const g = gcd(Math.abs(n), Math.abs(d));
+  numEl.textContent = n / g;
+  denEl.textContent = d / g;
+}
+
+function gcd(a, b) { return b ? gcd(b, a % b) : a; }
+
+/* ═════ PRACTICE MODE ═════ */
+function newPracticeQ() {
+  const types = ['identify', 'expanded', 'wordToStd', 'digit'];
+  const type = types[Math.floor(Math.random() * types.length)];
+  let num;
+
+  if (S.view === 'whole') {
+    num = Math.floor(Math.random() * 9000) + 100;
+  } else {
+    num = parseFloat((Math.random() * 9 + 0.01).toFixed(2));
+  }
+
+  if (type === 'identify') {
+    // Show blocks, identify the number
+    const digits = decompose(num);
+    const choices = new Set([num]);
+    while (choices.size < 5) {
+      let c;
+      if (S.view === 'whole') {
+        c = num + (Math.floor(Math.random() * 200) - 100);
+        if (c > 0) choices.add(c);
+      } else {
+        c = parseFloat((num + (Math.random() * 2 - 1)).toFixed(2));
+        if (c > 0 && c < 10) choices.add(c);
+      }
+    }
+    S.pQuestion = { type, num, digits, choices: Array.from(choices).sort((a, b) => a - b) };
+  } else if (type === 'expanded') {
+    const correct = expandedForm(num);
+    const wrong1 = expandedForm(num + (S.view === 'whole' ? 100 : 0.1));
+    const wrong2 = expandedForm(num + (S.view === 'whole' ? 10 : 0.01));
+    S.pQuestion = { type, num, choices: shuffleArray([correct, wrong1, wrong2]) };
+  } else if (type === 'wordToStd') {
+    const word = numberToWords(num);
+    const choices = new Set([num]);
+    while (choices.size < 4) {
+      let c;
+      if (S.view === 'whole') {
+        c = num + (Math.floor(Math.random() * 300) - 150);
+        if (c > 0) choices.add(c);
+      } else {
+        c = parseFloat((num + (Math.random() * 2 - 1)).toFixed(2));
+        if (c > 0 && c < 10) choices.add(c);
+      }
+    }
+    S.pQuestion = { type, num, word, choices: Array.from(choices).sort((a,b) => a - b) };
+  } else {
+    // Which digit is in the __ place?
+    const places = S.view === 'whole'
+      ? [['thousands',3],['hundreds',2],['tens',1],['ones',0]]
+      : [['ones',0],['tenths',-1],['hundredths',-2]];
+    const [placeName, power] = places[Math.floor(Math.random() * places.length)];
+    const digitStr = S.view === 'whole' ? String(num) : num.toFixed(3);
+    let correctDigit;
+    if (power >= 0) {
+      correctDigit = Math.floor(num / Math.pow(10, power)) % 10;
+    } else {
+      const parts = num.toFixed(3).split('.');
+      correctDigit = parseInt(parts[1][Math.abs(power) - 1]) || 0;
+    }
+    S.pQuestion = { type: 'digit', num, placeName, correctDigit, choices: shuffleArray([0,1,2,3,4,5,6,7,8,9].slice(0, 6)) };
+    // Ensure correct answer is in choices
+    if (!S.pQuestion.choices.includes(correctDigit)) {
+      S.pQuestion.choices[0] = correctDigit;
+      S.pQuestion.choices = shuffleArray(S.pQuestion.choices);
+    }
+  }
+}
+
+function renderPractice(ws, sp) {
+  if (!S.pQuestion) newPracticeQ();
+  const q = S.pQuestion;
+  let h = '';
+
+  if (q.type === 'identify') {
+    h += `<div class="question-card"><div class="question-text">What number do these blocks represent?</div></div>`;
+    // Set vals from digits and render chart
+    setValsFromNumber(q.num);
+    h += buildBlockChart(false);
+    h += '<div class="answer-grid" style="margin-top:16px;">';
+    q.choices.forEach(c => {
+      h += `<button class="answer-btn" onclick="checkPractice(${c}, ${q.num})">${c}</button>`;
+    });
+    h += '</div>';
+  } else if (q.type === 'expanded') {
+    h += `<div class="question-card"><div class="question-text">Which is the expanded form of <strong style="color:var(--cyan);">${q.num}</strong>?</div></div>`;
+    h += '<div class="answer-grid" style="flex-direction:column;align-items:center;">';
+    q.choices.forEach(c => {
+      const isCorrect = c === expandedForm(q.num);
+      h += `<button class="answer-btn" style="width:100%;max-width:400px;font-size:13px;" onclick="checkPractice(${isCorrect ? 1 : 0}, 1)">${c}</button>`;
+    });
+    h += '</div>';
+  } else if (q.type === 'wordToStd') {
+    h += `<div class="question-card"><div class="question-text">Write in standard form:</div><div style="font-size:18px;font-weight:600;color:var(--cyan);margin-top:8px;font-style:italic;">"${q.word}"</div></div>`;
+    h += '<div class="answer-grid">';
+    q.choices.forEach(c => {
+      h += `<button class="answer-btn" onclick="checkPractice(${c}, ${q.num})">${c}</button>`;
+    });
+    h += '</div>';
+  } else if (q.type === 'digit') {
+    h += `<div class="question-card"><div class="question-text">In <strong style="color:var(--cyan);">${q.num}</strong>, what digit is in the <strong style="color:var(--pink);">${q.placeName}</strong> place?</div></div>`;
+    h += '<div class="answer-grid">';
+    q.choices.forEach(c => {
+      h += `<button class="answer-btn" onclick="checkPractice(${c}, ${q.correctDigit})">${c}</button>`;
+    });
+    h += '</div>';
+  }
+
+  ws.innerHTML = h;
+  if (q.type === 'identify') setTimeout(renderAllVisuals, 10);
+
+  // Side panel
+  sp.innerHTML = `
+    <div class="score-display"><div class="score-value">${S.pScore}</div><div class="score-label">Score</div></div>
+    <div class="score-display" style="background:transparent;padding:8px;">
+      <div style="font-size:18px;font-weight:700;color:var(--yellow);">🔥 ${S.pStreak}</div>
+      <div class="score-label">Streak</div>
+      <div class="streak-bar"><div class="streak-fill" style="width:${Math.min(S.pStreak * 20, 100)}%;"></div></div>
     </div>
-  </div>
-  <div class="content" id="play">
-    <p class="mode-name">🎮 Play: Challenges</p>
-    <div class="card">
-      <h2>Place Value Quest</h2>
-      <div class="difficulty">
-        <span class="diff-indicator">Level:</span>
-        <div class="diff-bar"><div class="diff-fill" id="playDiffFill"></div></div>
-        <span id="playDiffLabel" style="color: var(--text);">Emergent</span>
-      </div>
-      <div id="playContent"></div>
-      <div class="stats">
-        <div class="stat"><span>Score:</span> <strong id="playScore">0</strong></div>
-        <div class="stat"><span>Total:</span> <strong id="playTotal">0</strong></div>
-        <div class="stat"><span>Streak:</span> <strong id="playStreak">0</strong></div>
-      </div>
+    <div class="panel-section"><div class="panel-title">Best Streak</div>
+      <div class="panel-text" style="font-size:24px;font-weight:800;color:var(--purple);">🏆 ${S.pBest}</div></div>
+    <div class="panel-section"><div class="panel-title">Tip</div>
+      <div class="panel-text">Look at each column carefully. Each column is <strong style="color:var(--cyan);">10×</strong> the one to its right!</div></div>`;
+}
+
+function checkPractice(clicked, correct) {
+  const isCorrect = (typeof clicked === 'number' && typeof correct === 'number')
+    ? Math.abs(clicked - correct) < 0.001
+    : clicked === correct;
+
+  if (isCorrect) {
+    S.pScore += 10 + S.pStreak * 2;
+    S.pStreak++;
+    if (S.pStreak > S.pBest) S.pBest = S.pStreak;
+    showFB('Correct!', 'correct');
+    setTimeout(() => { newPracticeQ(); render(); }, 1500);
+  } else {
+    S.pStreak = 0;
+    showFB('Try again!', 'incorrect');
+  }
+}
+
+/* ═════ PLAY MODE ═════ */
+function renderPlay(ws, sp) {
+  if (S.round === 0) { S.round = 1; S.score = 0; S.streak = 0; newPlayRound(); }
+
+  let h = `<div class="question-card"><div style="font-size:12px;color:var(--muted);margin-bottom:8px;">Round ${S.round} of ${S.total}</div>`;
+
+  if (S.playType === 'build') {
+    h += `<div class="question-text">Build <strong style="color:var(--cyan);font-size:24px;">${S.playTarget}</strong> using the sliders</div></div>`;
+    h += buildBlockChart(true);
+    h += '<div class="controls-row"><button class="ctrl-btn primary" onclick="checkPlay()">Check</button></div>';
+  } else {
+    h += `<div class="question-text">What number is shown?</div></div>`;
+    setValsFromNumber(S.playTarget);
+    h += buildBlockChart(false);
+    h += '<div class="answer-grid" style="margin-top:16px;">';
+    S.playChoices.forEach(c => {
+      h += `<button class="answer-btn" onclick="playPick(${c})">${c}</button>`;
+    });
+    h += '</div>';
+  }
+
+  ws.innerHTML = h;
+  setTimeout(renderAllVisuals, 10);
+
+  sp.innerHTML = `
+    <div class="score-display"><div class="score-value">${S.score}</div><div class="score-label">Score</div></div>
+    <div class="score-display" style="background:transparent;padding:8px;">
+      <div style="font-size:18px;font-weight:700;color:var(--yellow);">🔥 ${S.streak}</div>
+      <div class="score-label">Streak</div>
+      <div class="streak-bar"><div class="streak-fill" style="width:${Math.min(S.streak * 20, 100)}%;"></div></div>
     </div>
-  </div>
-  <div id="feedback" class="feedback"></div>
-  <div class="sr-only" role="status" aria-live="polite" id="ariaLive"></div>
-  <script src="../../vinculum-feedback.js"></script><script src="../../vinculum-guide.js"></script>
+    <div class="panel-section"><div class="panel-title">Best Streak</div>
+      <div class="panel-text" style="font-size:24px;font-weight:800;color:var(--purple);">🏆 ${S.best}</div></div>`;
+}
+
+function newPlayRound() {
+  if (S.view === 'whole') {
+    S.playTarget = Math.floor(Math.random() * 9000) + 100;
+  } else {
+    S.playTarget = parseFloat((Math.random() * 9 + 0.01).toFixed(2));
+  }
+
+  // Alternate between build and identify
+  S.playType = S.round % 2 === 1 ? 'identify' : 'build';
+
+  if (S.playType === 'identify') {
+    const choices = new Set([S.playTarget]);
+    while (choices.size < 5) {
+      let c;
+      if (S.view === 'whole') {
+        c = S.playTarget + Math.floor(Math.random() * 300) - 150;
+        if (c > 0) choices.add(c);
+      } else {
+        c = parseFloat((S.playTarget + (Math.random() * 2 - 1)).toFixed(2));
+        if (c > 0 && c < 10) choices.add(c);
+      }
+    }
+    S.playChoices = Array.from(choices).sort((a, b) => a - b);
+  }
+  // Reset vals for build rounds
+  Object.keys(S.vals).forEach(k => S.vals[k] = 0);
+}
+
+function playPick(val) {
+  const isCorrect = Math.abs(val - S.playTarget) < 0.001;
+  if (isCorrect) {
+    S.score += 10 + S.streak * 5;
+    S.streak++;
+    if (S.streak > S.best) S.best = S.streak;
+    showFB('Yes!', 'correct');
+  } else {
+    S.streak = 0;
+    showFB(S.playTarget + '', 'incorrect');
+  }
+  advancePlay();
+}
+
+function checkPlay() {
+  const current = getChartValue();
+  if (Math.abs(current - S.playTarget) < 0.001) {
+    S.score += 15 + S.streak * 5;
+    S.streak++;
+    if (S.streak > S.best) S.best = S.streak;
+    showFB('Perfect build!', 'correct');
+  } else {
+    S.streak = 0;
+    showFB('Need ' + S.playTarget + ', got ' + current, 'incorrect', 2500);
+  }
+  advancePlay();
+}
+
+function advancePlay() {
+  setTimeout(() => {
+    if (S.round >= S.total) {
+      showFB('Game Over! Score: ' + S.score, 'correct', 3000);
+      setTimeout(() => { S.round = 0; render(); }, 3000);
+      return;
+    }
+    S.round++;
+    newPlayRound();
+    render();
+  }, 1500);
+}
+
+/* ═════ UTILITIES ═════ */
+function decompose(num) {
+  if (S.view === 'whole') {
+    return {
+      th: Math.floor(num / 1000) % 10,
+      h:  Math.floor(num / 100) % 10,
+      t:  Math.floor(num / 10) % 10,
+      o:  num % 10
+    };
+  } else {
+    const str = num.toFixed(3);
+    const parts = str.split('.');
+    const whole = parseInt(parts[0]) || 0;
+    const dec = parts[1] || '000';
+    return {
+      od: whole % 10,
+      d1: parseInt(dec[0]) || 0,
+      d2: parseInt(dec[1]) || 0,
+      d3: parseInt(dec[2]) || 0
+    };
+  }
+}
+
+function setValsFromNumber(num) {
+  const d = decompose(num);
+  Object.assign(S.vals, d);
+}
+
+function expandedForm(num) {
+  if (S.view === 'whole') {
+    const d = decompose(num);
+    const parts = [];
+    if (d.th) parts.push(d.th + ' × 1000');
+    if (d.h) parts.push(d.h + ' × 100');
+    if (d.t) parts.push(d.t + ' × 10');
+    if (d.o) parts.push(String(d.o));
+    return parts.join(' + ') || '0';
+  } else {
+    const d = decompose(num);
+    const parts = [];
+    if (d.od) parts.push(String(d.od));
+    if (d.d1) parts.push(d.d1 + ' × 0.1');
+    if (d.d2) parts.push(d.d2 + ' × 0.01');
+    if (d.d3) parts.push(d.d3 + ' × 0.001');
+    return parts.join(' + ') || '0';
+  }
+}
+
+function numberToWords(n) {
+  const u = ['','one','two','three','four','five','six','seven','eight','nine'];
+  const teens = ['ten','eleven','twelve','thirteen','fourteen','fifteen','sixteen','seventeen','eighteen','nineteen'];
+  const tens = ['','','twenty','thirty','forty','fifty','sixty','seventy','eighty','ninety'];
+
+  if (n === 0) return 'zero';
+
+  let whole = Math.floor(n);
+  let decPart = Math.round((n - whole) * 1000);
+  let parts = [];
+
+  if (whole >= 1000) { parts.push(u[Math.floor(whole/1000)] + ' thousand'); whole %= 1000; }
+  if (whole >= 100) { parts.push(u[Math.floor(whole/100)] + ' hundred'); whole %= 100; }
+  if (whole >= 20) {
+    let w = tens[Math.floor(whole/10)];
+    if (whole % 10 > 0) w += '-' + u[whole%10];
+    parts.push(w);
+  } else if (whole >= 10) {
+    parts.push(teens[whole-10]);
+  } else if (whole > 0) {
+    parts.push(u[whole]);
+  }
+
+  if (decPart > 0) {
+    if (parts.length > 0) parts.push('and');
+    let dw = [];
+    let dp = decPart;
+    if (dp >= 100) { dw.push(u[Math.floor(dp/100)] + ' hundred'); dp %= 100; }
+    if (dp >= 20) {
+      let w = tens[Math.floor(dp/10)];
+      if (dp % 10 > 0) w += '-' + u[dp%10];
+      dw.push(w);
+    } else if (dp >= 10) {
+      dw.push(teens[dp-10]);
+    } else if (dp > 0) {
+      dw.push(u[dp]);
+    }
+    let unitName = 'thousandths';
+    if (decPart % 100 === 0) unitName = 'tenths';
+    else if (decPart % 10 === 0) unitName = 'hundredths';
+    parts.push(dw.join(' ') + ' ' + unitName);
+  }
+  return parts.join(' ') || 'zero';
+}
+
+function shuffleArray(arr) {
+  const a = [...arr];
+  for (let i = a.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [a[i], a[j]] = [a[j], a[i]];
+  }
+  return a;
+}
+
+function showFB(msg, type, duration) {
+  const el = document.getElementById('feedback');
+  el.textContent = msg;
+  el.className = 'feedback ' + type + ' show';
+  clearTimeout(el._t);
+  el._t = setTimeout(() => el.className = 'feedback', duration || 1800);
+}
+
+// Init
+render();
+</script>
 <script src="../../vinculum-input.js"></script>
+<script src="../../vinculum-core.js"></script>
+<script src="../../vinculum-data.js"></script>
+<script src="../../vinculum-adaptive-hook.js"></script>
+<script src="../../vinculum-3reads.js"></script>
+<script src="../../vinculum-stories.js"></script>
+<script src="../../vinculum-feedback.js"></script>
+<script src="../../vinculum-guide.js"></script>
 <script src="../../vinculum-identity.js"></script>
 <script src="../../vinculum-indigenous.js"></script>
 <script src="../../vinculum-dashboard.js"></script>
-  <script>
-    const S = { mode: 'explore', diff: 'emergent', score: 0, total: 0, streak: 0, answers: [] };
-
-
-    function updateDifficultyUI(modeId) {
-      const fillEl = modeId === 'practice' ? document.getElementById("diffFill") : document.getElementById("playDiffFill");
-      const labelEl = modeId === 'practice' ? document.getElementById("diffLabel") : document.getElementById("playDiffLabel");
-      if (!fillEl || !labelEl) return;
-      const pct = S.diff === 'emergent' ? 33 : S.diff === 'developing' ? 66 : 100;
-      fillEl.style.width = pct + '%';
-      labelEl.textContent = S.diff.charAt(0).toUpperCase() + S.diff.slice(1);
-    }
-
-
-    // Explore Mode
-    document.querySelectorAll('#pvDisplay .place-value-box').forEach(box => {
-      box.addEventListener('click', function() {
-        const digit = this.querySelector('.place-value-digit');
-        const place = parseInt(digit.dataset.place);
-        digit.classList.add('block-scale');
-        setTimeout(() => digit.classList.remove('block-scale'), 600);
-
-        const blockDisplay = document.getElementById('blockDisplay');
-        blockDisplay.innerHTML = '';
-        const num = parseInt(digit.textContent);
-
-        for (let i = 0; i < num; i++) {
-          const block = document.createElement('div');
-          block.className = 'block ' + (place === 0 ? 'block-unit' : place === 1 ? 'block-ten' : place === 2 ? 'block-hundred' : 'block-thousand');
-          block.style.animationDelay = (i * 0.05) + 's';
-          blockDisplay.appendChild(block);
-        }
-      });
-      box.addEventListener('keypress', function(e) {
-        if (e.key === 'Enter' || e.key === ' ') {
-          e.preventDefault();
-          this.click();
-        }
-      });
-    });
-
-    // Practice Mode
-    function generatePracticeQuestion() {
-      let num, forms;
-      if (S.diff === 'emergent') {
-        num = Math.floor(Math.random() * 10000) + 1000;
-      } else if (S.diff === 'developing') {
-        num = Math.floor(Math.random() * 100000) + 10000;
-      } else {
-        num = Math.floor(Math.random() * 10000000) + 1000000;
-      }
-
-      const standard = num.toString();
-      const words = numberToWords(num);
-      const expanded = getExpanded(num);
-
-      const qType = ['standard', 'words', 'expanded', 'compare'][Math.floor(Math.random() * 4)];
-
-      if (qType === 'standard') {
-        return {
-          question: `Write the number in standard form: "${words}"`,
-          answer: standard,
-          type: 'standard'
-        };
-      } else if (qType === 'words') {
-        return {
-          question: `Write in words: ${standard}`,
-          answer: words,
-          type: 'words'
-        };
-      } else if (qType === 'expanded') {
-        return {
-          question: `What is ${standard} in expanded form?`,
-          answer: expanded,
-          type: 'expanded'
-        };
-      } else {
-        const num2 = Math.floor(Math.random() * 10000000) + 1000;
-        const comp = num > num2 ? '>' : '<';
-        return {
-          question: `Is ${num} ${comp} ${num2}? (Type >, <, or =)`,
-          answer: comp,
-          type: 'compare'
-        };
-      }
-    }
-
-    function numberToWords(n) {
-      const ones = ['', 'one', 'two', 'three', 'four', 'five', 'six', 'seven', 'eight', 'nine'];
-      const teens = ['ten', 'eleven', 'twelve', 'thirteen', 'fourteen', 'fifteen', 'sixteen', 'seventeen', 'eighteen', 'nineteen'];
-      const tens = ['', '', 'twenty', 'thirty', 'forty', 'fifty', 'sixty', 'seventy', 'eighty', 'ninety'];
-      const scales = ['', 'thousand', 'million'];
-
-      if (n === 0) return 'zero';
-      let parts = [];
-      let scaleIdx = 0;
-      while (n > 0) {
-        const group = n % 1000;
-        if (group !== 0) {
-          let groupStr = '';
-          const h = Math.floor(group / 100);
-          if (h > 0) groupStr += ones[h] + ' hundred ';
-          const t = group % 100;
-          if (t >= 20) {
-            groupStr += tens[Math.floor(t / 10)];
-            if (t % 10 > 0) groupStr += ' ' + ones[t % 10];
-          } else if (t >= 10) {
-            groupStr += teens[t - 10];
-          } else if (t > 0) {
-            groupStr += ones[t];
-          }
-          if (scaleIdx > 0) groupStr += ' ' + scales[scaleIdx];
-          parts.unshift(groupStr.trim());
-        }
-        n = Math.floor(n / 1000);
-        scaleIdx++;
-      }
-      return parts.join(' ').replace(/\s+/g, ' ').trim();
-    }
-
-    function getExpanded(n) {
-      let parts = [];
-      let place = 0;
-      while (n > 0) {
-        const digit = n % 10;
-        if (digit > 0) {
-          parts.unshift(digit * Math.pow(10, place));
-        }
-        n = Math.floor(n / 10);
-        place++;
-      }
-      return parts.join(' + ');
-    }
-
-    function renderPractice() {
-      const q = generatePracticeQuestion();
-      const html = `
-        <div class="question">${q.question}</div>
-        <div class="answer-group">
-          <input type="text" class="answer-input" id="practiceAns" placeholder="Your answer..." autocomplete="off">
-          <button class="btn btn-primary" onclick="checkPracticeAnswer('${q.answer}')">Check</button>
-        </div>
-      `;
-      document.getElementById('practiceContent').innerHTML = html;
-      document.getElementById('practiceAns').focus();
-      updateDifficultyUI('practice');
-    }
-
-    function checkPracticeAnswer(correct) {
-      const input = document.getElementById('practiceAns');
-      const ans = input.value.trim().toLowerCase();
-      const correctAns = correct.toString().toLowerCase();
-      const isCorrect = ans === correctAns;
-
-      S.total++;
-      if (isCorrect) {
-        S.score++;
-        S.streak++;
-        showFB('Correct! ✓', 'correct');
-        S.answers.push(true);
-      } else {
-        S.streak = 0;
-        showFB('Try again!', 'incorrect');
-        S.answers.push(false);
-      }
-
-      document.getElementById('score').textContent = S.score;
-      document.getElementById('total').textContent = S.total;
-      document.getElementById('streak').textContent = S.streak;
-
-      adaptDifficulty();
-      setTimeout(renderPractice, 800);
-    }
-
-    // Play Mode
-    function generatePlayQuestion() {
-      const challenges = [
-        {
-          question: 'Lakota people tracked bison herds numbering in the millions. A herd of 2,500,000: what digit is in the millions place?',
-          answer: '2',
-          indigenous: true
-        },
-        {
-          question: 'If you multiply 400 by 10, what is the result?',
-          answer: '4000',
-          type: 'multiply'
-        },
-        {
-          question: 'What digit is in the ten-thousands place of 54,328?',
-          answer: '5',
-          type: 'place'
-        },
-        {
-          question: 'If a digit is in the hundreds place, what place is it 10 times larger than?',
-          answer: 'tens',
-          type: 'relationship'
-        }
-      ];
-
-      let question;
-      if (S.diff === 'emergent') {
-        question = challenges[Math.floor(Math.random() * 2)];
-      } else if (S.diff === 'developing') {
-        question = challenges[Math.floor(Math.random() * 3)];
-      } else {
-        question = challenges[Math.floor(Math.random() * challenges.length)];
-      }
-      return question;
-    }
-
-    function renderPlay() {
-      const q = generatePlayQuestion();
-      const html = `
-        <div class="question">${q.question}</div>
-        <div class="answer-group">
-          <input type="text" class="answer-input" id="playAns" placeholder="Your answer..." autocomplete="off">
-          <button class="btn btn-primary" onclick="checkPlayAnswer('${q.answer}')">Check</button>
-        </div>
-      `;
-      document.getElementById('playContent').innerHTML = html;
-      document.getElementById('playAns').focus();
-      updateDifficultyUI('play');
-    }
-
-    function checkPlayAnswer(correct) {
-      const input = document.getElementById('playAns');
-      const ans = input.value.trim().toLowerCase();
-      const correctAns = correct.toString().toLowerCase();
-      const isCorrect = ans === correctAns;
-
-      S.total++;
-      if (isCorrect) {
-        S.score++;
-        S.streak++;
-        showFB('Correct! ✓', 'correct');
-        S.answers.push(true);
-      } else {
-        S.streak = 0;
-        showFB('Try again!', 'incorrect');
-        S.answers.push(false);
-      }
-
-      document.getElementById('playScore').textContent = S.score;
-      document.getElementById('playTotal').textContent = S.total;
-      document.getElementById('playStreak').textContent = S.streak;
-
-      adaptDifficulty();
-      setTimeout(renderPlay, 800);
-    }
-
-    // Tab switching
-    document.querySelectorAll('.vinculum-mode-tab').forEach(tab => {
-      tab.addEventListener('click', function() {
-        const mode = this.dataset.mode;
-        S.mode = mode;
-        document.querySelectorAll('.vinculum-mode-tab').forEach(t => {
-          t.className = 'vinculum-mode-tab';
-        });
-        this.classList.add(mode === 'explore' ? 'active-explore' : mode === 'practice' ? 'active-practice' : 'active-play');
-        document.querySelectorAll('.content').forEach(c => c.classList.remove('active'));
-        document.getElementById(mode).classList.add('active');
-
-        if (mode === 'practice' && document.getElementById('practiceContent').innerHTML === '') {
-          renderPractice();
-        } else if (mode === 'play' && document.getElementById('playContent').innerHTML === '') {
-          renderPlay();
-        }
-      });
-    });
-
-    // Difficulty selector buttons
-    document.querySelectorAll('.vinculum-diff-btn').forEach(btn => {
-      btn.addEventListener('click', function() {
-        S.diff = this.dataset.diff;
-        document.querySelectorAll('.vinculum-diff-btn').forEach(b => b.classList.remove('active'));
-        this.classList.add('active');
-        updateDifficultyUI(S.mode === 'practice' ? 'practice' : 'play');
-      });
-    });
-  </script>
 </body>
 </html>

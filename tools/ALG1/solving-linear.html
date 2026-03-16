@@ -5,6 +5,9 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Solving Linear Equations — VINCULUM ALG1</title>
   <link rel="stylesheet" href="../../vinculum-core.css">
+  <link rel="stylesheet" href="../../shared/vinculum-tiles.css">
+  <script src="../../shared/vinculum-math.js"></script>
+  <script src="../../shared/vinculum-tiles.js"></script>
   <style>
     body { font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: var(--bg); color: var(--text); margin: 0; overflow-x: hidden; }
 
@@ -104,6 +107,8 @@
       color: var(--text2);
       margin-top: 1rem;
     }
+
+    /* Tile styles loaded from shared/vinculum-tiles.css */
 
     /* ── Action Buttons ── */
     .action-row {
@@ -207,6 +212,29 @@
 
     .hidden { display: none !important; }
 
+    /* ── Proper Math Notation Styles ── */
+    .step-math-line {
+      margin: 0.25rem 0;
+      font-size: 1.2rem;
+    }
+    .step-math-line .katex { font-size: 1.15em; }
+    .step-applied {
+      /* The "equation with operation shown on both sides" line */
+      padding: 0.25rem 0;
+    }
+    .step-result {
+      /* The simplified result line */
+      padding: 0.25rem 0;
+      font-weight: 700;
+    }
+    .step-card .vmath-caret {
+      font-size: 10px;
+      margin-top: 4px;
+    }
+    /* Main equation display should use KaTeX sizing */
+    .equation-text .katex { font-size: 1em; }
+    .equation-text { min-height: 2.5rem; display: flex; align-items: center; justify-content: center; }
+
     @media (max-width: 768px) {
       .concept-grid { grid-template-columns: 1fr; }
       .play-stats { grid-template-columns: 1fr; }
@@ -252,6 +280,21 @@
       <div class="equation-display">
         <div class="equation-label">Current Equation</div>
         <div class="equation-text" id="explore-equation">x + 5 = 12</div>
+      </div>
+
+      <!-- Algebra Tile Mat — CRA concrete scaffold -->
+      <div class="balance-model" id="tile-container">
+        <div class="tile-mat" id="tile-mat">
+          <div class="tile-side" id="tile-left"></div>
+          <div class="tile-equals">=</div>
+          <div class="tile-side" id="tile-right"></div>
+        </div>
+        <div class="tile-legend">
+          <span class="tile-legend-item"><span class="tile-legend-swatch" style="background:linear-gradient(135deg,#42a5f5,#1e88e5)"></span> x</span>
+          <span class="tile-legend-item"><span class="tile-legend-swatch" style="background:linear-gradient(135deg,#ffee58,#fdd835)"></span> +1</span>
+          <span class="tile-legend-item"><span class="tile-legend-swatch" style="background:linear-gradient(135deg,#ef5350,#c62828)"></span> negative</span>
+        </div>
+        <div class="tile-label" id="tile-label">Each tile represents a term — keep both sides equal</div>
       </div>
 
       <!-- Balance model SVG -->
@@ -370,20 +413,158 @@
     let playState = { score: 0, streak: 0, timer: 0, interval: null };
 
     // ════════════════════════════════════════════════════
-    // EQUATION GENERATOR — always produces integer answers
+    // MATH RENDERING HELPERS
+    // ════════════════════════════════════════════════════
+    // Render LaTeX → HTML via VinculumMath (falls back if not loaded)
+    const M = {
+      r: function(latex) {
+        return (typeof VinculumMath !== 'undefined')
+          ? VinculumMath.renderLatex(latex)
+          : '<i>' + latex + '</i>';
+      }
+    };
+
+    /**
+     * Build proper algebraic step notation.
+     * Instead of "3x + 3 = 12 → - 3 → 3x = 9"
+     * Shows:
+     *   Line 1: 3x + 3 {\color{red}{- 3}} = 12 {\color{red}{- 3}}
+     *   Line 2: 3x = 9
+     *
+     * For division, shows proper fraction notation:
+     *   Line 1: \frac{3x}{\color{red}{3}} = \frac{9}{\color{red}{3}}
+     *   Line 2: x = 3
+     */
+    function buildStepLatex(step) {
+      const OP_COLOR = '#ff3b8b'; // pink for operations
+
+      // Parse the before equation
+      const beforeParts = step.before.split('=').map(s => s.trim());
+      const afterParts = step.after.split('=').map(s => s.trim());
+      let left = latexify(beforeParts[0]);
+      let right = latexify(beforeParts[1]);
+      let afterLeft = latexify(afterParts[0]);
+      let afterRight = latexify(afterParts[1]);
+
+      let appliedLatex, resultLatex;
+
+      if (step.opType === 'subtract') {
+        // Show subtraction on both sides
+        const val = step.opValue;
+        appliedLatex = left + ' \\textcolor{' + OP_COLOR + '}{\\;-\\;' + val + '} \\;=\\; '
+                     + right + ' \\textcolor{' + OP_COLOR + '}{\\;-\\;' + val + '}';
+        resultLatex = afterLeft + ' \\;=\\; ' + afterRight;
+
+      } else if (step.opType === 'add') {
+        const val = step.opValue;
+        appliedLatex = left + ' \\textcolor{' + OP_COLOR + '}{\\;+\\;' + val + '} \\;=\\; '
+                     + right + ' \\textcolor{' + OP_COLOR + '}{\\;+\\;' + val + '}';
+        resultLatex = afterLeft + ' \\;=\\; ' + afterRight;
+
+      } else if (step.opType === 'divide') {
+        // Show proper fraction notation
+        const val = step.opValue;
+        appliedLatex = '\\dfrac{' + left + '}{\\textcolor{' + OP_COLOR + '}{' + val + '}} \\;=\\; '
+                     + '\\dfrac{' + right + '}{\\textcolor{' + OP_COLOR + '}{' + val + '}}';
+        resultLatex = afterLeft + ' \\;=\\; ' + afterRight;
+
+      } else if (step.opType === 'multiply') {
+        const val = step.opValue;
+        appliedLatex = left + ' \\textcolor{' + OP_COLOR + '}{\\;\\cdot\\;' + val + '} \\;=\\; '
+                     + right + ' \\textcolor{' + OP_COLOR + '}{\\;\\cdot\\;' + val + '}';
+        resultLatex = afterLeft + ' \\;=\\; ' + afterRight;
+
+      } else if (step.opType === 'subtractVar') {
+        // Subtract variable terms: - 3x from both sides
+        const val = step.opValue;
+        appliedLatex = left + ' \\textcolor{' + OP_COLOR + '}{\\;-\\;' + val + 'x} \\;=\\; '
+                     + right + ' \\textcolor{' + OP_COLOR + '}{\\;-\\;' + val + 'x}';
+        resultLatex = afterLeft + ' \\;=\\; ' + afterRight;
+
+      } else if (step.opType === 'distribute') {
+        // Distribution: show a(x + b) = ax + ab
+        appliedLatex = left + ' \\;=\\; ' + right;
+        resultLatex = afterLeft + ' \\;=\\; ' + afterRight;
+
+      } else {
+        // Fallback
+        appliedLatex = left + ' \\;=\\; ' + right;
+        resultLatex = afterLeft + ' \\;=\\; ' + afterRight;
+      }
+
+      return { appliedLatex, resultLatex };
+    }
+
+    /**
+     * Convert plain equation text to LaTeX-safe notation.
+     * "3x" → "3x", "x + 5" → "x + 5", etc.
+     * Handles implicit multiplication display.
+     */
+    function latexify(str) {
+      let s = str.trim();
+      // Replace "3x" with "3x" (already valid LaTeX)
+      // Replace standalone negative: "-5" stays as-is
+      return s;
+    }
+
+    // ════════════════════════════════════════════════════
+    // ALGEBRA TILES — delegates to shared/vinculum-tiles.js
+    // ════════════════════════════════════════════════════
+    function parseEquationToTiles(eqStr) { return VinculumTiles.parse(eqStr); }
+    function renderTiles(data) { VinculumTiles.renderData(data); }
+    function animateTileStep(step) { VinculumTiles.animateStep(step); }
+
+    /**
+     * Render a step card with proper math notation.
+     * Returns HTML string for the step content.
+     */
+    function renderStepHTML(step, index, state) {
+      const { appliedLatex, resultLatex } = buildStepLatex(step);
+
+      let stateClass = '';
+      if (state === 'revealed') stateClass = 'revealed';
+      else if (state === 'active') stateClass = 'active';
+      else if (state === 'completed') stateClass = 'completed';
+
+      return `
+        <div class="step-card ${stateClass}" id="${step._cardId || ''}">
+          <div class="step-number">${index + 1}</div>
+          <div class="step-body">
+            <div class="step-instruction">${step.instruction}</div>
+            <div class="step-equation">
+              <div class="step-math-line step-applied">${M.r(appliedLatex)}</div>
+              <div class="step-math-line step-result">${M.r(resultLatex)}</div>
+            </div>
+            <div class="vmath-caret">⌨ ${step.before} → ${step.operation} → ${step.after}</div>
+          </div>
+        </div>`;
+    }
+
+    /**
+     * Render an equation display (the big equation at top).
+     */
+    function renderEquationDisplay(elementId, eqText) {
+      const el = document.getElementById(elementId);
+      const latex = latexify(eqText.replace('=', ' \\;=\\; '));
+      el.innerHTML = M.r(latex);
+    }
+
+    // ════════════════════════════════════════════════════
+    // EQUATION GENERATOR — now with proper LaTeX metadata
     // ════════════════════════════════════════════════════
     function genEquation(diff) {
       let a, b, c, x, steps, display;
 
       if (diff === 'emergent') {
-        // 1-step: ax = c  or  x + b = c
         if (Math.random() < 0.5) {
           x = randInt(1, 12);
           b = randInt(1, 15);
           c = x + b;
           display = `x + ${b} = ${c}`;
           steps = [
-            { instruction: `Subtract ${b} from both sides`, before: `x + ${b} = ${c}`, operation: `- ${b}`, after: `x = ${c - b}` }
+            { instruction: `Subtract ${b} from both sides`,
+              before: `x + ${b} = ${c}`, operation: `- ${b}`, after: `x = ${c - b}`,
+              opType: 'subtract', opValue: b }
           ];
         } else {
           a = randInt(2, 6);
@@ -391,37 +572,45 @@
           c = a * x;
           display = `${a}x = ${c}`;
           steps = [
-            { instruction: `Divide both sides by ${a}`, before: `${a}x = ${c}`, operation: `÷ ${a}`, after: `x = ${x}` }
+            { instruction: `Divide both sides by ${a}`,
+              before: `${a}x = ${c}`, operation: `÷ ${a}`, after: `x = ${x}`,
+              opType: 'divide', opValue: a }
           ];
         }
       } else if (diff === 'proficient') {
-        // 2-step: ax + b = c
         a = randInt(2, 7);
         x = randInt(1, 10);
         b = randInt(1, 15);
         c = a * x + b;
         display = `${a}x + ${b} = ${c}`;
         steps = [
-          { instruction: `Subtract ${b} from both sides`, before: `${a}x + ${b} = ${c}`, operation: `- ${b}`, after: `${a}x = ${c - b}` },
-          { instruction: `Divide both sides by ${a}`, before: `${a}x = ${c - b}`, operation: `÷ ${a}`, after: `x = ${x}` }
+          { instruction: `Subtract ${b} from both sides`,
+            before: `${a}x + ${b} = ${c}`, operation: `- ${b}`, after: `${a}x = ${c - b}`,
+            opType: 'subtract', opValue: b },
+          { instruction: `Divide both sides by ${a}`,
+            before: `${a}x = ${c - b}`, operation: `÷ ${a}`, after: `x = ${x}`,
+            opType: 'divide', opValue: a }
         ];
       } else {
-        // Multi-step: a(x + b) = c  or  ax + b = cx + d
         const type = Math.random();
         if (type < 0.5) {
-          // Distribution: a(x + b) = c
           a = randInt(2, 5);
           b = randInt(1, 8);
           x = randInt(1, 10);
           c = a * (x + b);
           display = `${a}(x + ${b}) = ${c}`;
           steps = [
-            { instruction: `Distribute ${a} to each term inside parentheses`, before: `${a}(x + ${b}) = ${c}`, operation: `distribute`, after: `${a}x + ${a * b} = ${c}` },
-            { instruction: `Subtract ${a * b} from both sides`, before: `${a}x + ${a * b} = ${c}`, operation: `- ${a * b}`, after: `${a}x = ${c - a * b}` },
-            { instruction: `Divide both sides by ${a}`, before: `${a}x = ${c - a * b}`, operation: `÷ ${a}`, after: `x = ${x}` }
+            { instruction: `Distribute ${a} to each term inside parentheses`,
+              before: `${a}(x + ${b}) = ${c}`, operation: `distribute`, after: `${a}x + ${a * b} = ${c}`,
+              opType: 'distribute', opValue: a },
+            { instruction: `Subtract ${a * b} from both sides`,
+              before: `${a}x + ${a * b} = ${c}`, operation: `- ${a * b}`, after: `${a}x = ${c - a * b}`,
+              opType: 'subtract', opValue: a * b },
+            { instruction: `Divide both sides by ${a}`,
+              before: `${a}x = ${c - a * b}`, operation: `÷ ${a}`, after: `x = ${x}`,
+              opType: 'divide', opValue: a }
           ];
         } else {
-          // Variables on both sides: ax + b = cx + d
           a = randInt(3, 8);
           const c2 = randInt(1, a - 1);
           x = randInt(1, 8);
@@ -429,11 +618,17 @@
           const d = (a - c2) * x + b;
           display = `${a}x + ${b} = ${c2}x + ${d}`;
           steps = [
-            { instruction: `Subtract ${c2}x from both sides`, before: `${a}x + ${b} = ${c2}x + ${d}`, operation: `- ${c2}x`, after: `${a - c2}x + ${b} = ${d}` },
-            { instruction: `Subtract ${b} from both sides`, before: `${a - c2}x + ${b} = ${d}`, operation: `- ${b}`, after: `${a - c2}x = ${d - b}` },
-            { instruction: `Divide both sides by ${a - c2}`, before: `${a - c2}x = ${d - b}`, operation: `÷ ${a - c2}`, after: `x = ${x}` }
+            { instruction: `Subtract ${c2}x from both sides`,
+              before: `${a}x + ${b} = ${c2}x + ${d}`, operation: `- ${c2}x`, after: `${a - c2}x + ${b} = ${d}`,
+              opType: 'subtractVar', opValue: c2 },
+            { instruction: `Subtract ${b} from both sides`,
+              before: `${a - c2}x + ${b} = ${d}`, operation: `- ${b}`, after: `${a - c2}x = ${d - b}`,
+              opType: 'subtract', opValue: b },
+            { instruction: `Divide both sides by ${a - c2}`,
+              before: `${a - c2}x = ${d - b}`, operation: `÷ ${a - c2}`, after: `x = ${x}`,
+              opType: 'divide', opValue: a - c2 }
           ];
-          c = d; // store for reference
+          c = d;
         }
       }
 
@@ -449,21 +644,15 @@
       const svg = document.getElementById(svgId);
       const tilt = balanced ? 0 : (Math.random() < 0.5 ? -5 : 5);
       svg.innerHTML = `
-        <!-- Fulcrum -->
         <polygon points="250,220 230,180 270,180" fill="var(--card)" stroke="var(--border)" stroke-width="2"/>
-        <!-- Beam -->
         <g transform="rotate(${tilt}, 250, 178)">
           <line x1="80" y1="178" x2="420" y2="178" stroke="var(--cyan)" stroke-width="4" stroke-linecap="round"/>
-          <!-- Left pan -->
           <rect x="60" y="150" width="120" height="28" rx="6" fill="var(--bg2)" stroke="var(--border)" stroke-width="1.5"/>
           <text x="120" y="169" text-anchor="middle" fill="var(--text)" font-family="JetBrains Mono, monospace" font-size="14" font-weight="700">${leftLabel}</text>
-          <!-- Right pan -->
           <rect x="320" y="150" width="120" height="28" rx="6" fill="var(--bg2)" stroke="var(--border)" stroke-width="1.5"/>
           <text x="380" y="169" text-anchor="middle" fill="var(--text)" font-family="JetBrains Mono, monospace" font-size="14" font-weight="700">${rightLabel}</text>
-          <!-- Equal sign -->
           <text x="250" y="165" text-anchor="middle" fill="var(--cyan)" font-size="20" font-weight="700">=</text>
         </g>
-        <!-- Base -->
         <rect x="200" y="218" width="100" height="4" rx="2" fill="var(--border)"/>
       `;
     }
@@ -474,32 +663,26 @@
     function exploreNewEquation() {
       currentEq = genEquation(difficulty);
       exploreStep = 0;
-      document.getElementById('explore-equation').textContent = currentEq.display;
+      renderEquationDisplay('explore-equation', currentEq.display);
       document.getElementById('explore-next-btn').disabled = false;
       document.getElementById('explore-next-btn').textContent = 'Next Step →';
 
-      // Draw initial balance
       const parts = currentEq.display.split('=');
       drawBalance('balance-svg', parts[0].trim(), parts[1].trim(), true);
       document.getElementById('balance-instruction').textContent =
         'The equation is like a balance scale — both sides must stay equal. Click "Next Step" to see inverse operations in action.';
 
-      // Build step cards (hidden)
+      // Render algebra tiles for initial equation
+      var initTiles = parseEquationToTiles(currentEq.display);
+      renderTiles(initTiles);
+      document.getElementById('tile-label').textContent =
+        'Each tile represents a term — keep both sides equal';
+
       const panel = document.getElementById('explore-steps');
       panel.innerHTML = '';
       currentEq.steps.forEach((step, i) => {
-        panel.innerHTML += `
-          <div class="step-card" id="explore-step-${i}">
-            <div class="step-number">${i + 1}</div>
-            <div class="step-body">
-              <div class="step-instruction">${step.instruction}</div>
-              <div class="step-equation">
-                <span>${step.before}</span>
-                <span class="operation" style="margin-left:1rem;">  →  ${step.operation}  →  </span>
-                <span class="highlight">${step.after}</span>
-              </div>
-            </div>
-          </div>`;
+        step._cardId = `explore-step-${i}`;
+        panel.innerHTML += renderStepHTML(step, i, '');
       });
     }
 
@@ -509,11 +692,16 @@
       const card = document.getElementById(`explore-step-${exploreStep}`);
       card.classList.add('revealed');
 
-      // Update balance
       const step = currentEq.steps[exploreStep];
       const afterParts = step.after.split('=');
       drawBalance('balance-svg', afterParts[0].trim(), afterParts[1].trim(), true);
       document.getElementById('balance-instruction').textContent = step.instruction;
+
+      // Animate the algebra tiles for this step
+      animateTileStep(step);
+
+      // Update the main equation display to show the result of this step
+      renderEquationDisplay('explore-equation', step.after);
 
       exploreStep++;
       if (exploreStep >= currentEq.steps.length) {
@@ -521,7 +709,7 @@
         document.getElementById('explore-next-btn').disabled = true;
         document.getElementById('balance-instruction').textContent =
           `Solution: x = ${currentEq.x}. The variable is isolated! Click "New Equation" to try another.`;
-        showFB(`x = ${currentEq.x} — Equation solved!`, 'correct');
+        showFB(`x = ${currentEq.x} — Equation solved!`, 'correct', 3000);
       }
     }
 
@@ -532,16 +720,17 @@
       currentEq = genEquation(difficulty);
       practiceState = { stepIdx: 0, currentEq: currentEq.display };
 
-      document.getElementById('practice-equation').textContent = currentEq.display;
+      renderEquationDisplay('practice-equation', currentEq.display);
       document.getElementById('practice-prompt').textContent = 'What operation should you do first?';
       document.getElementById('practice-actions').classList.remove('hidden');
       document.getElementById('practice-value-row').classList.add('hidden');
       document.getElementById('practice-next-row').classList.add('hidden');
 
-      // Build step cards (all dimmed)
       const panel = document.getElementById('practice-steps');
       panel.innerHTML = '';
       currentEq.steps.forEach((step, i) => {
+        step._cardId = `practice-step-${i}`;
+        // Dimmed placeholder
         panel.innerHTML += `
           <div class="step-card" id="practice-step-${i}">
             <div class="step-number">${i + 1}</div>
@@ -551,8 +740,15 @@
             </div>
           </div>`;
       });
-      // Highlight first step
       document.getElementById('practice-step-0').classList.add('active');
+
+      // Show tile mat in practice mode (reuse the explore tile container)
+      var tileContainer = document.getElementById('tile-container');
+      if (tileContainer) tileContainer.style.display = '';
+      var initTiles = parseEquationToTiles(currentEq.display);
+      renderTiles(initTiles);
+      document.getElementById('tile-label').textContent =
+        'Use the tiles to visualize each step as you solve';
     }
 
     let selectedOp = null;
@@ -563,14 +759,13 @@
       const correctOp = getOpFromInstruction(step.instruction);
 
       if (op === correctOp) {
-        // Show value input
         document.getElementById('practice-actions').classList.add('hidden');
         document.getElementById('practice-value-row').classList.remove('hidden');
         document.getElementById('practice-value-input').value = '';
         document.getElementById('practice-value-input').focus();
-        showFB(`Correct — ${op}! Now enter the value.`, 'correct');
+        showFB(`Correct — ${op}! Now enter the value.`, 'correct', 2500);
       } else {
-        showFB(`Not quite. Look at the equation: ${step.before}. Which operation undoes what's being done to x?`, 'incorrect');
+        showFB(`Not quite. Look at the equation and think: which operation undoes what's being done to x?`, 'incorrect', 3500);
       }
     }
 
@@ -594,35 +789,39 @@
       const userValue = parseInt(document.getElementById('practice-value-input').value);
 
       if (userValue === expectedValue) {
-        // Reveal step
+        // Reveal step with proper math notation
         const card = document.getElementById(`practice-step-${practiceState.stepIdx}`);
+        const { appliedLatex, resultLatex } = buildStepLatex(step);
+
         card.classList.remove('active');
         card.classList.add('completed');
         document.getElementById(`practice-inst-${practiceState.stepIdx}`).textContent = step.instruction;
         document.getElementById(`practice-eq-${practiceState.stepIdx}`).innerHTML =
-          `<span>${step.before}</span> <span class="operation">→ ${step.operation} →</span> <span class="highlight">${step.after}</span>`;
+          `<div class="step-math-line step-applied">${M.r(appliedLatex)}</div>` +
+          `<div class="step-math-line step-result">${M.r(resultLatex)}</div>` +
+          `<div class="vmath-caret">⌨ ${step.before} → ${step.operation} → ${step.after}</div>`;
 
-        // Update equation display
-        document.getElementById('practice-equation').textContent = step.after;
+        renderEquationDisplay('practice-equation', step.after);
+
+        // Animate tiles for this step
+        animateTileStep(step);
 
         practiceState.stepIdx++;
-        showFB('Correct!', 'correct');
+        showFB('Correct!', 'correct', 2500);
 
         if (practiceState.stepIdx >= currentEq.steps.length) {
-          // Solved!
           document.getElementById('practice-value-row').classList.add('hidden');
           document.getElementById('practice-next-row').classList.remove('hidden');
           document.getElementById('practice-prompt').textContent = `Solved! x = ${currentEq.x}`;
-          showFB(`🎉 x = ${currentEq.x} — Great work solving step by step!`, 'correct');
+          showFB(`x = ${currentEq.x} — Great work solving step by step!`, 'correct', 3000);
         } else {
-          // Next step
           document.getElementById('practice-value-row').classList.add('hidden');
           document.getElementById('practice-actions').classList.remove('hidden');
           document.getElementById('practice-prompt').textContent = 'What operation next?';
           document.getElementById(`practice-step-${practiceState.stepIdx}`).classList.add('active');
         }
       } else {
-        showFB(`Not quite — look at the equation. What value do you need to ${selectedOp}?`, 'incorrect');
+        showFB(`Not quite — look at the equation. What value do you need to ${selectedOp}?`, 'incorrect', 3500);
       }
     }
 
@@ -645,7 +844,7 @@
 
     function playNext() {
       currentEq = genEquation(difficulty);
-      document.getElementById('play-equation').textContent = currentEq.display;
+      renderEquationDisplay('play-equation', currentEq.display);
       document.getElementById('play-answer').value = '';
       document.getElementById('play-answer').focus();
       document.getElementById('play-solution-row').classList.add('hidden');
@@ -660,12 +859,12 @@
       if (Math.abs(answer - currentEq.x) < 0.01) {
         playState.score += 10 * currentEq.steps.length;
         playState.streak++;
-        showFB(`✓ Correct! x = ${currentEq.x}`, 'correct');
+        showFB(`Correct! x = ${currentEq.x}`, 'correct');
         updatePlayStats();
         setTimeout(playNext, 1200);
       } else {
         playState.streak = 0;
-        showFB(`Not quite. x ≠ ${answer}. Try again or view the solution steps.`, 'incorrect');
+        showFB(`Not quite. Try again or view the solution steps.`, 'incorrect');
         document.getElementById('play-solution-row').classList.remove('hidden');
         updatePlayStats();
       }
@@ -675,18 +874,8 @@
       const panel = document.getElementById('play-steps');
       panel.innerHTML = '';
       currentEq.steps.forEach((step, i) => {
-        panel.innerHTML += `
-          <div class="step-card revealed">
-            <div class="step-number">${i + 1}</div>
-            <div class="step-body">
-              <div class="step-instruction">${step.instruction}</div>
-              <div class="step-equation">
-                <span>${step.before}</span>
-                <span class="operation"> → ${step.operation} → </span>
-                <span class="highlight">${step.after}</span>
-              </div>
-            </div>
-          </div>`;
+        step._cardId = `play-step-${i}`;
+        panel.innerHTML += renderStepHTML(step, i, 'revealed');
       });
     }
 
@@ -704,6 +893,13 @@
       document.querySelector(`[data-mode="${m}"]`).classList.add(`active-${m}`);
       document.querySelectorAll('.mode-content').forEach(c => c.classList.remove('active'));
       document.getElementById(`mode-${m}`).classList.add('active');
+
+      // Show algebra tiles in Explore & Practice (CRA concrete/representational)
+      // Hide in Play (abstract — student should internalize by now)
+      var tileContainer = document.getElementById('tile-container');
+      if (tileContainer) {
+        tileContainer.style.display = (m === 'play') ? 'none' : '';
+      }
 
       if (m === 'explore') exploreNewEquation();
       if (m === 'practice') practiceNewProblem();
@@ -727,7 +923,6 @@
       btn.addEventListener('click', () => setDifficulty(btn.dataset.diff));
     });
 
-    // Enter key support
     document.getElementById('practice-value-input').addEventListener('keydown', e => {
       if (e.key === 'Enter') practiceSubmitStep();
     });
@@ -736,11 +931,16 @@
     });
 
     // ════════════════════════════════════════════════════
-    // INIT
+    // INIT — wait for VinculumMath then start
     // ════════════════════════════════════════════════════
-    window.addEventListener('DOMContentLoaded', () => {
+    function init() {
       exploreNewEquation();
-    });
+    }
+    if (typeof VinculumMath !== 'undefined') {
+      VinculumMath.ready(init);
+    } else {
+      window.addEventListener('DOMContentLoaded', init);
+    }
   </script>
 </body>
 </html>
