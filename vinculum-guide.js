@@ -17,6 +17,20 @@
   // ============================================================================
 
   const GUIDE_DATA = {
+    'pattern-machine': {
+      instructions: {
+        explore: '1. Watch the full pattern displayed with <strong>colorful shapes</strong><br><br>2. The <strong>repeating unit</strong> is highlighted with a bracket below<br><br>3. Click "Next Pattern" to see different pattern types<br><br>4. Notice how the unit <strong>repeats</strong> to make the full pattern',
+        practice: '1. Look at the pattern — some shapes are <strong>missing</strong> (shown as ?)<br><br>2. Identify the <strong>repeating unit</strong> shown by the bracket<br><br>3. Tap the correct shape from the choices below<br><br>4. Wrong answers show <strong>hints</strong> about the repeating pattern',
+        play: '1. The last shape is always <strong>hidden</strong><br><br>2. Figure out <strong>what comes next</strong> as fast as you can<br><br>3. Build <strong>streaks</strong> for bonus point multipliers!'
+      },
+      standards: [
+        { code: 'K.OA.3', text: 'Decompose numbers and recognize patterns' },
+        { code: 'K.G.6', text: 'Compose simple shapes to form larger shapes' },
+        { code: '4.OA.5', text: 'Generate and analyze patterns' }
+      ],
+      keyConcept: 'A <strong>pattern</strong> is something that repeats in a predictable way. The <strong>repeating unit</strong> (or core) is the smallest group that repeats. Once you find it, you can predict what comes next!'
+    },
+
     'counting-objects': {
       instructions: {
         explore: '1. Click on objects to <strong>count</strong> them<br><br>2. Watch the number increment<br><br>3. Reset and try different sets',
@@ -99,6 +113,20 @@
         { code: '4.NF.1', text: 'Explain fraction equivalence' }
       ],
       keyConcept: 'A <strong>fraction</strong> names a part of a whole. The bottom number (denominator) tells how many equal parts; the top (numerator) tells how many parts we use.'
+    },
+
+    'decimal-place-value': {
+      instructions: {
+        explore: '1. Tap <strong>▲ ▼ arrows</strong> or scroll to change any digit<br><br>2. Watch ALL visuals update live — blocks, number line, readout, decomposition<br><br>3. <strong>Trailing zeros</strong> grey out when they don\'t change the value<br><br>4. Check the <strong>Extension</strong> section for powers of 10 notation',
+        practice: '1. Read the question about <strong>place value</strong><br><br>2. Type your answer in the field<br><br>3. Use expanded form, word form, or standard form as needed',
+        play: '1. Compare two decimals — which is <strong>larger</strong>?<br><br>2. Use place value understanding to decide<br><br>3. Score 5 in a row to win!'
+      },
+      standards: [
+        { code: '5.NBT.3', text: 'Read, write, and compare decimals to thousandths' },
+        { code: '5.NBT.4', text: 'Use place value to round decimals' },
+        { code: '5.NBT.1', text: 'Recognize that a digit is 10x what it represents in the place to its right' }
+      ],
+      keyConcept: 'Each place value is <strong>10 times</strong> the place to its right and <strong>1/10</strong> of the place to its left. The decimal point separates <strong>whole numbers</strong> from <strong>parts less than one</strong>. Trailing zeros (like 5.70 vs 5.7) don\'t change the value.'
     },
 
     'decimal-operations': {
