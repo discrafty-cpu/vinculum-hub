@@ -45,6 +45,111 @@
   }
 
   // ════════════════════════════════════════
+  // 3b. THEME CHOOSER (injected into every app)
+  // ════════════════════════════════════════
+  var VINCULUM_THEMES = [
+    { id: 'dark',         label: 'Dark',           icon: '🌙' },
+    { id: 'bright',       label: 'Bright',         icon: '☀️' },
+    { id: 'redlaser',     label: 'Red Laser',      icon: '🔴' },
+    { id: 'storm',        label: 'Storm',          icon: '⛈️' },
+    { id: 'frost',        label: 'Frost',          icon: '❄️' },
+    { id: 'emerald',      label: 'Emerald',        icon: '💎' },
+    { id: 'sunset',       label: 'Sunset',         icon: '🌅' },
+    { id: 'spartan',      label: 'Spartan',        icon: '🛡️' },
+    { id: 'neonforge',    label: 'Neon Forge',     icon: '🔮' },
+    { id: 'sunrise',      label: 'Sunrise',        icon: '🌄' },
+    { id: 'ocean',        label: 'Ocean',          icon: '🌊' },
+    { id: 'mathlab',      label: 'Math Lab',       icon: '🔬' },
+    { id: 'nature',       label: 'Nature',         icon: '🌿' },
+    { id: 'highcontrast', label: 'High Contrast',  icon: '◐' },
+    { id: 'laserpro',     label: 'Laser Pro',      icon: '⚡' }
+  ];
+
+  function _setTheme(id) {
+    document.documentElement.setAttribute('data-theme', id);
+    try { localStorage.setItem('vinculum-theme', id); } catch(e) {}
+    // Update button label
+    var btn = document.getElementById('vinculum-theme-toggle');
+    if (btn) {
+      var theme = VINCULUM_THEMES.find(function(t){ return t.id === id; });
+      btn.querySelector('.vtc-label').textContent = theme ? theme.icon : '🎨';
+    }
+    // Update active state in dropdown
+    var items = document.querySelectorAll('.vtc-item');
+    for (var i = 0; i < items.length; i++) {
+      items[i].classList.toggle('vtc-active', items[i].getAttribute('data-theme') === id);
+    }
+  }
+  window.VinculumSetTheme = _setTheme;
+
+  if (!VinculumParams.embed) {
+    document.addEventListener('DOMContentLoaded', function() {
+      // Inject CSS for the theme chooser
+      var style = document.createElement('style');
+      style.textContent = [
+        '.vtc-wrap{position:fixed;top:12px;right:12px;z-index:9999;font-family:Inter,-apple-system,sans-serif;}',
+        '.vtc-btn{width:40px;height:40px;border-radius:50%;border:2px solid var(--border);background:var(--card);',
+        '  cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:18px;',
+        '  box-shadow:0 2px 10px rgba(0,0,0,0.3);transition:all 0.2s ease;}',
+        '.vtc-btn:hover{transform:scale(1.1);border-color:var(--cyan);}',
+        '.vtc-dropdown{display:none;position:absolute;top:48px;right:0;background:var(--card);',
+        '  border:1px solid var(--border);border-radius:12px;padding:8px;min-width:180px;',
+        '  box-shadow:0 8px 32px rgba(0,0,0,0.4);max-height:70vh;overflow-y:auto;}',
+        '.vtc-dropdown.open{display:block;}',
+        '.vtc-item{display:flex;align-items:center;gap:8px;padding:8px 12px;border-radius:8px;',
+        '  cursor:pointer;font-size:13px;color:var(--text);transition:background 0.15s;border:none;',
+        '  background:transparent;width:100%;text-align:left;}',
+        '.vtc-item:hover{background:var(--glow);}',
+        '.vtc-active{background:rgba(0,212,255,0.15);font-weight:600;}',
+        '.vtc-icon{font-size:16px;width:24px;text-align:center;}',
+      ].join('\n');
+      document.head.appendChild(style);
+
+      // Build the widget
+      var currentId = document.documentElement.getAttribute('data-theme') || 'dark';
+      var currentTheme = VINCULUM_THEMES.find(function(t){ return t.id === currentId; }) || VINCULUM_THEMES[0];
+
+      var wrap = document.createElement('div');
+      wrap.className = 'vtc-wrap';
+
+      var btn = document.createElement('button');
+      btn.id = 'vinculum-theme-toggle';
+      btn.className = 'vtc-btn';
+      btn.title = 'Change Theme';
+      btn.innerHTML = '<span class="vtc-label">' + currentTheme.icon + '</span>';
+
+      var dropdown = document.createElement('div');
+      dropdown.className = 'vtc-dropdown';
+
+      VINCULUM_THEMES.forEach(function(t) {
+        var item = document.createElement('button');
+        item.className = 'vtc-item' + (t.id === currentId ? ' vtc-active' : '');
+        item.setAttribute('data-theme', t.id);
+        item.innerHTML = '<span class="vtc-icon">' + t.icon + '</span><span>' + t.label + '</span>';
+        item.addEventListener('click', function() {
+          _setTheme(t.id);
+          dropdown.classList.remove('open');
+        });
+        dropdown.appendChild(item);
+      });
+
+      btn.addEventListener('click', function(e) {
+        e.stopPropagation();
+        dropdown.classList.toggle('open');
+      });
+
+      document.addEventListener('click', function() {
+        dropdown.classList.remove('open');
+      });
+      dropdown.addEventListener('click', function(e) { e.stopPropagation(); });
+
+      wrap.appendChild(btn);
+      wrap.appendChild(dropdown);
+      document.body.appendChild(wrap);
+    });
+  }
+
+  // ════════════════════════════════════════
   // 4. ACCESSIBILITY — Read-to-Me
   // ════════════════════════════════════════
   window.VinculumA11y = {
