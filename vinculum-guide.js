@@ -403,7 +403,7 @@
 
     return standards
       .map(s => `<div style="margin-bottom: 12px; font-size: 0.85em;">
-        <strong style="color: var(--cyan);">${escapeHTML(s.code)}</strong>
+        <span class="std-badge">${escapeHTML(s.code)}</span>
         <p style="margin: 4px 0 0 0; color: var(--text2);">${escapeHTML(s.text)}</p>
       </div>`)
       .join('');
@@ -428,7 +428,10 @@
   function createGuidePanel(data, mode = 'explore') {
     const panelHTML = `
       <div class="vinculum-guide-panel" id="vinculumGuidePanel">
-        <button class="guide-toggle" id="guideToggle" title="Toggle instructions" aria-label="Toggle guide panel">?</button>
+        <button class="guide-toggle" id="guideToggle" title="Toggle guide panel" aria-label="Toggle guide panel">&#9776;</button>
+        <div class="guide-header">
+          <span class="guide-header-title">Guide</span>
+        </div>
         <div class="guide-content">
           <div class="panel-section">
             <div class="panel-title">How to Use</div>
@@ -465,37 +468,48 @@
     style.textContent = `
       .vinculum-guide-panel {
         position: fixed;
-        right: 0;
+        left: 0;
         top: 0;
         width: 260px;
         height: 100vh;
         background: var(--bg2);
-        border-left: 2px solid var(--border);
-        box-shadow: -2px 0 8px rgba(0, 0, 0, 0.12);
+        border-right: 2px solid var(--border);
+        box-shadow: 2px 0 8px rgba(0, 0, 0, 0.12);
         display: flex;
         flex-direction: column;
-        z-index: 9999;
+        z-index: 9998;
         font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
-        transition: transform 0.3s ease, right 0.3s ease;
+        transition: transform 0.3s ease;
         overflow: hidden;
       }
 
       .vinculum-guide-panel.collapsed {
-        transform: translateX(260px);
-        right: -260px;
+        transform: translateX(-260px);
+      }
+
+      /* Push main content right when panel is open */
+      body.guide-panel-open {
+        margin-left: 260px;
+        transition: margin-left 0.3s ease;
+      }
+
+      body.guide-panel-closed {
+        margin-left: 0;
+        transition: margin-left 0.3s ease;
       }
 
       .guide-toggle {
         position: absolute;
-        left: -48px;
-        top: 20px;
-        width: 40px;
-        height: 40px;
-        border-radius: 50%;
+        right: -44px;
+        top: 12px;
+        width: 36px;
+        height: 36px;
+        border-radius: 0 8px 8px 0;
         border: 2px solid var(--border);
+        border-left: none;
         background: var(--bg2);
         color: var(--text);
-        font-size: 20px;
+        font-size: 16px;
         font-weight: bold;
         cursor: pointer;
         display: flex;
@@ -507,7 +521,7 @@
 
       .guide-toggle:hover {
         background: var(--cyan);
-        color: white;
+        color: #000;
         border-color: var(--cyan);
       }
 
@@ -515,10 +529,26 @@
         transform: scale(0.95);
       }
 
+      .guide-header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 14px 16px 10px;
+        border-bottom: 1px solid var(--border);
+      }
+
+      .guide-header-title {
+        font-size: 11px;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 1px;
+        color: var(--cyan);
+      }
+
       .guide-content {
         flex: 1;
         overflow-y: auto;
-        padding: 20px;
+        padding: 16px;
         scroll-behavior: smooth;
       }
 
@@ -540,7 +570,7 @@
       }
 
       .panel-section {
-        margin-bottom: 24px;
+        margin-bottom: 20px;
       }
 
       .panel-section:last-child {
@@ -548,14 +578,14 @@
       }
 
       .panel-title {
-        font-size: 13px;
+        font-size: 12px;
         font-weight: 700;
         color: var(--text);
         text-transform: uppercase;
         letter-spacing: 0.5px;
-        margin-bottom: 10px;
+        margin-bottom: 8px;
         border-bottom: 1px solid var(--border);
-        padding-bottom: 8px;
+        padding-bottom: 6px;
       }
 
       .panel-text {
@@ -589,13 +619,17 @@
         font-size: 12px;
       }
 
-      .guide-standards strong {
+      /* Standards badge: outlined pill, not filled background */
+      .guide-standards .std-badge {
         display: inline-block;
-        background: var(--cyan);
-        color: white;
-        padding: 2px 6px;
-        border-radius: 3px;
+        border: 1.5px solid var(--cyan);
+        color: var(--cyan);
+        background: transparent;
+        padding: 2px 8px;
+        border-radius: 4px;
         font-size: 11px;
+        font-weight: 700;
+        font-family: 'Consolas', 'Courier New', monospace;
         margin-bottom: 4px;
       }
 
@@ -603,13 +637,13 @@
       @media (max-width: 899px) {
         .vinculum-guide-panel {
           position: fixed;
-          right: 0;
+          left: 0;
           bottom: 0;
           top: auto;
           width: 100%;
           height: auto;
           max-height: 70vh;
-          border-left: none;
+          border-right: none;
           border-top: 2px solid var(--border);
           border-radius: 16px 16px 0 0;
           box-shadow: 0 -2px 8px rgba(0, 0, 0, 0.12);
@@ -617,7 +651,10 @@
 
         .vinculum-guide-panel.collapsed {
           transform: translateY(100%);
-          bottom: 0;
+        }
+
+        body.guide-panel-open {
+          margin-left: 0;
         }
 
         .guide-toggle {
@@ -627,6 +664,9 @@
           bottom: 100%;
           top: auto;
           margin-bottom: 8px;
+          border-radius: 8px 8px 0 0;
+          border: 2px solid var(--border);
+          border-bottom: none;
         }
 
         .guide-content {
@@ -678,18 +718,26 @@
     const panel = document.getElementById('vinculumGuidePanel');
     const toggle = document.getElementById('guideToggle');
 
+    function updateBodyMargin() {
+      const isCollapsed = panel.classList.contains('collapsed');
+      document.body.classList.toggle('guide-panel-open', !isCollapsed);
+      document.body.classList.toggle('guide-panel-closed', isCollapsed);
+    }
+
     toggle.addEventListener('click', () => {
       panel.classList.toggle('collapsed');
+      updateBodyMargin();
       // Save state to localStorage
       const isCollapsed = panel.classList.contains('collapsed');
       localStorage.setItem('vinculum-guide-collapsed', isCollapsed);
     });
 
-    // Check if panel should be initially collapsed
+    // Default: START OPEN. Only collapse if user previously closed it.
     const shouldCollapse = localStorage.getItem('vinculum-guide-collapsed') === 'true';
     if (shouldCollapse) {
       panel.classList.add('collapsed');
     }
+    updateBodyMargin();
 
     // Listen for mode changes
     setupModeListener(guideData);
