@@ -1,0 +1,987 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>VINCULUM — Pi Explorer</title>
+<link rel="stylesheet" href="../../vinculum-core.css">
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:'Segoe UI',system-ui,sans-serif;background:var(--bg);color:var(--text);overflow-x:hidden}
+
+/* ── Layout ── */
+.app{display:grid;grid-template-columns:1fr 340px;grid-template-rows:auto 1fr;height:100vh;gap:0}
+.top-bar{grid-column:1/-1;display:flex;align-items:center;justify-content:space-between;padding:10px 24px;background:var(--card);border-bottom:1px solid var(--border)}
+.top-bar h1{font-size:22px;font-weight:800;letter-spacing:1px}
+.top-bar h1 span{background:var(--grad);-webkit-background-clip:text;-webkit-text-fill-color:transparent}
+.top-bar .stats{display:flex;gap:24px;font-size:13px;font-weight:700;text-transform:uppercase;letter-spacing:1.5px}
+.top-bar .stats .val{font-size:28px;display:block;letter-spacing:0}
+.badge{background:var(--cyan);color:#fff;padding:3px 10px;border-radius:12px;font-size:11px;font-weight:700}
+
+.main-canvas{position:relative;overflow:hidden;background:var(--bg2)}
+.sidebar{background:var(--card);border-left:1px solid var(--border);overflow-y:auto;padding:0}
+
+/* ── Mode Tabs ── */
+.vinculum-mode-tabs{display:flex;border-bottom:2px solid var(--border);background:var(--card2)}
+.vinculum-mode-tab{flex:1;padding:12px;text-align:center;font-weight:700;font-size:13px;text-transform:uppercase;letter-spacing:1px;cursor:pointer;border:none;background:none;color:var(--text2);transition:all .2s}
+.vinculum-mode-tab.active-explore{color:var(--cyan);border-bottom:3px solid var(--cyan)}
+.vinculum-mode-tab.active-practice{color:var(--green);border-bottom:3px solid var(--green)}
+.vinculum-mode-tab.active-play{color:var(--yellow);border-bottom:3px solid var(--yellow)}
+
+/* ── Panels ── */
+.panel{display:none;padding:16px}
+.panel.active{display:block}
+.panel-section{background:var(--bg2);border:1px solid var(--border);border-radius:10px;padding:14px;margin-bottom:12px}
+.panel-section h3{font-size:13px;text-transform:uppercase;letter-spacing:1.5px;color:var(--text2);margin-bottom:10px}
+
+/* ── Slider Controls ── */
+.slider-row{display:flex;align-items:center;gap:10px;margin:8px 0}
+.slider-row label{font-size:12px;font-weight:700;color:var(--text2);min-width:70px;text-transform:uppercase;letter-spacing:1px}
+.slider-row input[type=range]{flex:1;accent-color:var(--cyan);height:6px}
+.slider-row .slider-val{font-size:18px;font-weight:800;color:var(--cyan);min-width:40px;text-align:right}
+
+/* ── Buttons ── */
+.btn{padding:8px 16px;border:none;border-radius:8px;font-weight:700;font-size:13px;cursor:pointer;transition:all .2s}
+.btn-primary{background:var(--cyan);color:#fff}
+.btn-primary:hover{filter:brightness(1.2)}
+.btn-ghost{background:var(--bg2);color:var(--text);border:1px solid var(--border)}
+.btn-ghost:hover{border-color:var(--cyan);color:var(--cyan)}
+
+/* ── Difficulty ── */
+.vinculum-diff-selector{display:flex;gap:6px;margin:8px 0}
+.vinculum-diff-btn{padding:6px 12px;border:1px solid var(--border);border-radius:6px;background:var(--bg);color:var(--text2);font-size:12px;font-weight:700;cursor:pointer;transition:all .2s}
+.vinculum-diff-btn.active{background:var(--cyan);color:#fff;border-color:var(--cyan)}
+
+/* ── Readouts ── */
+.readout{display:grid;grid-template-columns:1fr 1fr;gap:6px;margin:8px 0}
+.readout-item{background:var(--card);border:1px solid var(--border);border-radius:8px;padding:8px 10px;text-align:center}
+.readout-item .label{font-size:10px;text-transform:uppercase;letter-spacing:1.5px;color:var(--text2)}
+.readout-item .value{font-size:18px;font-weight:800;color:var(--cyan)}
+
+/* ── Capture Log ── */
+.capture-log{max-height:200px;overflow-y:auto}
+.capture-entry{background:var(--card);border:1px solid var(--border);border-radius:6px;padding:8px;margin-bottom:6px;font-size:11px}
+.capture-entry .cap-title{font-weight:700;color:var(--cyan);font-size:12px}
+
+/* ── SVG Canvas ── */
+svg text{font-family:'Segoe UI',system-ui,sans-serif}
+.svg-container{width:100%;height:100%;display:flex;align-items:center;justify-content:center}
+
+/* ── Rolling Circle Track ── */
+.rolling-track{position:absolute;bottom:80px;left:0;right:0;height:200px}
+
+/* ── Play Mode HUD ── */
+.play-hud{display:flex;gap:16px;align-items:center;margin-bottom:12px}
+.play-hud .hud-item{text-align:center}
+.play-hud .hud-item .hud-val{font-size:28px;font-weight:800;color:var(--yellow)}
+.play-hud .hud-item .hud-label{font-size:10px;text-transform:uppercase;letter-spacing:1.5px;color:var(--text2)}
+
+/* ── Practice Steps ── */
+.step-card{background:var(--card2);border:1px solid var(--border);border-radius:8px;padding:10px;margin:6px 0;opacity:0.4;transition:all .3s}
+.step-card.revealed{opacity:1;border-color:var(--cyan)}
+.step-card.current{opacity:1;border-color:var(--green);box-shadow:0 0 12px var(--glow)}
+.step-card .step-num{font-size:10px;font-weight:800;color:var(--text2);text-transform:uppercase;letter-spacing:1px}
+.step-card .step-math{font-size:16px;font-weight:700;margin:4px 0}
+.step-card .step-explain{font-size:12px;color:var(--text2)}
+
+/* ── Input ── */
+.answer-input{width:100%;padding:10px;border:2px solid var(--border);border-radius:8px;background:var(--bg2);color:var(--text);font-size:16px;font-weight:700;text-align:center}
+.answer-input:focus{outline:none;border-color:var(--cyan);box-shadow:0 0 0 3px var(--glow)}
+#feedback{min-height:24px;text-align:center;font-weight:700;font-size:14px;margin:8px 0;transition:all .3s}
+
+/* ── Hub Link ── */
+.hub-link{text-decoration:none;color:var(--text2);font-size:13px;font-weight:600;display:flex;align-items:center;gap:6px}
+.hub-link:hover{color:var(--cyan)}
+
+/* ── Theme Picker ── */
+.theme-row{display:flex;gap:4px;flex-wrap:wrap;margin-top:8px}
+.theme-dot{width:20px;height:20px;border-radius:50%;cursor:pointer;border:2px solid transparent;transition:all .2s}
+.theme-dot:hover,.theme-dot.active{border-color:var(--text);transform:scale(1.2)}
+
+/* ── Shimmer ── */
+@keyframes shimmer{0%,100%{opacity:0.6}50%{opacity:1}}
+.shimmer{animation:shimmer 2s ease-in-out infinite}
+</style>
+</head>
+<body data-theme="">
+<div class="app">
+  <!-- ══ TOP BAR ══ -->
+  <div class="top-bar vinculum-header">
+    <div style="display:flex;align-items:center;gap:16px">
+      <a href="../../VINCULUM-Hub.html" class="hub-link">← Hub</a>
+      <h1>VINCULUM <span>Pi Explorer</span></h1>
+      <span class="badge">7.G.4</span>
+      <span class="badge" style="background:var(--pink)">MN: 7.3.2.2</span>
+    </div>
+    <div class="stats">
+      <div>SIDES <span class="val" id="topSides">6</span></div>
+      <div>LOWER <span class="val" id="topLower">3.000</span></div>
+      <div style="color:var(--cyan)">π <span class="val" id="topPi">3.14159</span></div>
+      <div>UPPER <span class="val" id="topUpper">3.464</span></div>
+    </div>
+  </div>
+
+  <!-- ══ MAIN CANVAS ══ -->
+  <div class="main-canvas" id="mainCanvas">
+    <div class="svg-container" id="svgContainer"></div>
+  </div>
+
+  <!-- ══ SIDEBAR ══ -->
+  <div class="sidebar">
+    <div class="vinculum-mode-tabs">
+      <button class="vinculum-mode-tab active-explore" data-mode="explore" onclick="switchMode('explore')">Explore</button>
+      <button class="vinculum-mode-tab" data-mode="practice" onclick="switchMode('practice')">Practice</button>
+      <button class="vinculum-mode-tab" data-mode="play" onclick="switchMode('play')">Play</button>
+    </div>
+
+    <!-- ── EXPLORE PANEL ── -->
+    <div class="panel active" id="panel-explore">
+      <div class="panel-section">
+        <h3>Archimedes' Exhaustion</h3>
+        <p style="font-size:12px;color:var(--text2);margin-bottom:8px">Squeeze π between inscribed &amp; circumscribed polygons.</p>
+        <div class="slider-row">
+          <label>Sides</label>
+          <input type="range" id="sidesSlider" min="3" max="120" value="6" oninput="updateExplore()">
+          <span class="slider-val" id="sidesVal">6</span>
+        </div>
+        <div class="slider-row">
+          <label>Radius</label>
+          <input type="range" id="radiusSlider" min="50" max="200" value="150" oninput="updateExplore()">
+          <span class="slider-val" id="radiusVal">150</span>
+        </div>
+      </div>
+
+      <div class="panel-section">
+        <h3>Live Bounds</h3>
+        <div class="readout">
+          <div class="readout-item"><div class="label">Inscribed</div><div class="value" id="inscribedVal">3.000</div></div>
+          <div class="readout-item"><div class="label">Circumscribed</div><div class="value" id="circumscribedVal">3.464</div></div>
+          <div class="readout-item"><div class="label">Gap</div><div class="value" id="gapVal">0.464</div></div>
+          <div class="readout-item"><div class="label">Accuracy</div><div class="value" id="accuracyVal">95.2%</div></div>
+        </div>
+      </div>
+
+      <div class="panel-section">
+        <h3>Visualization</h3>
+        <div class="vinculum-diff-selector">
+          <button class="vinculum-diff-btn active" onclick="setViz('polygons')">Polygons</button>
+          <button class="vinculum-diff-btn" onclick="setViz('rolling')">Rolling Circle</button>
+          <button class="vinculum-diff-btn" onclick="setViz('area')">Area Grid</button>
+        </div>
+      </div>
+
+      <div class="panel-section">
+        <h3>Capture Log</h3>
+        <button class="btn btn-primary" style="width:100%;margin-bottom:8px" onclick="captureSnapshot()">📸 Capture Current State</button>
+        <div class="capture-log" id="captureLog">
+          <div style="font-size:11px;color:var(--muted);text-align:center;padding:12px">No captures yet. Adjust the slider and capture states to build evidence.</div>
+        </div>
+      </div>
+
+      <div class="panel-section">
+        <h3>Theme</h3>
+        <div class="theme-row" id="themeRow"></div>
+      </div>
+    </div>
+
+    <!-- ── PRACTICE PANEL ── -->
+    <div class="panel" id="panel-practice">
+      <div class="panel-section">
+        <h3>Guided Estimation</h3>
+        <p style="font-size:12px;color:var(--text2);margin-bottom:10px">Use the polygon method to estimate π step by step.</p>
+        <div class="vinculum-diff-selector">
+          <button class="vinculum-diff-btn active" data-diff="emergent" onclick="setPracticeDiff('emergent')">Emergent</button>
+          <button class="vinculum-diff-btn" data-diff="proficient" onclick="setPracticeDiff('proficient')">Proficient</button>
+          <button class="vinculum-diff-btn" data-diff="advanced" onclick="setPracticeDiff('advanced')">Advanced</button>
+        </div>
+      </div>
+
+      <div class="panel-section" id="practicePrompt">
+        <h3>Challenge</h3>
+        <div id="practiceQuestion" style="font-size:15px;font-weight:700;margin:8px 0"></div>
+        <div id="practiceSteps"></div>
+        <div style="margin-top:10px">
+          <input type="text" class="answer-input" id="practiceInput" placeholder="Your answer..." onkeydown="if(event.key==='Enter')checkPractice()">
+          <div style="display:flex;gap:6px;margin-top:8px">
+            <button class="btn btn-primary" style="flex:1" onclick="checkPractice()">Check</button>
+            <button class="btn btn-ghost" onclick="showPracticeHint()">Hint</button>
+            <button class="btn btn-ghost" onclick="nextPractice()">Skip →</button>
+          </div>
+        </div>
+        <div id="feedback"></div>
+      </div>
+
+      <div class="panel-section">
+        <h3>Progress</h3>
+        <div class="readout">
+          <div class="readout-item"><div class="label">Correct</div><div class="value" id="practiceCorrect">0</div></div>
+          <div class="readout-item"><div class="label">Streak</div><div class="value" id="practiceStreak">0</div></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── PLAY PANEL ── -->
+    <div class="panel" id="panel-play">
+      <div class="panel-section">
+        <h3>Pi Speed Challenge</h3>
+        <p style="font-size:12px;color:var(--text2);margin-bottom:10px">Answer as many π questions as you can in 60 seconds!</p>
+        <div class="play-hud">
+          <div class="hud-item"><div class="hud-val" id="playScore">0</div><div class="hud-label">Score</div></div>
+          <div class="hud-item"><div class="hud-val" id="playStreak">0</div><div class="hud-label">Streak</div></div>
+          <div class="hud-item"><div class="hud-val" id="playTimer">60</div><div class="hud-label">Time</div></div>
+        </div>
+        <button class="btn btn-primary" style="width:100%" id="playStartBtn" onclick="startPlay()">Launch Challenge</button>
+      </div>
+
+      <div class="panel-section" id="playArea" style="display:none">
+        <div id="playQuestion" style="font-size:15px;font-weight:700;margin-bottom:10px"></div>
+        <input type="text" class="answer-input" id="playInput" placeholder="Answer..." onkeydown="if(event.key==='Enter')submitPlay()">
+        <button class="btn btn-primary" style="width:100%;margin-top:8px" onclick="submitPlay()">Submit</button>
+        <div id="playFeedback" style="min-height:24px;text-align:center;font-weight:700;font-size:14px;margin-top:8px"></div>
+      </div>
+
+      <div class="panel-section">
+        <h3>Difficulty</h3>
+        <div class="vinculum-diff-selector">
+          <button class="vinculum-diff-btn active" data-playdiff="emergent" onclick="setPlayDiff('emergent')">Emergent</button>
+          <button class="vinculum-diff-btn" data-playdiff="proficient" onclick="setPlayDiff('proficient')">Proficient</button>
+          <button class="vinculum-diff-btn" data-playdiff="advanced" onclick="setPlayDiff('advanced')">Advanced</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script src="../../vinculum-feedback.js"></script>
+<script src="../../vinculum-input.js"></script>
+<script src="../../vinculum-stories.js"></script>
+<script src="../../vinculum-core.js"></script>
+<script>
+/* ═══════════════════════════════════════════════════
+   PI EXPLORER — Vinculum Premium Tool
+   Visual proof engine for discovering π
+   ═══════════════════════════════════════════════════ */
+
+// ── State ──
+const S = {
+  sides: 6, radius: 150, viz: 'polygons',
+  captures: [],
+  practiceDiff: 'emergent', practiceCorrect: 0, practiceStreak: 0,
+  playDiff: 'emergent', playScore: 0, playStreak: 0, playTimer: 60, playActive: false, playInterval: null,
+  currentPractice: null, currentPlay: null
+};
+
+// ── Theme Setup ──
+const themes = [
+  {id:'',label:'Default',color:'#0a0e1a'},
+  {id:'bright',label:'Bright',color:'#f0f2f5'},
+  {id:'redlaser',label:'Red Laser',color:'#ff2d55'},
+  {id:'storm',label:'Storm',color:'#00e5ff'},
+  {id:'frost',label:'Frost',color:'#dce8f4'},
+  {id:'emerald',label:'Emerald',color:'#00e676'},
+  {id:'sunset',label:'Sunset',color:'#ff6b35'},
+  {id:'ocean',label:'Ocean',color:'#00B4D8'},
+  {id:'mathlab',label:'Math Lab',color:'#F5F5F7'},
+  {id:'nature',label:'Nature',color:'#6B8F71'},
+  {id:'highcontrast',label:'HC',color:'#FFD60A'}
+];
+const themeRow = document.getElementById('themeRow');
+themes.forEach(t => {
+  const dot = document.createElement('div');
+  dot.className = 'theme-dot' + (t.id === '' ? ' active' : '');
+  dot.style.background = t.color;
+  dot.title = t.label;
+  dot.onclick = () => {
+    document.body.dataset.theme = t.id;
+    themeRow.querySelectorAll('.theme-dot').forEach(d => d.classList.remove('active'));
+    dot.classList.add('active');
+    updateExplore();
+  };
+  themeRow.appendChild(dot);
+});
+
+// ══════════════════════════════════════════════════════
+// MATH ENGINE
+// ══════════════════════════════════════════════════════
+
+function inscribedPerimeter(n, r) {
+  // n-gon inscribed in circle of radius r → perimeter = 2nr·sin(π/n)
+  return 2 * n * r * Math.sin(Math.PI / n);
+}
+function circumscribedPerimeter(n, r) {
+  // n-gon circumscribed around circle of radius r → perimeter = 2nr·tan(π/n)
+  return 2 * n * r * Math.tan(Math.PI / n);
+}
+function piLower(n) {
+  // inscribed perimeter / diameter = n·sin(π/n)
+  return n * Math.sin(Math.PI / n);
+}
+function piUpper(n) {
+  // circumscribed perimeter / diameter = n·tan(π/n)
+  return n * Math.tan(Math.PI / n);
+}
+function polygonPoints(n, r, cx, cy, inset) {
+  const pts = [];
+  const effectiveR = inset ? r / Math.cos(Math.PI / n) : r;
+  for (let i = 0; i < n; i++) {
+    const angle = (2 * Math.PI * i / n) - Math.PI / 2;
+    pts.push({ x: cx + effectiveR * Math.cos(angle), y: cy + effectiveR * Math.sin(angle) });
+  }
+  return pts;
+}
+
+// ══════════════════════════════════════════════════════
+// EXPLORE MODE — SVG Rendering
+// ══════════════════════════════════════════════════════
+
+function updateExplore() {
+  S.sides = parseInt(document.getElementById('sidesSlider').value);
+  S.radius = parseInt(document.getElementById('radiusSlider').value);
+  document.getElementById('sidesVal').textContent = S.sides;
+  document.getElementById('radiusVal').textContent = S.radius;
+
+  const lower = piLower(S.sides);
+  const upper = piUpper(S.sides);
+  const gap = upper - lower;
+  const accuracy = (1 - Math.abs(Math.PI - (lower + upper) / 2) / Math.PI) * 100;
+
+  document.getElementById('topSides').textContent = S.sides;
+  document.getElementById('topLower').textContent = lower.toFixed(5);
+  document.getElementById('topUpper').textContent = upper.toFixed(5);
+  document.getElementById('inscribedVal').textContent = lower.toFixed(5);
+  document.getElementById('circumscribedVal').textContent = upper.toFixed(5);
+  document.getElementById('gapVal').textContent = gap.toFixed(5);
+  document.getElementById('accuracyVal').textContent = accuracy.toFixed(2) + '%';
+
+  if (S.viz === 'polygons') renderPolygons();
+  else if (S.viz === 'rolling') renderRolling();
+  else if (S.viz === 'area') renderAreaGrid();
+}
+
+function getCSS(prop) {
+  return getComputedStyle(document.documentElement).getPropertyValue(prop).trim();
+}
+
+function renderPolygons() {
+  const container = document.getElementById('svgContainer');
+  const w = container.clientWidth || 800;
+  const h = container.clientHeight || 600;
+  const cx = w / 2, cy = h / 2;
+  const r = S.radius;
+  const n = S.sides;
+
+  const inscribed = polygonPoints(n, r, cx, cy, false);
+  const circumscribed = polygonPoints(n, r, cx, cy, true);
+  const outerR = r / Math.cos(Math.PI / n);
+
+  const cyanColor = getCSS('--cyan') || '#00d4ff';
+  const pinkColor = getCSS('--pink') || '#ff3b8b';
+  const textColor = getCSS('--text') || '#e8edf5';
+  const text2Color = getCSS('--text2') || '#8b9cc0';
+  const bgColor = getCSS('--bg2') || '#111827';
+
+  let svg = `<svg width="${w}" height="${h}" xmlns="http://www.w3.org/2000/svg">`;
+
+  // Background grid
+  svg += `<defs>
+    <pattern id="grid" width="40" height="40" patternUnits="userSpaceOnUse">
+      <path d="M 40 0 L 0 0 0 40" fill="none" stroke="${text2Color}" stroke-width="0.2" opacity="0.3"/>
+    </pattern>
+  </defs>
+  <rect width="100%" height="100%" fill="${bgColor}"/>
+  <rect width="100%" height="100%" fill="url(#grid)"/>`;
+
+  // Axes
+  svg += `<line x1="0" y1="${cy}" x2="${w}" y2="${cy}" stroke="${text2Color}" stroke-width="0.5" opacity="0.3"/>`;
+  svg += `<line x1="${cx}" y1="0" x2="${cx}" y2="${h}" stroke="${text2Color}" stroke-width="0.5" opacity="0.3"/>`;
+
+  // Circumscribed polygon (outer) — pink/orange fill
+  const circumPts = circumscribed.map(p => `${p.x},${p.y}`).join(' ');
+  svg += `<polygon points="${circumPts}" fill="${pinkColor}" fill-opacity="0.08" stroke="${pinkColor}" stroke-width="2" stroke-opacity="0.7"/>`;
+
+  // Circle
+  svg += `<circle cx="${cx}" cy="${cy}" r="${r}" fill="none" stroke="${cyanColor}" stroke-width="2.5" stroke-dasharray="6 3" opacity="0.9"/>`;
+
+  // Inscribed polygon (inner) — cyan fill
+  const inscPts = inscribed.map(p => `${p.x},${p.y}`).join(' ');
+  svg += `<polygon points="${inscPts}" fill="${cyanColor}" fill-opacity="0.12" stroke="${cyanColor}" stroke-width="2.5"/>`;
+
+  // Vertex dots on inscribed
+  inscribed.forEach((p, i) => {
+    svg += `<circle cx="${p.x}" cy="${p.y}" r="4" fill="${cyanColor}"/>`;
+  });
+
+  // Vertex dots on circumscribed
+  circumscribed.forEach(p => {
+    svg += `<circle cx="${p.x}" cy="${p.y}" r="3" fill="${pinkColor}"/>`;
+  });
+
+  // Radius line
+  const rEnd = inscribed[0];
+  svg += `<line x1="${cx}" y1="${cy}" x2="${rEnd.x}" y2="${rEnd.y}" stroke="${cyanColor}" stroke-width="1.5"/>`;
+  svg += `<text x="${(cx + rEnd.x) / 2 + 10}" y="${(cy + rEnd.y) / 2}" fill="${cyanColor}" font-size="14" font-weight="700">r</text>`;
+
+  // Center dot
+  svg += `<circle cx="${cx}" cy="${cy}" r="5" fill="${cyanColor}"/>`;
+
+  // Labels
+  const lower = piLower(n).toFixed(5);
+  const upper = piUpper(n).toFixed(5);
+  svg += `<text x="20" y="30" fill="${cyanColor}" font-size="16" font-weight="800">INSCRIBED ${n}-gon</text>`;
+  svg += `<text x="20" y="50" fill="${cyanColor}" font-size="22" font-weight="800">π > ${lower}</text>`;
+  svg += `<text x="20" y="80" fill="${pinkColor}" font-size="16" font-weight="800">CIRCUMSCRIBED ${n}-gon</text>`;
+  svg += `<text x="20" y="100" fill="${pinkColor}" font-size="22" font-weight="800">π < ${upper}</text>`;
+
+  // Convergence indicator
+  const gap = piUpper(n) - piLower(n);
+  const barW = 200, barX = w - barW - 20, barY = 30;
+  const fillPct = Math.min(1, 1 - gap / 0.5);
+  svg += `<text x="${barX}" y="${barY - 5}" fill="${text2Color}" font-size="11" font-weight="700" text-anchor="start">CONVERGENCE</text>`;
+  svg += `<rect x="${barX}" y="${barY}" width="${barW}" height="10" rx="5" fill="${text2Color}" opacity="0.2"/>`;
+  svg += `<rect x="${barX}" y="${barY}" width="${barW * fillPct}" height="10" rx="5" fill="${cyanColor}"/>`;
+  svg += `<text x="${barX + barW + 8}" y="${barY + 9}" fill="${cyanColor}" font-size="12" font-weight="800">${(fillPct * 100).toFixed(1)}%</text>`;
+
+  // Side count badge
+  svg += `<text x="${cx}" y="${h - 20}" fill="${textColor}" font-size="14" font-weight="700" text-anchor="middle">${n} sides — Gap: ${gap.toFixed(6)}</text>`;
+
+  svg += `</svg>`;
+  container.innerHTML = svg;
+}
+
+function renderRolling() {
+  const container = document.getElementById('svgContainer');
+  const w = container.clientWidth || 800;
+  const h = container.clientHeight || 600;
+  const cyanColor = getCSS('--cyan') || '#00d4ff';
+  const pinkColor = getCSS('--pink') || '#ff3b8b';
+  const greenColor = getCSS('--green') || '#00e676';
+  const textColor = getCSS('--text') || '#e8edf5';
+  const text2Color = getCSS('--text2') || '#8b9cc0';
+  const bgColor = getCSS('--bg2') || '#111827';
+
+  const r = 60;
+  const groundY = h - 100;
+  const startX = r + 40;
+  const circumference = 2 * Math.PI * r;
+
+  // Animate rolling circle
+  if (!S.rollingAnim) S.rollingAnim = 0;
+  S.rollingAnim = (S.rollingAnim + 0.008) % 1;
+  const t = S.rollingAnim;
+  const rollDist = t * circumference;
+  const cx = startX + rollDist;
+  const cy = groundY - r;
+  const angle = -t * 2 * Math.PI;
+
+  let svg = `<svg width="${w}" height="${h}" xmlns="http://www.w3.org/2000/svg">`;
+  svg += `<rect width="100%" height="100%" fill="${bgColor}"/>`;
+
+  // Ground line
+  svg += `<line x1="0" y1="${groundY}" x2="${w}" y2="${groundY}" stroke="${text2Color}" stroke-width="2"/>`;
+
+  // Circumference markers
+  for (let i = 0; i <= 3; i++) {
+    const mx = startX + i * circumference;
+    if (mx < w) {
+      svg += `<line x1="${mx}" y1="${groundY - 8}" x2="${mx}" y2="${groundY + 8}" stroke="${pinkColor}" stroke-width="2"/>`;
+      svg += `<text x="${mx}" y="${groundY + 25}" fill="${pinkColor}" font-size="12" font-weight="700" text-anchor="middle">${i}πd</text>`;
+    }
+  }
+
+  // Rolled distance highlight
+  svg += `<line x1="${startX}" y1="${groundY}" x2="${cx}" y2="${groundY}" stroke="${cyanColor}" stroke-width="4"/>`;
+
+  // Circle
+  svg += `<circle cx="${cx}" cy="${cy}" r="${r}" fill="${cyanColor}" fill-opacity="0.1" stroke="${cyanColor}" stroke-width="2.5"/>`;
+
+  // Spoke to show rotation
+  const spokeX = cx + r * Math.cos(angle);
+  const spokeY = cy + r * Math.sin(angle);
+  svg += `<line x1="${cx}" y1="${cy}" x2="${spokeX}" y2="${spokeY}" stroke="${cyanColor}" stroke-width="2"/>`;
+  svg += `<circle cx="${spokeX}" cy="${spokeY}" r="5" fill="${cyanColor}"/>`;
+  svg += `<circle cx="${cx}" cy="${cy}" r="4" fill="${cyanColor}"/>`;
+
+  // Contact point trace
+  const contactX = cx + r * Math.sin(angle + Math.PI);
+  svg += `<circle cx="${cx}" cy="${groundY}" r="3" fill="${greenColor}"/>`;
+
+  // Labels
+  svg += `<text x="20" y="30" fill="${cyanColor}" font-size="18" font-weight="800">ROLLING CIRCLE</text>`;
+  svg += `<text x="20" y="55" fill="${textColor}" font-size="14">Circumference = π × diameter</text>`;
+  svg += `<text x="20" y="80" fill="${text2Color}" font-size="13">C = π × ${(2*r)} = ${(2 * Math.PI * r).toFixed(2)} px</text>`;
+
+  // Distance rolled readout
+  svg += `<text x="${cx}" y="${cy - r - 15}" fill="${cyanColor}" font-size="14" font-weight="800" text-anchor="middle">${(t * 100).toFixed(0)}% of one revolution</text>`;
+  svg += `<text x="${cx}" y="${cy}" fill="${textColor}" font-size="11" font-weight="700" text-anchor="middle">d=${2*r}</text>`;
+
+  // Diameter line
+  svg += `<text x="20" y="${h - 20}" fill="${greenColor}" font-size="15" font-weight="700">Distance rolled: ${rollDist.toFixed(1)} px = ${(rollDist / (2*r)).toFixed(3)}d ≈ ${(rollDist / (2*r)).toFixed(3)}... × d</text>`;
+
+  svg += `</svg>`;
+  container.innerHTML = svg;
+
+  if (S.viz === 'rolling') requestAnimationFrame(renderRolling);
+}
+
+function renderAreaGrid() {
+  const container = document.getElementById('svgContainer');
+  const w = container.clientWidth || 800;
+  const h = container.clientHeight || 600;
+  const cx = w / 2, cy = h / 2;
+  const r = S.radius;
+  const cyanColor = getCSS('--cyan') || '#00d4ff';
+  const pinkColor = getCSS('--pink') || '#ff3b8b';
+  const greenColor = getCSS('--green') || '#00e676';
+  const textColor = getCSS('--text') || '#e8edf5';
+  const text2Color = getCSS('--text2') || '#8b9cc0';
+  const bgColor = getCSS('--bg2') || '#111827';
+
+  const gridSize = 12;
+  const cellSize = r * 2 / gridSize;
+
+  let svg = `<svg width="${w}" height="${h}" xmlns="http://www.w3.org/2000/svg">`;
+  svg += `<rect width="100%" height="100%" fill="${bgColor}"/>`;
+
+  // Draw grid cells — color based on whether inside circle
+  let insideCount = 0;
+  let totalCells = gridSize * gridSize;
+  for (let row = 0; row < gridSize; row++) {
+    for (let col = 0; col < gridSize; col++) {
+      const cellCx = cx - r + col * cellSize + cellSize / 2;
+      const cellCy = cy - r + row * cellSize + cellSize / 2;
+      const dist = Math.sqrt((cellCx - cx) ** 2 + (cellCy - cy) ** 2);
+      const inside = dist <= r;
+      if (inside) insideCount++;
+      svg += `<rect x="${cx - r + col * cellSize}" y="${cy - r + row * cellSize}"
+              width="${cellSize - 1}" height="${cellSize - 1}" rx="2"
+              fill="${inside ? cyanColor : pinkColor}" fill-opacity="${inside ? 0.3 : 0.05}"
+              stroke="${inside ? cyanColor : text2Color}" stroke-width="0.5" stroke-opacity="0.4"/>`;
+    }
+  }
+
+  // Circle outline
+  svg += `<circle cx="${cx}" cy="${cy}" r="${r}" fill="none" stroke="${cyanColor}" stroke-width="2.5"/>`;
+
+  // Square outline (r² reference)
+  svg += `<rect x="${cx - r}" y="${cy - r}" width="${r * 2}" height="${r * 2}" fill="none" stroke="${pinkColor}" stroke-width="1.5" stroke-dasharray="6 3"/>`;
+
+  // Labels
+  const ratio = insideCount / totalCells;
+  const piEstimate = ratio * 4;
+  svg += `<text x="20" y="30" fill="${cyanColor}" font-size="18" font-weight="800">AREA METHOD</text>`;
+  svg += `<text x="20" y="55" fill="${textColor}" font-size="14">Circle area / Square area = π/4</text>`;
+  svg += `<text x="20" y="80" fill="${text2Color}" font-size="13">Inside: ${insideCount}/${totalCells} cells = ${ratio.toFixed(4)}</text>`;
+  svg += `<text x="20" y="105" fill="${greenColor}" font-size="16" font-weight="800">π ≈ ${piEstimate.toFixed(4)} (grid estimate)</text>`;
+  svg += `<text x="20" y="130" fill="${text2Color}" font-size="12">More cells → better estimate. Area = πr²</text>`;
+
+  // Center
+  svg += `<circle cx="${cx}" cy="${cy}" r="4" fill="${cyanColor}"/>`;
+  svg += `<text x="${cx + 8}" y="${cy - 8}" fill="${cyanColor}" font-size="12" font-weight="700">r=${Math.round(r / 10)}</text>`;
+
+  svg += `</svg>`;
+  container.innerHTML = svg;
+}
+
+// ══════════════════════════════════════════════════════
+// MODE SWITCHING
+// ══════════════════════════════════════════════════════
+
+function switchMode(mode) {
+  document.querySelectorAll('.vinculum-mode-tab').forEach(t => {
+    t.className = 'vinculum-mode-tab';
+  });
+  document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
+
+  const tab = document.querySelector(`[data-mode="${mode}"]`);
+  const activeClass = mode === 'explore' ? 'active-explore' : mode === 'practice' ? 'active-practice' : 'active-play';
+  tab.classList.add(activeClass);
+  document.getElementById(`panel-${mode}`).classList.add('active');
+
+  if (mode === 'explore') updateExplore();
+  if (mode === 'practice') nextPractice();
+  if (mode === 'play') renderPlayViz();
+}
+
+function setViz(v) {
+  S.viz = v;
+  document.querySelectorAll('.panel-section .vinculum-diff-btn').forEach(b => b.classList.remove('active'));
+  event.target.classList.add('active');
+  updateExplore();
+}
+
+// ══════════════════════════════════════════════════════
+// CAPTURE SYSTEM
+// ══════════════════════════════════════════════════════
+
+function captureSnapshot() {
+  const lower = piLower(S.sides);
+  const upper = piUpper(S.sides);
+  const capture = {
+    id: S.captures.length + 1,
+    sides: S.sides,
+    lower: lower.toFixed(6),
+    upper: upper.toFixed(6),
+    gap: (upper - lower).toFixed(6),
+    midpoint: ((lower + upper) / 2).toFixed(6),
+    viz: S.viz,
+    time: new Date().toLocaleTimeString()
+  };
+  S.captures.push(capture);
+
+  const log = document.getElementById('captureLog');
+  if (S.captures.length === 1) log.innerHTML = '';
+
+  const entry = document.createElement('div');
+  entry.className = 'capture-entry';
+  entry.innerHTML = `
+    <div class="cap-title">#${capture.id} — ${capture.sides}-gon @ ${capture.time}</div>
+    <div style="margin-top:4px">Lower: ${capture.lower} | Upper: ${capture.upper}</div>
+    <div>Gap: ${capture.gap} | Midpoint: ${capture.midpoint}</div>
+  `;
+  log.prepend(entry);
+}
+
+// ══════════════════════════════════════════════════════
+// PRACTICE MODE
+// ══════════════════════════════════════════════════════
+
+function setPracticeDiff(d) {
+  S.practiceDiff = d;
+  document.querySelectorAll('#panel-practice .vinculum-diff-btn').forEach(b => {
+    b.classList.toggle('active', b.dataset.diff === d);
+  });
+  nextPractice();
+}
+
+function generatePractice() {
+  const d = S.practiceDiff;
+  const types = [];
+
+  if (d === 'emergent') {
+    // Basic: Given C or A formula, compute with given r
+    const r = [3, 4, 5, 6, 7, 8, 10][Math.floor(Math.random() * 7)];
+    const isCirc = Math.random() < 0.5;
+    if (isCirc) {
+      types.push({
+        question: `A circle has radius ${r}. What is its circumference? (Round to 2 decimal places)`,
+        answer: +(2 * Math.PI * r).toFixed(2),
+        tolerance: 0.1,
+        steps: [
+          { text: `Formula: C = 2πr` },
+          { text: `C = 2 × π × ${r}` },
+          { text: `C = ${(2 * r)} × π` },
+          { text: `C ≈ ${(2 * Math.PI * r).toFixed(2)}` }
+        ],
+        hint: 'Use C = 2πr. Multiply 2 × π × radius.'
+      });
+    } else {
+      types.push({
+        question: `A circle has radius ${r}. What is its area? (Round to 2 decimal places)`,
+        answer: +(Math.PI * r * r).toFixed(2),
+        tolerance: 0.1,
+        steps: [
+          { text: `Formula: A = πr²` },
+          { text: `A = π × ${r}²` },
+          { text: `A = π × ${r * r}` },
+          { text: `A ≈ ${(Math.PI * r * r).toFixed(2)}` }
+        ],
+        hint: 'Use A = πr². Square the radius first, then multiply by π.'
+      });
+    }
+  } else if (d === 'proficient') {
+    // Polygon estimation: what's the inscribed perimeter ratio for n sides?
+    const n = [4, 6, 8, 12][Math.floor(Math.random() * 4)];
+    const est = piLower(n);
+    types.push({
+      question: `A regular ${n}-gon is inscribed in a unit circle. What is the lower bound for π? (5 decimal places)`,
+      answer: +est.toFixed(5),
+      tolerance: 0.001,
+      steps: [
+        { text: `Formula: π_lower = n × sin(π/n)` },
+        { text: `= ${n} × sin(π/${n})` },
+        { text: `= ${n} × sin(${(Math.PI / n).toFixed(5)})` },
+        { text: `= ${n} × ${Math.sin(Math.PI / n).toFixed(5)}` },
+        { text: `≈ ${est.toFixed(5)}` }
+      ],
+      hint: `Use the formula: n × sin(π/n) where n = ${n}`
+    });
+  } else {
+    // Advanced: How many sides needed for accuracy within X?
+    const targets = [0.01, 0.001, 0.0001];
+    const target = targets[Math.floor(Math.random() * 3)];
+    let needed = 3;
+    while (piUpper(needed) - piLower(needed) > target && needed < 10000) needed++;
+    types.push({
+      question: `How many polygon sides are needed so the gap between upper and lower bounds is less than ${target}?`,
+      answer: needed,
+      tolerance: 2,
+      steps: [
+        { text: `Gap = n·tan(π/n) − n·sin(π/n)` },
+        { text: `We need gap < ${target}` },
+        { text: `Testing polygons iteratively...` },
+        { text: `At n=${needed}: gap ≈ ${(piUpper(needed) - piLower(needed)).toFixed(6)}` },
+        { text: `Answer: ${needed} sides` }
+      ],
+      hint: `Try increasing n until n·tan(π/n) − n·sin(π/n) < ${target}. Start from n=3 and go up.`
+    });
+  }
+
+  return types[0];
+}
+
+function nextPractice() {
+  S.currentPractice = generatePractice();
+  const p = S.currentPractice;
+  document.getElementById('practiceQuestion').textContent = p.question;
+  document.getElementById('practiceInput').value = '';
+  document.getElementById('feedback').textContent = '';
+  document.getElementById('feedback').style.color = '';
+
+  // Render step cards (hidden)
+  const stepsDiv = document.getElementById('practiceSteps');
+  stepsDiv.innerHTML = '';
+  p.steps.forEach((step, i) => {
+    const card = document.createElement('div');
+    card.className = 'step-card';
+    card.id = `step-${i}`;
+    card.innerHTML = `<div class="step-num">Step ${i + 1}</div><div class="step-math">${step.text}</div>`;
+    stepsDiv.appendChild(card);
+  });
+
+  // Show polygon viz matching the practice
+  if (S.viz === 'polygons') updateExplore();
+}
+
+function checkPractice() {
+  const p = S.currentPractice;
+  if (!p) return;
+  const input = document.getElementById('practiceInput').value.trim();
+  const val = parseFloat(input);
+  const fb = document.getElementById('feedback');
+
+  if (isNaN(val)) {
+    fb.textContent = 'Enter a number';
+    fb.style.color = getCSS('--pink');
+    return;
+  }
+
+  if (Math.abs(val - p.answer) <= p.tolerance) {
+    fb.textContent = '✓ Correct!';
+    fb.style.color = getCSS('--green');
+    S.practiceCorrect++;
+    S.practiceStreak++;
+    document.getElementById('practiceCorrect').textContent = S.practiceCorrect;
+    document.getElementById('practiceStreak').textContent = S.practiceStreak;
+
+    // Reveal all steps
+    p.steps.forEach((_, i) => {
+      document.getElementById(`step-${i}`).classList.add('revealed');
+    });
+
+    setTimeout(nextPractice, 2000);
+  } else {
+    fb.textContent = `✗ Not quite. Expected ≈ ${p.answer}`;
+    fb.style.color = getCSS('--pink');
+    S.practiceStreak = 0;
+    document.getElementById('practiceStreak').textContent = 0;
+
+    // Reveal steps progressively
+    p.steps.forEach((_, i) => {
+      setTimeout(() => {
+        document.getElementById(`step-${i}`).classList.add('revealed');
+      }, i * 400);
+    });
+  }
+}
+
+function showPracticeHint() {
+  const p = S.currentPractice;
+  if (!p) return;
+  const fb = document.getElementById('feedback');
+  fb.textContent = '💡 ' + p.hint;
+  fb.style.color = getCSS('--yellow');
+
+  // Reveal first step
+  const step0 = document.getElementById('step-0');
+  if (step0) step0.classList.add('revealed', 'current');
+}
+
+// ══════════════════════════════════════════════════════
+// PLAY MODE
+// ══════════════════════════════════════════════════════
+
+function setPlayDiff(d) {
+  S.playDiff = d;
+  document.querySelectorAll('#panel-play .vinculum-diff-btn').forEach(b => {
+    b.classList.toggle('active', b.dataset.playdiff === d);
+  });
+}
+
+function generatePlayQuestion() {
+  const d = S.playDiff;
+  if (d === 'emergent') {
+    const r = [2, 3, 4, 5, 6, 7, 8, 9, 10][Math.floor(Math.random() * 9)];
+    const isC = Math.random() < 0.5;
+    return isC
+      ? { q: `C of circle with r=${r}?`, a: +(2 * Math.PI * r).toFixed(2), tol: 0.5 }
+      : { q: `Area of circle with r=${r}?`, a: +(Math.PI * r * r).toFixed(2), tol: 0.5 };
+  } else if (d === 'proficient') {
+    const choices = [
+      { q: `Diameter of circle with C=31.42?`, a: 10, tol: 0.5 },
+      { q: `Radius of circle with A=78.54?`, a: 5, tol: 0.5 },
+      { q: `C of circle with d=14?`, a: +(Math.PI * 14).toFixed(2), tol: 0.5 },
+      { q: `Area of circle with d=10?`, a: +(Math.PI * 25).toFixed(2), tol: 0.5 }
+    ];
+    return choices[Math.floor(Math.random() * choices.length)];
+  } else {
+    const n = [6, 8, 10, 12, 16, 20, 24][Math.floor(Math.random() * 7)];
+    const isLower = Math.random() < 0.5;
+    return isLower
+      ? { q: `π lower bound with ${n}-gon? (3 dec)`, a: +piLower(n).toFixed(3), tol: 0.01 }
+      : { q: `π upper bound with ${n}-gon? (3 dec)`, a: +piUpper(n).toFixed(3), tol: 0.01 };
+  }
+}
+
+function renderPlayViz() {
+  // Show a simple pi convergence chart on main canvas
+  const container = document.getElementById('svgContainer');
+  const w = container.clientWidth || 800;
+  const h = container.clientHeight || 600;
+  const cyanColor = getCSS('--cyan') || '#00d4ff';
+  const pinkColor = getCSS('--pink') || '#ff3b8b';
+  const greenColor = getCSS('--green') || '#00e676';
+  const yellowColor = getCSS('--yellow') || '#ffc107';
+  const textColor = getCSS('--text') || '#e8edf5';
+  const text2Color = getCSS('--text2') || '#8b9cc0';
+  const bgColor = getCSS('--bg2') || '#111827';
+
+  let svg = `<svg width="${w}" height="${h}" xmlns="http://www.w3.org/2000/svg">`;
+  svg += `<rect width="100%" height="100%" fill="${bgColor}"/>`;
+
+  // Draw convergence graph
+  const padding = 60;
+  const graphW = w - padding * 2;
+  const graphH = h - padding * 2;
+  const maxN = 100;
+  const piY = padding + graphH * (3.5 - Math.PI) / (3.5 - 2.5);
+
+  // Pi line
+  svg += `<line x1="${padding}" y1="${piY}" x2="${w - padding}" y2="${piY}" stroke="${yellowColor}" stroke-width="2" stroke-dasharray="8 4"/>`;
+  svg += `<text x="${w - padding + 5}" y="${piY + 4}" fill="${yellowColor}" font-size="14" font-weight="800">π</text>`;
+
+  // Axes
+  svg += `<line x1="${padding}" y1="${padding}" x2="${padding}" y2="${h - padding}" stroke="${text2Color}" stroke-width="1"/>`;
+  svg += `<line x1="${padding}" y1="${h - padding}" x2="${w - padding}" y2="${h - padding}" stroke="${text2Color}" stroke-width="1"/>`;
+  svg += `<text x="${w/2}" y="${h - 15}" fill="${text2Color}" font-size="12" text-anchor="middle">Number of polygon sides (n)</text>`;
+  svg += `<text x="15" y="${h/2}" fill="${text2Color}" font-size="12" text-anchor="middle" transform="rotate(-90,15,${h/2})">Estimate of π</text>`;
+
+  // Plot upper and lower bounds
+  let upperPath = `M`;
+  let lowerPath = `M`;
+  for (let n = 3; n <= maxN; n++) {
+    const x = padding + (n - 3) / (maxN - 3) * graphW;
+    const upperY = padding + graphH * (3.5 - piUpper(n)) / (3.5 - 2.5);
+    const lowerY = padding + graphH * (3.5 - piLower(n)) / (3.5 - 2.5);
+    const sep = n === 3 ? '' : ' L';
+    upperPath += `${sep}${x},${upperY}`;
+    lowerPath += `${sep}${x},${lowerY}`;
+  }
+  svg += `<path d="${upperPath}" fill="none" stroke="${pinkColor}" stroke-width="2"/>`;
+  svg += `<path d="${lowerPath}" fill="none" stroke="${cyanColor}" stroke-width="2"/>`;
+
+  // Legend
+  svg += `<circle cx="${padding + 20}" cy="${padding + 15}" r="5" fill="${cyanColor}"/>`;
+  svg += `<text x="${padding + 30}" y="${padding + 19}" fill="${cyanColor}" font-size="12" font-weight="700">Lower bound (inscribed)</text>`;
+  svg += `<circle cx="${padding + 20}" cy="${padding + 35}" r="5" fill="${pinkColor}"/>`;
+  svg += `<text x="${padding + 30}" y="${padding + 39}" fill="${pinkColor}" font-size="12" font-weight="700">Upper bound (circumscribed)</text>`;
+
+  // Title
+  svg += `<text x="${w/2}" y="30" fill="${textColor}" font-size="20" font-weight="800" text-anchor="middle">π CONVERGENCE — Archimedes' Method</text>`;
+
+  // Score display
+  if (S.playActive) {
+    svg += `<text x="${w/2}" y="${h/2}" fill="${yellowColor}" font-size="80" font-weight="900" text-anchor="middle" opacity="0.15">${S.playScore}</text>`;
+  }
+
+  svg += `</svg>`;
+  container.innerHTML = svg;
+}
+
+function startPlay() {
+  S.playActive = true;
+  S.playScore = 0;
+  S.playStreak = 0;
+  S.playTimer = 60;
+  document.getElementById('playScore').textContent = 0;
+  document.getElementById('playStreak').textContent = 0;
+  document.getElementById('playTimer').textContent = 60;
+  document.getElementById('playStartBtn').style.display = 'none';
+  document.getElementById('playArea').style.display = 'block';
+
+  nextPlayQuestion();
+  renderPlayViz();
+
+  S.playInterval = setInterval(() => {
+    S.playTimer--;
+    document.getElementById('playTimer').textContent = S.playTimer;
+    if (S.playTimer <= 0) endPlay();
+  }, 1000);
+}
+
+function nextPlayQuestion() {
+  S.currentPlay = generatePlayQuestion();
+  document.getElementById('playQuestion').textContent = S.currentPlay.q;
+  document.getElementById('playInput').value = '';
+  document.getElementById('playFeedback').textContent = '';
+  document.getElementById('playInput').focus();
+}
+
+function submitPlay() {
+  if (!S.playActive || !S.currentPlay) return;
+  const val = parseFloat(document.getElementById('playInput').value);
+  const fb = document.getElementById('playFeedback');
+
+  if (isNaN(val)) return;
+
+  if (Math.abs(val - S.currentPlay.a) <= S.currentPlay.tol) {
+    S.playScore++;
+    S.playStreak++;
+    fb.textContent = '✓ Correct!';
+    fb.style.color = getCSS('--green');
+  } else {
+    S.playStreak = 0;
+    fb.textContent = `✗ Answer: ${S.currentPlay.a}`;
+    fb.style.color = getCSS('--pink');
+  }
+
+  document.getElementById('playScore').textContent = S.playScore;
+  document.getElementById('playStreak').textContent = S.playStreak;
+  renderPlayViz();
+
+  setTimeout(nextPlayQuestion, 800);
+}
+
+function endPlay() {
+  clearInterval(S.playInterval);
+  S.playActive = false;
+  document.getElementById('playArea').style.display = 'none';
+  document.getElementById('playStartBtn').style.display = 'block';
+  document.getElementById('playStartBtn').textContent = `Score: ${S.playScore} — Play Again`;
+  document.getElementById('playFeedback').textContent = '';
+  renderPlayViz();
+}
+
+// ══════════════════════════════════════════════════════
+// INIT
+// ══════════════════════════════════════════════════════
+
+window.addEventListener('resize', () => {
+  if (S.viz === 'polygons') renderPolygons();
+  else if (S.viz === 'area') renderAreaGrid();
+  else if (S.viz === 'rolling') {} // already in RAF loop
+});
+
+updateExplore();
+</script>
+</body>
+</html>
