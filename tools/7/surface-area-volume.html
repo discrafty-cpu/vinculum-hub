@@ -1,3 +1,207 @@
-<!DOCTYPE html><html lang="en"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><title>Surface Area & Volume - VINCULUM</title><link rel="stylesheet" href="../../vinculum-core.css"><style>*{margin:0;padding:0;box-sizing:border-box}body{font-family:'Segoe UI';background-color:var(--bg);color:var(--text);padding:20px}.container{max-width:900px;margin:0 auto}.vinculum-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:30px;padding:20px;background-color:var(--card);border-radius:12px}.badge{background-color:var(--cyan);color:white;padding:4px 12px;border-radius:20px;font-size:12px}.mode-tabs{display:flex;gap:12px;margin-bottom:30px;border-bottom:2px solid var(--border)}.mode-tab{padding:12px 24px;background:0;border:0;color:var(--text2);font-size:16px;font-weight:600;cursor:pointer;border-bottom:3px solid transparent}.mode-tab.active{color:var(--cyan);border-bottom-color:var(--cyan)}.mode-content{display:none}.mode-content.active{display:block}.content-section{background-color:var(--card);border-radius:12px;padding:24px;margin-bottom:20px}.btn{padding:10px 24px;background-color:var(--cyan);color:white;border:0;border-radius:8px;cursor:pointer;font-weight:600}.input-group{display:flex;gap:12px;margin:15px 0}.input-group input{padding:8px 12px;border:2px solid var(--border);border-radius:8px;background-color:var(--bg2);color:var(--text);width:100px}.stats{background-color:var(--bg2);padding:15px;border-radius:8px;margin-top:15px}#feedback{margin-top:20px}</style></head><body data-theme=""><div class="container"><div class="vinculum-header"><div style="display:flex;align-items:center;gap:20px"><a href="../../VINCULUM-Hub.html" style="text-decoration:none;color:var(--text)">← Hub</a><div><h1 style="font-size:28px;font-weight:700">Surface Area & Volume</h1><div style="display:flex;gap:8px"><span class="badge">7.G.6</span><span class="badge" style="background-color:var(--pink)">MN: 7.3.2.3</span></div></div></div></div><div class="mode-tabs"><button class="mode-tab active" data-mode="explore">Explore</button><button class="mode-tab" data-mode="practice">Practice</button><button class="mode-tab" data-mode="play">Play</button></div><div id="explore" class="mode-content active"><div class="content-section"><h2>Explore: 3D Shapes</h2><p style="margin-bottom:20px">Calculate surface area and volume of prisms.</p><div class="input-group"><label>Length:</label><input type="number" id="exploreL" value="5" min="1" onchange="redrawExplore()"><label>Width:</label><input type="number" id="exploreW" value="3" min="1" onchange="redrawExplore()"><label>Height:</label><input type="number" id="exploreH" value="4" min="1" onchange="redrawExplore()"></div><div class="stats"><div><strong>Surface Area:</strong> <span id="exploreSA">94</span> sq units</div><div><strong>Volume:</strong> <span id="exploreVol">60</span> cu units</div></div></div></div><div id="practice" class="mode-content"><div class="content-section"><h2>Practice: Calculate SA & Volume</h2><div class="input-group"><button class="btn" onclick="changePractDiff('easy')" style="background-color:var(--cyan)">Easy</button><button class="btn" onclick="changePractDiff('medium')">Medium</button><button class="btn" onclick="changePractDiff('hard')">Hard</button></div><div style="background-color:var(--bg2);padding:15px;border-radius:8px;margin-bottom:20px" id="practiceProblem">Rectangular prism: 4×3×5. Volume?</div><div class="input-group"><input type="number" id="practiceAnswer" placeholder="Answer"><button class="btn" onclick="checkPracticeAnswer()">Check</button></div><div id="feedback"></div></div></div><div id="play" class="mode-content"><div class="content-section"><h2>Play: SA & Volume Race</h2><p style="margin-bottom:15px">Calculate fast! 60 seconds.</p><div style="display:flex;gap:20px;margin-bottom:20px"><div><strong>Score:</strong> <span id="playScore">0</span></div><div><strong>Time:</strong> <span id="playTimer">60</span>s</div><button class="btn" id="startPlayBtn" onclick="startPlayMode()">Start</button></div><div style="background-color:var(--bg2);padding:15px;border-radius:8px" id="playProblem" style="display:none"></div><div class="input-group" id="playControls" style="display:none"><input type="number" id="playAnswer" placeholder="Answer"><button class="btn" onclick="submitPlayAnswer()">Submit</button></div><div id="playFeedback" style="display:none"></div></div></div></div><script src="../../vinculum-feedback.js"></script><script src="../../vinculum-guide.js"></script><script src="../../vinculum-indigenous.js"></script><script src="../../indigenous-context-panel.js"></script>
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>VINCULUM — Surface Area & Volume</title>
+<link rel="stylesheet" href="../../vinculum-core.css">
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:'Segoe UI',system-ui,sans-serif;background:var(--bg);color:var(--text);overflow-x:hidden}
+.app{display:grid;grid-template-columns:1fr 340px;grid-template-rows:auto 1fr;height:100vh;gap:0}
+.top-bar{grid-column:1/-1;display:flex;align-items:center;justify-content:space-between;padding:10px 24px;background:var(--card);border-bottom:1px solid var(--border)}
+.top-bar h1{font-size:22px;font-weight:800;letter-spacing:1px}
+.top-bar h1 span{background:var(--grad);-webkit-background-clip:text;-webkit-text-fill-color:transparent}
+.top-bar .stats{display:flex;gap:24px;font-size:13px;font-weight:700;text-transform:uppercase;letter-spacing:1.5px}
+.badge{background:var(--cyan);color:#fff;padding:3px 10px;border-radius:12px;font-size:11px;font-weight:700;margin:0 2px}
+.badge.pink{background:var(--pink)}
+.main-canvas{position:relative;overflow:hidden;background:var(--bg2)}
+.sidebar{background:var(--card);border-left:1px solid var(--border);overflow-y:auto;padding:0}
+.vinculum-mode-tabs{display:flex;border-bottom:2px solid var(--border);background:var(--card2)}
+.vinculum-mode-tab{flex:1;padding:12px;text-align:center;font-weight:700;font-size:13px;text-transform:uppercase;letter-spacing:1px;cursor:pointer;border:none;background:none;color:var(--text2);transition:all .2s}
+.vinculum-mode-tab.active-explore{color:var(--cyan);border-bottom:3px solid var(--cyan)}
+.vinculum-mode-tab.active-practice{color:var(--green);border-bottom:3px solid var(--green)}
+.vinculum-mode-tab.active-play{color:var(--yellow);border-bottom:3px solid var(--yellow)}
+.panel{display:none;padding:16px}
+.panel.active{display:block}
+.panel-section{background:var(--bg2);border:1px solid var(--border);border-radius:10px;padding:14px;margin-bottom:12px}
+.panel-section h3{font-size:13px;text-transform:uppercase;letter-spacing:1.5px;color:var(--text2);margin-bottom:10px}
+.slider-row{display:flex;align-items:center;gap:10px;margin:8px 0}
+.slider-row label{font-size:12px;font-weight:700;color:var(--text2);min-width:70px;text-transform:uppercase;letter-spacing:1px}
+.slider-row input[type=range]{flex:1;accent-color:var(--cyan);height:6px}
+.slider-row .slider-val{font-size:18px;font-weight:800;color:var(--cyan);min-width:40px;text-align:right}
+.vinculum-diff-selector{display:flex;gap:6px;margin:8px 0}
+.vinculum-diff-btn{padding:6px 12px;border:1px solid var(--border);border-radius:6px;background:var(--bg);color:var(--text2);font-size:12px;font-weight:700;cursor:pointer;transition:all .2s}
+.vinculum-diff-btn.active{background:var(--cyan);color:#fff;border-color:var(--cyan)}
+.btn{padding:8px 16px;border:none;border-radius:8px;font-weight:700;font-size:13px;cursor:pointer;transition:all .2s}
+.btn-primary{background:var(--cyan);color:#fff}
+.btn-primary:hover{filter:brightness(1.2)}
+.svg-container{width:100%;height:100%;display:flex;align-items:center;justify-content:center}
+#feedback{min-height:24px;text-align:center;font-weight:700;font-size:14px;margin:8px 0;transition:all .3s;color:var(--green)}
+.answer-input{width:100%;padding:10px;border:2px solid var(--border);border-radius:8px;background:var(--bg2);color:var(--text);font-size:16px;font-weight:700;text-align:center}
+.answer-input:focus{outline:none;border-color:var(--cyan);box-shadow:0 0 0 3px var(--glow)}
+svg text{font-family:'Segoe UI',system-ui,sans-serif}
+.hub-link{text-decoration:none;color:var(--text2);font-size:13px;font-weight:600;display:flex;align-items:center;gap:6px}
+.hub-link:hover{color:var(--cyan)}
+.readout{display:grid;grid-template-columns:1fr 1fr;gap:6px;margin:8px 0}
+.readout-item{background:var(--card);border:1px solid var(--border);border-radius:8px;padding:8px 10px;text-align:center}
+.readout-item .label{font-size:10px;text-transform:uppercase;letter-spacing:1.5px;color:var(--text2)}
+.readout-item .value{font-size:18px;font-weight:800;color:var(--cyan)}
+.vocab-item{margin:8px 0;padding:8px;background:var(--bg);border-radius:4px;font-size:12px;color:var(--text2)}
+.vocab-item strong{color:var(--cyan)}
+</style>
+</head>
+<body data-theme="">
+<div class="app">
+<div class="top-bar">
+<div style="display:flex;align-items:center;gap:16px">
+<a href="../../VINCULUM-Hub.html" class="hub-link">← Hub</a>
+<h1>VINCULUM <span>Surface Area & Volume</span></h1>
+<span class="badge">7.G.6</span>
+<span class="badge pink">MN: 7.3.1.1</span>
+</div>
+<div class="stats">
+<div>L <span class="val" id="topL">5</span></div>
+<div>W <span class="val" id="topW">3</span></div>
+<div style="color:var(--cyan)">H <span class="val" id="topH">4</span></div>
+</div>
+</div>
+<div class="main-canvas" id="mainCanvas">
+<div class="svg-container" id="svgContainer"></div>
+</div>
+<div class="sidebar">
+<div class="vinculum-mode-tabs">
+<button class="vinculum-mode-tab active-explore" data-mode="explore" onclick="switchMode('explore')">Explore</button>
+<button class="vinculum-mode-tab" data-mode="practice" onclick="switchMode('practice')">Practice</button>
+<button class="vinculum-mode-tab" data-mode="play" onclick="switchMode('play')">Play</button>
+</div>
+<div class="panel active" id="panel-explore">
+<div class="panel-section">
+<h3>3D Shape Builder</h3>
+<p style="font-size:12px;color:var(--text2);margin-bottom:8px">Adjust dimensions. Formulas update instantly.</p>
+<div class="slider-row">
+<label>Length</label>
+<input type="range" id="lenSlider" min="2" max="10" value="5" oninput="updateExplore()">
+<span class="slider-val" id="lenVal">5</span>
+</div>
+<div class="slider-row">
+<label>Width</label>
+<input type="range" id="widSlider" min="2" max="10" value="3" oninput="updateExplore()">
+<span class="slider-val" id="widVal">3</span>
+</div>
+<div class="slider-row">
+<label>Height</label>
+<input type="range" id="hgtSlider" min="2" max="10" value="4" oninput="updateExplore()">
+<span class="slider-val" id="hgtVal">4</span>
+</div>
+<div class="readout" style="margin-top:12px">
+<div class="readout-item"><div class="label">SA</div><div class="value" id="readSA">94</div></div>
+<div class="readout-item"><div class="label">VOL</div><div class="value" id="readVol">60</div></div>
+</div>
+</div>
+</div>
+<div class="panel" id="panel-practice">
+<div class="panel-section">
+<h3>Difficulty</h3>
+<div class="vinculum-diff-selector">
+<button class="vinculum-diff-btn active" data-diff="easy" onclick="setDiff('easy')">Easy</button>
+<button class="vinculum-diff-btn" data-diff="medium" onclick="setDiff('medium')">Medium</button>
+<button class="vinculum-diff-btn" data-diff="hard" onclick="setDiff('hard')">Hard</button>
+</div>
+</div>
+<div class="panel-section">
+<h3>Your Answer</h3>
+<div id="practQuestion" style="font-size:12px;color:var(--text2);margin-bottom:10px;line-height:1.4;min-height:30px"></div>
+<input type="number" id="practAns" class="answer-input" placeholder="Enter value" min="0">
+<button class="btn btn-primary" style="width:100%;margin-top:8px;" onclick="checkAns()">Check</button>
+<div id="feedback"></div>
+</div>
+<div class="panel-section">
+<h3>Score</h3>
+<div class="readout">
+<div class="readout-item"><div class="label">Correct</div><div class="value" id="practScore">0</div></div>
+<div class="readout-item"><div class="label">Total</div><div class="value" id="practTotal">0</div></div>
+</div>
+</div>
+</div>
+<div class="panel" id="panel-play">
+<div class="panel-section">
+<h3>Speed Round</h3>
+<p style="font-size:12px;color:var(--text2)">Calculate SA or Volume fast! 60 seconds.</p>
+</div>
+<div class="panel-section">
+<h3>Your Answer</h3>
+<div id="playQuestion" style="font-size:12px;color:var(--text2);margin-bottom:10px;line-height:1.4;min-height:30px"></div>
+<input type="number" id="playAns" class="answer-input" placeholder="Enter value" min="0">
+<button class="btn btn-primary" style="width:100%;margin-top:8px;" onclick="submitPlay()">Submit</button>
+<div id="playFb" style="margin-top:8px"></div>
+</div>
+<div class="panel-section">
+<h3>Score</h3>
+<div class="readout">
+<div class="readout-item"><div class="label">Points</div><div class="value" id="playScore">0</div></div>
+<div class="readout-item"><div class="label">Time</div><div class="value" id="playTime">60s</div></div>
+</div>
+<button class="btn btn-primary" style="width:100%;margin-top:8px;" id="playBtn" onclick="startPlay()">Start</button>
+</div>
+<div class="panel-section">
+<h3>Formulas</h3>
+<div class="vocab-item"><strong>Prism SA:</strong> 2(lw+lh+wh)</div>
+<div class="vocab-item"><strong>Prism Vol:</strong> l × w × h</div>
+<div class="vocab-item"><strong>SA:</strong> Surface Area (sq units)</div>
+<div class="vocab-item"><strong>Vol:</strong> Volume (cu units)</div>
+</div>
+</div>
+<div class="panel active" id="panel-info" style="display:block;padding:16px">
+<div class="panel-section">
+<h3>How to Use</h3>
+<p style="font-size:12px;color:var(--text2);line-height:1.5">In Explore, drag sliders to change prism dimensions. Watch the 3D visualization and calculations update. Practice solves surface area and volume problems.</p>
+</div>
+<div class="panel-section">
+<h3>Vocabulary</h3>
+<div class="vocab-item"><strong>Rectangular Prism:</strong> 3D box shape</div>
+<div class="vocab-item"><strong>Surface Area:</strong> Total area of all faces</div>
+<div class="vocab-item"><strong>Volume:</strong> Space inside shape</div>
+<div class="vocab-item"><strong>Base:</strong> Top or bottom face</div>
+<div class="vocab-item"><strong>Net:</strong> Unfolded 2D view</div>
+</div>
+<div class="panel-section">
+<h3>Standards</h3>
+<p style="font-size:11px;color:var(--text2);line-height:1.6"><strong>7.G.6</strong> Solve real-world and mathematical problems involving area, volume and surface area of 2D and 3D objects.</p>
+</div>
+</div>
+</div>
+</div>
+
+<script>
+let mode='explore',diff='easy',practScore=0,practTotal=0,playScore=0,playTime=60,playActive=false,curProblem=null;
+function switchMode(m){mode=m;document.querySelectorAll('.vinculum-mode-tab').forEach(t=>t.classList.remove('active-explore','active-practice','active-play'));document.querySelectorAll('.panel').forEach(p=>p.classList.remove('active'));const tab=document.querySelector(`[data-mode="${m}"]`),cls=m==='explore'?'active-explore':m==='practice'?'active-practice':'active-play';tab.classList.add(cls);if(m==='explore'){document.getElementById('panel-explore').classList.add('active');document.getElementById('panel-info').style.display='block';updateExplore()}else if(m==='practice'){document.getElementById('panel-practice').classList.add('active');document.getElementById('panel-info').style.display='none';genPractice()}else{document.getElementById('panel-play').classList.add('active');document.getElementById('panel-info').style.display='none'}}
+function setDiff(d){diff=d;document.querySelectorAll('[data-diff]').forEach(b=>b.classList.remove('active'));event.target.classList.add('active');genPractice()}
+function updateExplore(){const l=parseInt(document.getElementById('lenSlider').value),w=parseInt(document.getElementById('widSlider').value),h=parseInt(document.getElementById('hgtSlider').value);const sa=2*(l*w+l*h+w*h),vol=l*w*h;document.getElementById('lenVal').textContent=l;document.getElementById('widVal').textContent=w;document.getElementById('hgtVal').textContent=h;document.getElementById('readSA').textContent=sa;document.getElementById('readVol').textContent=vol;document.getElementById('topL').textContent=l;document.getElementById('topW').textContent=w;document.getElementById('topH').textContent=h;drawPrism(l,w,h)}
+function drawPrism(l,w,h){const c=document.getElementById('svgContainer'),cx=c.clientWidth||600,cy=c.clientHeight||400;const scale=15;const x0=cx/2-l*scale/2,y0=cy/2-h*scale/2;let s='<svg width="'+cx+'" height="'+cy+'" style="display:block">';s+='<rect x="'+x0+'" y="'+y0+'" width="'+(l*scale)+'" height="'+(h*scale)+'" fill="rgba(0,180,255,0.2)" stroke="var(--cyan)" stroke-width="2"/>';s+='<rect x="'+(x0+5)+'" y="'+(y0-10)+'" width="'+(l*scale)+'" height="'+(h*scale)+'" fill="rgba(0,200,0,0.15)" stroke="var(--green)" stroke-width="1" stroke-dasharray="3,2"/>';s+='<text x="'+(x0+l*scale/2)+'" y="'+(y0+h*scale+25)+'" font-size="14" font-weight="700" fill="var(--text)" text-anchor="middle">L='+l+'</text>';s+='<text x="'+(x0-25)+'" y="'+(y0+h*scale/2)+'" font-size="14" font-weight="700" fill="var(--text)" text-anchor="middle" transform="rotate(-90 '+(x0-25)+' '+(y0+h*scale/2)+')">H='+h+'</text>';s+='<text x="'+(cx/2)+'" y="'+(cy/2-h*scale/2-30)+'" font-size="14" font-weight="700" fill="var(--green)">W='+w+'</text>';s+='</svg>';c.innerHTML=s}
+function genPractice(){const probs={easy:[{l:4,w:3,h:5,calc:'vol',ans:60},{l:3,w:3,h:3,calc:'vol',ans:27},{l:2,w:2,h:2,calc:'sa',ans:24},{l:5,w:2,h:3,calc:'vol',ans:30},{l:4,w:4,h:4,calc:'sa',ans:96}],medium:[{l:5,w:4,h:3,calc:'vol',ans:60},{l:6,w:4,h:2,calc:'sa',ans:88},{l:5,w:5,h:5,calc:'vol',ans:125},{l:7,w:3,h:2,calc:'sa',ans:122},{l:8,w:2,h:3,calc:'vol',ans:48}],hard:[{l:7,w:5,h:3,calc:'vol',ans:105},{l:8,w:6,h:4,calc:'sa',ans:208},{l:10,w:8,h:5,calc:'vol',ans:400},{l:9,w:4,h:6,calc:'sa',ans:228},{l:6,w:5,h:7,calc:'vol',ans:210}]};curProblem=probs[diff][Math.floor(Math.random()*probs[diff].length)];const q=curProblem.calc==='vol'?`Prism: ${curProblem.l}×${curProblem.w}×${curProblem.h}. Volume?`:`Prism: ${curProblem.l}×${curProblem.w}×${curProblem.h}. Surface Area?`;document.getElementById('practQuestion').textContent=q;document.getElementById('practAns').value='';document.getElementById('feedback').textContent='';document.getElementById('svgContainer').innerHTML='';drawPrism(curProblem.l,curProblem.w,curProblem.h)}
+function checkAns(){const ans=parseInt(document.getElementById('practAns').value),fb=document.getElementById('feedback'),ok=curProblem.ans;if(isNaN(ans)){fb.textContent='❌ Enter number';fb.style.color='var(--pink)';return}
+if(ans===ok){fb.textContent='✓ Correct!';fb.style.color='var(--green)';practScore++;practTotal++;document.getElementById('practScore').textContent=practScore;document.getElementById('practTotal').textContent=practTotal;setTimeout(genPractice,1200)}else{fb.textContent='❌ Answer: '+ok;fb.style.color='var(--pink)';practTotal++;document.getElementById('practTotal').textContent=practTotal}}
+function startPlay(){playActive=true;playScore=0;playTime=60;document.getElementById('playBtn').textContent='Playing...';document.getElementById('playBtn').disabled=true;document.getElementById('playScore').textContent='0';document.getElementById('playTime').textContent='60s';document.getElementById('playAns').disabled=false;document.getElementById('playFb').textContent='';const interval=setInterval(()=>{playTime--;document.getElementById('playTime').textContent=playTime+'s';if(playTime<=0){clearInterval(interval);endPlay()}},1000);genPlayProblem()}
+function genPlayProblem(){const calcs=['vol','sa'];const calc=calcs[Math.floor(Math.random()*2)];const dims=[[4,3,5],[5,4,3],[6,4,2],[3,3,3],[7,5,3],[8,2,3],[5,5,5],[6,3,2],[9,4,6],[10,8,5]];const [l,w,h]=dims[Math.floor(Math.random()*dims.length)];let ans;if(calc==='vol'){ans=l*w*h}else{ans=2*(l*w+l*h+w*h)}
+curProblem={l,w,h,calc,ans};const q=calc==='vol'?`${l}×${w}×${h} = Volume?`:`${l}×${w}×${h} = SA?`;document.getElementById('playQuestion').textContent=q;document.getElementById('svgContainer').innerHTML='';drawPrism(l,w,h);document.getElementById('playAns').value=''}
+function submitPlay(){if(!playActive)return;const ans=parseInt(document.getElementById('playAns').value),fb=document.getElementById('playFb');if(isNaN(ans)){fb.textContent='❌ Enter answer';fb.style.color='var(--pink)';return}
+if(ans===curProblem.ans){fb.textContent='✓ +1';fb.style.color='var(--green)';playScore++;document.getElementById('playScore').textContent=playScore}else{fb.textContent='❌ '+curProblem.ans;fb.style.color='var(--pink)'}
+document.getElementById('playAns').value='';setTimeout(genPlayProblem,600)}
+function endPlay(){playActive=false;document.getElementById('playBtn').textContent='Final: '+playScore;document.getElementById('playBtn').disabled=true}
+switchMode('explore');
+</script>
+
 <script src="../../vinculum-input.js"></script>
-<script>let practDiff='easy',playScore=0,playTimer=60,playActive=false;const problems={easy:[{l:4,w:3,h:5,calc:'volume',ans:60},{l:3,w:3,h:3,calc:'volume',ans:27},{l:2,w:2,h:2,calc:'surface',ans:24}],medium:[{l:5,w:4,h:3,calc:'volume',ans:60},{l:6,w:4,h:2,calc:'surface',ans:88},{l:5,w:5,h:5,calc:'volume',ans:125}],hard:[{l:7,w:5,h:3,calc:'volume',ans:105},{l:8,w:6,h:4,calc:'surface',ans:208},{l:10,w:8,h:5,calc:'volume',ans:400}]};function switchMode(m){['explore','practice','play'].forEach(x=>{document.getElementById(x).classList.remove('active');document.querySelector(`[data-mode="${x}"]`).classList.remove('active')});document.getElementById(m).classList.add('active');document.querySelector(`[data-mode="${m}"]`).classList.add('active');if(m==='practice')generatePracticeProblem()}document.querySelectorAll('.mode-tab').forEach(t=>t.addEventListener('click',()=>switchMode(t.dataset.mode)));function redrawExplore(){const l=parseFloat(document.getElementById('exploreL').value)||5;const w=parseFloat(document.getElementById('exploreW').value)||3;const h=parseFloat(document.getElementById('exploreH').value)||4;const sa=2*(l*w+l*h+w*h);const vol=l*w*h;document.getElementById('exploreSA').textContent=sa;document.getElementById('exploreVol').textContent=vol}function changePractDiff(d){practDiff=d;generatePracticeProblem()}function generatePracticeProblem(){window.currentProblem=problems[practDiff][Math.floor(Math.random()*3)];const {l,w,h,calc,ans}=window.currentProblem;const text=calc==='volume'?`Rectangular prism: ${l}×${w}×${h}. Volume?`:`Rectangular prism: ${l}×${w}×${h}. Surface Area?`;document.getElementById('practiceProblem').textContent=text;document.getElementById('practiceAnswer').value='';document.getElementById('feedback').textContent=''}function checkPracticeAnswer(){const a=parseFloat(document.getElementById('practiceAnswer').value);const fb=document.getElementById('feedback');if(isNaN(a)){fb.textContent='❌ Enter a number';fb.style.color='var(--pink)';return}if(a===window.currentProblem.ans){fb.textContent='✓ Correct!';fb.style.color='var(--green)';setTimeout(generatePracticeProblem,1500)}else{fb.textContent=`❌ Answer: ${window.currentProblem.ans}`;fb.style.color='var(--pink)'}}function startPlayMode(){playActive=true;playScore=0;playTimer=60;document.getElementById('startPlayBtn').style.display='none';document.getElementById('playProblem').style.display='block';document.getElementById('playControls').style.display='flex';document.getElementById('playFeedback').style.display='block';generatePlayProblem();const i=setInterval(()=>{playTimer--;document.getElementById('playTimer').textContent=playTimer;if(playTimer<=0){clearInterval(i);endPlayMode()}},1000)}function generatePlayProblem(){const all=[...problems.easy,...problems.medium,...problems.hard];window.currentPlayProblem=all[Math.floor(Math.random()*all.length)];const {l,w,h,calc}=window.currentPlayProblem;const text=calc==='volume'?`${l}×${w}×${h}. Vol?`:`${l}×${w}×${h}. SA?`;document.getElementById('playProblem').textContent=text;document.getElementById('playAnswer').value=''}function submitPlayAnswer(){if(!playActive)return;const a=parseFloat(document.getElementById('playAnswer').value);const fb=document.getElementById('playFeedback');if(isNaN(a))return;if(a===window.currentPlayProblem.ans){playScore++;document.getElementById('playScore').textContent=playScore;fb.textContent='✓';fb.style.color='var(--green)'}else{fb.textContent='✗';fb.style.color='var(--pink)'}setTimeout(generatePlayProblem,600)}function endPlayMode(){playActive=false;document.getElementById('playControls').style.display='none';document.getElementById('playFeedback').textContent=`Game Over! Score: ${playScore}`;document.getElementById('playFeedback').style.color='var(--cyan)';document.getElementById('startPlayBtn').textContent='Play Again';document.getElementById('startPlayBtn').style.display='block'}redrawExplore();generatePracticeProblem()</script></body></html>
+<script src="../../vinculum-core.js"></script>
+<script src="../../vinculum-data.js"></script>
+<script src="../../vinculum-adaptive-hook.js"></script>
+<script src="../../vinculum-3reads.js"></script>
+<script src="../../vinculum-stories.js"></script>
+<script src="../../vinculum-feedback.js"></script>
+<script src="../../vinculum-guide.js"></script>
+<script src="../../vinculum-identity.js"></script>
+<script src="../../vinculum-indigenous.js"></script>
+<script src="../../vinculum-dashboard.js"></script>
+</body>
+</html>
