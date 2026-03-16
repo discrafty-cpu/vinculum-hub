@@ -1,144 +1,745 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Solving Linear Equations</title>
-    <link rel="stylesheet" href="../../vinculum-core.css">
-    <style>:root { --bg: #0f0f1e; --bg2: #1a1a2e; --card: #16213e; --text: #e0e0e0; --cyan: #00d9ff; --green: #00ff88; --pink: #ff006e; --orange: #ffa500; --grad: linear-gradient(135deg, #00d9ff, #00ff88); } [data-theme="ocean"] { --bg: #0a1628; --card: #0f2847; --cyan: #4dd0e1; --green: #4cd964; } [data-theme="forest"] { --bg: #1a2818; --card: #2d4a2b; --cyan: #1abc9c; --green: #52c41a; } [data-theme="sunset"] { --bg: #2d1b1f; --card: #4a2835; --cyan: #ff6b9d; --pink: #ffa360; } [data-theme="space"] { --bg: #0a0e27; --card: #1a1a3e; --cyan: #7c3aed; --green: #ec4899; } * { margin: 0; padding: 0; box-sizing: border-box; } body { background: var(--bg); color: var(--text); font-family: 'Segoe UI', sans-serif; } .container { max-width: 1200px; margin: 0 auto; padding: 20px; } .vinculum-header { display: flex; justify-content: space-between; align-items: center; padding: 20px; background: var(--card); border-bottom: 2px solid var(--cyan); border-radius: 8px; margin-bottom: 30px; } .vinculum-header-left { display: flex; align-items: center; gap: 15px; } .vinculum-back-btn { background: transparent; border: none; color: var(--cyan); cursor: pointer; padding: 8px; display: flex; transition: 0.3s; } .vinculum-back-btn:hover { transform: translateX(-3px); color: var(--green); } .vinculum-title-group h1 { margin: 0; font-size: 28px; background: var(--grad); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; } .vinculum-badges { display: flex; gap: 8px; margin-top: 5px; } .badge, .tag { font-size: 11px; padding: 4px 8px; border-radius: 4px; background: rgba(0, 217, 255, 0.2); color: var(--cyan); border: 1px solid var(--cyan); } .tag { background: rgba(0, 255, 136, 0.2); color: var(--green); border-color: var(--green); } .tabs { display: flex; gap: 10px; margin-bottom: 30px; border-bottom: 2px solid var(--card); } .tab-btn { padding: 12px 20px; background: transparent; border: none; color: var(--text); cursor: pointer; font-size: 16px; transition: 0.3s; border-bottom: 3px solid transparent; } .tab-btn.active { color: var(--cyan); border-bottom-color: var(--cyan); } .tab-content { display: none; } .tab-content.active { display: block; } .card { background: var(--card); padding: 20px; border-radius: 8px; border-left: 4px solid var(--cyan); margin-bottom: 20px; } button { padding: 10px 20px; background: var(--cyan); color: var(--bg); border: none; border-radius: 4px; cursor: pointer; font-weight: 600; transition: 0.3s; } button:hover { background: var(--green); transform: translateY(-2px); } input { padding: 10px; background: var(--bg); color: var(--text); border: 1px solid var(--cyan); border-radius: 4px; } .feedback { padding: 15px; border-radius: 6px; margin: 20px 0; display: none; border-left: 4px solid var(--green); background: rgba(0, 255, 136, 0.1); } .feedback.show { display: block; } .feedback.error { border-left-color: var(--pink); background: rgba(255, 0, 110, 0.1); color: var(--pink); } .step-by-step { background: var(--bg2); padding: 15px; border-radius: 6px; margin: 15px 0; border-left: 4px solid var(--orange); }</style>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Solving Linear Equations — VINCULUM ALG1</title>
+  <link rel="stylesheet" href="../../vinculum-core.css">
+  <style>
+    body { font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: var(--bg); color: var(--text); margin: 0; overflow-x: hidden; }
+
+    .container { max-width: 960px; margin: 0 auto; padding: 1.25rem; display: flex; flex-direction: column; gap: 1rem; min-height: calc(100vh - 60px); }
+
+    /* ── Equation Display ── */
+    .equation-display {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 1rem;
+      padding: 1.5rem 2rem;
+      text-align: center;
+      font-family: 'JetBrains Mono', 'Fira Code', monospace;
+    }
+    .equation-text {
+      font-size: 2rem;
+      font-weight: 700;
+      color: var(--cyan);
+      letter-spacing: 2px;
+    }
+    .equation-label {
+      font-size: 0.75rem;
+      color: var(--muted);
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      margin-bottom: 0.5rem;
+      font-family: 'Inter', sans-serif;
+    }
+
+    /* ── Steps Panel ── */
+    .steps-panel {
+      display: flex;
+      flex-direction: column;
+      gap: 0.75rem;
+    }
+    .step-card {
+      background: var(--bg2);
+      border: 1px solid var(--border);
+      border-radius: 0.75rem;
+      padding: 1rem 1.25rem;
+      display: flex;
+      align-items: flex-start;
+      gap: 1rem;
+      opacity: 0.3;
+      transition: all 0.4s ease;
+    }
+    .step-card.revealed {
+      opacity: 1;
+      border-left: 3px solid var(--cyan);
+    }
+    .step-card.active {
+      opacity: 1;
+      border-left: 3px solid var(--yellow, #fbbf24);
+      background: color-mix(in srgb, var(--yellow, #fbbf24) 5%, var(--bg2));
+    }
+    .step-card.completed {
+      opacity: 1;
+      border-left: 3px solid var(--green);
+    }
+    .step-number {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 50%;
+      width: 2rem;
+      height: 2rem;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 0.75rem;
+      font-weight: 700;
+      color: var(--cyan);
+      flex-shrink: 0;
+    }
+    .step-card.completed .step-number { background: var(--green); color: var(--bg); border-color: var(--green); }
+    .step-body { flex: 1; }
+    .step-instruction { font-size: 0.875rem; color: var(--text2); margin-bottom: 0.25rem; }
+    .step-equation {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 1.125rem;
+      font-weight: 600;
+      color: var(--text);
+    }
+    .step-equation .highlight { color: var(--cyan); }
+    .step-equation .operation { color: var(--pink, #ff3b8b); }
+
+    /* ── Balance Model (Explore) ── */
+    .balance-model {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 1rem;
+      padding: 1.5rem;
+      text-align: center;
+    }
+    .balance-svg { max-width: 500px; margin: 0 auto; }
+    .balance-instruction {
+      font-size: 0.9rem;
+      color: var(--text2);
+      margin-top: 1rem;
+    }
+
+    /* ── Action Buttons ── */
+    .action-row {
+      display: flex;
+      gap: 0.75rem;
+      justify-content: center;
+      flex-wrap: wrap;
+    }
+    .action-btn {
+      background: var(--card);
+      border: 1px solid var(--border);
+      color: var(--text);
+      padding: 0.625rem 1.25rem;
+      border-radius: 0.5rem;
+      cursor: pointer;
+      font-size: 0.875rem;
+      font-weight: 600;
+      transition: all 0.2s;
+      font-family: inherit;
+    }
+    .action-btn:hover { border-color: var(--cyan); color: var(--cyan); transform: translateY(-1px); }
+    .action-btn.primary { background: var(--cyan); color: var(--bg); border-color: var(--cyan); }
+    .action-btn.primary:hover { background: var(--green); border-color: var(--green); }
+    .action-btn:disabled { opacity: 0.4; cursor: not-allowed; transform: none; }
+
+    /* ── Practice Input ── */
+    .practice-input-row {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      justify-content: center;
+      margin-top: 0.5rem;
+    }
+    .practice-input-row label {
+      font-size: 0.875rem;
+      color: var(--text2);
+      font-weight: 600;
+    }
+    .step-input {
+      background: var(--bg);
+      border: 2px solid var(--border);
+      color: var(--text);
+      padding: 0.625rem 1rem;
+      border-radius: 0.5rem;
+      font-size: 1.125rem;
+      font-family: 'JetBrains Mono', monospace;
+      font-weight: 600;
+      width: 120px;
+      text-align: center;
+      transition: border-color 0.2s;
+    }
+    .step-input:focus { outline: none; border-color: var(--cyan); }
+
+    /* ── Play Mode ── */
+    .play-timer {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 1.5rem;
+      font-weight: 700;
+      color: var(--cyan);
+      text-align: center;
+    }
+    .play-stats {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 0.75rem;
+    }
+    .stat-card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 0.75rem;
+      padding: 1rem;
+      text-align: center;
+    }
+    .stat-value {
+      font-size: 1.75rem;
+      font-weight: 700;
+      background: var(--grad);
+      background-clip: text;
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+    .stat-label { font-size: 0.7rem; color: var(--muted); text-transform: uppercase; letter-spacing: 1px; margin-top: 0.25rem; }
+
+    /* ── Explore concept cards ── */
+    .concept-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 1rem;
+    }
+    .concept-card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 0.75rem;
+      padding: 1.25rem;
+    }
+    .concept-card h4 { color: var(--cyan); margin-bottom: 0.5rem; font-size: 0.875rem; text-transform: uppercase; letter-spacing: 0.5px; }
+    .concept-card p { font-size: 0.8125rem; color: var(--text2); line-height: 1.6; }
+
+    .mode-content { display: none; flex-direction: column; gap: 1rem; }
+    .mode-content.active { display: flex; }
+
+    .hidden { display: none !important; }
+
+    @media (max-width: 768px) {
+      .concept-grid { grid-template-columns: 1fr; }
+      .play-stats { grid-template-columns: 1fr; }
+      .equation-text { font-size: 1.5rem; }
+    }
+  </style>
 </head>
 <body>
-    <div class="container">
-        <div class="vinculum-header">
-            <div class="vinculum-header-left">
-                <a href="../../VINCULUM-Hub.html" class="vinculum-back-btn" aria-label="Back to Hub"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 12H5M12 19l-7-7 7-7"/></svg></a>
-                <div class="vinculum-title-group">
-                    <h1 class="vinculum-title">Solving Linear Equations</h1>
-                    <div class="vinculum-badges"><span class="badge">A-REI.1</span><span class="tag">A-REI.3</span></div>
-                </div>
-            </div>
-            <div class="vinculum-header-right">
-                <select class="vinculum-theme-select" onchange="document.body.setAttribute('data-theme', this.value)">
-                    <option value="">Theme</option><option value="ocean">Ocean</option><option value="forest">Forest</option><option value="sunset">Sunset</option><option value="space">Space</option>
-                </select>
-            </div>
-        </div>
+  <!-- Header -->
+  <header class="vinculum-header">
+    <div class="vinculum-header-left">
+      <a href="../../VINCULUM-Hub.html" class="vinculum-back-btn">
+        <svg viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="2"><path d="M8 1L3 6l5 5"/></svg>
+        Hub
+      </a>
+      <div class="vinculum-header-title"><span class="brand">Solving Linear Equations</span></div>
+      <span class="vinculum-header-badge">ALG1</span>
+    </div>
+    <div class="vinculum-header-right">
+      <div class="vinculum-std-tags">
+        <span class="vinculum-std-tag">A-REI.1</span>
+        <span class="vinculum-std-tag">A-REI.3</span>
+      </div>
+    </div>
+  </header>
 
-        <div class="tabs">
-            <button class="tab-btn active" onclick="switchTab('explore')">Explore</button>
-            <button class="tab-btn" onclick="switchTab('practice')">Practice</button>
-            <button class="tab-btn" onclick="switchTab('play')">Play</button>
-        </div>
-
-        <div id="explore" class="tab-content active">
-            <div class="card">
-                <h2>Solving Linear Equations</h2>
-                <p>Use inverse operations to isolate the variable. What you do to one side, you must do to the other.</p>
-            </div>
-
-            <div class="card">
-                <h3>Example: 2x + 5 = 13</h3>
-                <div class="step-by-step">
-                    <p><strong>Step 1:</strong> Subtract 5 from both sides<br>2x + 5 - 5 = 13 - 5<br>2x = 8</p>
-                </div>
-                <div class="step-by-step">
-                    <p><strong>Step 2:</strong> Divide both sides by 2<br>2x ÷ 2 = 8 ÷ 2<br>x = 4</p>
-                </div>
-                <p style="color: var(--green); margin-top: 15px;"><strong>Check:</strong> 2(4) + 5 = 8 + 5 = 13 ✓</p>
-            </div>
-        </div>
-
-        <div id="practice" class="tab-content">
-            <div class="card">
-                <h2>Practice: Solve the Equation</h2>
-                <p id="problemText">Solve: 3x + 7 = 16</p>
-                <div style="display: flex; gap: 10px; margin: 20px 0;">
-                    <input type="text" id="answerInput" placeholder="x = ">
-                    <button onclick="checkAnswer()">Check</button>
-                </div>
-                <div id="feedback" class="feedback"></div>
-                <button onclick="nextProblem()" style="width: 100%; margin-top: 20px;">Next Problem</button>
-            </div>
-        </div>
-
-        <div id="play" class="tab-content">
-            <div class="card">
-                <h2>Play: Solve & Race</h2>
-                <p id="racePrompt">Solve as fast as you can!</p>
-                <div style="display: flex; gap: 10px; margin: 20px 0;">
-                    <input type="text" id="raceAnswer" placeholder="x = ">
-                    <button onclick="raceCheck()">Submit</button>
-                </div>
-                <div id="feedback" class="feedback"></div>
-                <button onclick="nextRace()" style="width: 100%; margin-top: 20px;">Next Challenge</button>
-            </div>
-        </div>
+  <div class="container">
+    <!-- Mode Tabs -->
+    <div class="vinculum-mode-tabs">
+      <button class="vinculum-mode-tab active-explore" data-mode="explore">Explore</button>
+      <button class="vinculum-mode-tab" data-mode="practice">Practice</button>
+      <button class="vinculum-mode-tab" data-mode="play">Play</button>
+      <div class="vinculum-diff-selector">
+        <span class="vinculum-diff-label">Level</span>
+        <button class="vinculum-diff-btn active" data-diff="emergent">1-Step</button>
+        <button class="vinculum-diff-btn" data-diff="proficient">2-Step</button>
+        <button class="vinculum-diff-btn" data-diff="advanced">Multi-Step</button>
+      </div>
     </div>
 
-    <script src="../../vinculum-feedback.js"></script>
-    <script src="../../vinculum-input.js"></script>
-    <script>
-        let currentEquation = null;
+    <!-- ═══ EXPLORE MODE ═══ -->
+    <div class="mode-content active" id="mode-explore">
+      <div class="equation-display">
+        <div class="equation-label">Current Equation</div>
+        <div class="equation-text" id="explore-equation">x + 5 = 12</div>
+      </div>
 
-        function switchTab(tabName) {
-            document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
-            document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
-            document.getElementById(tabName).classList.add('active');
-            event.target.classList.add('active');
+      <!-- Balance model SVG -->
+      <div class="balance-model">
+        <svg class="balance-svg" id="balance-svg" viewBox="0 0 500 220" width="100%"></svg>
+        <div class="balance-instruction" id="balance-instruction">
+          The equation is like a balance scale — both sides must stay equal. Click "Next Step" to see inverse operations in action.
+        </div>
+      </div>
 
-            if (tabName === 'practice') nextProblem();
-            else if (tabName === 'play') nextRace();
+      <!-- Step-by-step reveal -->
+      <div class="steps-panel" id="explore-steps"></div>
+
+      <div class="action-row">
+        <button class="action-btn" onclick="exploreNewEquation()">New Equation</button>
+        <button class="action-btn primary" id="explore-next-btn" onclick="exploreNextStep()">Next Step →</button>
+      </div>
+
+      <div class="concept-grid">
+        <div class="concept-card">
+          <h4>Inverse Operations</h4>
+          <p>Addition undoes subtraction. Multiplication undoes division. Use inverse operations to isolate the variable.</p>
+        </div>
+        <div class="concept-card">
+          <h4>Balance Principle</h4>
+          <p>Whatever you do to one side of the equation, you must do to the other side to keep it balanced.</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- ═══ PRACTICE MODE ═══ -->
+    <div class="mode-content" id="mode-practice">
+      <div class="equation-display">
+        <div class="equation-label">Solve step by step</div>
+        <div class="equation-text" id="practice-equation">3x + 7 = 16</div>
+      </div>
+
+      <div class="steps-panel" id="practice-steps"></div>
+
+      <div class="practice-input-row" id="practice-input-area">
+        <label id="practice-prompt">What operation should you do first?</label>
+      </div>
+
+      <div class="action-row" id="practice-actions">
+        <button class="action-btn" id="btn-subtract" onclick="practiceSelectOp('subtract')">Subtract</button>
+        <button class="action-btn" id="btn-add" onclick="practiceSelectOp('add')">Add</button>
+        <button class="action-btn" id="btn-divide" onclick="practiceSelectOp('divide')">Divide</button>
+        <button class="action-btn" id="btn-multiply" onclick="practiceSelectOp('multiply')">Multiply</button>
+      </div>
+
+      <div class="practice-input-row hidden" id="practice-value-row">
+        <label>By how much?</label>
+        <input type="number" class="step-input" id="practice-value-input" placeholder="?">
+        <button class="action-btn primary" onclick="practiceSubmitStep()">Apply</button>
+      </div>
+
+      <div class="action-row hidden" id="practice-next-row">
+        <button class="action-btn primary" onclick="practiceNewProblem()">Next Problem →</button>
+      </div>
+    </div>
+
+    <!-- ═══ PLAY MODE ═══ -->
+    <div class="mode-content" id="mode-play">
+      <div class="play-stats">
+        <div class="stat-card">
+          <div class="stat-value" id="play-score">0</div>
+          <div class="stat-label">Score</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-value" id="play-streak">0</div>
+          <div class="stat-label">Streak</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-value" id="play-timer">0:00</div>
+          <div class="stat-label">Time</div>
+        </div>
+      </div>
+
+      <div class="equation-display">
+        <div class="equation-label">Solve for x</div>
+        <div class="equation-text" id="play-equation">2x + 3 = 11</div>
+      </div>
+
+      <!-- Show steps as user solves -->
+      <div class="steps-panel" id="play-steps"></div>
+
+      <div class="practice-input-row">
+        <label>x =</label>
+        <input type="number" class="step-input" id="play-answer" placeholder="?" step="any">
+        <button class="action-btn primary" onclick="playSubmit()">Submit</button>
+      </div>
+
+      <div class="action-row hidden" id="play-solution-row">
+        <button class="action-btn" id="play-show-steps" onclick="playShowSteps()">Show Solution Steps</button>
+        <button class="action-btn primary" onclick="playNext()">Next →</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="feedback" class="feedback"></div>
+
+  <script src="../../vinculum-input.js"></script>
+  <script src="../../vinculum-feedback.js"></script>
+  <script src="../../vinculum-core.js"></script>
+  <script src="../../vinculum-adaptive-hook.js"></script>
+  <script>
+    // ════════════════════════════════════════════════════
+    // STATE
+    // ════════════════════════════════════════════════════
+    let difficulty = 'emergent';
+    let mode = 'explore';
+    let currentEq = null;
+    let exploreStep = 0;
+    let practiceState = {};
+    let playState = { score: 0, streak: 0, timer: 0, interval: null };
+
+    // ════════════════════════════════════════════════════
+    // EQUATION GENERATOR — always produces integer answers
+    // ════════════════════════════════════════════════════
+    function genEquation(diff) {
+      let a, b, c, x, steps, display;
+
+      if (diff === 'emergent') {
+        // 1-step: ax = c  or  x + b = c
+        if (Math.random() < 0.5) {
+          x = randInt(1, 12);
+          b = randInt(1, 15);
+          c = x + b;
+          display = `x + ${b} = ${c}`;
+          steps = [
+            { instruction: `Subtract ${b} from both sides`, before: `x + ${b} = ${c}`, operation: `- ${b}`, after: `x = ${c - b}` }
+          ];
+        } else {
+          a = randInt(2, 6);
+          x = randInt(1, 10);
+          c = a * x;
+          display = `${a}x = ${c}`;
+          steps = [
+            { instruction: `Divide both sides by ${a}`, before: `${a}x = ${c}`, operation: `÷ ${a}`, after: `x = ${x}` }
+          ];
         }
-
-        function generateEquation() {
-            const a = Math.floor(Math.random() * 5) + 1;
-            const b = Math.floor(Math.random() * 10) + 1;
-            const c = Math.floor(Math.random() * 20) + 1;
-            const answer = (c - b) / a;
-            return { a, b, c, answer, display: `${a}x + ${b} = ${c}` };
+      } else if (diff === 'proficient') {
+        // 2-step: ax + b = c
+        a = randInt(2, 7);
+        x = randInt(1, 10);
+        b = randInt(1, 15);
+        c = a * x + b;
+        display = `${a}x + ${b} = ${c}`;
+        steps = [
+          { instruction: `Subtract ${b} from both sides`, before: `${a}x + ${b} = ${c}`, operation: `- ${b}`, after: `${a}x = ${c - b}` },
+          { instruction: `Divide both sides by ${a}`, before: `${a}x = ${c - b}`, operation: `÷ ${a}`, after: `x = ${x}` }
+        ];
+      } else {
+        // Multi-step: a(x + b) = c  or  ax + b = cx + d
+        const type = Math.random();
+        if (type < 0.5) {
+          // Distribution: a(x + b) = c
+          a = randInt(2, 5);
+          b = randInt(1, 8);
+          x = randInt(1, 10);
+          c = a * (x + b);
+          display = `${a}(x + ${b}) = ${c}`;
+          steps = [
+            { instruction: `Distribute ${a} to each term inside parentheses`, before: `${a}(x + ${b}) = ${c}`, operation: `distribute`, after: `${a}x + ${a * b} = ${c}` },
+            { instruction: `Subtract ${a * b} from both sides`, before: `${a}x + ${a * b} = ${c}`, operation: `- ${a * b}`, after: `${a}x = ${c - a * b}` },
+            { instruction: `Divide both sides by ${a}`, before: `${a}x = ${c - a * b}`, operation: `÷ ${a}`, after: `x = ${x}` }
+          ];
+        } else {
+          // Variables on both sides: ax + b = cx + d
+          a = randInt(3, 8);
+          const c2 = randInt(1, a - 1);
+          x = randInt(1, 8);
+          b = randInt(1, 10);
+          const d = (a - c2) * x + b;
+          display = `${a}x + ${b} = ${c2}x + ${d}`;
+          steps = [
+            { instruction: `Subtract ${c2}x from both sides`, before: `${a}x + ${b} = ${c2}x + ${d}`, operation: `- ${c2}x`, after: `${a - c2}x + ${b} = ${d}` },
+            { instruction: `Subtract ${b} from both sides`, before: `${a - c2}x + ${b} = ${d}`, operation: `- ${b}`, after: `${a - c2}x = ${d - b}` },
+            { instruction: `Divide both sides by ${a - c2}`, before: `${a - c2}x = ${d - b}`, operation: `÷ ${a - c2}`, after: `x = ${x}` }
+          ];
+          c = d; // store for reference
         }
+      }
 
-        function nextProblem() {
-            currentEquation = generateEquation();
-            document.getElementById('problemText').textContent = `Solve: ${currentEquation.display}`;
-            document.getElementById('answerInput').value = '';
-            clearFeedback();
+      return { display, x, steps, difficulty: diff };
+    }
+
+    function randInt(min, max) { return Math.floor(Math.random() * (max - min + 1)) + min; }
+
+    // ════════════════════════════════════════════════════
+    // BALANCE MODEL SVG
+    // ════════════════════════════════════════════════════
+    function drawBalance(svgId, leftLabel, rightLabel, balanced) {
+      const svg = document.getElementById(svgId);
+      const tilt = balanced ? 0 : (Math.random() < 0.5 ? -5 : 5);
+      svg.innerHTML = `
+        <!-- Fulcrum -->
+        <polygon points="250,220 230,180 270,180" fill="var(--card)" stroke="var(--border)" stroke-width="2"/>
+        <!-- Beam -->
+        <g transform="rotate(${tilt}, 250, 178)">
+          <line x1="80" y1="178" x2="420" y2="178" stroke="var(--cyan)" stroke-width="4" stroke-linecap="round"/>
+          <!-- Left pan -->
+          <rect x="60" y="150" width="120" height="28" rx="6" fill="var(--bg2)" stroke="var(--border)" stroke-width="1.5"/>
+          <text x="120" y="169" text-anchor="middle" fill="var(--text)" font-family="JetBrains Mono, monospace" font-size="14" font-weight="700">${leftLabel}</text>
+          <!-- Right pan -->
+          <rect x="320" y="150" width="120" height="28" rx="6" fill="var(--bg2)" stroke="var(--border)" stroke-width="1.5"/>
+          <text x="380" y="169" text-anchor="middle" fill="var(--text)" font-family="JetBrains Mono, monospace" font-size="14" font-weight="700">${rightLabel}</text>
+          <!-- Equal sign -->
+          <text x="250" y="165" text-anchor="middle" fill="var(--cyan)" font-size="20" font-weight="700">=</text>
+        </g>
+        <!-- Base -->
+        <rect x="200" y="218" width="100" height="4" rx="2" fill="var(--border)"/>
+      `;
+    }
+
+    // ════════════════════════════════════════════════════
+    // EXPLORE MODE
+    // ════════════════════════════════════════════════════
+    function exploreNewEquation() {
+      currentEq = genEquation(difficulty);
+      exploreStep = 0;
+      document.getElementById('explore-equation').textContent = currentEq.display;
+      document.getElementById('explore-next-btn').disabled = false;
+      document.getElementById('explore-next-btn').textContent = 'Next Step →';
+
+      // Draw initial balance
+      const parts = currentEq.display.split('=');
+      drawBalance('balance-svg', parts[0].trim(), parts[1].trim(), true);
+      document.getElementById('balance-instruction').textContent =
+        'The equation is like a balance scale — both sides must stay equal. Click "Next Step" to see inverse operations in action.';
+
+      // Build step cards (hidden)
+      const panel = document.getElementById('explore-steps');
+      panel.innerHTML = '';
+      currentEq.steps.forEach((step, i) => {
+        panel.innerHTML += `
+          <div class="step-card" id="explore-step-${i}">
+            <div class="step-number">${i + 1}</div>
+            <div class="step-body">
+              <div class="step-instruction">${step.instruction}</div>
+              <div class="step-equation">
+                <span>${step.before}</span>
+                <span class="operation" style="margin-left:1rem;">  →  ${step.operation}  →  </span>
+                <span class="highlight">${step.after}</span>
+              </div>
+            </div>
+          </div>`;
+      });
+    }
+
+    function exploreNextStep() {
+      if (exploreStep >= currentEq.steps.length) return;
+
+      const card = document.getElementById(`explore-step-${exploreStep}`);
+      card.classList.add('revealed');
+
+      // Update balance
+      const step = currentEq.steps[exploreStep];
+      const afterParts = step.after.split('=');
+      drawBalance('balance-svg', afterParts[0].trim(), afterParts[1].trim(), true);
+      document.getElementById('balance-instruction').textContent = step.instruction;
+
+      exploreStep++;
+      if (exploreStep >= currentEq.steps.length) {
+        document.getElementById('explore-next-btn').textContent = '✓ Solved!';
+        document.getElementById('explore-next-btn').disabled = true;
+        document.getElementById('balance-instruction').textContent =
+          `Solution: x = ${currentEq.x}. The variable is isolated! Click "New Equation" to try another.`;
+        showFB(`x = ${currentEq.x} — Equation solved!`, 'correct');
+      }
+    }
+
+    // ════════════════════════════════════════════════════
+    // PRACTICE MODE — guided step-by-step
+    // ════════════════════════════════════════════════════
+    function practiceNewProblem() {
+      currentEq = genEquation(difficulty);
+      practiceState = { stepIdx: 0, currentEq: currentEq.display };
+
+      document.getElementById('practice-equation').textContent = currentEq.display;
+      document.getElementById('practice-prompt').textContent = 'What operation should you do first?';
+      document.getElementById('practice-actions').classList.remove('hidden');
+      document.getElementById('practice-value-row').classList.add('hidden');
+      document.getElementById('practice-next-row').classList.add('hidden');
+
+      // Build step cards (all dimmed)
+      const panel = document.getElementById('practice-steps');
+      panel.innerHTML = '';
+      currentEq.steps.forEach((step, i) => {
+        panel.innerHTML += `
+          <div class="step-card" id="practice-step-${i}">
+            <div class="step-number">${i + 1}</div>
+            <div class="step-body">
+              <div class="step-instruction" id="practice-inst-${i}">Step ${i + 1}...</div>
+              <div class="step-equation" id="practice-eq-${i}"></div>
+            </div>
+          </div>`;
+      });
+      // Highlight first step
+      document.getElementById('practice-step-0').classList.add('active');
+    }
+
+    let selectedOp = null;
+
+    function practiceSelectOp(op) {
+      selectedOp = op;
+      const step = currentEq.steps[practiceState.stepIdx];
+      const correctOp = getOpFromInstruction(step.instruction);
+
+      if (op === correctOp) {
+        // Show value input
+        document.getElementById('practice-actions').classList.add('hidden');
+        document.getElementById('practice-value-row').classList.remove('hidden');
+        document.getElementById('practice-value-input').value = '';
+        document.getElementById('practice-value-input').focus();
+        showFB(`Correct — ${op}! Now enter the value.`, 'correct');
+      } else {
+        showFB(`Not quite. Look at the equation: ${step.before}. Which operation undoes what's being done to x?`, 'incorrect');
+      }
+    }
+
+    function getOpFromInstruction(inst) {
+      if (inst.includes('Subtract')) return 'subtract';
+      if (inst.includes('Add')) return 'add';
+      if (inst.includes('Divide')) return 'divide';
+      if (inst.includes('Multiply')) return 'multiply';
+      if (inst.includes('Distribute')) return 'distribute';
+      return '';
+    }
+
+    function getValueFromInstruction(inst) {
+      const match = inst.match(/(\d+)/);
+      return match ? parseInt(match[1]) : 0;
+    }
+
+    function practiceSubmitStep() {
+      const step = currentEq.steps[practiceState.stepIdx];
+      const expectedValue = getValueFromInstruction(step.instruction);
+      const userValue = parseInt(document.getElementById('practice-value-input').value);
+
+      if (userValue === expectedValue) {
+        // Reveal step
+        const card = document.getElementById(`practice-step-${practiceState.stepIdx}`);
+        card.classList.remove('active');
+        card.classList.add('completed');
+        document.getElementById(`practice-inst-${practiceState.stepIdx}`).textContent = step.instruction;
+        document.getElementById(`practice-eq-${practiceState.stepIdx}`).innerHTML =
+          `<span>${step.before}</span> <span class="operation">→ ${step.operation} →</span> <span class="highlight">${step.after}</span>`;
+
+        // Update equation display
+        document.getElementById('practice-equation').textContent = step.after;
+
+        practiceState.stepIdx++;
+        showFB('Correct!', 'correct');
+
+        if (practiceState.stepIdx >= currentEq.steps.length) {
+          // Solved!
+          document.getElementById('practice-value-row').classList.add('hidden');
+          document.getElementById('practice-next-row').classList.remove('hidden');
+          document.getElementById('practice-prompt').textContent = `Solved! x = ${currentEq.x}`;
+          showFB(`🎉 x = ${currentEq.x} — Great work solving step by step!`, 'correct');
+        } else {
+          // Next step
+          document.getElementById('practice-value-row').classList.add('hidden');
+          document.getElementById('practice-actions').classList.remove('hidden');
+          document.getElementById('practice-prompt').textContent = 'What operation next?';
+          document.getElementById(`practice-step-${practiceState.stepIdx}`).classList.add('active');
         }
+      } else {
+        showFB(`Not quite — look at the equation. What value do you need to ${selectedOp}?`, 'incorrect');
+      }
+    }
 
-        function checkAnswer() {
-            const answer = parseFloat(document.getElementById('answerInput').value);
-            if (Math.abs(answer - currentEquation.answer) < 0.01) {
-                showFeedback(`Correct! x = ${currentEquation.answer}`, 'success');
-            } else {
-                showFeedback(`Not quite. x = ${currentEquation.answer}`, 'error');
-            }
-            setTimeout(() => nextProblem(), 1500);
-        }
+    // ════════════════════════════════════════════════════
+    // PLAY MODE — timed solve with optional step reveal
+    // ════════════════════════════════════════════════════
+    function playStart() {
+      playState.score = 0;
+      playState.streak = 0;
+      playState.timer = 0;
+      clearInterval(playState.interval);
+      playState.interval = setInterval(() => {
+        playState.timer++;
+        const m = Math.floor(playState.timer / 60);
+        const s = playState.timer % 60;
+        document.getElementById('play-timer').textContent = `${m}:${s.toString().padStart(2, '0')}`;
+      }, 1000);
+      playNext();
+    }
 
-        function nextRace() {
-            currentEquation = generateEquation();
-            document.getElementById('racePrompt').textContent = `Solve: ${currentEquation.display}`;
-            document.getElementById('raceAnswer').value = '';
-            clearFeedback();
-        }
+    function playNext() {
+      currentEq = genEquation(difficulty);
+      document.getElementById('play-equation').textContent = currentEq.display;
+      document.getElementById('play-answer').value = '';
+      document.getElementById('play-answer').focus();
+      document.getElementById('play-solution-row').classList.add('hidden');
+      document.getElementById('play-steps').innerHTML = '';
+      updatePlayStats();
+    }
 
-        function raceCheck() {
-            checkAnswer();
-            setTimeout(() => nextRace(), 1500);
-        }
+    function playSubmit() {
+      const answer = parseFloat(document.getElementById('play-answer').value);
+      if (isNaN(answer)) { showFB('Enter a number for x.', 'info'); return; }
 
-        function showFeedback(message, type) {
-            const fb = document.getElementById('feedback');
-            fb.textContent = message;
-            fb.classList.remove('error', 'success');
-            if (type) fb.classList.add(type);
-            fb.classList.add('show');
-        }
+      if (Math.abs(answer - currentEq.x) < 0.01) {
+        playState.score += 10 * currentEq.steps.length;
+        playState.streak++;
+        showFB(`✓ Correct! x = ${currentEq.x}`, 'correct');
+        updatePlayStats();
+        setTimeout(playNext, 1200);
+      } else {
+        playState.streak = 0;
+        showFB(`Not quite. x ≠ ${answer}. Try again or view the solution steps.`, 'incorrect');
+        document.getElementById('play-solution-row').classList.remove('hidden');
+        updatePlayStats();
+      }
+    }
 
-        function clearFeedback() {
-            document.getElementById('feedback').classList.remove('show');
-        }
+    function playShowSteps() {
+      const panel = document.getElementById('play-steps');
+      panel.innerHTML = '';
+      currentEq.steps.forEach((step, i) => {
+        panel.innerHTML += `
+          <div class="step-card revealed">
+            <div class="step-number">${i + 1}</div>
+            <div class="step-body">
+              <div class="step-instruction">${step.instruction}</div>
+              <div class="step-equation">
+                <span>${step.before}</span>
+                <span class="operation"> → ${step.operation} → </span>
+                <span class="highlight">${step.after}</span>
+              </div>
+            </div>
+          </div>`;
+      });
+    }
 
-        window.addEventListener('load', () => nextProblem());
-    </script>
+    function updatePlayStats() {
+      document.getElementById('play-score').textContent = playState.score;
+      document.getElementById('play-streak').textContent = playState.streak;
+    }
+
+    // ════════════════════════════════════════════════════
+    // MODE & DIFFICULTY SWITCHING
+    // ════════════════════════════════════════════════════
+    function switchMode(m) {
+      mode = m;
+      document.querySelectorAll('.vinculum-mode-tab').forEach(t => t.classList.remove('active-explore', 'active-practice', 'active-play'));
+      document.querySelector(`[data-mode="${m}"]`).classList.add(`active-${m}`);
+      document.querySelectorAll('.mode-content').forEach(c => c.classList.remove('active'));
+      document.getElementById(`mode-${m}`).classList.add('active');
+
+      if (m === 'explore') exploreNewEquation();
+      if (m === 'practice') practiceNewProblem();
+      if (m === 'play') playStart();
+    }
+
+    function setDifficulty(diff) {
+      difficulty = diff;
+      document.querySelectorAll('.vinculum-diff-btn').forEach(b => b.classList.remove('active'));
+      document.querySelector(`[data-diff="${diff}"]`).classList.add('active');
+      switchMode(mode);
+    }
+
+    // ════════════════════════════════════════════════════
+    // EVENT LISTENERS
+    // ════════════════════════════════════════════════════
+    document.querySelectorAll('.vinculum-mode-tab').forEach(tab => {
+      tab.addEventListener('click', () => switchMode(tab.dataset.mode));
+    });
+    document.querySelectorAll('.vinculum-diff-btn').forEach(btn => {
+      btn.addEventListener('click', () => setDifficulty(btn.dataset.diff));
+    });
+
+    // Enter key support
+    document.getElementById('practice-value-input').addEventListener('keydown', e => {
+      if (e.key === 'Enter') practiceSubmitStep();
+    });
+    document.getElementById('play-answer').addEventListener('keydown', e => {
+      if (e.key === 'Enter') playSubmit();
+    });
+
+    // ════════════════════════════════════════════════════
+    // INIT
+    // ════════════════════════════════════════════════════
+    window.addEventListener('DOMContentLoaded', () => {
+      exploreNewEquation();
+    });
+  </script>
 </body>
 </html>
