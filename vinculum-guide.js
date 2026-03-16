@@ -1,0 +1,744 @@
+/**
+ * VINCULUM Hub Guide Module
+ * Auto-injects instructional panel into any VINCULUM tool
+ *
+ * Usage: Add a single script tag to any tool
+ *   <script src="vinculum-guide.js"></script>
+ *
+ * The module auto-detects the tool, loads instruction data, and creates
+ * a floating side panel with "How to Use", "Standards", and "Key Concept" tabs.
+ */
+
+(function() {
+  'use strict';
+
+  // ============================================================================
+  // GUIDE DATA STORE
+  // ============================================================================
+
+  const GUIDE_DATA = {
+    'counting-objects': {
+      instructions: {
+        explore: '1. Click on objects to <strong>count</strong> them<br><br>2. Watch the number increment<br><br>3. Reset and try different sets',
+        practice: '1. See a <strong>group of objects</strong><br><br>2. Count carefully and enter the number<br><br>3. Check your answer',
+        play: '1. Count objects <strong>quickly</strong><br><br>2. Beat the timer<br><br>3. Advance through difficulty levels!'
+      },
+      standards: [
+        { code: 'K.CC.1', text: 'Count forward from a given number' },
+        { code: 'K.CC.3', text: 'Write numbers from 0 to 20' },
+        { code: 'K.CC.5', text: 'Count to answer "how many"' }
+      ],
+      keyConcept: '<strong>Counting</strong> means touching each object once and saying one number for each object. The last number you say tells <strong>how many</strong> there are.'
+    },
+
+    'number-bonds': {
+      instructions: {
+        explore: '1. Drag numbers to the top circle (the <strong>whole</strong>)<br><br>2. Drag parts to the bottom circles<br><br>3. Watch how they show parts that <strong>make the whole</strong>',
+        practice: '1. See a number bond with <strong>one missing part</strong><br><br>2. Figure out what makes the whole<br><br>3. Type the missing number',
+        play: '1. Complete number bonds <strong>against the timer</strong><br><br>2. Build accuracy streaks<br><br>3. Try all difficulty levels!'
+      },
+      standards: [
+        { code: 'K.OA.1', text: 'Represent addition and subtraction with objects' },
+        { code: '1.OA.3', text: 'Apply properties of operations' },
+        { code: '1.OA.4', text: 'Understand subtraction as an unknown-addend problem' }
+      ],
+      keyConcept: 'A <strong>number bond</strong> shows that a whole number can be broken into parts. The top number equals the sum of the bottom numbers.'
+    },
+
+    'add-subtract': {
+      instructions: {
+        explore: '1. Use the number line or manipulatives<br><br>2. Move forward to <strong>add</strong>, backward to <strong>subtract</strong><br><br>3. Watch the total change',
+        practice: '1. Solve addition and subtraction problems<br><br>2. Use <strong>number bonds</strong> or the <strong>number line</strong><br><br>3. Check your work',
+        play: '1. Race against the clock<br><br>2. Solve within 20 fluently<br><br>3. Build your high score!'
+      },
+      standards: [
+        { code: '1.OA.1', text: 'Add and subtract within 20' },
+        { code: '1.OA.6', text: 'Fluently add and subtract within 10' },
+        { code: '2.OA.2', text: 'Fluently add and subtract within 20' }
+      ],
+      keyConcept: 'Addition is combining groups; subtraction is taking apart. Both can be shown on a <strong>number line</strong> — hop forward to add, backward to subtract.'
+    },
+
+    'place-value-chart': {
+      instructions: {
+        explore: '1. Drag base-ten blocks to the chart<br><br>2. <strong>Ones</strong> go in the ones place, <strong>tens</strong> in the tens place<br><br>3. Watch how 10 ones regroup into 1 ten',
+        practice: '1. Build numbers using blocks<br><br>2. Read the number from the chart<br><br>3. Regroup when needed',
+        play: '1. Build numbers <strong>quickly</strong><br><br>2. Use efficient regrouping<br><br>3. Complete all challenge levels!'
+      },
+      standards: [
+        { code: '2.NBT.1', text: 'Understand place value (tens and ones)' },
+        { code: '2.NBT.3', text: 'Read and write numbers to 1000' },
+        { code: '3.NBT.1', text: 'Use place value to round' }
+      ],
+      keyConcept: 'Each place is worth 10 times the place to its right. A <strong>tens rod</strong> is the same as 10 <strong>ones cubes</strong>; a <strong>hundreds flat</strong> is 10 <strong>tens rods</strong>.'
+    },
+
+    'multiply-models': {
+      instructions: {
+        explore: '1. Set the number of <strong>rows</strong> and <strong>columns</strong><br><br>2. Watch an array form<br><br>3. Count the total: rows × columns',
+        practice: '1. See a <strong>multiplication fact</strong><br><br>2. Use the array to figure out the product<br><br>3. Enter your answer',
+        play: '1. Solve multiplication facts <strong>quickly</strong><br><br>2. Master the times tables<br><br>3. Unlock bonus levels!'
+      },
+      standards: [
+        { code: '2.OA.4', text: 'Use arrays to represent multiplication' },
+        { code: '3.OA.3', text: 'Use multiplication within 100' },
+        { code: '3.OA.5', text: 'Relate multiplication to addition' }
+      ],
+      keyConcept: 'An <strong>array</strong> organizes objects in equal rows and columns. Rows × columns = total. This shows why multiplication is <strong>repeated addition</strong>.'
+    },
+
+    'fraction-visual': {
+      instructions: {
+        explore: '1. Adjust the <strong>denominator</strong> (number of parts)<br><br>2. Shade parts to show the <strong>numerator</strong><br><br>3. See equivalent fractions<br><br>4. Compare fractions visually',
+        practice: '1. See a <strong>fraction picture</strong><br><br>2. Write the fraction or shade correctly<br><br>3. Check against the visual',
+        play: '1. Identify and compare fractions <strong>quickly</strong><br><br>2. Recognize equivalent forms<br><br>3. Beat your score!'
+      },
+      standards: [
+        { code: '3.NF.1', text: 'Understand fractions as equal parts' },
+        { code: '3.NF.2', text: 'Represent fractions on a number line' },
+        { code: '4.NF.1', text: 'Explain fraction equivalence' }
+      ],
+      keyConcept: 'A <strong>fraction</strong> names a part of a whole. The bottom number (denominator) tells how many equal parts; the top (numerator) tells how many parts we use.'
+    },
+
+    'decimal-operations': {
+      instructions: {
+        explore: '1. Use a <strong>decimal grid</strong> (100 squares)<br><br>2. Shade to show decimals<br><br>3. Connect decimals to fractions',
+        practice: '1. Add or subtract decimals<br><br>2. Align the <strong>decimal points</strong><br><br>3. Use the grid to verify',
+        play: '1. Solve decimal problems <strong>against the timer</strong><br><br>2. Mix addition and subtraction<br><br>3. Advance through levels!'
+      },
+      standards: [
+        { code: '4.NF.6', text: 'Use decimal notation for fractions' },
+        { code: '5.NBT.7', text: 'Add, subtract, multiply, and divide decimals' },
+        { code: '5.NBT.2', text: 'Explain decimal patterns' }
+      ],
+      keyConcept: 'A <strong>decimal</strong> is another way to write a fraction using <strong>place value</strong>. One-tenth is 0.1, one-hundredth is 0.01.'
+    },
+
+    'ratio-table': {
+      instructions: {
+        explore: '1. Enter two numbers to set a <strong>base ratio</strong><br><br>2. The table generates <strong>equivalent ratios</strong> by multiplying<br><br>3. Look for the <strong>pattern</strong> — what stays the same?',
+        practice: '1. Read the <strong>given ratio</strong> in the table<br><br>2. Find the <strong>missing value</strong> that keeps the ratio equivalent<br><br>3. Type your answer and click <strong>Submit</strong>',
+        play: '1. Solve ratio problems <strong>quickly</strong><br><br>2. Complete all problems before time runs out<br><br>3. Try all difficulty levels!'
+      },
+      standards: [
+        { code: '6.RP.1', text: 'Understand the concept of a ratio' },
+        { code: '6.RP.2', text: 'Understand unit rates' },
+        { code: '6.RP.3', text: 'Use ratio reasoning to solve problems' }
+      ],
+      keyConcept: 'A <strong>ratio table</strong> organizes equivalent ratios. Each row multiplies both values by the same factor, keeping the relationship <strong>proportional</strong>.'
+    },
+
+    'coordinate-plane': {
+      instructions: {
+        explore: '1. Locate points using <strong>(x, y) coordinates</strong><br><br>2. x tells you <strong>right/left</strong>, y tells you <strong>up/down</strong><br><br>3. Plot ordered pairs and trace patterns',
+        practice: '1. Read coordinates and plot the point<br><br>2. Or read a point and write its coordinates<br><br>3. Check your work on the grid',
+        play: '1. Plot points <strong>against the clock</strong><br><br>2. Create pictures by plotting sequences<br><br>3. Beat difficulty levels!'
+      },
+      standards: [
+        { code: '5.G.1', text: 'Graph points on a coordinate plane' },
+        { code: '6.G.3', text: 'Draw polygons on the coordinate plane' },
+        { code: '7.G.1', text: 'Solve problems involving scale drawings' }
+      ],
+      keyConcept: 'The <strong>coordinate plane</strong> uses two perpendicular number lines (axes). Every point has an address: (x, y). Start at the origin, go right or left, then up or down.'
+    },
+
+    'expressions-equations': {
+      instructions: {
+        explore: '1. Use variables to represent <strong>unknown numbers</strong><br><br>2. Build expressions with <strong>operations</strong><br><br>3. See how changes to variables affect the result',
+        practice: '1. Evaluate expressions for given values<br><br>2. Build expressions from <strong>word problems</strong><br><br>3. Check your work',
+        play: '1. Solve expression problems <strong>quickly</strong><br><br>2. Build expressions from scenarios<br><br>3. Unlock all levels!'
+      },
+      standards: [
+        { code: '6.EE.1', text: 'Write and evaluate expressions' },
+        { code: '6.EE.2', text: 'Write expressions from word problems' },
+        { code: '6.EE.3', text: 'Apply properties to generate equivalent expressions' }
+      ],
+      keyConcept: 'An <strong>expression</strong> combines numbers, variables, and operations. An <strong>equation</strong> says two expressions are equal. Use variables like <strong>x</strong> to represent unknowns.'
+    },
+
+    'proportional-relationships': {
+      instructions: {
+        explore: '1. Plot points on a graph showing a <strong>proportional relationship</strong><br><br>2. Notice the straight line through the origin<br><br>3. Find the <strong>constant ratio (slope)</strong>',
+        practice: '1. Identify if a relationship is <strong>proportional</strong><br><br>2. Find the <strong>rate of change</strong><br><br>3. Use it to solve problems',
+        play: '1. Determine proportional relationships <strong>quickly</strong><br><br>2. Solve real-world scenarios<br><br>3. Complete all challenges!'
+      },
+      standards: [
+        { code: '7.RP.1', text: 'Compute unit rates' },
+        { code: '7.RP.2', text: 'Recognize proportional relationships' },
+        { code: '7.RP.3', text: 'Use proportions to solve problems' }
+      ],
+      keyConcept: 'A <strong>proportional relationship</strong> means the ratio between two quantities stays constant. When graphed, it\'s a straight line through the origin with slope = rate.'
+    },
+
+    'pythagorean-theorem': {
+      instructions: {
+        explore: '1. Adjust a <strong>right triangle\'s</strong> sides<br><br>2. Watch how a² + b² = c²<br><br>3. See the areas of squares on each side',
+        practice: '1. Given two sides, find the third using the <strong>Pythagorean theorem</strong><br><br>2. Check if a triangle is a <strong>right triangle</strong><br><br>3. Solve problems step by step',
+        play: '1. Find missing sides <strong>against the timer</strong><br><br>2. Identify right triangles<br><br>3. Solve real-world scenarios!'
+      },
+      standards: [
+        { code: '8.G.6', text: 'Explain the Pythagorean theorem' },
+        { code: '8.G.7', text: 'Apply the Pythagorean theorem to solve problems' },
+        { code: 'G-SRT.4', text: 'Prove and use the Pythagorean theorem' }
+      ],
+      keyConcept: 'In a <strong>right triangle</strong>, the square of the hypotenuse equals the sum of squares of the other two sides: <strong>a² + b² = c²</strong>.'
+    },
+
+    'linear-functions': {
+      instructions: {
+        explore: '1. Adjust <strong>slope</strong> and <strong>y-intercept</strong><br><br>2. See the line change in real time<br><br>3. Understand how each parameter affects the graph',
+        practice: '1. Write the equation from a graph<br><br>2. Graph a line from an equation<br><br>3. Find intercepts and slope',
+        play: '1. Match equations to lines <strong>quickly</strong><br><br>2. Build lines from descriptions<br><br>3. Solve real-world function problems!'
+      },
+      standards: [
+        { code: '8.F.3', text: 'Understand linear functions' },
+        { code: '8.EE.5', text: 'Understand slope' },
+        { code: 'F-LE.1', text: 'Recognize linear functions' }
+      ],
+      keyConcept: 'A <strong>linear function</strong> has the form y = mx + b. The slope <strong>m</strong> is the rate of change; the y-intercept <strong>b</strong> is where it crosses the y-axis.'
+    },
+
+    'addition-quest': {
+      instructions: {
+        explore: '1. Use sliders to set <strong>two addends</strong><br><br>2. Watch the character <strong>hop along</strong> the number line<br><br>3. The landing spot shows the <strong>sum</strong>',
+        practice: '1. Read the addition problem<br><br>2. Figure out where the character <strong>lands</strong><br><br>3. If wrong, watch the <strong>hop-by-hop scaffolding</strong>',
+        play: '1. Solve addition problems in <strong>60 seconds</strong><br><br>2. Build streaks for <strong>bonus multipliers</strong><br><br>3. Beat your high score!'
+      },
+      standards: [
+        { code: '1.OA.1', text: 'Add and subtract within 20' },
+        { code: '1.OA.6', text: 'Add and subtract within 20 fluently' },
+        { code: '2.OA.2', text: 'Fluently add and subtract within 20' }
+      ],
+      keyConcept: 'Addition means <strong>moving forward</strong> on a number line. Starting at the first addend, each hop of 1 brings you closer to the <strong>sum</strong>.'
+    },
+
+    'division-dash': {
+      instructions: {
+        explore: '1. Use sliders to set <strong>total objects</strong> and <strong>group size</strong><br><br>2. Watch objects partition into <strong>equal groups</strong><br><br>3. Remainder objects get a <strong>dashed border</strong>',
+        practice: '1. Read the division problem<br><br>2. Count the groups in the array<br><br>3. If wrong, watch <strong>groups form one at a time</strong>',
+        play: '1. Solve division problems in <strong>60 seconds</strong><br><br>2. Build streaks for <strong>multipliers</strong><br><br>3. Try all difficulty levels!'
+      },
+      standards: [
+        { code: '3.OA.2', text: 'Interpret quotients of whole numbers' },
+        { code: '3.OA.3', text: 'Use multiplication and division within 100' },
+        { code: '3.OA.7', text: 'Fluently multiply and divide within 100' }
+      ],
+      keyConcept: 'Division means making <strong>equal groups</strong>. The dividend is the total, the divisor is the group size, and the quotient tells <strong>how many groups</strong> fit.'
+    },
+
+    'pi-explorer': {
+      instructions: {
+        explore: '1. Adjust the <strong>polygon sides</strong> slider<br><br>2. Watch inscribed and circumscribed polygons <strong>converge on π</strong><br><br>3. Switch visualization modes to see <strong>different proofs</strong><br><br>4. Capture snapshots for your evidence log',
+        practice: '1. Work through <strong>step cards</strong> about π<br><br>2. Choose your difficulty level<br><br>3. Use the visualizations to <strong>check your thinking</strong>',
+        play: '1. Answer π questions in <strong>60 seconds</strong><br><br>2. Use what you learned in Explore<br><br>3. Beat your high score!'
+      },
+      standards: [
+        { code: '7.G.4', text: 'Know formulas for area and circumference of a circle' },
+        { code: '7.G.6', text: 'Solve problems involving area and circumference' }
+      ],
+      keyConcept: 'π is the ratio of a circle\'s <strong>circumference to its diameter</strong>. Archimedes proved this by trapping π between inscribed and circumscribed polygon perimeters.'
+    },
+
+    'solving-linear': {
+      instructions: {
+        explore: '1. Watch the <strong>balance beam</strong> model the equation<br><br>2. Each step keeps both sides <strong>equal</strong><br><br>3. The goal is to get <strong>x alone</strong> on one side',
+        practice: '1. Solve the equation <strong>step by step</strong><br><br>2. Use inverse operations to isolate x<br><br>3. Check your answer by <strong>substituting back</strong>',
+        play: '1. Solve equations <strong>against the clock</strong><br><br>2. Build accuracy streaks<br><br>3. Advance through difficulty levels!'
+      },
+      standards: [
+        { code: 'A-REI.1', text: 'Explain each step in solving an equation' },
+        { code: 'A-REI.3', text: 'Solve linear equations in one variable' }
+      ],
+      keyConcept: 'Solving an equation means finding the value that makes both sides <strong>equal</strong>. Each step must do the <strong>same thing</strong> to both sides.'
+    },
+
+    'graphing-linear': {
+      instructions: {
+        explore: '1. Set <strong>slope</strong> and <strong>y-intercept</strong> values<br><br>2. Watch the line update on the grid<br><br>3. Trace the line to understand patterns',
+        practice: '1. Graph equations in <strong>slope-intercept form</strong><br><br>2. Find the slope and intercepts from graphs<br><br>3. Write equations from points',
+        play: '1. Match lines to equations <strong>quickly</strong><br><br>2. Build lines from descriptions<br><br>3. Unlock all challenge levels!'
+      },
+      standards: [
+        { code: 'A-SSE.1', text: 'Interpret expressions using structure' },
+        { code: 'F-IF.7a', text: 'Graph linear functions' },
+        { code: 'A-CED.2', text: 'Create equations in two variables' }
+      ],
+      keyConcept: 'Linear equations in the form y = mx + b can be graphed using the y-intercept (b) as the starting point, then moving by the slope (m).'
+    },
+
+    'quadratic-functions': {
+      instructions: {
+        explore: '1. Adjust coefficients to change the <strong>parabola</strong><br><br>2. See how a, b, and c affect the shape<br><br>3. Find the vertex and axis of symmetry',
+        practice: '1. Graph quadratic equations<br><br>2. Identify key features (vertex, intercepts)<br><br>3. Match graphs to equations',
+        play: '1. Solve quadratic problems <strong>against the timer</strong><br><br>2. Identify function features quickly<br><br>3. Solve real-world scenarios!'
+      },
+      standards: [
+        { code: 'F-IF.8a', text: 'Understand properties of quadratic functions' },
+        { code: 'A-SSE.3', text: 'Choose and produce an equivalent form of expressions' },
+        { code: 'F-IF.9', text: 'Compare function families' }
+      ],
+      keyConcept: 'A <strong>quadratic function</strong> has the form y = ax² + bx + c. Its graph is a <strong>parabola</strong> with a <strong>vertex</strong> (turning point) and axis of symmetry.'
+    }
+  };
+
+  // ============================================================================
+  // UTILITY FUNCTIONS
+  // ============================================================================
+
+  /**
+   * Auto-detect tool ID from multiple sources
+   */
+  function detectToolId() {
+    // Try body data-tool-id first
+    const bodyToolId = document.body.getAttribute('data-tool-id');
+    if (bodyToolId) return bodyToolId;
+
+    // Try to parse from page title
+    const title = document.title.toLowerCase();
+    const titleMatch = title.match(/(\w+[-\w]*)/);
+    if (titleMatch) {
+      const toolId = titleMatch[1]
+        .replace(/\s+/g, '-')
+        .replace(/[^\w-]/g, '');
+      if (GUIDE_DATA[toolId]) return toolId;
+    }
+
+    // Try URL path
+    const path = window.location.pathname.toLowerCase();
+    const pathMatch = path.match(/\/([a-z0-9-]+)\.html?/);
+    if (pathMatch) {
+      const toolId = pathMatch[1];
+      if (GUIDE_DATA[toolId]) return toolId;
+    }
+
+    return null;
+  }
+
+  /**
+   * Generate fallback instruction for unknown tools
+   */
+  function generateFallbackInstructions(toolId) {
+    const titleCase = toolId
+      .split('-')
+      .map(w => w.charAt(0).toUpperCase() + w.slice(1))
+      .join(' ');
+
+    return {
+      instructions: {
+        explore: `1. <strong>Experiment</strong> with this tool's features<br><br>2. Try different inputs and settings<br><br>3. Observe patterns and relationships`,
+        practice: '1. Work through <strong>guided problems</strong><br><br>2. Check your answers carefully<br><br>3. Review solutions when stuck',
+        play: '1. Solve problems <strong>against the clock</strong><br><br>2. Build your accuracy and speed<br><br>3. Compete and have fun!'
+      },
+      standards: [
+        { code: 'MATH', text: 'Build mathematical thinking and problem-solving skills' }
+      ],
+      keyConcept: `<strong>${titleCase}</strong> helps you explore and master important math concepts through interactive visualization and practice.`
+    };
+  }
+
+  /**
+   * Get guide data for a tool (with fallback)
+   */
+  function getGuideData(toolId) {
+    if (!toolId) return null;
+    return GUIDE_DATA[toolId] || generateFallbackInstructions(toolId);
+  }
+
+  /**
+   * Detect current mode from UI elements
+   */
+  function detectCurrentMode() {
+    // Look for active mode tab
+    const activeModeTab = document.querySelector(
+      '.mode-tab.active, .vinculum-mode-tab.active, [data-mode-active="true"]'
+    );
+
+    if (activeModeTab) {
+      const modeText = activeModeTab.textContent.toLowerCase().trim();
+      if (modeText.includes('explore')) return 'explore';
+      if (modeText.includes('practice')) return 'practice';
+      if (modeText.includes('play')) return 'play';
+    }
+
+    // Default to explore
+    return 'explore';
+  }
+
+  /**
+   * Build standards HTML
+   */
+  function buildStandardsHTML(standards) {
+    if (!standards || standards.length === 0) {
+      return '<p style="font-size: 0.9em; color: var(--muted);">No standards available</p>';
+    }
+
+    return standards
+      .map(s => `<div style="margin-bottom: 12px; font-size: 0.85em;">
+        <strong style="color: var(--cyan);">${escapeHTML(s.code)}</strong>
+        <p style="margin: 4px 0 0 0; color: var(--text2);">${escapeHTML(s.text)}</p>
+      </div>`)
+      .join('');
+  }
+
+  /**
+   * Escape HTML to prevent injection
+   */
+  function escapeHTML(str) {
+    const div = document.createElement('div');
+    div.textContent = str;
+    return div.innerHTML;
+  }
+
+  // ============================================================================
+  // PANEL CREATION & INJECTION
+  // ============================================================================
+
+  /**
+   * Create the guide panel HTML
+   */
+  function createGuidePanel(data, mode = 'explore') {
+    const panelHTML = `
+      <div class="vinculum-guide-panel" id="vinculumGuidePanel">
+        <button class="guide-toggle" id="guideToggle" title="Toggle instructions" aria-label="Toggle guide panel">?</button>
+        <div class="guide-content">
+          <div class="panel-section">
+            <div class="panel-title">How to Use</div>
+            <div class="panel-text guide-instructions" id="guideInstructions">
+              ${data.instructions[mode] || data.instructions.explore}
+            </div>
+          </div>
+          <div class="panel-section">
+            <div class="panel-title">Standards</div>
+            <div class="panel-text guide-standards" id="guideStandards">
+              ${buildStandardsHTML(data.standards)}
+            </div>
+          </div>
+          <div class="panel-section">
+            <div class="panel-title">Key Concept</div>
+            <div class="panel-text guide-concept" id="guideConcept">
+              ${data.keyConcept}
+            </div>
+          </div>
+        </div>
+      </div>
+    `;
+    return panelHTML;
+  }
+
+  /**
+   * Inject CSS for the guide panel
+   */
+  function injectStyles() {
+    if (document.getElementById('vinculum-guide-styles')) return;
+
+    const style = document.createElement('style');
+    style.id = 'vinculum-guide-styles';
+    style.textContent = `
+      .vinculum-guide-panel {
+        position: fixed;
+        right: 0;
+        top: 0;
+        width: 260px;
+        height: 100vh;
+        background: var(--bg2);
+        border-left: 2px solid var(--border);
+        box-shadow: -2px 0 8px rgba(0, 0, 0, 0.12);
+        display: flex;
+        flex-direction: column;
+        z-index: 9999;
+        font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+        transition: transform 0.3s ease, right 0.3s ease;
+        overflow: hidden;
+      }
+
+      .vinculum-guide-panel.collapsed {
+        transform: translateX(260px);
+        right: -260px;
+      }
+
+      .guide-toggle {
+        position: absolute;
+        left: -48px;
+        top: 20px;
+        width: 40px;
+        height: 40px;
+        border-radius: 50%;
+        border: 2px solid var(--border);
+        background: var(--bg2);
+        color: var(--text);
+        font-size: 20px;
+        font-weight: bold;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        transition: background 0.2s ease, color 0.2s ease;
+        z-index: 10000;
+      }
+
+      .guide-toggle:hover {
+        background: var(--cyan);
+        color: white;
+        border-color: var(--cyan);
+      }
+
+      .guide-toggle:active {
+        transform: scale(0.95);
+      }
+
+      .guide-content {
+        flex: 1;
+        overflow-y: auto;
+        padding: 20px;
+        scroll-behavior: smooth;
+      }
+
+      .guide-content::-webkit-scrollbar {
+        width: 6px;
+      }
+
+      .guide-content::-webkit-scrollbar-track {
+        background: transparent;
+      }
+
+      .guide-content::-webkit-scrollbar-thumb {
+        background: var(--border);
+        border-radius: 3px;
+      }
+
+      .guide-content::-webkit-scrollbar-thumb:hover {
+        background: var(--text2);
+      }
+
+      .panel-section {
+        margin-bottom: 24px;
+      }
+
+      .panel-section:last-child {
+        margin-bottom: 0;
+      }
+
+      .panel-title {
+        font-size: 13px;
+        font-weight: 700;
+        color: var(--text);
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        margin-bottom: 10px;
+        border-bottom: 1px solid var(--border);
+        padding-bottom: 8px;
+      }
+
+      .panel-text {
+        font-size: 13px;
+        line-height: 1.6;
+        color: var(--text2);
+      }
+
+      .panel-text strong {
+        color: var(--text);
+        font-weight: 600;
+      }
+
+      .panel-text p {
+        margin: 0;
+      }
+
+      .guide-instructions ol,
+      .guide-instructions ul {
+        margin: 0;
+        padding-left: 0;
+        list-style: none;
+      }
+
+      .guide-instructions li {
+        margin-bottom: 8px;
+        line-height: 1.5;
+      }
+
+      .guide-standards {
+        font-size: 12px;
+      }
+
+      .guide-standards strong {
+        display: inline-block;
+        background: var(--cyan);
+        color: white;
+        padding: 2px 6px;
+        border-radius: 3px;
+        font-size: 11px;
+        margin-bottom: 4px;
+      }
+
+      /* Mobile: Bottom sheet instead of side panel */
+      @media (max-width: 899px) {
+        .vinculum-guide-panel {
+          position: fixed;
+          right: 0;
+          bottom: 0;
+          top: auto;
+          width: 100%;
+          height: auto;
+          max-height: 70vh;
+          border-left: none;
+          border-top: 2px solid var(--border);
+          border-radius: 16px 16px 0 0;
+          box-shadow: 0 -2px 8px rgba(0, 0, 0, 0.12);
+        }
+
+        .vinculum-guide-panel.collapsed {
+          transform: translateY(100%);
+          bottom: 0;
+        }
+
+        .guide-toggle {
+          position: absolute;
+          right: 20px;
+          left: auto;
+          bottom: 100%;
+          top: auto;
+          margin-bottom: 8px;
+        }
+
+        .guide-content {
+          max-height: calc(70vh - 40px);
+        }
+      }
+
+      /* Prevent layout shift when scrollbar appears */
+      body {
+        overflow-y: scroll;
+      }
+    `;
+
+    document.head.appendChild(style);
+  }
+
+  /**
+   * Initialize the guide panel
+   */
+  function initGuidePanel() {
+    // Check if guide already exists (avoid double-injection)
+    if (document.getElementById('vinculumGuidePanel')) return;
+
+    // Detect tool ID
+    const toolId = detectToolId();
+    if (!toolId) {
+      console.warn('[VinculumGuide] Could not detect tool ID');
+      return;
+    }
+
+    // Get guide data
+    const guideData = getGuideData(toolId);
+    if (!guideData) {
+      console.warn('[VinculumGuide] No guide data for tool:', toolId);
+      return;
+    }
+
+    // Inject styles
+    injectStyles();
+
+    // Detect initial mode
+    const initialMode = detectCurrentMode();
+
+    // Create and inject panel
+    const panelHTML = createGuidePanel(guideData, initialMode);
+    document.body.insertAdjacentHTML('beforeend', panelHTML);
+
+    // Set up event listeners
+    const panel = document.getElementById('vinculumGuidePanel');
+    const toggle = document.getElementById('guideToggle');
+
+    toggle.addEventListener('click', () => {
+      panel.classList.toggle('collapsed');
+      // Save state to localStorage
+      const isCollapsed = panel.classList.contains('collapsed');
+      localStorage.setItem('vinculum-guide-collapsed', isCollapsed);
+    });
+
+    // Check if panel should be initially collapsed
+    const shouldCollapse = localStorage.getItem('vinculum-guide-collapsed') === 'true';
+    if (shouldCollapse) {
+      panel.classList.add('collapsed');
+    }
+
+    // Listen for mode changes
+    setupModeListener(guideData);
+
+    // Expose API
+    window.VinculumGuide = {
+      updateMode: function(mode) {
+        updateInstructions(guideData, mode);
+      },
+      show: function() {
+        panel.classList.remove('collapsed');
+      },
+      hide: function() {
+        panel.classList.add('collapsed');
+      },
+      toggle: function() {
+        panel.classList.toggle('collapsed');
+      }
+    };
+
+    console.log('[VinculumGuide] Panel initialized for tool:', toolId);
+  }
+
+  /**
+   * Listen for mode changes and update instructions
+   */
+  function setupModeListener(guideData) {
+    // Observer for mode tab changes
+    const observeModeTabs = () => {
+      const modeTabs = document.querySelectorAll('.mode-tab, .vinculum-mode-tab');
+      modeTabs.forEach(tab => {
+        tab.addEventListener('click', function() {
+          setTimeout(() => {
+            const mode = detectCurrentMode();
+            updateInstructions(guideData, mode);
+          }, 100);
+        });
+      });
+    };
+
+    // Initial setup
+    observeModeTabs();
+
+    // Watch for DOM changes
+    const observer = new MutationObserver(() => {
+      observeModeTabs();
+    });
+
+    observer.observe(document.body, {
+      childList: true,
+      subtree: true,
+      attributes: true,
+      attributeFilter: ['class']
+    });
+  }
+
+  /**
+   * Update instructions based on mode
+   */
+  function updateInstructions(guideData, mode) {
+    const instructionsEl = document.getElementById('guideInstructions');
+    if (instructionsEl && guideData.instructions[mode]) {
+      instructionsEl.innerHTML = guideData.instructions[mode];
+    }
+  }
+
+  // ============================================================================
+  // INITIALIZATION
+  // ============================================================================
+
+  /**
+   * Wait for DOM to be ready, then initialize
+   */
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', initGuidePanel);
+  } else {
+    initGuidePanel();
+  }
+
+})();

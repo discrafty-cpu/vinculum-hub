@@ -1,0 +1,1114 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Addition Quest - VINCULUM Hub Teaching Game</title>
+    <link rel="stylesheet" href="../../vinculum-core.css">
+    <style>
+        :root {
+            --transition-speed: 300ms;
+            --glow-strength: 0.8;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            overflow: hidden;
+        }
+
+        .vinculum-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 1rem 2rem;
+            background: var(--card);
+            border-bottom: 2px solid var(--cyan);
+            z-index: 100;
+        }
+
+        .header-title {
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: var(--cyan);
+            text-shadow: 0 0 10px var(--cyan);
+        }
+
+        .header-controls {
+            display: flex;
+            gap: 1rem;
+            align-items: center;
+        }
+
+        .theme-picker {
+            display: flex;
+            gap: 0.5rem;
+            align-items: center;
+        }
+
+        .theme-btn {
+            width: 32px;
+            height: 32px;
+            border: 2px solid transparent;
+            border-radius: 50%;
+            cursor: pointer;
+            transition: all 200ms;
+            font-size: 0.7rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #fff;
+            font-weight: 600;
+        }
+
+        .theme-btn:hover {
+            transform: scale(1.1);
+            border-color: var(--cyan);
+        }
+
+        .theme-btn.active {
+            border-color: var(--cyan);
+            box-shadow: 0 0 15px var(--cyan);
+        }
+
+        .main-container {
+            display: flex;
+            height: calc(100vh - 80px);
+            gap: 1.5rem;
+            padding: 1.5rem;
+            background: var(--bg);
+        }
+
+        .canvas-area {
+            flex: 0 0 65%;
+            display: flex;
+            flex-direction: column;
+            gap: 1rem;
+        }
+
+        .number-line-container {
+            flex: 1;
+            background: var(--card);
+            border: 2px solid var(--cyan);
+            border-radius: 12px;
+            padding: 2rem;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            position: relative;
+            overflow: hidden;
+        }
+
+        #numberLineSvg {
+            width: 100%;
+            height: 100%;
+            min-height: 200px;
+        }
+
+        .sidebar {
+            flex: 0 0 35%;
+            background: var(--card);
+            border: 2px solid var(--cyan);
+            border-radius: 12px;
+            padding: 1.5rem;
+            display: flex;
+            flex-direction: column;
+            gap: 1.5rem;
+            overflow-y: auto;
+        }
+
+        .mode-tabs {
+            display: flex;
+            gap: 0.5rem;
+            border-bottom: 2px solid var(--cyan);
+            padding-bottom: 1rem;
+        }
+
+        .mode-tab {
+            flex: 1;
+            padding: 0.75rem;
+            border: none;
+            background: transparent;
+            color: var(--text);
+            cursor: pointer;
+            border-radius: 6px;
+            font-weight: 600;
+            transition: all 200ms;
+            position: relative;
+        }
+
+        .mode-tab:hover {
+            background: rgba(0, 229, 255, 0.1);
+        }
+
+        .mode-tab.active {
+            color: var(--cyan);
+            background: rgba(0, 229, 255, 0.2);
+        }
+
+        .mode-tab.active::after {
+            content: '';
+            position: absolute;
+            bottom: -1rem;
+            left: 0;
+            right: 0;
+            height: 2px;
+            background: var(--cyan);
+            border-radius: 2px;
+        }
+
+        .problem-display {
+            text-align: center;
+            padding: 1.5rem;
+            background: rgba(0, 229, 255, 0.05);
+            border-radius: 8px;
+            border: 1px solid var(--cyan);
+        }
+
+        .problem-text {
+            font-size: 3rem;
+            font-weight: 700;
+            color: var(--cyan);
+            margin-bottom: 0.5rem;
+            font-family: 'Courier New', monospace;
+            text-shadow: 0 0 20px var(--cyan);
+        }
+
+        .problem-label {
+            font-size: 0.9rem;
+            color: var(--text);
+            opacity: 0.7;
+        }
+
+        .answer-input-container {
+            display: flex;
+            gap: 0.75rem;
+        }
+
+        #answerInput {
+            flex: 1;
+            padding: 1rem;
+            background: var(--bg);
+            border: 2px solid var(--cyan);
+            border-radius: 8px;
+            color: var(--cyan);
+            font-size: 1.5rem;
+            text-align: center;
+            font-weight: 700;
+            transition: all 200ms;
+        }
+
+        #answerInput:focus {
+            outline: none;
+            box-shadow: 0 0 20px var(--cyan);
+        }
+
+        #answerInput::placeholder {
+            color: var(--cyan);
+            opacity: 0.4;
+        }
+
+        .submit-btn {
+            padding: 1rem 1.5rem;
+            background: var(--cyan);
+            color: var(--bg);
+            border: none;
+            border-radius: 8px;
+            font-weight: 700;
+            cursor: pointer;
+            transition: all 200ms;
+            font-size: 1rem;
+        }
+
+        .submit-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 25px var(--cyan);
+        }
+
+        .submit-btn:active {
+            transform: translateY(0);
+        }
+
+        .stats-panel {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 1rem;
+            padding: 1rem;
+            background: rgba(0, 229, 255, 0.05);
+            border-radius: 8px;
+            border: 1px solid var(--cyan);
+        }
+
+        .stat {
+            text-align: center;
+        }
+
+        .stat-label {
+            font-size: 0.8rem;
+            color: var(--text);
+            opacity: 0.7;
+            margin-bottom: 0.25rem;
+        }
+
+        .stat-value {
+            font-size: 1.75rem;
+            font-weight: 700;
+            color: var(--cyan);
+        }
+
+        .difficulty-selector {
+            display: flex;
+            gap: 0.5rem;
+        }
+
+        .diff-btn {
+            flex: 1;
+            padding: 0.75rem;
+            background: var(--bg);
+            border: 2px solid var(--cyan);
+            color: var(--text);
+            border-radius: 6px;
+            cursor: pointer;
+            font-weight: 600;
+            transition: all 200ms;
+            font-size: 0.9rem;
+        }
+
+        .diff-btn:hover {
+            background: rgba(0, 229, 255, 0.1);
+        }
+
+        .diff-btn.active {
+            background: var(--cyan);
+            color: var(--bg);
+        }
+
+        .capture-btn {
+            padding: 0.75rem;
+            background: var(--bg);
+            border: 2px solid var(--cyan);
+            color: var(--cyan);
+            border-radius: 6px;
+            cursor: pointer;
+            font-weight: 600;
+            transition: all 200ms;
+        }
+
+        .capture-btn:hover {
+            background: rgba(0, 229, 255, 0.1);
+        }
+
+        .capture-log {
+            max-height: 250px;
+            overflow-y: auto;
+            border-top: 1px solid var(--cyan);
+            padding-top: 1rem;
+        }
+
+        .capture-card {
+            background: rgba(0, 229, 255, 0.05);
+            border: 1px solid var(--cyan);
+            border-radius: 6px;
+            padding: 0.75rem;
+            margin-bottom: 0.5rem;
+            font-size: 0.85rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .capture-time {
+            color: var(--text);
+            opacity: 0.7;
+        }
+
+        .capture-result {
+            color: var(--cyan);
+            font-weight: 700;
+        }
+
+        .slider-container {
+            margin: 1rem 0;
+        }
+
+        .slider-label {
+            font-size: 0.9rem;
+            margin-bottom: 0.5rem;
+            color: var(--text);
+        }
+
+        input[type="range"] {
+            width: 100%;
+            height: 6px;
+            border-radius: 3px;
+            background: var(--bg);
+            outline: none;
+            -webkit-appearance: none;
+        }
+
+        input[type="range"]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            background: var(--cyan);
+            cursor: pointer;
+            box-shadow: 0 0 10px var(--cyan);
+        }
+
+        input[type="range"]::-moz-range-thumb {
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            background: var(--cyan);
+            cursor: pointer;
+            border: none;
+            box-shadow: 0 0 10px var(--cyan);
+        }
+
+        .explore-panel {
+            display: none;
+        }
+
+        .explore-panel.active {
+            display: block;
+        }
+
+        .explore-readout {
+            background: rgba(0, 229, 255, 0.05);
+            border: 1px solid var(--cyan);
+            border-radius: 6px;
+            padding: 1rem;
+            text-align: center;
+            font-size: 1.2rem;
+            color: var(--cyan);
+            font-family: 'Courier New', monospace;
+            font-weight: 700;
+        }
+
+        .timer-bar {
+            width: 100%;
+            height: 8px;
+            background: var(--bg);
+            border-radius: 4px;
+            overflow: hidden;
+            margin-top: 0.5rem;
+        }
+
+        .timer-fill {
+            height: 100%;
+            background: var(--cyan);
+            width: 100%;
+            transition: width 100ms linear;
+        }
+
+        .step-card {
+            background: rgba(0, 229, 255, 0.05);
+            border: 1px solid var(--cyan);
+            border-radius: 6px;
+            padding: 1rem;
+            margin-top: 1rem;
+            animation: pulse 1s ease-in-out infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.8; }
+        }
+
+        .step-text {
+            color: var(--text);
+            font-size: 0.95rem;
+            margin-bottom: 0.75rem;
+        }
+
+        #feedback {
+            position: fixed;
+            top: 100px;
+            right: 2rem;
+            max-width: 300px;
+            z-index: 1000;
+        }
+
+        .feedback-message {
+            background: var(--card);
+            border: 2px solid var(--cyan);
+            border-radius: 8px;
+            padding: 1.5rem;
+            margin-bottom: 0.5rem;
+            animation: slideIn 300ms ease-out;
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+        }
+
+        @keyframes slideIn {
+            from {
+                opacity: 0;
+                transform: translateX(20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateX(0);
+            }
+        }
+
+        .feedback-icon {
+            font-size: 1.5rem;
+        }
+
+        .streak-display {
+            font-size: 2rem;
+            font-weight: 700;
+            color: var(--cyan);
+            text-align: center;
+            text-shadow: 0 0 20px var(--cyan);
+            margin: 1rem 0;
+        }
+
+        @media (max-width: 1400px) {
+            .main-container {
+                flex-direction: column;
+                height: auto;
+            }
+
+            .canvas-area {
+                flex: 0 0 auto;
+                min-height: 400px;
+            }
+
+            .sidebar {
+                flex: 0 0 auto;
+                max-height: 400px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="vinculum-header">
+        <div class="header-title">🚀 Addition Quest</div>
+        <div class="header-controls">
+            <div class="theme-picker" id="themePicker"></div>
+        </div>
+    </div>
+
+    <div class="main-container">
+        <div class="canvas-area">
+            <div class="number-line-container">
+                <svg id="numberLineSvg"></svg>
+            </div>
+        </div>
+
+        <div class="sidebar">
+            <div class="mode-tabs">
+                <button class="mode-tab active" data-mode="explore">Explore</button>
+                <button class="mode-tab" data-mode="practice">Practice</button>
+                <button class="mode-tab" data-mode="play">Play</button>
+            </div>
+
+            <div class="problem-display">
+                <div class="problem-label">Current Problem</div>
+                <div class="problem-text" id="problemText">7 + 5 = ?</div>
+            </div>
+
+            <div class="answer-input-container">
+                <input type="number" id="answerInput" placeholder="?" inputmode="numeric">
+                <button class="submit-btn" id="submitBtn">✓</button>
+            </div>
+
+            <div class="stats-panel">
+                <div class="stat">
+                    <div class="stat-label">Score</div>
+                    <div class="stat-value" id="scoreDisplay">0</div>
+                </div>
+                <div class="stat">
+                    <div class="stat-label">Streak</div>
+                    <div class="stat-value" id="streakDisplay">0</div>
+                </div>
+                <div class="stat">
+                    <div class="stat-label">Solved</div>
+                    <div class="stat-value" id="solvedDisplay">0</div>
+                </div>
+                <div class="stat">
+                    <div class="stat-label">Accuracy</div>
+                    <div class="stat-value" id="accuracyDisplay">—</div>
+                </div>
+            </div>
+
+            <div class="difficulty-selector">
+                <button class="diff-btn active" data-difficulty="emergent">Emergent</button>
+                <button class="diff-btn" data-difficulty="proficient">Proficient</button>
+                <button class="diff-btn" data-difficulty="advanced">Advanced</button>
+            </div>
+
+            <button class="capture-btn" id="captureBtn">📸 Capture</button>
+
+            <div class="explore-panel active" id="explorePanel">
+                <div class="slider-container">
+                    <div class="slider-label">First Addend (A): <span id="addendAValue">7</span></div>
+                    <input type="range" id="addendASlider" min="0" max="20" value="7">
+                </div>
+                <div class="slider-container">
+                    <div class="slider-label">Second Addend (B): <span id="addendBValue">5</span></div>
+                    <input type="range" id="addendBSlider" min="0" max="20" value="5">
+                </div>
+                <div class="explore-readout" id="exploreReadout">Start: 7, Jump: +5, Land: 12</div>
+            </div>
+
+            <div id="capture-log" class="capture-log"></div>
+        </div>
+    </div>
+
+    <div id="feedback"></div>
+
+    <script src="../../vinculum-core.js"></script>
+    <script src="../../vinculum-input.js"></script>
+    <script src="../../vinculum-feedback.js"></script>
+  <script src="../../vinculum-guide.js"></script><script src="../../vinculum-indigenous.js"></script><script src="../../indigenous-context-panel.js"></script>
+
+    <script>
+        const themes = [
+            {id: '', label: 'Default', color: '#0a0e1a'},
+            {id: 'bright', label: 'Bright', color: '#f0f2f5'},
+            {id: 'redlaser', label: 'Red Laser', color: '#ff2d55'},
+            {id: 'storm', label: 'Storm', color: '#00e5ff'},
+            {id: 'frost', label: 'Frost', color: '#dce8f4'},
+            {id: 'emerald', label: 'Emerald', color: '#00e676'},
+            {id: 'sunset', label: 'Sunset', color: '#ff6b35'},
+            {id: 'spartan', label: 'Spartan', color: '#8B1A32'},
+            {id: 'neonforge', label: 'Neon Forge', color: '#ff00ff'},
+            {id: 'sunrise', label: 'Sunrise', color: '#FF8C42'},
+            {id: 'ocean', label: 'Ocean', color: '#00B4D8'},
+            {id: 'mathlab', label: 'Math Lab', color: '#F5F5F7'},
+            {id: 'nature', label: 'Nature', color: '#6B8F71'},
+            {id: 'highcontrast', label: 'HC', color: '#FFD60A'},
+            {id: 'laserpro', label: 'Laser Pro', color: '#ff2030'}
+        ];
+
+        class AdditionQuest {
+            constructor() {
+                this.currentMode = 'explore';
+                this.currentDifficulty = 'emergent';
+                this.currentProblem = {a: 7, b: 5};
+                this.score = 0;
+                this.streak = 0;
+                this.problems = 0;
+                this.correct = 0;
+                this.captureLog = [];
+                this.showingScaffolding = false;
+                this.timeLeft = 60;
+                this.playModeTimer = null;
+
+                this.initThemePicker();
+                this.initEventListeners();
+                this.generateProblem();
+                this.drawNumberLine();
+            }
+
+            initThemePicker() {
+                const picker = document.getElementById('themePicker');
+                themes.forEach(theme => {
+                    const btn = document.createElement('button');
+                    btn.className = 'theme-btn';
+                    if (theme.id === '') btn.classList.add('active');
+                    btn.textContent = theme.label.substring(0, 2);
+                    btn.style.backgroundColor = theme.color;
+                    btn.title = theme.label;
+                    btn.onclick = () => this.setTheme(theme.id, btn);
+                    picker.appendChild(btn);
+                });
+            }
+
+            setTheme(id, btn) {
+                document.documentElement.setAttribute('data-theme', id);
+                document.querySelectorAll('.theme-btn').forEach(b => b.classList.remove('active'));
+                btn.classList.add('active');
+            }
+
+            initEventListeners() {
+                document.querySelectorAll('.mode-tab').forEach(tab => {
+                    tab.addEventListener('click', (e) => this.switchMode(e.target.dataset.mode));
+                });
+
+                document.querySelectorAll('.diff-btn').forEach(btn => {
+                    btn.addEventListener('click', (e) => this.switchDifficulty(e.target.dataset.difficulty));
+                });
+
+                document.getElementById('submitBtn').addEventListener('click', () => this.submitAnswer());
+                document.getElementById('answerInput').addEventListener('keypress', (e) => {
+                    if (e.key === 'Enter') this.submitAnswer();
+                });
+
+                document.getElementById('captureBtn').addEventListener('click', () => this.captureState());
+
+                document.getElementById('addendASlider').addEventListener('input', (e) => {
+                    this.currentProblem.a = parseInt(e.target.value);
+                    document.getElementById('addendAValue').textContent = this.currentProblem.a;
+                    this.updateExploreMode();
+                    this.drawNumberLine();
+                });
+
+                document.getElementById('addendBSlider').addEventListener('input', (e) => {
+                    this.currentProblem.b = parseInt(e.target.value);
+                    document.getElementById('addendBValue').textContent = this.currentProblem.b;
+                    this.updateExploreMode();
+                    this.drawNumberLine();
+                });
+            }
+
+            generateProblem() {
+                const ranges = {
+                    emergent: {max: 10, aMax: 9, bMax: 9},
+                    proficient: {max: 100, aMax: 50, bMax: 50},
+                    advanced: {max: 1000, aMax: 500, bMax: 500}
+                };
+
+                const range = ranges[this.currentDifficulty];
+                let a, b;
+                do {
+                    a = Math.floor(Math.random() * (range.aMax + 1));
+                    b = Math.floor(Math.random() * (range.bMax + 1));
+                } while (a + b > range.max);
+
+                this.currentProblem = {a, b};
+                this.problems++;
+                this.showingScaffolding = false;
+                this.updateProblemDisplay();
+                this.drawNumberLine();
+                document.getElementById('answerInput').value = '';
+                document.getElementById('answerInput').focus();
+            }
+
+            updateProblemDisplay() {
+                document.getElementById('problemText').textContent = `${this.currentProblem.a} + ${this.currentProblem.b} = ?`;
+            }
+
+            switchMode(mode) {
+                this.currentMode = mode;
+                document.querySelectorAll('.mode-tab').forEach(tab => tab.classList.remove('active'));
+                document.querySelector(`[data-mode="${mode}"]`).classList.add('active');
+
+                const explorePanel = document.getElementById('explorePanel');
+                if (mode === 'explore') {
+                    explorePanel.classList.add('active');
+                    document.getElementById('answerInput').disabled = true;
+                    document.getElementById('submitBtn').disabled = true;
+                    this.updateExploreMode();
+                } else {
+                    explorePanel.classList.remove('active');
+                    document.getElementById('answerInput').disabled = false;
+                    document.getElementById('submitBtn').disabled = false;
+                }
+
+                if (mode === 'play') {
+                    this.score = 0;
+                    this.streak = 0;
+                    this.problems = 0;
+                    this.correct = 0;
+                    this.updateStats();
+                    this.startPlayMode();
+                } else {
+                    if (this.playModeTimer) clearInterval(this.playModeTimer);
+                }
+
+                this.generateProblem();
+            }
+
+            switchDifficulty(difficulty) {
+                this.currentDifficulty = difficulty;
+                document.querySelectorAll('.diff-btn').forEach(btn => btn.classList.remove('active'));
+                document.querySelector(`[data-difficulty="${difficulty}"]`).classList.add('active');
+                this.generateProblem();
+            }
+
+            submitAnswer() {
+                if (this.currentMode === 'explore') return;
+
+                const answer = parseInt(document.getElementById('answerInput').value);
+                const correct = answer === this.currentProblem.a + this.currentProblem.b;
+
+                if (isNaN(answer)) {
+                    this.showFeedback('Please enter a number', '❌');
+                    return;
+                }
+
+                if (correct) {
+                    this.correct++;
+                    this.streak++;
+                    const basePoints = this.currentDifficulty === 'emergent' ? 10 : this.currentDifficulty === 'proficient' ? 20 : 30;
+                    const multiplier = this.currentMode === 'play' ? Math.floor(this.streak / 5) + 1 : 1;
+                    const points = basePoints * multiplier;
+                    this.score += points;
+
+                    this.showFeedback(`✓ Correct! +${points} points`, '✓');
+                    this.celebrateCorrectAnswer();
+
+                    if ([5, 10, 15].includes(this.streak)) {
+                        this.showFeedback(`🔥 ${this.streak} Streak!`, '🔥');
+                    }
+
+                    this.captureState(true, true);
+                    setTimeout(() => this.generateProblem(), 1000);
+                } else {
+                    this.showFeedback('Try again!', '❌');
+                    if (this.currentMode === 'practice') {
+                        this.showingScaffolding = true;
+                        this.showScaffoldingFeedback();
+                        this.drawNumberLineWithScaffolding();
+                    }
+                    this.captureState(true, false);
+                }
+
+                this.updateStats();
+            }
+
+            showScaffoldingFeedback() {
+                const stepCard = document.querySelector('.step-card') || (() => {
+                    const card = document.createElement('div');
+                    card.className = 'step-card';
+                    document.querySelector('.sidebar').insertBefore(card, document.getElementById('capture-log'));
+                    return card;
+                })();
+
+                const sum = this.currentProblem.a + this.currentProblem.b;
+                stepCard.innerHTML = `
+                    <div class="step-text">Let's count together!</div>
+                    <div class="step-text" style="font-size: 1.3rem; color: var(--cyan); font-weight: 700;">
+                        Start at ${this.currentProblem.a}, count up ${this.currentProblem.b} times to reach ${sum}
+                    </div>
+                `;
+            }
+
+            drawNumberLine() {
+                const svg = document.getElementById('numberLineSvg');
+                const ranges = {
+                    emergent: 20,
+                    proficient: 100,
+                    advanced: 1000
+                };
+                const maxNum = ranges[this.currentDifficulty];
+                const width = svg.clientWidth || 800;
+                const height = svg.clientHeight || 250;
+
+                svg.innerHTML = '';
+
+                const padding = 60;
+                const lineY = height / 2;
+                const usableWidth = width - 2 * padding;
+                const scale = usableWidth / maxNum;
+
+                const line = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+                line.setAttribute('x1', padding);
+                line.setAttribute('y1', lineY);
+                line.setAttribute('x2', width - padding);
+                line.setAttribute('y2', lineY);
+                line.setAttribute('stroke', 'var(--cyan)');
+                line.setAttribute('stroke-width', '3');
+                svg.appendChild(line);
+
+                for (let i = 0; i <= maxNum; i += Math.max(1, Math.floor(maxNum / 10))) {
+                    const x = padding + i * scale;
+                    const tick = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+                    tick.setAttribute('x1', x);
+                    tick.setAttribute('y1', lineY - 10);
+                    tick.setAttribute('x2', x);
+                    tick.setAttribute('y2', lineY + 10);
+                    tick.setAttribute('stroke', 'var(--cyan)');
+                    tick.setAttribute('stroke-width', '2');
+                    svg.appendChild(tick);
+
+                    const label = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+                    label.setAttribute('x', x);
+                    label.setAttribute('y', lineY + 30);
+                    label.setAttribute('text-anchor', 'middle');
+                    label.setAttribute('fill', 'var(--cyan)');
+                    label.setAttribute('font-size', '14');
+                    label.setAttribute('font-weight', '600');
+                    label.textContent = i;
+                    svg.appendChild(label);
+                }
+
+                const startX = padding + this.currentProblem.a * scale;
+                const endX = padding + (this.currentProblem.a + this.currentProblem.b) * scale;
+
+                const circle = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+                circle.setAttribute('cx', startX);
+                circle.setAttribute('cy', lineY);
+                circle.setAttribute('r', '20');
+                circle.setAttribute('fill', 'var(--cyan)');
+                circle.setAttribute('id', 'character');
+                svg.appendChild(circle);
+
+                const astronaut = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+                astronaut.setAttribute('x', startX);
+                astronaut.setAttribute('y', lineY + 6);
+                astronaut.setAttribute('text-anchor', 'middle');
+                astronaut.setAttribute('font-size', '20');
+                astronaut.textContent = '🚀';
+                astronaut.setAttribute('id', 'astronaut');
+                svg.appendChild(astronaut);
+
+                const answerCircle = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+                answerCircle.setAttribute('cx', endX);
+                answerCircle.setAttribute('cy', lineY);
+                answerCircle.setAttribute('r', '18');
+                answerCircle.setAttribute('fill', 'none');
+                answerCircle.setAttribute('stroke', 'var(--cyan)');
+                answerCircle.setAttribute('stroke-width', '3');
+                answerCircle.setAttribute('stroke-dasharray', '5,5');
+                answerCircle.setAttribute('opacity', '0.5');
+                svg.appendChild(answerCircle);
+
+                this.drawHopPath(svg, padding, lineY, scale, startX, endX);
+            }
+
+            drawHopPath(svg, padding, lineY, scale, startX, endX) {
+                const hopCount = this.currentProblem.b;
+                const hopDistance = (endX - startX) / hopCount;
+
+                for (let i = 0; i < hopCount; i++) {
+                    const x1 = startX + i * hopDistance;
+                    const x2 = startX + (i + 1) * hopDistance;
+                    const arcHeight = 40 + Math.sin(i / hopCount * Math.PI) * 20;
+
+                    const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+                    const d = `M ${x1} ${lineY} Q ${(x1 + x2) / 2} ${lineY - arcHeight} ${x2} ${lineY}`;
+                    path.setAttribute('d', d);
+                    path.setAttribute('stroke', 'var(--cyan)');
+                    path.setAttribute('stroke-width', '2');
+                    path.setAttribute('fill', 'none');
+                    path.setAttribute('opacity', '0.3');
+                    svg.appendChild(path);
+                }
+            }
+
+            drawNumberLineWithScaffolding() {
+                const svg = document.getElementById('numberLineSvg');
+                const ranges = {
+                    emergent: 20,
+                    proficient: 100,
+                    advanced: 1000
+                };
+                const maxNum = ranges[this.currentDifficulty];
+                const width = svg.clientWidth || 800;
+                const height = svg.clientHeight || 250;
+
+                svg.innerHTML = '';
+
+                const padding = 60;
+                const lineY = height / 2;
+                const usableWidth = width - 2 * padding;
+                const scale = usableWidth / maxNum;
+
+                const line = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+                line.setAttribute('x1', padding);
+                line.setAttribute('y1', lineY);
+                line.setAttribute('x2', width - padding);
+                line.setAttribute('y2', lineY);
+                line.setAttribute('stroke', 'var(--cyan)');
+                line.setAttribute('stroke-width', '3');
+                svg.appendChild(line);
+
+                for (let i = 0; i <= Math.min(this.currentProblem.a + this.currentProblem.b, maxNum); i += Math.max(1, Math.floor(maxNum / 10))) {
+                    const x = padding + i * scale;
+                    const tick = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+                    tick.setAttribute('x1', x);
+                    tick.setAttribute('y1', lineY - 10);
+                    tick.setAttribute('x2', x);
+                    tick.setAttribute('y2', lineY + 10);
+                    tick.setAttribute('stroke', 'var(--cyan)');
+                    tick.setAttribute('stroke-width', '2');
+                    svg.appendChild(tick);
+
+                    const label = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+                    label.setAttribute('x', x);
+                    label.setAttribute('y', lineY + 30);
+                    label.setAttribute('text-anchor', 'middle');
+                    label.setAttribute('fill', 'var(--cyan)');
+                    label.setAttribute('font-size', '14');
+                    label.setAttribute('font-weight', '600');
+                    label.textContent = i;
+                    svg.appendChild(label);
+                }
+
+                const startX = padding + this.currentProblem.a * scale;
+                const endX = padding + (this.currentProblem.a + this.currentProblem.b) * scale;
+
+                const circle = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+                circle.setAttribute('cx', startX);
+                circle.setAttribute('cy', lineY);
+                circle.setAttribute('r', '20');
+                circle.setAttribute('fill', 'var(--cyan)');
+                svg.appendChild(circle);
+
+                const astronaut = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+                astronaut.setAttribute('x', startX);
+                astronaut.setAttribute('y', lineY + 6);
+                astronaut.setAttribute('text-anchor', 'middle');
+                astronaut.setAttribute('font-size', '20');
+                astronaut.textContent = '🚀';
+                svg.appendChild(astronaut);
+
+                for (let i = 1; i <= this.currentProblem.b; i++) {
+                    const x = startX + (endX - startX) * (i / this.currentProblem.b);
+                    const hopNum = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+                    hopNum.setAttribute('x', x);
+                    hopNum.setAttribute('y', lineY - 50);
+                    hopNum.setAttribute('text-anchor', 'middle');
+                    hopNum.setAttribute('fill', 'var(--cyan)');
+                    hopNum.setAttribute('font-size', '18');
+                    hopNum.setAttribute('font-weight', '700');
+                    hopNum.textContent = i;
+                    hopNum.style.opacity = '0';
+                    hopNum.style.animation = `fadeIn 300ms ease-out forwards`;
+                    hopNum.style.animationDelay = `${i * 100}ms`;
+                    svg.appendChild(hopNum);
+                }
+
+                const style = document.createElement('style');
+                style.textContent = `
+                    @keyframes fadeIn {
+                        from { opacity: 0; transform: translateY(-10px); }
+                        to { opacity: 1; transform: translateY(0); }
+                    }
+                `;
+                document.head.appendChild(style);
+            }
+
+            celebrateCorrectAnswer() {
+                const svg = document.getElementById('numberLineSvg');
+                const astronaut = svg.querySelector('#astronaut');
+                if (!astronaut) return;
+
+                const x = parseFloat(astronaut.getAttribute('x'));
+                const y = parseFloat(astronaut.getAttribute('y'));
+
+                for (let i = 0; i < 12; i++) {
+                    const particle = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+                    const angle = (i / 12) * Math.PI * 2;
+                    particle.setAttribute('cx', x);
+                    particle.setAttribute('cy', y);
+                    particle.setAttribute('r', '4');
+                    particle.setAttribute('fill', 'var(--cyan)');
+                    particle.style.opacity = '1';
+                    particle.style.animation = `burst 600ms ease-out forwards`;
+                    particle.style.animationDelay = `${i * 20}ms`;
+                    particle.style.setProperty('--px', Math.cos(angle) * 60);
+                    particle.style.setProperty('--py', Math.sin(angle) * 60);
+                    svg.appendChild(particle);
+                }
+
+                const style = document.createElement('style');
+                style.textContent = `
+                    @keyframes burst {
+                        to {
+                            transform: translate(var(--px), var(--py));
+                            opacity: 0;
+                        }
+                    }
+                `;
+                document.head.appendChild(style);
+            }
+
+            updateExploreMode() {
+                const a = this.currentProblem.a;
+                const b = this.currentProblem.b;
+                const sum = a + b;
+                document.getElementById('exploreReadout').textContent = `Start: ${a}, Jump: +${b}, Land: ${sum}`;
+            }
+
+            startPlayMode() {
+                this.timeLeft = 60;
+                const updateTimer = () => {
+                    const percent = (this.timeLeft / 60) * 100;
+                    const fill = document.querySelector('.timer-fill');
+                    if (fill) fill.style.width = percent + '%';
+
+                    if (this.timeLeft <= 0) {
+                        clearInterval(this.playModeTimer);
+                        this.endPlayMode();
+                    }
+                    this.timeLeft--;
+                };
+
+                if (!document.querySelector('.timer-bar')) {
+                    const container = document.querySelector('.problem-display');
+                    const timerBar = document.createElement('div');
+                    timerBar.className = 'timer-bar';
+                    timerBar.innerHTML = '<div class="timer-fill"></div>';
+                    container.appendChild(timerBar);
+                }
+
+                this.playModeTimer = setInterval(updateTimer, 1000);
+            }
+
+            endPlayMode() {
+                this.showFeedback(`Game Over! Score: ${this.score} | Accuracy: ${this.getAccuracy()}%`, '🎮');
+                this.switchMode('explore');
+            }
+
+            updateStats() {
+                document.getElementById('scoreDisplay').textContent = this.score;
+                document.getElementById('streakDisplay').textContent = this.streak;
+                document.getElementById('solvedDisplay').textContent = this.correct;
+                document.getElementById('accuracyDisplay').textContent = this.getAccuracy() + '%';
+            }
+
+            getAccuracy() {
+                return this.problems === 0 ? 0 : Math.round((this.correct / this.problems) * 100);
+            }
+
+            captureState(addLog = false, correct = false) {
+                if (!addLog) return;
+
+                const timestamp = new Date().toLocaleTimeString();
+                const log = {
+                    time: timestamp,
+                    problem: `${this.currentProblem.a} + ${this.currentProblem.b}`,
+                    correct: correct,
+                    scaffold: this.showingScaffolding
+                };
+                this.captureLog.push(log);
+
+                const logContainer = document.getElementById('capture-log');
+                const card = document.createElement('div');
+                card.className = 'capture-card';
+                card.innerHTML = `
+                    <div>
+                        <div class="capture-time">${log.time}</div>
+                        <div>${log.problem} ${correct ? '✓' : '✗'}</div>
+                    </div>
+                    <div class="capture-result">${correct ? '✓' : '✗'}</div>
+                `;
+                logContainer.insertBefore(card, logContainer.firstChild);
+
+                if (logContainer.children.length > 10) {
+                    logContainer.removeChild(logContainer.lastChild);
+                }
+            }
+
+            showFeedback(message, icon) {
+                const container = document.getElementById('feedback');
+                const msg = document.createElement('div');
+                msg.className = 'feedback-message';
+                msg.innerHTML = `<div class="feedback-icon">${icon}</div><div>${message}</div>`;
+                container.appendChild(msg);
+
+                setTimeout(() => msg.remove(), 2000);
+            }
+        }
+
+        window.addEventListener('load', () => {
+            new AdditionQuest();
+        });
+    </script>
+</body>
+</html>
