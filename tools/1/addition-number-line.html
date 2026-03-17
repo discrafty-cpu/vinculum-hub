@@ -44,9 +44,19 @@ body{font-family:var(--font);background:var(--bg);color:var(--text);height:100vh
 .sidebar::-webkit-scrollbar{width:3px;}
 .sidebar::-webkit-scrollbar-thumb{background:rgba(255,255,255,0.1);border-radius:4px;}
 
+/* ── Hub Back Link ── */
+.vin-back{
+  display:flex;align-items:center;justify-content:center;
+  width:30px;height:30px;border-radius:var(--radius-sm);
+  background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.1);
+  color:var(--text-dim);font-size:14px;cursor:pointer;text-decoration:none;
+  transition:all var(--transition);flex-shrink:0;
+}
+.vin-back:hover{background:rgba(79,195,247,0.15);color:var(--accent);border-color:rgba(79,195,247,0.3);}
+
 /* ── Brand Header ── */
 .vin-header{
-  padding:14px 18px 12px;display:flex;align-items:center;justify-content:space-between;
+  padding:14px 18px 12px;display:flex;align-items:center;justify-content:space-between;gap:10px;
   border-bottom:1px solid rgba(79,195,247,0.1);
   background:linear-gradient(180deg,rgba(0,0,0,0.55),rgba(0,0,0,0.2));
   backdrop-filter:blur(var(--blur-sm));flex-shrink:0;
@@ -348,6 +358,36 @@ body{font-family:var(--font);background:var(--bg);color:var(--text);height:100vh
   padding:0 6px;display:flex;align-items:center;font-family:var(--mono);
 }
 
+/* ═══════ NOTATION LEDGER ═══════ */
+.ledger-wrap{
+  max-height:200px;overflow-y:auto;scrollbar-width:thin;
+  background:rgba(0,0,0,0.3);border:1px solid rgba(79,195,247,0.12);
+  border-radius:var(--radius-sm);padding:8px 10px;
+}
+.ledger-wrap::-webkit-scrollbar{width:3px;}
+.ledger-wrap::-webkit-scrollbar-thumb{background:rgba(79,195,247,0.2);border-radius:4px;}
+.ledger-entry{
+  display:flex;flex-direction:column;gap:2px;padding:5px 0;
+  border-bottom:1px solid rgba(255,255,255,0.04);
+}
+.ledger-entry:last-child{border-bottom:none;}
+.ledger-expr{color:var(--text-dim);font-size:0.7em;font-family:var(--mono);letter-spacing:0.5px;}
+.ledger-eq{font-size:0.85em;font-weight:600;}
+.ledger-eq .katex{font-size:1em;}
+.ledger-step-num{
+  font-size:7px;font-weight:800;color:var(--accent);text-transform:uppercase;
+  letter-spacing:0.15em;opacity:0.5;margin-bottom:1px;
+}
+.ledger-empty{color:var(--label);font-size:0.72em;font-style:italic;text-align:center;padding:12px 0;}
+.ledger-clear{
+  margin-top:6px;padding:4px 10px;border-radius:var(--radius-sm);
+  background:rgba(244,67,54,0.06);border:1px solid rgba(244,67,54,0.15);
+  color:var(--incorrect);font-size:8px;font-weight:700;text-transform:uppercase;letter-spacing:0.1em;
+  cursor:pointer;font-family:var(--font);transition:all var(--transition);
+  display:none;
+}
+.ledger-clear:hover{background:rgba(244,67,54,0.15);}
+
 /* ═══════ FEEDBACK TOASTS ═══════ */
 .fb{position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);font-size:2.5em;font-weight:900;z-index:350;pointer-events:none;animation:fbA 0.9s ease-out forwards;}
 .fb-g{color:var(--correct);text-shadow:0 0 30px var(--correct-glow);}
@@ -374,6 +414,7 @@ body{font-family:var(--font);background:var(--bg);color:var(--text);height:100vh
   <aside class="sidebar">
     <!-- Brand Header -->
     <div class="vin-header">
+      <a class="vin-back" href="../../VINCULUM-Hub.html" title="Back to Hub">←</a>
       <div class="vin-logo">
         <div class="vin-logo-mark">V</div>
         <div class="vin-brand-text">
@@ -433,10 +474,14 @@ body{font-family:var(--font);background:var(--bg);color:var(--text);height:100vh
         </p>
       </div>
 
-      <!-- KaTeX Display -->
-      <div class="ctrl-card" id="katex-card">
-        <h3>Math Notation</h3>
-        <div id="katex-display" style="background:rgba(0,0,0,0.3);border:1px solid rgba(79,195,247,0.12);border-radius:var(--radius-sm);padding:10px;min-height:36px;display:flex;align-items:center;justify-content:center;"></div>
+      <!-- Vinculum Notation Ledger -->
+      <div class="ctrl-card" id="ledger-card">
+        <h3>Notation Ledger</h3>
+        <div class="ledger-wrap" id="ledger-wrap">
+          <div class="ledger-empty" id="ledger-empty">Move on the number line to see notation build here</div>
+          <div id="ledger-entries"></div>
+        </div>
+        <button class="ledger-clear" id="ledger-clear" onclick="clearLedger()">Clear Ledger</button>
       </div>
     </div>
   </aside>
@@ -513,8 +558,11 @@ const S = {
   diff: 0,            // 0=emergent, 1=proficient, 2=advanced
   nlMin: 0, nlMax: 10,
   dotPos: 0,
+  prevDotPos: 0,      // track previous position for ledger
   jumpMode: false,    // explore: waiting for jump destination
   jumps: [],          // [{from, to}]
+  // Notation Ledger
+  ledger: [],         // [{from, to, op, expression, equation}]
   // Practice/Play
   prob: null,         // {q, ans, a, b, op, type}
   score: 0, streak: 0, bestStreak: 0, correct: 0, wrong: 0,
@@ -596,8 +644,9 @@ function renderTrack(){
   S.jumps.forEach(j=>renderArch(j.from,j.to));
 }
 
-function moveDot(val,animate=true){
+function moveDot(val, animate=true, recordLedger=false){
   val=Math.max(S.nlMin,Math.min(S.nlMax,Math.round(val)));
+  const prev = S.dotPos;
   S.dotPos=val;
   const dot=$('nl-dot');
   if(dot){
@@ -606,7 +655,10 @@ function moveDot(val,animate=true){
     dot.setAttribute('aria-valuenow',val);
     if(!animate)requestAnimationFrame(()=>dot.style.transition='');
   }
-  updateKaTeX();
+  // Record to Notation Ledger when it's a deliberate placement (not drag)
+  if(recordLedger && S.mode==='explore' && prev !== val){
+    addLedgerEntry(prev, val);
+  }
 }
 
 function renderArch(from, to){
@@ -679,8 +731,8 @@ function setupDotDrag(dot){
 
   // Keyboard
   dot.addEventListener('keydown',e=>{
-    if(e.key==='ArrowRight')moveDot(S.dotPos+1);
-    else if(e.key==='ArrowLeft')moveDot(S.dotPos-1);
+    if(e.key==='ArrowRight')moveDot(S.dotPos+1, true, true);
+    else if(e.key==='ArrowLeft')moveDot(S.dotPos-1, true, true);
   });
 }
 
@@ -695,15 +747,16 @@ $('nl-viewport').addEventListener('click',e=>{
 
   if(S.mode==='explore'){
     if(S.jumpMode){
-      // Create jump
+      // Create jump — record to ledger
       const from=S.dotPos;
       renderArch(from,val);
       S.jumps.push({from,to:val});
-      moveDot(val);
+      moveDot(val, true, true);
       S.jumpMode=false;
       $('btn-jump').classList.remove('active');
     } else {
-      moveDot(val);
+      // Direct placement — record to ledger
+      moveDot(val, true, true);
     }
   } else if(S.mode==='practice'||S.mode==='play'){
     // In practice/play, clicking places answer guess
@@ -722,11 +775,14 @@ function startJump(){
 }
 function clearJumps(){
   S.jumps=[];
+  clearLedger();
   renderTrack();
 }
 function undoJump(){
   if(S.jumps.length===0)return;
   const last=S.jumps.pop();
+  if(S.ledger.length>0) S.ledger.pop();
+  renderLedger();
   moveDot(last.from);
   renderTrack();
 }
@@ -738,6 +794,7 @@ function setMode(mode){
   S.mode=mode;
   S.jumpMode=false;
   S.jumps=[];
+  clearLedger();
   clearInterval(S.timerInt);
   S.running=false;
 
@@ -827,6 +884,7 @@ function checkAnswer(val){
     if(S.streak>S.bestStreak)S.bestStreak=S.streak;
     if(S.streak%5===0)S.level=Math.min(S.level+1,2);
     showFB('+'+bonus,'fb-g');
+    addProblemToLedger(S.prob, true);
     updateStats();
     setTimeout(()=>nextProblem(),1200);
   } else {
@@ -834,6 +892,7 @@ function checkAnswer(val){
     $('ans-display').className='answer-display wrong';
     S.streak=0;S.wrong++;
     showFB('Try the number line','fb-r');
+    addProblemToLedger(S.prob, false);
     updateStats();
     setTimeout(()=>openRemediation(S.prob),1200);
   }
@@ -1122,17 +1181,102 @@ function showFB(text,cls){
   setTimeout(()=>el.remove(),1000);
 }
 
-function updateKaTeX(){
-  const el=$('katex-display');
-  if(!el)return;
-  try{
-    if(S.prob){
-      const latex=S.prob.q.replace('−','-').replace('?','\\square');
-      katex.render(latex+' = \\,?', el, {throwOnError:false,displayMode:false});
-    } else {
-      katex.render(`\\text{Position: }${S.dotPos}`, el, {throwOnError:false,displayMode:false});
+/* ═══════════════════════════════════════════════════
+   VINCULUM NOTATION LEDGER
+   Tracks every move as expression → equation in KaTeX.
+   Bridges Concrete (movement) → Abstract (notation).
+   ═══════════════════════════════════════════════════ */
+function addLedgerEntry(from, to){
+  if(from === to) return; // no movement, no entry
+  const diff = to - from;
+  const op = diff >= 0 ? '+' : '−';
+  const amt = Math.abs(diff);
+
+  // Expression: what you're DOING  (e.g. "3 + 5")
+  const expression = `${from} ${op} ${amt}`;
+  // Equation: the RESULT           (e.g. "3 + 5 = 8")
+  const equation = `${from} ${op} ${amt} = ${to}`;
+
+  S.ledger.push({ from, to, op, amt, expression, equation });
+  renderLedger();
+}
+
+function renderLedger(){
+  const container = $('ledger-entries');
+  const empty = $('ledger-empty');
+  const clearBtn = $('ledger-clear');
+  if(!container) return;
+
+  container.innerHTML = '';
+
+  if(S.ledger.length === 0){
+    empty.style.display = 'block';
+    clearBtn.style.display = 'none';
+    return;
+  }
+
+  empty.style.display = 'none';
+  clearBtn.style.display = 'inline-block';
+
+  S.ledger.forEach((entry, i) => {
+    const div = document.createElement('div');
+    div.className = 'ledger-entry';
+
+    // Step number
+    const step = document.createElement('div');
+    step.className = 'ledger-step-num';
+    step.textContent = `Move ${i + 1}`;
+    div.appendChild(step);
+
+    // Expression line (what you're doing)
+    const exprDiv = document.createElement('div');
+    exprDiv.className = 'ledger-expr';
+    exprDiv.textContent = entry.expression;
+    div.appendChild(exprDiv);
+
+    // Equation line (the result, rendered in KaTeX)
+    const eqDiv = document.createElement('div');
+    eqDiv.className = 'ledger-eq';
+    try {
+      const latex = entry.equation.replace('−', '-');
+      katex.render(latex, eqDiv, { throwOnError: false, displayMode: false });
+    } catch(e) {
+      eqDiv.textContent = entry.equation;
     }
-  }catch(e){el.textContent='';}
+    div.appendChild(eqDiv);
+
+    container.appendChild(div);
+  });
+
+  // Auto-scroll to latest entry
+  const wrap = $('ledger-wrap');
+  if(wrap) wrap.scrollTop = wrap.scrollHeight;
+}
+
+function clearLedger(){
+  S.ledger = [];
+  renderLedger();
+}
+
+// For practice/play mode, add a problem entry to the ledger
+function addProblemToLedger(prob, wasCorrect){
+  const entry = {
+    from: prob.a,
+    to: prob.ans,
+    op: prob.op === '+' ? '+' : '−',
+    amt: prob.b,
+    expression: prob.q,
+    equation: `${prob.q} = ${prob.ans}`,
+    correct: wasCorrect
+  };
+  S.ledger.push(entry);
+  renderLedger();
+}
+
+// Legacy wrapper — still called in some places
+function updateKaTeX(){
+  // Now handled by the Notation Ledger
+  // This function remains for compatibility
 }
 
 function endGame(){
@@ -1171,8 +1315,7 @@ document.addEventListener('touchmove',e=>{
    ═══════════════════════════════════════════════════ */
 renderTrack();
 buildMainKeypad();
-updateKaTeX();
+renderLedger();
 </script>
 </body>
-</html>
 </html>
