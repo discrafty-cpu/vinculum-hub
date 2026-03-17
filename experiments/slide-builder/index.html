@@ -1,0 +1,383 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Slide Builder — Vinculum Math Solutions</title>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+  <style>
+    *{margin:0;padding:0;box-sizing:border-box}
+    :root{
+      --accent:#1a6fc4;--accent2:#e8a020;--green:#2db87a;
+      --bg:#0d1117;--card:#161b22;--card2:#21262d;
+      --border:rgba(26,111,196,0.3);--text:#e6edf3;--muted:#7d8590;
+    }
+    body{font-family:'Segoe UI',system-ui,sans-serif;background:var(--bg);color:var(--text);min-height:100vh;overflow-x:hidden}
+
+    /* ── TOP BAR ── */
+    .topbar{display:flex;align-items:center;justify-content:space-between;padding:14px 28px;border-bottom:1px solid var(--border);background:rgba(13,17,23,0.97);position:sticky;top:0;z-index:100;backdrop-filter:blur(8px)}
+    .brand{display:flex;flex-direction:column}
+    .brand-name{font-size:1.2rem;font-weight:800;color:var(--accent);letter-spacing:-.3px}
+    .brand-sub{font-size:.68rem;color:var(--accent2);font-weight:600;letter-spacing:1.5px;text-transform:uppercase}
+    .launch-btn{padding:10px 28px;background:linear-gradient(135deg,var(--accent),#1558a0);color:#fff;border:none;border-radius:6px;font-weight:700;font-size:0.92rem;cursor:pointer;transition:opacity .2s;letter-spacing:.3px;box-shadow:0 2px 8px rgba(26,111,196,.4)}
+    .launch-btn:hover{opacity:.88}
+    .launch-btn:disabled{opacity:.3;cursor:not-allowed;box-shadow:none}
+
+    /* ── SETUP ── */
+    #setup-screen{display:flex;flex-direction:column;gap:0;max-width:1060px;margin:0 auto;padding:28px 24px 60px}
+    .step-card{background:var(--card);border:1px solid var(--border);border-radius:10px;padding:22px 24px;margin-bottom:16px}
+    .step-title{font-size:.95rem;font-weight:700;margin-bottom:4px;display:flex;align-items:center;gap:8px}
+    .step-num{width:22px;height:22px;border-radius:4px;background:var(--accent);display:inline-flex;align-items:center;justify-content:center;font-size:.72rem;font-weight:800;color:#fff;flex-shrink:0}
+    .step-sub{font-size:.8rem;color:var(--muted);margin-bottom:16px;margin-left:30px;line-height:1.5}
+
+    /* ── DROP ZONE ── */
+    #drop-zone{border:2px dashed var(--accent);border-radius:8px;padding:32px 24px;text-align:center;cursor:pointer;transition:all .2s;background:rgba(26,111,196,.04)}
+    #drop-zone:hover,#drop-zone.drag-over{border-color:var(--accent2);background:rgba(232,160,32,.06)}
+    #drop-zone .drop-icon{font-size:2.2rem;margin-bottom:10px;display:block}
+    #drop-zone h3{font-size:.95rem;margin-bottom:5px;color:var(--text)}
+    #drop-zone p{color:var(--muted);font-size:.8rem}
+    .browse-link{color:var(--accent);text-decoration:underline;cursor:pointer}
+    #file-input{display:none}
+    .default-dur-row{display:flex;align-items:center;gap:10px;margin-top:14px;padding-top:14px;border-top:1px solid var(--border)}
+    .default-dur-row label{font-size:.8rem;color:var(--muted)}
+    .tiny-input{background:var(--card2);border:1px solid var(--border);color:var(--text);border-radius:6px;padding:5px 10px;font-size:.86rem;width:70px;outline:none;text-align:center}
+    .tiny-input:focus{border-color:var(--accent)}
+
+    /* ── WEB APP FORM ── */
+    .webapp-form{display:grid;grid-template-columns:1fr auto auto auto;gap:10px;align-items:end}
+    @media(max-width:640px){.webapp-form{grid-template-columns:1fr 1fr}}
+    .form-group{display:flex;flex-direction:column;gap:5px}
+    .form-group label{font-size:.72rem;color:var(--muted);text-transform:uppercase;letter-spacing:.6px;font-weight:600}
+    .form-input{background:var(--card2);border:1px solid var(--border);color:var(--text);border-radius:6px;padding:8px 12px;font-size:.86rem;outline:none;width:100%}
+    .form-input:focus{border-color:var(--accent)}
+    .add-btn{padding:9px 18px;background:var(--green);color:#fff;border:none;border-radius:6px;font-weight:700;font-size:.86rem;cursor:pointer;transition:opacity .2s;white-space:nowrap;align-self:flex-end}
+    .add-btn:hover{opacity:.86}
+    .dur-hint{font-size:.7rem;color:var(--muted);margin-top:3px}
+
+    /* ── SEQUENCE ── */
+    #sequence-list{display:flex;flex-direction:column;gap:8px;min-height:50px}
+    .empty-seq{text-align:center;padding:28px;color:var(--muted);font-size:.84rem;border:1px dashed var(--border);border-radius:8px}
+    .seq-item{display:grid;grid-template-columns:44px 1fr auto auto auto;gap:10px;align-items:center;background:var(--card2);border:1px solid var(--border);border-radius:8px;padding:9px 13px;transition:background .15s}
+    .seq-item:hover{background:#2d333b}
+    .seq-thumb{width:44px;height:30px;object-fit:cover;border-radius:4px;display:block}
+    .seq-icon{width:44px;height:30px;border-radius:4px;background:rgba(26,111,196,.15);display:flex;align-items:center;justify-content:center;font-size:1.1rem}
+    .seq-info{min-width:0}
+    .seq-name{font-size:.83rem;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+    .seq-type{font-size:.7rem;color:var(--muted);margin-top:2px}
+    .dur-cell{display:flex;align-items:center;gap:5px;white-space:nowrap}
+    .dur-cell .tiny-input{width:60px}
+    .dur-cell span{font-size:.75rem;color:var(--muted)}
+    .move-btns{display:flex;flex-direction:column;gap:2px}
+    .icon-btn{background:none;border:none;color:var(--muted);cursor:pointer;font-size:.78rem;padding:2px 5px;border-radius:3px;line-height:1;transition:color .15s,background .15s}
+    .icon-btn:hover{color:var(--text);background:rgba(255,255,255,.07)}
+    .del-btn{background:rgba(255,70,70,.1);border:none;color:#f47067;cursor:pointer;font-size:.75rem;padding:4px 8px;border-radius:5px;transition:background .15s}
+    .del-btn:hover{background:rgba(255,70,70,.25)}
+    .seq-count{font-size:.75rem;color:var(--muted);margin-bottom:8px}
+
+    /* ── SETTINGS ── */
+    .settings-row{display:flex;gap:24px;flex-wrap:wrap;margin-top:12px}
+    .setting{display:flex;flex-direction:column;gap:5px}
+    .setting label{font-size:.72rem;color:var(--muted);text-transform:uppercase;letter-spacing:.6px;font-weight:600}
+    .setting select{background:var(--card2);border:1px solid var(--border);color:var(--text);border-radius:6px;padding:7px 12px;font-size:.86rem;outline:none;cursor:pointer}
+
+    /* ── LOADING ── */
+    #loading-screen{display:none;flex-direction:column;align-items:center;justify-content:center;height:60vh;gap:18px}
+    .spinner{width:44px;height:44px;border:3px solid rgba(26,111,196,.2);border-top-color:var(--accent);border-radius:50%;animation:spin .7s linear infinite}
+    @keyframes spin{to{transform:rotate(360deg)}}
+    .loading-text{color:var(--muted);font-size:.92rem}
+
+    /* ── KIOSK ── */
+    #kiosk-screen{display:none;position:fixed;inset:0;background:#000;flex-direction:column;z-index:999}
+    #slide-container{flex:1;position:relative;overflow:hidden;display:flex;align-items:center;justify-content:center}
+    #slide-img{max-width:100%;max-height:100%;object-fit:contain;display:none}
+    #webapp-frame{position:absolute;inset:0;width:100%;height:100%;border:none;display:none;background:#fff}
+    #webapp-blocker{position:absolute;inset:0;display:none;flex-direction:column;align-items:center;justify-content:center;background:rgba(13,17,23,.96);gap:16px;text-align:center;padding:32px}
+    #webapp-blocker .blocker-icon{font-size:3rem}
+    #webapp-blocker h3{font-size:1.05rem}
+    #webapp-blocker p{color:var(--muted);font-size:.83rem;max-width:360px;line-height:1.6}
+    .open-tab-btn{padding:10px 22px;background:var(--accent);color:#fff;border:none;border-radius:6px;font-weight:600;cursor:pointer;font-size:.88rem}
+    #progress-bar-wrap{position:absolute;top:0;left:0;right:0;height:3px;background:rgba(255,255,255,.08);z-index:10}
+    #progress-bar{height:100%;background:linear-gradient(90deg,var(--accent),var(--accent2));width:0%}
+    #slide-counter{position:absolute;top:10px;right:14px;font-size:.72rem;color:rgba(255,255,255,.3);z-index:10;letter-spacing:.8px}
+    #item-label{position:absolute;top:10px;left:14px;font-size:.75rem;color:rgba(255,255,255,.35);z-index:10;max-width:55%;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+    #timer-badge{position:absolute;top:14px;left:50%;transform:translateX(-50%);background:rgba(0,0,0,.7);border:1px solid rgba(255,255,255,.12);border-radius:50px;padding:5px 16px;font-size:.83rem;font-weight:700;color:#fff;z-index:20;display:none;letter-spacing:.5px}
+    #brand-watermark{position:absolute;bottom:52px;right:16px;font-size:.65rem;color:rgba(255,255,255,.2);z-index:10;letter-spacing:.5px;pointer-events:none}
+    #thumb-strip{position:absolute;top:0;left:0;right:0;height:0;overflow:hidden;background:rgba(0,0,0,.9);display:flex;align-items:center;gap:8px;padding:0;transition:height .3s,padding .3s;z-index:15}
+    #kiosk-screen:hover #thumb-strip{height:68px;padding:6px 14px;overflow-x:auto}
+    .thumb-item{flex-shrink:0;cursor:pointer;opacity:.42;border:2px solid transparent;border-radius:5px;overflow:hidden;transition:all .2s;height:50px;display:flex;align-items:center;justify-content:center}
+    .thumb-item.active-thumb{opacity:1;border-color:var(--accent)}
+    .thumb-item:hover{opacity:.85}
+    .thumb-item img{height:50px;min-width:78px;object-fit:cover;display:block}
+    .thumb-item .webapp-thumb{width:78px;height:50px;background:rgba(26,111,196,.2);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;font-size:1rem}
+    .thumb-item .webapp-thumb span{font-size:.52rem;color:rgba(255,255,255,.5);text-align:center;padding:0 4px;line-height:1.3}
+    #controls{position:absolute;bottom:0;left:0;right:0;padding:12px 18px;background:linear-gradient(transparent,rgba(0,0,0,.82));display:flex;align-items:center;justify-content:space-between;gap:10px;opacity:0;transition:opacity .3s;z-index:10}
+    #kiosk-screen:hover #controls{opacity:1}
+    .dot-nav{display:flex;gap:6px;align-items:center;flex-wrap:wrap;justify-content:center;flex:1}
+    .dot{width:6px;height:6px;border-radius:50%;background:rgba(255,255,255,.25);cursor:pointer;transition:all .2s}
+    .dot.active{background:#fff;transform:scale(1.5)}
+    .dot.webapp-dot{background:rgba(26,111,196,.6)}
+    .dot.webapp-dot.active{background:var(--accent);transform:scale(1.5)}
+    .dot:hover{background:rgba(255,255,255,.65)}
+    .ctrl-btn{background:rgba(255,255,255,.1);border:none;color:#fff;width:36px;height:36px;border-radius:50%;font-size:.95rem;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:background .2s;flex-shrink:0}
+    .ctrl-btn:hover{background:rgba(255,255,255,.22)}
+    #btn-exit{background:rgba(255,70,70,.18)}
+    #btn-exit:hover{background:rgba(255,70,70,.4)}
+    #btn-fullscreen{background:rgba(26,111,196,.22)}
+    #key-hint{position:absolute;bottom:52px;left:50%;transform:translateX(-50%);background:rgba(0,0,0,.55);color:rgba(255,255,255,.38);font-size:.65rem;padding:4px 12px;border-radius:20px;pointer-events:none;opacity:0;transition:opacity .3s;white-space:nowrap;z-index:10}
+    #kiosk-screen:hover #key-hint{opacity:1}
+    @keyframes fadeSlide{from{opacity:0;transform:scale(1.012)}to{opacity:1;transform:scale(1)}}
+    .slide-enter{animation:fadeSlide .4s ease forwards}
+  </style>
+</head>
+<body>
+
+<div id="setup-screen">
+  <div class="topbar" style="position:relative;top:0;margin:-28px -24px 24px;border-radius:0">
+    <div class="brand">
+      <div class="brand-name">▶ Slide Builder</div>
+      <div class="brand-sub">Vinculum Math Solutions</div>
+    </div>
+    <button class="launch-btn" id="launch-btn" disabled onclick="launchKiosk()">▶ Launch Presentation</button>
+  </div>
+
+  <div class="step-card">
+    <div class="step-title"><span class="step-num">1</span> Add Slide Images or PDF</div>
+    <div class="step-sub">Drop PNG/JPG exports or a PDF — Google Slides: File → Download → PDF or PNG images</div>
+    <div id="drop-zone" onclick="document.getElementById('file-input').click()">
+      <span class="drop-icon">🖼️</span>
+      <h3>Drop slides here or <span class="browse-link">browse files</span></h3>
+      <p>PNG · JPG · PDF · drop multiple images at once</p>
+    </div>
+    <input type="file" id="file-input" multiple accept="image/png,image/jpeg,image/jpg,image/webp,application/pdf" />
+    <div class="default-dur-row">
+      <label>Default duration per slide:</label>
+      <input type="number" class="tiny-input" id="default-slide-dur" value="6" min="1" max="300" />
+      <span style="font-size:.78rem;color:var(--muted)">seconds</span>
+    </div>
+  </div>
+
+  <div class="step-card">
+    <div class="step-title"><span class="step-num">2</span> Add a Live Web App (optional)</div>
+    <div class="step-sub">Paste any URL — Google Apps Script, dashboards, live tools. Each item gets its own timer.</div>
+    <div class="webapp-form">
+      <div class="form-group">
+        <label>Web App URL</label>
+        <input type="url" class="form-input" id="webapp-url" placeholder="https://script.google.com/…/exec" />
+      </div>
+      <div class="form-group">
+        <label>Label</label>
+        <input type="text" class="form-input" id="webapp-label" placeholder="e.g. Math Dashboard" />
+      </div>
+      <div class="form-group">
+        <label>Duration (sec)</label>
+        <input type="number" class="form-input tiny-input" id="webapp-dur" value="120" min="5" max="3600" style="width:90px" />
+        <div class="dur-hint">120 = 2 min</div>
+      </div>
+      <div class="form-group" style="justify-content:flex-end">
+        <button class="add-btn" onclick="addWebApp()">＋ Add</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="step-card">
+    <div class="step-title"><span class="step-num">3</span> Arrange Sequence</div>
+    <div class="step-sub">Reorder items, edit individual durations. Mix slides and web apps in any order.</div>
+    <div class="seq-count" id="seq-count">0 items in sequence</div>
+    <div id="sequence-list"><div class="empty-seq">Add slides or web apps above — they'll appear here in order.</div></div>
+  </div>
+
+  <div class="step-card">
+    <div class="step-title"><span class="step-num">4</span> Playback Settings</div>
+    <div class="settings-row">
+      <div class="setting"><label>Loop</label><select id="loop-select"><option value="yes">Loop forever</option><option value="no">Stop at end</option></select></div>
+      <div class="setting"><label>Transition</label><select id="transition-select"><option value="fade">Fade</option><option value="instant">Instant</option></select></div>
+      <div class="setting"><label>Fullscreen</label><select id="fullscreen-select"><option value="ask">Ask on launch</option><option value="yes">Always fullscreen</option><option value="no">Window only</option></select></div>
+    </div>
+  </div>
+</div>
+
+<div id="loading-screen"><div class="spinner"></div><div class="loading-text" id="loading-text">Processing…</div></div>
+
+<div id="kiosk-screen">
+  <div id="progress-bar-wrap"><div id="progress-bar"></div></div>
+  <div id="item-label"></div>
+  <div id="slide-counter">1 / 1</div>
+  <div id="timer-badge">⏱ 2:00</div>
+  <div id="brand-watermark">Vinculum Math Solutions</div>
+  <div id="thumb-strip"></div>
+  <div id="slide-container">
+    <img id="slide-img" src="" alt="" />
+    <div id="webapp-running" style="display:none;position:absolute;inset:0;flex-direction:column;align-items:center;justify-content:center;gap:20px;background:#080c10">
+      <div style="font-size:3.5rem">🚀</div>
+      <div id="wr-label" style="font-size:1.3rem;font-weight:700;color:#fff;letter-spacing:.5px"></div>
+      <div style="font-size:.85rem;color:rgba(255,255,255,.4);max-width:340px;text-align:center;line-height:1.6">Running in popup window — it will close automatically when the timer ends</div>
+      <div id="wr-reopen" style="margin-top:8px">
+        <button onclick="reopenPopup()" style="padding:9px 22px;background:var(--accent);color:#fff;border:none;border-radius:6px;font-weight:600;cursor:pointer;font-size:.88rem">↗ Reopen if closed</button>
+      </div>
+    </div>
+  </div>
+  <div id="key-hint">← → arrows · Space pause · F fullscreen · Esc exit</div>
+  <div id="controls">
+    <button class="ctrl-btn" id="btn-exit" title="Exit (Esc)">✕</button>
+    <button class="ctrl-btn" id="btn-prev" title="Previous (←)">◀</button>
+    <div class="dot-nav" id="dot-nav"></div>
+    <button class="ctrl-btn" id="btn-play-pause" title="Pause (Space)">⏸</button>
+    <button class="ctrl-btn" id="btn-next" title="Next (→)">▶</button>
+    <button class="ctrl-btn" id="btn-fullscreen" title="Fullscreen (F)">⛶</button>
+  </div>
+</div>
+
+<script>
+pdfjsLib.GlobalWorkerOptions.workerSrc='https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+let sequence=[];
+const dropZone=document.getElementById('drop-zone'),fileInput=document.getElementById('file-input');
+dropZone.addEventListener('dragover',e=>{e.preventDefault();dropZone.classList.add('drag-over');});
+dropZone.addEventListener('dragleave',()=>dropZone.classList.remove('drag-over'));
+dropZone.addEventListener('drop',e=>{e.preventDefault();dropZone.classList.remove('drag-over');handleFiles(e.dataTransfer.files);});
+fileInput.addEventListener('change',e=>handleFiles(e.target.files));
+async function handleFiles(files){
+  if(!files||!files.length)return;
+  const arr=Array.from(files),pdfs=arr.filter(f=>f.type==='application/pdf'),imgs=arr.filter(f=>f.type.startsWith('image/'));
+  showLoading('Processing files…');
+  const newItems=[];
+  if(pdfs.length>0)newItems.push(...await loadPDF(pdfs[0]));
+  if(imgs.length>0)newItems.push(...await loadImages(imgs));
+  if(!newItems.length){alert('Could not read any slides.');showSetup();return;}
+  sequence.push(...newItems);renderSequence();showSetup();
+}
+async function loadImages(imgFiles){
+  imgFiles.sort((a,b)=>a.name.localeCompare(b.name,undefined,{numeric:true}));
+  const items=[];
+  return new Promise(resolve=>{
+    let done=0;
+    imgFiles.forEach((file,i)=>{
+      const r=new FileReader();
+      r.onload=e=>{items[i]={type:'slide',src:e.target.result,label:file.name.replace(/\.[^.]+$/,''),duration:getDur()};done++;document.getElementById('loading-text').textContent=`Loading image ${done}/${imgFiles.length}…`;if(done===imgFiles.length)resolve(items);};
+      r.readAsDataURL(file);
+    });
+  });
+}
+async function loadPDF(file){
+  const ab=await file.arrayBuffer(),pdf=await pdfjsLib.getDocument({data:ab}).promise,total=pdf.numPages,items=[];
+  for(let i=1;i<=total;i++){document.getElementById('loading-text').textContent=`Rendering page ${i}/${total}…`;const page=await pdf.getPage(i),vp=page.getViewport({scale:2}),c=document.createElement('canvas');c.width=vp.width;c.height=vp.height;await page.render({canvasContext:c.getContext('2d'),viewport:vp}).promise;items.push({type:'slide',src:c.toDataURL('image/jpeg',0.92),label:`Slide ${i}`,duration:getDur()});}
+  return items;
+}
+function getDur(){return(parseInt(document.getElementById('default-slide-dur').value)||6)*1000;}
+function addWebApp(){
+  const url=document.getElementById('webapp-url').value.trim(),label=document.getElementById('webapp-label').value.trim()||'Web App',dur=(parseInt(document.getElementById('webapp-dur').value)||120)*1000;
+  if(!url){alert('Please enter a URL.');return;}
+  if(!url.startsWith('http')){alert('URL must start with http:// or https://');return;}
+  sequence.push({type:'webapp',url,label,duration:dur});
+  document.getElementById('webapp-url').value='';document.getElementById('webapp-label').value='';renderSequence();
+}
+document.getElementById('webapp-url').addEventListener('keydown',e=>{if(e.key==='Enter')addWebApp();});
+function renderSequence(){
+  const list=document.getElementById('sequence-list'),count=document.getElementById('seq-count'),btn=document.getElementById('launch-btn');
+  if(!sequence.length){list.innerHTML='<div class="empty-seq">Add slides or web apps above — they\'ll appear here in order.</div>';count.textContent='0 items in sequence';btn.disabled=true;return;}
+  btn.disabled=false;count.textContent=`${sequence.length} item${sequence.length!==1?'s':''} in sequence`;
+  list.innerHTML='';
+  sequence.forEach((item,i)=>{
+    const row=document.createElement('div');row.className='seq-item';
+    if(item.type==='slide'){const img=document.createElement('img');img.src=item.src;img.className='seq-thumb';row.appendChild(img);}
+    else{const icon=document.createElement('div');icon.className='seq-icon';icon.textContent='🌐';row.appendChild(icon);}
+    const info=document.createElement('div');info.className='seq-info';info.innerHTML=`<div class="seq-name">${esc(item.label)}</div><div class="seq-type">${item.type==='slide'?'🖼 Slide':'🌐 Web App'}</div>`;row.appendChild(info);
+    const dc=document.createElement('div');dc.className='dur-cell';const inp=document.createElement('input');inp.type='number';inp.className='tiny-input';inp.value=Math.round(item.duration/1000);inp.min=1;inp.max=3600;inp.onchange=()=>{sequence[i].duration=(parseInt(inp.value)||5)*1000;};dc.appendChild(inp);dc.insertAdjacentHTML('beforeend','<span>sec</span>');row.appendChild(dc);
+    const mv=document.createElement('div');mv.className='move-btns';
+    const up=document.createElement('button');up.className='icon-btn';up.textContent='▲';up.disabled=i===0;up.onclick=()=>{[sequence[i-1],sequence[i]]=[sequence[i],sequence[i-1]];renderSequence();};
+    const dn=document.createElement('button');dn.className='icon-btn';dn.textContent='▼';dn.disabled=i===sequence.length-1;dn.onclick=()=>{[sequence[i],sequence[i+1]]=[sequence[i+1],sequence[i]];renderSequence();};
+    mv.appendChild(up);mv.appendChild(dn);row.appendChild(mv);
+    const del=document.createElement('button');del.className='del-btn';del.textContent='✕';del.onclick=()=>{sequence.splice(i,1);renderSequence();};row.appendChild(del);
+    list.appendChild(row);
+  });
+}
+function esc(s){return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
+let ci=0,playing=true,tid=null,tick=null,tLeft=0,webappPopup=null,currentPopupUrl='';
+const ks=document.getElementById('kiosk-screen'),si=document.getElementById('slide-img'),wr=document.getElementById('webapp-running'),tb=document.getElementById('timer-badge'),pb=document.getElementById('progress-bar'),sc=document.getElementById('slide-counter'),il=document.getElementById('item-label'),dn=document.getElementById('dot-nav'),ts=document.getElementById('thumb-strip');
+function openWebAppPopup(url){
+  currentPopupUrl=url;
+  const w=screen.width,h=screen.height;
+  if(webappPopup&&!webappPopup.closed){
+    // Reuse the already-open window — navigate it to the new URL
+    webappPopup.location.href=url;
+    webappPopup.focus();
+  } else {
+    // Fallback: open fresh (may be blocked if no user gesture, but worth trying)
+    webappPopup=window.open(url,'webapp_popup',`width=${w},height=${h},left=0,top=0,toolbar=no,menubar=no,scrollbars=yes,resizable=yes`);
+    if(webappPopup)webappPopup.focus();
+  }
+}
+function preopenPopup(){
+  // Called during Launch click (user gesture) — browsers allow this
+  if(!webappPopup||webappPopup.closed){
+    const w=screen.width,h=screen.height;
+    webappPopup=window.open('about:blank','webapp_popup',`width=${w},height=${h},left=0,top=0,toolbar=no,menubar=no,scrollbars=yes,resizable=yes`);
+  }
+}
+function reopenPopup(){if(currentPopupUrl)openWebAppPopup(currentPopupUrl);}
+function closePopup(){if(webappPopup&&!webappPopup.closed){webappPopup.close();webappPopup=null;}}
+function launchKiosk(){
+  if(!sequence.length)return;ci=0;playing=true;
+  // Pre-open popup during user click so browser allows it
+  const hasWebApp=sequence.some(s=>s.type==='webapp');
+  if(hasWebApp)preopenPopup();
+  buildNav();showKiosk();renderItem(0);
+  const fs=document.getElementById('fullscreen-select').value;
+  if(fs==='yes')setTimeout(()=>ks.requestFullscreen(),100);
+  else if(fs==='ask')setTimeout(()=>{if(confirm('Launch in fullscreen?'))ks.requestFullscreen();},200);
+}
+function buildNav(){
+  dn.innerHTML='';ts.innerHTML='';
+  sequence.forEach((item,i)=>{
+    const d=document.createElement('div');d.className='dot'+(item.type==='webapp'?' webapp-dot':'')+(i===0?' active':'');d.title=item.label;d.onclick=()=>goTo(i);dn.appendChild(d);
+    const t=document.createElement('div');t.className='thumb-item'+(i===0?' active-thumb':'');t.onclick=()=>goTo(i);
+    if(item.type==='slide'){const img=document.createElement('img');img.src=item.src;t.appendChild(img);}
+    else t.innerHTML=`<div class="webapp-thumb">🌐<span>${esc(item.label.substring(0,12))}</span></div>`;
+    ts.appendChild(t);
+  });
+}
+function renderItem(idx){
+  const item=sequence[idx];clearT();
+  document.querySelectorAll('.dot').forEach((d,i)=>d.classList.toggle('active',i===idx));
+  document.querySelectorAll('.thumb-item').forEach((t,i)=>t.classList.toggle('active-thumb',i===idx));
+  sc.textContent=`${idx+1} / ${sequence.length}`;il.textContent=item.label;
+  si.style.display='none';wr.style.display='none';tb.style.display='none';closePopup();
+  if(item.type==='slide'){
+    si.style.display='block';si.onload=()=>{si.classList.remove('slide-enter');void si.offsetWidth;si.classList.add('slide-enter');};si.src=item.src;
+  }else{
+    wr.style.display='flex';
+    document.getElementById('wr-label').textContent=item.label;
+    tb.style.display='block';startCD(item.duration);
+    openWebAppPopup(item.url);
+  }
+  startProg(item.duration);if(playing)schedAdv(item.duration);
+}
+function startProg(dur){pb.style.transition='none';pb.style.width='0%';void pb.offsetWidth;pb.style.transition=`width ${dur}ms linear`;pb.style.width='100%';}
+function startCD(dur){tLeft=Math.round(dur/1000);updT();tick=setInterval(()=>{tLeft--;if(tLeft<0){clearInterval(tick);return;}updT();},1000);}
+function updT(){const m=Math.floor(tLeft/60),s=String(tLeft%60).padStart(2,'0');tb.textContent=`⏱ ${m}:${s}`;}
+function schedAdv(dur){clearTimeout(tid);tid=setTimeout(()=>{const loop=document.getElementById('loop-select').value==='yes';if(ci<sequence.length-1)ci++;else if(loop)ci=0;else{playing=false;document.getElementById('btn-play-pause').textContent='▶';return;}renderItem(ci);},dur);}
+function clearT(){clearTimeout(tid);clearInterval(tick);}
+function goTo(idx){ci=idx;renderItem(idx);}
+function nextItem(){if(ci<sequence.length-1){ci++;renderItem(ci);}else if(document.getElementById('loop-select').value==='yes'){ci=0;renderItem(0);}}
+function prevItem(){if(ci>0){ci--;renderItem(ci);}}
+document.getElementById('btn-prev').onclick=prevItem;
+document.getElementById('btn-next').onclick=nextItem;
+document.getElementById('btn-exit').onclick=()=>{clearT();closePopup();if(document.fullscreenElement)document.exitFullscreen();showSetup();};
+document.getElementById('btn-fullscreen').onclick=toggleFS;
+document.getElementById('btn-play-pause').onclick=()=>{playing=!playing;document.getElementById('btn-play-pause').textContent=playing?'⏸':'▶';if(playing)renderItem(ci);else{clearT();pb.style.transition='none';}};
+function toggleFS(){if(!document.fullscreenElement){ks.requestFullscreen();document.getElementById('btn-fullscreen').textContent='⊡';}else{document.exitFullscreen();document.getElementById('btn-fullscreen').textContent='⛶';}}
+document.addEventListener('fullscreenchange',()=>{if(!document.fullscreenElement)document.getElementById('btn-fullscreen').textContent='⛶';});
+document.addEventListener('keydown',e=>{
+  if(ks.style.display==='none')return;
+  if(e.key==='ArrowRight'){e.preventDefault();nextItem();}
+  else if(e.key==='ArrowLeft'){e.preventDefault();prevItem();}
+  else if(e.key===' '){e.preventDefault();document.getElementById('btn-play-pause').click();}
+  else if(e.key==='Escape'){if(document.fullscreenElement)document.exitFullscreen();else document.getElementById('btn-exit').click();}
+  else if(e.key==='f'||e.key==='F')toggleFS();
+});
+const ss=document.getElementById('setup-screen'),ls=document.getElementById('loading-screen');
+function showSetup(){ss.style.display='flex';ls.style.display='none';ks.style.display='none';}
+function showLoading(msg){ss.style.display='none';ls.style.display='flex';ks.style.display='none';document.getElementById('loading-text').textContent=msg||'Loading…';}
+function showKiosk(){ss.style.display='none';ls.style.display='none';ks.style.display='flex';}
+</script>
+</body>
+</html>

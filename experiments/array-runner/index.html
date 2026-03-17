@@ -1,0 +1,702 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Vinculum - 3D Multiplication Array Runner</title>
+<style>
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body { overflow: hidden; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: #000; user-select: none; touch-action: none; }
+#game-canvas { display: block; width: 100vw; height: 100vh; }
+#ui-overlay { position: absolute; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; }
+#ui-overlay > * { pointer-events: auto; }
+#hud { position: absolute; top: 10px; left: 0; right: 0; display: none; justify-content: space-between; align-items: center; padding: 0 10px; flex-wrap: wrap; gap: 4px; }
+.hud-item { background: rgba(0,0,0,0.65); color: white; padding: 6px 12px; border-radius: 24px; font-size: clamp(13px, 3.5vw, 16px); font-weight: bold; white-space: nowrap; }
+.hud-btn { cursor: pointer; -webkit-tap-highlight-color: transparent; }
+.hud-btn:active { opacity: 0.7; }
+#timer { color: #FFD700; font-variant-numeric: tabular-nums; }
+#done-btn { background: rgba(76,175,80,0.8); display: none; }
+#mute-btn { font-size: clamp(16px, 4vw, 20px); padding: 4px 10px; }
+#streak-display { color: #FF6B6B; }
+#menu-screen { position: absolute; top: 0; left: 0; right: 0; bottom: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); }
+#menu-screen h1 { font-size: clamp(36px, 10vw, 68px); color: white; text-shadow: 3px 3px 8px rgba(0,0,0,0.3); margin-bottom: 6px; letter-spacing: 6px; }
+.subtitle { color: rgba(255,255,255,0.8); font-size: clamp(14px, 4vw, 22px); margin-bottom: 30px; }
+.btn { padding: 14px 44px; font-size: clamp(17px, 4.5vw, 26px); font-weight: bold; border: none; border-radius: 50px; cursor: pointer; transition: transform 0.2s, box-shadow 0.2s; margin: 6px; -webkit-tap-highlight-color: transparent; }
+.btn:hover { transform: scale(1.05); box-shadow: 0 8px 25px rgba(0,0,0,0.3); }
+.btn-primary { background: #FFD700; color: #333; }
+.btn-explore { background: #90EE90; color: #333; }
+.menu-buttons { display: flex; flex-direction: column; align-items: center; gap: 4px; }
+.mode-label { color: rgba(255,255,255,0.5); font-size: 12px; margin-top: 2px; }
+.instructions { color: rgba(255,255,255,0.65); font-size: clamp(12px, 3vw, 15px); margin-top: 20px; text-align: center; line-height: 1.6; padding: 0 20px; }
+#question-panel { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); background: white; border-radius: 20px; padding: 28px 32px; min-width: 300px; max-width: 90vw; width: auto; box-shadow: 0 20px 60px rgba(0,0,0,0.5); display: none; text-align: center; }
+#question-panel h2 { font-size: clamp(26px, 7vw, 38px); color: #333; margin-bottom: 20px; }
+.answer-btn { display: block; width: 100%; padding: 12px; margin: 6px 0; font-size: clamp(18px, 5vw, 24px); font-weight: bold; border: 3px solid #e0e0e0; border-radius: 14px; background: #fafafa; cursor: pointer; transition: all 0.15s; -webkit-tap-highlight-color: transparent; outline: none; }
+@media(hover:hover){.answer-btn:hover { border-color: #667eea; background: #f0f0ff; }}
+.answer-btn.correct { background: #4CAF50; color: white; border-color: #4CAF50; }
+.answer-btn.wrong { background: #EF5350; color: white; border-color: #EF5350; }
+#skip-panel { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); background: white; border-radius: 20px; padding: 20px 24px; max-width: 92vw; max-height: 90vh; overflow-y: auto; box-shadow: 0 20px 60px rgba(0,0,0,0.5); display: none; text-align: center; }
+#skip-panel h2 { font-size: clamp(22px, 6vw, 30px); color: #333; margin-bottom: 4px; }
+.skip-instruction { font-size: clamp(13px, 3.5vw, 18px); color: #666; margin-bottom: 10px; }
+#skip-grid { display: inline-block; margin: 8px auto; max-height: 35vh; overflow: hidden; }
+.skip-row { display: flex; justify-content: center; margin: 1px 0; }
+.skip-cell { border-radius: 4px; background: #e8e8e8; transition: background 0.3s, transform 0.2s; }
+.skip-cell.filled { background: #667eea; transform: scale(1.05); }
+#skip-count-display { font-size: clamp(32px, 9vw, 52px); font-weight: bold; color: #667eea; margin: 10px 0; transition: color 0.3s; }
+#skip-row-label { font-size: clamp(14px, 3.5vw, 20px); color: #888; margin-bottom: 8px; min-height: 24px; }
+#skip-click-btn { padding: 12px 36px; font-size: clamp(16px, 4.5vw, 22px); background: #667eea; color: white; border: none; border-radius: 50px; cursor: pointer; font-weight: bold; -webkit-tap-highlight-color: transparent; }
+#skip-click-btn:hover { background: #5568d6; }
+#skip-check-area { display: none; margin-top: 10px; }
+#skip-check-area .skip-check-q { font-size: clamp(16px, 4vw, 22px); font-weight: bold; color: #333; margin-bottom: 10px; }
+#skip-check-area .skip-check-btns { display: flex; flex-wrap: wrap; gap: 8px; justify-content: center; }
+#skip-check-area .check-btn { flex: 1 1 45%; max-width: 48%; padding: 10px 8px; font-size: clamp(16px, 4vw, 22px); font-weight: bold; border: 3px solid #e0e0e0; border-radius: 12px; background: #fafafa; cursor: pointer; transition: all 0.15s; -webkit-tap-highlight-color: transparent; outline: none; }
+@media(hover:hover){#skip-check-area .check-btn:hover { border-color: #667eea; background: #f0f0ff; }}
+#skip-check-area .check-btn.correct { background: #4CAF50; color: white; border-color: #4CAF50; }
+#skip-check-area .check-btn.wrong { background: #EF5350; color: white; border-color: #EF5350; }
+#skip-check-result { font-size: clamp(14px, 3.5vw, 18px); font-weight: bold; margin-top: 8px; min-height: 24px; }
+#gameover-screen { position: absolute; top: 0; left: 0; right: 0; bottom: 0; display: none; flex-direction: column; align-items: center; justify-content: center; background: rgba(0,0,0,0.85); overflow-y: auto; padding: 20px; }
+#gameover-title { font-size: clamp(32px, 9vw, 52px); color: #FFD700; margin-bottom: 12px; }
+.final-score { font-size: clamp(22px, 6vw, 34px); color: white; margin-bottom: 8px; }
+.stats { color: rgba(255,255,255,0.65); font-size: clamp(14px, 3.5vw, 18px); margin-bottom: 16px; line-height: 1.6; }
+#missed-facts { color: white; font-size: clamp(13px, 3.2vw, 16px); background: rgba(255,255,255,0.1); border-radius: 12px; padding: 14px 20px; margin-bottom: 20px; max-width: 90vw; line-height: 1.5; display: none; text-align: left; }
+#missed-facts strong { color: #FFD700; }
+#missed-facts .fact-list { color: #FF9999; margin-top: 4px; }
+#missed-facts .focus-tip { color: #90EE90; margin-top: 8px; }
+#touch-controls { position: absolute; bottom: 30px; left: 0; right: 0; display: none; justify-content: center; gap: 80px; }
+.touch-btn { width: 70px; height: 70px; border-radius: 50%; background: rgba(255,255,255,0.25); border: 3px solid rgba(255,255,255,0.4); color: white; font-size: 32px; display: flex; align-items: center; justify-content: center; cursor: pointer; -webkit-tap-highlight-color: transparent; }
+.touch-btn:active { background: rgba(255,255,255,0.5); }
+#feedback-flash { position: absolute; top: -60px; left: 50%; transform: translateX(-50%); font-size: clamp(20px, 5vw, 28px); font-weight: bold; pointer-events: none; padding: 10px 32px; border-radius: 0 0 16px 16px; color: white; text-align: center; transition: top 0.35s ease-out, opacity 0.3s; opacity: 0; z-index: 100; white-space: nowrap; letter-spacing: 1px; text-shadow: 0 1px 3px rgba(0,0,0,0.3); }
+</style>
+</head>
+<body>
+<canvas id="game-canvas"></canvas>
+<div id="ui-overlay">
+    <div id="hud">
+        <div class="hud-item" id="score-display">Score: 0</div>
+        <div class="hud-item" id="timer">3:00</div>
+        <div class="hud-item" id="streak-display">Streak: 0</div>
+        <div class="hud-item hud-btn" id="mute-btn">&#x1f50a;</div>
+        <div class="hud-item hud-btn" id="done-btn">Done</div>
+    </div>
+    <div id="menu-screen">
+        <h1>VINCULUM</h1>
+        <p class="subtitle">3D Multiplication Array Runner</p>
+        <div class="menu-buttons">
+            <button class="btn btn-primary" id="play-timed-btn">TIMED (3 min)</button>
+            <button class="btn btn-explore" id="play-explore-btn">EXPLORE MODE</button>
+        </div>
+        <p class="instructions">Arrow keys or A/D to switch lanes &bull; Swipe on mobile<br>Run into arrays and answer the multiplication!<br>Timed: race the clock &bull; Explore: learn at your own pace</p>
+    </div>
+    <div id="question-panel">
+        <h2 id="question-text"></h2>
+        <div id="answer-buttons"></div>
+    </div>
+    <div id="skip-panel">
+        <h2 id="skip-title"></h2>
+        <p class="skip-instruction" id="skip-instruction"></p>
+        <div id="skip-grid"></div>
+        <div id="skip-row-label"></div>
+        <div id="skip-count-display">0</div>
+        <button id="skip-click-btn">+ 5</button>
+        <div id="skip-check-area">
+            <div class="skip-check-q" id="skip-check-q"></div>
+            <div class="skip-check-btns" id="skip-check-btns"></div>
+            <div id="skip-check-result"></div>
+        </div>
+    </div>
+    <div id="gameover-screen">
+        <h1 id="gameover-title">TIME'S UP!</h1>
+        <div class="final-score" id="final-score"></div>
+        <div class="stats" id="final-stats"></div>
+        <div id="missed-facts"></div>
+        <button class="btn btn-primary" id="replay-btn">Play Again</button>
+    </div>
+    <div id="touch-controls">
+        <div class="touch-btn" id="touch-left">&larr;</div>
+        <div class="touch-btn" id="touch-right">&rarr;</div>
+    </div>
+    <div id="feedback-flash"></div>
+</div>
+<script src="https://unpkg.com/three@0.150.0/build/three.min.js"></script>
+<script>
+const GAME_DURATION=180,PLAYER_SPEED=14,LANE_WIDTH=5,LANES=[-LANE_WIDTH,0,LANE_WIDTH],SPAWN_DISTANCE=130,MIN_ARRAY_GAP=22,MAX_ARRAY_GAP=35;
+const ARRAY_COLORS=['#FF6B6B','#4ECDC4','#45B7D1','#96CEB4','#FFEAA7','#DDA0DD','#98D8C8','#F7DC6F','#FF9FF3','#74b9ff','#a29bfe','#fd79a8'];
+
+let gameState='MENU',gameMode='timed',score=0,streak=0,bestStreak=0,timeRemaining=GAME_DURATION,timeElapsed=0,correctCount=0,wrongCount=0;
+let currentArrayObj=null,skipState=null,playerZ=0,playerLane=1,targetX=0,nextSpawnZ=30;
+let scene,camera,renderer,clock,player,obstacles=[],sceneryItems=[],groundTiles=[],keys={},isMobile=false;
+let missedFacts=[];
+let audioCtx=null,soundEnabled=true;
+
+/* ===== AUDIO SYSTEM ===== */
+function getAudioCtx(){
+    if(!audioCtx){try{audioCtx=new(window.AudioContext||window.webkitAudioContext)();}catch(e){}}
+    if(audioCtx&&audioCtx.state==='suspended')audioCtx.resume();
+    return audioCtx;
+}
+function playBeat(){
+    if(!soundEnabled)return;
+    const ctx=getAudioCtx();if(!ctx)return;
+    try{
+        const osc=ctx.createOscillator(),gain=ctx.createGain();
+        osc.connect(gain);gain.connect(ctx.destination);
+        osc.frequency.value=880;osc.type='sine';
+        gain.gain.setValueAtTime(0.25,ctx.currentTime);
+        gain.gain.exponentialRampToValueAtTime(0.001,ctx.currentTime+0.12);
+        osc.start(ctx.currentTime);osc.stop(ctx.currentTime+0.12);
+    }catch(e){}
+}
+function speakNumber(num){
+    if(!soundEnabled)return;
+    try{
+        if('speechSynthesis' in window){
+            speechSynthesis.cancel();
+            const u=new SpeechSynthesisUtterance(String(num));
+            u.rate=0.85;u.pitch=1.1;
+            speechSynthesis.speak(u);
+        }
+    }catch(e){}
+}
+function playCorrectSound(){
+    if(!soundEnabled)return;
+    const ctx=getAudioCtx();if(!ctx)return;
+    try{
+        [523,659,784].forEach((freq,i)=>{
+            const osc=ctx.createOscillator(),gain=ctx.createGain();
+            osc.connect(gain);gain.connect(ctx.destination);
+            osc.frequency.value=freq;osc.type='sine';
+            const t=ctx.currentTime+i*0.1;
+            gain.gain.setValueAtTime(0.2,t);
+            gain.gain.exponentialRampToValueAtTime(0.001,t+0.12);
+            osc.start(t);osc.stop(t+0.12);
+        });
+    }catch(e){}
+}
+function playWrongSound(){
+    if(!soundEnabled)return;
+    const ctx=getAudioCtx();if(!ctx)return;
+    try{
+        const osc=ctx.createOscillator(),gain=ctx.createGain();
+        osc.connect(gain);gain.connect(ctx.destination);
+        osc.frequency.value=200;osc.type='sawtooth';
+        gain.gain.setValueAtTime(0.12,ctx.currentTime);
+        gain.gain.exponentialRampToValueAtTime(0.001,ctx.currentTime+0.25);
+        osc.start(ctx.currentTime);osc.stop(ctx.currentTime+0.25);
+    }catch(e){}
+}
+
+/* ===== INIT ===== */
+function init(){
+    isMobile='ontouchstart' in window||navigator.maxTouchPoints>0;
+    if(isMobile)document.getElementById('touch-controls').style.display='flex';
+
+    scene=new THREE.Scene();
+    scene.background=new THREE.Color(0x87CEEB);
+    scene.fog=new THREE.FogExp2(0x87CEEB,0.008);
+    camera=new THREE.PerspectiveCamera(65,window.innerWidth/window.innerHeight,0.1,250);
+
+    const canvas=document.getElementById('game-canvas');
+    renderer=new THREE.WebGLRenderer({canvas,antialias:true});
+    renderer.setSize(window.innerWidth,window.innerHeight);
+    renderer.setPixelRatio(Math.min(window.devicePixelRatio,2));
+    renderer.shadowMap.enabled=true;
+    renderer.shadowMap.type=THREE.PCFSoftShadowMap;
+
+    scene.add(new THREE.AmbientLight(0xffffff,0.55));
+    const sun=new THREE.DirectionalLight(0xfff5e0,0.85);
+    sun.position.set(20,30,20);sun.castShadow=true;
+    sun.shadow.mapSize.width=1024;sun.shadow.mapSize.height=1024;
+    sun.shadow.camera.near=0.5;sun.shadow.camera.far=80;
+    sun.shadow.camera.left=-30;sun.shadow.camera.right=30;
+    sun.shadow.camera.top=30;sun.shadow.camera.bottom=-30;
+    scene.add(sun);
+    scene.add(new THREE.HemisphereLight(0x87CEEB,0x4CAF50,0.3));
+
+    const grassMat=new THREE.MeshLambertMaterial({color:0x5cb85c});
+    for(let i=0;i<5;i++){const t=new THREE.Mesh(new THREE.PlaneGeometry(120,120),grassMat);t.rotation.x=-Math.PI/2;t.position.set(0,-0.01,i*120-120);t.receiveShadow=true;scene.add(t);groundTiles.push(t);}
+    const roadMat=new THREE.MeshLambertMaterial({color:0x8d6e4e});
+    for(let i=0;i<5;i++){const r=new THREE.Mesh(new THREE.PlaneGeometry(18,120),roadMat);r.rotation.x=-Math.PI/2;r.position.set(0,0.01,i*120-120);r.receiveShadow=true;scene.add(r);groundTiles.push(r);}
+    const lineMat=new THREE.MeshBasicMaterial({color:0xffffff,transparent:true,opacity:0.2});
+    for(let l=-1;l<=1;l++)for(let i=0;i<5;i++){const ln=new THREE.Mesh(new THREE.PlaneGeometry(0.12,120),lineMat);ln.rotation.x=-Math.PI/2;ln.position.set(l*LANE_WIDTH,0.02,i*120-120);scene.add(ln);groundTiles.push(ln);}
+
+    for(let z=-20;z<200;z+=6+Math.random()*6)createTree(z);
+    createPlayer();
+    clock=new THREE.Clock();
+
+    window.addEventListener('keydown',e=>{
+        if(e.key==='ArrowLeft'||e.key==='a'||e.key==='A'){e.preventDefault();if(gameState==='PLAYING'&&playerLane<2){playerLane++;targetX=LANES[playerLane];}}
+        if(e.key==='ArrowRight'||e.key==='d'||e.key==='D'){e.preventDefault();if(gameState==='PLAYING'&&playerLane>0){playerLane--;targetX=LANES[playerLane];}}
+        keys[e.key]=true;
+    });
+    window.addEventListener('keyup',e=>{keys[e.key]=false;});
+    window.addEventListener('resize',onResize);
+
+    let touchStartX=0;
+    canvas.addEventListener('touchstart',e=>{touchStartX=e.touches[0].clientX;},{passive:true});
+    canvas.addEventListener('touchend',e=>{
+        const dx=e.changedTouches[0].clientX-touchStartX;
+        if(gameState==='PLAYING'){if(dx>40&&playerLane>0){playerLane--;targetX=LANES[playerLane];}else if(dx<-40&&playerLane<2){playerLane++;targetX=LANES[playerLane];}}
+    },{passive:true});
+    document.getElementById('touch-left').addEventListener('touchstart',e=>{e.preventDefault();if(gameState==='PLAYING'&&playerLane<2){playerLane++;targetX=LANES[playerLane];}});
+    document.getElementById('touch-right').addEventListener('touchstart',e=>{e.preventDefault();if(gameState==='PLAYING'&&playerLane>0){playerLane--;targetX=LANES[playerLane];}});
+
+    document.getElementById('play-timed-btn').addEventListener('click',()=>startGame('timed'));
+    document.getElementById('play-explore-btn').addEventListener('click',()=>startGame('explore'));
+    document.getElementById('replay-btn').addEventListener('click',()=>startGame(gameMode));
+    document.getElementById('skip-click-btn').addEventListener('click',skipCountClick);
+    document.getElementById('done-btn').addEventListener('click',()=>{if(gameState==='PLAYING')endGame();});
+    document.getElementById('mute-btn').addEventListener('click',toggleMute);
+    animate();
+}
+
+function toggleMute(){
+    soundEnabled=!soundEnabled;
+    document.getElementById('mute-btn').textContent=soundEnabled?'\u{1F50A}':'\u{1F507}';
+    if(!soundEnabled&&'speechSynthesis' in window)speechSynthesis.cancel();
+}
+
+/* ===== CHARACTER ===== */
+function createPlayer(){
+    player=new THREE.Group();
+    const maroon=0x800020,grey=0x666666,darkGrey=0x444444,gold=0xCCAA00;
+
+    const body=new THREE.Mesh(new THREE.CylinderGeometry(0.45,0.55,1.4,12),new THREE.MeshLambertMaterial({color:maroon}));
+    body.position.y=1.4;body.castShadow=true;player.add(body);
+    const belt=new THREE.Mesh(new THREE.CylinderGeometry(0.56,0.56,0.12,12),new THREE.MeshLambertMaterial({color:grey}));
+    belt.position.y=0.85;player.add(belt);
+
+    const head=new THREE.Mesh(new THREE.SphereGeometry(0.35,14,14),new THREE.MeshLambertMaterial({color:0x8D5524}));
+    head.position.y=2.55;head.castShadow=true;player.add(head);
+    const eyeG=new THREE.SphereGeometry(0.06,8,8),eyeM=new THREE.MeshBasicMaterial({color:0x222222});
+    [-0.12,0.12].forEach(x=>{const e=new THREE.Mesh(eyeG,eyeM);e.position.set(x,2.6,0.3);player.add(e);});
+
+    const helmet=new THREE.Mesh(new THREE.SphereGeometry(0.44,14,14),new THREE.MeshLambertMaterial({color:grey}));
+    helmet.position.y=2.7;helmet.scale.set(1,0.9,1.1);helmet.castShadow=true;player.add(helmet);
+    const plume=new THREE.Mesh(new THREE.BoxGeometry(0.1,0.5,0.8),new THREE.MeshLambertMaterial({color:maroon}));
+    plume.position.set(0,3.15,0);player.add(plume);
+    const plumeTop=new THREE.Mesh(new THREE.SphereGeometry(0.12,8,8),new THREE.MeshLambertMaterial({color:maroon}));
+    plumeTop.position.set(0,3.4,0);plumeTop.scale.set(0.8,0.6,1.5);player.add(plumeTop);
+    const cheekMat=new THREE.MeshLambertMaterial({color:grey});
+    [-0.28,0.28].forEach(x=>{
+        const guard=new THREE.Mesh(new THREE.BoxGeometry(0.08,0.35,0.25),cheekMat);
+        guard.position.set(x,2.4,0.15);player.add(guard);
+    });
+    const noseGuard=new THREE.Mesh(new THREE.BoxGeometry(0.06,0.4,0.06),new THREE.MeshLambertMaterial({color:grey}));
+    noseGuard.position.set(0,2.5,0.42);player.add(noseGuard);
+
+    const armL=new THREE.Mesh(new THREE.CylinderGeometry(0.12,0.1,0.7,8),new THREE.MeshLambertMaterial({color:0x8D5524}));
+    armL.position.set(-0.6,1.3,0);armL.rotation.z=0.3;armL.userData={type:'arm',side:0};player.add(armL);
+    const shield=new THREE.Mesh(new THREE.CylinderGeometry(0.6,0.6,0.08,16),new THREE.MeshLambertMaterial({color:grey}));
+    shield.position.set(-0.9,1.2,0.15);shield.rotation.x=Math.PI/2;shield.rotation.z=0.2;shield.castShadow=true;player.add(shield);
+    const rim=new THREE.Mesh(new THREE.TorusGeometry(0.58,0.04,8,16),new THREE.MeshLambertMaterial({color:gold}));
+    rim.position.set(-0.9,1.2,0.19);rim.castShadow=true;player.add(rim);
+    const emblem=new THREE.Mesh(new THREE.CylinderGeometry(0.25,0.25,0.09,12),new THREE.MeshLambertMaterial({color:maroon}));
+    emblem.position.set(-0.9,1.2,0.19);emblem.rotation.x=Math.PI/2;player.add(emblem);
+
+    const armR=new THREE.Mesh(new THREE.CylinderGeometry(0.12,0.1,0.7,8),new THREE.MeshLambertMaterial({color:0x8D5524}));
+    armR.position.set(0.6,1.3,0);armR.rotation.z=-0.3;armR.userData={type:'arm',side:1};player.add(armR);
+    const pencilGroup=new THREE.Group();
+    const shaft=new THREE.Mesh(new THREE.CylinderGeometry(0.06,0.06,1.2,6),new THREE.MeshLambertMaterial({color:0xFFD700}));
+    pencilGroup.add(shaft);
+    const ferrule=new THREE.Mesh(new THREE.CylinderGeometry(0.065,0.065,0.1,6),new THREE.MeshLambertMaterial({color:0xCCCCCC}));
+    ferrule.position.y=0.55;pencilGroup.add(ferrule);
+    const eraser=new THREE.Mesh(new THREE.CylinderGeometry(0.055,0.055,0.12,6),new THREE.MeshLambertMaterial({color:0xFF9999}));
+    eraser.position.y=0.66;pencilGroup.add(eraser);
+    const tip=new THREE.Mesh(new THREE.ConeGeometry(0.06,0.2,6),new THREE.MeshLambertMaterial({color:0xFFD700}));
+    tip.position.y=-0.7;pencilGroup.add(tip);
+    const graphite=new THREE.Mesh(new THREE.ConeGeometry(0.025,0.1,6),new THREE.MeshLambertMaterial({color:0x333333}));
+    graphite.position.y=-0.82;pencilGroup.add(graphite);
+    pencilGroup.position.set(0.75,1.5,0.3);
+    pencilGroup.rotation.x=-0.4;pencilGroup.rotation.z=-0.15;
+    player.add(pencilGroup);
+
+    const legG=new THREE.CylinderGeometry(0.14,0.12,0.8,8),legM=new THREE.MeshLambertMaterial({color:darkGrey});
+    [-0.2,0.2].forEach((x,i)=>{const l=new THREE.Mesh(legG,legM);l.position.set(x,0.4,0);l.userData={type:'leg',side:i};player.add(l);});
+    const shinMat=new THREE.MeshLambertMaterial({color:grey});
+    [-0.2,0.2].forEach(x=>{
+        const shin=new THREE.Mesh(new THREE.BoxGeometry(0.12,0.4,0.08),shinMat);
+        shin.position.set(x,0.35,0.12);player.add(shin);
+    });
+
+    scene.add(player);
+}
+
+/* ===== SCENERY ===== */
+function createTree(z){
+    const side=Math.random()>0.5?1:-1,x=side*(12+Math.random()*25),tree=new THREE.Group();
+    const tH=2+Math.random()*2;
+    const trunk=new THREE.Mesh(new THREE.CylinderGeometry(0.2,0.4,tH,6),new THREE.MeshLambertMaterial({color:0x8B4513}));
+    trunk.position.y=tH/2;tree.add(trunk);
+    const fR=1.5+Math.random()*1.5;
+    const f=new THREE.Mesh(new THREE.SphereGeometry(fR,8,6),new THREE.MeshLambertMaterial({color:new THREE.Color().setHSL(0.28+Math.random()*0.08,0.6,0.35)}));
+    f.position.y=tH+fR*0.7;f.scale.y=1.2;tree.add(f);
+    tree.position.set(x,0,z);scene.add(tree);sceneryItems.push(tree);
+}
+
+function drawRoundedRect(ctx,x,y,w,h,r){
+    ctx.beginPath();ctx.moveTo(x+r,y);ctx.lineTo(x+w-r,y);ctx.quadraticCurveTo(x+w,y,x+w,y+r);
+    ctx.lineTo(x+w,y+h-r);ctx.quadraticCurveTo(x+w,y+h,x+w-r,y+h);ctx.lineTo(x+r,y+h);
+    ctx.quadraticCurveTo(x,y+h,x,y+h-r);ctx.lineTo(x,y+r);ctx.quadraticCurveTo(x,y,x+r,y);ctx.closePath();
+}
+
+function createArrayTexture(rows,cols){
+    const c=document.createElement('canvas'),ctx=c.getContext('2d'),s=512;c.width=s;c.height=s;
+    ctx.fillStyle='rgba(255,255,255,0.95)';drawRoundedRect(ctx,0,0,s,s,16);ctx.fill();
+    ctx.strokeStyle='#555';ctx.lineWidth=4;drawRoundedRect(ctx,3,3,s-6,s-6,14);ctx.stroke();
+    ctx.fillStyle='#333';ctx.font='bold 36px sans-serif';ctx.textAlign='center';ctx.textBaseline='top';
+    ctx.fillText(rows+' \u00D7 '+cols,s/2,10);
+    const tP=56,p=20,aW=s-p*2,aH=s-tP-p,cS=Math.min(aW/cols,aH/rows)-3;
+    const gW=cols*(cS+3),gH=rows*(cS+3),sX=(s-gW)/2,sY=tP+(aH-gH)/2;
+    for(let r=0;r<rows;r++){const color=ARRAY_COLORS[r%ARRAY_COLORS.length];for(let co=0;co<cols;co++){ctx.fillStyle=color;drawRoundedRect(ctx,sX+co*(cS+3),sY+r*(cS+3),cS,cS,4);ctx.fill();}}
+    return c;
+}
+
+function spawnArrayObstacle(z){
+    const a=Math.floor(Math.random()*11)+2,b=Math.floor(Math.random()*11)+2;
+    // Randomly pick orientation so students see both 3 rows of 7 AND 7 rows of 3
+    const rows=Math.random()>0.5?a:b,cols=rows===a?b:a;
+    const tex=new THREE.CanvasTexture(createArrayTexture(rows,cols));
+    const pH=5.5,pW=pH;
+    const geo=new THREE.BoxGeometry(pW,pH,0.12);
+    const fM=new THREE.MeshLambertMaterial({map:tex}),eM=new THREE.MeshLambertMaterial({color:0x667eea});
+    const mesh=new THREE.Mesh(geo,[eM,eM,eM,eM,fM,fM]);
+    const lane=Math.floor(Math.random()*3),x=LANES[lane],rotY=(Math.random()-0.5)*0.7;
+    mesh.position.set(x,pH/2+0.8,z);mesh.rotation.y=rotY;mesh.castShadow=true;
+    mesh.userData={rows,cols,product:rows*cols,lane,baseY:mesh.position.y,time:Math.random()*100,rotY};
+    const glow=new THREE.Mesh(new THREE.BoxGeometry(pW+0.3,pH+0.3,0.05),new THREE.MeshBasicMaterial({color:0x667eea,transparent:true,opacity:0.15}));
+    glow.position.z=-0.1;mesh.add(glow);
+    scene.add(mesh);obstacles.push(mesh);
+}
+
+/* ===== GAME FLOW ===== */
+function startGame(mode){
+    gameMode=mode||'timed';
+    gameState='PLAYING';score=0;streak=0;bestStreak=0;correctCount=0;wrongCount=0;
+    missedFacts=[];
+    timeRemaining=GAME_DURATION;timeElapsed=0;
+    playerZ=0;playerLane=1;targetX=LANES[1];nextSpawnZ=30;
+    obstacles.forEach(o=>scene.remove(o));obstacles=[];
+
+    // Reset positions so character doesn't end up in space
+    player.position.set(0,0,0);
+    groundTiles.forEach(t=>{while(t.position.z>150)t.position.z-=600;while(t.position.z<-150)t.position.z+=600;});
+    sceneryItems.forEach(t=>{while(t.position.z>220)t.position.z-=240;while(t.position.z<-60)t.position.z+=240;});
+    camera.position.set(0,5.5,-9);camera.lookAt(0,2.5,18);
+
+    for(let z=30;z<SPAWN_DISTANCE;z+=MIN_ARRAY_GAP+Math.random()*(MAX_ARRAY_GAP-MIN_ARRAY_GAP)){spawnArrayObstacle(z);nextSpawnZ=z+MIN_ARRAY_GAP+Math.random()*(MAX_ARRAY_GAP-MIN_ARRAY_GAP);}
+    document.getElementById('menu-screen').style.display='none';
+    document.getElementById('gameover-screen').style.display='none';
+    document.getElementById('question-panel').style.display='none';
+    document.getElementById('skip-panel').style.display='none';
+    document.getElementById('hud').style.display='flex';
+    // Show Done button only in explore mode
+    document.getElementById('done-btn').style.display=(gameMode==='explore')?'block':'none';
+    if(isMobile)document.getElementById('touch-controls').style.display='flex';
+    updateHUD();
+}
+
+/* ===== GAME LOOP ===== */
+function update(delta){
+    if(gameState==='PLAYING'){
+        playerZ+=PLAYER_SPEED*delta;
+        player.position.x+=(targetX-player.position.x)*10*delta;
+        player.position.z=playerZ;
+        const rc=playerZ*3;
+        player.position.y=Math.abs(Math.sin(rc))*0.25;
+        player.children.forEach(ch=>{
+            if(ch.userData&&ch.userData.type==='arm')ch.rotation.x=Math.sin(rc+ch.userData.side*Math.PI)*0.5;
+            else if(ch.userData&&ch.userData.type==='leg')ch.rotation.x=Math.sin(rc+ch.userData.side*Math.PI)*0.6;
+        });
+        camera.position.set(player.position.x*0.3,5.5+Math.sin(rc*0.3)*0.15,playerZ-9);
+        camera.lookAt(player.position.x*0.4,2.5,playerZ+18);
+        const sl=scene.children.find(c=>c.isDirectionalLight);
+        if(sl){sl.position.set(playerZ+20,30,playerZ+20);sl.target.position.set(0,0,playerZ);sl.target.updateMatrixWorld();}
+        groundTiles.forEach(t=>{while(t.position.z<playerZ-120)t.position.z+=600;});
+        sceneryItems.forEach(t=>{if(t.position.z<playerZ-40)t.position.z+=240;});
+        for(let i=obstacles.length-1;i>=0;i--){
+            const arr=obstacles[i];arr.userData.time+=delta;
+            arr.position.y=arr.userData.baseY+Math.sin(arr.userData.time*1.8)*0.35;
+            arr.rotation.y=arr.userData.rotY+Math.sin(arr.userData.time*0.7)*0.08;
+            const dz=arr.position.z-playerZ,dx=Math.abs(arr.position.x-player.position.x);
+            if(dz<2&&dz>-1.5&&dx<2.8){currentArrayObj=arr;showQuestion(arr.userData.rows,arr.userData.cols,arr.userData.product);gameState='QUESTION';break;}
+            if(arr.position.z<playerZ-15){scene.remove(arr);obstacles.splice(i,1);}
+        }
+        while(nextSpawnZ<playerZ+SPAWN_DISTANCE){spawnArrayObstacle(nextSpawnZ);nextSpawnZ+=MIN_ARRAY_GAP+Math.random()*(MAX_ARRAY_GAP-MIN_ARRAY_GAP);}
+        // Timer logic depends on mode
+        if(gameMode==='timed'){
+            timeRemaining-=delta;if(timeRemaining<=0){timeRemaining=0;endGame();}
+        }else{
+            timeElapsed+=delta;
+        }
+        updateHUD();
+    }
+    if(gameState==='QUESTION'||gameState==='SKIP_COUNT'){
+        if(gameMode==='timed'){
+            timeRemaining-=delta;if(timeRemaining<=0){timeRemaining=0;document.getElementById('question-panel').style.display='none';document.getElementById('skip-panel').style.display='none';removeCurrentArray();skipState=null;endGame();}
+        }else{
+            timeElapsed+=delta;
+        }
+        updateHUD();
+        const t=clock.getElapsedTime();camera.position.x=player.position.x*0.3+Math.sin(t*0.4)*0.4;camera.position.y=5.5+Math.sin(t*0.3)*0.2;
+        obstacles.forEach(a=>{a.userData.time+=delta;a.position.y=a.userData.baseY+Math.sin(a.userData.time*1.8)*0.35;});
+    }
+    if(gameState==='GAME_OVER'){
+        player.position.y=0;
+    }
+}
+
+/* ===== QUESTIONS ===== */
+function showQuestion(rows,cols,product){
+    document.getElementById('question-text').textContent=rows+' \u00D7 '+cols+' = ?';
+    const ws=new Set(),strats=[()=>product+Math.floor(Math.random()*6)+1,()=>product-Math.floor(Math.random()*6)-1,()=>rows*(cols+1),()=>rows*(cols-1),()=>(rows+1)*cols,()=>(rows-1)*cols,()=>product+cols,()=>product-rows];
+    let att=0;while(ws.size<3&&att<50){const v=strats[Math.floor(Math.random()*strats.length)]();if(v>0&&v!==product&&!ws.has(v))ws.add(v);att++;}
+    while(ws.size<3){const v=product+ws.size+1;if(v!==product)ws.add(v);}
+    const ans=[product,...ws];for(let i=ans.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[ans[i],ans[j]]=[ans[j],ans[i]];}
+    const c=document.getElementById('answer-buttons');c.innerHTML='';
+    ans.forEach(a=>{const b=document.createElement('button');b.className='answer-btn';b.textContent=a;b.addEventListener('click',()=>handleAnswer(a,product,rows,cols,b));c.appendChild(b);});
+    document.getElementById('question-panel').style.display='block';
+    // Clear any focus so no button looks pre-selected
+    if(document.activeElement)document.activeElement.blur();
+}
+
+function handleAnswer(answer,correct,rows,cols,btn){
+    document.querySelectorAll('.answer-btn').forEach(b=>{b.style.pointerEvents='none';});
+    if(answer===correct){
+        btn.classList.add('correct');streak++;if(streak>bestStreak)bestStreak=streak;
+        const pts=10+Math.min(streak,10)*2;score+=pts;correctCount++;
+        showFeedback('+'+pts,'#4CAF50');playCorrectSound();
+        setTimeout(()=>{removeCurrentArray();document.getElementById('question-panel').style.display='none';gameState='PLAYING';updateHUD();},700);
+    }else{
+        btn.classList.add('wrong');document.querySelectorAll('.answer-btn').forEach(b=>{if(parseInt(b.textContent)===correct)b.classList.add('correct');});
+        streak=0;wrongCount++;
+        missedFacts.push({rows,cols,product:rows*cols});
+        showFeedback('Skip count!','#EF5350');playWrongSound();
+        setTimeout(()=>{document.getElementById('question-panel').style.display='none';startSkipCount(rows,cols);},1200);
+    }
+}
+
+/* ===== SKIP COUNTING ===== */
+function startSkipCount(rows,cols){
+    gameState='SKIP_COUNT';
+    const checkRow=(rows>=4)?Math.floor(rows/2):-1;
+    // Fresh state — locked:false ensures button is immediately clickable
+    skipState={rows,cols,currentRow:0,total:0,checkRow,checkDone:false,locked:false};
+
+    document.getElementById('skip-title').textContent=rows+' \u00D7 '+cols;
+    document.getElementById('skip-instruction').textContent='Skip count by '+cols+'! Tap the button to build each row.';
+    document.getElementById('skip-count-display').textContent='0';
+    document.getElementById('skip-count-display').style.color='#667eea';
+    document.getElementById('skip-row-label').textContent='';
+    document.getElementById('skip-check-area').style.display='none';
+    document.getElementById('skip-check-result').textContent='';
+    // Reset button appearance from any previous pacing lock
+    const skipBtn=document.getElementById('skip-click-btn');
+    skipBtn.style.opacity='1';
+
+    // Dynamic cell sizing
+    const grid=document.getElementById('skip-grid');grid.innerHTML='';
+    const maxGridW=Math.min(360,window.innerWidth-80);
+    const maxGridH=Math.min(200,window.innerHeight*0.25);
+    const mC=Math.min(cols,12),mR=Math.min(rows,12);
+    const cellSize=Math.max(12,Math.min(36,Math.floor(maxGridW/mC)-4,Math.floor(maxGridH/mR)-4));
+    const cellGap=Math.max(1,Math.min(2,Math.floor(cellSize/12)));
+
+    for(let r=0;r<mR;r++){
+        const rd=document.createElement('div');rd.className='skip-row';rd.id='skip-row-'+r;rd.style.margin=cellGap+'px 0';
+        for(let c=0;c<mC;c++){
+            const cl=document.createElement('div');cl.className='skip-cell';
+            cl.style.width=cellSize+'px';cl.style.height=cellSize+'px';cl.style.margin=cellGap+'px';
+            rd.appendChild(cl);
+        }
+        grid.appendChild(rd);
+    }
+    document.getElementById('skip-click-btn').textContent='+ '+cols;
+    document.getElementById('skip-click-btn').style.display='inline-block';
+    document.getElementById('skip-panel').style.display='block';
+}
+
+function skipCountClick(){
+    if(!skipState||gameState!=='SKIP_COUNT')return;
+    const{rows,cols,currentRow,checkRow,checkDone}=skipState;
+    if(currentRow>=rows)return;
+    // Ignore clicks while pacing lock is active
+    if(skipState.locked)return;
+
+    // Checkpoint: at midpoint, quiz them
+    if(currentRow===checkRow&&!checkDone){
+        showSkipCheck();
+        return;
+    }
+    fillSkipRow();
+}
+
+function fillSkipRow(){
+    const{rows,cols,currentRow}=skipState;
+    const mR=Math.min(rows,12),vR=mR-1-currentRow;
+    if(vR>=0&&vR<mR){const rd=document.getElementById('skip-row-'+vR);if(rd)rd.querySelectorAll('.skip-cell').forEach((c,i)=>setTimeout(()=>c.classList.add('filled'),i*30));}
+    skipState.currentRow++;skipState.total+=cols;
+    document.getElementById('skip-count-display').textContent=skipState.total;
+    document.getElementById('skip-row-label').textContent='Row '+skipState.currentRow+': '+skipState.currentRow+' \u00D7 '+cols+' = '+skipState.total;
+
+    // Audio: beat + speak the running total
+    playBeat();
+    setTimeout(()=>speakNumber(skipState.total),150);
+
+    // Lock the button so students must wait and listen before clicking again
+    // Pace scales with number size: bigger numbers take longer to say
+    const numDigits=String(skipState.total).length;
+    const paceDelay=800+numDigits*250; // ~1.05s for single digit, ~1.3s for two, ~1.55s for three
+    skipState.locked=true;
+    const btn=document.getElementById('skip-click-btn');
+    btn.style.opacity='0.4';
+    if(skipState.currentRow<rows){
+        setTimeout(()=>{
+            if(skipState){skipState.locked=false;btn.style.opacity='1';}
+        },paceDelay);
+    }
+
+    if(skipState.currentRow>=rows){
+        document.getElementById('skip-click-btn').style.display='none';
+        document.getElementById('skip-instruction').textContent=rows+' \u00D7 '+cols+' = '+skipState.total+'!';
+        document.getElementById('skip-count-display').style.color='#4CAF50';
+        document.getElementById('skip-row-label').textContent='Great job! You built the whole array!';
+        playCorrectSound();
+        score+=5;setTimeout(()=>{document.getElementById('skip-panel').style.display='none';removeCurrentArray();gameState='PLAYING';skipState=null;updateHUD();},1800);
+    }
+}
+
+function showSkipCheck(){
+    document.getElementById('skip-click-btn').style.display='none';
+    const{rows,cols,currentRow}=skipState;
+    const nextTotal=(currentRow+1)*cols;
+    document.getElementById('skip-check-q').textContent='What comes next? '+(currentRow+1)+' \u00D7 '+cols+' = ?';
+
+    const wrongs=new Set();
+    const strats=[()=>nextTotal+cols,()=>nextTotal-cols,()=>nextTotal+Math.floor(Math.random()*5)+1,()=>nextTotal-Math.floor(Math.random()*5)-1];
+    let att=0;while(wrongs.size<3&&att<40){const v=strats[Math.floor(Math.random()*strats.length)]();if(v>0&&v!==nextTotal&&!wrongs.has(v))wrongs.add(v);att++;}
+    while(wrongs.size<3){const v=nextTotal+wrongs.size+1;if(v!==nextTotal)wrongs.add(v);}
+
+    const opts=[nextTotal,...wrongs];
+    for(let i=opts.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[opts[i],opts[j]]=[opts[j],opts[i]];}
+
+    const btnsDiv=document.getElementById('skip-check-btns');btnsDiv.innerHTML='';
+    document.getElementById('skip-check-result').textContent='';
+    opts.forEach(v=>{
+        const b=document.createElement('button');b.className='check-btn';b.textContent=v;
+        b.addEventListener('click',()=>handleSkipCheck(v,nextTotal));
+        btnsDiv.appendChild(b);
+    });
+    document.getElementById('skip-check-area').style.display='block';
+    if(document.activeElement)document.activeElement.blur();
+}
+
+function handleSkipCheck(answer,correct){
+    document.querySelectorAll('.check-btn').forEach(b=>{b.style.pointerEvents='none';});
+    const resultEl=document.getElementById('skip-check-result');
+    if(answer===correct){
+        document.querySelectorAll('.check-btn').forEach(b=>{if(parseInt(b.textContent)===correct)b.classList.add('correct');});
+        resultEl.textContent='Correct! Keep skip counting!';
+        resultEl.style.color='#4CAF50';
+        score+=3;playCorrectSound();
+    }else{
+        document.querySelectorAll('.check-btn').forEach(b=>{
+            if(parseInt(b.textContent)===correct)b.classList.add('correct');
+            if(parseInt(b.textContent)===answer)b.classList.add('wrong');
+        });
+        resultEl.textContent='Try again! Restarting skip count...';
+        resultEl.style.color='#EF5350';playWrongSound();
+        // Reset and restart the entire skip count
+        setTimeout(()=>{
+            document.getElementById('skip-check-area').style.display='none';
+            document.getElementById('skip-panel').style.display='none';
+            startSkipCount(skipState.rows,skipState.cols);
+        },1400);
+        return;
+    }
+    skipState.checkDone=true;
+    setTimeout(()=>{
+        document.getElementById('skip-check-area').style.display='none';
+        document.getElementById('skip-click-btn').style.display='inline-block';
+        fillSkipRow();
+    },1200);
+}
+
+/* ===== DATA TRACKING ===== */
+function getMissedFactsSummary(){
+    if(missedFacts.length===0)return'';
+    // Count which individual factors appear most
+    const factorCount={};
+    missedFacts.forEach(({rows,cols})=>{
+        factorCount[rows]=(factorCount[rows]||0)+1;
+        if(rows!==cols)factorCount[cols]=(factorCount[cols]||0)+1;
+    });
+    const sorted=Object.entries(factorCount).sort((a,b)=>b[1]-a[1]).slice(0,3);
+    // List specific missed facts (deduplicated)
+    const seen=new Set();
+    const unique=[];
+    missedFacts.forEach(f=>{const k=f.rows+'\u00D7'+f.cols;if(!seen.has(k)){seen.add(k);unique.push(k);}});
+    let html='<strong>Facts to practice:</strong><br>';
+    html+='<span class="fact-list">'+unique.slice(0,6).join(', ')+'</span>';
+    if(sorted.length>0){
+        html+='<br><span class="focus-tip">Focus on: '+sorted.map(([f])=>f+"'s").join(', ')+'</span>';
+    }
+    return html;
+}
+
+/* ===== UTILITIES ===== */
+function removeCurrentArray(){if(currentArrayObj){const i=obstacles.indexOf(currentArrayObj);if(i>-1){scene.remove(currentArrayObj);obstacles.splice(i,1);}currentArrayObj=null;}}
+function showFeedback(t,c){
+    const e=document.getElementById('feedback-flash');
+    e.textContent=t;
+    // High-contrast banner colors: dark green or dark red backgrounds with white text
+    e.style.background=c==='#4CAF50'?'rgba(27,94,32,0.92)':'rgba(183,28,28,0.92)';
+    e.style.opacity='1';
+    e.style.top='40px';
+    setTimeout(()=>{e.style.top='-60px';e.style.opacity='0';},1400);
+}
+
+function endGame(){
+    gameState='GAME_OVER';
+    player.position.y=0;
+    document.getElementById('hud').style.display='none';document.getElementById('question-panel').style.display='none';document.getElementById('skip-panel').style.display='none';
+    if(isMobile)document.getElementById('touch-controls').style.display='none';
+    // Title changes based on mode
+    document.getElementById('gameover-title').textContent=(gameMode==='timed')?"TIME'S UP!":'GREAT PRACTICE!';
+    const tot=correctCount+wrongCount,acc=tot>0?Math.round(correctCount/tot*100):0;
+    document.getElementById('final-score').textContent='Final Score: '+score;
+    // Build stats line with time info
+    let statsHTML='Correct: '+correctCount+' &nbsp;|&nbsp; Wrong: '+wrongCount+' &nbsp;|&nbsp; Accuracy: '+acc+'%<br>Best Streak: '+bestStreak;
+    if(gameMode==='explore'){
+        const em=Math.floor(timeElapsed/60),es=Math.floor(timeElapsed%60);
+        statsHTML+=' &nbsp;|&nbsp; Time: '+em+':'+(es<10?'0':'')+es;
+    }
+    document.getElementById('final-stats').innerHTML=statsHTML;
+    // Missed facts summary
+    const mfEl=document.getElementById('missed-facts');
+    const mfHTML=getMissedFactsSummary();
+    if(mfHTML){mfEl.innerHTML=mfHTML;mfEl.style.display='block';}else{mfEl.style.display='none';}
+    document.getElementById('gameover-screen').style.display='flex';
+}
+
+function updateHUD(){
+    document.getElementById('score-display').textContent='Score: '+score;
+    document.getElementById('streak-display').textContent='Streak: '+streak;
+    const te=document.getElementById('timer');
+    if(gameMode==='timed'){
+        const m=Math.floor(timeRemaining/60),s=Math.floor(timeRemaining%60);
+        te.textContent=m+':'+(s<10?'0':'')+s;te.style.color=timeRemaining<30?'#FF4444':'#FFD700';
+    }else{
+        const m=Math.floor(timeElapsed/60),s=Math.floor(timeElapsed%60);
+        te.textContent=m+':'+(s<10?'0':'')+s;te.style.color='#90EE90';
+    }
+}
+
+function onResize(){
+    // Only allow resize on menu or game-over screens — lock during gameplay
+    if(gameState==='PLAYING'||gameState==='QUESTION'||gameState==='SKIP_COUNT')return;
+    camera.aspect=window.innerWidth/window.innerHeight;camera.updateProjectionMatrix();renderer.setSize(window.innerWidth,window.innerHeight);
+}
+function animate(){requestAnimationFrame(animate);const d=Math.min(clock.getDelta(),0.05);update(d);renderer.render(scene,camera);}
+init();
+</script>
+</body>
+</html>

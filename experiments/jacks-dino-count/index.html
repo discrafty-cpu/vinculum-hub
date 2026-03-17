@@ -1,0 +1,1468 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Jack's Dinosaur Counting Adventure</title>
+<style>
+* { margin: 0; padding: 0; box-sizing: border-box; }
+html, body { overflow: hidden; background: #87CEEB; font-family: 'Comic Sans MS', 'Chalkboard SE', cursive; touch-action: none; -webkit-touch-callout: none; -webkit-user-select: none; user-select: none; }
+canvas { display: block; touch-action: none; }
+
+#ui-overlay {
+  position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+  pointer-events: none; z-index: 10;
+}
+
+#message-box {
+  position: fixed; top: 30px; left: 50%; transform: translateX(-50%);
+  background: rgba(255,255,255,0.92); border-radius: 25px;
+  padding: 15px 35px; font-size: 24px; color: #4a3728;
+  border: 4px solid #8BC34A; box-shadow: 0 4px 20px rgba(0,0,0,0.15);
+  display: none; text-align: center; z-index: 20;
+  pointer-events: auto; max-width: 90%;
+}
+
+#count-display {
+  position: fixed; top: 100px; left: 50%; transform: translateX(-50%);
+  font-size: 72px; color: #FF6F00; text-shadow: 3px 3px 0 #fff, -1px -1px 0 #fff;
+  display: none; z-index: 20; font-weight: bold;
+}
+
+#score-display {
+  position: fixed; top: 20px; right: 20px;
+  background: rgba(255,255,255,0.85); border-radius: 20px;
+  padding: 8px 16px; font-size: 18px; color: #4a3728;
+  border: 3px solid #FFB74D; z-index: 20;
+}
+
+#start-screen {
+  position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+  background: linear-gradient(135deg, #81C784 0%, #4CAF50 50%, #388E3C 100%);
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
+  z-index: 100; pointer-events: auto;
+}
+#start-screen h1 {
+  font-size: 42px; color: #fff; text-shadow: 3px 3px 0 #2E7D32;
+  margin-bottom: 10px; text-align: center; padding: 0 20px;
+}
+#start-screen p {
+  font-size: 20px; color: #E8F5E9; margin-bottom: 40px; text-align: center; padding: 0 20px;
+}
+#dino-preview { width: 300px; height: 300px; margin-bottom: 15px; background: transparent; }
+.btn {
+  pointer-events: auto; cursor: pointer;
+  background: #FF8F00; color: #fff; border: none; border-radius: 30px;
+  padding: 18px 50px; font-size: 28px; font-family: inherit;
+  box-shadow: 0 6px 0 #E65100; transition: all 0.15s;
+  -webkit-tap-highlight-color: transparent;
+}
+.btn:hover { transform: translateY(2px); box-shadow: 0 4px 0 #E65100; }
+.btn:active { transform: translateY(4px); box-shadow: 0 2px 0 #E65100; }
+.btn-small {
+  pointer-events: auto; cursor: pointer;
+  background: #43A047; color: #fff; border: none; border-radius: 20px;
+  padding: 12px 30px; font-size: 20px; font-family: inherit;
+  box-shadow: 0 4px 0 #2E7D32; margin: 5px; transition: all 0.15s;
+  -webkit-tap-highlight-color: transparent;
+}
+.btn-small:hover { transform: translateY(2px); box-shadow: 0 2px 0 #2E7D32; }
+
+#celebration {
+  position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+  display: none; z-index: 25; pointer-events: none;
+}
+
+#controls-hint {
+  position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%);
+  background: rgba(255,255,255,0.8); border-radius: 15px;
+  padding: 8px 20px; font-size: 14px; color: #666;
+  z-index: 20; white-space: nowrap;
+}
+
+#try-again-btns {
+  position: fixed; bottom: 150px; left: 50%; transform: translateX(-50%);
+  display: none; z-index: 20; text-align: center;
+  pointer-events: auto;
+}
+
+/* ════════════════════════════════════════════ */
+/* VIRTUAL JOYSTICK                            */
+/* ════════════════════════════════════════════ */
+#joystick-zone {
+  position: fixed; bottom: 30px; left: 30px;
+  width: 140px; height: 140px; z-index: 30;
+  pointer-events: auto; display: none;
+  -webkit-tap-highlight-color: transparent;
+}
+#joystick-base {
+  position: absolute; top: 0; left: 0;
+  width: 140px; height: 140px;
+  border-radius: 50%;
+  background: rgba(255,255,255,0.3);
+  border: 3px solid rgba(255,255,255,0.5);
+}
+#joystick-thumb {
+  position: absolute;
+  width: 60px; height: 60px;
+  border-radius: 50%;
+  background: rgba(255,255,255,0.7);
+  border: 3px solid rgba(255,255,255,0.9);
+  top: 40px; left: 40px;
+  transition: none;
+}
+
+/* Tap hint for dinos on touch */
+#tap-hint {
+  position: fixed; bottom: 30px; right: 30px;
+  background: rgba(255,165,0,0.85); color: #fff; border-radius: 20px;
+  padding: 10px 18px; font-size: 16px; z-index: 30;
+  display: none; pointer-events: none;
+}
+
+@keyframes bounce {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-15px); }
+}
+</style>
+</head>
+<body>
+
+<div id="start-screen">
+  <canvas id="dino-preview"></canvas>
+  <h1>Jack's Dino Count!</h1>
+  <p>Help Jack count the dinosaurs hiding in the meadow!</p>
+  <button class="btn" onclick="startGame()">Let's Play!</button>
+</div>
+
+<div id="ui-overlay">
+  <div id="score-display"><svg width="18" height="18" viewBox="0 0 24 24" style="vertical-align:middle;margin-right:4px"><polygon points="12,2 15,9 22,9 16.5,14 18.5,21 12,17 5.5,21 7.5,14 2,9 9,9" fill="#FFB74D" stroke="#E65100" stroke-width="1.5"/></svg><span id="score">0</span> / <span id="total-stations">0</span></div>
+  <div id="message-box"></div>
+  <div id="count-display"></div>
+  <div id="try-again-btns">
+    <button class="btn-small" onclick="tryAgain()">Try Again!</button>
+    <button class="btn-small" onclick="startOver()">Start Over</button>
+  </div>
+  <div id="controls-hint"></div>
+</div>
+
+<!-- Virtual joystick for touch devices -->
+<div id="joystick-zone">
+  <div id="joystick-base"></div>
+  <div id="joystick-thumb"></div>
+</div>
+
+<div id="tap-hint">👆 Tap each dino!</div>
+
+<canvas id="celebration"></canvas>
+
+<script src="https://unpkg.com/three@0.160.0/build/three.module.js" type="module"></script>
+<script type="module">
+import * as THREE from 'https://unpkg.com/three@0.160.0/build/three.module.js';
+
+// ═══════════════════════════════════════════
+// TOUCH DETECTION
+// ═══════════════════════════════════════════
+const isTouchDevice = ('ontouchstart' in window) || (navigator.maxTouchPoints > 0);
+
+// ═══════════════════════════════════════════
+// GLOBALS
+// ═══════════════════════════════════════════
+let scene, camera, renderer, clock;
+let jack, jackMixer, jackWalking = false;
+let stations = [];
+let currentStation = null;
+let dinosaurs = [];
+let dinoCount = 0;
+let countedSoFar = 0;
+let gamePhase = 'explore'; // explore, reveal, counting, celebrate, complete
+let stationsCompleted = 0;
+let totalStations = 0;
+let keys = {};
+const JACK_SPEED = 4.5;
+let raycaster = new THREE.Raycaster();
+let mouse = new THREE.Vector2();
+let groundPlane;
+let jackAngle = 0;
+let jackBobTime = 0;
+let dinoClickables = [];
+let glowTime = 0;
+
+// Virtual joystick state
+let joystickActive = false;
+let joystickDX = 0;
+let joystickDZ = 0;
+let joystickTouchId = null;
+const joystickCenterX = 70; // center of 140px base
+const joystickCenterY = 70;
+const joystickMaxDist = 50;
+
+// Audio context for sound effects
+let audioCtx;
+function getAudioCtx() {
+  if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+  return audioCtx;
+}
+
+// ═══════════════════════════════════════════
+// VIRTUAL JOYSTICK (touch devices only)
+// ═══════════════════════════════════════════
+function initJoystick() {
+  const zone = document.getElementById('joystick-zone');
+  const thumb = document.getElementById('joystick-thumb');
+
+  zone.addEventListener('touchstart', (e) => {
+    e.preventDefault();
+    const touch = e.changedTouches[0];
+    joystickTouchId = touch.identifier;
+    joystickActive = true;
+    updateJoystickThumb(touch, zone, thumb);
+  }, { passive: false });
+
+  zone.addEventListener('touchmove', (e) => {
+    e.preventDefault();
+    for (let i = 0; i < e.changedTouches.length; i++) {
+      if (e.changedTouches[i].identifier === joystickTouchId) {
+        updateJoystickThumb(e.changedTouches[i], zone, thumb);
+        break;
+      }
+    }
+  }, { passive: false });
+
+  const endJoystick = (e) => {
+    for (let i = 0; i < e.changedTouches.length; i++) {
+      if (e.changedTouches[i].identifier === joystickTouchId) {
+        joystickActive = false;
+        joystickDX = 0;
+        joystickDZ = 0;
+        joystickTouchId = null;
+        // Reset thumb to center
+        thumb.style.left = '40px';
+        thumb.style.top = '40px';
+        break;
+      }
+    }
+  };
+
+  zone.addEventListener('touchend', endJoystick, { passive: false });
+  zone.addEventListener('touchcancel', endJoystick, { passive: false });
+}
+
+function updateJoystickThumb(touch, zone, thumb) {
+  const rect = zone.getBoundingClientRect();
+  let localX = touch.clientX - rect.left - joystickCenterX;
+  let localY = touch.clientY - rect.top - joystickCenterY;
+
+  // Clamp to circle
+  const dist = Math.sqrt(localX * localX + localY * localY);
+  if (dist > joystickMaxDist) {
+    localX = (localX / dist) * joystickMaxDist;
+    localY = (localY / dist) * joystickMaxDist;
+  }
+
+  // Move thumb visually
+  thumb.style.left = (joystickCenterX + localX - 30) + 'px'; // 30 = half of 60px thumb
+  thumb.style.top = (joystickCenterY + localY - 30) + 'px';
+
+  // Normalize to -1..1 for movement
+  joystickDX = localX / joystickMaxDist;
+  joystickDZ = localY / joystickMaxDist;
+}
+
+// ═══════════════════════════════════════════
+// TOUCH RAYCASTING (for tapping dinosaurs)
+// ═══════════════════════════════════════════
+function initTouchRaycast() {
+  // Listen for taps on the Three.js canvas
+  // We use 'touchend' so the finger has lifted = intentional tap
+  // We also track if the touch moved (to avoid counting swipes as taps)
+  let touchStartPos = null;
+
+  renderer.domElement.addEventListener('touchstart', (e) => {
+    // Don't intercept if touching the joystick area
+    if (joystickTouchId !== null && e.touches.length > 1) return;
+
+    const touch = e.changedTouches[0];
+    touchStartPos = { x: touch.clientX, y: touch.clientY };
+  }, { passive: true });
+
+  renderer.domElement.addEventListener('touchend', (e) => {
+    if (gamePhase !== 'counting') return;
+
+    const touch = e.changedTouches[0];
+
+    // Only count as tap if finger didn't move much (not a drag/swipe)
+    if (touchStartPos) {
+      const dx = touch.clientX - touchStartPos.x;
+      const dy = touch.clientY - touchStartPos.y;
+      if (Math.sqrt(dx*dx + dy*dy) > 20) return; // was a swipe, ignore
+    }
+
+    // Convert touch position to normalized device coordinates
+    mouse.x = (touch.clientX / window.innerWidth) * 2 - 1;
+    mouse.y = -(touch.clientY / window.innerHeight) * 2 + 1;
+    raycaster.setFromCamera(mouse, camera);
+
+    // Check tap on dinosaurs
+    const clickTargets = [];
+    dinosaurs.forEach(d => {
+      d.group.traverse(child => {
+        if (child.isMesh) {
+          child.userData.dinoIndex = d.index;
+          clickTargets.push(child);
+        }
+      });
+    });
+
+    const hits = raycaster.intersectObjects(clickTargets);
+    if (hits.length > 0) {
+      const dinoIdx = hits[0].object.userData.dinoIndex;
+      if (dinoIdx === countedSoFar) {
+        countDino(dinoIdx);
+      }
+    }
+  }, { passive: true });
+}
+
+// ═══════════════════════════════════════════
+// SPEECH
+// ═══════════════════════════════════════════
+function speak(text, rate = 0.85, pitch = 1.1) {
+  return new Promise(resolve => {
+    if (!('speechSynthesis' in window)) { resolve(); return; }
+    window.speechSynthesis.cancel();
+    const utter = new SpeechSynthesisUtterance(text);
+    utter.rate = rate;
+    utter.pitch = pitch;
+    utter.volume = 1;
+    // Try to find a friendly voice
+    const voices = speechSynthesis.getVoices();
+    const friendly = voices.find(v =>
+      v.name.includes('Samantha') || v.name.includes('Karen') ||
+      v.name.includes('Victoria') || v.name.includes('Moira') ||
+      v.lang.startsWith('en')
+    );
+    if (friendly) utter.voice = friendly;
+    utter.onend = resolve;
+    utter.onerror = resolve;
+    // Safety timeout in case speech never fires onend (common on iOS)
+    const safetyTimer = setTimeout(resolve, Math.max(3000, text.length * 80));
+    utter.onend = () => { clearTimeout(safetyTimer); resolve(); };
+    speechSynthesis.speak(utter);
+  });
+}
+
+// Sound effects
+function playTone(freq, duration, type = 'sine', volume = 0.3) {
+  try {
+    const ctx = getAudioCtx();
+    if (ctx.state === 'suspended') ctx.resume();
+    const osc = ctx.createOscillator();
+    const gain = ctx.createGain();
+    osc.type = type;
+    osc.frequency.value = freq;
+    gain.gain.setValueAtTime(volume, ctx.currentTime);
+    gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + duration);
+    osc.connect(gain);
+    gain.connect(ctx.destination);
+    osc.start();
+    osc.stop(ctx.currentTime + duration);
+  } catch(e) { /* audio not available */ }
+}
+
+function playCountSound(n) {
+  playTone(300 + n * 60, 0.25, 'sine', 0.25);
+}
+
+function playSuccessSound() {
+  [0, 100, 200, 300].forEach((delay, i) => {
+    setTimeout(() => playTone(400 + i * 100, 0.3, 'sine', 0.2), delay);
+  });
+}
+
+function playDiscoverSound() {
+  playTone(350, 0.15, 'sine', 0.2);
+  setTimeout(() => playTone(500, 0.15, 'sine', 0.2), 120);
+  setTimeout(() => playTone(650, 0.25, 'sine', 0.2), 240);
+}
+
+// ═══════════════════════════════════════════
+// UI HELPERS
+// ═══════════════════════════════════════════
+function showMessage(text) {
+  const box = document.getElementById('message-box');
+  box.textContent = text;
+  box.style.display = 'block';
+}
+function hideMessage() {
+  document.getElementById('message-box').style.display = 'none';
+}
+function showCount(n) {
+  const el = document.getElementById('count-display');
+  el.textContent = n;
+  el.style.display = 'block';
+  el.style.animation = 'none';
+  el.offsetHeight;
+  el.style.animation = 'bounce 0.4s ease';
+}
+function hideCount() {
+  document.getElementById('count-display').style.display = 'none';
+}
+function updateScore() {
+  document.getElementById('score').textContent = stationsCompleted;
+  document.getElementById('total-stations').textContent = totalStations;
+}
+function showTryAgainButtons() {
+  document.getElementById('try-again-btns').style.display = 'block';
+}
+function hideTryAgainButtons() {
+  document.getElementById('try-again-btns').style.display = 'none';
+}
+function showTapHint(show) {
+  document.getElementById('tap-hint').style.display = show ? 'block' : 'none';
+}
+
+// Confetti
+function launchConfetti() {
+  const canvas = document.getElementById('celebration');
+  canvas.style.display = 'block';
+  canvas.width = window.innerWidth;
+  canvas.height = window.innerHeight;
+  const ctx = canvas.getContext('2d');
+  const particles = [];
+  const colors = ['#FF6F00','#8BC34A','#E91E63','#2196F3','#FFD600','#9C27B0'];
+  for (let i = 0; i < 120; i++) {
+    particles.push({
+      x: Math.random() * canvas.width,
+      y: -20 - Math.random() * 200,
+      vx: (Math.random() - 0.5) * 6,
+      vy: Math.random() * 4 + 2,
+      color: colors[Math.floor(Math.random() * colors.length)],
+      size: Math.random() * 8 + 4,
+      rot: Math.random() * Math.PI * 2,
+      rotSpeed: (Math.random() - 0.5) * 0.2,
+      life: 1
+    });
+  }
+  function animConfetti() {
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    let alive = false;
+    particles.forEach(p => {
+      p.x += p.vx;
+      p.y += p.vy;
+      p.vy += 0.08;
+      p.rot += p.rotSpeed;
+      p.life -= 0.005;
+      if (p.life > 0) {
+        alive = true;
+        ctx.save();
+        ctx.translate(p.x, p.y);
+        ctx.rotate(p.rot);
+        ctx.globalAlpha = p.life;
+        ctx.fillStyle = p.color;
+        ctx.fillRect(-p.size/2, -p.size/2, p.size, p.size);
+        ctx.restore();
+      }
+    });
+    if (alive) requestAnimationFrame(animConfetti);
+    else canvas.style.display = 'none';
+  }
+  animConfetti();
+}
+
+// ═══════════════════════════════════════════
+// CREATE JACK (the boy)
+// ═══════════════════════════════════════════
+function createJack() {
+  const group = new THREE.Group();
+
+  // Body
+  const bodyGeo = new THREE.CylinderGeometry(0.28, 0.22, 0.7, 8);
+  const bodyMat = new THREE.MeshPhongMaterial({ color: 0x4488CC });
+  const body = new THREE.Mesh(bodyGeo, bodyMat);
+  body.position.y = 0.65;
+  group.add(body);
+
+  // Legs
+  const legGeo = new THREE.CylinderGeometry(0.08, 0.08, 0.45, 6);
+  const legMat = new THREE.MeshPhongMaterial({ color: 0x5D4037 });
+  const leftLeg = new THREE.Mesh(legGeo, legMat);
+  leftLeg.position.set(-0.12, 0.22, 0);
+  leftLeg.name = 'leftLeg';
+  group.add(leftLeg);
+  const rightLeg = new THREE.Mesh(legGeo, legMat);
+  rightLeg.position.set(0.12, 0.22, 0);
+  rightLeg.name = 'rightLeg';
+  group.add(rightLeg);
+
+  // Shoes
+  const shoeGeo = new THREE.BoxGeometry(0.14, 0.08, 0.2);
+  const shoeMat = new THREE.MeshPhongMaterial({ color: 0x222222 });
+  const leftShoe = new THREE.Mesh(shoeGeo, shoeMat);
+  leftShoe.position.set(-0.12, 0.02, 0.03);
+  group.add(leftShoe);
+  const rightShoe = new THREE.Mesh(shoeGeo, shoeMat);
+  rightShoe.position.set(0.12, 0.02, 0.03);
+  group.add(rightShoe);
+
+  // Arms
+  const armGeo = new THREE.CylinderGeometry(0.06, 0.06, 0.45, 6);
+  const skinMat = new THREE.MeshPhongMaterial({ color: 0xC8956C });
+  const leftArm = new THREE.Mesh(armGeo, skinMat);
+  leftArm.position.set(-0.38, 0.72, 0);
+  leftArm.rotation.z = 0.15;
+  leftArm.name = 'leftArm';
+  group.add(leftArm);
+  const rightArm = new THREE.Mesh(armGeo, skinMat);
+  rightArm.position.set(0.38, 0.72, 0);
+  rightArm.rotation.z = -0.15;
+  rightArm.name = 'rightArm';
+  group.add(rightArm);
+
+  // Head
+  const headGeo = new THREE.SphereGeometry(0.25, 12, 10);
+  const headMat = new THREE.MeshPhongMaterial({ color: 0xC8956C });
+  const head = new THREE.Mesh(headGeo, headMat);
+  head.position.y = 1.22;
+  group.add(head);
+
+  // Curly hair — only front and low side curls (rest hidden by beanie)
+  const hairMat = new THREE.MeshPhongMaterial({ color: 0x6D4C2E });
+  const curlPositions = [
+    [0.1, 0.04, 0.2], [-0.1, 0.04, 0.2],
+    [0.15, 0.02, 0.15], [-0.15, 0.02, 0.15],
+    [0.05, 0.06, 0.22], [-0.05, 0.06, 0.22],
+    [0.18, 0.0, 0.08], [-0.18, 0.0, 0.08],
+    [0.2, -0.02, 0], [-0.2, -0.02, 0],
+  ];
+  curlPositions.forEach(p => {
+    const curl = new THREE.Mesh(
+      new THREE.SphereGeometry(0.055 + Math.random() * 0.025, 6, 5),
+      hairMat
+    );
+    curl.position.set(p[0], 1.22 + p[1], p[2]);
+    group.add(curl);
+  });
+
+  // Beanie — sphere cap covering top of head
+  // Head: y=1.22, radius=0.25. Eyes at y=1.26.
+  // Beanie bottom edge ~y=1.28 (just above eyes)
+  const beanieRadius = 0.27;
+  const beanieGeo = new THREE.SphereGeometry(
+    beanieRadius, 16, 10,
+    0, Math.PI * 2,
+    0, Math.PI * 0.52
+  ).toNonIndexed();
+  const beaniePos = beanieGeo.getAttribute('position');
+  const beanieColors = new Float32Array(beaniePos.count * 3);
+  const blueC = [0.15, 0.35, 0.9];
+  const redC = [0.88, 0.12, 0.12];
+  for (let i = 0; i < beaniePos.count; i++) {
+    const y = beaniePos.getY(i);
+    const stripe = Math.floor((beanieRadius - y) * 12);
+    const c = (stripe % 2 === 0) ? blueC : redC;
+    beanieColors[i * 3] = c[0];
+    beanieColors[i * 3 + 1] = c[1];
+    beanieColors[i * 3 + 2] = c[2];
+  }
+  beanieGeo.setAttribute('color', new THREE.BufferAttribute(beanieColors, 3));
+  const beanie = new THREE.Mesh(beanieGeo, new THREE.MeshPhongMaterial({ vertexColors: true }));
+  beanie.position.y = 1.22;
+  group.add(beanie);
+
+  // Eyes
+  const eyeGeo = new THREE.SphereGeometry(0.04, 8, 8);
+  const eyeMat = new THREE.MeshPhongMaterial({ color: 0x333333 });
+  const eyeWhiteGeo = new THREE.SphereGeometry(0.055, 8, 8);
+  const eyeWhiteMat = new THREE.MeshPhongMaterial({ color: 0xFFFFFF });
+  [-0.08, 0.08].forEach(x => {
+    const white = new THREE.Mesh(eyeWhiteGeo, eyeWhiteMat);
+    white.position.set(x, 1.26, 0.2);
+    group.add(white);
+    const eye = new THREE.Mesh(eyeGeo, eyeMat);
+    eye.position.set(x, 1.26, 0.23);
+    group.add(eye);
+  });
+
+  // Smile — thin curved line, not a filled shape
+  const smileCurve = new THREE.EllipseCurve(0, 0, 0.08, 0.05, Math.PI * 0.15, Math.PI * 0.85, false, 0);
+  const smilePoints = smileCurve.getPoints(16);
+  const smileGeo = new THREE.BufferGeometry().setFromPoints(smilePoints);
+  const smileLine = new THREE.Line(smileGeo, new THREE.LineBasicMaterial({ color: 0x5D3A1A, linewidth: 2 }));
+  smileLine.position.set(0, 1.15, 0.25);
+  smileLine.rotation.z = Math.PI;
+  group.add(smileLine);
+
+  group.position.y = 0;
+  return group;
+}
+
+// ═══════════════════════════════════════════
+// CREATE CUTE BRONTOSAURUS
+// ═══════════════════════════════════════════
+function createBrontosaurus(color) {
+  const group = new THREE.Group();
+  const mainColor = color || 0x81C784;
+  const mat = new THREE.MeshPhongMaterial({ color: mainColor });
+  const bellyMat = new THREE.MeshPhongMaterial({ color: 0xC8E6C9 });
+
+  // Body
+  const bodyGeo = new THREE.SphereGeometry(0.35, 12, 10);
+  const body = new THREE.Mesh(bodyGeo, mat);
+  body.scale.set(1.3, 0.9, 1);
+  body.position.y = 0.4;
+  group.add(body);
+
+  // Belly
+  const bellyGeo = new THREE.SphereGeometry(0.28, 10, 8);
+  const belly = new THREE.Mesh(bellyGeo, bellyMat);
+  belly.scale.set(1.1, 0.8, 0.9);
+  belly.position.set(0, 0.35, 0.1);
+  group.add(belly);
+
+  // Neck
+  const neckGeo = new THREE.CylinderGeometry(0.1, 0.14, 0.5, 8);
+  const neck = new THREE.Mesh(neckGeo, mat);
+  neck.position.set(0.3, 0.65, 0);
+  neck.rotation.z = -0.5;
+  group.add(neck);
+
+  // Head
+  const headGeo = new THREE.SphereGeometry(0.16, 10, 8);
+  const head = new THREE.Mesh(headGeo, mat);
+  head.position.set(0.5, 0.9, 0);
+  group.add(head);
+
+  // Eyes
+  const eyeWhiteGeo = new THREE.SphereGeometry(0.055, 8, 6);
+  const eyeWhiteMat = new THREE.MeshPhongMaterial({ color: 0xFFFFFF });
+  const pupilGeo = new THREE.SphereGeometry(0.032, 8, 6);
+  const pupilMat = new THREE.MeshPhongMaterial({ color: 0x222222 });
+  [0.06, -0.06].forEach(z => {
+    const white = new THREE.Mesh(eyeWhiteGeo, eyeWhiteMat);
+    white.position.set(0.62, 0.94, z);
+    group.add(white);
+    const pupil = new THREE.Mesh(pupilGeo, pupilMat);
+    pupil.position.set(0.66, 0.94, z);
+    group.add(pupil);
+  });
+
+  // Smile
+  const smileCurve = new THREE.EllipseCurve(0, 0, 0.06, 0.03, 0, Math.PI, false, 0);
+  const smilePoints = smileCurve.getPoints(12);
+  const smileLineGeo = new THREE.BufferGeometry().setFromPoints(
+    smilePoints.map(p => new THREE.Vector3(p.x, p.y, 0))
+  );
+  const smileLine = new THREE.Line(smileLineGeo, new THREE.LineBasicMaterial({ color: 0x555555, linewidth: 2 }));
+  smileLine.position.set(0.65, 0.87, 0);
+  smileLine.rotation.y = Math.PI / 2;
+  group.add(smileLine);
+
+  // Blush
+  const blushMat = new THREE.MeshPhongMaterial({ color: 0xF48FB1, transparent: true, opacity: 0.5 });
+  [0.08, -0.08].forEach(z => {
+    const blush = new THREE.Mesh(new THREE.SphereGeometry(0.03, 6, 6), blushMat);
+    blush.position.set(0.6, 0.88, z);
+    group.add(blush);
+  });
+
+  // Legs
+  const legGeo = new THREE.CylinderGeometry(0.07, 0.09, 0.25, 6);
+  [[-0.15, 0.12, 0.15], [-0.15, 0.12, -0.15], [0.15, 0.12, 0.15], [0.15, 0.12, -0.15]].forEach(pos => {
+    const leg = new THREE.Mesh(legGeo, mat);
+    leg.position.set(...pos);
+    group.add(leg);
+  });
+
+  // Tail
+  const tailGeo = new THREE.CylinderGeometry(0.04, 0.09, 0.45, 6);
+  const tail = new THREE.Mesh(tailGeo, mat);
+  tail.position.set(-0.45, 0.4, 0);
+  tail.rotation.z = 0.8;
+  group.add(tail);
+  const tipGeo = new THREE.SphereGeometry(0.05, 6, 6);
+  const tip = new THREE.Mesh(tipGeo, mat);
+  tip.position.set(-0.62, 0.55, 0);
+  group.add(tip);
+
+  // Add invisible hit sphere for easier tapping on mobile
+  const hitGeo = new THREE.SphereGeometry(0.6, 8, 6);
+  const hitMat = new THREE.MeshBasicMaterial({ visible: false });
+  const hitSphere = new THREE.Mesh(hitGeo, hitMat);
+  hitSphere.position.set(0, 0.4, 0);
+  group.add(hitSphere);
+
+  group.scale.set(0.7, 0.7, 0.7);
+  return group;
+}
+
+// ═══════════════════════════════════════════
+// ENVIRONMENT OBJECTS
+// ═══════════════════════════════════════════
+function createTree(height = 2) {
+  const group = new THREE.Group();
+  const trunkGeo = new THREE.CylinderGeometry(0.12, 0.18, height * 0.5, 8);
+  const trunkMat = new THREE.MeshPhongMaterial({ color: 0x795548 });
+  const trunk = new THREE.Mesh(trunkGeo, trunkMat);
+  trunk.position.y = height * 0.25;
+  group.add(trunk);
+  const leafMat = new THREE.MeshPhongMaterial({ color: 0x4CAF50 });
+  [0, 0.3, 0.55].forEach((offset, i) => {
+    const r = 0.7 - i * 0.15;
+    const leafGeo = new THREE.ConeGeometry(r, 0.7, 8);
+    const leaf = new THREE.Mesh(leafGeo, leafMat);
+    leaf.position.y = height * 0.5 + offset;
+    group.add(leaf);
+  });
+  return group;
+}
+
+function createRockPile() {
+  const group = new THREE.Group();
+  const rockMat = new THREE.MeshPhongMaterial({ color: 0x9E9E9E });
+  const rockMat2 = new THREE.MeshPhongMaterial({ color: 0x757575 });
+  // Large boulder stack — scaled up to tree-size (~2 units tall)
+  [[0, 0.5, 0, 0.7], [0.6, 0.4, 0.3, 0.5], [-0.5, 0.4, 0.4, 0.45],
+   [0.3, 0.9, -0.1, 0.45], [-0.3, 0.85, 0.1, 0.4],
+   [0, 1.2, 0, 0.35], [0.4, 0.3, -0.4, 0.38]].forEach((r, i) => {
+    const geo = new THREE.SphereGeometry(r[3], 7, 6);
+    const rock = new THREE.Mesh(geo, i % 2 === 0 ? rockMat : rockMat2);
+    rock.position.set(r[0], r[1], r[2]);
+    rock.scale.y = 0.75;
+    group.add(rock);
+  });
+  return group;
+}
+
+function createGrassClump() {
+  const group = new THREE.Group();
+  const grassMat = new THREE.MeshPhongMaterial({ color: 0x7CB342, side: THREE.DoubleSide });
+  const darkGrassMat = new THREE.MeshPhongMaterial({ color: 0x558B2F, side: THREE.DoubleSide });
+  // Tall grass — scaled up to tree-size (~2 units tall)
+  for (let i = 0; i < 25; i++) {
+    const height = 1.2 + Math.random() * 1.0;
+    const width = 0.12 + Math.random() * 0.08;
+    const geo = new THREE.PlaneGeometry(width, height);
+    const blade = new THREE.Mesh(geo, i % 3 === 0 ? darkGrassMat : grassMat);
+    const angle = Math.random() * Math.PI * 2;
+    const dist = Math.random() * 0.7;
+    blade.position.set(Math.cos(angle) * dist, height / 2, Math.sin(angle) * dist);
+    blade.rotation.y = Math.random() * Math.PI;
+    blade.rotation.x = (Math.random() - 0.5) * 0.25;
+    group.add(blade);
+  }
+  const flowerColors = [0xE91E63, 0xFFEB3B, 0x9C27B0, 0xFF5722];
+  for (let i = 0; i < 6; i++) {
+    const flowerMat = new THREE.MeshPhongMaterial({ color: flowerColors[Math.floor(Math.random() * flowerColors.length)] });
+    const flower = new THREE.Mesh(new THREE.SphereGeometry(0.08, 6, 6), flowerMat);
+    const a = Math.random() * Math.PI * 2;
+    const d = Math.random() * 0.5;
+    flower.position.set(Math.cos(a) * d, 0.8 + Math.random() * 0.6, Math.sin(a) * d);
+    group.add(flower);
+  }
+  return group;
+}
+
+function createInteractionMarker() {
+  const geo = new THREE.RingGeometry(1.3, 1.5, 24);
+  const mat = new THREE.MeshBasicMaterial({ color: 0xFFEB3B, transparent: true, opacity: 0.25, side: THREE.DoubleSide, depthWrite: false, polygonOffset: true, polygonOffsetFactor: -1, polygonOffsetUnits: -1 });
+  const ring = new THREE.Mesh(geo, mat);
+  ring.rotation.x = -Math.PI / 2;
+  ring.position.y = 0.05;
+  ring.renderOrder = 1;
+  return ring;
+}
+
+// ═══════════════════════════════════════════
+// SCENE SETUP
+// ═══════════════════════════════════════════
+function initScene() {
+  scene = new THREE.Scene();
+  scene.background = new THREE.Color(0x87CEEB);
+  scene.fog = new THREE.Fog(0x87CEEB, 25, 50);
+  clock = new THREE.Clock();
+
+  camera = new THREE.PerspectiveCamera(50, window.innerWidth / window.innerHeight, 0.1, 100);
+  camera.position.set(0, 8, 10);
+  camera.lookAt(0, 0, 0);
+
+  renderer = new THREE.WebGLRenderer({ antialias: true });
+  renderer.setSize(window.innerWidth, window.innerHeight);
+  renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+  renderer.shadowMap.enabled = true;
+  renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+  document.body.insertBefore(renderer.domElement, document.body.firstChild);
+
+  // Lights
+  const ambient = new THREE.AmbientLight(0xffffff, 0.6);
+  scene.add(ambient);
+  const sun = new THREE.DirectionalLight(0xffffff, 0.8);
+  sun.position.set(5, 10, 5);
+  sun.castShadow = true;
+  sun.shadow.mapSize.width = 1024;
+  sun.shadow.mapSize.height = 1024;
+  sun.shadow.camera.near = 0.5;
+  sun.shadow.camera.far = 50;
+  sun.shadow.camera.left = -15;
+  sun.shadow.camera.right = 15;
+  sun.shadow.camera.top = 15;
+  sun.shadow.camera.bottom = -15;
+  scene.add(sun);
+
+  // Ground — large play area
+  const groundGeo = new THREE.PlaneGeometry(100, 100);
+  const groundMat = new THREE.MeshPhongMaterial({ color: 0x7CB342 });
+  groundPlane = new THREE.Mesh(groundGeo, groundMat);
+  groundPlane.rotation.x = -Math.PI / 2;
+  groundPlane.receiveShadow = true;
+  scene.add(groundPlane);
+
+  // Dirt patches
+  for (let i = 0; i < 20; i++) {
+    const patchGeo = new THREE.CircleGeometry(0.5 + Math.random() * 1.2, 8);
+    const patchMat = new THREE.MeshPhongMaterial({ color: 0x8D6E63, transparent: true, opacity: 0.3 });
+    const patch = new THREE.Mesh(patchGeo, patchMat);
+    patch.rotation.x = -Math.PI / 2;
+    patch.position.set((Math.random() - 0.5) * 50, 0.01, (Math.random() - 0.5) * 50);
+    scene.add(patch);
+  }
+
+  // Mountains around the edges
+  const mountainColors = [0x6D8B74, 0x5B7553, 0x7A9972, 0x4A6741];
+  const snowMat = new THREE.MeshPhongMaterial({ color: 0xF5F5F5 });
+  for (let i = 0; i < 20; i++) {
+    const angle = (i / 20) * Math.PI * 2;
+    const dist = 42 + Math.random() * 8;
+    const mtnHeight = 8 + Math.random() * 10;
+    const mtnRadius = 5 + Math.random() * 4;
+    const mtnMat = new THREE.MeshPhongMaterial({ color: mountainColors[i % mountainColors.length] });
+    const mtnGeo = new THREE.ConeGeometry(mtnRadius, mtnHeight, 6);
+    const mtn = new THREE.Mesh(mtnGeo, mtnMat);
+    mtn.position.set(Math.cos(angle) * dist, mtnHeight / 2, Math.sin(angle) * dist);
+    mtn.rotation.y = Math.random() * Math.PI;
+    scene.add(mtn);
+    // Snow cap
+    const capGeo = new THREE.ConeGeometry(mtnRadius * 0.3, mtnHeight * 0.2, 6);
+    const cap = new THREE.Mesh(capGeo, snowMat);
+    cap.position.set(Math.cos(angle) * dist, mtnHeight * 0.9, Math.sin(angle) * dist);
+    scene.add(cap);
+  }
+
+  // Background trees
+  for (let i = 0; i < 30; i++) {
+    const tree = createTree(1.5 + Math.random() * 2);
+    const angle = Math.random() * Math.PI * 2;
+    const dist = 20 + Math.random() * 15;
+    tree.position.set(Math.cos(angle) * dist, 0, Math.sin(angle) * dist);
+    tree.castShadow = true;
+    scene.add(tree);
+  }
+
+  // Sun
+  const sunGeo = new THREE.SphereGeometry(2, 16, 16);
+  const sunMat = new THREE.MeshBasicMaterial({ color: 0xFFF176 });
+  const sunMesh = new THREE.Mesh(sunGeo, sunMat);
+  sunMesh.position.set(10, 18, -15);
+  scene.add(sunMesh);
+
+  // Clouds
+  for (let i = 0; i < 6; i++) {
+    const cloudGroup = new THREE.Group();
+    const cloudMat = new THREE.MeshPhongMaterial({ color: 0xFFFFFF, transparent: true, opacity: 0.85 });
+    for (let j = 0; j < 4; j++) {
+      const cloudPart = new THREE.Mesh(
+        new THREE.SphereGeometry(0.5 + Math.random() * 0.8, 8, 6),
+        cloudMat
+      );
+      cloudPart.position.set(j * 0.7, Math.random() * 0.3, Math.random() * 0.3);
+      cloudPart.scale.y = 0.5;
+      cloudGroup.add(cloudPart);
+    }
+    cloudGroup.position.set(
+      (Math.random() - 0.5) * 30,
+      12 + Math.random() * 5,
+      -10 - Math.random() * 10
+    );
+    scene.add(cloudGroup);
+  }
+
+  // Jack
+  jack = createJack();
+  jack.position.set(0, 0, 16);
+  jack.castShadow = true;
+  scene.add(jack);
+
+  // Stations — compact cluster, all reachable from Jack (z=16)
+  // Dino count line is at z=8, so stations start at z=2 and below
+  const stationConfigs = [
+    { type: 'tree', pos: [-6, 0, 1] },
+    { type: 'rocks', pos: [6, 0, -2] },
+    { type: 'grass', pos: [-3, 0, -6] },
+    { type: 'tree', pos: [8, 0, -8] },
+    { type: 'rocks', pos: [-8, 0, -5] },
+    { type: 'grass', pos: [3, 0, -11] },
+    { type: 'tree', pos: [-5, 0, -12] },
+    { type: 'rocks', pos: [7, 0, -11] },
+    { type: 'grass', pos: [10, 0, -4] },
+    { type: 'tree', pos: [-10, 0, -9] },
+  ];
+
+  stationConfigs.forEach(cfg => {
+    let obj;
+    if (cfg.type === 'tree') {
+      // Tree clump: one big tree + 2-3 smaller ones nearby
+      obj = new THREE.Group();
+      const mainTree = createTree(1.8 + Math.random() * 0.5);
+      obj.add(mainTree);
+      const smallCount = 2 + Math.floor(Math.random() * 2);
+      for (let t = 0; t < smallCount; t++) {
+        const smallTree = createTree(0.9 + Math.random() * 0.5);
+        const angle = (t / smallCount) * Math.PI * 2 + Math.random() * 0.5;
+        smallTree.position.set(Math.cos(angle) * 1.2, 0, Math.sin(angle) * 1.2);
+        obj.add(smallTree);
+      }
+    }
+    else if (cfg.type === 'rocks') obj = createRockPile();
+    else obj = createGrassClump();
+
+    obj.position.set(...cfg.pos);
+    obj.castShadow = true;
+    scene.add(obj);
+
+    const marker = createInteractionMarker();
+    marker.position.set(cfg.pos[0], 0.05, cfg.pos[2]);
+    scene.add(marker);
+
+    stations.push({
+      object: obj,
+      marker: marker,
+      position: new THREE.Vector3(...cfg.pos),
+      type: cfg.type,
+      completed: false,
+      dinoCount: Math.floor(Math.random() * 10) + 1
+    });
+  });
+
+  totalStations = stations.length;
+  updateScore();
+
+  // ═══════════════════════════════════════
+  // INPUT SETUP — both keyboard AND touch
+  // ═══════════════════════════════════════
+  window.addEventListener('keydown', e => keys[e.key.toLowerCase()] = true);
+  window.addEventListener('keyup', e => keys[e.key.toLowerCase()] = false);
+
+  // Mouse click for desktop
+  window.addEventListener('click', onGameClick);
+
+  // Touch raycast for iPad/mobile dino tapping
+  initTouchRaycast();
+
+  // Show joystick on touch devices, keyboard hint on desktop
+  if (isTouchDevice) {
+    document.getElementById('joystick-zone').style.display = 'block';
+    document.getElementById('controls-hint').textContent = 'Use the joystick to move Jack!';
+    initJoystick();
+  } else {
+    document.getElementById('controls-hint').textContent = 'Arrow keys or WASD to move Jack 🏃‍♂️';
+  }
+
+  window.addEventListener('resize', onResize);
+
+  // Prevent default touch on canvas (stops iOS scroll/zoom)
+  renderer.domElement.addEventListener('touchstart', e => e.preventDefault(), { passive: false });
+  renderer.domElement.addEventListener('touchmove', e => e.preventDefault(), { passive: false });
+}
+
+function onResize() {
+  camera.aspect = window.innerWidth / window.innerHeight;
+  camera.updateProjectionMatrix();
+  renderer.setSize(window.innerWidth, window.innerHeight);
+}
+
+// ═══════════════════════════════════════════
+// GAME CLICK HANDLER (desktop mouse)
+// ═══════════════════════════════════════════
+function onGameClick(event) {
+  if (gamePhase !== 'counting') return;
+  // Skip if this was a touch (handled separately)
+  if (event.sourceCapabilities && event.sourceCapabilities.firesTouchEvents) return;
+
+  mouse.x = (event.clientX / window.innerWidth) * 2 - 1;
+  mouse.y = -(event.clientY / window.innerHeight) * 2 + 1;
+  raycaster.setFromCamera(mouse, camera);
+
+  const clickTargets = [];
+  dinosaurs.forEach(d => {
+    d.group.traverse(child => {
+      if (child.isMesh) {
+        child.userData.dinoIndex = d.index;
+        clickTargets.push(child);
+      }
+    });
+  });
+
+  const hits = raycaster.intersectObjects(clickTargets);
+  if (hits.length > 0) {
+    const dinoIdx = hits[0].object.userData.dinoIndex;
+    if (dinoIdx === countedSoFar) {
+      countDino(dinoIdx);
+    }
+  }
+}
+
+async function countDino(idx) {
+  const dino = dinosaurs[idx];
+  if (dino.counted) return;
+  dino.counted = true;
+  countedSoFar++;
+
+  dino.group.traverse(child => {
+    if (child.isMesh && child.material.color) {
+      child.material.emissive = new THREE.Color(0x444400);
+    }
+  });
+
+  const origY = dino.group.position.y;
+  dino.bouncing = true;
+
+  playCountSound(countedSoFar);
+  showCount(countedSoFar);
+
+  const numberWords = ['one','two','three','four','five','six','seven','eight','nine','ten'];
+  await speak(numberWords[countedSoFar - 1], 0.9, 1.2);
+
+  setTimeout(() => {
+    dino.group.traverse(child => {
+      if (child.isMesh && child.material.emissive) {
+        child.material.emissive = new THREE.Color(0x000000);
+      }
+    });
+    dino.bouncing = false;
+    dino.group.position.y = origY;
+  }, 400);
+
+  if (countedSoFar >= dinoCount) {
+    gamePhase = 'celebrate';
+    hideCount();
+    showTapHint(false);
+    await celebrate();
+  } else {
+    highlightNextDino();
+  }
+}
+
+function highlightNextDino() {
+  if (countedSoFar < dinosaurs.length) {
+    dinosaurs[countedSoFar].shouldGlow = true;
+  }
+}
+
+async function celebrate() {
+  playSuccessSound();
+  launchConfetti();
+
+  const cheers = [
+    "Nice job counting!",
+    "Great counting! You got them all!",
+    "Hooray! All the dinos are counted!",
+    "Wonderful counting!",
+    "That was perfect counting!"
+  ];
+  const cheer = cheers[Math.floor(Math.random() * cheers.length)];
+  showMessage(cheer);
+  await speak(cheer, 0.85, 1.1);
+
+  if (isInitialCount) {
+    // First-time count of 10 complete — now let them explore
+    isInitialCount = false;
+    setTimeout(() => {
+      clearDinosaurs();
+      hideMessage();
+      hideCount();
+      gamePhase = 'explore';
+      const moveMsg = isTouchDevice
+        ? "Great job! Now use the joystick to find more dinosaurs hiding!"
+        : "Great job! Now use the arrow keys to find more dinosaurs hiding!";
+      speak(moveMsg, 0.85, 1.1);
+      showMessage(isTouchDevice
+        ? "Use the joystick to find more dinos!"
+        : "Walk to the trees, rocks, or grass to find dinos!");
+      setTimeout(hideMessage, 4000);
+    }, 2500);
+  } else {
+    currentStation.completed = true;
+    stationsCompleted++;
+    updateScore();
+
+    setTimeout(() => {
+      clearDinosaurs();
+      hideMessage();
+      hideCount();
+
+      if (stationsCompleted >= totalStations) {
+        gameComplete();
+      } else {
+        gamePhase = 'explore';
+        speak("Great! Let's find more dinosaurs!", 0.85, 1.1);
+        showMessage("Keep exploring! Find more hiding spots!");
+        setTimeout(hideMessage, 3000);
+      }
+    }, 2500);
+  }
+}
+
+async function gameComplete() {
+  gamePhase = 'complete';
+  launchConfetti();
+  showMessage("You found all the dinosaurs! Nice counting!");
+  await speak("You found all the dinosaurs! That was great counting! Would you like to play again?", 0.85, 1.1);
+  showTryAgainButtons();
+}
+
+// ═══════════════════════════════════════════
+// DINOSAUR SPAWNING
+// ═══════════════════════════════════════════
+function spawnDinosaurs(station) {
+  clearDinosaurs();
+  dinoCount = station.dinoCount;
+  countedSoFar = 0;
+
+  const dinoColors = [0x81C784, 0x64B5F6, 0xFFB74D, 0xE57373, 0xBA68C8, 0x4DD0E1, 0xFFF176, 0xA1887F, 0xF48FB1, 0x80CBC4];
+
+  for (let i = 0; i < dinoCount; i++) {
+    const dino = createBrontosaurus(dinoColors[i % dinoColors.length]);
+    const spacing = 1.2;
+    const totalWidth = (dinoCount - 1) * spacing;
+    const x = station.position.x + (i * spacing - totalWidth / 2);
+    const z = station.position.z + 1.5 + Math.sin(i * 0.5) * 0.3;
+
+    dino.position.set(x, 0, z);
+    dino.rotation.y = Math.PI;
+    dino.scale.set(0, 0, 0);
+    dino.visible = true;
+    scene.add(dino);
+
+    dinosaurs.push({
+      group: dino,
+      index: i,
+      targetScale: 0.7,
+      counted: false,
+      bouncing: false,
+      shouldGlow: false,
+      fadeIn: 0,
+      fadeDelay: i * 0.15
+    });
+  }
+}
+
+function clearDinosaurs() {
+  dinosaurs.forEach(d => {
+    scene.remove(d.group);
+  });
+  dinosaurs = [];
+  dinoClickables = [];
+}
+
+// ═══════════════════════════════════════════
+// GAME PHASES
+// ═══════════════════════════════════════════
+async function enterStation(station) {
+  if (station.completed || gamePhase !== 'explore') return;
+
+  currentStation = station;
+  gamePhase = 'reveal';
+  playDiscoverSound();
+
+  const objectName = station.type === 'tree' ? 'tree' : station.type === 'rocks' ? 'pile of rocks' : 'clump of grass';
+  showMessage("Something is hiding behind the " + objectName + "!");
+  await speak("Oh look! Something is hiding behind the " + objectName + "!", 0.85, 1.1);
+
+  await new Promise(r => setTimeout(r, 800));
+  spawnDinosaurs(station);
+  await new Promise(r => setTimeout(r, 1500 + station.dinoCount * 200));
+
+  const touchMsg = isTouchDevice ? "Tap" : "Click";
+  showMessage("Can you count the dinosaurs? " + touchMsg + " each one!");
+  await speak("Can you count the dinosaurs? Touch each one, starting from the left!", 0.8, 1.1);
+
+  if (isTouchDevice) showTapHint(true);
+  gamePhase = 'counting';
+  highlightNextDino();
+}
+
+// ═══════════════════════════════════════════
+// GAME LOOP
+// ═══════════════════════════════════════════
+function updateJack(delta) {
+  let dx = 0, dz = 0;
+
+  // Keyboard input
+  if (keys['arrowup'] || keys['w']) dz -= 1;
+  if (keys['arrowdown'] || keys['s']) dz += 1;
+  if (keys['arrowleft'] || keys['a']) dx -= 1;
+  if (keys['arrowright'] || keys['d']) dx += 1;
+
+  // Joystick input (adds to keyboard, so both work)
+  if (joystickActive) {
+    dx += joystickDX;
+    dz += joystickDZ;
+  }
+
+  const moving = Math.abs(dx) > 0.1 || Math.abs(dz) > 0.1;
+
+  if (moving && (gamePhase === 'explore' || gamePhase === 'counting')) {
+    const len = Math.sqrt(dx*dx + dz*dz);
+    if (len > 1) { dx /= len; dz /= len; }
+
+    jack.position.x += dx * JACK_SPEED * delta;
+    jack.position.z += dz * JACK_SPEED * delta;
+
+    jackAngle = Math.atan2(dx, dz);
+    jack.rotation.y = jackAngle;
+
+    jackBobTime += delta * 10;
+    const bob = Math.sin(jackBobTime) * 0.05;
+    jack.position.y = bob > 0 ? bob : 0;
+
+    jack.children.forEach(child => {
+      if (child.name === 'leftLeg') child.rotation.x = Math.sin(jackBobTime) * 0.4;
+      if (child.name === 'rightLeg') child.rotation.x = -Math.sin(jackBobTime) * 0.4;
+      if (child.name === 'leftArm') child.rotation.x = -Math.sin(jackBobTime) * 0.3;
+      if (child.name === 'rightArm') child.rotation.x = Math.sin(jackBobTime) * 0.3;
+    });
+
+    jack.position.x = Math.max(-18, Math.min(18, jack.position.x));
+    jack.position.z = Math.max(-18, Math.min(18, jack.position.z));
+  }
+
+  if (gamePhase === 'explore') {
+    stations.forEach(station => {
+      if (station.completed) return;
+      const dist = jack.position.distanceTo(station.position);
+      if (dist < 1.8) {
+        enterStation(station);
+      }
+      if (dist < 4) {
+        station.marker.material.opacity = 0.25 + Math.sin(Date.now() * 0.005) * 0.15;
+      }
+    });
+  }
+}
+
+function updateCamera() {
+  const targetPos = new THREE.Vector3(
+    jack.position.x,
+    jack.position.y + 6,
+    jack.position.z + 7
+  );
+  camera.position.lerp(targetPos, 0.05);
+  const lookTarget = new THREE.Vector3(jack.position.x, jack.position.y + 0.5, jack.position.z);
+  camera.lookAt(lookTarget);
+}
+
+function updateDinosaurs(delta) {
+  glowTime += delta;
+  dinosaurs.forEach(d => {
+    if (d.fadeIn < 1) {
+      d.fadeDelay -= delta;
+      if (d.fadeDelay <= 0) {
+        d.fadeIn = Math.min(1, d.fadeIn + delta * 2);
+        const s = d.fadeIn * d.targetScale;
+        d.group.scale.set(s, s, s);
+      }
+    }
+
+    if (d.shouldGlow && !d.counted) {
+      const glow = (Math.sin(glowTime * 4) * 0.5 + 0.5) * 0.3;
+      d.group.traverse(child => {
+        if (child.isMesh && child.material.emissive) {
+          child.material.emissive = new THREE.Color(glow, glow * 0.8, 0);
+        }
+      });
+    }
+
+    if (d.bouncing) {
+      d.group.position.y = 0.15 + Math.abs(Math.sin(Date.now() * 0.01)) * 0.2;
+    }
+
+    if (!d.counted && !d.bouncing && d.fadeIn >= 1) {
+      d.group.position.y = Math.sin(Date.now() * 0.002 + d.index) * 0.03;
+    }
+  });
+}
+
+function animate() {
+  requestAnimationFrame(animate);
+  const delta = Math.min(clock.getDelta(), 0.05);
+
+  updateJack(delta);
+  updateCamera();
+  updateDinosaurs(delta);
+
+  renderer.render(scene, camera);
+}
+
+// ═══════════════════════════════════════════
+// GAME CONTROL
+// ═══════════════════════════════════════════
+let isInitialCount = false;
+
+function spawnInitialDinos() {
+  clearDinosaurs();
+  isInitialCount = true;
+  dinoCount = 10;
+  countedSoFar = 0;
+
+  // Build a circular deck for Jack to stand on
+  const deckGeo = new THREE.CylinderGeometry(1.4, 1.4, 0.08, 12);
+  const deckMat = new THREE.MeshPhongMaterial({ color: 0xD7CCC8 });
+  const deck = new THREE.Mesh(deckGeo, deckMat);
+  deck.position.set(0, 0.04, 16);
+  scene.add(deck);
+  const rimGeo = new THREE.TorusGeometry(1.4, 0.06, 8, 24);
+  const rimMat = new THREE.MeshPhongMaterial({ color: 0x8D6E63 });
+  const rim = new THREE.Mesh(rimGeo, rimMat);
+  rim.rotation.x = -Math.PI / 2;
+  rim.position.set(0, 0.08, 16);
+  scene.add(rim);
+
+  // Turn Jack to face the dinos (toward -z)
+  jack.rotation.y = Math.PI;
+
+  const dinoColors = [0x81C784, 0x64B5F6, 0xFFB74D, 0xE57373, 0xBA68C8, 0x4DD0E1, 0xFFF176, 0xA1887F, 0xF48FB1, 0x80CBC4];
+
+  // Spread 10 dinos in a wide line in front of Jack, all clearly visible
+  const spacing = 1.8;
+  const totalWidth = 9 * spacing;
+  const dinoZ = 8; // well in front of Jack (z=8 vs Jack z=16), clear open space
+
+  for (let i = 0; i < 10; i++) {
+    const dino = createBrontosaurus(dinoColors[i]);
+    const x = (i * spacing - totalWidth / 2);
+    const z = dinoZ + Math.sin(i * 0.7) * 0.4;
+
+    dino.position.set(x, 0, z);
+    // Face toward camera (so we see their cute faces)
+    dino.rotation.y = Math.PI;
+    dino.scale.set(0, 0, 0);
+    dino.visible = true;
+    scene.add(dino);
+
+    dinosaurs.push({
+      group: dino,
+      index: i,
+      targetScale: 0.7,
+      counted: false,
+      bouncing: false,
+      shouldGlow: false,
+      fadeIn: 0,
+      fadeDelay: i * 0.12
+    });
+  }
+}
+
+window.startGame = function() {
+  document.getElementById('start-screen').style.display = 'none';
+  getAudioCtx();
+  speechSynthesis.getVoices();
+  initScene();
+  animate();
+
+  setTimeout(async () => {
+    spawnInitialDinos();
+    showMessage("Count to ten to find more dinos!");
+    await speak("Count to ten to find more dinos! Tap each dinosaur starting from the left!", 0.8, 1.1);
+    await new Promise(r => setTimeout(r, 1500));
+    gamePhase = 'counting';
+    if (isTouchDevice) showTapHint(true);
+    highlightNextDino();
+  }, 500);
+};
+
+window.tryAgain = function() {
+  hideTryAgainButtons();
+  hideMessage();
+  hideCount();
+  showTapHint(false);
+  clearDinosaurs();
+
+  if (currentStation) {
+    currentStation.completed = false;
+    stationsCompleted = Math.max(0, stationsCompleted - 1);
+    updateScore();
+    gamePhase = 'explore';
+    speak("Let's try again! Walk back to the hiding spot!", 0.85, 1.1);
+    showMessage("Walk to a hiding spot to try again!");
+    setTimeout(hideMessage, 3000);
+  }
+};
+
+window.startOver = function() {
+  hideTryAgainButtons();
+  hideMessage();
+  hideCount();
+  showTapHint(false);
+  clearDinosaurs();
+  stationsCompleted = 0;
+  stations.forEach(s => {
+    s.completed = false;
+    s.dinoCount = Math.floor(Math.random() * 10) + 1;
+  });
+  updateScore();
+  jack.position.set(0, 0, 6);
+  gamePhase = 'explore';
+  speak("Starting over! Let's find all the dinosaurs again!", 0.85, 1.1);
+  showMessage("Starting over! Go find the dinosaurs!");
+  setTimeout(hideMessage, 3000);
+};
+
+// Pre-load voices
+if ('speechSynthesis' in window) {
+  speechSynthesis.getVoices();
+  speechSynthesis.onvoiceschanged = () => speechSynthesis.getVoices();
+}
+
+// 3D Dino preview on start screen
+function renderDinoPreview() {
+  const canvas = document.getElementById('dino-preview');
+  if (!canvas) return;
+  const width = 300;
+  const height = 300;
+  canvas.width = width * Math.min(window.devicePixelRatio, 2);
+  canvas.height = height * Math.min(window.devicePixelRatio, 2);
+
+  const previewScene = new THREE.Scene();
+  const previewCamera = new THREE.PerspectiveCamera(28, width / height, 0.1, 100);
+  previewCamera.position.set(0, 1.0, 4.2);
+  previewCamera.lookAt(0, 0.2, 0);
+
+  const previewRenderer = new THREE.WebGLRenderer({ canvas, antialias: true, alpha: true });
+  previewRenderer.setClearColor(0x000000, 0);
+  previewRenderer.setSize(width, height);
+  previewRenderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+
+  previewScene.add(new THREE.AmbientLight(0xffffff, 0.8));
+  const dl = new THREE.DirectionalLight(0xffffff, 0.6);
+  dl.position.set(2, 3, 2);
+  previewScene.add(dl);
+
+  const dino = createBrontosaurus(0x81C784);
+  dino.scale.set(0.95, 0.95, 0.95);
+  dino.rotation.y = Math.PI;
+  previewScene.add(dino);
+
+  let time = 0;
+  function animatePreview() {
+    time += 0.016;
+    dino.rotation.y += 0.012;
+    dino.position.y = Math.sin(time * 1.5) * 0.06;
+    previewRenderer.render(previewScene, previewCamera);
+    requestAnimationFrame(animatePreview);
+  }
+  animatePreview();
+}
+renderDinoPreview();
+</script>
+</body>
+</html>

@@ -1,0 +1,2325 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Vinculum Logic Engine 3D — V3.0</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Fira+Code:wght@400;700&family=Inter:wght@400;900&display=swap');
+        *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+        :root {
+            --bg: #020203; --accent: #bc13fe; --secondary: #fb923c;
+            --panel: rgba(8, 8, 12, 0.98); --teal: #14b8a6;
+            --ax-x: #ff4466; --ax-y: #44ff66; --ax-z: #4488ff;
+        }
+
+        body { background: var(--bg); color: #f1f5f9; font-family: 'Inter', sans-serif; overflow: hidden; height: 100vh; user-select: none; }
+        .app-wrap { display: flex; height: 100vh; }
+
+        /* ── Sidebar ── */
+        .sidebar {
+            width: 340px; min-width: 340px; z-index: 50;
+            background: var(--panel); border-right: 1px solid rgba(255,255,255,0.08);
+            display: flex; flex-direction: column;
+            backdrop-filter: blur(60px); box-shadow: 25px 0 100px rgba(0,0,0,0.95);
+            overflow-y: auto; padding: 20px;
+        }
+        .sidebar::-webkit-scrollbar { width: 3px; }
+        .sidebar::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.1); border-radius: 4px; }
+
+        .ctrl-card {
+            background: linear-gradient(145deg, rgba(255,255,255,0.04) 0%, rgba(255,255,255,0.01) 100%);
+            border: 1px solid rgba(255,255,255,0.08); border-radius: 16px;
+            padding: 14px; margin-bottom: 10px;
+        }
+        .ctrl-card h3 {
+            font-size: 9px; font-weight: 900; color: var(--accent);
+            text-transform: uppercase; letter-spacing: 0.25em; margin-bottom: 10px;
+        }
+
+        .btn-s {
+            padding: 6px 4px; border-radius: 8px;
+            background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1);
+            font-size: 9px; font-weight: 900; text-transform: uppercase;
+            transition: all 0.15s ease; color: #94a3b8; cursor: pointer;
+            font-family: 'Inter', sans-serif;
+        }
+        .btn-s:hover { background: rgba(168,85,247,0.2); color: #fff; }
+        .btn-s.active { background: rgba(168,85,247,0.3); color: #fff; border-color: rgba(168,85,247,0.5); }
+
+        .btn-view {
+            padding: 8px 4px; border-radius: 8px;
+            background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1);
+            font-size: 8px; font-weight: 900; text-transform: uppercase; letter-spacing: 0.1em;
+            transition: all 0.15s ease; color: #94a3b8; cursor: pointer; font-family: 'Inter', sans-serif;
+        }
+        .btn-view:hover { background: rgba(20,184,166,0.2); color: #fff; }
+        .btn-view.active { background: rgba(20,184,166,0.3); color: #2dd4bf; border-color: rgba(20,184,166,0.5); }
+
+        .btn-primary {
+            width: 100%; padding: 10px; border-radius: 10px;
+            background: linear-gradient(to right, #9333ea, #4f46e5);
+            border: 1px solid rgba(192,132,252,0.5);
+            font-size: 10px; font-weight: 900; text-transform: uppercase; letter-spacing: 0.2em;
+            color: #fff; cursor: pointer; font-family: 'Inter', sans-serif;
+        }
+        .btn-primary:active { transform: scale(0.95); }
+
+        .fire-btn {
+            padding: 10px; background-color: #ea580c; color: #fff;
+            font-weight: 900; text-transform: uppercase; font-size: 10px; letter-spacing: 0.2em;
+            border-radius: 9999px; border: none; cursor: pointer; width: 100%;
+            font-family: 'Inter', sans-serif; font-style: italic;
+        }
+        .fire-btn:active { transform: scale(0.95); }
+
+        input[type=range] {
+            appearance: none; -webkit-appearance: none;
+            background: rgba(255,255,255,0.1); height: 5px; border-radius: 9999px; width: 100%; outline: none;
+        }
+        input[type=range]::-webkit-slider-thumb {
+            -webkit-appearance: none; width: 16px; height: 16px;
+            background: #fff; border-radius: 50%; cursor: pointer;
+            border: 2px solid #bc13fe;
+        }
+
+        .g2 { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; }
+        .g3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 5px; }
+        .g4 { display: grid; grid-template-columns: 1fr 1fr 1fr 1fr; gap: 5px; }
+        .g5 { display: grid; grid-template-columns: 1fr 1fr 1fr 1fr 1fr; gap: 5px; }
+        .fc { display: flex; flex-direction: column; }
+        .lbl { font-size: 8px; font-weight: 900; color: rgba(255,255,255,0.2); text-transform: uppercase; letter-spacing: 0.1em; }
+
+        /* Axis selector toggle */
+        .axis-toggle {
+            padding: 8px; border-radius: 10px; border: 2px solid rgba(255,255,255,0.1);
+            font-size: 12px; font-weight: 900; cursor: pointer;
+            transition: all 0.15s ease; font-family: 'Fira Code', monospace;
+            background: rgba(255,255,255,0.03); text-align: center;
+        }
+        .axis-toggle.sel { border-width: 2px; transform: scale(1.05); }
+
+        /* Dimension slider row */
+        .dim-row {
+            display: flex; align-items: center; gap: 8px; margin-bottom: 6px;
+        }
+        .dim-label {
+            font-family: 'Fira Code', monospace; font-weight: 900; font-size: 13px;
+            min-width: 18px; text-align: center;
+        }
+        .dim-val {
+            font-family: 'Fira Code', monospace; font-size: 12px; font-weight: 700;
+            color: #fff; min-width: 36px; text-align: right;
+        }
+        .dim-unit { font-size: 8px; color: rgba(255,255,255,0.2); font-weight: 700; }
+
+        /* ── Viewport ── */
+        .viewport {
+            flex: 1; position: relative;
+            background: radial-gradient(circle at 50% 50%, rgba(188,19,254,0.06) 0%, transparent 70%), #020203;
+        }
+        #three-canvas { display: block; width: 100%; height: 100%; cursor: crosshair; }
+
+        .metrics-hud {
+            position: absolute; top: 16px; left: 16px; right: 16px;
+            z-index: 40; pointer-events: none;
+            background: rgba(8,8,12,0.85); border: 1px solid rgba(255,255,255,0.06);
+            backdrop-filter: blur(16px); border-radius: 14px; padding: 14px 20px;
+        }
+        .metrics-row { display: flex; gap: 28px; align-items: flex-end; flex-wrap: wrap; }
+        .metric-label { font-size: 8px; font-weight: 900; text-transform: uppercase; color: #a855f7; letter-spacing: 0.2em; margin-bottom: 2px; }
+        .metric-value { font-size: 32px; font-weight: 900; color: #fff; letter-spacing: -2px; line-height: 1; text-shadow: 0 4px 15px rgba(0,0,0,0.5); }
+        .metric-value.sm { font-size: 22px; }
+        .math-readout {
+            flex: 1; min-width: 200px; display: flex; align-items: center; justify-content: flex-end;
+        }
+        .math-readout .latex-hud {
+            background: rgba(0,0,0,0.4); border: 1px solid rgba(168,85,247,0.2);
+            padding: 6px 14px; border-radius: 10px; font-size: 13px; min-height: 36px;
+            display: flex; align-items: center; justify-content: center;
+        }
+        .conn-readout {
+            margin-top: 8px; padding-top: 8px; border-top: 1px solid rgba(255,255,255,0.04);
+            font-family: 'Fira Code', monospace; font-size: 10px; color: rgba(255,255,255,0.5);
+            display: none; line-height: 1.6;
+        }
+        .conn-readout.active { display: block; }
+
+        .view-badge {
+            position: absolute; top: 110px; right: 20px; z-index: 40; pointer-events: none; text-align: right;
+        }
+        .view-badge .vb-name { font-size: 28px; font-weight: 900; color: rgba(255,255,255,0.06); text-transform: uppercase; letter-spacing: -1px; line-height: 1; }
+        .view-badge .vb-sub { font-size: 8px; font-weight: 900; color: rgba(255,255,255,0.1); text-transform: uppercase; letter-spacing: 0.4em; }
+
+        /* Axis legend - compact */
+        .ax-legend {
+            position: absolute; bottom: 20px; left: 20px; z-index: 40; pointer-events: none;
+            background: rgba(8,8,12,0.8); border: 1px solid rgba(255,255,255,0.06);
+            backdrop-filter: blur(12px); padding: 10px 14px; border-radius: 12px;
+        }
+        .ax-row { display: flex; align-items: center; gap: 8px; margin-bottom: 3px; }
+        .ax-row:last-child { margin-bottom: 0; }
+        .ax-dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
+        .ax-label { font-family: 'Fira Code', monospace; font-weight: 700; font-size: 11px; }
+        .ax-hint { font-size: 7px; color: rgba(255,255,255,0.2); font-weight: 700; text-transform: uppercase; letter-spacing: 0.1em; }
+
+        /* Face info */
+        .face-info {
+            position: absolute; bottom: 20px; right: 20px; z-index: 40; pointer-events: none;
+        }
+        .face-info-inner {
+            background: rgba(8,8,12,0.9); border: 1px solid rgba(255,255,255,0.08);
+            backdrop-filter: blur(16px); padding: 12px 16px; border-radius: 14px; min-width: 240px;
+        }
+
+        /* Ledger */
+        .ledger-btn {
+            position: absolute; bottom: 20px; left: 50%; transform: translateX(-50%); z-index: 60;
+        }
+        .ledger-btn button {
+            background: rgba(147,51,234,0.12); padding: 10px 20px; border-radius: 14px;
+            border: 1px solid rgba(168,85,247,0.25); cursor: pointer;
+            font-size: 10px; font-weight: 900; color: #fff; text-transform: uppercase;
+            letter-spacing: 0.1em; font-style: italic; font-family: 'Inter', sans-serif;
+        }
+        .ledger-btn button:hover { background: rgba(147,51,234,0.25); }
+
+        #ledger-overlay {
+            position: fixed; inset: 0; background: rgba(0,0,0,0.96);
+            backdrop-filter: blur(40px); z-index: 1000; display: none;
+            padding: 30px; flex-direction: column; align-items: center;
+        }
+        #ledger-window {
+            background: #08080a; border: 1px solid rgba(255,255,255,0.1);
+            width: 100%; max-width: 1000px; height: 85vh; border-radius: 24px;
+            display: flex; flex-direction: column; overflow: hidden;
+        }
+        .history-card {
+            background: rgba(255,255,255,0.02); border: 1px solid rgba(255,255,255,0.05);
+            padding: 16px; border-radius: 12px; margin-bottom: 10px;
+        }
+        .history-card:hover { background: rgba(188,19,254,0.05); border-color: var(--accent); }
+        .proof-box {
+            background: rgba(0,0,0,0.6); border: 1px solid rgba(255,255,255,0.05);
+            padding: 8px; border-radius: 8px; font-family: 'Fira Code', monospace;
+            color: #a855f7; margin-top: 6px; display: flex; align-items: center; justify-content: center;
+        }
+
+        .color-mode-btn {
+            padding: 6px 8px; border-radius: 8px; background: rgba(255,255,255,0.04);
+            border: 1px solid rgba(255,255,255,0.08); font-size: 8px; font-weight: 900;
+            text-transform: uppercase; letter-spacing: 0.08em; color: #94a3b8;
+            cursor: pointer; font-family: 'Inter', sans-serif;
+        }
+        .color-mode-btn.active { background: rgba(168,85,247,0.2); color: #c084fc; border-color: rgba(168,85,247,0.35); }
+
+        .trace-btn {
+            padding: 8px 6px; border-radius: 10px; font-size: 8px; font-weight: 900;
+            text-transform: uppercase; letter-spacing: 0.1em; cursor: pointer;
+            display: flex; flex-direction: column; align-items: center; gap: 2px;
+            font-family: 'Inter', sans-serif;
+        }
+
+        .latex-display {
+            background: #000; padding: 12px; border-radius: 10px; min-height: 50px;
+            display: flex; align-items: center; justify-content: center;
+            border: 1px solid rgba(255,255,255,0.06); font-size: 11px;
+        }
+
+        /* Live dimension readout */
+        .dim-readout {
+            background: rgba(0,0,0,0.4); border: 1px solid rgba(255,255,255,0.06);
+            border-radius: 10px; padding: 8px 12px; font-family: 'Fira Code', monospace;
+            font-size: 10px; line-height: 1.6;
+        }
+    </style>
+</head>
+<body>
+<div class="app-wrap">
+    <aside class="sidebar">
+        <!-- Header — compact -->
+        <header style="margin-bottom:16px;">
+            <div style="display:flex;align-items:center;gap:8px;margin-bottom:4px;">
+                <span style="width:8px;height:8px;border-radius:50%;background:#9333ea;box-shadow:0 0 10px rgba(168,85,247,0.8);display:block;"></span>
+                <div style="font-size:8px;font-weight:900;color:rgba(255,255,255,0.25);letter-spacing:6px;text-transform:uppercase;">Vinculum</div>
+            </div>
+            <h1 style="text-transform:uppercase;font-size:1.8rem;font-weight:900;color:#fff;letter-spacing:-0.03em;line-height:0.9;">
+                3D <span style="color:#a855f7;font-style:italic;">Geometry</span>
+            </h1>
+        </header>
+
+        <!-- VIEWS -->
+        <section class="ctrl-card" style="border-color:rgba(20,184,166,0.25);">
+            <h3 style="color:#2dd4bf;">Views</h3>
+            <div class="g5">
+                <button class="btn-view active" onclick="setView('iso')" id="view-iso">ISO</button>
+                <button class="btn-view" onclick="setView('front')" id="view-front">Front</button>
+                <button class="btn-view" onclick="setView('top')" id="view-top">Top</button>
+                <button class="btn-view" onclick="setView('right')" id="view-right">Right</button>
+                <button class="btn-view" onclick="setView('free')" id="view-free">Free</button>
+            </div>
+        </section>
+
+        <!-- PRIMITIVES -->
+        <section class="ctrl-card">
+            <h3>Primitives</h3>
+            <div class="g3">
+                <button onclick="loadSolid('cube')" class="btn-s" style="color:#fff;border-color:rgba(255,255,255,0.2);">Cube</button>
+                <button onclick="loadSolid('tetra')" class="btn-s">Tetra</button>
+                <button onclick="loadSolid('octa')" class="btn-s">Octa</button>
+                <button onclick="loadSolid('prism')" class="btn-s">Tri Prism</button>
+                <button onclick="loadSolid('pyramid')" class="btn-s">Pyramid</button>
+                <button onclick="loadSolid('unit')" class="btn-s" style="color:#2dd4bf;border-color:rgba(20,184,166,0.4);">Unit</button>
+                <button onclick="loadSolid('rectprism')" class="btn-s" style="color:#fb923c;border-color:rgba(251,146,60,0.3);">Rect Prism</button>
+                <button onclick="loadSolid('cylinder')" class="btn-s" style="color:#60a5fa;border-color:rgba(96,165,250,0.3);">Cylinder</button>
+                <button onclick="loadSolid('dodeca')" class="btn-s">Dodeca</button>
+            </div>
+        </section>
+
+        <!-- UNIT CUBES VISUALIZATION -->
+        <section class="ctrl-card" style="border-color:rgba(192,192,220,0.3);">
+            <h3 style="color:#c0c0dc;">Unit Cubes · Volume Builder</h3>
+            <div class="g4" style="margin-bottom:6px;">
+                <button class="color-mode-btn active" onclick="setCubeMode('solid')" id="uc-solid" style="color:#fff;border-color:rgba(255,255,255,0.2);">Solid</button>
+                <button class="color-mode-btn" onclick="setCubeMode('glass')" id="uc-glass">Glass</button>
+                <button class="color-mode-btn" onclick="setCubeMode('exploded')" id="uc-exploded">Explode</button>
+                <button class="color-mode-btn" onclick="setCubeMode('off')" id="uc-off">Off</button>
+            </div>
+            <div class="g2" style="margin-bottom:6px;">
+                <button class="color-mode-btn active" onclick="toggleSpark()" id="spark-btn" style="color:#fde047;border-color:rgba(253,224,71,0.4);">Shimmer: ON</button>
+                <button class="color-mode-btn active" onclick="toggleCubeNumbers()" id="num-btn">Numbers: ON</button>
+            </div>
+            <div style="margin-bottom:6px;">
+                <button class="color-mode-btn active" onclick="toggleCubeOrigin()" id="origin-btn" style="font-size:9px;width:100%;color:#67e8f9;border-color:rgba(103,232,249,0.3);">Origin: Center</button>
+            </div>
+            <div id="cube-count-readout" style="text-align:center;font-family:'Fira Code',monospace;font-size:11px;color:rgba(255,255,255,0.25);margin-bottom:4px;">—</div>
+            <div style="font-size:7px;color:rgba(255,255,255,0.12);text-align:center;line-height:1.4;">
+                Solid: opaque blocks · Glass: see-through<br>
+                Explode: spread apart · Shimmer: electric edges<br>
+                Center: cubes centered on shape · Vertex: corner at origin
+            </div>
+        </section>
+
+        <!-- 3D LATTICE -->
+        <section class="ctrl-card">
+            <h3 style="color:#94a3b8;">3D Lattice</h3>
+            <div class="g2">
+                <button class="color-mode-btn" onclick="toggleLattice()" id="lattice-btn">Show Lattice Dots</button>
+                <button class="color-mode-btn" onclick="toggleGridDots()" id="griddot-btn">Floor Dots</button>
+            </div>
+        </section>
+
+        <!-- DIMENSION BUILDER — instant -->
+        <section class="ctrl-card" style="border-color:rgba(251,146,60,0.3);">
+            <h3 style="color:#fb923c;">Dimensions <span style="font-size:7px;color:rgba(255,255,255,0.15);letter-spacing:0.1em;font-weight:400;">· instant</span></h3>
+            <div class="dim-row">
+                <span class="dim-label" id="dim-x-label" style="color:var(--ax-x);">X</span>
+                <input type="range" id="dim-x" min="1" max="12" step="1" value="6" oninput="updateDimensions()" style="flex:1;">
+                <span class="dim-val" id="dim-x-val">6.0</span>
+                <span class="dim-unit">u</span>
+            </div>
+            <div class="dim-row">
+                <span class="dim-label" id="dim-y-label" style="color:var(--ax-y);">Y</span>
+                <input type="range" id="dim-y" min="1" max="12" step="1" value="6" oninput="updateDimensions()" style="flex:1;">
+                <span class="dim-val" id="dim-y-val">6.0</span>
+                <span class="dim-unit">u</span>
+            </div>
+            <div class="dim-row" id="dim-z-row">
+                <span class="dim-label" id="dim-z-label" style="color:var(--ax-z);">Z</span>
+                <input type="range" id="dim-z" min="1" max="12" step="1" value="6" oninput="updateDimensions()" style="flex:1;">
+                <span class="dim-val" id="dim-z-val">6.0</span>
+                <span class="dim-unit">u</span>
+            </div>
+            <div class="dim-readout" style="margin-top:6px;">
+                <div style="display:flex;justify-content:space-between;">
+                    <span style="color:rgba(255,255,255,0.3);">dimensions</span>
+                    <span id="dim-dims" style="color:#fb923c;font-weight:700;">6 × 6 × 6</span>
+                </div>
+                <div style="display:flex;justify-content:space-between;">
+                    <span style="color:rgba(255,255,255,0.3);">volume</span>
+                    <span id="dim-vol" style="color:#fff;font-weight:700;">216.0 u³</span>
+                </div>
+                <div style="display:flex;justify-content:space-between;">
+                    <span style="color:rgba(255,255,255,0.3);">surface area</span>
+                    <span id="dim-sa" style="color:#fff;font-weight:700;">216.0 u²</span>
+                </div>
+            </div>
+        </section>
+
+        <!-- ROTATION — condensed: axis selector + angle buttons -->
+        <section class="ctrl-card">
+            <h3>Rotation</h3>
+            <div style="margin-bottom:8px;">
+                <div class="lbl" style="margin-bottom:5px;">Axis</div>
+                <div class="g3">
+                    <div class="axis-toggle sel" id="rot-ax-x" onclick="selectRotAxis('x')" style="color:var(--ax-x);border-color:var(--ax-x);background:rgba(255,68,102,0.1);">X</div>
+                    <div class="axis-toggle" id="rot-ax-y" onclick="selectRotAxis('y')" style="color:var(--ax-y);border-color:rgba(255,255,255,0.1);">Y</div>
+                    <div class="axis-toggle" id="rot-ax-z" onclick="selectRotAxis('z')" style="color:var(--ax-z);border-color:rgba(255,255,255,0.1);">Z</div>
+                </div>
+            </div>
+            <div class="lbl" style="margin-bottom:5px;">Angle</div>
+            <div class="g4" id="rot-angle-btns">
+                <button onclick="applyRotation(state.rotAxis, -90)" class="btn-s">−90°</button>
+                <button onclick="applyRotation(state.rotAxis, -45)" class="btn-s">−45°</button>
+                <button onclick="applyRotation(state.rotAxis, 45)" class="btn-s">+45°</button>
+                <button onclick="applyRotation(state.rotAxis, 90)" class="btn-s">+90°</button>
+            </div>
+        </section>
+
+        <!-- REFLECTION -->
+        <section class="ctrl-card">
+            <h3>Reflection</h3>
+            <div class="g3">
+                <button onclick="applyReflection('xy')" class="btn-s"><span style="color:var(--ax-x);">X</span><span style="color:var(--ax-y);">Y</span></button>
+                <button onclick="applyReflection('xz')" class="btn-s"><span style="color:var(--ax-x);">X</span><span style="color:var(--ax-z);">Z</span></button>
+                <button onclick="applyReflection('yz')" class="btn-s"><span style="color:var(--ax-y);">Y</span><span style="color:var(--ax-z);">Z</span></button>
+            </div>
+        </section>
+
+        <!-- TRANSLATION -->
+        <section class="ctrl-card">
+            <h3>Translation</h3>
+            <div class="fc" style="gap:4px;">
+                <div style="display:flex;align-items:center;gap:6px;">
+                    <span class="lbl" style="color:var(--ax-x);min-width:16px;">Δx</span>
+                    <input type="range" id="transX" min="-10" max="10" step="1" value="0" style="flex:1;" oninput="updateTransUI()">
+                    <span id="tx-val" style="color:#fff;font-size:10px;font-family:'Fira Code',monospace;min-width:24px;text-align:right;">0</span>
+                </div>
+                <div style="display:flex;align-items:center;gap:6px;">
+                    <span class="lbl" style="color:var(--ax-y);min-width:16px;">Δy</span>
+                    <input type="range" id="transY" min="-10" max="10" step="1" value="0" style="flex:1;" oninput="updateTransUI()">
+                    <span id="ty-val" style="color:#fff;font-size:10px;font-family:'Fira Code',monospace;min-width:24px;text-align:right;">0</span>
+                </div>
+                <div style="display:flex;align-items:center;gap:6px;">
+                    <span class="lbl" style="color:var(--ax-z);min-width:16px;">Δz</span>
+                    <input type="range" id="transZ" min="-10" max="10" step="1" value="0" style="flex:1;" oninput="updateTransUI()">
+                    <span id="tz-val" style="color:#fff;font-size:10px;font-family:'Fira Code',monospace;min-width:24px;text-align:right;">0</span>
+                </div>
+                <button onclick="executeTranslation()" class="btn-primary" style="margin-top:4px;">Translate</button>
+            </div>
+        </section>
+
+        <!-- SCALE -->
+        <section class="ctrl-card">
+            <h3>Scale</h3>
+            <div style="display:flex;align-items:center;gap:6px;margin-bottom:6px;">
+                <span style="font-size:8px;font-weight:700;color:rgba(255,255,255,0.2);">0.25×</span>
+                <input type="range" id="k-slider" min="0.25" max="4" step="0.25" value="1.0" style="flex:1;" oninput="updateDilationUI()">
+                <span style="font-size:8px;font-weight:700;color:rgba(255,255,255,0.2);">4×</span>
+            </div>
+            <div class="dim-readout" style="margin-bottom:6px;">
+                <div style="display:flex;justify-content:space-between;">
+                    <span style="color:rgba(255,255,255,0.3);">k</span>
+                    <span id="dp-k" style="color:#fb923c;font-weight:700;">1.0×</span>
+                </div>
+                <div style="display:flex;justify-content:space-between;">
+                    <span style="color:rgba(255,255,255,0.3);">vol</span>
+                    <span id="dp-vol" style="color:#fff;font-weight:700;">—</span>
+                </div>
+            </div>
+            <button id="dilation-btn" onclick="fireDilation()" class="fire-btn">Scale ×1</button>
+        </section>
+
+        <!-- POINTS & CONNECTIONS -->
+        <section class="ctrl-card" style="border-color:rgba(255,255,255,0.15);">
+            <h3 style="color:#fff;">Points</h3>
+            <div class="g3" style="margin-bottom:6px;">
+                <button class="color-mode-btn active" onclick="setPointMode('on')" id="pt-on">Show</button>
+                <button class="color-mode-btn" onclick="setPointMode('off')" id="pt-off">Hide</button>
+                <button class="color-mode-btn" onclick="setPointMode('coords')" id="pt-coords">Coords</button>
+            </div>
+            <div style="font-size:7px;color:rgba(255,255,255,0.12);text-align:center;line-height:1.4;margin-bottom:6px;">
+                Show: letter labels · Coords: full (x,y,z)
+            </div>
+            <div id="conn-tools" style="display:none;">
+                <div style="font-size:7px;color:rgba(255,255,255,0.12);text-align:center;margin-bottom:4px;">Click 2 vertices to connect</div>
+                <div class="g2">
+                    <button class="color-mode-btn" onclick="clearConnections()" id="conn-clear">Clear Connections</button>
+                    <button class="color-mode-btn" onclick="toggleConnectMode()" id="conn-mode-btn">Connect: OFF</button>
+                </div>
+            </div>
+            <button class="btn-s" onclick="document.getElementById('conn-tools').style.display = document.getElementById('conn-tools').style.display==='none'?'block':'none'; this.textContent = document.getElementById('conn-tools').style.display==='none'?'Measure Tool ▸':'Measure Tool ▾'" style="width:100%;margin-top:4px;font-size:8px;color:rgba(255,255,255,0.3);">Measure Tool ▸</button>
+        </section>
+
+        <!-- FACE RENDERING -->
+        <section class="ctrl-card">
+            <h3 style="color:#fb923c;">Faces</h3>
+            <div class="g3">
+                <button class="color-mode-btn active" onclick="setColorMode('normal')" id="cm-normal">Normal</button>
+                <button class="color-mode-btn" onclick="setColorMode('axis')" id="cm-axis">Axis</button>
+                <button class="color-mode-btn" onclick="setColorMode('flat')" id="cm-flat">Flat</button>
+            </div>
+            <div style="font-size:7px;color:rgba(255,255,255,0.15);text-align:center;margin-top:4px;">Click a face in viewport to inspect</div>
+        </section>
+
+        <!-- TRACE MEMORY -->
+        <section class="ctrl-card" style="border-color:rgba(255,40,40,0.2);">
+            <h3 style="color:#f87171;">Traces</h3>
+            <div style="font-size:8px;color:rgba(255,255,255,0.2);text-align:center;margin-bottom:6px;text-transform:uppercase;letter-spacing:0.2em;" id="trace-count">no traces</div>
+            <div class="g2">
+                <button id="btn-recall" class="trace-btn" style="background:rgba(255,34,34,0.1);border:1px solid rgba(255,34,34,0.3);color:#f87171;opacity:0.3;" onclick="recallLast()" disabled>⟳ Recall</button>
+                <button id="btn-clear-traces" class="trace-btn" style="background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.08);color:rgba(255,255,255,0.3);opacity:0.3;" onclick="clearTraces()" disabled>✕ Clear</button>
+            </div>
+        </section>
+    </aside>
+
+    <!-- ═══════ VIEWPORT ═══════ -->
+    <div class="viewport" id="viewport">
+        <div class="metrics-hud">
+            <div class="metrics-row">
+                <div><div class="metric-label">Vol (u³)</div><div class="metric-value" id="vol-val">0.0</div></div>
+                <div><div class="metric-label">SA (u²)</div><div class="metric-value" id="sa-val">0.0</div></div>
+                <div><div class="metric-label">Verts</div><div class="metric-value sm" id="vert-val">0</div></div>
+                <div><div class="metric-label">Faces</div><div class="metric-value sm" id="face-val">0</div></div>
+                <div class="math-readout"><div class="latex-hud" id="latex-box"></div></div>
+            </div>
+            <div class="conn-readout" id="conn-readout"></div>
+        </div>
+
+        <div class="view-badge">
+            <div class="vb-name" id="view-name">Isometric</div>
+            <div class="vb-sub" id="view-sub">Perspective</div>
+        </div>
+
+        <div class="ax-legend">
+            <div class="ax-row"><div class="ax-dot" style="background:var(--ax-x);"></div><span class="ax-label" style="color:var(--ax-x);">X</span><span class="ax-hint">Horizontal</span></div>
+            <div class="ax-row"><div class="ax-dot" style="background:var(--ax-y);"></div><span class="ax-label" style="color:var(--ax-y);">Y</span><span class="ax-hint">Vertical</span></div>
+            <div class="ax-row"><div class="ax-dot" style="background:var(--ax-z);"></div><span class="ax-label" style="color:var(--ax-z);">Z</span><span class="ax-hint">Depth</span></div>
+            <div id="view-hint" style="margin-top:4px;font-size:7px;color:rgba(255,255,255,0.15);text-transform:uppercase;letter-spacing:0.1em;border-top:1px solid rgba(255,255,255,0.04);padding-top:4px;">All axes visible</div>
+        </div>
+
+        <div class="face-info" id="face-info" style="display:none;">
+            <div class="face-info-inner">
+                <div style="font-size:8px;font-weight:900;color:#fb923c;text-transform:uppercase;letter-spacing:0.2em;margin-bottom:6px;">Face Info</div>
+                <div id="face-detail" style="font-family:'Fira Code',monospace;font-size:10px;color:rgba(255,255,255,0.7);line-height:1.6;"></div>
+            </div>
+        </div>
+
+        <div class="ledger-btn"><button onclick="toggleLedger()">Examine Moves</button></div>
+    </div>
+</div>
+
+<!-- LEDGER OVERLAY -->
+<div id="ledger-overlay">
+    <div id="ledger-window">
+        <div style="padding:30px;height:100%;display:flex;flex-direction:column;">
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:24px;">
+                <h2 style="font-size:2.5rem;font-weight:900;color:#fff;font-style:italic;letter-spacing:-0.03em;text-transform:uppercase;">Move <span style="color:#a855f7;">History</span></h2>
+                <button onclick="toggleLedger()" style="padding:10px 20px;background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.1);border-radius:9999px;cursor:pointer;color:#fff;font-weight:900;font-size:10px;text-transform:uppercase;letter-spacing:0.1em;font-family:'Inter',sans-serif;">Resume</button>
+            </div>
+            <div id="history-ledger" style="flex:1;overflow-y:auto;padding-right:12px;"></div>
+        </div>
+    </div>
+</div>
+
+<script>
+// ══════════════════════════════════════════════════════════
+// VINCULUM 3D ENGINE V2.2
+// ══════════════════════════════════════════════════════════
+
+const AXIS_COLORS = { x: 0xff4466, y: 0x44ff66, z: 0x4488ff };
+
+const viewport = document.getElementById('viewport');
+const scene = new THREE.Scene();
+const camera = new THREE.PerspectiveCamera(50, 1, 0.1, 1000);
+const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+renderer.setPixelRatio(window.devicePixelRatio);
+renderer.setClearColor(0x000000, 0);
+viewport.insertBefore(renderer.domElement, viewport.firstChild);
+renderer.domElement.id = 'three-canvas';
+
+const raycaster = new THREE.Raycaster();
+const mouse = new THREE.Vector2();
+
+// ── State ──
+const state = {
+    vertices: [], faces: [], shapeName: 'cube',
+    currentView: 'iso', colorMode: 'normal',
+    selectedFaceIdx: -1, rotAxis: 'x',
+    cubeMode: 'solid',  // 'solid' | 'glass' | 'exploded' | 'off'
+    cubeOrigin: 'center', // 'center' = cube centered on origin, 'vertex' = corner on origin
+    dimMode: 'box', // 'box' | 'cylinder' | 'none' — how sliders rebuild shape
+    sparkOn: true, // shimmer sparks toggle
+    showCubeNumbers: true, // exploded view numbering toggle
+    showLattice: false, showFloorDots: false,
+    boxW: 6, boxH: 6, boxD: 6,
+    pointMode: 'on', // 'on' | 'off' | 'coords'
+    connectMode: false, // whether clicking selects vertices for connection
+    connectFirst: -1, // first selected vertex index
+    connections: [], // [{a: vertIdx, b: vertIdx}]
+    ghosts: [], pinnedGhost: null, history: [],
+    volume: 0, surfaceArea: 0,
+    orbitEnabled: false, mouseDown: false, mouseMoved: false,
+    mouseX: 0, mouseY: 0,
+    camTheta: Math.PI / 4, camPhi: Math.PI / 6, camDist: 22,
+};
+
+let connectionGroup = new THREE.Group();
+let sparkEdges = []; // references to spark ShaderMaterial instances for animation
+let heartbeatMat = null; // the unit cube face material when pulsing
+let heartbeatEdgeMat = null; // the unit cube edge material when pulsing
+
+// ── Solid Library ──
+function makeBox(w, h, d) {
+    const hw = w/2, hh = h/2, hd = d/2;
+    return {
+        vertices: [
+            [-hw,-hh,-hd],[hw,-hh,-hd],[hw,hh,-hd],[-hw,hh,-hd],
+            [-hw,-hh,hd],[hw,-hh,hd],[hw,hh,hd],[-hw,hh,hd]
+        ],
+        faces: [
+            [0,1,2],[0,2,3],[4,6,5],[4,7,6],
+            [0,4,5],[0,5,1],[2,6,7],[2,7,3],
+            [0,3,7],[0,7,4],[1,5,6],[1,6,2],
+        ]
+    };
+}
+
+function getBoundingBox(verts) {
+    let minX=Infinity,minY=Infinity,minZ=Infinity,maxX=-Infinity,maxY=-Infinity,maxZ=-Infinity;
+    verts.forEach(([x,y,z]) => {
+        minX=Math.min(minX,x); minY=Math.min(minY,y); minZ=Math.min(minZ,z);
+        maxX=Math.max(maxX,x); maxY=Math.max(maxY,y); maxZ=Math.max(maxZ,z);
+    });
+    return { minX, minY, minZ, maxX, maxY, maxZ };
+}
+
+function makeCylinder(r, h, segs) {
+    segs = segs || 24;
+    const verts = [];
+    verts.push([0, -h/2, 0]); // 0: bottom center
+    verts.push([0, h/2, 0]);  // 1: top center
+    for (let i = 0; i < segs; i++) {
+        const a = (i / segs) * Math.PI * 2;
+        const x = r * Math.cos(a), z = r * Math.sin(a);
+        verts.push([x, -h/2, z]);
+        verts.push([x, h/2, z]);
+    }
+    const faces = [];
+    for (let i = 0; i < segs; i++) {
+        const bCur = 2 + i * 2;
+        const bNext = 2 + ((i + 1) % segs) * 2;
+        const tCur = 3 + i * 2;
+        const tNext = 3 + ((i + 1) % segs) * 2;
+        faces.push([0, bNext, bCur]);
+        faces.push([1, tCur, tNext]);
+        faces.push([bCur, bNext, tNext]);
+        faces.push([bCur, tNext, tCur]);
+    }
+    return { vertices: verts, faces: faces };
+}
+
+const solidLibrary = {
+    cube: makeBox(6, 6, 6),
+    unit: makeBox(1, 1, 1),
+    tetra: {
+        vertices: [[0,4,0],[-3,-2,3],[3,-2,3],[0,-2,-3]],
+        faces: [[0,1,2],[0,2,3],[0,3,1],[1,3,2]]
+    },
+    octa: {
+        vertices: [[0,4,0],[0,-4,0],[4,0,0],[-4,0,0],[0,0,4],[0,0,-4]],
+        faces: [[0,2,4],[0,4,3],[0,3,5],[0,5,2],[1,4,2],[1,3,4],[1,5,3],[1,2,5]]
+    },
+    prism: {
+        vertices: [[-3,-3,-2],[3,-3,-2],[0,3,-2],[-3,-3,2],[3,-3,2],[0,3,2]],
+        faces: [[0,1,2],[3,5,4],[0,3,4],[0,4,1],[1,4,5],[1,5,2],[0,2,5],[0,5,3]]
+    },
+    pyramid: {
+        vertices: [[-3,0,-3],[3,0,-3],[3,0,3],[-3,0,3],[0,5,0]],
+        faces: [[0,1,2],[0,2,3],[0,4,1],[1,4,2],[2,4,3],[3,4,0]]
+    },
+    rectprism: makeBox(10, 6, 4),
+    cylinder: makeCylinder(3, 6, 24),
+    dodeca: (() => {
+        const phi = (1 + Math.sqrt(5)) / 2, s = 2;
+        const a = s, b = s / phi, c = s * phi;
+        const v = [[-a,-a,-a],[-a,-a,a],[-a,a,-a],[-a,a,a],[a,-a,-a],[a,-a,a],[a,a,-a],[a,a,a],[0,-b,-c],[0,-b,c],[0,b,-c],[0,b,c],[-b,-c,0],[-b,c,0],[b,-c,0],[b,c,0],[-c,0,-b],[c,0,-b],[-c,0,b],[c,0,b]];
+        const f = [[0,8,4],[0,4,14],[0,14,12],[0,12,1],[0,1,18],[0,18,16],[0,16,2],[0,2,10],[0,10,8],[7,11,3],[7,3,13],[7,13,15],[7,15,6],[7,6,17],[7,17,19],[7,19,5],[7,5,9],[7,9,11],[1,12,14],[1,14,5],[1,5,9],[1,9,11],[1,11,3],[1,3,18],[2,16,18],[2,18,3],[2,3,13],[2,13,15],[2,15,6],[2,6,10],[4,8,10],[4,10,6],[4,6,17],[4,17,19],[4,19,5],[4,5,14]];
+        return { vertices: v, faces: f };
+    })()
+};
+
+const GHOST_LIFE = 60000;
+
+let meshGroup = new THREE.Group();
+let ghostGroup = new THREE.Group();
+let pinnedGhostGroup = new THREE.Group();
+let axisLabelsGroup = new THREE.Group();
+let unitCubeGroup = new THREE.Group();
+let latticeGroup = new THREE.Group();
+let floorDotsGroup = new THREE.Group();
+let gridHelper, axesGroup;
+let pickableMesh = null;
+
+scene.add(ghostGroup);
+scene.add(pinnedGhostGroup);
+scene.add(unitCubeGroup);
+scene.add(meshGroup);
+scene.add(axisLabelsGroup);
+scene.add(latticeGroup);
+scene.add(floorDotsGroup);
+scene.add(connectionGroup);
+
+// ══════════════════════════════════════════
+// INIT
+// ══════════════════════════════════════════
+function init() {
+    resize();
+    buildGrid();
+    buildAxes();
+    buildAxisLabels();
+    loadSolid('cube');
+    updateCamera();
+    animate();
+    updateTransUI();
+    updateDilationUI();
+    updateDimSliderUI();
+}
+
+function resize() {
+    const w = viewport.clientWidth, h = viewport.clientHeight;
+    camera.aspect = w / h;
+    camera.updateProjectionMatrix();
+    renderer.setSize(w, h);
+}
+window.addEventListener('resize', resize);
+
+// ══════════════════════════════════════════
+// GRID + AXES — compact labels at tips
+// ══════════════════════════════════════════
+function buildGrid() {
+    if (gridHelper) scene.remove(gridHelper);
+    gridHelper = new THREE.GridHelper(40, 40, 0x1a1a2e, 0x0a0a15);
+    gridHelper.material.opacity = 0.4;
+    gridHelper.material.transparent = true;
+    scene.add(gridHelper);
+}
+
+function buildAxes() {
+    if (axesGroup) scene.remove(axesGroup);
+    axesGroup = new THREE.Group();
+    const len = 16;
+
+    const makeLine = (from, to, color) => {
+        const g = new THREE.BufferGeometry().setFromPoints([new THREE.Vector3(...from), new THREE.Vector3(...to)]);
+        axesGroup.add(new THREE.Line(g, new THREE.LineBasicMaterial({ color, transparent: true, opacity: 0.7 })));
+    };
+    makeLine([-len,0,0],[len,0,0], AXIS_COLORS.x);
+    makeLine([0,-len,0],[0,len,0], AXIS_COLORS.y);
+    makeLine([0,0,-len],[0,0,len], AXIS_COLORS.z);
+
+    // Small arrowhead cones
+    const cone = new THREE.CylinderGeometry(0, 0.3, 0.9, 6);
+    const xC = new THREE.Mesh(cone, new THREE.MeshBasicMaterial({ color: AXIS_COLORS.x }));
+    xC.position.set(len, 0, 0); xC.rotation.z = -Math.PI/2; axesGroup.add(xC);
+    const yC = new THREE.Mesh(cone.clone(), new THREE.MeshBasicMaterial({ color: AXIS_COLORS.y }));
+    yC.position.set(0, len, 0); axesGroup.add(yC);
+    const zC = new THREE.Mesh(cone.clone(), new THREE.MeshBasicMaterial({ color: AXIS_COLORS.z }));
+    zC.position.set(0, 0, len); zC.rotation.x = Math.PI/2; axesGroup.add(zC);
+
+    scene.add(axesGroup);
+}
+
+function buildAxisLabels() {
+    while (axisLabelsGroup.children.length) axisLabelsGroup.remove(axisLabelsGroup.children[0]);
+
+    [{ t:'X', c:'#ff4466', p:[17,0.5,0] },
+     { t:'Y', c:'#44ff66', p:[0.5,17,0] },
+     { t:'Z', c:'#4488ff', p:[0,0.5,17] }].forEach(l => {
+        const cv = document.createElement('canvas');
+        cv.width = 48; cv.height = 48;
+        const cx = cv.getContext('2d');
+        cx.beginPath(); cx.arc(24,24,20,0,Math.PI*2);
+        cx.fillStyle = 'rgba(0,0,0,0.55)'; cx.fill();
+        cx.strokeStyle = l.c; cx.lineWidth = 2; cx.stroke();
+        cx.fillStyle = l.c; cx.font = 'bold 26px Inter,sans-serif';
+        cx.textAlign = 'center'; cx.textBaseline = 'middle'; cx.fillText(l.t, 24, 25);
+        const tex = new THREE.CanvasTexture(cv);
+        tex.minFilter = THREE.LinearFilter;
+        const sp = new THREE.Sprite(new THREE.SpriteMaterial({ map: tex, transparent: true, depthTest: true, sizeAttenuation: true }));
+        sp.position.set(...l.p); sp.scale.set(1.0, 1.0, 1);
+        axisLabelsGroup.add(sp);
+    });
+}
+
+// ══════════════════════════════════════════
+// FACE COLORING
+// ══════════════════════════════════════════
+function computeFaceNormal(f) {
+    const a = state.vertices[f[0]], b = state.vertices[f[1]], c = state.vertices[f[2]];
+    const ab = [b[0]-a[0],b[1]-a[1],b[2]-a[2]], ac = [c[0]-a[0],c[1]-a[1],c[2]-a[2]];
+    const nx = ab[1]*ac[2]-ab[2]*ac[1], ny = ab[2]*ac[0]-ab[0]*ac[2], nz = ab[0]*ac[1]-ab[1]*ac[0];
+    const ln = Math.sqrt(nx*nx+ny*ny+nz*nz)||1;
+    return [nx/ln,ny/ln,nz/ln];
+}
+
+function getFaceColor(fIdx) {
+    const n = computeFaceNormal(state.faces[fIdx]);
+    if (state.colorMode === 'axis') {
+        const ax=Math.abs(n[0]),ay=Math.abs(n[1]),az=Math.abs(n[2]);
+        if(ax>=ay&&ax>=az) return new THREE.Color(0xff4466);
+        if(ay>=ax&&ay>=az) return new THREE.Color(0x44ff66);
+        return new THREE.Color(0x4488ff);
+    }
+    if (state.colorMode === 'normal') {
+        return new THREE.Color(0.15+Math.abs(n[0])*0.85, 0.08+Math.abs(n[1])*0.85, 0.15+Math.abs(n[2])*0.85);
+    }
+    return new THREE.Color(0xbc13fe);
+}
+
+function setColorMode(m) {
+    state.colorMode = m;
+    document.querySelectorAll('.color-mode-btn').forEach(b => b.classList.remove('active'));
+    document.getElementById('cm-'+m).classList.add('active');
+    rebuildMesh();
+}
+
+// ══════════════════════════════════════════
+// LOAD + REBUILD MESH
+// ══════════════════════════════════════════
+function loadSolid(name) {
+    addGhost();
+    let lib = solidLibrary[name];
+    if (name === 'unit') lib = makeBox(1,1,1);
+    state.vertices = JSON.parse(JSON.stringify(lib.vertices));
+    state.faces = JSON.parse(JSON.stringify(lib.faces));
+    state.shapeName = name;
+    state.selectedFaceIdx = -1;
+    document.getElementById('face-info').style.display = 'none';
+
+    // Sync dimension sliders for all shapes
+    if (name === 'cube') { setDimSliders(6,6,6); state.dimMode = 'box'; }
+    else if (name === 'unit') {
+        setDimSliders(1,1,1); state.dimMode = 'box';
+        if (state.cubeMode === 'off') setCubeMode('solid');
+    }
+    else if (name === 'rectprism') { setDimSliders(10,6,4); state.dimMode = 'box'; }
+    else if (name === 'cylinder') {
+        // For cylinder: X=diameter, Y=height, Z locked to match X (circular)
+        setDimSliders(6,6,6); state.dimMode = 'cylinder';
+    }
+    else {
+        // Other shapes: sliders show bounding box but don't rebuild
+        const bb = getBoundingBox(lib.vertices);
+        const bw = Math.round(bb.maxX - bb.minX) || 1;
+        const bh = Math.round(bb.maxY - bb.minY) || 1;
+        const bd = Math.round(bb.maxZ - bb.minZ) || 1;
+        setDimSliders(Math.min(12,bw), Math.min(12,bh), Math.min(12,bd));
+        state.dimMode = 'none';
+    }
+
+    // Force Center origin for non-box shapes (Vertex only valid for boxes)
+    if (state.dimMode !== 'box') {
+        state.cubeOrigin = 'center';
+    }
+    updateOriginBtn();
+    updateRotationBtns();
+
+    addHistory("Primitive", `Load ${name}`, `Solid initialized.`, `V=${lib.vertices.length},\\; F=${lib.faces.length}`);
+    rebuildMesh();
+}
+
+function setDimSliders(w,h,d) {
+    document.getElementById('dim-x').value = w; document.getElementById('dim-y').value = h; document.getElementById('dim-z').value = d;
+    state.boxW = w; state.boxH = h; state.boxD = d;
+    updateDimSliderUI();
+    updateDimLabels();
+}
+
+function updateDimLabels() {
+    const isCyl = (state.dimMode === 'cylinder');
+    const isNone = (state.dimMode === 'none');
+    document.getElementById('dim-x-label').textContent = isCyl ? 'D' : 'X';
+    document.getElementById('dim-y-label').textContent = isCyl ? 'H' : 'Y';
+    document.getElementById('dim-z-row').style.opacity = isCyl ? '0.3' : '1';
+    document.getElementById('dim-z').disabled = isCyl;
+    // For non-parametric shapes, dim all sliders
+    if (isNone) {
+        document.getElementById('dim-x').disabled = true;
+        document.getElementById('dim-y').disabled = true;
+        document.getElementById('dim-z').disabled = true;
+        ['dim-x-label','dim-y-label','dim-z-label'].forEach(id => {
+            document.getElementById(id).style.opacity = '0.3';
+        });
+    } else {
+        document.getElementById('dim-x').disabled = false;
+        document.getElementById('dim-y').disabled = false;
+        if (!isCyl) document.getElementById('dim-z').disabled = false;
+        ['dim-x-label','dim-y-label','dim-z-label'].forEach(id => {
+            document.getElementById(id).style.opacity = '1';
+        });
+        if (isCyl) document.getElementById('dim-z-label').style.opacity = '0.3';
+    }
+}
+
+function rebuildMesh() {
+    while (meshGroup.children.length) meshGroup.remove(meshGroup.children[0]);
+
+    const positions = [], colors = [];
+    state.faces.forEach((f, fIdx) => {
+        const col = (fIdx === state.selectedFaceIdx) ? new THREE.Color(1, 0.85, 0.2) : getFaceColor(fIdx);
+        f.forEach(idx => {
+            const v = state.vertices[idx];
+            positions.push(v[0], v[1], v[2]);
+            colors.push(col.r, col.g, col.b);
+        });
+    });
+
+    const geom = new THREE.BufferGeometry();
+    geom.setAttribute('position', new THREE.Float32BufferAttribute(positions, 3));
+    geom.setAttribute('color', new THREE.Float32BufferAttribute(colors, 3));
+    geom.computeVertexNormals();
+
+    // Shape mesh: hidden when voxels are active on non-box shapes (the voxels ARE the shape)
+    // For box shapes, keep ghost-thin. For non-box with cubes off, show more visible.
+    const isBoxShape = (state.dimMode === 'box');
+    const voxelsAreShape = (!isBoxShape && state.cubeMode !== 'off');
+    const shapeOpacity = voxelsAreShape ? 0.0 : (isBoxShape ? 0.08 : 0.22);
+    const solidMat = new THREE.MeshPhongMaterial({ vertexColors:true, transparent:true, opacity:shapeOpacity, side:THREE.DoubleSide, depthWrite:false, shininess:60, flatShading:true });
+    const solidMesh = new THREE.Mesh(geom, solidMat);
+    solidMesh.visible = !voxelsAreShape;
+    meshGroup.add(solidMesh);
+    pickableMesh = solidMesh;
+
+    // No wireframe — unit cubes provide the structure
+
+    // Vertex dots + labels (respect pointMode)
+    if (state.pointMode !== 'off') {
+        const dotGeo = new THREE.SphereGeometry(0.18, 8, 8);
+        const dotMat = new THREE.MeshBasicMaterial({ color: 0xffffff });
+        const selDotMat = new THREE.MeshBasicMaterial({ color: 0xfb923c });
+        state.vertices.forEach((v, i) => {
+            const isSelected = (state.connectMode && state.connectFirst === i);
+            const d = new THREE.Mesh(dotGeo, isSelected ? selDotMat : dotMat.clone());
+            d.position.set(v[0],v[1],v[2]);
+            d.userData = { vertIdx: i };
+            meshGroup.add(d);
+        });
+
+        // Labels: letters or full coordinates
+        state.vertices.forEach((v,i) => {
+            const name = getVertexName(i);
+            const showCoords = (state.pointMode === 'coords');
+            const label = showCoords ? `${name}(${dispR(v[0])},${dispR(v[1])},${dispR(v[2])})` : name;
+            const cvW = showCoords ? 180 : 32;
+            const cvH = showCoords ? 28 : 32;
+            const cv = document.createElement('canvas');
+            cv.width = cvW; cv.height = cvH;
+            const cx = cv.getContext('2d');
+            if (showCoords) {
+                cx.fillStyle = 'rgba(0,0,0,0.7)'; cx.beginPath();
+                cx.roundRect(0, 0, cvW, cvH, 6); cx.fill();
+                cx.fillStyle = '#fff'; cx.font = 'bold 13px Fira Code,monospace';
+                cx.textAlign = 'center'; cx.textBaseline = 'middle';
+                cx.fillText(label, cvW/2, cvH/2);
+            } else {
+                cx.beginPath(); cx.arc(16,16,14,0,Math.PI*2);
+                cx.fillStyle = 'rgba(0,0,0,0.5)'; cx.fill();
+                cx.fillStyle = '#fff'; cx.font = 'bold 18px Inter,sans-serif';
+                cx.textAlign = 'center'; cx.textBaseline = 'middle'; cx.fillText(label,16,17);
+            }
+            const tex = new THREE.CanvasTexture(cv); tex.minFilter = THREE.LinearFilter;
+            const sp = new THREE.Sprite(new THREE.SpriteMaterial({ map:tex, transparent:true, depthTest:true, sizeAttenuation:true }));
+            sp.position.set(v[0], v[1]+0.55, v[2]);
+            sp.scale.set(showCoords ? 2.2 : 0.55, showCoords ? 0.35 : 0.55, 1);
+            meshGroup.add(sp);
+        });
+    }
+
+    updateMetrics();
+    rebuildUnitCubes();
+    rebuildConnections();
+}
+
+// ══════════════════════════════════════════
+// VERTEX NAMING + POINTS + CONNECTIONS
+// ══════════════════════════════════════════
+// roundRect polyfill for older browsers
+if (!CanvasRenderingContext2D.prototype.roundRect) {
+    CanvasRenderingContext2D.prototype.roundRect = function(x, y, w, h, r) {
+        this.moveTo(x+r,y); this.arcTo(x+w,y,x+w,y+h,r); this.arcTo(x+w,y+h,x,y+h,r);
+        this.arcTo(x,y+h,x,y,r); this.arcTo(x,y,x+w,y,r); this.closePath();
+    };
+}
+
+function getVertexName(i) {
+    // A, B, C, ... Z, A1, B1, ...
+    const letter = String.fromCharCode(65 + (i % 26));
+    const suffix = i >= 26 ? Math.floor(i / 26) : '';
+    return letter + suffix;
+}
+
+function setPointMode(mode) {
+    state.pointMode = mode;
+    document.querySelectorAll('#pt-on,#pt-off,#pt-coords').forEach(b => b.classList.remove('active'));
+    document.getElementById('pt-' + mode).classList.add('active');
+    rebuildMesh();
+}
+
+function toggleConnectMode() {
+    state.connectMode = !state.connectMode;
+    state.connectFirst = -1;
+    const btn = document.getElementById('conn-mode-btn');
+    btn.textContent = state.connectMode ? 'Connect: ON' : 'Connect: OFF';
+    btn.classList.toggle('active', state.connectMode);
+}
+
+function clearConnections() {
+    state.connections = [];
+    state.connectFirst = -1;
+    rebuildConnections();
+    updateConnectionReadout();
+}
+
+function handleVertexClick(vertIdx) {
+    if (!state.connectMode) return false;
+    if (state.connectFirst < 0) {
+        state.connectFirst = vertIdx;
+        rebuildMesh(); // highlight selected vertex
+        return true;
+    } else {
+        if (vertIdx !== state.connectFirst) {
+            state.connections.push({ a: state.connectFirst, b: vertIdx });
+        }
+        state.connectFirst = -1;
+        rebuildMesh();
+        rebuildConnections();
+        updateConnectionReadout();
+        return true;
+    }
+}
+
+function rebuildConnections() {
+    while (connectionGroup.children.length) connectionGroup.remove(connectionGroup.children[0]);
+    state.connections.forEach(conn => {
+        if (conn.a >= state.vertices.length || conn.b >= state.vertices.length) return;
+        const va = state.vertices[conn.a], vb = state.vertices[conn.b];
+        const g = new THREE.BufferGeometry().setFromPoints([
+            new THREE.Vector3(va[0], va[1], va[2]),
+            new THREE.Vector3(vb[0], vb[1], vb[2])
+        ]);
+        const line = new THREE.Line(g, new THREE.LineBasicMaterial({ color: 0xfb923c, linewidth: 2, transparent: true, opacity: 0.9 }));
+        connectionGroup.add(line);
+
+        // Midpoint label with distance
+        const mx = (va[0]+vb[0])/2, my = (va[1]+vb[1])/2, mz = (va[2]+vb[2])/2;
+        const dist = Math.sqrt((vb[0]-va[0])**2 + (vb[1]-va[1])**2 + (vb[2]-va[2])**2);
+        const cv = document.createElement('canvas');
+        cv.width = 100; cv.height = 24;
+        const cx = cv.getContext('2d');
+        cx.fillStyle = 'rgba(251,146,60,0.85)'; cx.beginPath();
+        cx.roundRect(0, 0, 100, 24, 6); cx.fill();
+        cx.fillStyle = '#fff'; cx.font = 'bold 13px Fira Code,monospace';
+        cx.textAlign = 'center'; cx.textBaseline = 'middle';
+        cx.fillText(dist.toFixed(2) + 'u', 50, 12);
+        const tex = new THREE.CanvasTexture(cv); tex.minFilter = THREE.LinearFilter;
+        const sp = new THREE.Sprite(new THREE.SpriteMaterial({ map: tex, transparent: true, depthTest: false }));
+        sp.position.set(mx, my + 0.4, mz); sp.scale.set(1.2, 0.3, 1);
+        connectionGroup.add(sp);
+    });
+}
+
+function updateConnectionReadout() {
+    const el = document.getElementById('conn-readout');
+    if (!state.connections.length) {
+        el.classList.remove('active');
+        el.innerHTML = '';
+        return;
+    }
+    el.classList.add('active');
+    const lines = state.connections.map(conn => {
+        if (conn.a >= state.vertices.length || conn.b >= state.vertices.length) return '';
+        const va = state.vertices[conn.a], vb = state.vertices[conn.b];
+        const nA = getVertexName(conn.a), nB = getVertexName(conn.b);
+        const dist = Math.sqrt((vb[0]-va[0])**2 + (vb[1]-va[1])**2 + (vb[2]-va[2])**2);
+        return `<span style="color:#fb923c;">${nA}→${nB}</span> = <span style="color:#fff;font-weight:700;">${dist.toFixed(2)}u</span>`;
+    }).filter(Boolean);
+    el.innerHTML = lines.join(' &nbsp;·&nbsp; ');
+}
+
+// ══════════════════════════════════════════
+// UNIT CUBES + LATTICE
+// ══════════════════════════════════════════
+function setCubeMode(mode) {
+    state.cubeMode = mode;
+    document.querySelectorAll('#uc-off,#uc-solid,#uc-glass,#uc-exploded').forEach(b => b.classList.remove('active'));
+    document.getElementById('uc-' + mode).classList.add('active');
+    rebuildUnitCubes();
+}
+
+function toggleSpark() {
+    state.sparkOn = !state.sparkOn;
+    const btn = document.getElementById('spark-btn');
+    btn.textContent = state.sparkOn ? 'Shimmer: ON' : 'Shimmer: OFF';
+    btn.classList.toggle('active', state.sparkOn);
+    btn.style.color = state.sparkOn ? '#fde047' : '#94a3b8';
+    btn.style.borderColor = state.sparkOn ? 'rgba(253,224,71,0.4)' : 'rgba(255,255,255,0.1)';
+    rebuildUnitCubes();
+}
+
+function toggleCubeNumbers() {
+    state.showCubeNumbers = !state.showCubeNumbers;
+    const btn = document.getElementById('num-btn');
+    btn.textContent = state.showCubeNumbers ? 'Numbers: ON' : 'Numbers: OFF';
+    btn.classList.toggle('active', state.showCubeNumbers);
+    rebuildUnitCubes();
+}
+
+function toggleCubeOrigin() {
+    // Vertex origin only available for box shapes (box, rectprism, unit)
+    if (state.dimMode !== 'box') return;
+    state.cubeOrigin = state.cubeOrigin === 'center' ? 'vertex' : 'center';
+    updateOriginBtn();
+    rebuildUnitCubes();
+}
+
+function updateOriginBtn() {
+    const btn = document.getElementById('origin-btn');
+    const allowed = (state.dimMode === 'box');
+    btn.textContent = state.cubeOrigin === 'center' ? 'Origin: Center' : 'Origin: Vertex';
+    btn.disabled = !allowed;
+    btn.style.opacity = allowed ? '1' : '0.3';
+    btn.style.cursor = allowed ? 'pointer' : 'not-allowed';
+    if (!allowed) btn.title = 'Vertex origin only available for box shapes';
+    else btn.title = '';
+}
+
+function updateRotationBtns() {
+    // Disable rotation for cylinder mode (clip shader assumes Y-axis alignment)
+    const blocked = (state.dimMode === 'cylinder');
+    const container = document.getElementById('rot-angle-btns');
+    if (container) {
+        Array.from(container.children).forEach(btn => {
+            btn.disabled = blocked;
+            btn.style.opacity = blocked ? '0.3' : '1';
+            btn.style.cursor = blocked ? 'not-allowed' : 'pointer';
+            btn.title = blocked ? 'Rotation disabled for cylinder (clip requires axis alignment)' : '';
+        });
+    }
+    // Also disable axis selectors
+    ['x','y','z'].forEach(a => {
+        const el = document.getElementById('rot-ax-' + a);
+        if (el) {
+            el.style.opacity = blocked ? '0.3' : '';
+            el.style.pointerEvents = blocked ? 'none' : '';
+        }
+    });
+}
+
+// ── Cylinder-clip face shader: Phong lighting + radial discard ──
+// uExpOffset: subtracted from world pos before clip test → cubes keep their carved shape when exploded
+const cylClipVert = `
+    uniform vec3 uExpOffset;
+    varying vec3 vNormal;
+    varying vec3 vViewPos;
+    varying vec3 vClipPos;
+    void main() {
+        vNormal = normalMatrix * normal;
+        vec4 mvPos = modelViewMatrix * vec4(position, 1.0);
+        vViewPos = mvPos.xyz;
+        vec3 wPos = (modelMatrix * vec4(position, 1.0)).xyz;
+        vClipPos = wPos - uExpOffset;
+        gl_Position = projectionMatrix * mvPos;
+    }
+`;
+const cylClipFrag = `
+    uniform vec3 uColor;
+    uniform vec3 uColor2;
+    uniform float uOpacity;
+    uniform float uShininess;
+    uniform float uCylR2;
+    varying vec3 vNormal;
+    varying vec3 vViewPos;
+    varying vec3 vClipPos;
+    void main() {
+        float d2 = vClipPos.x * vClipPos.x + vClipPos.z * vClipPos.z;
+        if (d2 > uCylR2) discard;
+
+        vec3 N = normalize(gl_FrontFacing ? vNormal : -vNormal);
+        vec3 V = normalize(-vViewPos);
+        vec3 L1 = normalize(vec3(0.5, 1.0, 0.3));
+        vec3 L2 = normalize(vec3(-0.4, 0.3, -0.7));
+
+        float diff1 = max(dot(N, L1), 0.0);
+        float diff2 = max(dot(N, L2), 0.0) * 0.25;
+
+        vec3 R1 = reflect(-L1, N);
+        float spec = pow(max(dot(V, R1), 0.0), uShininess);
+
+        float edgeFrac = sqrt(d2 / uCylR2);
+        float rimGlow = smoothstep(0.8, 1.0, edgeFrac) * 0.2;
+
+        vec3 base = gl_FrontFacing ? uColor : uColor2;
+        vec3 col = base * (0.2 + 0.55 * diff1 + diff2) + vec3(1.0) * spec * 0.22;
+        col += vec3(0.55, 0.45, 1.0) * rimGlow;
+
+        gl_FragColor = vec4(col, uOpacity);
+    }
+`;
+
+// ── Cylinder-clip edge shader ──
+const cylClipEdgeVert = `
+    uniform vec3 uExpOffset;
+    varying vec3 vClipPos;
+    void main() {
+        vec3 wPos = (modelMatrix * vec4(position, 1.0)).xyz;
+        vClipPos = wPos - uExpOffset;
+        gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
+    }
+`;
+const cylClipEdgeFrag = `
+    uniform vec3 uColor;
+    uniform float uOpacity;
+    uniform float uCylR2;
+    varying vec3 vClipPos;
+    void main() {
+        float d2 = vClipPos.x * vClipPos.x + vClipPos.z * vClipPos.z;
+        if (d2 > uCylR2) discard;
+        gl_FragColor = vec4(uColor, uOpacity);
+    }
+`;
+
+// ── Convex polyhedron half-plane clipping ──
+// Computes unique outward-facing clip planes from triangulated faces
+function computeClipPlanes(vertices, faces) {
+    const planes = [];
+    for (const f of faces) {
+        const a = vertices[f[0]], b = vertices[f[1]], c = vertices[f[2]];
+        const e1 = [b[0]-a[0], b[1]-a[1], b[2]-a[2]];
+        const e2 = [c[0]-a[0], c[1]-a[1], c[2]-a[2]];
+        let nx = e1[1]*e2[2] - e1[2]*e2[1];
+        let ny = e1[2]*e2[0] - e1[0]*e2[2];
+        let nz = e1[0]*e2[1] - e1[1]*e2[0];
+        const len = Math.sqrt(nx*nx + ny*ny + nz*nz);
+        if (len < 1e-8) continue;
+        nx /= len; ny /= len; nz /= len;
+        const d = -(nx*a[0] + ny*a[1] + nz*a[2]);
+        // Deduplicate co-planar faces
+        let isDup = false;
+        for (const p of planes) {
+            const dot = p[0]*nx + p[1]*ny + p[2]*nz;
+            if (Math.abs(dot - 1) < 0.01 && Math.abs(p[3] - d) < 0.05) { isDup = true; break; }
+        }
+        if (!isDup) planes.push([nx, ny, nz, d]);
+    }
+    // Ensure normals point OUTWARD (centroid should test as inside, i.e. dot+d < 0)
+    const cx = vertices.reduce((s,v) => s+v[0], 0) / vertices.length;
+    const cy = vertices.reduce((s,v) => s+v[1], 0) / vertices.length;
+    const cz = vertices.reduce((s,v) => s+v[2], 0) / vertices.length;
+    for (const p of planes) {
+        const val = p[0]*cx + p[1]*cy + p[2]*cz + p[3];
+        if (val > 0) { p[0] = -p[0]; p[1] = -p[1]; p[2] = -p[2]; p[3] = -p[3]; }
+    }
+    return planes;
+}
+
+// ── Poly clip face shader ──
+const polyClipVert = `
+    uniform vec3 uExpOffset;
+    varying vec3 vNormal;
+    varying vec3 vViewPos;
+    varying vec3 vClipPos;
+    void main() {
+        vNormal = normalMatrix * normal;
+        vec4 mvPos = modelViewMatrix * vec4(position, 1.0);
+        vViewPos = mvPos.xyz;
+        vec3 wPos = (modelMatrix * vec4(position, 1.0)).xyz;
+        vClipPos = wPos - uExpOffset;
+        gl_Position = projectionMatrix * mvPos;
+    }
+`;
+const polyClipFrag = `
+    uniform vec3 uColor;
+    uniform vec3 uColor2;
+    uniform float uOpacity;
+    uniform float uShininess;
+    uniform vec4 uPlanes[24];
+    uniform int uPlaneCount;
+    varying vec3 vNormal;
+    varying vec3 vViewPos;
+    varying vec3 vClipPos;
+    void main() {
+        for (int i = 0; i < 24; i++) {
+            if (i >= uPlaneCount) break;
+            float d = dot(vClipPos, uPlanes[i].xyz) + uPlanes[i].w;
+            if (d > 0.0) discard;
+        }
+        vec3 N = normalize(gl_FrontFacing ? vNormal : -vNormal);
+        vec3 V = normalize(-vViewPos);
+        vec3 L1 = normalize(vec3(0.5, 1.0, 0.3));
+        vec3 L2 = normalize(vec3(-0.4, 0.3, -0.7));
+        float diff1 = max(dot(N, L1), 0.0);
+        float diff2 = max(dot(N, L2), 0.0) * 0.25;
+        vec3 R1 = reflect(-L1, N);
+        float spec = pow(max(dot(V, R1), 0.0), uShininess);
+        // Edge glow: find min distance to any plane
+        float minDist = 999.0;
+        for (int i = 0; i < 24; i++) {
+            if (i >= uPlaneCount) break;
+            float d = -(dot(vClipPos, uPlanes[i].xyz) + uPlanes[i].w);
+            minDist = min(minDist, d);
+        }
+        float edgeFrac = 1.0 - clamp(minDist * 2.0, 0.0, 1.0);
+        float rimGlow = smoothstep(0.7, 1.0, edgeFrac) * 0.15;
+        vec3 base = gl_FrontFacing ? uColor : uColor2;
+        vec3 col = base * (0.2 + 0.55 * diff1 + diff2) + vec3(1.0) * spec * 0.22;
+        col += vec3(0.55, 0.45, 1.0) * rimGlow;
+        gl_FragColor = vec4(col, uOpacity);
+    }
+`;
+
+// ── Poly clip edge shader ──
+const polyClipEdgeVert = `
+    uniform vec3 uExpOffset;
+    varying vec3 vClipPos;
+    void main() {
+        vec3 wPos = (modelMatrix * vec4(position, 1.0)).xyz;
+        vClipPos = wPos - uExpOffset;
+        gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
+    }
+`;
+const polyClipEdgeFrag = `
+    uniform vec3 uColor;
+    uniform float uOpacity;
+    uniform vec4 uPlanes[24];
+    uniform int uPlaneCount;
+    varying vec3 vClipPos;
+    void main() {
+        for (int i = 0; i < 24; i++) {
+            if (i >= uPlaneCount) break;
+            float d = dot(vClipPos, uPlanes[i].xyz) + uPlanes[i].w;
+            if (d > 0.0) discard;
+        }
+        gl_FragColor = vec4(uColor, uOpacity);
+    }
+`;
+
+// ── Poly spark shader ──
+const polySparkVert = `
+    uniform float uTime;
+    uniform vec3 uExpOffset;
+    attribute float edgeRandom;
+    varying float vSpark;
+    varying float vRand;
+    varying vec3 vClipPos;
+    void main() {
+        vRand = edgeRandom;
+        vec3 wPos = (modelMatrix * vec4(position, 1.0)).xyz;
+        vClipPos = wPos - uExpOffset;
+        float pos = position.x * 3.7 + position.y * 5.3 + position.z * 4.1;
+        float wave = sin(pos * 2.0 + uTime * 4.0 + edgeRandom * 40.0);
+        float wave2 = sin(pos * 7.0 - uTime * 6.5 + edgeRandom * 20.0);
+        float flicker = sin(uTime * 15.0 + edgeRandom * 100.0) * 0.5 + 0.5;
+        float raw = wave * wave2 * flicker;
+        vSpark = smoothstep(0.15, 0.6, raw);
+        gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
+    }
+`;
+const polySparkFrag = `
+    uniform float uTime;
+    uniform float uIntensity;
+    uniform vec4 uPlanes[24];
+    uniform int uPlaneCount;
+    varying float vSpark;
+    varying float vRand;
+    varying vec3 vClipPos;
+    void main() {
+        for (int i = 0; i < 24; i++) {
+            if (i >= uPlaneCount) break;
+            float d = dot(vClipPos, uPlanes[i].xyz) + uPlanes[i].w;
+            if (d > 0.0) discard;
+        }
+        vec3 baseCol = vec3(0.45, 0.45, 0.65);
+        vec3 sparkCol = vec3(1.0, 0.95, 0.4);
+        vec3 hotCol = vec3(1.0, 1.0, 0.9);
+        vec3 col = mix(baseCol, sparkCol, vSpark * uIntensity);
+        col = mix(col, hotCol, vSpark * vSpark * uIntensity * 0.6);
+        float alpha = mix(0.25, 1.0, vSpark * uIntensity);
+        gl_FragColor = vec4(col, alpha);
+    }
+`;
+
+function makePolySparkEdgeMaterial(intensity, planesArray, planeCount, expOffset) {
+    // Build uniform-friendly vec4 array
+    const pArr = [];
+    for (let i = 0; i < 24; i++) {
+        pArr.push(i < planeCount
+            ? new THREE.Vector4(planesArray[i][0], planesArray[i][1], planesArray[i][2], planesArray[i][3])
+            : new THREE.Vector4(0,0,0,0));
+    }
+    return new THREE.ShaderMaterial({
+        uniforms: {
+            uTime: { value: 0.0 },
+            uIntensity: { value: intensity },
+            uPlanes: { value: pArr },
+            uPlaneCount: { value: planeCount },
+            uExpOffset: { value: expOffset || new THREE.Vector3(0, 0, 0) },
+        },
+        vertexShader: polySparkVert,
+        fragmentShader: polySparkFrag,
+        transparent: true,
+        depthWrite: false,
+    });
+}
+
+// ── Spark edge shader (with optional cylinder clip + explosion offset) ──
+const sparkVertShader = `
+    uniform float uTime;
+    uniform vec3 uExpOffset;
+    attribute float edgeRandom;
+    varying float vSpark;
+    varying float vRand;
+    varying vec3 vClipPos;
+    void main() {
+        vRand = edgeRandom;
+        vec3 wPos = (modelMatrix * vec4(position, 1.0)).xyz;
+        vClipPos = wPos - uExpOffset;
+        float pos = position.x * 3.7 + position.y * 5.3 + position.z * 4.1;
+        float wave = sin(pos * 2.0 + uTime * 4.0 + edgeRandom * 40.0);
+        float wave2 = sin(pos * 7.0 - uTime * 6.5 + edgeRandom * 20.0);
+        float flicker = sin(uTime * 15.0 + edgeRandom * 100.0) * 0.5 + 0.5;
+        float raw = wave * wave2 * flicker;
+        vSpark = smoothstep(0.15, 0.6, raw);
+        gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
+    }
+`;
+const sparkFragShader = `
+    uniform float uTime;
+    uniform float uIntensity;
+    uniform float uCylR2;
+    varying float vSpark;
+    varying float vRand;
+    varying vec3 vClipPos;
+    void main() {
+        float d2 = vClipPos.x * vClipPos.x + vClipPos.z * vClipPos.z;
+        if (d2 > uCylR2) discard;
+
+        vec3 baseCol = vec3(0.45, 0.45, 0.65);
+        vec3 sparkCol = vec3(1.0, 0.95, 0.4);
+        vec3 hotCol = vec3(1.0, 1.0, 0.9);
+        vec3 col = mix(baseCol, sparkCol, vSpark * uIntensity);
+        col = mix(col, hotCol, vSpark * vSpark * uIntensity * 0.6);
+        float alpha = mix(0.25, 1.0, vSpark * uIntensity);
+        gl_FragColor = vec4(col, alpha);
+    }
+`;
+
+function makeSparkEdgeMaterial(intensity, cylR2, expOffset) {
+    const mat = new THREE.ShaderMaterial({
+        uniforms: {
+            uTime: { value: 0.0 },
+            uIntensity: { value: intensity },
+            uCylR2: { value: cylR2 != null ? cylR2 : 999999.0 },
+            uExpOffset: { value: expOffset || new THREE.Vector3(0, 0, 0) },
+        },
+        vertexShader: sparkVertShader,
+        fragmentShader: sparkFragShader,
+        transparent: true,
+        depthWrite: false,
+    });
+    return mat;
+}
+
+// ── Heartbeat material for single unit cube ──
+// Double-throb then rest — like a real heartbeat
+const heartbeatVertShader = `
+    uniform float uTime;
+    varying vec3 vPos;
+    void main() {
+        vPos = position;
+        gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
+    }
+`;
+const heartbeatFragShader = `
+    uniform float uTime;
+    varying vec3 vPos;
+    void main() {
+        // Heartbeat: two quick peaks then a rest period (~1.2s cycle)
+        float cycle = mod(uTime * 1.4, 1.0);
+        float beat1 = smoothstep(0.0, 0.06, cycle) * smoothstep(0.14, 0.06, cycle);
+        float beat2 = smoothstep(0.18, 0.24, cycle) * smoothstep(0.34, 0.24, cycle);
+        float pulse = (beat1 + beat2 * 0.7);
+        // Base: deep crimson, pulse to bright red-orange
+        vec3 baseCol = vec3(0.35, 0.04, 0.06);
+        vec3 pulseCol = vec3(1.0, 0.15, 0.08);
+        vec3 hotCol = vec3(1.0, 0.55, 0.25);
+        vec3 col = mix(baseCol, pulseCol, pulse);
+        col = mix(col, hotCol, pulse * pulse * 0.5);
+        float alpha = mix(0.7, 1.0, pulse * 0.6);
+        gl_FragColor = vec4(col, alpha);
+    }
+`;
+const heartbeatEdgeFragShader = `
+    uniform float uTime;
+    void main() {
+        float cycle = mod(uTime * 1.4, 1.0);
+        float beat1 = smoothstep(0.0, 0.06, cycle) * smoothstep(0.14, 0.06, cycle);
+        float beat2 = smoothstep(0.18, 0.24, cycle) * smoothstep(0.34, 0.24, cycle);
+        float pulse = (beat1 + beat2 * 0.7);
+        vec3 baseCol = vec3(0.6, 0.1, 0.1);
+        vec3 sparkCol = vec3(1.0, 0.9, 0.3);
+        vec3 col = mix(baseCol, sparkCol, pulse);
+        float alpha = mix(0.5, 1.0, pulse);
+        gl_FragColor = vec4(col, alpha);
+    }
+`;
+
+function makeHeartbeatMaterials() {
+    heartbeatMat = new THREE.ShaderMaterial({
+        uniforms: { uTime: { value: 0.0 } },
+        vertexShader: heartbeatVertShader,
+        fragmentShader: heartbeatFragShader,
+        transparent: true, side: THREE.FrontSide, depthWrite: true,
+    });
+    heartbeatEdgeMat = new THREE.ShaderMaterial({
+        uniforms: { uTime: { value: 0.0 } },
+        vertexShader: `uniform float uTime; void main() { gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0); }`,
+        fragmentShader: heartbeatEdgeFragShader,
+        transparent: true, depthWrite: false,
+    });
+}
+
+function addEdgeRandomAttribute(edgeGeo) {
+    // Add per-vertex randomness so each edge segment sparks independently
+    const count = edgeGeo.attributes.position.count;
+    const randoms = new Float32Array(count);
+    for (let i = 0; i < count; i++) randoms[i] = Math.random();
+    edgeGeo.setAttribute('edgeRandom', new THREE.Float32BufferAttribute(randoms, 1));
+    return edgeGeo;
+}
+
+function rebuildUnitCubes() {
+    while (unitCubeGroup.children.length) unitCubeGroup.remove(unitCubeGroup.children[0]);
+    sparkEdges = [];
+
+    if (state.cubeMode === 'off') {
+        document.getElementById('cube-count-readout').textContent = '—';
+        return;
+    }
+
+    // Calculate bounding box of current shape
+    let minX=Infinity,minY=Infinity,minZ=Infinity,maxX=-Infinity,maxY=-Infinity,maxZ=-Infinity;
+    state.vertices.forEach(([x,y,z]) => {
+        minX=Math.min(minX,x); minY=Math.min(minY,y); minZ=Math.min(minZ,z);
+        maxX=Math.max(maxX,x); maxY=Math.max(maxY,y); maxZ=Math.max(maxZ,z);
+    });
+
+    // Round (not ceil/floor) so integer-width dimensions like 1×1×1 produce correct cube counts
+    const x0 = Math.round(minX), y0 = Math.round(minY), z0 = Math.round(minZ);
+    const x1 = Math.round(maxX), y1 = Math.round(maxY), z1 = Math.round(maxZ);
+
+    const isSolid = (state.cubeMode === 'solid');
+    const isGlass = (state.cubeMode === 'glass');
+    const isExploded = (state.cubeMode === 'exploded');
+    const cubeSize = isExploded ? 0.82 : (isSolid ? 0.98 : 1);
+    const useSpark = state.sparkOn;
+    let count = 0;
+
+    // Detect if this is a single unit cube (heartbeat mode)
+    const nX = x1 - x0, nY = y1 - y0, nZ = z1 - z0;
+    const totalCubes = Math.max(0, nX) * Math.max(0, nY) * Math.max(0, nZ);
+    const isHeartbeat = (totalCubes === 1);
+
+    // Create heartbeat materials if needed
+    if (isHeartbeat && !heartbeatMat) makeHeartbeatMaterials();
+
+    // ── Shape classification ──
+    const isBoxShape = (state.dimMode === 'box');
+    const isCylinder = (state.dimMode === 'cylinder');
+    const isConvexPoly = (state.dimMode === 'none' && !isHeartbeat); // tetra, octa, pyramid, prism, dodeca
+    const cylR = isCylinder ? (maxX - minX) / 2 : 0;
+    const cylR2 = cylR * cylR;
+    // For shape clip: include cubes slightly outside (shader handles precise cut)
+    const clipMargin = (isCylinder || isConvexPoly) ? 0.71 : 0; // sqrt(0.5²+0.5²) for diagonal
+
+    // ── Compute clip planes for convex polyhedra ──
+    let polyPlanes = null, polyPlaneCount = 0, polyPlanesUniform = null;
+    if (isConvexPoly) {
+        polyPlanes = computeClipPlanes(state.vertices, state.faces);
+        polyPlaneCount = Math.min(polyPlanes.length, 24);
+        polyPlanesUniform = [];
+        for (let i = 0; i < 24; i++) {
+            polyPlanesUniform.push(i < polyPlaneCount
+                ? new THREE.Vector4(polyPlanes[i][0], polyPlanes[i][1], polyPlanes[i][2], polyPlanes[i][3])
+                : new THREE.Vector4(0,0,0,0));
+        }
+    }
+
+    // ── Face materials ──
+    let cubeMat, altMat = null;
+    // Shared color config for non-box shapes
+    const c1 = isSolid ? [0.486, 0.361, 0.749] : isGlass ? [0.75, 0.78, 0.88] : [0.545, 0.435, 0.75];
+    const c2 = isSolid ? [0.42, 0.30, 0.65] : isGlass ? [0.65, 0.68, 0.78] : [0.48, 0.38, 0.68];
+    const op = isSolid ? 1.0 : isGlass ? 0.14 : 0.7;
+    const shin = isSolid ? 50.0 : isGlass ? 20.0 : 35.0;
+
+    if (isHeartbeat) {
+        cubeMat = heartbeatMat;
+    } else if (isCylinder) {
+        cubeMat = new THREE.ShaderMaterial({
+            uniforms: {
+                uColor: { value: new THREE.Vector3(c1[0], c1[1], c1[2]) },
+                uColor2: { value: new THREE.Vector3(c2[0], c2[1], c2[2]) },
+                uOpacity: { value: op },
+                uShininess: { value: shin },
+                uCylR2: { value: cylR2 },
+                uExpOffset: { value: new THREE.Vector3(0, 0, 0) },
+            },
+            vertexShader: cylClipVert,
+            fragmentShader: cylClipFrag,
+            transparent: true,
+            side: THREE.DoubleSide,
+            depthWrite: !isGlass,
+        });
+    } else if (isConvexPoly) {
+        cubeMat = new THREE.ShaderMaterial({
+            uniforms: {
+                uColor: { value: new THREE.Vector3(c1[0], c1[1], c1[2]) },
+                uColor2: { value: new THREE.Vector3(c2[0], c2[1], c2[2]) },
+                uOpacity: { value: op },
+                uShininess: { value: shin },
+                uPlanes: { value: polyPlanesUniform },
+                uPlaneCount: { value: polyPlaneCount },
+                uExpOffset: { value: new THREE.Vector3(0, 0, 0) },
+            },
+            vertexShader: polyClipVert,
+            fragmentShader: polyClipFrag,
+            transparent: true,
+            side: THREE.DoubleSide,
+            depthWrite: !isGlass,
+        });
+    } else if (isSolid) {
+        cubeMat = new THREE.MeshPhongMaterial({
+            color: 0x7c5cbf, shininess: 40,
+            transparent: false, side: THREE.FrontSide, depthWrite: true,
+        });
+    } else if (isGlass) {
+        cubeMat = new THREE.MeshPhysicalMaterial({
+            color: 0xc0c8e0, metalness: 0.1, roughness: 0.15,
+            transparent: true, opacity: 0.12,
+            side: THREE.DoubleSide, depthWrite: false,
+        });
+    } else {
+        cubeMat = new THREE.MeshPhongMaterial({
+            color: 0x8b6fc0, shininess: 30,
+            transparent: true, opacity: 0.65,
+            side: THREE.FrontSide, depthWrite: true,
+        });
+    }
+
+    if (isExploded) {
+        if (isCylinder) {
+            altMat = new THREE.ShaderMaterial({
+                uniforms: {
+                    uColor: { value: new THREE.Vector3(0.69, 0.55, 0.88) },
+                    uColor2: { value: new THREE.Vector3(0.60, 0.48, 0.78) },
+                    uOpacity: { value: 0.7 },
+                    uShininess: { value: 35.0 },
+                    uCylR2: { value: cylR2 },
+                    uExpOffset: { value: new THREE.Vector3(0, 0, 0) },
+                },
+                vertexShader: cylClipVert,
+                fragmentShader: cylClipFrag,
+                transparent: true,
+                side: THREE.DoubleSide,
+                depthWrite: true,
+            });
+        } else if (isConvexPoly) {
+            altMat = new THREE.ShaderMaterial({
+                uniforms: {
+                    uColor: { value: new THREE.Vector3(0.69, 0.55, 0.88) },
+                    uColor2: { value: new THREE.Vector3(0.60, 0.48, 0.78) },
+                    uOpacity: { value: 0.7 },
+                    uShininess: { value: 35.0 },
+                    uPlanes: { value: polyPlanesUniform },
+                    uPlaneCount: { value: polyPlaneCount },
+                    uExpOffset: { value: new THREE.Vector3(0, 0, 0) },
+                },
+                vertexShader: polyClipVert,
+                fragmentShader: polyClipFrag,
+                transparent: true,
+                side: THREE.DoubleSide,
+                depthWrite: true,
+            });
+        } else {
+            altMat = new THREE.MeshPhongMaterial({
+                color: 0xb08ce0, shininess: 30, transparent: true, opacity: 0.65,
+                side: THREE.FrontSide, depthWrite: true,
+            });
+        }
+    }
+
+    // ── Edge materials ──
+    const useClipEdges = (isCylinder || isConvexPoly) && !isHeartbeat;
+    let plainEdgeMat;
+    if (useClipEdges) {
+        const ec = isSolid ? [0.83, 0.72, 1.0] : isGlass ? [0.6, 0.6, 0.8] : [1.0, 1.0, 1.0];
+        const eo = isSolid ? 0.85 : isGlass ? 0.25 : 0.65;
+        if (isCylinder) {
+            plainEdgeMat = new THREE.ShaderMaterial({
+                uniforms: {
+                    uColor: { value: new THREE.Vector3(ec[0], ec[1], ec[2]) },
+                    uOpacity: { value: eo },
+                    uCylR2: { value: cylR2 },
+                    uExpOffset: { value: new THREE.Vector3(0, 0, 0) },
+                },
+                vertexShader: cylClipEdgeVert,
+                fragmentShader: cylClipEdgeFrag,
+                transparent: true,
+                depthWrite: false,
+            });
+        } else {
+            plainEdgeMat = new THREE.ShaderMaterial({
+                uniforms: {
+                    uColor: { value: new THREE.Vector3(ec[0], ec[1], ec[2]) },
+                    uOpacity: { value: eo },
+                    uPlanes: { value: polyPlanesUniform },
+                    uPlaneCount: { value: polyPlaneCount },
+                    uExpOffset: { value: new THREE.Vector3(0, 0, 0) },
+                },
+                vertexShader: polyClipEdgeVert,
+                fragmentShader: polyClipEdgeFrag,
+                transparent: true,
+                depthWrite: false,
+            });
+        }
+    } else {
+        plainEdgeMat = new THREE.LineBasicMaterial({
+            color: isSolid ? 0xd4b8ff : isGlass ? 0x9999cc : 0xffffff,
+            transparent: true,
+            opacity: isSolid ? 0.9 : isGlass ? 0.3 : 0.7,
+        });
+    }
+    const sparkIntensity = isSolid ? 0.45 : isGlass ? 0.7 : 1.0;
+    const sparkClipR2 = isCylinder ? cylR2 : null; // pass to cylinder spark material
+
+    const cubeGeo = new THREE.BoxGeometry(cubeSize, cubeSize, cubeSize);
+    const baseEdgeGeo = new THREE.EdgesGeometry(cubeGeo);
+
+    // ── Inside test for cube inclusion (expanded by clipMargin; shader does precise cut) ──
+    let insideTest = null;
+    if (!isBoxShape) {
+        if (isCylinder) {
+            const cylCY = (minY + maxY) / 2;
+            const cylHH = (maxY - minY) / 2;
+            insideTest = (px, py, pz) => {
+                const dist = Math.sqrt(px*px + pz*pz);
+                return dist <= cylR + clipMargin && Math.abs(py - cylCY) <= cylHH;
+            };
+        } else if (isConvexPoly && polyPlanes) {
+            // Half-plane test with margin: include cubes near boundary
+            insideTest = (px, py, pz) => {
+                for (let i = 0; i < polyPlaneCount; i++) {
+                    const p = polyPlanes[i];
+                    const d = p[0]*px + p[1]*py + p[2]*pz + p[3];
+                    if (d > clipMargin) return false;
+                }
+                return true;
+            };
+        } else {
+            // Generic shapes: raycast along Y-axis
+            insideTest = (px, py, pz) => {
+                let crossings = 0;
+                for (let fi = 0; fi < state.faces.length; fi++) {
+                    const f = state.faces[fi];
+                    const a = state.vertices[f[0]], b = state.vertices[f[1]], c = state.vertices[f[2]];
+                    const e1x = b[0]-a[0], e1y = b[1]-a[1], e1z = b[2]-a[2];
+                    const e2x = c[0]-a[0], e2y = c[1]-a[1], e2z = c[2]-a[2];
+                    const denom = e1x * e2z - e1z * e2x;
+                    if (Math.abs(denom) < 1e-8) continue;
+                    const invD = 1.0 / denom;
+                    const dx = px - a[0], dz = pz - a[2];
+                    const uu = (dx * e2z - dz * e2x) * invD;
+                    if (uu < 0 || uu > 1) continue;
+                    const vv = (e1x * dz - e1z * dx) * invD;
+                    if (vv < 0 || uu + vv > 1) continue;
+                    const intY = a[1] + uu * e1y + vv * e2y;
+                    if (intY > py) crossings++;
+                }
+                return crossings % 2 === 1;
+            };
+        }
+    }
+
+    const midX = (x0 + x1) / 2, midY = (y0 + y1) / 2, midZ = (z0 + z1) / 2;
+
+    // Centering offset
+    const shapeCX = (minX + maxX) / 2, shapeCY = (minY + maxY) / 2, shapeCZ = (minZ + maxZ) / 2;
+    const gridCX = midX, gridCY = midY, gridCZ = midZ;
+    const useCenter = (state.cubeOrigin === 'center');
+    const offX = useCenter ? (shapeCX - gridCX) : 0;
+    const offY = useCenter ? (shapeCY - gridCY) : 0;
+    const offZ = useCenter ? (shapeCZ - gridCZ) : 0;
+
+    let insideCount = 0;
+
+    for (let ix = x0; ix < x1; ix++) {
+        for (let iy = y0; iy < y1; iy++) {
+            for (let iz = z0; iz < z1; iz++) {
+                count++;
+                const cx = ix + 0.5 + offX, cy = iy + 0.5 + offY, cz = iz + 0.5 + offZ;
+
+                const isInside = insideTest ? insideTest(cx, cy, cz) : true;
+                if (isInside) insideCount++;
+                if (!isInside && !isBoxShape) continue;
+
+                let ox = cx, oy = cy, oz = cz;
+                if (isExploded) {
+                    const eMidX = midX + offX, eMidY = midY + offY, eMidZ = midZ + offZ;
+                    ox = cx + (cx - eMidX) * 0.35;
+                    oy = cy + (cy - eMidY) * 0.35;
+                    oz = cz + (cz - eMidZ) * 0.35;
+                }
+
+                const checker = (ix + iy + iz) % 2 === 0;
+                let mat = (isExploded && altMat && !checker) ? altMat : cubeMat;
+
+                // Exploded clip shapes: per-cube material clone with unique uExpOffset
+                const needsClipExp = (isCylinder || isConvexPoly) && isExploded;
+                const expOff = needsClipExp ? new THREE.Vector3(ox - cx, oy - cy, oz - cz) : null;
+                if (expOff) {
+                    mat = mat.clone();
+                    mat.uniforms.uExpOffset.value = expOff;
+                }
+
+                const mesh = new THREE.Mesh(cubeGeo, mat);
+                mesh.position.set(ox, oy, oz);
+                unitCubeGroup.add(mesh);
+
+                // Edges
+                if (isHeartbeat) {
+                    const edges = new THREE.LineSegments(baseEdgeGeo, heartbeatEdgeMat);
+                    edges.position.set(ox, oy, oz);
+                    unitCubeGroup.add(edges);
+                } else if (useSpark) {
+                    const sparkGeo = addEdgeRandomAttribute(baseEdgeGeo.clone());
+                    let sMat;
+                    if (isConvexPoly) {
+                        sMat = makePolySparkEdgeMaterial(sparkIntensity, polyPlanes, polyPlaneCount, expOff);
+                    } else {
+                        sMat = makeSparkEdgeMaterial(sparkIntensity, sparkClipR2, expOff);
+                    }
+                    sparkEdges.push(sMat);
+                    const edges = new THREE.LineSegments(sparkGeo, sMat);
+                    edges.position.set(ox, oy, oz);
+                    unitCubeGroup.add(edges);
+                } else {
+                    let edgeMat = plainEdgeMat;
+                    if (expOff) {
+                        edgeMat = plainEdgeMat.clone();
+                        edgeMat.uniforms.uExpOffset.value = expOff;
+                    }
+                    const edges = new THREE.LineSegments(baseEdgeGeo, edgeMat);
+                    edges.position.set(ox, oy, oz);
+                    unitCubeGroup.add(edges);
+                }
+
+                // Number labels in exploded mode
+                if (isExploded && state.showCubeNumbers && insideCount <= 200) {
+                    const cv = document.createElement('canvas');
+                    cv.width = 32; cv.height = 32;
+                    const ctx = cv.getContext('2d');
+                    ctx.fillStyle = '#fff'; ctx.font = 'bold 20px Inter,sans-serif';
+                    ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+                    ctx.fillText(insideCount, 16, 17);
+                    const tex = new THREE.CanvasTexture(cv); tex.minFilter = THREE.LinearFilter;
+                    const sp = new THREE.Sprite(new THREE.SpriteMaterial({ map: tex, transparent: true, depthTest: false }));
+                    sp.position.set(ox, oy, oz); sp.scale.set(0.45, 0.45, 1);
+                    unitCubeGroup.add(sp);
+                }
+            }
+        }
+    }
+
+    // ── Cylinder: add a thin translucent shell at exact radius for visual seal ──
+    if (isCylinder && !isExploded && !isHeartbeat) {
+        const cylH = maxY - minY;
+        const shellGeo = new THREE.CylinderGeometry(cylR, cylR, cylH, 48, 1, true);
+        const shellMat = new THREE.MeshPhongMaterial({
+            color: 0xa088e0,
+            transparent: true,
+            opacity: isSolid ? 0.08 : isGlass ? 0.05 : 0.06,
+            side: THREE.DoubleSide,
+            depthWrite: false,
+            shininess: 100,
+        });
+        const shell = new THREE.Mesh(shellGeo, shellMat);
+        shell.position.y = (minY + maxY) / 2;
+        unitCubeGroup.add(shell);
+    }
+
+    let readout;
+    if (isHeartbeat) {
+        readout = `<span style="color:#ff4444;font-weight:900;font-size:13px;">1 unit cube</span><br><span style="font-size:8px;color:rgba(255,100,100,0.5);letter-spacing:0.1em;">drag sliders to build</span>`;
+    } else if (!isBoxShape && insideCount < count) {
+        readout = `<span style="color:#60a5fa;font-weight:900;font-size:14px;">${insideCount}</span> <span style="color:rgba(255,255,255,0.3);">unit cubes</span> <span style="color:rgba(255,255,255,0.12);">≈ shape</span>`;
+        readout += `<br><span style="font-size:9px;color:rgba(255,255,255,0.2);">${count - insideCount} clipped · ${count} in ${nX}×${nY}×${nZ} bbox</span>`;
+    } else {
+        readout = `<span style="color:#c0c0dc;font-weight:900;font-size:14px;">${count}</span> <span style="color:rgba(255,255,255,0.3);">unit cubes</span>`;
+        if (nX > 0 && nY > 0 && nZ > 0) {
+            readout += `<br><span style="font-size:9px;color:rgba(255,255,255,0.2);">${nX} × ${nY} × ${nZ} = ${count}</span>`;
+        }
+    }
+    document.getElementById('cube-count-readout').innerHTML = readout;
+}
+
+function toggleLattice() {
+    state.showLattice = !state.showLattice;
+    const btn = document.getElementById('lattice-btn');
+    btn.classList.toggle('active', state.showLattice);
+    btn.textContent = state.showLattice ? 'Lattice ON' : 'Show Lattice Dots';
+    rebuildLattice();
+}
+
+function toggleGridDots() {
+    state.showFloorDots = !state.showFloorDots;
+    const btn = document.getElementById('griddot-btn');
+    btn.classList.toggle('active', state.showFloorDots);
+    btn.textContent = state.showFloorDots ? 'Floor ON' : 'Floor Dots';
+    rebuildFloorDots();
+}
+
+function rebuildLattice() {
+    while (latticeGroup.children.length) latticeGroup.remove(latticeGroup.children[0]);
+    if (!state.showLattice) return;
+
+    // 3D lattice of dots at every integer coordinate within a reasonable range
+    const range = 10;
+    const dotGeo = new THREE.SphereGeometry(0.06, 6, 6);
+    const dotMat = new THREE.MeshBasicMaterial({ color: 0x6666aa, transparent: true, opacity: 0.4 });
+
+    // Use instancing for performance
+    const positions = [];
+    for (let x = -range; x <= range; x++) {
+        for (let y = -range; y <= range; y++) {
+            for (let z = -range; z <= range; z++) {
+                positions.push([x, y, z]);
+            }
+        }
+    }
+
+    // To keep it performant, use merged geometry
+    // For up to ~9261 dots (21^3), individual meshes would be slow
+    // Use points instead
+    const pointPositions = new Float32Array(positions.length * 3);
+    positions.forEach((p, i) => { pointPositions[i*3] = p[0]; pointPositions[i*3+1] = p[1]; pointPositions[i*3+2] = p[2]; });
+
+    const pointGeo = new THREE.BufferGeometry();
+    pointGeo.setAttribute('position', new THREE.Float32BufferAttribute(pointPositions, 3));
+
+    const pointMat = new THREE.PointsMaterial({
+        color: 0x7777bb,
+        size: 0.12,
+        transparent: true,
+        opacity: 0.35,
+        sizeAttenuation: true,
+    });
+
+    latticeGroup.add(new THREE.Points(pointGeo, pointMat));
+}
+
+function rebuildFloorDots() {
+    while (floorDotsGroup.children.length) floorDotsGroup.remove(floorDotsGroup.children[0]);
+    if (!state.showFloorDots) return;
+
+    const range = 18;
+    const positions = new Float32Array((range*2+1) * (range*2+1) * 3);
+    let idx = 0;
+    for (let x = -range; x <= range; x++) {
+        for (let z = -range; z <= range; z++) {
+            positions[idx++] = x; positions[idx++] = 0; positions[idx++] = z;
+        }
+    }
+
+    const geo = new THREE.BufferGeometry();
+    geo.setAttribute('position', new THREE.Float32BufferAttribute(positions, 3));
+
+    const mat = new THREE.PointsMaterial({
+        color: 0xaaaacc,
+        size: 0.15,
+        transparent: true,
+        opacity: 0.5,
+        sizeAttenuation: true,
+    });
+
+    floorDotsGroup.add(new THREE.Points(geo, mat));
+}
+
+// ══════════════════════════════════════════
+// DIMENSION BUILDER — instant slider control
+// ══════════════════════════════════════════
+function updateDimensions() {
+    const w = parseFloat(document.getElementById('dim-x').value);
+    const h = parseFloat(document.getElementById('dim-y').value);
+    const d = parseFloat(document.getElementById('dim-z').value);
+    state.boxW = w; state.boxH = h; state.boxD = d;
+    document.getElementById('dim-x-val').textContent = w.toFixed(1);
+    document.getElementById('dim-y-val').textContent = h.toFixed(1);
+    document.getElementById('dim-z-val').textContent = d.toFixed(1);
+
+    let shape, vol, sa;
+
+    if (state.dimMode === 'cylinder') {
+        // X = diameter (radius = w/2), Y = height, Z follows X (circular cross-section)
+        const r = w / 2;
+        document.getElementById('dim-z').value = w; // lock Z to X
+        document.getElementById('dim-z-val').textContent = w.toFixed(1);
+        state.boxD = w;
+        shape = makeCylinder(r, h, 24);
+        vol = Math.PI * r * r * h;
+        sa = 2 * Math.PI * r * (r + h);
+        state.shapeName = `cyl d${w}×h${h}`;
+        document.getElementById('dim-dims').textContent = `d${w} × h${h}`;
+        document.getElementById('dim-vol').textContent = `${vol.toFixed(1)} u³`;
+        document.getElementById('dim-sa').textContent = `${sa.toFixed(1)} u²`;
+    } else if (state.dimMode === 'box') {
+        shape = makeBox(w, h, d);
+        vol = w * h * d;
+        sa = 2*(w*h + w*d + h*d);
+        state.shapeName = `box ${w}×${h}×${d}`;
+        document.getElementById('dim-dims').textContent = `${w} × ${h} × ${d}`;
+        document.getElementById('dim-vol').textContent = `${vol.toFixed(1)} u³`;
+        document.getElementById('dim-sa').textContent = `${sa.toFixed(1)} u²`;
+    } else {
+        // Non-parametric shapes: sliders don't rebuild
+        return;
+    }
+
+    state.vertices = JSON.parse(JSON.stringify(shape.vertices));
+    state.faces = JSON.parse(JSON.stringify(shape.faces));
+    state.selectedFaceIdx = -1;
+    document.getElementById('face-info').style.display = 'none';
+    rebuildMesh();
+}
+
+function updateDimSliderUI() {
+    document.getElementById('dim-x-val').textContent = state.boxW.toFixed(1);
+    document.getElementById('dim-y-val').textContent = state.boxH.toFixed(1);
+    document.getElementById('dim-z-val').textContent = state.boxD.toFixed(1);
+    if (state.dimMode === 'cylinder') {
+        const r = state.boxW / 2;
+        const vol = Math.PI * r * r * state.boxH;
+        const sa = 2 * Math.PI * r * (r + state.boxH);
+        document.getElementById('dim-dims').textContent = `d${state.boxW} × h${state.boxH}`;
+        document.getElementById('dim-vol').textContent = `${vol.toFixed(1)} u³`;
+        document.getElementById('dim-sa').textContent = `${sa.toFixed(1)} u²`;
+    } else {
+        const vol = state.boxW * state.boxH * state.boxD;
+        const sa = 2*(state.boxW*state.boxH + state.boxW*state.boxD + state.boxH*state.boxD);
+        document.getElementById('dim-dims').textContent = `${state.boxW} × ${state.boxH} × ${state.boxD}`;
+        document.getElementById('dim-vol').textContent = `${vol.toFixed(1)} u³`;
+        document.getElementById('dim-sa').textContent = `${sa.toFixed(1)} u²`;
+    }
+}
+
+// ══════════════════════════════════════════
+// ROTATION AXIS SELECTOR
+// ══════════════════════════════════════════
+function selectRotAxis(axis) {
+    state.rotAxis = axis;
+    ['x','y','z'].forEach(a => {
+        const el = document.getElementById('rot-ax-'+a);
+        if (a === axis) {
+            el.classList.add('sel');
+            const c = a==='x'?'var(--ax-x)':a==='y'?'var(--ax-y)':'var(--ax-z)';
+            const bg = a==='x'?'rgba(255,68,102,0.1)':a==='y'?'rgba(68,255,102,0.1)':'rgba(68,136,255,0.1)';
+            el.style.borderColor = c; el.style.background = bg;
+        } else {
+            el.classList.remove('sel');
+            el.style.borderColor = 'rgba(255,255,255,0.1)'; el.style.background = 'rgba(255,255,255,0.03)';
+        }
+    });
+}
+
+// ══════════════════════════════════════════
+// FACE PICKING
+// ══════════════════════════════════════════
+function onViewportClick(e) {
+    if (state.mouseMoved) return;
+    const rect = renderer.domElement.getBoundingClientRect();
+    mouse.x = ((e.clientX-rect.left)/rect.width)*2-1;
+    mouse.y = -((e.clientY-rect.top)/rect.height)*2+1;
+    raycaster.setFromCamera(mouse, camera);
+
+    // Try vertex picking first (for connections)
+    if (state.connectMode && state.pointMode !== 'off') {
+        const vertexMeshes = meshGroup.children.filter(c => c.userData && c.userData.vertIdx !== undefined);
+        const vertHits = raycaster.intersectObjects(vertexMeshes);
+        if (vertHits.length > 0) {
+            const vertIdx = vertHits[0].object.userData.vertIdx;
+            if (handleVertexClick(vertIdx)) return;
+        }
+    }
+
+    // Fall back to face picking
+    if (!pickableMesh) return;
+    const hits = raycaster.intersectObject(pickableMesh);
+    if (hits.length > 0) {
+        const fIdx = Math.floor(hits[0].faceIndex);
+        state.selectedFaceIdx = (state.selectedFaceIdx===fIdx) ? -1 : fIdx;
+        if (state.selectedFaceIdx >= 0 && state.selectedFaceIdx < state.faces.length) {
+            showFaceInfo(state.selectedFaceIdx);
+        } else { document.getElementById('face-info').style.display = 'none'; state.selectedFaceIdx = -1; }
+        rebuildMesh();
+    } else { state.selectedFaceIdx = -1; document.getElementById('face-info').style.display = 'none'; rebuildMesh(); }
+}
+
+function showFaceInfo(fIdx) {
+    const f = state.faces[fIdx], n = computeFaceNormal(f);
+    const verts = f.map(i => state.vertices[i]);
+    const ab=[verts[1][0]-verts[0][0],verts[1][1]-verts[0][1],verts[1][2]-verts[0][2]];
+    const ac=[verts[2][0]-verts[0][0],verts[2][1]-verts[0][1],verts[2][2]-verts[0][2]];
+    const cr=[ab[1]*ac[2]-ab[2]*ac[1],ab[2]*ac[0]-ab[0]*ac[2],ab[0]*ac[1]-ab[1]*ac[0]];
+    const area = (Math.sqrt(cr[0]**2+cr[1]**2+cr[2]**2)/2).toFixed(2);
+    const ax=Math.abs(n[0]),ay=Math.abs(n[1]),az=Math.abs(n[2]);
+    let dom,dc;
+    if(ax>=ay&&ax>=az){dom='X';dc='var(--ax-x)'}
+    else if(ay>=ax&&ay>=az){dom='Y';dc='var(--ax-y)'}
+    else{dom='Z';dc='var(--ax-z)'}
+    const labels = f.map(i=>String.fromCharCode(65+(i%26)));
+    document.getElementById('face-detail').innerHTML = `
+        <div><span style="color:rgba(255,255,255,0.3);">Face</span> <b style="color:#fff;">#${fIdx}</b> (${labels.join('-')})</div>
+        <div><span style="color:rgba(255,255,255,0.3);">Normal:</span> (${n[0].toFixed(2)}, ${n[1].toFixed(2)}, ${n[2].toFixed(2)})</div>
+        <div><span style="color:rgba(255,255,255,0.3);">Facing:</span> <b style="color:${dc};">${dom}</b></div>
+        <div><span style="color:rgba(255,255,255,0.3);">Area:</span> ${area} u²</div>`;
+    document.getElementById('face-info').style.display = 'block';
+}
+
+renderer.domElement.addEventListener('click', onViewportClick);
+
+// ══════════════════════════════════════════
+// GHOSTS
+// ══════════════════════════════════════════
+function addGhost() {
+    if (!state.vertices.length) return;
+    state.ghosts.push({ vertices:JSON.parse(JSON.stringify(state.vertices)), faces:JSON.parse(JSON.stringify(state.faces)), timestamp:Date.now() });
+    updateTraceButtons();
+}
+function renderGhosts() {
+    while(ghostGroup.children.length) ghostGroup.remove(ghostGroup.children[0]);
+    while(pinnedGhostGroup.children.length) pinnedGhostGroup.remove(pinnedGhostGroup.children[0]);
+    const now = Date.now();
+    state.ghosts = state.ghosts.filter(g=>(now-g.timestamp)<GHOST_LIFE);
+    state.ghosts.forEach(g => {
+        const a = 0.2*(1-(now-g.timestamp)/GHOST_LIFE);
+        ghostGroup.add(new THREE.Mesh(buildGhostGeom(g), new THREE.MeshBasicMaterial({color:0xfb923c,wireframe:true,transparent:true,opacity:a})));
+    });
+    if (state.pinnedGhost) {
+        const g = buildGhostGeom(state.pinnedGhost);
+        pinnedGhostGroup.add(new THREE.Mesh(g, new THREE.MeshBasicMaterial({color:0xff2222,wireframe:true,transparent:true,opacity:0.45})));
+        pinnedGhostGroup.add(new THREE.Mesh(g.clone(), new THREE.MeshBasicMaterial({color:0xff2222,transparent:true,opacity:0.05,side:THREE.DoubleSide,depthWrite:false})));
+    }
+    updateTraceButtons();
+}
+function buildGhostGeom(g) {
+    const p = []; g.faces.forEach(f=>{f.forEach(i=>{const v=g.vertices[i];p.push(v[0],v[1],v[2]);})});
+    const gm = new THREE.BufferGeometry(); gm.setAttribute('position',new THREE.Float32BufferAttribute(p,3)); return gm;
+}
+function recallLast() { if(!state.ghosts.length)return; state.pinnedGhost=JSON.parse(JSON.stringify(state.ghosts[state.ghosts.length-1])); updateTraceButtons(); }
+function clearTraces() { state.ghosts=[]; state.pinnedGhost=null; updateTraceButtons(); }
+function updateTraceButtons() {
+    const has=state.ghosts.length>0, pin=state.pinnedGhost!==null;
+    const r=document.getElementById('btn-recall'), c=document.getElementById('btn-clear-traces');
+    r.disabled=!has; r.style.opacity=has?'1':'0.3';
+    c.disabled=!has&&!pin; c.style.opacity=(has||pin)?'1':'0.3';
+    document.getElementById('trace-count').textContent = has?`${state.ghosts.length} trace${state.ghosts.length>1?'s':''}`:'no traces';
+}
+
+// ══════════════════════════════════════════
+// TRANSFORMATIONS
+// ══════════════════════════════════════════
+// snap: only for clean ops (translate, reflect, scale) where results land on grid
+function snap(v){return Math.round(v*4)/4;}
+// display rounding: for labels — shows tenths, hides float noise
+function dispR(v){return Math.round(v*10)/10;}
+
+function applyRotation(axis, deg) {
+    if (state.dimMode === 'cylinder') return; // clip shader requires Y-axis alignment
+    addGhost();
+    const rad=(deg*Math.PI)/180, cos=Math.cos(rad), sin=Math.sin(rad);
+    // No snap — pure rotation preserves distances and volume exactly
+    state.vertices = state.vertices.map(([x,y,z])=>{
+        if(axis==='x') return [x, cos*y - sin*z, sin*y + cos*z];
+        if(axis==='y') return [cos*x + sin*z, y, -sin*x + cos*z];
+        return [cos*x - sin*y, sin*x + cos*y, z];
+    });
+    addHistory("Rotation",`R_${axis.toUpperCase()}(${deg>0?'+':''}${deg}°)`,`Rotation about ${axis.toUpperCase()}-axis.`,
+        `R_${axis}(${deg}°)`);
+    state.selectedFaceIdx=-1; document.getElementById('face-info').style.display='none';
+    rebuildMesh();
+}
+
+function applyReflection(plane) {
+    addGhost();
+    // Reflection just negates — snap is safe here
+    state.vertices = state.vertices.map(([x,y,z])=>{
+        if(plane==='xy') return [snap(x),snap(y),snap(-z)];
+        if(plane==='xz') return [snap(x),snap(-y),snap(z)];
+        return [snap(-x),snap(y),snap(z)];
+    });
+    addHistory("Reflection",`\\sigma_{${plane.toUpperCase()}}`,`Mirror across ${plane.toUpperCase()} plane.`,
+        plane==='xy'?`(x,y,z)\\to(x,y,-z)`:plane==='xz'?`(x,y,z)\\to(x,-y,z)`:`(x,y,z)\\to(-x,y,z)`);
+    state.selectedFaceIdx=-1; document.getElementById('face-info').style.display='none';
+    rebuildMesh();
+}
+
+function executeTranslation() {
+    addGhost();
+    const dx=parseInt(document.getElementById('transX').value), dy=parseInt(document.getElementById('transY').value), dz=parseInt(document.getElementById('transZ').value);
+    // Integer shift — snap keeps things tidy
+    state.vertices = state.vertices.map(([x,y,z])=>[snap(x+dx),snap(y+dy),snap(z+dz)]);
+    addHistory("Translation",`T[${dx},${dy},${dz}]`,`Rigid shift.`,`(x,y,z)\\to(x+${dx},y+${dy},z+${dz})`);
+    rebuildMesh();
+}
+
+function fireDilation() {
+    addGhost();
+    const k=parseFloat(document.getElementById('k-slider').value);
+    // Scale factors are 0.25 steps × grid values — snap keeps results clean
+    state.vertices = state.vertices.map(([x,y,z])=>[snap(x*k),snap(y*k),snap(z*k)]);
+    addHistory("Dilation",`Scale ${k}×`,`Volume scales by k³.`,`(x,y,z)\\to(${k}x,${k}y,${k}z)`);
+    rebuildMesh();
+}
+
+// ══════════════════════════════════════════
+// UI UPDATES
+// ══════════════════════════════════════════
+function updateTransUI() {
+    document.getElementById('tx-val').textContent = document.getElementById('transX').value;
+    document.getElementById('ty-val').textContent = document.getElementById('transY').value;
+    document.getElementById('tz-val').textContent = document.getElementById('transZ').value;
+}
+
+function updateDilationUI() {
+    const k=parseFloat(document.getElementById('k-slider').value);
+    const btn=document.getElementById('dilation-btn');
+    let label;
+    if(k<1)label=`Shrink ×${k}`;else if(k===1)label=`No Change`;else label=`Enlarge ×${k}`;
+    btn.textContent=label;
+    btn.style.backgroundColor = k<1?'#3b82f6':k===1?'#6b7280':'#ea580c';
+    document.getElementById('dp-k').textContent = k<1?`${k}× shrink`:k>1?`${k}× enlarge`:'1.0×';
+    document.getElementById('dp-k').style.color = k<1?'#60a5fa':k>1?'#fb923c':'rgba(255,255,255,0.3)';
+    document.getElementById('dp-vol').textContent = `${(state.volume*k*k*k).toFixed(1)} u³`;
+}
+
+function updateMetrics() {
+    let vol=0;
+    state.faces.forEach(f=>{const a=state.vertices[f[0]],b=state.vertices[f[1]],c=state.vertices[f[2]];vol+=(a[0]*(b[1]*c[2]-b[2]*c[1])-a[1]*(b[0]*c[2]-b[2]*c[0])+a[2]*(b[0]*c[1]-b[1]*c[0]));});
+    state.volume=Math.abs(vol/6);
+    let sa=0;
+    state.faces.forEach(f=>{const a=state.vertices[f[0]],b=state.vertices[f[1]],c=state.vertices[f[2]];const ab=[b[0]-a[0],b[1]-a[1],b[2]-a[2]],ac=[c[0]-a[0],c[1]-a[1],c[2]-a[2]];const cr=[ab[1]*ac[2]-ab[2]*ac[1],ab[2]*ac[0]-ab[0]*ac[2],ab[0]*ac[1]-ab[1]*ac[0]];sa+=Math.sqrt(cr[0]**2+cr[1]**2+cr[2]**2)/2;});
+    state.surfaceArea=sa;
+    document.getElementById('vol-val').textContent=state.volume.toFixed(1);
+    document.getElementById('sa-val').textContent=state.surfaceArea.toFixed(1);
+    document.getElementById('vert-val').textContent=state.vertices.length;
+    document.getElementById('face-val').textContent=state.faces.length;
+
+    // Update edge math in HUD
+    const latexBox = document.getElementById('latex-box');
+    if(state.vertices.length>=2){
+        const a=state.vertices[0],b=state.vertices[1];
+        const nA = getVertexName(0), nB = getVertexName(1);
+        const d=Math.sqrt((b[0]-a[0])**2+(b[1]-a[1])**2+(b[2]-a[2])**2).toFixed(2);
+        try{katex.render(`${nA}${nB} = ${d}\\,u`,latexBox);}catch(e){}
+    }
+    updateDilationUI();
+}
+
+// ══════════════════════════════════════════
+// CAMERA
+// ══════════════════════════════════════════
+const viewCfg = {
+    iso:  {t:Math.PI/4, p:Math.PI/6, d:22, n:'Isometric', s:'Perspective', h:'All axes visible'},
+    front:{t:0, p:0, d:22, n:'Front', s:'XY · Z-Normal', h:'<span style="color:var(--ax-x)">X</span> horiz · <span style="color:var(--ax-y)">Y</span> vert · <span style="color:var(--ax-z)">Z</span> into screen'},
+    top:  {t:0, p:Math.PI/2-0.001, d:22, n:'Top', s:'XZ · Y-Normal', h:'<span style="color:var(--ax-x)">X</span> horiz · <span style="color:var(--ax-z)">Z</span> vert · <span style="color:var(--ax-y)">Y</span> into screen'},
+    right:{t:Math.PI/2, p:0, d:22, n:'Right', s:'YZ · X-Normal', h:'<span style="color:var(--ax-z)">Z</span> horiz · <span style="color:var(--ax-y)">Y</span> vert · <span style="color:var(--ax-x)">X</span> into screen'},
+    free: {t:Math.PI/4, p:Math.PI/6, d:22, n:'Free', s:'Orbit', h:'Drag to orbit'},
+};
+
+function setView(name) {
+    state.currentView=name;
+    const c=viewCfg[name];
+    if(name!=='free'){state.camTheta=c.t;state.camPhi=c.p;state.camDist=c.d;}
+    state.orbitEnabled=(name==='free');
+    document.querySelectorAll('.btn-view').forEach(b=>b.classList.remove('active'));
+    document.getElementById('view-'+name).classList.add('active');
+    document.getElementById('view-name').textContent=c.n;
+    document.getElementById('view-sub').textContent=c.s;
+    document.getElementById('view-hint').innerHTML=c.h;
+
+    // Hide axis labels that point directly at camera in standard views
+    // Labels order: 0=X, 1=Y, 2=Z
+    const labels = axisLabelsGroup.children;
+    if (labels.length === 3) {
+        labels[0].visible = true; labels[1].visible = true; labels[2].visible = true;
+        if (name === 'front') labels[2].visible = false;  // Z points at camera
+        if (name === 'top')   labels[1].visible = false;  // Y points at camera
+        if (name === 'right') labels[0].visible = false;  // X points at camera
+    }
+
+    updateCamera();
+}
+
+function updateCamera() {
+    const x=state.camDist*Math.cos(state.camPhi)*Math.sin(state.camTheta);
+    const y=state.camDist*Math.sin(state.camPhi);
+    const z=state.camDist*Math.cos(state.camPhi)*Math.cos(state.camTheta);
+    camera.position.set(x,y,z); camera.lookAt(0,0,0);
+}
+
+// Mouse orbit + zoom
+viewport.addEventListener('mousedown',e=>{if(e.target.tagName==='BUTTON')return;state.mouseDown=true;state.mouseMoved=false;state.mouseX=e.clientX;state.mouseY=e.clientY;});
+window.addEventListener('mousemove',e=>{if(!state.mouseDown)return;const dx=e.clientX-state.mouseX,dy=e.clientY-state.mouseY;if(Math.abs(dx)>3||Math.abs(dy)>3)state.mouseMoved=true;if(state.orbitEnabled){state.camTheta+=dx*0.005;state.camPhi=Math.max(-Math.PI/2+0.05,Math.min(Math.PI/2-0.05,state.camPhi+dy*0.005));updateCamera();}state.mouseX=e.clientX;state.mouseY=e.clientY;});
+window.addEventListener('mouseup',()=>{state.mouseDown=false;});
+viewport.addEventListener('wheel',e=>{e.preventDefault();state.camDist=Math.max(6,Math.min(60,state.camDist+e.deltaY*0.03));updateCamera();},{passive:false});
+
+// Lighting
+scene.add(new THREE.AmbientLight(0xffffff,0.6));
+const dl1=new THREE.DirectionalLight(0xffffff,0.7);dl1.position.set(10,15,10);scene.add(dl1);
+const dl2=new THREE.DirectionalLight(0x8844ff,0.3);dl2.position.set(-10,-5,-10);scene.add(dl2);
+
+// ══════════════════════════════════════════
+// HISTORY + LEDGER
+// ══════════════════════════════════════════
+function addHistory(type,title,explanation,proof){state.history.unshift({type,title,explanation,proof,time:new Date().toLocaleTimeString()});if(state.history.length>50)state.history.pop();}
+
+function toggleLedger(){const o=document.getElementById('ledger-overlay');const s=o.style.display==='flex';o.style.display=s?'none':'flex';if(!s)renderLedger();}
+
+function renderLedger(){
+    document.getElementById('history-ledger').innerHTML = state.history.map((it,i)=>`
+        <div class="history-card">
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;">
+                <span style="font-size:8px;font-weight:900;color:#a855f7;text-transform:uppercase;letter-spacing:0.2em;">${it.type}</span>
+                <span style="font-size:9px;color:rgba(255,255,255,0.2);font-family:'Fira Code',monospace;">${it.time}</span>
+            </div>
+            <div style="color:#fff;font-weight:700;font-size:1rem;margin-bottom:4px;font-style:italic;text-transform:uppercase;">${it.title}</div>
+            <div style="color:rgba(255,255,255,0.35);font-size:10px;line-height:1.5;margin-bottom:6px;">${it.explanation}</div>
+            <div class="proof-box"><div id="proof-${i}"></div></div>
+        </div>`).join('');
+    state.history.forEach((it,i)=>{const el=document.getElementById('proof-'+i);if(el)try{katex.render(it.proof,el);}catch(e){}});
+}
+
+// Animate
+function animate(){
+    requestAnimationFrame(animate);
+    renderGhosts();
+    const t = performance.now() * 0.001;
+    // Animate spark edges
+    sparkEdges.forEach(mat => { mat.uniforms.uTime.value = t; });
+    // Animate heartbeat
+    if (heartbeatMat) heartbeatMat.uniforms.uTime.value = t;
+    if (heartbeatEdgeMat) heartbeatEdgeMat.uniforms.uTime.value = t;
+    renderer.render(scene,camera);
+}
+
+// Keyboard
+document.addEventListener('keydown',e=>{if(e.key==='Escape'){const o=document.getElementById('ledger-overlay');if(o.style.display==='flex')toggleLedger();}});
+
+window.onload = init;
+</script>
+</body>
+</html>
