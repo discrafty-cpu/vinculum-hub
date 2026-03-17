@@ -1,0 +1,1830 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Proportional Propulsion — Vinculum Math Solutions</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: #060614;
+            color: #ffffff;
+            overflow: hidden;
+            height: 100vh;
+            width: 100vw;
+        }
+
+        canvas {
+            display: block;
+            position: absolute;
+            top: 0;
+            left: 0;
+        }
+
+        #splashScreen {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(6, 6, 20, 0.88);
+            backdrop-filter: blur(3px);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+        }
+
+        .splash-logo {
+            font-size: 14px;
+            color: #40c4ff;
+            margin-bottom: 40px;
+            font-weight: bold;
+            letter-spacing: 2px;
+        }
+
+        .splash-title {
+            font-size: 56px;
+            font-weight: bold;
+            color: #00e676;
+            margin-bottom: 12px;
+            text-align: center;
+            text-shadow: 0 0 20px rgba(0, 230, 118, 0.5);
+        }
+
+        .splash-subtitle {
+            font-size: 24px;
+            color: #40c4ff;
+            margin-bottom: 30px;
+            text-align: center;
+        }
+
+        .splash-briefing {
+            max-width: 500px;
+            font-size: 16px;
+            line-height: 1.6;
+            color: #ccc;
+            text-align: center;
+            margin-bottom: 40px;
+        }
+
+        .accept-button {
+            background: linear-gradient(135deg, #00e676, #1de9b6);
+            color: #000;
+            border: none;
+            padding: 14px 40px;
+            font-size: 18px;
+            font-weight: bold;
+            cursor: pointer;
+            border-radius: 8px;
+            box-shadow: 0 0 20px rgba(0, 230, 118, 0.4);
+            transition: all 0.3s;
+        }
+
+        .accept-button:hover {
+            transform: scale(1.05);
+            box-shadow: 0 0 30px rgba(0, 230, 118, 0.6);
+        }
+
+        .hub-link {
+            position: fixed;
+            top: 20px;
+            left: 20px;
+            color: #40c4ff;
+            text-decoration: none;
+            font-size: 14px;
+            font-weight: bold;
+            cursor: pointer;
+            z-index: 999;
+            transition: color 0.3s;
+        }
+
+        .hub-link:hover {
+            color: #00e676;
+        }
+
+        #gameContainer {
+            display: none;
+        }
+
+        #hud {
+            position: fixed;
+            top: 20px;
+            left: 20px;
+            right: 20px;
+            color: #00e676;
+            font-size: 18px;
+            font-weight: bold;
+            display: none;
+            justify-content: space-between;
+            z-index: 100;
+        }
+
+        .hud-left {
+            display: flex;
+            gap: 40px;
+        }
+
+        .hud-stat {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .hud-label {
+            color: #40c4ff;
+            font-size: 12px;
+            font-weight: normal;
+        }
+
+        .hud-value {
+            color: #00e676;
+            font-size: 24px;
+            font-weight: bold;
+        }
+
+        .tier-badge {
+            padding: 4px 12px;
+            border-radius: 4px;
+            font-size: 12px;
+            font-weight: bold;
+        }
+
+        .tier-cadet {
+            background: #1e88e5;
+            color: #fff;
+        }
+
+        .tier-pilot {
+            background: #ff9100;
+            color: #000;
+        }
+
+        .tier-commander {
+            background: #e91e63;
+            color: #fff;
+        }
+
+        #timerBar {
+            position: fixed;
+            bottom: 20px;
+            left: 20px;
+            width: 200px;
+            height: 8px;
+            background: #222;
+            border: 2px solid #40c4ff;
+            border-radius: 4px;
+            overflow: hidden;
+            z-index: 100;
+            display: none;
+        }
+
+        #timerBarFill {
+            height: 100%;
+            background: #00e676;
+            width: 100%;
+            transition: background-color 0.1s;
+        }
+
+        .audio-toggle {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            background: #40c4ff;
+            color: #000;
+            border: none;
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            cursor: pointer;
+            font-size: 20px;
+            display: none;
+            align-items: center;
+            justify-content: center;
+            z-index: 100;
+            font-weight: bold;
+        }
+
+        .audio-toggle:hover {
+            background: #00e676;
+        }
+
+        #problemModal {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.8);
+            display: none;
+            align-items: center;
+            justify-content: center;
+            z-index: 500;
+            backdrop-filter: blur(4px);
+        }
+
+        .problem-card {
+            background: #0a0a15;
+            border: 2px solid #40c4ff;
+            border-radius: 12px;
+            padding: 30px;
+            max-width: 700px;
+            max-height: 90vh;
+            overflow-y: auto;
+            box-shadow: 0 0 40px rgba(64, 196, 255, 0.3);
+        }
+
+        .problem-story {
+            color: #40c4ff;
+            font-size: 14px;
+            font-style: italic;
+            margin-bottom: 20px;
+            padding: 15px;
+            background: rgba(64, 196, 255, 0.1);
+            border-left: 3px solid #00e676;
+            border-radius: 4px;
+        }
+
+        .problem-content {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 30px;
+            margin-bottom: 30px;
+        }
+
+        .problem-rep {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .problem-rep canvas {
+            border: 1px solid #40c4ff;
+            border-radius: 6px;
+            background: rgba(64, 196, 255, 0.05);
+        }
+
+        .problem-rep-table {
+            width: 100%;
+            border-collapse: collapse;
+            border: 1px solid #40c4ff;
+            border-radius: 6px;
+            overflow: hidden;
+        }
+
+        .problem-rep-table th,
+        .problem-rep-table td {
+            border: 1px solid #40c4ff;
+            padding: 12px;
+            text-align: center;
+            background: rgba(64, 196, 255, 0.05);
+        }
+
+        .problem-rep-table th {
+            background: rgba(0, 230, 118, 0.1);
+            color: #00e676;
+            font-weight: bold;
+        }
+
+        .problem-rep-equation {
+            text-align: center;
+            font-size: 24px;
+            padding: 20px;
+            background: rgba(64, 196, 255, 0.1);
+            border-radius: 6px;
+            border: 1px solid #40c4ff;
+        }
+
+        .problem-question {
+            color: #00e676;
+            font-size: 16px;
+            font-weight: bold;
+            margin-bottom: 15px;
+        }
+
+        .problem-choices {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .choice-btn {
+            background: rgba(64, 196, 255, 0.1);
+            border: 2px solid #40c4ff;
+            color: #fff;
+            padding: 12px;
+            border-radius: 6px;
+            cursor: pointer;
+            text-align: left;
+            font-size: 15px;
+            transition: all 0.3s;
+        }
+
+        .choice-btn:hover {
+            background: rgba(0, 230, 118, 0.1);
+            border-color: #00e676;
+            transform: translateX(5px);
+        }
+
+        .choice-btn.correct {
+            background: rgba(0, 230, 118, 0.3);
+            border-color: #00e676;
+            color: #00e676;
+        }
+
+        .choice-btn.incorrect {
+            background: rgba(255, 145, 0, 0.3);
+            border-color: #ff9100;
+            color: #ff9100;
+        }
+
+        #remediationModal {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.85);
+            display: none;
+            align-items: center;
+            justify-content: center;
+            z-index: 600;
+            backdrop-filter: blur(4px);
+        }
+
+        .remediation-card {
+            background: #0a0a15;
+            border: 2px solid #ff9100;
+            border-radius: 12px;
+            padding: 30px;
+            max-width: 600px;
+            box-shadow: 0 0 40px rgba(255, 145, 0, 0.3);
+        }
+
+        .rem-title {
+            color: #ff9100;
+            font-size: 20px;
+            font-weight: bold;
+            margin-bottom: 20px;
+        }
+
+        .rem-step {
+            color: #ccc;
+            font-size: 16px;
+            line-height: 1.6;
+            margin-bottom: 20px;
+        }
+
+        .rem-input-group {
+            margin: 20px 0;
+        }
+
+        .rem-input-group label {
+            color: #40c4ff;
+            display: block;
+            margin-bottom: 8px;
+            font-weight: bold;
+        }
+
+        .rem-input {
+            width: 100%;
+            padding: 10px;
+            background: rgba(64, 196, 255, 0.1);
+            border: 1px solid #40c4ff;
+            color: #00e676;
+            border-radius: 4px;
+            font-size: 16px;
+        }
+
+        .rem-hint {
+            color: #ff9100;
+            font-size: 13px;
+            margin-top: 8px;
+            font-style: italic;
+        }
+
+        .rem-buttons {
+            display: flex;
+            gap: 10px;
+            margin-top: 20px;
+        }
+
+        .rem-btn {
+            flex: 1;
+            padding: 10px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-weight: bold;
+            transition: all 0.3s;
+        }
+
+        .rem-next {
+            background: #00e676;
+            color: #000;
+        }
+
+        .rem-next:hover {
+            background: #1de9b6;
+        }
+
+        .rem-next:disabled {
+            background: #666;
+            color: #ccc;
+            cursor: not-allowed;
+        }
+
+        #blockDodgeCanvas {
+            position: fixed;
+            top: 0;
+            left: 0;
+            display: none;
+            z-index: 450;
+        }
+
+        #resultsScreen {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(135deg, #060614 0%, #0a0a15 100%);
+            display: none;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            z-index: 2000;
+        }
+
+        .results-title {
+            font-size: 48px;
+            color: #00e676;
+            margin-bottom: 30px;
+            text-shadow: 0 0 20px rgba(0, 230, 118, 0.5);
+        }
+
+        .results-stats {
+            background: rgba(64, 196, 255, 0.1);
+            border: 2px solid #40c4ff;
+            border-radius: 12px;
+            padding: 30px;
+            margin-bottom: 40px;
+            max-width: 500px;
+        }
+
+        .stat-row {
+            display: flex;
+            justify-content: space-between;
+            padding: 12px 0;
+            border-bottom: 1px solid rgba(64, 196, 255, 0.3);
+            color: #ccc;
+            font-size: 18px;
+        }
+
+        .stat-row:last-child {
+            border-bottom: none;
+        }
+
+        .stat-label {
+            color: #40c4ff;
+            font-weight: bold;
+        }
+
+        .stat-value {
+            color: #00e676;
+            font-weight: bold;
+        }
+
+        .results-buttons {
+            display: flex;
+            gap: 20px;
+        }
+
+        .results-btn {
+            padding: 14px 30px;
+            border: none;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .results-btn-play {
+            background: linear-gradient(135deg, #00e676, #1de9b6);
+            color: #000;
+        }
+
+        .results-btn-play:hover {
+            transform: scale(1.05);
+        }
+
+        .results-btn-hub {
+            background: transparent;
+            color: #40c4ff;
+            border: 2px solid #40c4ff;
+        }
+
+        .results-btn-hub:hover {
+            background: rgba(64, 196, 255, 0.1);
+        }
+
+        .touch-controls {
+            position: fixed;
+            bottom: 20px;
+            left: 20px;
+            right: 20px;
+            display: none;
+            gap: 20px;
+            z-index: 100;
+        }
+
+        .touch-zone {
+            flex: 1;
+            height: 60px;
+            background: rgba(64, 196, 255, 0.2);
+            border: 2px solid #40c4ff;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #40c4ff;
+            font-weight: bold;
+        }
+
+        @media (max-width: 768px) {
+            .problem-content {
+                grid-template-columns: 1fr;
+            }
+
+            .touch-controls {
+                display: flex;
+            }
+
+            .splash-title {
+                font-size: 36px;
+            }
+
+            .splash-subtitle {
+                font-size: 18px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div id="splashScreen">
+        <div class="splash-logo">VINCULUM MATH SOLUTIONS</div>
+        <div class="splash-title">PROPORTIONAL PROPULSION</div>
+        <div class="splash-subtitle">Space Station Cafeteria — Provision Scaling</div>
+        <div class="splash-briefing">
+            Commander, our space station's cafeteria is in chaos! Supplies need to be scaled according to the number of crew members. Help deliver the right provisions using your knowledge of proportional relationships. Navigate the corridors, solve math problems, and keep our astronauts fed!
+        </div>
+        <button class="accept-button" onclick="startGame()">ACCEPT MISSION</button>
+    </div>
+
+    <a href="../../VINCULUM-Hub.html" class="hub-link" id="hubLink">← VINCULUM Hub</a>
+
+    <div id="gameContainer">
+        <div id="hud">
+            <div class="hud-left">
+                <div class="hud-stat">
+                    <div class="hud-label">TIME</div>
+                    <div class="hud-value" id="hudTime">3:00</div>
+                </div>
+                <div class="hud-stat">
+                    <div class="hud-label">SCORE</div>
+                    <div class="hud-value" id="hudScore">0</div>
+                </div>
+                <div class="hud-stat">
+                    <div class="hud-label">STREAK</div>
+                    <div class="hud-value" id="hudStreak">0</div>
+                </div>
+                <div class="hud-stat">
+                    <div class="hud-label">MISSED</div>
+                    <div class="hud-value" id="hudWrong">0</div>
+                </div>
+            </div>
+            <div class="hud-stat">
+                <div class="tier-badge" id="tierBadge">CADET</div>
+            </div>
+        </div>
+
+        <button class="audio-toggle" id="audioToggle" onclick="toggleAudio()">🔊</button>
+
+        <div id="timerBar">
+            <div id="timerBarFill"></div>
+        </div>
+
+        <div class="touch-controls" id="touchControls">
+            <div class="touch-zone" ontouchstart="handleTouchLeft(true)" ontouchend="handleTouchLeft(false)">← LEFT</div>
+            <div class="touch-zone" ontouchstart="handleTouchCenter(true)" ontouchend="handleTouchCenter(false)">CENTER</div>
+            <div class="touch-zone" ontouchstart="handleTouchRight(true)" ontouchend="handleTouchRight(false)">RIGHT →</div>
+        </div>
+    </div>
+
+    <div id="problemModal">
+        <div class="problem-card" id="problemCard"></div>
+    </div>
+
+    <div id="remediationModal">
+        <div class="remediation-card" id="remediationCard"></div>
+    </div>
+
+    <canvas id="blockDodgeCanvas"></canvas>
+
+    <div id="resultsScreen">
+        <div class="results-title">SUPPLY RUN COMPLETE</div>
+        <div class="results-stats">
+            <div class="stat-row">
+                <span class="stat-label">Provisions Delivered:</span>
+                <span class="stat-value" id="resScore">0</span>
+            </div>
+            <div class="stat-row">
+                <span class="stat-label">Missed Shipments:</span>
+                <span class="stat-value" id="resWrong">0</span>
+            </div>
+            <div class="stat-row">
+                <span class="stat-label">Accuracy:</span>
+                <span class="stat-value" id="resAccuracy">0%</span>
+            </div>
+            <div class="stat-row">
+                <span class="stat-label">Best Streak:</span>
+                <span class="stat-value" id="resStreak">0</span>
+            </div>
+            <div class="stat-row">
+                <span class="stat-label">Final Tier:</span>
+                <span class="stat-value" id="resTier">CADET</span>
+            </div>
+        </div>
+        <div class="results-buttons">
+            <button class="results-btn results-btn-play" onclick="startGame()">FLY AGAIN</button>
+            <button class="results-btn results-btn-hub" onclick="window.location.href='https://vinculum-math-solutions.github.io/'">RETURN TO SPACE GAMES HUB</button>
+        </div>
+    </div>
+
+    <script>
+        const G = {
+            tier: 'cadet',
+            gameRunning: false,
+            gameTime: 180,
+            score: 0,
+            wrong: 0,
+            streak: 0,
+            bestStreak: 0,
+            lastAnswers: [],
+            audioEnabled: true,
+            currentProblem: null,
+            currentPanel: null,
+            astronautLane: 0,
+            targetLane: 0,
+        };
+
+        const PROVISIONS = [
+            {item: 'meal packs', unit: 'astronauts', icon: 'MP', story: 'The morning shift needs meals delivered to each astronaut before launch prep begins.'},
+            {item: 'water pouches', unit: 'crew members', icon: 'WP', story: 'Hydration alert! Every crew member needs water pouches restocked for the 12-hour orbit.'},
+            {item: 'protein bars', unit: 'days', icon: 'PB', story: 'Mission Control says we need enough protein bars to last the full trip.'},
+            {item: 'oxygen canisters', unit: 'compartments', icon: 'O2', story: 'Life support is critical — each compartment needs its oxygen supply topped off.'},
+            {item: 'fruit rations', unit: 'teams', icon: 'FR', story: 'The science teams are requesting fruit rations for their research module rotations.'},
+            {item: 'nutrient tubes', unit: 'shifts', icon: 'NT', story: 'Each shift of workers in the engine bay needs nutrient tubes to stay energized.'},
+            {item: 'freeze-dried servings', unit: 'passengers', icon: 'FD', story: 'A transport shuttle just docked — we need freeze-dried servings for every passenger.'},
+            {item: 'electrolyte packs', unit: 'stations', icon: 'EP', story: 'The medical bay ordered electrolyte packs for each station in the recovery ward.'},
+            {item: 'calcium tablets', unit: 'astronauts', icon: 'CT', story: 'Bone density drops in zero-g! Every astronaut needs their daily calcium tablets.'},
+            {item: 'coffee packets', unit: 'shifts', icon: 'CP', story: 'Morale runs on coffee up here — each shift needs their packets before clocking in.'},
+            {item: 'vitamin capsules', unit: 'crew members', icon: 'VC', story: 'The flight surgeon insists: every crew member gets their vitamin capsules, no exceptions.'},
+            {item: 'rice portions', unit: 'passengers', icon: 'RP', story: 'The galley chef is prepping rice for the incoming passenger shuttle.'},
+            {item: 'juice boxes', unit: 'teams', icon: 'JB', story: 'The EVA teams just came back from a spacewalk — they need juice boxes ASAP.'},
+            {item: 'granola bars', unit: 'days', icon: 'GB', story: 'We\'re stocking the emergency reserve — enough granola bars to last every day of the mission.'},
+            {item: 'soup packets', unit: 'compartments', icon: 'SP', story: 'Cold front in Module C! Warm soup packets are being distributed to each compartment.'},
+            {item: 'energy gels', unit: 'stations', icon: 'EG', story: 'The marathon training crew needs energy gels at each workout station on the ring.'},
+        ];
+
+        function plu(n, word) {
+            if (n === 1 || n === '1') {
+                if (word.endsWith('ches')) return word.slice(0, -2);
+                if (word.endsWith('s')) return word.slice(0, -1);
+            }
+            return word;
+        }
+
+        const FM = {
+            0.1: '\\frac{1}{10}', 0.2: '\\frac{1}{5}', 0.25: '\\frac{1}{4}',
+            0.4: '\\frac{2}{5}', 0.5: '\\frac{1}{2}', 0.6: '\\frac{3}{5}',
+            0.75: '\\frac{3}{4}', 0.8: '\\frac{4}{5}', 1.25: '\\frac{5}{4}',
+            1.5: '\\frac{3}{2}', 2.5: '\\frac{5}{2}', 3.5: '\\frac{7}{2}', 4.5: '\\frac{9}{2}'
+        };
+
+        function kL(k) {
+            if (FM[k]) return FM[k];
+            if (Math.abs(k - 1/3) < 0.001) return '\\frac{1}{3}';
+            if (Math.abs(k - 2/3) < 0.001) return '\\frac{2}{3}';
+            if (Number.isInteger(k)) return String(k);
+            const rounded = Math.round(k * 100) / 100;
+            if (FM[rounded]) return FM[rounded];
+            return String(k);
+        }
+
+        function tierPairs() {
+            const cadet = [
+                {k: 1, xs: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]},
+                {k: 2, xs: [1, 2, 3, 4, 5]},
+                {k: 3, xs: [1, 2, 3]},
+                {k: 4, xs: [1, 2]},
+                {k: 5, xs: [1, 2]},
+                {k: 2, xs: [2, 3, 4]},
+                {k: 3, xs: [2, 3]},
+                {k: 1, xs: [3, 5, 7, 9]},
+                {k: 2, xs: [1, 3, 5]},
+                {k: 3, xs: [1, 3]},
+            ];
+            const pilot = [
+                {k: 1, xs: [2, 3, 4, 5, 6, 7, 8, 9, 10]},
+                {k: 2, xs: [1, 2, 3, 4, 5]},
+                {k: 3, xs: [1, 2, 3]},
+                {k: 4, xs: [1, 2]},
+                {k: 5, xs: [1, 2]},
+                {k: 6, xs: [1]},
+                {k: 7, xs: [1]},
+                {k: 8, xs: [1]},
+                {k: 9, xs: [1]},
+                {k: 10, xs: [1]},
+                {k: 2, xs: [3, 4, 5]},
+                {k: 3, xs: [2, 3]},
+                {k: 4, xs: [1, 2]},
+                {k: 5, xs: [1, 2]},
+                {k: 1, xs: [4, 6, 8, 10]},
+            ];
+            const commander = [
+                {k: 1, xs: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]},
+                {k: 2, xs: [1, 2, 3, 4, 5]},
+                {k: 3, xs: [1, 2, 3]},
+                {k: 4, xs: [1, 2]},
+                {k: 5, xs: [1, 2]},
+                {k: 6, xs: [1]},
+                {k: 7, xs: [1]},
+                {k: 8, xs: [1]},
+                {k: 9, xs: [1]},
+                {k: 10, xs: [1]},
+                {k: 0.1, xs: [10]},
+                {k: 0.2, xs: [5, 10]},
+                {k: 0.25, xs: [4, 8]},
+                {k: 1/3, xs: [3, 6, 9]},
+                {k: 0.4, xs: [5, 10]},
+                {k: 0.5, xs: [2, 4, 6, 8, 10]},
+                {k: 0.6, xs: [5, 10]},
+                {k: 2/3, xs: [3, 6, 9]},
+                {k: 0.75, xs: [4, 8]},
+                {k: 0.8, xs: [5, 10]},
+                {k: 1.25, xs: [4, 8]},
+                {k: 1.5, xs: [2, 4, 6]},
+                {k: 2.5, xs: [2, 4]},
+                {k: 3.5, xs: [2]},
+                {k: 4.5, xs: [2]},
+            ];
+            switch (G.tier) {
+                case 'cadet': return cadet;
+                case 'pilot': return pilot;
+                case 'commander': return commander;
+            }
+            return cadet;
+        }
+
+        function genProblem() {
+            const pairs = tierPairs();
+            const pair = pairs[Math.floor(Math.random() * pairs.length)];
+            const k = pair.k;
+            const x = pair.xs[Math.floor(Math.random() * pair.xs.length)];
+            const y = Math.round(k * x);
+
+            const prov = PROVISIONS[Math.floor(Math.random() * PROVISIONS.length)];
+            const rep = ['graph', 'table', 'equation'][Math.floor(Math.random() * 3)];
+
+            const pointCount = Math.min(4, Math.max(2, Math.floor(Math.random() * 3) + 2));
+            const points = [];
+            const xVals = [];
+
+            for (let i = 0; i < pointCount; i++) {
+                const px = pair.xs[Math.floor(Math.random() * pair.xs.length)];
+                if (!xVals.includes(px)) {
+                    xVals.push(px);
+                    points.push({x: px, y: Math.round(k * px)});
+                }
+            }
+
+            points.sort((a, b) => a.x - b.x);
+
+            const qType = ['find_k', 'find_y', 'find_equation'][Math.floor(Math.random() * 3)];
+            let question, correctChoice, choices;
+
+            if (qType === 'find_k') {
+                question = `What is k (the constant of proportionality)?`;
+                correctChoice = kL(k);
+                // Pick distractors from same family (whole or fractional)
+                const pool = Number.isInteger(k)
+                    ? [1,2,3,4,5,6,7,8,9,10].filter(v => v !== k)
+                    : [0.1,0.2,0.25,0.4,0.5,0.6,0.75,0.8,1,1.25,1.5,2,2.5,3,3.5,4,4.5,5].filter(v => Math.abs(v - k) > 0.01);
+                pool.sort(() => Math.random() - 0.5);
+                const wrongs = pool.slice(0, 3).map(v => kL(v));
+                choices = [correctChoice, ...wrongs].sort(() => Math.random() - 0.5);
+
+            } else if (qType === 'find_y') {
+                question = `If there are ${x} ${plu(x, prov.unit)}, how many ${prov.item}?`;
+                correctChoice = String(y);
+                // Whole-number distractors, clearly distinct
+                const candidates = new Set();
+                for (let dk = -3; dk <= 3; dk++) {
+                    if (dk === 0) continue;
+                    const alt = y + dk;
+                    if (alt > 0 && alt <= 10) candidates.add(alt);
+                }
+                if (x !== y && x > 0 && x <= 10) candidates.add(x);
+                const cArr = [...candidates].filter(v => v !== y).sort(() => Math.random() - 0.5);
+                const wrongs = cArr.slice(0, 3).map(String);
+                // Fallback fill
+                let off = 1;
+                while (wrongs.length < 3) {
+                    const v = y + off;
+                    if (v > 0 && v <= 10 && !wrongs.includes(String(v)) && v !== y) wrongs.push(String(v));
+                    const v2 = y - off;
+                    if (v2 > 0 && v2 <= 10 && !wrongs.includes(String(v2)) && v2 !== y) wrongs.push(String(v2));
+                    off++;
+                    if (off > 12) break;
+                }
+                choices = [correctChoice, ...wrongs.slice(0, 3)].sort(() => Math.random() - 0.5);
+
+            } else {
+                question = `Which equation represents this relationship?`;
+                correctChoice = `y = ${kL(k)}x`;
+                const eqPool = Number.isInteger(k)
+                    ? [1,2,3,4,5,6,7,8,9,10].filter(v => v !== k)
+                    : [0.1,0.2,0.25,0.5,0.75,1,1.25,1.5,2,2.5,3,3.5,4,5].filter(v => Math.abs(v - k) > 0.01);
+                eqPool.sort(() => Math.random() - 0.5);
+                const wrongs = eqPool.slice(0, 3).map(v => `y = ${kL(v)}x`);
+                choices = [correctChoice, ...wrongs].sort(() => Math.random() - 0.5);
+            }
+
+            return { k, x, y, prov, rep, points, qType, question, correctChoice, choices };
+        }
+
+        function drawMiniGraph(canvas, problem) {
+            const ctx = canvas.getContext('2d');
+            const dpr = window.devicePixelRatio || 1;
+            canvas.width = 300 * dpr;
+            canvas.height = 300 * dpr;
+            canvas.style.width = '300px';
+            canvas.style.height = '300px';
+            ctx.scale(dpr, dpr);
+
+            const padding = 40;
+            const w = 300 - 2 * padding;
+            const h = 300 - 2 * padding;
+            const maxX = Math.max(...problem.points.map(p => p.x)) * 1.2;
+            const maxY = Math.max(...problem.points.map(p => p.y)) * 1.2;
+
+            ctx.fillStyle = 'rgba(64, 196, 255, 0.05)';
+            ctx.fillRect(padding, padding, w, h);
+            ctx.strokeStyle = 'rgba(64, 196, 255, 0.3)';
+            ctx.lineWidth = 0.5;
+
+            for (let i = 0; i <= 5; i++) {
+                const x = padding + (i / 5) * w;
+                ctx.beginPath();
+                ctx.moveTo(x, padding);
+                ctx.lineTo(x, padding + h);
+                ctx.stroke();
+
+                const y = padding + (i / 5) * h;
+                ctx.beginPath();
+                ctx.moveTo(padding, y);
+                ctx.lineTo(padding + w, y);
+                ctx.stroke();
+            }
+
+            ctx.strokeStyle = '#40c4ff';
+            ctx.lineWidth = 1.5;
+            ctx.beginPath();
+            ctx.moveTo(padding, padding + h);
+            ctx.lineTo(padding + w, padding + h);
+            ctx.stroke();
+            ctx.beginPath();
+            ctx.moveTo(padding, padding);
+            ctx.lineTo(padding, padding + h);
+            ctx.stroke();
+
+            ctx.strokeStyle = '#40c4ff';
+            ctx.lineWidth = 1;
+            ctx.beginPath();
+            ctx.moveTo(padding + w - 5, padding + 3);
+            ctx.lineTo(padding + w, padding);
+            ctx.lineTo(padding + w - 3, padding + 5);
+            ctx.stroke();
+
+            ctx.beginPath();
+            ctx.moveTo(padding + 3, padding);
+            ctx.lineTo(padding, padding - 5);
+            ctx.lineTo(padding + 5, padding + 3);
+            ctx.stroke();
+
+            ctx.fillStyle = '#40c4ff';
+            ctx.font = '12px Arial';
+            ctx.textAlign = 'right';
+            for (let i = 0; i <= 5; i++) {
+                const x = padding + (i / 5) * w;
+                const val = Math.round((i / 5) * maxX);
+                ctx.fillText(String(val), x - 5, padding + h + 15);
+            }
+
+            ctx.textAlign = 'right';
+            ctx.textBaseline = 'middle';
+            for (let i = 0; i <= 5; i++) {
+                const y = padding + (i / 5) * h;
+                const val = Math.round((1 - i / 5) * maxY);
+                ctx.fillText(String(val), padding - 15, y);
+            }
+
+            ctx.strokeStyle = 'rgba(0, 230, 118, 0.4)';
+            ctx.lineWidth = 2;
+            ctx.beginPath();
+            let first = true;
+            for (let px = 0; px <= maxX; px += 0.1) {
+                const py = problem.k * px;
+                if (py <= maxY) {
+                    const screenX = padding + (px / maxX) * w;
+                    const screenY = padding + h - (py / maxY) * h;
+                    if (first) {
+                        ctx.moveTo(screenX, screenY);
+                        first = false;
+                    } else {
+                        ctx.lineTo(screenX, screenY);
+                    }
+                }
+            }
+            ctx.stroke();
+
+            problem.points.forEach(pt => {
+                const screenX = padding + (pt.x / maxX) * w;
+                const screenY = padding + h - (pt.y / maxY) * h;
+                ctx.fillStyle = 'rgba(0, 230, 118, 0.2)';
+                ctx.beginPath();
+                ctx.arc(screenX, screenY, 8, 0, 2 * Math.PI);
+                ctx.fill();
+                ctx.strokeStyle = '#00e676';
+                ctx.lineWidth = 2;
+                ctx.beginPath();
+                ctx.arc(screenX, screenY, 6, 0, 2 * Math.PI);
+                ctx.stroke();
+                ctx.fillStyle = '#00e676';
+                ctx.font = 'bold 11px Arial';
+                ctx.textAlign = 'center';
+                ctx.fillText(`(${pt.x}, ${pt.y})`, screenX, screenY - 12);
+            });
+
+            ctx.fillStyle = '#40c4ff';
+            ctx.beginPath();
+            ctx.arc(padding, padding + h, 3, 0, 2 * Math.PI);
+            ctx.fill();
+        }
+
+        function renderProblem(problem) {
+            const modal = document.getElementById('problemModal');
+            const card = document.getElementById('problemCard');
+
+            let html = `<div class="problem-story">${problem.prov.story}</div>`;
+            html += `<div class="problem-content">`;
+
+            if (problem.rep === 'graph') {
+                html += `<div class="problem-rep"><canvas id="graphCanvas"></canvas></div>`;
+            } else if (problem.rep === 'table') {
+                html += `<div class="problem-rep"><table class="problem-rep-table"><tr><th>${problem.prov.unit}</th><th>${problem.prov.item}</th></tr>`;
+                problem.points.forEach(pt => {
+                    html += `<tr><td>${pt.x}</td><td>${pt.y}</td></tr>`;
+                });
+                html += `</table></div>`;
+            } else {
+                html += `<div class="problem-rep"><div class="problem-rep-equation" id="eqnDiv"></div></div>`;
+            }
+
+            html += `<div><div class="problem-question">${problem.question}</div><div class="problem-choices">`;
+            problem.choices.forEach((choice, idx) => {
+                html += `<button class="choice-btn" onclick="answerProblem(${idx})" id="choice${idx}"><span id="choice${idx}Text"></span></button>`;
+            });
+            html += `</div></div></div>`;
+
+            card.innerHTML = html;
+            modal.style.display = 'flex';
+
+            if (problem.rep === 'graph') {
+                setTimeout(() => {
+                    const canvas = document.getElementById('graphCanvas');
+                    if (canvas) drawMiniGraph(canvas, problem);
+                }, 0);
+            } else if (problem.rep === 'equation') {
+                const eqnDiv = document.getElementById('eqnDiv');
+                if (problem.qType === 'find_k') {
+                    katex.render(`y = k \\cdot x`, eqnDiv, {throwOnError: false});
+                } else {
+                    katex.render(`y = ${kL(problem.k)}x`, eqnDiv, {throwOnError: false});
+                }
+                // Prominent "Point on the Line" hint
+                const hint = document.createElement('div');
+                hint.style.cssText = 'text-align:center;margin:12px 0 6px;padding:10px 16px;background:rgba(64,196,255,.08);border:1px solid rgba(64,196,255,.35);border-radius:8px;';
+                hint.innerHTML = `<div style="font-size:9px;letter-spacing:2px;color:rgba(64,196,255,.5);margin-bottom:4px;font-weight:700;">POINT ON THE LINE</div>`
+                    + `<div style="font-size:22px;font-weight:900;color:#40c4ff;">(${problem.x}, ${problem.y})</div>`
+                    + `<div style="font-size:11px;color:rgba(255,255,255,.5);margin-top:3px;">${problem.x} ${plu(problem.x, problem.prov.unit)} → ${problem.y} ${plu(problem.y, problem.prov.item)}</div>`;
+                eqnDiv.parentElement.appendChild(hint);
+            }
+
+            problem.choices.forEach((choice, idx) => {
+                const choiceText = document.getElementById(`choice${idx}Text`);
+                if (choice.includes('{')) {
+                    katex.render(choice, choiceText, {throwOnError: false});
+                } else {
+                    choiceText.innerText = choice;
+                }
+            });
+
+            speak(`${problem.prov.story} ${problem.question}`);
+        }
+
+        function answerProblem(idx) {
+            const problem = G.currentProblem;
+            const chosen = problem.choices[idx];
+            const correct = problem.correctChoice === chosen;
+
+            const choiceBtn = document.getElementById(`choice${idx}`);
+            choiceBtn.classList.add(correct ? 'correct' : 'incorrect');
+
+            setTimeout(() => {
+                if (correct) {
+                    G.score += 10;
+                    G.streak++;
+                    if (G.streak > G.bestStreak) G.bestStreak = G.streak;
+                    G.lastAnswers.push(true);
+                    if (G.lastAnswers.length > 5) G.lastAnswers.shift();
+                    speak('Correct!');
+                    updateHUD();
+                    document.getElementById('problemModal').style.display = 'none';
+                    setTimeout(startBlockDodge, 500);
+                } else {
+                    G.wrong++;
+                    G.streak = 0;
+                    G.lastAnswers.push(false);
+                    if (G.lastAnswers.length > 5) G.lastAnswers.shift();
+                    speak('Incorrect. Let\'s walk through this together.');
+                    updateHUD();
+                    document.getElementById('problemModal').style.display = 'none';
+                    setTimeout(() => startRemediation(problem), 500);
+                }
+                adaptTier();
+            }, 1000);
+        }
+
+        let remediationState = 0;
+        let remediationProblem = null;
+
+        function startRemediation(problem) {
+            remediationProblem = problem;
+            remediationState = 0;
+            runRemStep();
+        }
+
+        function runRemStep() {
+            const problem = remediationProblem;
+            const modal = document.getElementById('remediationModal');
+            const card = document.getElementById('remediationCard');
+
+            if (remediationState === 0) {
+                card.innerHTML = `
+                    <div class="rem-title">Learning Support</div>
+                    <div class="rem-step">
+                        Looking at our data, when we have ${problem.points[0].x} ${plu(problem.points[0].x, problem.prov.unit)},
+                        we need ${problem.points[0].y} ${plu(problem.points[0].y, problem.prov.item)}.
+                        <br><br>
+                        The constant of proportionality (k) tells us: for every 1 ${problem.prov.unit},
+                        we need ${kL(problem.k)} ${plu(1, problem.prov.item)}.
+                    </div>
+                    <div class="rem-buttons">
+                        <button class="rem-btn rem-next" onclick="remediationState++;runRemStep()">I SEE IT — NEXT</button>
+                    </div>
+                `;
+            } else if (remediationState <= 3) {
+                const pt = problem.points[remediationState - 1];
+                card.innerHTML = `
+                    <div class="rem-title">Build the pattern</div>
+                    <div class="rem-step">
+                        If ${pt.x} ${plu(pt.x, problem.prov.unit)} need ${pt.y} ${plu(pt.y, problem.prov.item)},
+                        let's verify: ${pt.x} × ${kL(problem.k)} = ?
+                    </div>
+                    <div class="rem-input-group">
+                        <label>Enter the result:</label>
+                        <input type="number" id="remInput" class="rem-input" placeholder="Enter number" onkeypress="if(event.key==='Enter') checkRemInput()">
+                    </div>
+                    <div class="rem-buttons">
+                        <button class="rem-btn rem-next" onclick="checkRemInput()">CHECK</button>
+                    </div>
+                `;
+                setTimeout(() => document.getElementById('remInput').focus(), 100);
+            } else {
+                card.innerHTML = `
+                    <div class="rem-title">Great work!</div>
+                    <div class="rem-step">
+                        You've walked through the pattern. The equation is y = ${kL(problem.k)}x.
+                        <br><br>
+                        Remember: multiply any value on the left by ${kL(problem.k)} to get the value on the right.
+                    </div>
+                    <div class="rem-buttons">
+                        <button class="rem-btn rem-next" onclick="closeRemediation()">BACK TO GAME</button>
+                    </div>
+                `;
+            }
+            modal.style.display = 'flex';
+        }
+
+        function checkRemInput() {
+            const problem = remediationProblem;
+            const input = document.getElementById('remInput');
+            const answer = parseFloat(input.value);
+            const pt = problem.points[remediationState - 1];
+            const expected = pt.y;
+
+            if (answer === expected) {
+                remediationState++;
+                runRemStep();
+            } else {
+                input.style.borderColor = '#ff9100';
+                const hint = document.createElement('div');
+                hint.className = 'rem-hint';
+                hint.innerText = `Hint: ${pt.x} × ${kL(problem.k)} = ${expected}`;
+                input.parentNode.appendChild(hint);
+                setTimeout(() => hint.remove(), 2000);
+            }
+        }
+
+        function closeRemediation() {
+            document.getElementById('remediationModal').style.display = 'none';
+            resumeGame();
+        }
+
+        const dodge = {active: false, raf: null, timer: null, timeLeft: 0,
+            astronaut: {x: 0, y: 0, w: 40, h: 56, lane: 1, targetLane: 1},
+            blocks: [], dots: [], dotScore: 0, lastSpawn: 0, speed: 3,
+            W: 0, H: 0, lanes: [], dpr: 1};
+
+        function startBlockDodge() {
+            const canvas = document.getElementById('blockDodgeCanvas');
+            const dpr = Math.min(window.devicePixelRatio || 1, 2);
+            canvas.width = window.innerWidth * dpr;
+            canvas.height = window.innerHeight * dpr;
+            canvas.style.width = window.innerWidth + 'px';
+            canvas.style.height = window.innerHeight + 'px';
+            canvas.style.display = 'block';
+
+            const W = window.innerWidth, H = window.innerHeight;
+            const lanes = [W * 0.2, W * 0.5, W * 0.8];
+
+            dodge.active = true;
+            dodge.timeLeft = 10;
+            dodge.blocks = [];
+            dodge.dots = [];
+            dodge.dotScore = 0;
+            dodge.lastSpawn = performance.now();
+            dodge.speed = 3;
+            dodge.W = W;
+            dodge.H = H;
+            dodge.lanes = lanes;
+            dodge.dpr = dpr;
+            dodge.astronaut = {x: lanes[1], y: H - 120, w: 40, h: 56, lane: 1, targetLane: 1};
+
+            speak('Block Dodge! Dodge the crates, collect the dots!');
+
+            dodge.timer = setInterval(() => {
+                dodge.timeLeft--;
+                if (dodge.timeLeft <= 0) endBlockDodge();
+            }, 1000);
+
+            dodgeLoop();
+        }
+
+        function dodgeLoop() {
+            if (!dodge.active) return;
+            dodge.raf = requestAnimationFrame(dodgeLoop);
+
+            const canvas = document.getElementById('blockDodgeCanvas');
+            const ctx = canvas.getContext('2d');
+            const {W, H, lanes, dpr, astronaut: ast} = dodge;
+            ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+            ctx.clearRect(0, 0, W, H);
+
+            // Background
+            ctx.fillStyle = 'rgba(6,6,20,.6)';
+            ctx.fillRect(0, 0, W, H);
+
+            // Lane lines
+            ctx.strokeStyle = 'rgba(0,230,118,.08)';
+            ctx.lineWidth = 1;
+            ctx.setLineDash([8, 12]);
+            for (let i = 0; i < 3; i++) {
+                ctx.beginPath(); ctx.moveTo(lanes[i], 0); ctx.lineTo(lanes[i], H); ctx.stroke();
+            }
+            ctx.setLineDash([]);
+
+            // Smooth lane movement
+            const targetX = lanes[ast.targetLane];
+            ast.x += (targetX - ast.x) * 0.15;
+
+            // Spawn blocks and dots
+            const now = performance.now();
+            const spawnRate = dodge.timeLeft > 7 ? 600 : dodge.timeLeft > 4 ? 450 : 350;
+            if (now - dodge.lastSpawn > spawnRate) {
+                dodge.lastSpawn = now;
+                const bLane = Math.floor(Math.random() * 3);
+                dodge.blocks.push({x: lanes[bLane], y: -40, w: 44, h: 44, rot: Math.random() * Math.PI});
+                if (Math.random() < 0.5) {
+                    let dLane;
+                    do { dLane = Math.floor(Math.random() * 3); } while (dLane === bLane);
+                    dodge.dots.push({x: lanes[dLane], y: -30, r: 10, glow: 0});
+                }
+            }
+
+            const spd = 3 + (10 - dodge.timeLeft) * 0.4;
+
+            // Draw blocks (orange crates)
+            dodge.blocks.forEach(b => {
+                b.y += spd;
+                b.rot += 0.03;
+                ctx.save();
+                ctx.translate(b.x, b.y);
+                ctx.rotate(b.rot);
+                ctx.fillStyle = 'rgba(255,109,0,.7)';
+                ctx.shadowColor = 'rgba(255,109,0,.4)';
+                ctx.shadowBlur = 12;
+                ctx.fillRect(-b.w / 2, -b.h / 2, b.w, b.h);
+                ctx.shadowBlur = 0;
+                ctx.strokeStyle = 'rgba(255,150,50,.5)';
+                ctx.lineWidth = 2;
+                ctx.strokeRect(-b.w / 2, -b.h / 2, b.w, b.h);
+                ctx.restore();
+            });
+
+            // Draw dots (green collectibles)
+            dodge.dots.forEach(d => {
+                d.y += spd * 0.85;
+                d.glow = (d.glow + 0.08) % (Math.PI * 2);
+                const pulse = 1 + Math.sin(d.glow) * 0.3;
+                ctx.shadowColor = 'rgba(0,230,118,.7)';
+                ctx.shadowBlur = 16 * pulse;
+                ctx.fillStyle = '#00e676';
+                ctx.beginPath();
+                ctx.arc(d.x, d.y, d.r * pulse, 0, Math.PI * 2);
+                ctx.fill();
+                ctx.shadowBlur = 0;
+                ctx.fillStyle = 'rgba(255,255,255,.8)';
+                ctx.beginPath();
+                ctx.arc(d.x, d.y, d.r * 0.4, 0, Math.PI * 2);
+                ctx.fill();
+            });
+
+            // Draw astronaut
+            drawDodgeAstronaut(ctx, ast.x, ast.y, ast.w, ast.h);
+
+            // Collision — blocks
+            dodge.blocks = dodge.blocks.filter(b => {
+                if (b.y > H + 60) return false;
+                const dx = Math.abs(b.x - ast.x), dy = Math.abs(b.y - ast.y);
+                if (dx < (b.w / 2 + ast.w / 2 - 8) && dy < (b.h / 2 + ast.h / 2 - 8)) {
+                    ctx.fillStyle = 'rgba(255,50,50,.15)';
+                    ctx.fillRect(0, 0, W, H);
+                    return false;
+                }
+                return true;
+            });
+
+            // Collision — dots
+            dodge.dots = dodge.dots.filter(d => {
+                if (d.y > H + 40) return false;
+                const dx = Math.abs(d.x - ast.x), dy = Math.abs(d.y - ast.y);
+                if (dx < (d.r + ast.w / 2) && dy < (d.r + ast.h / 2)) {
+                    dodge.dotScore++;
+                    return false;
+                }
+                return true;
+            });
+
+            // Timer display
+            ctx.fillStyle = '#40c4ff';
+            ctx.font = 'bold 28px "Segoe UI", sans-serif';
+            ctx.textAlign = 'center';
+            ctx.shadowColor = 'rgba(64,196,255,.5)';
+            ctx.shadowBlur = 10;
+            ctx.fillText(Math.max(0, dodge.timeLeft) + 's', W / 2, 50);
+            ctx.fillStyle = '#00e676';
+            ctx.font = 'bold 14px "Segoe UI", sans-serif';
+            ctx.fillText('DOTS: ' + dodge.dotScore, W / 2, 75);
+            ctx.shadowBlur = 0;
+        }
+
+        function drawDodgeAstronaut(ctx, x, y, w, h) {
+            ctx.save();
+            ctx.translate(x, y);
+            // Backpack
+            ctx.fillStyle = 'rgba(0,230,118,.6)';
+            ctx.fillRect(-w / 2 - 6, -h / 2 + 8, 8, h * 0.5);
+            // Body
+            ctx.fillStyle = 'rgba(220,230,255,.9)';
+            ctx.shadowColor = 'rgba(64,196,255,.4)';
+            ctx.shadowBlur = 10;
+            const bx = -w / 2 + 2, by = -h / 2 + 14, bw = w - 4, bh = h * 0.55, br = 6;
+            ctx.beginPath();
+            ctx.moveTo(bx + br, by);
+            ctx.lineTo(bx + bw - br, by);
+            ctx.quadraticCurveTo(bx + bw, by, bx + bw, by + br);
+            ctx.lineTo(bx + bw, by + bh - br);
+            ctx.quadraticCurveTo(bx + bw, by + bh, bx + bw - br, by + bh);
+            ctx.lineTo(bx + br, by + bh);
+            ctx.quadraticCurveTo(bx, by + bh, bx, by + bh - br);
+            ctx.lineTo(bx, by + br);
+            ctx.quadraticCurveTo(bx, by, bx + br, by);
+            ctx.closePath();
+            ctx.fill();
+            ctx.shadowBlur = 0;
+            // Helmet
+            ctx.fillStyle = 'rgba(200,210,230,.95)';
+            ctx.beginPath();
+            ctx.arc(0, -h / 2 + 8, 16, 0, Math.PI * 2);
+            ctx.fill();
+            // Visor
+            ctx.fillStyle = 'rgba(64,196,255,.7)';
+            ctx.beginPath();
+            ctx.arc(0, -h / 2 + 8, 11, Math.PI * 0.2, Math.PI * 0.8);
+            ctx.lineTo(0, -h / 2 + 8);
+            ctx.fill();
+            // Legs
+            ctx.fillStyle = 'rgba(180,190,210,.8)';
+            ctx.fillRect(-w / 4, h * 0.08, 8, h * 0.35);
+            ctx.fillRect(w / 4 - 8, h * 0.08, 8, h * 0.35);
+            // Badge
+            ctx.fillStyle = 'rgba(0,230,118,.8)';
+            ctx.font = 'bold 8px sans-serif';
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+            ctx.fillText('V', 0, -h / 2 + 28);
+            ctx.restore();
+        }
+
+        function endBlockDodge() {
+            dodge.active = false;
+            if (dodge.raf) cancelAnimationFrame(dodge.raf);
+            if (dodge.timer) clearInterval(dodge.timer);
+
+            const bonus = dodge.dotScore;
+            if (bonus > 0) G.score += bonus;
+
+            document.getElementById('blockDodgeCanvas').style.display = 'none';
+            updateHUD();
+            resumeGame();
+        }
+
+        function adaptTier() {
+            if (G.lastAnswers.length < 5) return;
+            const correct = G.lastAnswers.filter(x => x).length;
+            if (correct >= 4 && G.tier === 'cadet') {
+                G.tier = 'pilot';
+            } else if (correct >= 4 && G.tier === 'pilot') {
+                G.tier = 'commander';
+            } else if (correct <= 1 && G.tier === 'commander') {
+                G.tier = 'pilot';
+            } else if (correct <= 1 && G.tier === 'pilot') {
+                G.tier = 'cadet';
+            }
+        }
+
+        const synth = window.speechSynthesis;
+        let currentUtterance = null;
+
+        function speak(text) {
+            if (!G.audioEnabled) return;
+            stopSpeech();
+            currentUtterance = new SpeechSynthesisUtterance(text);
+            currentUtterance.rate = 1;
+            synth.speak(currentUtterance);
+        }
+
+        function stopSpeech() {
+            synth.cancel();
+        }
+
+        function toggleAudio() {
+            G.audioEnabled = !G.audioEnabled;
+            const btn = document.getElementById('audioToggle');
+            btn.innerText = G.audioEnabled ? '🔊' : '🔇';
+        }
+
+        let scene, camera, renderer, astronaut, panels = [];
+        let lastPanelTime = 0;
+        const LANE_X = [-3, 0, 3];
+        let crates = [];
+
+        function initScene() {
+            scene = new THREE.Scene();
+            scene.background = new THREE.Color(0x060614);
+            scene.fog = new THREE.FogExp2(0x060614, 0.003);
+
+            camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+            camera.position.set(0, 1.5, 0);
+
+            renderer = new THREE.WebGLRenderer({antialias: true});
+            renderer.setSize(window.innerWidth, window.innerHeight);
+            renderer.shadowMap.enabled = true;
+            document.body.appendChild(renderer.domElement);
+
+            const ambientLight = new THREE.AmbientLight(0x666666);
+            scene.add(ambientLight);
+
+            const directionalLight = new THREE.DirectionalLight(0xffffff, 0.8);
+            directionalLight.position.set(0, 5, 5);
+            directionalLight.castShadow = true;
+            directionalLight.shadow.mapSize.width = 2048;
+            directionalLight.shadow.mapSize.height = 2048;
+            scene.add(directionalLight);
+
+            const floorGeom = new THREE.PlaneGeometry(10, 500);
+            const floorMat = new THREE.MeshStandardMaterial({color: 0x1a1a2e, roughness: 0.8});
+            const floor = new THREE.Mesh(floorGeom, floorMat);
+            floor.rotation.x = -Math.PI / 2;
+            floor.position.z = -250;
+            scene.add(floor);
+
+            const ceilingGeom = new THREE.PlaneGeometry(10, 500);
+            const ceilingMat = new THREE.MeshStandardMaterial({color: 0x0f0f1e, roughness: 0.9});
+            const ceiling = new THREE.Mesh(ceilingGeom, ceilingMat);
+            ceiling.rotation.x = Math.PI / 2;
+            ceiling.position.y = 3;
+            ceiling.position.z = -250;
+            scene.add(ceiling);
+
+            const wallGeom = new THREE.PlaneGeometry(3, 500);
+            const wallMat = new THREE.MeshStandardMaterial({color: 0x16213e, roughness: 0.8, side: THREE.DoubleSide});
+            const leftWall = new THREE.Mesh(wallGeom, wallMat);
+            leftWall.rotation.y = Math.PI / 2;
+            leftWall.position.set(-5, 1.5, -250);
+            scene.add(leftWall);
+
+            const rightWall = new THREE.Mesh(wallGeom, wallMat.clone());
+            rightWall.rotation.y = -Math.PI / 2;
+            rightWall.position.set(5, 1.5, -250);
+            scene.add(rightWall);
+
+            for (let i = 0; i < 30; i++) {
+                const stripGeom = new THREE.BoxGeometry(0.3, 0.1, 0.3);
+                const stripMat = new THREE.MeshStandardMaterial({color: 0x00e676, emissive: 0x00e676});
+                const strip = new THREE.Mesh(stripGeom, stripMat);
+                strip.position.set(-4.5, 2.9, -i * 20 - 10);
+                scene.add(strip);
+
+                const strip2 = new THREE.Mesh(stripGeom, stripMat);
+                strip2.position.set(4.5, 2.9, -i * 20 - 10);
+                scene.add(strip2);
+            }
+
+            astronaut = new THREE.Group();
+            const bodyGeom = new THREE.CylinderGeometry(0.4, 0.3, 1.2, 8);
+            const bodyMat = new THREE.MeshStandardMaterial({color: 0x40c4ff});
+            const body = new THREE.Mesh(bodyGeom, bodyMat);
+            body.position.y = 0.6;
+            astronaut.add(body);
+
+            const headGeom = new THREE.SphereGeometry(0.35, 8, 8);
+            const headMat = new THREE.MeshStandardMaterial({color: 0xcccccc});
+            const head = new THREE.Mesh(headGeom, headMat);
+            head.position.y = 1.5;
+            astronaut.add(head);
+
+            const visorGeom = new THREE.TorusGeometry(0.25, 0.05, 8, 8);
+            const visorMat = new THREE.MeshStandardMaterial({color: 0x00e676, emissive: 0x00e676});
+            const visor = new THREE.Mesh(visorGeom, visorMat);
+            visor.position.y = 1.5;
+            visor.rotation.x = Math.PI / 4;
+            astronaut.add(visor);
+
+            astronaut.position.set(0, 0, 0);
+            scene.add(astronaut);
+
+            // Floating supply crates (decorative)
+            const crateGeo = new THREE.BoxGeometry(0.5, 0.5, 0.5);
+            const crateMats = [
+                new THREE.MeshStandardMaterial({color: 0xff6d00, emissive: 0x331800, transparent: true, opacity: 0.6}),
+                new THREE.MeshStandardMaterial({color: 0x00e676, emissive: 0x002a10, transparent: true, opacity: 0.5}),
+                new THREE.MeshStandardMaterial({color: 0x40c4ff, emissive: 0x0a2030, transparent: true, opacity: 0.5})
+            ];
+            for (let i = 0; i < 20; i++) {
+                const m = new THREE.Mesh(crateGeo, crateMats[i % 3].clone());
+                m.position.set((Math.random() - 0.5) * 8, Math.random() * 2.5 + 0.3, -Math.random() * 200);
+                m.rotation.set(Math.random(), Math.random(), Math.random());
+                m.userData = {ry: (0.5 - Math.random()) * 0.02, speed: 0.02 + Math.random() * 0.03};
+                scene.add(m);
+                crates.push(m);
+            }
+
+            G.lane = 1; // start center
+
+            window.addEventListener('keydown', (e) => {
+                if (!G.gameRunning && !dodge.active) return;
+                if (e.key === 'ArrowLeft' || e.key === 'a') {
+                    if (dodge.active) {
+                        dodge.astronaut.targetLane = Math.max(0, dodge.astronaut.targetLane - 1);
+                    } else {
+                        G.lane = Math.max(0, G.lane - 1);
+                    }
+                    e.preventDefault();
+                }
+                if (e.key === 'ArrowRight' || e.key === 'd') {
+                    if (dodge.active) {
+                        dodge.astronaut.targetLane = Math.min(2, dodge.astronaut.targetLane + 1);
+                    } else {
+                        G.lane = Math.min(2, G.lane + 1);
+                    }
+                    e.preventDefault();
+                }
+            });
+
+            // Touch: tap left/right half of screen
+            document.addEventListener('touchstart', (e) => {
+                if (!G.gameRunning && !dodge.active) return;
+                const tx = e.touches[0].clientX;
+                if (tx < window.innerWidth * 0.4) {
+                    if (dodge.active) dodge.astronaut.targetLane = Math.max(0, dodge.astronaut.targetLane - 1);
+                    else G.lane = Math.max(0, G.lane - 1);
+                } else if (tx > window.innerWidth * 0.6) {
+                    if (dodge.active) dodge.astronaut.targetLane = Math.min(2, dodge.astronaut.targetLane + 1);
+                    else G.lane = Math.min(2, G.lane + 1);
+                }
+            }, {passive: true});
+
+            window.addEventListener('resize', () => {
+                camera.aspect = window.innerWidth / window.innerHeight;
+                camera.updateProjectionMatrix();
+                renderer.setSize(window.innerWidth, window.innerHeight);
+            });
+        }
+
+        function handleTouchLeft(active) { inputState.left = active; }
+        function handleTouchCenter(active) { }
+        function handleTouchRight(active) { inputState.right = active; }
+
+        let _lastSpawnLane = -1;
+
+        function spawnPanel() {
+            const problem = genProblem();
+            const prov = problem.prov;
+
+            // Canvas texture for the holographic panel
+            const canvas = document.createElement('canvas');
+            canvas.width = 256;
+            canvas.height = 256;
+            const ctx = canvas.getContext('2d');
+
+            // Translucent background with glow border
+            ctx.fillStyle = 'rgba(6, 6, 20, 0.7)';
+            ctx.fillRect(0, 0, 256, 256);
+
+            // Border glow
+            ctx.strokeStyle = 'rgba(0, 230, 118, 0.6)';
+            ctx.lineWidth = 4;
+            ctx.strokeRect(8, 8, 240, 240);
+            ctx.strokeStyle = 'rgba(64, 196, 255, 0.3)';
+            ctx.lineWidth = 2;
+            ctx.strokeRect(16, 16, 224, 224);
+
+            // Large provision icon
+            ctx.fillStyle = '#00e676';
+            ctx.font = 'bold 72px "Segoe UI", Arial, sans-serif';
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+            ctx.shadowColor = 'rgba(0, 230, 118, 0.6)';
+            ctx.shadowBlur = 20;
+            ctx.fillText(prov.icon, 128, 110);
+            ctx.shadowBlur = 0;
+
+            // Provision name label
+            ctx.fillStyle = '#40c4ff';
+            ctx.font = 'bold 18px "Segoe UI", Arial, sans-serif';
+            ctx.fillText(prov.item.toUpperCase(), 128, 180);
+
+            // "SUPPLY CRATE" label
+            ctx.fillStyle = 'rgba(255, 145, 0, 0.7)';
+            ctx.font = 'bold 14px "Segoe UI", Arial, sans-serif';
+            ctx.fillText('SUPPLY CRATE', 128, 215);
+
+            const texture = new THREE.CanvasTexture(canvas);
+            const panelGroup = new THREE.Group();
+
+            // Main panel face
+            const panelGeom = new THREE.PlaneGeometry(2.5, 2.5);
+            const panelMat = new THREE.MeshBasicMaterial({
+                map: texture, transparent: true, opacity: 0.92,
+                side: THREE.DoubleSide, depthWrite: false
+            });
+            const panelMesh = new THREE.Mesh(panelGeom, panelMat);
+            panelGroup.add(panelMesh);
+
+            // Glow ring behind panel
+            const glowRing = new THREE.Mesh(
+                new THREE.TorusGeometry(1.6, 0.08, 8, 32),
+                new THREE.MeshBasicMaterial({color: 0x00e676, transparent: true, opacity: 0.35})
+            );
+            glowRing.position.z = -0.05;
+            panelGroup.add(glowRing);
+
+            // Never same lane twice in a row
+            let laneIdx = Math.floor(Math.random() * 3);
+            if (laneIdx === _lastSpawnLane) laneIdx = (laneIdx + 1 + Math.floor(Math.random() * 2)) % 3;
+            _lastSpawnLane = laneIdx;
+
+            panelGroup.position.set(LANE_X[laneIdx], 1.5, -55);
+            panelGroup.userData = {problem: problem, lane: laneIdx, speed: 0.15 + Math.random() * 0.03};
+
+            scene.add(panelGroup);
+            panels.push(panelGroup);
+        }
+
+        // Background render loop — keeps the 3D corridor visible behind splash/results
+        function bgRender() {
+            requestAnimationFrame(bgRender);
+            if (G.gameRunning || !renderer) return; // gameLoop handles rendering when running
+            // Animate crates even on splash
+            crates.forEach(c => {
+                c.position.z += c.userData.speed * 1.5;
+                c.rotation.y += c.userData.ry;
+                if (c.position.z > 8) {
+                    c.position.z = -200 + Math.random() * 10;
+                    c.position.x = (Math.random() - 0.5) * 8;
+                    c.position.y = Math.random() * 2.5 + 0.3;
+                }
+            });
+            camera.position.x = Math.sin(Date.now() * 0.0005) * 0.3;
+            camera.position.y = 1.5 + Math.sin(Date.now() * 0.0008) * 0.05;
+            camera.lookAt(0, 1.5, -20);
+            renderer.render(scene, camera);
+        }
+
+        function gameLoop() {
+            if (!G.gameRunning) return;
+
+            G.gameTime -= 0.016;
+            if (G.gameTime <= 0) {
+                endGame();
+                return;
+            }
+
+            const mins = Math.floor(G.gameTime / 60);
+            const secs = Math.floor(G.gameTime % 60);
+            document.getElementById('hudTime').innerText = `${mins}:${secs.toString().padStart(2, '0')}`;
+
+            const timerFill = document.getElementById('timerBarFill');
+            const progress = G.gameTime / 180;
+            timerFill.style.width = (progress * 100) + '%';
+            if (progress > 0.5) {
+                timerFill.style.backgroundColor = '#00e676';
+            } else if (progress > 0.25) {
+                timerFill.style.backgroundColor = '#ff9100';
+            } else {
+                timerFill.style.backgroundColor = '#f44336';
+            }
+
+            const targetX = LANE_X[G.lane];
+            G.astronautLane += (targetX - G.astronautLane) * 0.12;
+            astronaut.position.x = G.astronautLane;
+            astronaut.position.y = 0.2 + Math.sin(Date.now() * 0.002) * 0.05;
+
+            for (let i = panels.length - 1; i >= 0; i--) {
+                const p = panels[i];
+                p.position.z += p.userData.speed;
+                // Spin the panel gently
+                p.rotation.y = Math.sin(Date.now() * 0.001) * 0.05;
+                // Collision: astronaut lane matches panel lane and z overlap
+                const dist = Math.abs(p.position.x - astronaut.position.x);
+                if (dist < 1.5 && p.position.z > -1.5 && p.position.z < 1.5) {
+                    scene.remove(p);
+                    panels.splice(i, 1);
+                    G.gameRunning = false;
+                    G.currentProblem = p.userData.problem;
+                    showProblem();
+                    break;
+                }
+                // Remove if passed player
+                if (p.position.z > 10) {
+                    scene.remove(p);
+                    panels.splice(i, 1);
+                }
+            }
+
+            lastPanelTime += 0.016;
+            if (lastPanelTime > 4 && panels.length < 3) {
+                spawnPanel();
+                lastPanelTime = 0;
+            }
+
+            // Animate floating crates
+            crates.forEach(c => {
+                c.position.z += c.userData.speed * 1.5;
+                c.rotation.y += c.userData.ry;
+                if (c.position.z > 8) {
+                    c.position.z = -200 + Math.random() * 10;
+                    c.position.x = (Math.random() - 0.5) * 8;
+                    c.position.y = Math.random() * 2.5 + 0.3;
+                }
+            });
+
+            // Camera gentle sway
+            camera.position.x = Math.sin(Date.now() * 0.0005) * 0.2 + G.astronautLane * 0.15;
+            camera.lookAt(G.astronautLane * 0.3, 1.5, -20);
+            renderer.render(scene, camera);
+            requestAnimationFrame(gameLoop);
+        }
+
+        function showProblem() {
+            renderProblem(G.currentProblem);
+        }
+
+        function resumeGame() {
+            G.gameRunning = true;
+            gameLoop();
+        }
+
+        function startGame() {
+            document.getElementById('splashScreen').style.display = 'none';
+            document.getElementById('resultsScreen').style.display = 'none';
+            document.getElementById('problemModal').style.display = 'none';
+            document.getElementById('remediationModal').style.display = 'none';
+            document.getElementById('blockDodgeCanvas').style.display = 'none';
+            document.getElementById('gameContainer').style.display = 'flex';
+            document.getElementById('hud').style.display = 'flex';
+            document.getElementById('audioToggle').style.display = 'flex';
+            document.getElementById('timerBar').style.display = 'block';
+
+            G.gameRunning = true;
+            G.gameTime = 180;
+            G.score = 0;
+            G.wrong = 0;
+            G.streak = 0;
+            G.bestStreak = 0;
+            G.tier = 'cadet';
+            G.lastAnswers = [];
+
+            if (!scene) {
+                initScene();
+            }
+            // Clear any leftover panels
+            panels.forEach(p => scene.remove(p));
+            panels = [];
+            lastPanelTime = 3.5; // spawn first panel quickly
+
+            updateHUD();
+            gameLoop();
+        }
+
+        function updateHUD() {
+            document.getElementById('hudScore').innerText = G.score;
+            document.getElementById('hudStreak').innerText = G.streak;
+            document.getElementById('hudWrong').innerText = G.wrong;
+
+            const tierBadge = document.getElementById('tierBadge');
+            tierBadge.innerText = G.tier.toUpperCase();
+            tierBadge.className = `tier-badge tier-${G.tier}`;
+        }
+
+        function endGame() {
+            G.gameRunning = false;
+            document.getElementById('hud').style.display = 'none';
+            document.getElementById('timerBar').style.display = 'none';
+            document.getElementById('problemModal').style.display = 'none';
+            document.getElementById('remediationModal').style.display = 'none';
+            document.getElementById('blockDodgeCanvas').style.display = 'none';
+            const total = G.score / 10 + G.wrong;
+            const accuracy = total > 0 ? Math.round((G.score / 10) / total * 100) : 0;
+
+            document.getElementById('resScore').innerText = G.score / 10;
+            document.getElementById('resWrong').innerText = G.wrong;
+            document.getElementById('resAccuracy').innerText = accuracy + '%';
+            document.getElementById('resStreak').innerText = G.bestStreak;
+            document.getElementById('resTier').innerText = G.tier.toUpperCase();
+
+            document.getElementById('gameContainer').style.display = 'none';
+            document.getElementById('resultsScreen').style.display = 'flex';
+        }
+        // Init scene immediately so 3D corridor shows behind splash
+        initScene();
+        bgRender();
+    </script>
+</body>
+</html>
