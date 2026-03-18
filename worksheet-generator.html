@@ -102,11 +102,24 @@ body{font-family:'Inter',system-ui,sans-serif;background:var(--bg);color:var(--t
 @keyframes neon-pulse{0%,100%{text-shadow:0 0 4px rgba(0,242,255,0.4);}50%{text-shadow:0 0 16px rgba(0,242,255,0.8),0 0 30px rgba(0,242,255,0.3);}}
 .neon-glow{animation:neon-pulse 3s ease-in-out infinite;}
 
-/* Step Scrubber */
-.step-scrubber{display:flex;gap:6px;margin-top:12px;align-items:center;}
-.step-scrubber input[type=range]{-webkit-appearance:none;background:rgba(255,255,255,0.1);height:4px;border-radius:2px;flex:1;}
-.step-scrubber input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;height:16px;width:16px;border-radius:50%;background:var(--neon);cursor:pointer;border:2px solid white;box-shadow:0 0 8px rgba(0,242,255,0.5);}
-.step-label{font-family:'Fira Code',monospace;font-size:10px;color:var(--neon);min-width:50px;text-align:right;}
+/* Step Reveal Control */
+.step-scrubber{margin-top:14px;}
+.reveal-steps{display:flex;align-items:center;justify-content:center;gap:0;}
+.reveal-step{
+  display:flex;flex-direction:column;align-items:center;gap:4px;
+  background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.08);
+  border-radius:10px;padding:8px 14px;cursor:pointer;transition:all 0.3s ease;
+  min-width:68px;
+}
+.reveal-step:hover{background:rgba(0,242,255,0.08);border-color:rgba(0,242,255,0.3);}
+.reveal-step.active{background:rgba(0,242,255,0.12);border-color:var(--neon);box-shadow:0 0 12px rgba(0,242,255,0.2);}
+.reveal-step.passed{background:rgba(0,242,255,0.06);border-color:rgba(0,242,255,0.25);}
+.reveal-icon{font-size:16px;line-height:1;}
+.reveal-text{font-family:'Fira Code',monospace;font-size:9px;color:rgba(255,255,255,0.4);text-transform:uppercase;letter-spacing:0.1em;transition:color 0.3s;}
+.reveal-step.active .reveal-text,.reveal-step.passed .reveal-text{color:var(--neon);}
+.reveal-step.active .reveal-text{font-weight:700;}
+.reveal-connector{width:18px;height:2px;background:rgba(255,255,255,0.08);flex-shrink:0;}
+.reveal-step.passed+.reveal-connector{background:var(--neon);box-shadow:0 0 6px rgba(0,242,255,0.3);}
 
 @media(max-width:600px){.topics-grid{grid-template-columns:1fr;}}
 </style>
@@ -136,9 +149,23 @@ body{font-family:'Inter',system-ui,sans-serif;background:var(--bg);color:var(--t
       <button class="nav-btn" onclick="nextProb()">Next →</button>
     </div>
     <div class="step-scrubber" id="stepScrubber" style="display:none;">
-      <span style="font-family:'Fira Code',monospace;font-size:9px;color:var(--accent);font-weight:700;text-transform:uppercase;letter-spacing:0.2em;">EXPLODE</span>
-      <input type="range" min="0" max="3" step="1" value="0" id="explodeSlider" oninput="explodeStep(this.value)">
-      <span class="step-label" id="explodeLabel">Stem</span>
+      <div class="reveal-steps" id="revealSteps">
+        <button class="reveal-step active" data-step="0" onclick="explodeStep(0)" title="Hide everything">
+          <span class="reveal-icon">◯</span><span class="reveal-text">Hidden</span>
+        </button>
+        <div class="reveal-connector"></div>
+        <button class="reveal-step" data-step="1" onclick="explodeStep(1)" title="Show the question">
+          <span class="reveal-icon">📖</span><span class="reveal-text">Question</span>
+        </button>
+        <div class="reveal-connector"></div>
+        <button class="reveal-step" data-step="2" onclick="explodeStep(2)" title="Show the hint">
+          <span class="reveal-icon">💡</span><span class="reveal-text">Hint</span>
+        </button>
+        <div class="reveal-connector"></div>
+        <button class="reveal-step" data-step="3" onclick="explodeStep(3)" title="Show the answer">
+          <span class="reveal-icon">✓</span><span class="reveal-text">Answer</span>
+        </button>
+      </div>
     </div>
   </div>
   <div class="print-section" id="printSection">
@@ -2608,7 +2635,19 @@ function generatePDF() {
 // ═══════════════════════════════════════════════════════════
 function explodeStep(val) {
   val = parseInt(val);
-  document.getElementById('explodeLabel').textContent = ['Stem','Hint','Solve','Full'][val] || 'Step '+val;
+  S.explodeLevel = val;
+  // Update button states
+  document.querySelectorAll('.reveal-step').forEach(btn => {
+    const step = parseInt(btn.dataset.step);
+    btn.classList.toggle('active', step === val);
+    btn.classList.toggle('passed', step < val);
+  });
+  // Update connectors — passed connectors light up
+  document.querySelectorAll('.reveal-connector').forEach((conn, i) => {
+    conn.style.background = i < val ? 'var(--neon)' : 'rgba(255,255,255,0.08)';
+    conn.style.boxShadow = i < val ? '0 0 6px rgba(0,242,255,0.3)' : 'none';
+  });
+
   const p = S.allProbs[S.probIdx];
   if (!p) return;
   const stemEl = document.getElementById('prevStem');
@@ -2633,7 +2672,7 @@ const _origSelectTopic = selectTopic;
 selectTopic = function(topic) {
   _origSelectTopic(topic);
   const scrubber = document.getElementById('stepScrubber');
-  if (scrubber) { scrubber.style.display = 'flex'; document.getElementById('explodeSlider').value = 1; explodeStep(1); }
+  if (scrubber) { scrubber.style.display = 'block'; explodeStep(1); }
   if (document.getElementById('chkCRA')?.checked) updateCRAVisuals();
 };
 
