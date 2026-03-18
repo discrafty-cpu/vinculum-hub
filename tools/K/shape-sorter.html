@@ -1,0 +1,957 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>VINCULUM Shape Sorter</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&family=JetBrains+Mono:wght@600&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="../../vinculum-core.css">
+    <link rel="stylesheet" href="shape-sorter.css">
+</head>
+<body>
+    <div class="container">
+        <div class="vinculum-header">
+            <div class="vinculum-header-left">
+              <a class="vinculum-back-btn" href="../../VINCULUM-Hub.html" style="text-decoration:none;">◀ Hub</a>
+              <div class="vinculum-header-title"><span class="brand">Shape Sorter</span></div>
+              <span class="vinculum-header-badge">K.G</span>
+            </div>
+            <div class="vinculum-header-right">
+              <div class="vinculum-std-tags">
+                <span class="vinculum-std-tag">K.G.1</span>
+                <span class="vinculum-std-tag">K.G.2</span>
+                <span class="vinculum-std-tag">K.G.3</span>
+                <span class="vinculum-std-tag">K.G.4</span>
+              </div>
+            </div>
+        </div>
+            <div class="vinculum-mode-tabs">
+                <button class="vinculum-mode-tab active-explore" data-mode="explore" id="modeExplore">
+                    <div class="mode-icon">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
+                            <circle cx="12" cy="12" r="3"></circle>
+                        </svg>
+                    </div>
+                    Explore
+                </button>
+                <button class="vinculum-mode-tab" data-mode="practice" id="modePractice">
+                    <div class="mode-icon">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <circle cx="12" cy="12" r="9"></circle>
+                            <polyline points="12 7 12 12 16 14"></polyline>
+                        </svg>
+                    </div>
+                    Practice
+                </button>
+                <button class="vinculum-mode-tab" data-mode="play" id="modePlay">
+                    <div class="mode-icon">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"></polygon>
+                        </svg>
+                    </div>
+                    Play
+                </button>
+            </div>
+        </div>
+
+        <div class="main">
+            <div class="workspace" role="main" id="workspace"></div>
+            <div class="side-panel" id="sidePanel"></div>
+        </div>
+    </div>
+
+    <div class="overlay" id="overlay"></div>
+    <div class="feedback-popup" id="feedbackPopup"></div>
+    <div class="feedback" id="feedback"></div>
+
+      <script src="../../vinculum-input.js"></script>
+<script>
+        let SHAPES_2D = [];
+
+        let SHAPES_3D = [];
+
+        // Initialize shapes data from external JSON files
+        async function loadShapesData() {
+            try {
+                const response2D = await fetch('data/shapes-2d.json');
+                SHAPES_2D = await response2D.json();
+                const response3D = await fetch('data/shapes-3d.json');
+                const shapes3DData = await response3D.json();
+
+                // Reconstruct svg functions for 3D shapes from templates
+                SHAPES_3D = shapes3DData.map(shape => {
+                    const shapeObj = {...shape};
+                    if (shape.svgTemplate) {
+                        shapeObj.svg = (size) => shape.svgTemplate.replace('{size}', size);
+                        delete shapeObj.svgTemplate;
+                    }
+                    return shapeObj;
+                });
+            } catch (e) {
+                console.error('Error loading shape data:', e);
+            }
+        }
+
+        // Load shapes immediately
+        loadShapesData();
+
+        const SIDE_COLORS = ['#00d4ff', '#00e676', '#b388ff', '#ff9100', '#ff3b8b', '#ffc107'];
+
+        const MISCONCEPTIONS_SHAPESORT = {
+            sideCountError: { id: 'sideCountError', desc: 'Miscounts the number of sides on a shape' },
+            curvedStraightConfusion: { id: 'curvedStraightConfusion', desc: 'Confuses curved and straight-sided shapes' },
+            sizeNotShape: { id: 'sizeNotShape', desc: 'Sorts by size rather than shape properties' },
+            orientationTrick: { id: 'orientationTrick', desc: 'Does not recognize a rotated shape as the same shape' },
+            namePropertyGap: { id: 'namePropertyGap', desc: 'Knows shape name but not its defining properties' }
+        };
+
+        const S = {
+            mode: 'explore',
+            difficulty: '2D Basics',
+            selectedShape: null,
+            shapes: [],
+            currentQuestion: null,
+            score: 0,
+            streak: 0,
+            best: 0,
+            practiceProgress: {
+                clickedCorners: [],
+                clickedSides: [],
+                questionType: null
+            },
+            tourStep: 0,
+            tourTimers: []
+        };
+
+        /* ── Read-Aloud + Story Banner ── */
+        function toggleReadAloud() {
+          if (window.VinculumStories && VinculumStories.isReading()) {
+            VinculumStories.stopReading();
+            document.getElementById('readAloudBtn').textContent = '🔊 Read to Me';
+          } else {
+            const storyEl = document.getElementById('storyBanner');
+            const text = storyEl ? storyEl.textContent : (S.selectedShape ? S.selectedShape.name + ' information' : 'Welcome to this math tool!');
+            if (window.VinculumStories) {
+              VinculumStories.readAloud(text, { rate: 0.85, onComplete: () => {
+                document.getElementById('readAloudBtn').textContent = '🔊 Read to Me';
+              }});
+              document.getElementById('readAloudBtn').textContent = '⏹ Stop';
+            }
+          }
+        }
+
+        function initializeState() {
+            if (S.difficulty === '2D Basics') {
+                S.shapes = SHAPES_2D.slice(0, 5);
+            } else if (S.difficulty === '2D + 3D') {
+                S.shapes = [...SHAPES_2D, ...SHAPES_3D];
+            } else if (S.difficulty === 'Attributes') {
+                S.shapes = SHAPES_2D;
+            }
+
+            if (!S.selectedShape || !S.shapes.find(s => s.id === S.selectedShape.id)) {
+                S.selectedShape = S.shapes[0];
+            }
+        }
+
+        function buildShapeSVG(shape, size) {
+            if (shape.type === '3D') {
+                return shape.svg(size);
+            }
+
+            if (shape.curved) {
+                if (shape.id === 'circle') {
+                    return `<svg viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg" width="${size}" height="${size}">
+                        <circle cx="100" cy="100" r="80" fill="none" stroke="#00d4ff" stroke-width="2"/>
+                    </svg>`;
+                } else if (shape.id === 'oval') {
+                    return `<svg viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg" width="${size}" height="${size}">
+                        <ellipse cx="100" cy="100" rx="88" ry="60" fill="none" stroke="#00d4ff" stroke-width="2"/>
+                    </svg>`;
+                }
+            }
+
+            const vertices = shape.vertices;
+            if (!vertices || vertices.length === 0) {
+                return '';
+            }
+
+            let svg = `<svg viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg" width="${size}" height="${size}"><defs><filter id="sideGlow"><feGaussianBlur stdDeviation="3" result="blur"/><feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge></filter><filter id="cornerGlow"><feGaussianBlur stdDeviation="5" result="blur"/><feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge></filter></defs><g>`;
+
+            for (let i = 0; i < vertices.length; i++) {
+                const v1 = vertices[i];
+                const v2 = vertices[(i + 1) % vertices.length];
+                const color = SIDE_COLORS[i % SIDE_COLORS.length];
+
+                svg += `<line x1="${v1[0]}" y1="${v1[1]}" x2="${v2[0]}" y2="${v2[1]}" stroke="${color}" stroke-width="3" stroke-linecap="round" class="shape-side" data-side="${i}"/>`;
+
+                const midX = (v1[0] + v2[0]) / 2;
+                const midY = (v1[1] + v2[1]) / 2;
+                const dx = v2[0] - v1[0];
+                const dy = v2[1] - v1[1];
+                const len = Math.sqrt(dx * dx + dy * dy);
+                const offsetX = (dy / len) * 12;
+                const offsetY = (-dx / len) * 12;
+
+                svg += `<text x="${midX + offsetX}" y="${midY + offsetY + 5}" text-anchor="middle" font-size="14" font-weight="bold" fill="${color}" font-family="JetBrains Mono" class="side-number" data-side="${i}">${i + 1}</text>`;
+            }
+
+            for (let i = 0; i < vertices.length; i++) {
+                const v = vertices[i];
+                svg += `<circle cx="${v[0]}" cy="${v[1]}" r="10" fill="#ff3b8b" class="corner-dot inactive" data-corner="${i}"/>`;
+                svg += `<text x="${v[0]}" y="${v[1] + 5}" text-anchor="middle" font-size="12" font-weight="bold" fill="white" font-family="JetBrains Mono" pointer-events="none" class="corner-number" data-corner="${i}">${i + 1}</text>`;
+            }
+
+            svg += `</g></svg>`;
+            return svg;
+        }
+
+        function clearTourTimers() {
+            S.tourTimers.forEach(timerId => clearTimeout(timerId));
+            S.tourTimers = [];
+            S.tourStep = 0;
+        }
+
+        function runTour(shape) {
+            clearTourTimers();
+            S.tourStep = 0;
+
+            // Step 1: Shape appears with title (0-1.2s)
+            const t1 = setTimeout(() => {
+                S.tourStep = 1;
+                render();
+            }, 100);
+            S.tourTimers.push(t1);
+
+            let currentTime = 1200;
+
+            // Step 2: Count the sides
+            if (shape.curved && shape.corners === 0) {
+                // Curved shapes — no sides to count
+                const t2 = setTimeout(() => {
+                    S.tourStep = 2;
+                    render();
+                }, currentTime);
+                S.tourTimers.push(t2);
+                currentTime += 2500;
+            } else if (shape.sides > 0) {
+                // Render the "Let's count the sides!" UI
+                const t2 = setTimeout(() => {
+                    S.tourStep = 2;
+                    render();
+
+                    // After render, start highlighting sides one by one
+                    // Scope all queries to the center stage display, NOT the sidebar thumbnails
+                    for (let i = 0; i < shape.sides; i++) {
+                        const delay = (i * 1500) + 400;
+                        const sideT = setTimeout(() => {
+                            // Re-query stage each time (DOM may have been rebuilt)
+                            const stage = document.getElementById('shapeDisplay');
+                            const sideLine = stage ? stage.querySelector(`[data-side="${i}"].shape-side`) : null;
+                            const sideNum = stage ? stage.querySelector(`text.side-number[data-side="${i}"]`) : null;
+                            if (sideLine) {
+                                sideLine.style.animation = 'sideGlow 1.2s ease forwards';
+                                sideLine.style.strokeWidth = '6';
+                            }
+                            if (sideNum) {
+                                sideNum.style.fontSize = '20';
+                                sideNum.style.filter = 'drop-shadow(0 0 6px ' + SIDE_COLORS[i % SIDE_COLORS.length] + ')';
+                            }
+
+                            // Update the running counter
+                            const counter = document.getElementById('tourCounter');
+                            if (counter) {
+                                const nums = [];
+                                for (let j = 0; j <= i; j++) {
+                                    const c = SIDE_COLORS[j % SIDE_COLORS.length];
+                                    nums.push(`<span style="color:${c};font-weight:700;font-size:32px;text-shadow:0 0 10px ${c};animation:pulseGlow 0.5s ease forwards;">${j+1}</span>`);
+                                }
+                                const check = (i === shape.sides - 1) ? ' <span style="color:#ffc107;font-size:32px;animation:pulseGlow 0.5s ease forwards;">✓</span>' : '';
+                                counter.innerHTML = nums.join('<span style="color:#5a6b8f;margin:0 6px;">...</span>') + check;
+                            }
+                        }, delay);
+                        S.tourTimers.push(sideT);
+                    }
+                }, currentTime);
+                S.tourTimers.push(t2);
+                currentTime += (shape.sides * 1500) + 1200;
+            } else {
+                currentTime += 500;
+            }
+
+            // Step 3: Count the corners
+            if (shape.corners > 0) {
+                const t3 = setTimeout(() => {
+                    S.tourStep = 3;
+                    render();
+
+                    // After render, flash corners one by one on the CENTER STAGE
+                    for (let i = 0; i < shape.corners; i++) {
+                        const delay = (i * 1400) + 400;
+                        const cornerT = setTimeout(() => {
+                            // Re-query stage each time
+                            const stage = document.getElementById('shapeDisplay');
+                            const cornerDot = stage ? stage.querySelector(`circle.corner-dot[data-corner="${i}"]`) : null;
+                            const cornerNum = stage ? stage.querySelector(`text.corner-number[data-corner="${i}"]`) : null;
+                            if (cornerDot) {
+                                cornerDot.style.animation = 'cornerFlash 1.1s ease forwards';
+                                cornerDot.style.filter = 'drop-shadow(0 0 20px #ffffff) drop-shadow(0 0 40px #ff3b8b)';
+                            }
+                            if (cornerNum) {
+                                cornerNum.style.fontSize = '18';
+                                cornerNum.style.filter = 'drop-shadow(0 0 8px #ff3b8b)';
+                            }
+
+                            // Update the running counter
+                            const counter = document.getElementById('tourCounter');
+                            if (counter) {
+                                const nums = [];
+                                for (let j = 0; j <= i; j++) {
+                                    nums.push(`<span style="color:#ff3b8b;font-weight:700;font-size:32px;text-shadow:0 0 12px #ff3b8b;animation:pulseGlow 0.5s ease forwards;">${j+1}</span>`);
+                                }
+                                const check = (i === shape.corners - 1) ? ' <span style="color:#ffc107;font-size:32px;animation:pulseGlow 0.5s ease forwards;">✓</span>' : '';
+                                counter.innerHTML = nums.join('<span style="color:#5a6b8f;margin:0 6px;">...</span>') + check;
+                            }
+                        }, delay);
+                        S.tourTimers.push(cornerT);
+                    }
+                }, currentTime);
+                S.tourTimers.push(t3);
+                currentTime += (shape.corners * 1400) + 1200;
+            } else if (shape.curved) {
+                // Curved shapes — no corners
+                const t3 = setTimeout(() => {
+                    S.tourStep = 3;
+                    render();
+                }, currentTime);
+                S.tourTimers.push(t3);
+                currentTime += 2500;
+            }
+
+            // Step 4: Summary card
+            const t4 = setTimeout(() => {
+                S.tourStep = 4;
+                render();
+            }, currentTime);
+            S.tourTimers.push(t4);
+        }
+
+        function renderExploreMode() {
+            let html = `<div class="explore-layout">`;
+
+            /* Inject story banner */
+            if (window.VinculumStories && S.selectedShape) {
+              const toolName = window.location.pathname.split('/').pop().replace('.html','');
+              const storyData = VinculumStories.getStory(toolName, {shape: S.selectedShape.name, sides: S.selectedShape.sides, curved: S.selectedShape.curved});
+              if (storyData && storyData.story) {
+                if (window.Vinculum3Reads) {
+
+                  html += Vinculum3Reads.getBannerHTML(storyData);
+
+                } else {
+
+                  html += '<div id="storyBanner" style="background:var(--card2,#1a1f2e);border:1px solid var(--border);border-radius:12px;padding:16px 20px;margin-bottom:16px;font-size:15px;line-height:1.6;color:var(--text);position:relative;"><span style="font-size:12px;color:var(--cyan);font-weight:700;text-transform:uppercase;letter-spacing:1px;">📖 Story</span><br>' + storyData.story + '<br><em style="color:var(--yellow);font-weight:600;">' + storyData.question + '</em><button onclick="toggleReadAloud()" style="position:absolute;top:12px;right:12px;background:none;border:1px solid var(--border);border-radius:8px;padding:4px 10px;color:var(--cyan);cursor:pointer;font-size:14px;" title="Read story aloud">🔊</button></div>';
+
+                }
+              }
+            }
+
+            html += `<div class="shape-list">`;
+            S.shapes.forEach(shape => {
+                const isActive = S.selectedShape.id === shape.id ? 'active' : '';
+                html += `<div class="shape-item ${isActive}" data-shape-id="${shape.id}">
+                    <div class="shape-item-preview">
+                        ${buildShapeSVG(shape, 32)}
+                    </div>
+                    <div class="shape-item-name">${shape.name}</div>
+                </div>`;
+            });
+            html += `</div>`;
+
+            html += `<div class="stage">`;
+
+            // Tour title
+            if (S.tourStep >= 1) {
+                html += `<div class="tour-title">Let's learn about the ${S.selectedShape.name}!</div>`;
+            }
+
+            // Shape display
+            html += `<div class="stage-shape-display" id="shapeDisplay">`;
+            html += buildShapeSVG(S.selectedShape, 240);
+            html += `</div>`;
+
+            // Teaching area
+            html += `<div class="tour-teaching-area">`;
+
+            if (S.tourStep === 2) {
+                if (S.selectedShape.curved && S.selectedShape.corners === 0) {
+                    html += `<div class="tour-step-text" style="font-size:22px;">No straight sides — it curves all the way around!</div>`;
+                } else {
+                    if (S.selectedShape.type === '3D') {
+                        html += `<div class="tour-step-text" style="font-size:22px;">👆 Let's count the faces!</div>`;
+                    } else {
+                        html += `<div class="tour-step-text" style="font-size:22px;">👆 Let's count the sides!</div>`;
+                    }
+                    html += `<div class="tour-counter" id="tourCounter" style="min-height:36px;"></div>`;
+                }
+            } else if (S.tourStep === 3) {
+                if (S.selectedShape.corners > 0) {
+                    if (S.selectedShape.type === '3D') {
+                        html += `<div class="tour-step-text" style="font-size:22px;">👆 Now let's count the vertices!</div>`;
+                    } else {
+                        html += `<div class="tour-step-text" style="font-size:22px;">👆 Now let's count the corners!</div>`;
+                    }
+                    html += `<div class="tour-counter" id="tourCounter" style="min-height:36px;"></div>`;
+                } else {
+                    html += `<div class="tour-step-text" style="font-size:22px;">No corners! It's smooth and round.</div>`;
+                }
+            } else if (S.tourStep === 4) {
+                html += `<div class="tour-summary-card">`;
+                html += `<div class="tour-summary-title">A ${S.selectedShape.name} has:</div>`;
+                html += `<div class="tour-summary-text">`;
+                if (S.selectedShape.type === '3D') {
+                    html += `<span style="color: #00d4ff; font-weight: 700;">${S.selectedShape.sides}</span> ${S.selectedShape.sides === 1 ? 'face' : 'faces'} • `;
+                    html += `<span style="color: #ff3b8b; font-weight: 700;">${S.selectedShape.corners}</span> ${S.selectedShape.corners === 1 ? 'vertex' : 'vertices'}`;
+                } else {
+                    html += `<span style="color: #00d4ff; font-weight: 700;">${S.selectedShape.sides}</span> ${S.selectedShape.sides === 1 ? 'side' : 'sides'} • `;
+                    html += `<span style="color: #ff3b8b; font-weight: 700;">${S.selectedShape.corners}</span> ${S.selectedShape.corners === 1 ? 'corner' : 'corners'}`;
+                }
+                html += `</div>`;
+                html += `<div class="tour-summary-examples">`;
+                html += `<strong>You can find ${S.selectedShape.name.toLowerCase()}s on:</strong><br>`;
+                html += S.selectedShape.realWorldExamples || 'Look around — can you spot this shape?';
+                html += `</div>`;
+                html += `<div class="tour-controls">`;
+                html += `<button class="tour-btn" id="replayBtn">▶ Replay</button>`;
+                html += `<button class="tour-btn tour-btn-secondary" id="nextBtn">Next Shape →</button>`;
+                html += `</div>`;
+                html += `</div>`;
+            }
+
+            html += `</div>`;
+            html += `</div>`;
+
+            return html;
+        }
+
+        function buildPracticeSVG(shape, size) {
+            // Special version for Practice that shows clicked/unclicked states
+            if (shape.curved) {
+                return buildShapeSVG(shape, size);
+            }
+
+            const vertices = shape.vertices;
+            if (!vertices || vertices.length === 0) return '';
+
+            let svg = `<svg viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg" width="${size}" height="${size}"><g>`;
+
+            // Draw sides with clicked/unclicked states
+            for (let i = 0; i < vertices.length; i++) {
+                const v1 = vertices[i];
+                const v2 = vertices[(i + 1) % vertices.length];
+                const color = SIDE_COLORS[i % SIDE_COLORS.length];
+                const isClicked = S.practiceProgress.clickedSides.includes(i);
+                const isSideQuestion = S.currentQuestion && S.currentQuestion.type === 'count-sides';
+                const sideClass = isSideQuestion ? (isClicked ? 'shape-side side-clicked' : 'shape-side side-inactive') : 'shape-side';
+
+                svg += `<line x1="${v1[0]}" y1="${v1[1]}" x2="${v2[0]}" y2="${v2[1]}" stroke="${color}" stroke-width="${isClicked ? 6 : 3}" stroke-linecap="round" class="${sideClass}" data-side="${i}"/>`;
+
+                const midX = (v1[0] + v2[0]) / 2;
+                const midY = (v1[1] + v2[1]) / 2;
+                const dx = v2[0] - v1[0];
+                const dy = v2[1] - v1[1];
+                const len = Math.sqrt(dx * dx + dy * dy);
+                const offsetX = (dy / len) * 12;
+                const offsetY = (-dx / len) * 12;
+                const numClass = isSideQuestion ? (isClicked ? 'side-number side-num-clicked' : 'side-number side-num-inactive') : 'side-number';
+
+                svg += `<text x="${midX + offsetX}" y="${midY + offsetY + 5}" text-anchor="middle" font-size="${isClicked ? 18 : 14}" font-weight="bold" fill="${color}" font-family="JetBrains Mono" class="${numClass}" data-side="${i}">${i + 1}</text>`;
+            }
+
+            // Draw corners with clicked/unclicked states
+            for (let i = 0; i < vertices.length; i++) {
+                const v = vertices[i];
+                const isClicked = S.practiceProgress.clickedCorners.includes(i);
+                const isCornerQuestion = S.currentQuestion && S.currentQuestion.type === 'count-corners';
+                const dotClass = isCornerQuestion ? (isClicked ? 'corner-dot active' : 'corner-dot inactive') : (isClicked ? 'corner-dot active' : 'corner-dot inactive');
+                const dotR = isClicked ? 14 : 10;
+
+                svg += `<circle cx="${v[0]}" cy="${v[1]}" r="${dotR}" class="${dotClass}" data-corner="${i}"/>`;
+                svg += `<text x="${v[0]}" y="${v[1] + 5}" text-anchor="middle" font-size="${isClicked ? 14 : 12}" font-weight="bold" fill="white" font-family="JetBrains Mono" pointer-events="none" class="corner-number" data-corner="${i}">${i + 1}</text>`;
+            }
+
+            svg += `</g></svg>`;
+            return svg;
+        }
+
+        function renderPracticeMode() {
+            const question = S.currentQuestion;
+
+            let html = `<div class="practice-layout">`;
+            html += `<div class="practice-question">${question.prompt}</div>`;
+
+            html += `<div class="practice-shape-display" id="practiceShapeDisplay">`;
+            html += buildPracticeSVG(S.selectedShape, 240);
+            html += `</div>`;
+
+            if (question.type === 'count-corners' || question.type === 'count-sides') {
+                const count = question.type === 'count-corners' ? S.practiceProgress.clickedCorners.length : S.practiceProgress.clickedSides.length;
+                const total = question.type === 'count-corners' ? S.selectedShape.corners : S.selectedShape.sides;
+                const label = question.type === 'count-corners' ? 'corners' : 'sides';
+                const color = question.type === 'count-corners' ? '#ff1744' : '#00d4ff';
+
+                // Show tap instruction
+                if (count === 0) {
+                    html += `<div class="practice-counter" style="color:${color};">Tap each ${label === 'corners' ? 'corner dot' : 'side'} on the shape! (${total} to find)</div>`;
+                } else if (count < total) {
+                    html += `<div class="practice-counter" style="color:${color};font-size:22px;font-weight:700;">${count} of ${total} ${label} found — keep going!</div>`;
+                } else {
+                    // All clicked — now show the answer buttons
+                    html += `<div class="practice-counter" style="color:#00e676;font-size:22px;font-weight:700;">All ${total} ${label} found! ✓</div>`;
+                    html += `<div class="practice-question" style="margin-top: 16px;">How many ${label}?</div>`;
+                    html += `<div class="practice-buttons">`;
+                    for (let i = 0; i <= 8; i++) {
+                        html += `<button class="answer-btn" data-answer="${i}">${i}</button>`;
+                    }
+                    html += `</div>`;
+                }
+            } else if (question.type === 'name-shape') {
+                html += `<div class="practice-buttons">`;
+                // Get 4 shape options — avoid confusing pairs
+                const confusable = { square: 'rhombus', rhombus: 'square', circle: 'oval', oval: 'circle' };
+                const exclude = confusable[S.selectedShape.id] || null;
+                const options = [S.selectedShape];
+                const others = S.shapes.filter(s => s.id !== S.selectedShape.id && s.id !== exclude);
+                while (options.length < 4 && others.length > 0) {
+                    const idx = Math.floor(Math.random() * others.length);
+                    options.push(others.splice(idx, 1)[0]);
+                }
+                options.sort(() => Math.random() - 0.5);
+                options.forEach(shape => {
+                    html += `<button class="answer-btn" data-answer="${shape.id}">${shape.name}</button>`;
+                });
+                html += `</div>`;
+            } else if (question.type === 'is-2d-or-3d') {
+                html += `<div class="practice-buttons">`;
+                html += `<button class="answer-btn" data-answer="2D">2D (Flat)</button>`;
+                html += `<button class="answer-btn" data-answer="3D">3D (Solid)</button>`;
+                html += `</div>`;
+            }
+
+            html += `</div>`;
+            return html;
+        }
+
+        function renderPlayMode() {
+            let html = `<div class="play-layout">`;
+
+            html += `<div class="score-display">
+                <div class="score-label">Score</div>
+                ${S.score}
+            </div>`;
+
+            html += `<div class="streak-badge">
+                <div class="score-label">Streak</div>
+                <div style="font-size: 28px; font-weight: 700; color: #00e676;">${S.streak}</div>
+            </div>`;
+
+            html += `<div class="play-question">${S.currentQuestion.prompt}</div>`;
+
+            html += `<div class="play-shape-display">`;
+            html += buildShapeSVG(S.selectedShape, 200);
+            html += `</div>`;
+
+            html += `<div class="practice-buttons">`;
+            if (S.currentQuestion.type === 'name') {
+                const confusable = { square: 'rhombus', rhombus: 'square', circle: 'oval', oval: 'circle' };
+                const exclude = confusable[S.selectedShape.id] || null;
+                const playOptions = [S.selectedShape];
+                const playOthers = S.shapes.filter(s => s.id !== S.selectedShape.id && s.id !== exclude);
+                while (playOptions.length < 4 && playOthers.length > 0) {
+                    const idx = Math.floor(Math.random() * playOthers.length);
+                    playOptions.push(playOthers.splice(idx, 1)[0]);
+                }
+                playOptions.sort(() => Math.random() - 0.5);
+                playOptions.forEach(shape => {
+                    html += `<button class="answer-btn" data-answer="${shape.id}">${shape.name}</button>`;
+                });
+            } else if (S.currentQuestion.type === 'sides') {
+                for (let i = 0; i <= 6; i++) {
+                    html += `<button class="answer-btn" data-answer="${i}">${i}</button>`;
+                }
+            } else if (S.currentQuestion.type === 'corners') {
+                for (let i = 0; i <= 8; i++) {
+                    html += `<button class="answer-btn" data-answer="${i}">${i}</button>`;
+                }
+            }
+            html += `</div>`;
+
+            html += `</div>`;
+            return html;
+        }
+
+        function renderExplorePanel() {
+            let html = `<div class="panel-section">
+                <div class="panel-title">Shape Tour</div>`;
+
+            // Step indicators
+            html += `<div class="step-indicators">`;
+            for (let i = 1; i <= 4; i++) {
+                const isActive = S.tourStep >= i ? 'active' : '';
+                html += `<div class="step-dot ${isActive}"></div>`;
+            }
+            html += `</div>`;
+            html += `</div>`;
+
+            html += `<div class="panel-section">
+                <div class="panel-title">Vocabulary</div>`;
+            if (S.selectedShape.type === '3D') {
+                html += `<div class="vocab-item">
+                    <div class="vocab-word">Face</div>
+                    <div class="vocab-def">A flat surface on a 3D shape.</div>
+                </div>`;
+                html += `<div class="vocab-item">
+                    <div class="vocab-word">Edge</div>
+                    <div class="vocab-def">Where two faces meet.</div>
+                </div>`;
+                html += `<div class="vocab-item">
+                    <div class="vocab-word">Vertex</div>
+                    <div class="vocab-def">A corner where edges meet.</div>
+                </div>`;
+            } else {
+                html += `<div class="vocab-item">
+                    <div class="vocab-word">Side</div>
+                    <div class="vocab-def">A straight line that makes up a shape.</div>
+                </div>`;
+                html += `<div class="vocab-item">
+                    <div class="vocab-word">Corner</div>
+                    <div class="vocab-def">The point where two sides meet.</div>
+                </div>`;
+            }
+            html += `</div>`;
+
+            html += `<div class="panel-section">
+                <div class="panel-title">Did you know?</div>
+                <div class="fun-fact">`;
+            html += S.selectedShape.funFact || 'This is a 3D shape you can find in the real world!';
+            html += `</div>
+            </div>`;
+
+            return html;
+        }
+
+        function renderPracticePanel() {
+            let html = `<div class="panel-section">
+                <div class="panel-title">How to Practice</div>
+                <div class="panel-content">
+                    <p><strong>① Count the dots</strong> - Click on each corner or side number</p>
+                    <p><strong>② Tap your answer</strong> - Choose the right number or name</p>
+                    <p><strong>③ Learn!</strong> - You'll improve with each try</p>
+                </div>
+            </div>`;
+
+            html += `<div class="panel-section">
+                <div class="panel-title">Tips</div>
+                <div class="panel-content">
+                    <p>Click the colored numbers to count sides and corners. Take your time!</p>
+                </div>
+            </div>`;
+
+            return html;
+        }
+
+        function renderPlayPanel() {
+            let html = `<div class="panel-section">
+                <div class="panel-title">Score Tracking</div>
+                <div class="panel-content">
+                    <p><strong>Score:</strong> Points for correct answers</p>
+                    <p><strong>Streak:</strong> Correct answers in a row</p>
+                    <p><strong>Best:</strong> Your highest streak</p>
+                </div>
+            </div>`;
+
+            html += `<div class="panel-section">
+                <div class="panel-title">Playing Tips</div>
+                <div class="panel-content">
+                    <p>Answer as many questions correctly as you can to build your streak!</p>
+                </div>
+            </div>`;
+
+            return html;
+        }
+
+        function render() {
+            initializeState();
+
+            let workspaceHtml = '';
+            if (S.mode === 'explore') {
+                workspaceHtml = renderExploreMode();
+            } else if (S.mode === 'practice') {
+                workspaceHtml = renderPracticeMode();
+            } else if (S.mode === 'play') {
+                workspaceHtml = renderPlayMode();
+            }
+
+            document.getElementById('workspace').innerHTML = workspaceHtml;
+
+            let panelHtml = '';
+            if (S.mode === 'explore') {
+                panelHtml = renderExplorePanel();
+            } else if (S.mode === 'practice') {
+                panelHtml = renderPracticePanel();
+            } else if (S.mode === 'play') {
+                panelHtml = renderPlayPanel();
+            }
+
+            document.getElementById('sidePanel').innerHTML = panelHtml;
+
+            attachEventListeners();
+        }
+
+        function attachEventListeners() {
+            document.querySelectorAll('.vinculum-mode-tab').forEach(tab => {
+                tab.addEventListener('click', () => {
+                    clearTourTimers();
+                    S.mode = tab.dataset.mode;
+                    document.querySelectorAll('.vinculum-mode-tab').forEach(t => {
+                      t.classList.remove('active-explore', 'active-practice', 'active-play');
+                    });
+                    tab.classList.add(`active-${S.mode}`);
+                    if (S.mode === 'practice') {
+                        initializePractice();
+                    } else if (S.mode === 'play') {
+                        initializePlay();
+                    }
+                    render();
+                });
+            });
+
+            if (S.mode === 'explore') {
+                document.querySelectorAll('.vinculum-diff-btn').forEach(btn => {
+                    btn.addEventListener('click', () => {
+                        S.difficulty = btn.textContent;
+                        render();
+                    });
+                });
+            }
+
+            if (S.mode === 'explore') {
+                document.querySelectorAll('.shape-item').forEach(item => {
+                    item.addEventListener('click', () => {
+                        const shapeId = item.dataset.shapeId;
+                        S.selectedShape = S.shapes.find(s => s.id === shapeId);
+                        runTour(S.selectedShape);
+                        render();
+                    });
+                });
+
+                const replayBtn = document.getElementById('replayBtn');
+                if (replayBtn) {
+                    replayBtn.addEventListener('click', () => {
+                        runTour(S.selectedShape);
+                        render();
+                    });
+                }
+
+                const nextBtn = document.getElementById('nextBtn');
+                if (nextBtn) {
+                    nextBtn.addEventListener('click', () => {
+                        const currentIdx = S.shapes.findIndex(s => s.id === S.selectedShape.id);
+                        const nextIdx = (currentIdx + 1) % S.shapes.length;
+                        S.selectedShape = S.shapes[nextIdx];
+                        runTour(S.selectedShape);
+                        render();
+                    });
+                }
+            }
+
+            document.querySelectorAll('.answer-btn').forEach(btn => {
+                btn.addEventListener('click', () => {
+                    handleAnswer(btn.dataset.answer);
+                });
+            });
+
+            // Practice mode — corner dot clicks
+            if (S.mode === 'practice' && S.currentQuestion) {
+                const practiceDisplay = document.getElementById('practiceShapeDisplay');
+                if (practiceDisplay) {
+                    // Corner clicks
+                    practiceDisplay.querySelectorAll('.corner-dot').forEach(dot => {
+                        dot.addEventListener('click', () => {
+                            if (S.currentQuestion.type === 'count-corners') {
+                                const cornerIdx = parseInt(dot.dataset.corner);
+                                if (!S.practiceProgress.clickedCorners.includes(cornerIdx)) {
+                                    S.practiceProgress.clickedCorners.push(cornerIdx);
+                                    render();
+                                }
+                            }
+                        });
+                    });
+
+                    // Side clicks
+                    practiceDisplay.querySelectorAll('.shape-side').forEach(line => {
+                        line.addEventListener('click', () => {
+                            if (S.currentQuestion.type === 'count-sides') {
+                                const sideIdx = parseInt(line.dataset.side);
+                                if (!S.practiceProgress.clickedSides.includes(sideIdx)) {
+                                    S.practiceProgress.clickedSides.push(sideIdx);
+                                    render();
+                                }
+                            }
+                        });
+                    });
+                    // Also allow clicking side numbers
+                    practiceDisplay.querySelectorAll('.side-number').forEach(num => {
+                        num.addEventListener('click', () => {
+                            if (S.currentQuestion.type === 'count-sides') {
+                                const sideIdx = parseInt(num.dataset.side);
+                                if (!S.practiceProgress.clickedSides.includes(sideIdx)) {
+                                    S.practiceProgress.clickedSides.push(sideIdx);
+                                    render();
+                                }
+                            }
+                        });
+                    });
+                }
+            }
+        }
+
+        function initializePractice() {
+            const types = ['count-corners', 'count-sides', 'name-shape'];
+            const type = types[Math.floor(Math.random() * types.length)];
+
+            S.selectedShape = S.shapes[Math.floor(Math.random() * S.shapes.length)];
+            S.practiceProgress = { clickedCorners: [], clickedSides: [] };
+
+            if (type === 'count-corners') {
+                S.currentQuestion = { type: 'count-corners', prompt: 'Count the corners!' };
+            } else if (type === 'count-sides') {
+                S.currentQuestion = { type: 'count-sides', prompt: 'Count the sides!' };
+            } else {
+                S.currentQuestion = { type: 'name-shape', prompt: 'What is this shape called?' };
+            }
+        }
+
+        function initializePlay() {
+            const types = ['name', 'sides', 'corners'];
+            const type = types[Math.floor(Math.random() * types.length)];
+
+            S.selectedShape = S.shapes[Math.floor(Math.random() * S.shapes.length)];
+
+            if (type === 'name') {
+                S.currentQuestion = { type: 'name', prompt: 'What is this shape called?' };
+            } else if (type === 'sides') {
+                S.currentQuestion = { type: 'sides', prompt: 'How many sides does it have?' };
+            } else {
+                S.currentQuestion = { type: 'corners', prompt: 'How many corners does it have?' };
+            }
+        }
+
+        function getDiagnosticFeedback(answer) {
+            const shape = S.selectedShape;
+            const answerNum = parseInt(answer);
+
+            if (S.mode === 'practice') {
+                if (S.currentQuestion.type === 'count-corners') {
+                    return `Count the corners carefully! A ${shape.name} has ${shape.corners} corners. Try again!`;
+                } else if (S.currentQuestion.type === 'count-sides') {
+                    return `Count the sides carefully! A ${shape.name} has ${shape.sides} sides. Try again!`;
+                } else if (S.currentQuestion.type === 'name-shape') {
+                    return `Look at this shape's sides and corners. What makes it special? That tells you which group it belongs in.`;
+                }
+            } else if (S.mode === 'play') {
+                if (S.currentQuestion.type === 'name') {
+                    return `Look at this shape's sides and corners. What makes it special? That tells you which group it belongs in.`;
+                } else if (S.currentQuestion.type === 'sides') {
+                    return `Count the sides! A ${shape.name} has ${shape.sides} sides. Which group is for shapes with ${shape.sides} sides?`;
+                } else if (S.currentQuestion.type === 'corners') {
+                    return `Count the corners carefully! A ${shape.name} has ${shape.corners} corners. Try again!`;
+                }
+            }
+            return 'Look at this shape carefully. Try again!';
+        }
+
+        function handleAnswer(answer) {
+            let correct = false;
+
+            if (S.mode === 'practice') {
+                if (S.currentQuestion.type === 'count-corners') {
+                    correct = parseInt(answer) === S.selectedShape.corners;
+                } else if (S.currentQuestion.type === 'count-sides') {
+                    correct = parseInt(answer) === S.selectedShape.sides;
+                } else if (S.currentQuestion.type === 'name-shape') {
+                    correct = answer === S.selectedShape.id;
+                }
+            } else if (S.mode === 'play') {
+                if (S.currentQuestion.type === 'name') {
+                    correct = answer === S.selectedShape.id;
+                } else if (S.currentQuestion.type === 'sides') {
+                    correct = parseInt(answer) === S.selectedShape.sides;
+                } else if (S.currentQuestion.type === 'corners') {
+                    correct = parseInt(answer) === S.selectedShape.corners;
+                }
+            }
+
+            if (correct) {
+                showFB('✓ Great job!', 'correct');
+                if (S.mode === 'play') {
+                    S.score += 10;
+                    S.streak += 1;
+                    S.best = Math.max(S.best, S.streak);
+                }
+                setTimeout(() => {
+                    if (S.mode === 'practice') {
+                        initializePractice();
+                    } else if (S.mode === 'play') {
+                        initializePlay();
+                    }
+                    render();
+                }, 800);
+            } else {
+                const diagnosticMsg = getDiagnosticFeedback(answer);
+                showFB(diagnosticMsg, 'incorrect');
+                if (S.mode === 'play') {
+                    S.streak = 0;
+                }
+                setTimeout(() => render(), 800);
+            }
+        }
+
+
+        function setupDifficultySelector() {
+            const difficulties = ['2D Basics', '2D + 3D', 'Attributes'];
+            let html = '';
+            difficulties.forEach(diff => {
+                const isActive = S.difficulty === diff ? 'active' : '';
+                html += `<button class="vinculum-diff-btn ${isActive}">${diff}</button>`;
+            });
+            document.getElementById('difficultySelector').innerHTML = html;
+        }
+
+        setupDifficultySelector();
+
+        // Wait for shapes data to load before initializing
+        (async function initialize() {
+            await loadShapesData();
+            initializeState();
+            S.selectedShape = S.shapes[0];
+            render();
+            runTour(S.selectedShape);
+        })();
+    </script>
+<script src="../../vinculum-core.js"></script>
+<script src="../../vinculum-data.js"></script>
+    <script src="../../vinculum-adaptive-hook.js"></script>
+<script src="../../vinculum-3reads.js"></script>
+<script src="../../vinculum-stories.js"></script>
+<script src="../../vinculum-feedback.js"></script>
+  <script src="../../vinculum-guide.js"></script>
+<script src="../../vinculum-identity.js"></script>
+<script src="../../vinculum-indigenous.js"></script>
+<script src="../../vinculum-dashboard.js"></script>
+<!-- Foundation loaded from vinculum-core.js -->
+</body>
+</html>

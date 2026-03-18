@@ -1,0 +1,538 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Integer Exponents</title>
+    <link rel="stylesheet" href="../../vinculum-core.css">
+    <!-- Shared math rendering (auto-loads KaTeX from CDN) -->
+    <script src="../../shared/vinculum-math.js"></script>
+    <style>
+        :root {
+            --bg: #0f0f1e;
+            --bg2: #1a1a2e;
+            --card: #16213e;
+            --text: #e0e0e0;
+            --cyan: #00d9ff;
+            --green: #00ff88;
+            --pink: #ff006e;
+            --orange: #ffa500;
+            --grad: linear-gradient(135deg, #00d9ff, #00ff88);
+        }
+
+        [data-theme="ocean"] { --bg: #0a1628; --card: #0f2847; --cyan: #4dd0e1; --green: #4cd964; }
+        [data-theme="forest"] { --bg: #1a2818; --card: #2d4a2b; --cyan: #1abc9c; --green: #52c41a; }
+        [data-theme="sunset"] { --bg: #2d1b1f; --card: #4a2835; --cyan: #ff6b9d; --pink: #ffa360; }
+        [data-theme="space"] { --bg: #0a0e27; --card: #1a1a3e; --cyan: #7c3aed; --green: #ec4899; }
+
+        body { background: var(--bg); color: var(--text); font-family: 'Segoe UI', sans-serif; margin: 0; padding: 0; }
+        .container { max-width: 1200px; margin: 0 auto; padding: 20px; }
+
+        .vinculum-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 20px;
+            background: var(--card);
+            border-bottom: 2px solid var(--cyan);
+            border-radius: 8px;
+            margin-bottom: 30px;
+        }
+
+        .vinculum-header-left { display: flex; align-items: center; gap: 15px; }
+        .vinculum-back-btn { background: transparent; border: none; color: var(--cyan); cursor: pointer; padding: 8px; display: flex; transition: 0.3s; }
+        .vinculum-back-btn:hover { transform: translateX(-3px); color: var(--green); }
+
+        .vinculum-title-group h1 { margin: 0; font-size: 28px; background: var(--grad); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; }
+        .vinculum-badges { display: flex; gap: 8px; margin-top: 5px; }
+        .badge, .tag { font-size: 11px; padding: 4px 8px; border-radius: 4px; background: rgba(0, 217, 255, 0.2); color: var(--cyan); border: 1px solid var(--cyan); }
+        .tag { background: rgba(0, 255, 136, 0.2); color: var(--green); border-color: var(--green); }
+
+        .tabs { display: flex; gap: 10px; margin-bottom: 30px; border-bottom: 2px solid var(--card); }
+        .tab-btn { padding: 12px 20px; background: transparent; border: none; color: var(--text); cursor: pointer; font-size: 16px; transition: 0.3s; border-bottom: 3px solid transparent; }
+        .tab-btn.active { color: var(--cyan); border-bottom-color: var(--cyan); }
+
+        .tab-content { display: none; }
+        .tab-content.active { display: block; }
+
+        .card { background: var(--card); padding: 20px; border-radius: 8px; border-left: 4px solid var(--cyan); margin-bottom: 20px; }
+        .canvas-container { width: 100%; height: 400px; background: var(--bg); border: 2px solid var(--cyan); border-radius: 8px; margin: 20px 0; position: relative; }
+
+        canvas { display: block; border-radius: 6px; }
+
+        .controls { display: flex; gap: 15px; margin: 20px 0; flex-wrap: wrap; }
+        .control-group { display: flex; flex-direction: column; gap: 5px; }
+        .control-group label { font-size: 12px; text-transform: uppercase; color: var(--cyan); font-weight: 600; }
+
+        input[type="range"], input[type="text"], select { padding: 10px; background: var(--bg); color: var(--text); border: 1px solid var(--cyan); border-radius: 4px; font-size: 14px; }
+        input[type="range"] { width: 150px; }
+
+        button { padding: 10px 20px; background: var(--cyan); color: var(--bg); border: none; border-radius: 4px; cursor: pointer; font-weight: 600; transition: 0.3s; }
+        button:hover { background: var(--green); transform: translateY(-2px); }
+
+        .feedback { padding: 15px; border-radius: 6px; margin: 20px 0; display: none; border-left: 4px solid var(--green); background: rgba(0, 255, 136, 0.1); }
+        .feedback.show { display: block; }
+        .feedback.error { border-left-color: var(--pink); background: rgba(255, 0, 110, 0.1); color: var(--pink); }
+
+        .rule-box { background: var(--bg2); padding: 15px; border-radius: 6px; margin: 15px 0; border-left: 4px solid var(--orange); }
+        .rule-box code { background: var(--bg); padding: 2px 6px; border-radius: 3px; color: var(--cyan); }
+
+        .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 20px; }
+
+        .difficulty-selector { display: flex; gap: 10px; margin: 20px 0; }
+        .difficulty-btn { padding: 10px 20px; background: var(--bg2); border: 2px solid var(--text); color: var(--text); cursor: pointer; border-radius: 4px; transition: 0.3s; }
+        .difficulty-btn.active { border-color: var(--cyan); color: var(--cyan); background: var(--card); }
+
+        /* App-specific math sizing overrides (base styles from vinculum-math.js) */
+        .rule-box .vmath-rendered { font-size: 1.2em; }
+        #productResult .vmath-rendered, #powerResult .vmath-rendered { font-size: 1.4em; }
+        #questionText .vmath-rendered { font-size: 1.8em; }
+        #questionText .vmath-caret { font-size: 13px; margin-top: 6px; }
+        .game-card-math .vmath-rendered { font-size: 1.1em; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="vinculum-header">
+            <div class="vinculum-header-left">
+                <a href="../../VINCULUM-Hub.html" class="vinculum-back-btn" aria-label="Back to Hub">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>
+                </a>
+                <div class="vinculum-title-group">
+                    <h1 class="vinculum-title">Integer Exponents</h1>
+                    <div class="vinculum-badges"><span class="badge">8.EE.1</span></div>
+                </div>
+            </div>
+            <div class="vinculum-header-right"></div>
+        </div>
+
+        <div class="tabs">
+            <button class="tab-btn active" onclick="switchTab('explore')">Explore</button>
+            <button class="tab-btn" onclick="switchTab('practice')">Practice</button>
+            <button class="tab-btn" onclick="switchTab('play')">Play</button>
+        </div>
+
+        <div id="explore" class="tab-content active">
+            <div class="card">
+                <h2>Understanding Exponent Rules</h2>
+                <p>Exponents show repeated multiplication. <span data-math="3^{4} = 3 \times 3 \times 3 \times 3 = 81"></span></p>
+            </div>
+
+            <div class="card">
+                <h3 class="vmath-dual">
+                    <span data-math="a^m \times a^n = a^{(m+n)}"></span>
+                    <div class="vmath-caret">⌨ a^m × a^n = a^(m+n)</div>
+                </h3>
+                <div class="rule-box">
+                    <p>When multiplying powers with the same base, add the exponents.</p>
+                    <div class="vmath-dual">
+                        <span data-math="2^{3} \times 2^{2} = 2^{(3+2)} = 2^{5} = 32"></span>
+                        <div class="vmath-caret">⌨ 2^3 × 2^2 = 2^(3+2) = 2^5 = 32</div>
+                    </div>
+                </div>
+                <div class="controls">
+                    <div class="control-group">
+                        <label>Base</label>
+                        <input type="range" id="base1" min="2" max="10" value="2" step="1" onchange="updateProductRule()">
+                        <span id="base1Val">2</span>
+                    </div>
+                    <div class="control-group">
+                        <label>Exponent 1</label>
+                        <input type="range" id="exp1" min="1" max="6" value="3" step="1" onchange="updateProductRule()">
+                        <span id="exp1Val">3</span>
+                    </div>
+                    <div class="control-group">
+                        <label>Exponent 2</label>
+                        <input type="range" id="exp2" min="1" max="6" value="2" step="1" onchange="updateProductRule()">
+                        <span id="exp2Val">2</span>
+                    </div>
+                </div>
+                <div id="productResult" style="font-size: 18px; color: var(--green); font-weight: bold; margin: 20px 0;"></div>
+                <div class="canvas-container" id="productCanvas"></div>
+            </div>
+
+            <div class="card">
+                <h3 class="vmath-dual">
+                    <span data-math="(a^m)^n = a^{(m \times n)}"></span>
+                    <div class="vmath-caret">⌨ (a^m)^n = a^(m×n)</div>
+                </h3>
+                <div class="rule-box">
+                    <p>When raising a power to a power, multiply the exponents.</p>
+                    <div class="vmath-dual">
+                        <span data-math="(2^{3})^{2} = 2^{(3 \times 2)} = 2^{6} = 64"></span>
+                        <div class="vmath-caret">⌨ (2^3)^2 = 2^(3×2) = 2^6 = 64</div>
+                    </div>
+                </div>
+                <div class="controls">
+                    <div class="control-group">
+                        <label>Base</label>
+                        <input type="range" id="base2" min="2" max="10" value="2" step="1" onchange="updatePowerRule()">
+                        <span id="base2Val">2</span>
+                    </div>
+                    <div class="control-group">
+                        <label>Inner Exponent</label>
+                        <input type="range" id="innerExp" min="1" max="5" value="3" step="1" onchange="updatePowerRule()">
+                        <span id="innerExpVal">3</span>
+                    </div>
+                    <div class="control-group">
+                        <label>Outer Exponent</label>
+                        <input type="range" id="outerExp" min="1" max="4" value="2" step="1" onchange="updatePowerRule()">
+                        <span id="outerExpVal">2</span>
+                    </div>
+                </div>
+                <div id="powerResult" style="font-size: 18px; color: var(--green); font-weight: bold; margin: 20px 0;"></div>
+            </div>
+        </div>
+
+        <div id="practice" class="tab-content">
+            <div class="card">
+                <h2>Practice: Simplify Using Exponent Rules</h2>
+                <div class="difficulty-selector">
+                    <button class="difficulty-btn active" onclick="setPractice('easy')">Easy</button>
+                    <button class="difficulty-btn" onclick="setPractice('medium')">Medium</button>
+                    <button class="difficulty-btn" onclick="setPractice('hard')">Hard</button>
+                </div>
+
+                <div id="practiceQuestion" class="card" style="background: var(--bg2); border-left-color: var(--green);">
+                    <h3>Simplify:</h3>
+                    <div id="questionText" style="font-weight: bold; color: var(--cyan);"></div>
+                </div>
+
+                <div class="controls">
+                    <div class="control-group">
+                        <label>Your Answer (use ^ for exponent)</label>
+                        <input type="text" id="answerInput" placeholder="e.g., 2^5">
+                    </div>
+                    <button onclick="checkAnswer()">Check</button>
+                </div>
+
+                <div id="feedback" class="feedback"></div>
+                <button onclick="nextPracticeQuestion()" style="width: 100%; margin-top: 20px;">Next Question</button>
+            </div>
+        </div>
+
+        <div id="play" class="tab-content">
+            <div class="card">
+                <h2>Play: Exponent Matching Game</h2>
+                <div id="gameBoard" style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; margin: 20px 0;"></div>
+                <div id="feedback" class="feedback"></div>
+                <button onclick="resetGame()" style="width: 100%; margin-top: 20px;">New Game</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="../../vinculum-feedback.js"></script><script src="../../vinculum-guide.js"></script><script src="../../vinculum-indigenous.js"></script><script src="../../indigenous-context-panel.js"></script>
+    <script src="../../vinculum-input.js"></script>
+    <script>
+        // ═══════════════════════════════════════
+        // App State (all math rendering via shared VinculumMath)
+        // ═══════════════════════════════════════
+        let currentDifficulty = 'easy';
+        let currentQuestion = null;
+        let gameCards = [];
+        let gameMatches = 0;
+        let productLink = null;  // color-coded link instance
+        let powerLink = null;
+
+        function switchTab(tabName) {
+            document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
+            document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+            document.getElementById(tabName).classList.add('active');
+            event.target.classList.add('active');
+
+            if (tabName === 'explore') {
+                setTimeout(() => { updateProductRule(); updatePowerRule(); }, 100);
+            } else if (tabName === 'practice') {
+                nextPracticeQuestion();
+            } else if (tabName === 'play') {
+                initializeGame();
+            }
+        }
+
+        // ═══════════════════════════════════════
+        // EXPLORE — Product Rule (color-coded)
+        // ═══════════════════════════════════════
+        function updateProductRule() {
+            const base = parseInt(document.getElementById('base1').value);
+            const e1 = parseInt(document.getElementById('exp1').value);
+            const e2 = parseInt(document.getElementById('exp2').value);
+
+            document.getElementById('base1Val').textContent = base;
+            document.getElementById('exp1Val').textContent = e1;
+            document.getElementById('exp2Val').textContent = e2;
+
+            const sum = e1 + e2;
+            const result = Math.pow(base, sum);
+
+            // Color-coded: base=cyan, exp1=coral, exp2=orange, sum=purple, result=green
+            productLink = VinculumMath.colorLink({
+                target: 'productResult',
+                template: '{base}^{e1} × {base}^{e2} = {base}^{sum} = {result}',
+                templateLatex: '{base}^{{e1}} \\times {base}^{{e2}} = {base}^{{sum}} = {result}',
+                vars: {
+                    base:   { value: base,   color: '#00d9ff', label: 'Base' },
+                    e1:     { value: e1,     color: '#ff6b6b', label: 'Exponent 1' },
+                    e2:     { value: e2,     color: '#ffa500', label: 'Exponent 2' },
+                    sum:    { value: sum,    color: '#a78bfa', computed: true },
+                    result: { value: result, color: '#00ff88', computed: true }
+                }
+            });
+
+            drawProductVisualization(base, e1, e2);
+        }
+
+        // ═══════════════════════════════════════
+        // EXPLORE — Power Rule (color-coded)
+        // ═══════════════════════════════════════
+        function updatePowerRule() {
+            const base = parseInt(document.getElementById('base2').value);
+            const inner = parseInt(document.getElementById('innerExp').value);
+            const outer = parseInt(document.getElementById('outerExp').value);
+
+            document.getElementById('base2Val').textContent = base;
+            document.getElementById('innerExpVal').textContent = inner;
+            document.getElementById('outerExpVal').textContent = outer;
+
+            const product = inner * outer;
+            const result = Math.pow(base, product);
+
+            powerLink = VinculumMath.colorLink({
+                target: 'powerResult',
+                template: '({base}^{inner})^{outer} = {base}^{product} = {result}',
+                templateLatex: '({base}^{{inner}})^{{outer}} = {base}^{{product}} = {result}',
+                vars: {
+                    base:    { value: base,    color: '#00d9ff', label: 'Base' },
+                    inner:   { value: inner,   color: '#ff6b6b', label: 'Inner Exp' },
+                    outer:   { value: outer,   color: '#ffa500', label: 'Outer Exp' },
+                    product: { value: product, color: '#a78bfa', computed: true },
+                    result:  { value: result,  color: '#00ff88', computed: true }
+                }
+            });
+        }
+
+        // ═══════════════════════════════════════
+        // EXPLORE — Visualization
+        // ═══════════════════════════════════════
+        function drawProductVisualization(base, exp1, exp2) {
+            const container = document.getElementById('productCanvas');
+            container.innerHTML = '';
+            const canvas = document.createElement('canvas');
+            canvas.width = container.clientWidth;
+            canvas.height = container.clientHeight;
+            container.appendChild(canvas);
+
+            const ctx = canvas.getContext('2d');
+            const styles = getComputedStyle(document.documentElement);
+            ctx.fillStyle = styles.getPropertyValue('--bg');
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+            const boxSize = 40;
+            const padding = 20;
+            let x = padding;
+
+            ctx.font = '14px Arial';
+            ctx.textAlign = 'center';
+
+            // Color-code boxes to match the expression: exp1 group = coral, exp2 group = orange
+            for (let i = 0; i < exp1; i++) {
+                ctx.fillStyle = '#ff6b6b'; // coral — matches Exponent 1 color
+                ctx.fillRect(x, padding, boxSize, boxSize);
+                ctx.fillStyle = '#fff';
+                ctx.fillText(base.toString(), x + boxSize / 2, padding + boxSize / 2 + 5);
+                x += boxSize + 5;
+            }
+
+            ctx.fillStyle = styles.getPropertyValue('--text');
+            ctx.font = 'bold 18px Arial';
+            ctx.fillText('×', x + 10, padding + boxSize / 2 + 5);
+            x += 30;
+
+            for (let i = 0; i < exp2; i++) {
+                ctx.fillStyle = '#ffa500'; // orange — matches Exponent 2 color
+                ctx.fillRect(x, padding, boxSize, boxSize);
+                ctx.fillStyle = '#fff';
+                ctx.fillText(base.toString(), x + boxSize / 2, padding + boxSize / 2 + 5);
+                x += boxSize + 5;
+            }
+        }
+
+        // ═══════════════════════════════════════
+        // PRACTICE (uses VinculumMath.render + dual)
+        // ═══════════════════════════════════════
+        function setPractice(level) {
+            currentDifficulty = level;
+            document.querySelectorAll('.difficulty-btn').forEach(b => b.classList.remove('active'));
+            event.target.classList.add('active');
+            nextPracticeQuestion();
+        }
+
+        function generatePracticeQuestion() {
+            const bases = { easy: [2, 3], medium: [2, 3, 4, 5], hard: [2, 3, 4, 5, 6, 7] };
+            const exponents = { easy: [1, 2, 3, 4], medium: [2, 3, 4, 5], hard: [3, 4, 5, 6] };
+
+            const base = bases[currentDifficulty][Math.floor(Math.random() * bases[currentDifficulty].length)];
+            const types = ['product', 'power', 'quotient'];
+            const type = types[Math.floor(Math.random() * types.length)];
+
+            let question, answer, questionLatex, answerLatex;
+
+            if (type === 'product') {
+                const e1 = exponents[currentDifficulty][Math.floor(Math.random() * exponents[currentDifficulty].length)];
+                const e2 = exponents[currentDifficulty][Math.floor(Math.random() * exponents[currentDifficulty].length)];
+                question = `${base}^${e1} × ${base}^${e2}`;
+                answer = `${base}^${e1 + e2}`;
+                questionLatex = `${base}^{${e1}} \\times ${base}^{${e2}}`;
+                answerLatex = `${base}^{${e1 + e2}}`;
+            } else if (type === 'power') {
+                const e1 = exponents[currentDifficulty][Math.floor(Math.random() * exponents[currentDifficulty].length)];
+                const e2 = exponents[currentDifficulty].filter(e => e <= 3)[Math.floor(Math.random() * 3)] || 2;
+                question = `(${base}^${e1})^${e2}`;
+                answer = `${base}^${e1 * e2}`;
+                questionLatex = `(${base}^{${e1}})^{${e2}}`;
+                answerLatex = `${base}^{${e1 * e2}}`;
+            } else {
+                const e1 = exponents[currentDifficulty][Math.floor(Math.random() * exponents[currentDifficulty].length)];
+                const e2 = Math.min(e1 - 1, exponents[currentDifficulty][Math.floor(Math.random() * exponents[currentDifficulty].length)]);
+                question = `${base}^${e1} ÷ ${base}^${e2}`;
+                answer = `${base}^${e1 - e2}`;
+                questionLatex = `${base}^{${e1}} \\div ${base}^{${e2}}`;
+                answerLatex = `${base}^{${e1 - e2}}`;
+            }
+
+            return { question, answer, questionLatex, answerLatex };
+        }
+
+        function nextPracticeQuestion() {
+            currentQuestion = generatePracticeQuestion();
+            const el = document.getElementById('questionText');
+            el.innerHTML = VinculumMath.dual(currentQuestion.question, { display: true });
+            document.getElementById('answerInput').value = '';
+            clearFeedback();
+        }
+
+        function checkAnswer() {
+            const userAnswer = document.getElementById('answerInput').value.trim().replace(/\s/g, '');
+            const correct = userAnswer === currentQuestion.answer.replace(/\s/g, '');
+
+            if (correct) {
+                const fullExpr = currentQuestion.question + ' = ' + currentQuestion.answer;
+                showFeedback('Correct!', 'success', VinculumMath.dual(fullExpr));
+            } else {
+                showFeedback('Not quite. The answer is:', 'error', VinculumMath.dual(currentQuestion.answer));
+            }
+
+            setTimeout(() => nextPracticeQuestion(), 2000);
+        }
+
+        // ═══════════════════════════════════════
+        // PLAY — Matching Game (uses VinculumMath.render)
+        // ═══════════════════════════════════════
+        function initializeGame() {
+            gameCards = [];
+            gameMatches = 0;
+
+            const pairs = [
+                { display: '2^3 × 2^2', value: '2^5' },
+                { display: '3^2 × 3^1', value: '3^3' },
+                { display: '(2^2)^2',   value: '2^4' },
+                { display: '(3^2)^2',   value: '3^4' },
+                { display: '2^5 ÷ 2^2', value: '2^3' },
+                { display: '3^4 ÷ 3^2', value: '3^2' },
+                { display: '5^2',       value: '25' }
+            ];
+
+            for (let i = 0; i < 7; i++) {
+                gameCards.push({ ...pairs[i], side: 'question', flipped: false, matched: false, id: i });
+                gameCards.push({ ...pairs[i], side: 'answer',   flipped: false, matched: false, id: i });
+            }
+
+            gameCards.sort(() => Math.random() - 0.5);
+            renderGameBoard();
+        }
+
+        function renderGameBoard() {
+            const board = document.getElementById('gameBoard');
+            board.innerHTML = '';
+
+            gameCards.forEach((card, idx) => {
+                const btn = document.createElement('button');
+                btn.style.cssText = 'padding:15px;min-height:90px;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;';
+
+                if (card.matched) {
+                    btn.style.opacity = '0.4';
+                    btn.style.pointerEvents = 'none';
+                }
+
+                if (card.flipped || card.matched) {
+                    const caret = card.side === 'question' ? card.display : card.value;
+                    btn.innerHTML = '<div class="game-card-math"><span class="vmath-rendered">' +
+                        VinculumMath.render(caret) + '</span></div>' +
+                        '<div class="vmath-caret" style="font-size:10px;margin-top:4px;">⌨ ' + caret + '</div>';
+                } else {
+                    btn.innerHTML = '<span style="font-size:24px;">?</span>';
+                }
+
+                btn.onclick = () => flipCard(idx);
+                board.appendChild(btn);
+            });
+        }
+
+        let flipped = [];
+        function flipCard(idx) {
+            if (flipped.length === 2 || gameCards[idx].flipped || gameCards[idx].matched) return;
+
+            gameCards[idx].flipped = true;
+            flipped.push(idx);
+            renderGameBoard();
+
+            if (flipped.length === 2) {
+                const [i1, i2] = flipped;
+                const match = gameCards[i1].id === gameCards[i2].id && i1 !== i2;
+
+                if (match) {
+                    gameCards[i1].matched = true;
+                    gameCards[i2].matched = true;
+                    gameMatches++;
+                    showFeedback('Match found!', 'success');
+                    flipped = [];
+                    renderGameBoard();
+                    if (gameMatches === 7) {
+                        setTimeout(() => showFeedback('You won! All pairs matched!', 'success'), 300);
+                    }
+                } else {
+                    setTimeout(() => {
+                        gameCards[i1].flipped = false;
+                        gameCards[i2].flipped = false;
+                        flipped = [];
+                        renderGameBoard();
+                    }, 1200);
+                }
+                if (!match) flipped = [];
+            }
+        }
+
+        function resetGame() { initializeGame(); clearFeedback(); }
+
+        // ═══════════════════════════════════════
+        // Feedback
+        // ═══════════════════════════════════════
+        function showFeedback(message, type, renderedHtml) {
+            const fb = document.getElementById('feedback');
+            fb.innerHTML = message + (renderedHtml ? '<div style="margin-top:8px;">' + renderedHtml + '</div>' : '');
+            fb.className = 'feedback show ' + (type === 'error' ? 'error' : '');
+        }
+
+        function clearFeedback() {
+            document.querySelectorAll('.feedback').forEach(fb => fb.classList.remove('show'));
+        }
+
+        // ═══════════════════════════════════════
+        // Init — wait for VinculumMath to load KaTeX
+        // ═══════════════════════════════════════
+        VinculumMath.ready(function() {
+            updateProductRule();
+            updatePowerRule();
+        });
+    </script>
+</body>
+</html>

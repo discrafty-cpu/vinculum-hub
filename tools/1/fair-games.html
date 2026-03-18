@@ -1,0 +1,852 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="VINCULUM Learning Hub - Fair Games Explorer">
+    <meta name="author" content="VINCULUM">
+    <title>Fair Games Explorer — VINCULUM Hub</title>
+
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+
+    <!-- VINCULUM Core Styles -->
+    <link rel="stylesheet" href="../../vinculum-core.css">
+
+    <style>
+        :root {
+            --color-coin: #FFD700;
+            --color-spinner: #FF6B9D;
+            --color-dice: #4ECDC4;
+            --color-fair: #2ECC71;
+            --color-unfair: #E74C3C;
+        }
+
+        .tool-section {
+            margin: 2rem 0;
+            padding: 1.5rem;
+            background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+            border-radius: 12px;
+            border-left: 5px solid var(--color-coin);
+        }
+
+        .tool-section.spinner-sec {
+            border-left-color: var(--color-spinner);
+        }
+
+        .tool-section.dice-sec {
+            border-left-color: var(--color-dice);
+        }
+
+        .button-group {
+            display: flex;
+            gap: 1rem;
+            flex-wrap: wrap;
+            margin: 1rem 0;
+        }
+
+        .action-btn {
+            padding: 0.75rem 1.5rem;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: transform 0.2s, box-shadow 0.2s;
+            font-size: 1rem;
+        }
+
+        .action-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+        }
+
+        .action-btn:active {
+            transform: translateY(0);
+        }
+
+        .results-display {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 1rem;
+            margin: 1.5rem 0;
+        }
+
+        .result-box {
+            background: white;
+            padding: 1rem;
+            border-radius: 8px;
+            text-align: center;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+            border-top: 4px solid var(--color-coin);
+        }
+
+        .result-box.spinner {
+            border-top-color: var(--color-spinner);
+        }
+
+        .result-box.dice {
+            border-top-color: var(--color-dice);
+        }
+
+        .result-label {
+            font-size: 0.85rem;
+            color: #666;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-bottom: 0.5rem;
+        }
+
+        .result-value {
+            font-size: 2.5rem;
+            font-weight: 700;
+            color: #333;
+            font-family: 'JetBrains Mono', monospace;
+        }
+
+        .tally-chart {
+            display: flex;
+            align-items: flex-end;
+            gap: 0.5rem;
+            margin: 1rem 0;
+            padding: 1rem;
+            background: white;
+            border-radius: 8px;
+            min-height: 200px;
+        }
+
+        .tally-bar {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .bar {
+            width: 100%;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border-radius: 4px 4px 0 0;
+            min-height: 20px;
+            transition: height 0.3s ease;
+            position: relative;
+        }
+
+        .bar-label {
+            font-weight: 600;
+            font-size: 0.9rem;
+            text-align: center;
+        }
+
+        .bar-count {
+            position: absolute;
+            top: -25px;
+            left: 50%;
+            transform: translateX(-50%);
+            font-weight: 700;
+            color: #333;
+        }
+
+        .prediction-box {
+            background: #FFF8DC;
+            border: 2px dashed #FFB347;
+            padding: 1rem;
+            border-radius: 8px;
+            margin: 1rem 0;
+        }
+
+        .prediction-label {
+            font-weight: 600;
+            color: #333;
+            margin-bottom: 0.5rem;
+        }
+
+        .prediction-options {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+            gap: 0.5rem;
+        }
+
+        .prediction-btn {
+            padding: 0.5rem;
+            border: 2px solid #ddd;
+            background: white;
+            border-radius: 6px;
+            cursor: pointer;
+            font-weight: 600;
+            transition: all 0.2s;
+        }
+
+        .prediction-btn:hover {
+            border-color: #667eea;
+            background: #f0f4ff;
+        }
+
+        .prediction-btn.selected {
+            background: #667eea;
+            color: white;
+            border-color: #667eea;
+        }
+
+        .spinner-viz {
+            display: inline-block;
+            width: 150px;
+            height: 150px;
+            border-radius: 50%;
+            margin: 1rem;
+            position: relative;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+            animation: spin-anim 0.1s linear infinite;
+        }
+
+        @keyframes spin-anim {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .spinner-section-1 {
+            clip-path: polygon(50% 50%, 50% 0%, 100% 0%);
+            background: #FF6B9D;
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            border-radius: 50%;
+        }
+
+        .spinner-section-2 {
+            clip-path: polygon(50% 50%, 100% 0%, 100% 100%);
+            background: #4ECDC4;
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            border-radius: 50%;
+        }
+
+        .spinner-section-3 {
+            clip-path: polygon(50% 50%, 100% 100%, 0% 100%);
+            background: #FFD700;
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            border-radius: 50%;
+        }
+
+        .spinner-section-4 {
+            clip-path: polygon(50% 50%, 0% 100%, 0% 0%);
+            background: #95E1D3;
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            border-radius: 50%;
+        }
+
+        .dice-display {
+            display: inline-flex;
+            gap: 1rem;
+            margin: 1rem 0;
+        }
+
+        .dice {
+            width: 80px;
+            height: 80px;
+            background: white;
+            border: 3px solid #333;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 2.5rem;
+            font-weight: 700;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+        }
+
+        .game-card {
+            background: white;
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            padding: 1.5rem;
+            margin: 1rem 0;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .game-card:hover {
+            border-color: #667eea;
+            box-shadow: 0 4px 12px rgba(102, 126, 234, 0.2);
+            transform: translateY(-2px);
+        }
+
+        .game-card h3 {
+            color: #333;
+            margin: 0 0 0.5rem 0;
+        }
+
+        .game-card p {
+            color: #666;
+            font-size: 0.95rem;
+            margin: 0.5rem 0;
+        }
+
+        .fair-indicator {
+            display: inline-block;
+            padding: 0.5rem 1rem;
+            border-radius: 20px;
+            font-weight: 600;
+            font-size: 0.9rem;
+            margin-top: 1rem;
+        }
+
+        .fair-indicator.fair {
+            background: var(--color-fair);
+            color: white;
+        }
+
+        .fair-indicator.unfair {
+            background: var(--color-unfair);
+            color: white;
+        }
+
+        .score-display {
+            font-size: 2rem;
+            font-weight: 700;
+            color: var(--color-fair);
+            text-align: center;
+            padding: 1rem;
+            background: #f0fff4;
+            border-radius: 8px;
+            margin: 1rem 0;
+        }
+
+        .play-instructions {
+            background: #e3f2fd;
+            border-left: 4px solid #2196F3;
+            padding: 1rem;
+            border-radius: 4px;
+            margin: 1rem 0;
+        }
+    </style>
+</head>
+<body>
+    <div class="vinculum-header">
+        <h1 slot="title">Fair Games Explorer</h1>
+        <span slot="grade">Grades 1-2</span>
+        <span slot="ccss">K.MD.A.1, 1.MD.A.1</span>
+        <span slot="minnesota">1.4.1.1, 2.4.1.1</span>
+    </div>
+
+    <div class="vinculum-mode-tabs">
+        <button class="vinculum-mode-tab" data-mode="explore"><svg width="18" height="18" viewBox="0 0 48 48" fill="none"><path d="M4 24C4 24 12 12 24 12C36 12 44 24 44 24C44 24 36 36 24 36C12 36 4 24 4 24Z" stroke="currentColor" stroke-width="3" fill="none"/><circle cx="24" cy="24" r="7" stroke="currentColor" stroke-width="3" fill="none"/><circle cx="24" cy="24" r="3" fill="currentColor"/><line x1="24" y1="4" x2="24" y2="9" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" opacity="0.5"/><line x1="10" y1="8" x2="13" y2="12" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" opacity="0.5"/><line x1="38" y1="8" x2="35" y2="12" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" opacity="0.5"/></svg> Explore</button>
+        <button class="vinculum-mode-tab" data-mode="practice"><svg width="18" height="18" viewBox="0 0 48 48" fill="none"><circle cx="24" cy="24" r="20" stroke="currentColor" stroke-width="3" fill="none" opacity="0.3"/><circle cx="24" cy="24" r="20" stroke="currentColor" stroke-width="3" fill="none" stroke-dasharray="126" stroke-dashoffset="32" stroke-linecap="round"/><polyline points="16,24 22,32 34,16" stroke="currentColor" stroke-width="4" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg> Practice</button>
+        <button class="vinculum-mode-tab" data-mode="play"><svg width="18" height="18" viewBox="0 0 48 48" fill="none"><polygon points="28,4 12,28 22,28 18,44 36,18 26,18" fill="none" stroke="currentColor" stroke-width="3" stroke-linejoin="round"/><polygon points="27,8 15,27 23,27 20,40 34,19 26,19" fill="currentColor" opacity="0.15"/></svg> Play</button>
+
+        <div class="difficulty-selector">
+            <label for="difficulty-select">Difficulty:</label>
+            <select id="difficulty-select" class="vinculum-diff-button">
+                <option value="easy">Easy</option>
+                <option value="medium" selected>Medium</option>
+                <option value="hard">Hard</option>
+            </select>
+        </div>
+    </div>
+
+    <!-- EXPLORE MODE -->
+    <div class="vinculum-mode-content" data-mode="explore">
+        <div class="card">
+            <h2>Explore: Flip, Spin & Roll!</h2>
+            <p>Try different games and see what happens! Watch the results pile up.</p>
+
+            <!-- Coin Flip -->
+            <div class="tool-section">
+                <h3>🪙 Flip a Coin</h3>
+                <p>Heads or tails? Let's see!</p>
+                <div class="button-group">
+                    <button class="action-btn" id="flip-btn">Flip Coin</button>
+                    <button class="action-btn" id="reset-coin" style="background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);">Reset</button>
+                </div>
+                <div class="results-display">
+                    <div class="result-box">
+                        <div class="result-label">Heads</div>
+                        <div class="result-value" id="heads-count">0</div>
+                    </div>
+                    <div class="result-box">
+                        <div class="result-label">Tails</div>
+                        <div class="result-value" id="tails-count">0</div>
+                    </div>
+                </div>
+                <div class="tally-chart">
+                    <div class="tally-bar">
+                        <div class="bar" id="heads-bar" style="height: 0%"></div>
+                        <div class="bar-label">Heads</div>
+                    </div>
+                    <div class="tally-bar">
+                        <div class="bar" id="tails-bar" style="height: 0%"></div>
+                        <div class="bar-label">Tails</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Spinner -->
+            <div class="tool-section spinner-sec">
+                <h3>🎡 Spin the Spinner</h3>
+                <p>Red, blue, yellow, or green? Spin and see!</p>
+                <div class="button-group">
+                    <button class="action-btn" id="spin-btn" style="background: linear-gradient(135deg, #FF6B9D 0%, #FF8F7E 100%);">Spin Spinner</button>
+                    <button class="action-btn" id="reset-spinner" style="background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);">Reset</button>
+                </div>
+                <div class="results-display">
+                    <div class="result-box spinner">
+                        <div class="result-label">Red</div>
+                        <div class="result-value" id="red-count">0</div>
+                    </div>
+                    <div class="result-box spinner">
+                        <div class="result-label">Blue</div>
+                        <div class="result-value" id="blue-count">0</div>
+                    </div>
+                    <div class="result-box spinner">
+                        <div class="result-label">Yellow</div>
+                        <div class="result-value" id="yellow-count">0</div>
+                    </div>
+                    <div class="result-box spinner">
+                        <div class="result-label">Green</div>
+                        <div class="result-value" id="green-count">0</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Dice -->
+            <div class="tool-section dice-sec">
+                <h3>🎲 Roll a Dice</h3>
+                <p>Roll and see how many dots appear!</p>
+                <div class="button-group">
+                    <button class="action-btn" id="roll-btn" style="background: linear-gradient(135deg, #4ECDC4 0%, #44A08D 100%);">Roll Dice</button>
+                    <button class="action-btn" id="reset-dice" style="background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);">Reset</button>
+                </div>
+                <div id="dice-display"></div>
+                <div class="tally-chart">
+                    <div class="tally-bar">
+                        <div class="bar" id="one-bar" style="height: 0%"></div>
+                        <div class="bar-label">1</div>
+                    </div>
+                    <div class="tally-bar">
+                        <div class="bar" id="two-bar" style="height: 0%"></div>
+                        <div class="bar-label">2</div>
+                    </div>
+                    <div class="tally-bar">
+                        <div class="bar" id="three-bar" style="height: 0%"></div>
+                        <div class="bar-label">3</div>
+                    </div>
+                    <div class="tally-bar">
+                        <div class="bar" id="four-bar" style="height: 0%"></div>
+                        <div class="bar-label">4</div>
+                    </div>
+                    <div class="tally-bar">
+                        <div class="bar" id="five-bar" style="height: 0%"></div>
+                        <div class="bar-label">5</div>
+                    </div>
+                    <div class="tally-bar">
+                        <div class="bar" id="six-bar" style="height: 0%"></div>
+                        <div class="bar-label">6</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- PRACTICE MODE -->
+    <div class="vinculum-mode-content" data-mode="practice">
+        <div class="card">
+            <h2>Practice: Predict the Results</h2>
+            <p>Make a guess about what will happen! Which result do you think will happen more?</p>
+
+            <div class="tool-section">
+                <h3>📊 Coin Flip Prediction</h3>
+                <p id="coin-scenario">You flip a coin 10 times. Which will come up more?</p>
+                <div class="prediction-box">
+                    <div class="prediction-label">Your prediction:</div>
+                    <div class="prediction-options">
+                        <button class="prediction-btn" id="pred-heads">Heads</button>
+                        <button class="prediction-btn" id="pred-tails">Tails</button>
+                        <button class="prediction-btn" id="pred-equal">About Equal</button>
+                    </div>
+                </div>
+                <div class="button-group">
+                    <button class="action-btn" id="test-coin-pred" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);">Test My Prediction!</button>
+                </div>
+                <div id="coin-pred-feedback"></div>
+            </div>
+
+            <div class="tool-section spinner-sec">
+                <h3>🎡 Spinner Prediction</h3>
+                <p id="spinner-scenario">The spinner has 4 equal sections. Which color will come up most?</p>
+                <div class="prediction-box">
+                    <div class="prediction-label">Your prediction:</div>
+                    <div class="prediction-options">
+                        <button class="prediction-btn" id="pred-likely-equal">Any color equally</button>
+                        <button class="prediction-btn" id="pred-likely-one">One color more</button>
+                    </div>
+                </div>
+                <div class="button-group">
+                    <button class="action-btn" id="test-spinner-pred" style="background: linear-gradient(135deg, #FF6B9D 0%, #FF8F7E 100%);">Test My Prediction!</button>
+                </div>
+                <div id="spinner-pred-feedback"></div>
+            </div>
+
+            <div class="tool-section dice-sec">
+                <h3>🎲 Dice Roll Prediction</h3>
+                <p id="dice-scenario">Roll a dice many times. What will happen?</p>
+                <div class="prediction-box">
+                    <div class="prediction-label">Your prediction:</div>
+                    <div class="prediction-options">
+                        <button class="prediction-btn" id="pred-high">High numbers (4,5,6)</button>
+                        <button class="prediction-btn" id="pred-low">Low numbers (1,2,3)</button>
+                        <button class="prediction-btn" id="pred-fair">About equal</button>
+                    </div>
+                </div>
+                <div class="button-group">
+                    <button class="action-btn" id="test-dice-pred" style="background: linear-gradient(135deg, #4ECDC4 0%, #44A08D 100%);">Test My Prediction!</button>
+                </div>
+                <div id="dice-pred-feedback"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- PLAY MODE -->
+    <div class="vinculum-mode-content" data-mode="play">
+        <div class="card">
+            <h2>Play: Is It Fair? Game</h2>
+            <div class="play-instructions">
+                <p><strong>Rules:</strong> I'll describe a game. You decide: Is it FAIR or UNFAIR?
+                A fair game gives everyone the same chance to win!</p>
+            </div>
+
+            <div class="score-display">
+                Score: <span id="play-score">0</span> / <span id="play-total">0</span>
+            </div>
+
+            <div id="game-container">
+                <div id="game-question"></div>
+                <div class="button-group" id="game-buttons">
+                    <button class="action-btn" id="fair-btn" style="background: var(--color-fair);">FAIR ✓</button>
+                    <button class="action-btn" id="unfair-btn" style="background: var(--color-unfair);">UNFAIR ✗</button>
+                </div>
+                <div id="game-feedback"></div>
+                <div id="game-controls">
+                    <button class="action-btn" id="next-game" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);">Next Game</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div id="feedback" class="feedback"></div>
+    <div id="sr-announcements" class="sr-only" aria-live="polite" aria-atomic="true"></div>
+
+    <script src="../../vinculum-feedback.js"></script><script src="../../vinculum-guide.js"></script><script src="../../vinculum-indigenous.js"></script><script src="../../indigenous-context-panel.js"></script>
+    <script src="../../vinculum-input.js"></script>
+
+    <script>
+        // State management
+        const state = {
+            explore: {
+                coin: { heads: 0, tails: 0 },
+                spinner: { red: 0, blue: 0, yellow: 0, green: 0 },
+                dice: { 1: 0, 2: 0, 3: 0, 4: 0, 5: 0, 6: 0 }
+            },
+            practice: {
+                coinPred: null,
+                spinnerPred: null,
+                dicePred: null
+            },
+            play: {
+                score: 0,
+                total: 0,
+                gameIndex: 0
+            }
+        };
+
+        const fairGames = [
+            {
+                q: "A coin flip: Heads or Tails.",
+                answer: true,
+                exp: "Both sides have equal chance!"
+            },
+            {
+                q: "A spinner with 4 equal colors.",
+                answer: true,
+                exp: "Each color has the same space!"
+            },
+            {
+                q: "A dice roll: any number 1-6.",
+                answer: true,
+                exp: "Every number has equal chance!"
+            },
+            {
+                q: "A bag with 3 red balls and 1 blue. Pick without looking.",
+                answer: false,
+                exp: "Red is picked more often!"
+            },
+            {
+                q: "A spinner that's 3/4 red and 1/4 blue.",
+                answer: false,
+                exp: "Red takes up more space!"
+            }
+        ];
+
+        // ─────────────────────────────────────────────────────
+        // EXPLORE MODE
+        // ─────────────────────────────────────────────────────
+
+        function renderExplore() {
+            setupCoinFlip();
+            setupSpinner();
+            setupDice();
+        }
+
+        function setupCoinFlip() {
+            const flipBtn = document.getElementById('flip-btn');
+            const resetBtn = document.getElementById('reset-coin');
+
+            flipBtn.addEventListener('click', () => {
+                const result = Math.random() > 0.5 ? 'heads' : 'tails';
+                state.explore.coin[result]++;
+                updateCoinDisplay();
+            });
+
+            resetBtn.addEventListener('click', () => {
+                state.explore.coin = { heads: 0, tails: 0 };
+                updateCoinDisplay();
+            });
+        }
+
+        function updateCoinDisplay() {
+            const { heads, tails } = state.explore.coin;
+            document.getElementById('heads-count').textContent = heads;
+            document.getElementById('tails-count').textContent = tails;
+            const total = Math.max(heads + tails, 1);
+            const headsPct = (heads / total) * 100;
+            const tailsPct = (tails / total) * 100;
+            document.getElementById('heads-bar').style.height = headsPct + '%';
+            document.getElementById('tails-bar').style.height = tailsPct + '%';
+        }
+
+        function setupSpinner() {
+            const spinBtn = document.getElementById('spin-btn');
+            const resetBtn = document.getElementById('reset-spinner');
+            const colors = ['red', 'blue', 'yellow', 'green'];
+
+            spinBtn.addEventListener('click', () => {
+                const result = colors[Math.floor(Math.random() * 4)];
+                state.explore.spinner[result]++;
+                updateSpinnerDisplay();
+            });
+
+            resetBtn.addEventListener('click', () => {
+                state.explore.spinner = { red: 0, blue: 0, yellow: 0, green: 0 };
+                updateSpinnerDisplay();
+            });
+        }
+
+        function updateSpinnerDisplay() {
+            const s = state.explore.spinner;
+            const counts = [s.red, s.blue, s.yellow, s.green];
+            document.getElementById('red-count').textContent = s.red;
+            document.getElementById('blue-count').textContent = s.blue;
+            document.getElementById('yellow-count').textContent = s.yellow;
+            document.getElementById('green-count').textContent = s.green;
+            const total = Math.max(counts.reduce((a, b) => a + b, 0), 1);
+            ['red', 'blue', 'yellow', 'green'].forEach((col, i) => {
+                const bar = document.getElementById(col + '-bar');
+                if (bar) bar.style.height = ((counts[i] / total) * 100) + '%';
+            });
+        }
+
+        function setupDice() {
+            const rollBtn = document.getElementById('roll-btn');
+            const resetBtn = document.getElementById('reset-dice');
+
+            rollBtn.addEventListener('click', () => {
+                const roll = Math.floor(Math.random() * 6) + 1;
+                state.explore.dice[roll]++;
+                updateDiceDisplay();
+            });
+
+            resetBtn.addEventListener('click', () => {
+                state.explore.dice = { 1: 0, 2: 0, 3: 0, 4: 0, 5: 0, 6: 0 };
+                updateDiceDisplay();
+            });
+        }
+
+        function updateDiceDisplay() {
+            const d = state.explore.dice;
+            const counts = [d[1], d[2], d[3], d[4], d[5], d[6]];
+            const total = Math.max(counts.reduce((a, b) => a + b, 0), 1);
+
+            for (let i = 1; i <= 6; i++) {
+                const bar = document.getElementById(i + '-bar');
+                if (bar) bar.style.height = ((d[i] / total) * 100) + '%';
+            }
+        }
+
+        // ─────────────────────────────────────────────────────
+        // PRACTICE MODE
+        // ─────────────────────────────────────────────────────
+
+        function renderPractice() {
+            document.getElementById('test-coin-pred').addEventListener('click', testCoinPred);
+            document.getElementById('test-spinner-pred').addEventListener('click', testSpinnerPred);
+            document.getElementById('test-dice-pred').addEventListener('click', testDicePred);
+
+            document.querySelectorAll('.prediction-btn').forEach(btn => {
+                btn.addEventListener('click', function() {
+                    const container = this.parentElement;
+                    container.querySelectorAll('.prediction-btn').forEach(b => b.classList.remove('selected'));
+                    this.classList.add('selected');
+                });
+            });
+        }
+
+        function testCoinPred() {
+            const pred = document.querySelector('[id^="pred-"][id*="heads"], [id^="pred-"][id*="tails"], [id^="pred-"][id*="equal"].selected');
+            if (!pred) {
+                showFeedback('Choose a prediction first!', 'warning');
+                return;
+            }
+            const trials = 20;
+            let heads = 0;
+            for (let i = 0; i < trials; i++) {
+                if (Math.random() > 0.5) heads++;
+            }
+            const tails = trials - heads;
+            const feedback = document.getElementById('coin-pred-feedback');
+            feedback.innerHTML = `<p><strong>Result:</strong> Heads: ${heads}, Tails: ${tails}</p>`;
+            if (Math.abs(heads - tails) <= 3) {
+                feedback.innerHTML += '<p style="color: var(--color-fair);">✓ Great prediction! They came out nearly equal!</p>';
+            } else {
+                feedback.innerHTML += '<p style="color: #333;">One came out ahead this time, but with more flips they balance out!</p>';
+            }
+        }
+
+        function testSpinnerPred() {
+            const feedback = document.getElementById('spinner-pred-feedback');
+            const trials = 20;
+            const colors = ['red', 'blue', 'yellow', 'green'];
+            const counts = { red: 0, blue: 0, yellow: 0, green: 0 };
+            for (let i = 0; i < trials; i++) {
+                counts[colors[Math.floor(Math.random() * 4)]]++;
+            }
+            let max = Math.max(...Object.values(counts));
+            feedback.innerHTML = `<p><strong>Results:</strong> Red: ${counts.red}, Blue: ${counts.blue}, Yellow: ${counts.yellow}, Green: ${counts.green}</p>`;
+            const maxCount = Object.values(counts).filter(c => c === max).length;
+            if (maxCount > 1) {
+                feedback.innerHTML += '<p style="color: var(--color-fair);">✓ With equal space, colors balanced nicely!</p>';
+            } else {
+                feedback.innerHTML += '<p style="color: #333;">One color led this time, but that\'s just luck!</p>';
+            }
+        }
+
+        function testDicePred() {
+            const feedback = document.getElementById('dice-pred-feedback');
+            const trials = 20;
+            let high = 0, low = 0;
+            for (let i = 0; i < trials; i++) {
+                const roll = Math.floor(Math.random() * 6) + 1;
+                if (roll >= 4) high++;
+                else low++;
+            }
+            feedback.innerHTML = `<p><strong>Results:</strong> Low (1-3): ${low}, High (4-6): ${high}</p>`;
+            if (Math.abs(high - low) <= 3) {
+                feedback.innerHTML += '<p style="color: var(--color-fair);">✓ Great guess! They came out nearly equal!</p>';
+            } else {
+                feedback.innerHTML += '<p style="color: #333;">One side came ahead this time, but they have equal chance!</p>';
+            }
+        }
+
+        // ─────────────────────────────────────────────────────
+        // PLAY MODE
+        // ─────────────────────────────────────────────────────
+
+        function renderPlay() {
+            state.play = { score: 0, total: 0, gameIndex: 0 };
+            showGameQuestion();
+
+            document.getElementById('fair-btn').addEventListener('click', () => checkAnswer(true));
+            document.getElementById('unfair-btn').addEventListener('click', () => checkAnswer(false));
+            document.getElementById('next-game').addEventListener('click', showGameQuestion);
+        }
+
+        function showGameQuestion() {
+            if (state.play.gameIndex >= fairGames.length) {
+                state.play.gameIndex = 0;
+            }
+
+            const game = fairGames[state.play.gameIndex];
+            const container = document.getElementById('game-question');
+            container.innerHTML = `<div class="game-card"><p style="font-size: 1.3rem; font-weight: 600;">${game.q}</p></div>`;
+            document.getElementById('game-feedback').innerHTML = '';
+            document.getElementById('next-game').style.display = 'none';
+            document.getElementById('fair-btn').style.display = 'inline-block';
+            document.getElementById('unfair-btn').style.display = 'inline-block';
+        }
+
+        function checkAnswer(userAnswer) {
+            const game = fairGames[state.play.gameIndex];
+            const isCorrect = userAnswer === game.answer;
+            state.play.total++;
+            if (isCorrect) state.play.score++;
+
+            const feedback = document.getElementById('game-feedback');
+            const icon = isCorrect ? '✓' : '✗';
+            const color = isCorrect ? 'var(--color-fair)' : 'var(--color-unfair)';
+            feedback.innerHTML = `<div style="background: ${color}20; border-left: 4px solid ${color}; padding: 1rem; border-radius: 4px; margin: 1rem 0;">
+                <p style="color: ${color}; font-weight: 700; font-size: 1.2rem;">${icon} ${isCorrect ? 'Correct!' : 'Not quite!'}</p>
+                <p style="color: #333;">${game.exp}</p>
+            </div>`;
+
+            document.getElementById('play-score').textContent = state.play.score;
+            document.getElementById('play-total').textContent = state.play.total;
+            document.getElementById('fair-btn').style.display = 'none';
+            document.getElementById('unfair-btn').style.display = 'none';
+            document.getElementById('next-game').style.display = 'inline-block';
+            state.play.gameIndex++;
+        }
+
+        // ─────────────────────────────────────────────────────
+        // Mode switching
+        // ─────────────────────────────────────────────────────
+
+        document.querySelectorAll('.vinculum-mode-tab').forEach(tab => {
+            tab.addEventListener('click', function() {
+                const mode = this.getAttribute('data-mode');
+                switchMode(mode);
+            });
+        });
+
+        function switchMode(mode) {
+            document.querySelectorAll('.vinculum-mode-content').forEach(el => {
+                el.style.display = 'none';
+            });
+            document.querySelectorAll('.vinculum-mode-tab').forEach(tab => {
+                tab.classList.remove('active');
+            });
+
+            const content = document.querySelector(`[data-mode="${mode}"]`);
+            if (content) content.style.display = 'block';
+            document.querySelector(`.vinculum-mode-tab[data-mode="${mode}"]`).classList.add('active');
+
+            if (mode === 'explore') renderExplore();
+            else if (mode === 'practice') renderPractice();
+            else if (mode === 'play') renderPlay();
+        }
+
+        function showFeedback(msg, type = 'info') {
+            const fb = document.getElementById('feedback');
+            fb.innerHTML = `<div class="${type}">${msg}</div>`;
+            setTimeout(() => fb.innerHTML = '', 3000);
+        }
+
+        // Initialize
+        switchMode('explore');
+    </script>
+</body>
+</html>

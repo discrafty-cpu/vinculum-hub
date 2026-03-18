@@ -1,0 +1,1029 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>VINCULUM — Measurement Compare</title>
+<link rel="stylesheet" href="../../vinculum-core.css">
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;600&display=swap');
+
+/* Theme system loaded from vinculum-core.css */
+.vinculum-rtm-btn .rtm-icon{font-size:14px;}
+
+/* Focus Visible */
+*:focus-visible {
+  outline:2px solid var(--cyan);outline-offset:2px;border-radius:4px;
+}
+.sr-only {
+  position:absolute;width:1px;height:1px;padding:0;margin:-1px;
+  overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0;
+}
+
+* { margin:0; padding:0; box-sizing:border-box; }
+body {
+  font-family: 'Inter', sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  height: 100vh;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  user-select: none;
+}
+
+/* ── HEADER ── */
+/* ── MODE TABS ── */
+.vinculum-diff-btn:hover { color: var(--text2); }
+
+/* ── MAIN AREA ── */
+.main {
+  flex: 1;
+  display: flex;
+  overflow: hidden;
+}
+
+/* ── WORKSPACE ── */
+.workspace {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+  position: relative;
+  overflow-y: auto;
+}
+
+/* ── COMPARE CARDS ── */
+.compare-cards {
+  display: flex;
+  flex-direction: row;
+  gap: 20px;
+  justify-content: center;
+  align-items: stretch;
+}
+.item-card {
+  background: var(--card);
+  border-radius: 16px;
+  padding: 20px;
+  text-align: center;
+  min-width: 140px;
+  border: 2px solid var(--border);
+  transition: border-color 0.3s, box-shadow 0.3s;
+}
+.item-card.selected {
+  border-color: var(--cyan);
+  box-shadow: 0 0 16px rgba(0,212,255,0.2);
+}
+.item-card.winner {
+  border-color: var(--green);
+  box-shadow: 0 0 16px rgba(0,230,118,0.25);
+}
+.item-emoji {
+  font-size: 56px;
+  line-height: 1.2;
+}
+.item-name {
+  font-size: 14px;
+  font-weight: 600;
+  margin-top: 8px;
+  color: var(--text2);
+  text-transform: capitalize;
+}
+
+/* ── COMPARE BARS ── */
+.compare-bar-track {
+  width: 100%;
+  height: 20px;
+  background: var(--border);
+  border-radius: 10px;
+  overflow: hidden;
+  margin-top: 12px;
+}
+.compare-bar {
+  height: 20px;
+  border-radius: 10px;
+  background: var(--cyan);
+  transition: width 0.5s ease;
+}
+.compare-bar.weight { background: var(--yellow); }
+.compare-bar.capacity { background: var(--purple); }
+
+/* ── ATTRIBUTE TOGGLE ── */
+.attribute-toggle {
+  display: flex;
+  flex-direction: row;
+  gap: 8px;
+  justify-content: center;
+  margin-top: 16px;
+}
+.attr-btn {
+  padding: 8px 16px;
+  border-radius: 10px;
+  border: 1px solid var(--border);
+  background: var(--card);
+  color: var(--text2);
+  font-size: 13px;
+  font-weight: 600;
+  font-family: inherit;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+.attr-btn:hover { background: var(--card-hover); color: var(--text); }
+.attr-btn.active {
+  background: var(--grad);
+  color: var(--bg);
+  border-color: transparent;
+}
+
+/* ── ITEM SELECTOR ── */
+.item-selector {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+  justify-content: center;
+  margin-top: 12px;
+  max-width: 420px;
+}
+.item-sel-btn {
+  width: 44px;
+  height: 44px;
+  border-radius: 10px;
+  border: 2px solid var(--border);
+  background: var(--card);
+  font-size: 22px;
+  cursor: pointer;
+  transition: all 0.2s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.item-sel-btn:hover { border-color: var(--cyan); transform: scale(1.1); }
+.item-sel-btn.active { border-color: var(--cyan); background: rgba(0,212,255,0.1); box-shadow: 0 0 12px rgba(0,212,255,0.2); }
+
+/* ── CHOICE BUTTONS ── */
+.choice-btn {
+  min-width: 100px;
+  height: 56px;
+  border-radius: 14px;
+  font-size: 16px;
+  font-weight: 700;
+  font-family: inherit;
+  border: 2px solid var(--border);
+  background: var(--card);
+  color: var(--text);
+  cursor: pointer;
+  transition: all 0.2s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 0 16px;
+}
+.choice-btn:hover {
+  border-color: var(--cyan);
+  background: rgba(0,212,255,0.05);
+  transform: scale(1.03);
+}
+.choice-btn.correct-flash {
+  border-color: var(--green);
+  background: rgba(0,230,118,0.15);
+  color: var(--green);
+}
+.choice-btn.incorrect-flash {
+  border-color: var(--pink);
+  background: rgba(255,59,139,0.15);
+  color: var(--pink);
+}
+
+/* ── INSTRUCTION BOX ── */
+.instruction-box {
+  text-align: center;
+  padding: 12px 20px;
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--text2);
+  margin-bottom: 16px;
+  line-height: 1.5;
+}
+
+/* ── COMPARISON RESULT ── */
+.compare-result {
+  text-align: center;
+  margin-top: 16px;
+  padding: 12px 24px;
+  background: rgba(0,230,118,0.08);
+  border: 1px solid rgba(0,230,118,0.2);
+  border-radius: 12px;
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--green);
+}
+
+/* ── CONTROLS ── */
+.controls {
+  display: flex;
+  gap: 8px;
+  margin-top: 16px;
+  flex-wrap: wrap;
+  justify-content: center;
+}
+.ctrl-btn {
+  padding: 10px 20px;
+  border-radius: 10px;
+  border: 1px solid var(--border);
+  background: var(--card);
+  color: var(--text2);
+  font-size: 13px;
+  font-weight: 600;
+  font-family: inherit;
+  cursor: pointer;
+  transition: all 0.2s;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.ctrl-btn:hover { background: var(--card-hover); color: var(--text); }
+.ctrl-btn.primary {
+  background: var(--grad);
+  color: var(--bg);
+  border-color: transparent;
+}
+.ctrl-btn.primary:hover { opacity: 0.9; }
+.ctrl-btn.danger { color: var(--pink); }
+.ctrl-btn.danger:hover { background: rgba(255,59,139,0.1); }
+
+/* ── SCORE DISPLAY ── */
+.score-display {
+  text-align: center;
+  padding: 16px;
+  background: var(--card);
+  border-radius: 12px;
+  margin-bottom: 12px;
+}
+.score-value {
+  font-size: 36px;
+  font-weight: 900;
+  font-family: 'JetBrains Mono', monospace;
+  background: var(--grad);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+.score-label {
+  font-size: 11px;
+  color: var(--muted);
+  text-transform: uppercase;
+  letter-spacing: 1px;
+}
+.streak-bar {
+  height: 6px;
+  background: var(--card);
+  border-radius: 3px;
+  overflow: hidden;
+  margin-top: 8px;
+}
+.streak-fill {
+  height: 100%;
+  background: var(--grad);
+  border-radius: 3px;
+  transition: width 0.3s;
+}
+
+/* ── FEEDBACK ── */
+.feedback {
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%) scale(0);
+  padding: 24px 48px;
+  border-radius: 20px;
+  font-size: 28px;
+  font-weight: 800;
+  z-index: 200;
+  pointer-events: none;
+  transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275), opacity 0.3s;
+  opacity: 0;
+  max-width: 90vw;
+  text-align: center;
+}
+.feedback.show {
+  transform: translate(-50%, -50%) scale(1);
+  opacity: 1;
+}
+.feedback.correct {
+  background: rgba(0,230,118,0.15);
+  color: var(--green);
+  border: 2px solid var(--green);
+}
+.feedback.incorrect {
+  background: rgba(255,59,139,0.15);
+  color: var(--pink);
+  border: 2px solid var(--pink);
+}
+.feedback.try-again {
+  background: rgba(255,193,7,0.15);
+  color: var(--yellow);
+  border: 2px solid var(--yellow);
+}
+.feedback.misconception {
+  background: rgba(255,193,7,0.12);
+  color: var(--yellow);
+  border: 2px solid var(--yellow);
+  font-size: 18px;
+  font-weight: 600;
+  line-height: 1.4;
+}
+
+/* ── SIDE PANEL ── */
+.side-panel {
+  width: 280px;
+  background: var(--bg2);
+  border-left: 1px solid var(--border);
+  padding: 20px;
+  overflow-y: auto;
+  flex-shrink: 0;
+}
+.panel-section {
+  margin-bottom: 20px;
+}
+.panel-title {
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 1.5px;
+  color: var(--muted);
+  margin-bottom: 8px;
+}
+.panel-text {
+  font-size: 13px;
+  color: var(--text2);
+  line-height: 1.6;
+}
+
+/* ── ANIMATIONS ── */
+@keyframes pop {
+  0% { transform: scale(0); }
+  70% { transform: scale(1.2); }
+  100% { transform: scale(1); }
+}
+@keyframes shake {
+  0%, 100% { transform: translateX(0); }
+  25% { transform: translateX(-8px); }
+  75% { transform: translateX(8px); }
+}
+@keyframes slideUp {
+  0% { opacity:0; transform: translateY(16px); }
+  100% { opacity:1; transform: translateY(0); }
+}
+.pop-in { animation: pop 0.3s ease-out forwards; }
+.shake { animation: shake 0.3s ease-in-out; }
+.slide-up { animation: slideUp 0.4s ease-out forwards; }
+
+/* scrollbar */
+::-webkit-scrollbar { width: 6px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+</style>
+</head>
+<body>
+
+<!-- HEADER -->
+<div class="vinculum-header">
+  <div class="vinculum-header-left">
+    <a class="vinculum-back-btn" href="../../VINCULUM-Hub.html" style="text-decoration:none;">&#9664; Hub</a>
+    <div class="vinculum-header-title"><span>VINCULUM</span> Measurement Compare</div>
+    <span class="vinculum-header-badge">K.MD</span>
+  </div>
+  <div class="vinculum-header-right">
+    <div class="vinculum-std-tags">
+      <span class="vinculum-std-tag">K.MD.1</span>
+      <span class="vinculum-std-tag">K.MD.2</span>
+      <span class="vinculum-std-tag mn">MN K.3.2.1</span>
+    </div>
+    <button class="vinculum-back-btn" id="readAloudBtn" onclick="toggleReadAloud()" aria-label="Read Aloud" title="Read instructions aloud" style="margin-left:8px;white-space:nowrap;">&#128264; Read to Me</button>
+  </div>
+</div>
+
+<!-- MODE TABS -->
+<div class="vinculum-mode-tabs">
+  <button class="vinculum-mode-tab active-explore" id="tabExplore" data-mode="explore">
+    <svg width="18" height="18" viewBox="0 0 48 48" fill="none"><path d="M4 24C4 24 12 12 24 12C36 12 44 24 44 24C44 24 36 36 24 36C12 36 4 24 4 24Z" stroke="currentColor" stroke-width="3" fill="none"/><circle cx="24" cy="24" r="7" stroke="currentColor" stroke-width="3" fill="none"/><circle cx="24" cy="24" r="3" fill="currentColor"/><line x1="24" y1="4" x2="24" y2="9" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" opacity="0.5"/><line x1="10" y1="8" x2="13" y2="12" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" opacity="0.5"/><line x1="38" y1="8" x2="35" y2="12" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" opacity="0.5"/></svg> Explore
+  </button>
+  <button class="vinculum-mode-tab" id="tabPractice" data-mode="practice">
+    <svg width="18" height="18" viewBox="0 0 48 48" fill="none"><circle cx="24" cy="24" r="20" stroke="currentColor" stroke-width="3" fill="none" opacity="0.3"/><circle cx="24" cy="24" r="20" stroke="currentColor" stroke-width="3" fill="none" stroke-dasharray="126" stroke-dashoffset="32" stroke-linecap="round"/><polyline points="16,24 22,32 34,16" stroke="currentColor" stroke-width="4" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg> Practice
+  </button>
+  <button class="vinculum-mode-tab" id="tabPlay" data-mode="play">
+    <svg width="18" height="18" viewBox="0 0 48 48" fill="none"><polygon points="28,4 12,28 22,28 18,44 36,18 26,18" fill="none" stroke="currentColor" stroke-width="3" stroke-linejoin="round"/><polygon points="27,8 15,27 23,27 20,40 34,19 26,19" fill="currentColor" opacity="0.15"/></svg> Play
+  </button>
+  <div class="vinculum-diff-selector">
+    <span class="vinculum-diff-label">Level</span>
+    <button class="vinculum-diff-btn active" id="diffE" data-diff="emergent">Length</button>
+    <button class="vinculum-diff-btn" id="diffP" data-diff="proficient">Length+Weight</button>
+    <button class="vinculum-diff-btn" id="diffA" data-diff="advanced">All</button>
+  </div>
+</div>
+
+<!-- MAIN -->
+<div class="main">
+  <div class="workspace" role="main" id="workspace"></div>
+  <div class="side-panel" id="sidePanel"></div>
+</div>
+
+<!-- FEEDBACK POPUP -->
+<div class="feedback" id="feedback"></div>
+
+<script src="../../vinculum-input.js"></script>
+<script>
+// ════════════════════════════════════════
+// MEASUREMENT ITEMS
+// ════════════════════════════════════════
+const ITEMS = [
+  { name:'pencil', emoji:'\u270F\uFE0F', length:3, weight:1, capacity:0 },
+  { name:'book', emoji:'\uD83D\uDCD5', length:5, weight:3, capacity:0 },
+  { name:'crayon', emoji:'\uD83D\uDD8D\uFE0F', length:2, weight:1, capacity:0 },
+  { name:'backpack', emoji:'\uD83C\uDF92', length:6, weight:4, capacity:5 },
+  { name:'cup', emoji:'\uD83E\uDD64', length:3, weight:1, capacity:2 },
+  { name:'water bottle', emoji:'\uD83E\uDDF4', length:4, weight:2, capacity:4 },
+  { name:'shoe', emoji:'\uD83D\uDC5F', length:5, weight:2, capacity:1 },
+  { name:'apple', emoji:'\uD83C\uDF4E', length:2, weight:2, capacity:0 },
+  { name:'ruler', emoji:'\uD83D\uDCCF', length:6, weight:1, capacity:0 },
+  { name:'lunchbox', emoji:'\uD83E\uDDF0', length:5, weight:3, capacity:3 }
+];
+
+const MAX_ATTR = 6; // max value for bar scaling
+
+// ════════════════════════════════════════
+// STATE
+// ════════════════════════════════════════
+let S = {
+  mode: 'explore',
+  diff: 'emergent',
+  // Explore
+  leftItem: null,
+  rightItem: null,
+  attribute: 'length',
+  // Practice
+  pLeft: null,
+  pRight: null,
+  pAttribute: 'length',
+  pAnswer: '',
+  // Play / Score
+  score: 0,
+  streak: 0,
+  best: 0,
+  round: 0,
+  total: 10,
+  playLeft: null,
+  playRight: null,
+  playAttribute: 'length',
+  playAnswer: ''
+};
+
+// ════════════════════════════════════════
+// MISCONCEPTIONS
+// ════════════════════════════════════════
+const MISCONCEPTIONS = {
+  lengthArea: { id:'length-area', msg:function(){ return 'We\'re comparing LENGTH \u2014 how long something is, not how big it looks!'; } },
+  sizeWeight: { id:'size-weight', msg:function(){ return 'Bigger doesn\'t always mean heavier! A big pillow is lighter than a small rock.'; } },
+  offByOne: { id:'same-confused', msg:function(){ return 'Look again \u2014 are they really the same, or is one a little more?'; } },
+  randomGuess: { id:'random', msg:function(attr){ return 'Think about ' + attr + '. Which one has MORE ' + attr + '?'; } }
+};
+
+// ════════════════════════════════════════
+// READ-ALOUD
+// ════════════════════════════════════════
+function toggleReadAloud() {
+  if (window.VinculumStories && VinculumStories.isReading()) {
+    VinculumStories.stopReading();
+    document.getElementById('readAloudBtn').textContent = '\uD83D\uDD0A Read to Me';
+  } else {
+    var fb = document.getElementById('feedback');
+    var storyEl = document.getElementById('storyBanner');
+    var text = storyEl ? storyEl.textContent : (fb ? fb.textContent : 'Welcome to Measurement Compare!');
+    if (window.VinculumStories) {
+      VinculumStories.readAloud(text, { rate: 0.85, onComplete: function() {
+        document.getElementById('readAloudBtn').textContent = '\uD83D\uDD0A Read to Me';
+      }});
+      document.getElementById('readAloudBtn').textContent = '\u23F9 Stop';
+    }
+  }
+}
+
+// ════════════════════════════════════════
+// HELPERS
+// ════════════════════════════════════════
+function randInt(min, max) {
+  return Math.floor(Math.random() * (max - min + 1)) + min;
+}
+
+function pick(arr) {
+  return arr[randInt(0, arr.length - 1)];
+}
+
+function pickTwo() {
+  var a = randInt(0, ITEMS.length - 1);
+  var b = a;
+  while (b === a) b = randInt(0, ITEMS.length - 1);
+  return [ITEMS[a], ITEMS[b]];
+}
+
+function getAttributes() {
+  if (S.diff === 'emergent') return ['length'];
+  if (S.diff === 'proficient') return ['length','weight'];
+  return ['length','weight','capacity'];
+}
+
+function attrLabel(attr) {
+  return { length:'length', weight:'weight', capacity:'capacity' }[attr] || attr;
+}
+
+function attrVerb(attr) {
+  return { length:'LONGER', weight:'HEAVIER', capacity:'holds MORE' }[attr] || 'MORE';
+}
+
+function attrVerbShort(attr) {
+  return { length:'longer', weight:'heavier', capacity:'holds more' }[attr] || 'more';
+}
+
+function attrQuestion(attr) {
+  return { length:'Which is LONGER?', weight:'Which is HEAVIER?', capacity:'Which HOLDS MORE?' }[attr] || 'Which has more?';
+}
+
+function compareItems(a, b, attr) {
+  if (a[attr] > b[attr]) return 'left';
+  if (b[attr] > a[attr]) return 'right';
+  return 'same';
+}
+
+function barClass(attr) {
+  if (attr === 'weight') return 'compare-bar weight';
+  if (attr === 'capacity') return 'compare-bar capacity';
+  return 'compare-bar';
+}
+
+function barWidth(item, attr) {
+  return Math.round((item[attr] / MAX_ATTR) * 100) + '%';
+}
+
+function showFeedback(text, type) {
+  var fb = document.getElementById('feedback');
+  fb.textContent = text;
+  fb.className = 'feedback ' + type + ' show';
+  setTimeout(function() { fb.classList.remove('show'); }, 1800);
+}
+
+function showMisconception(text) {
+  var fb = document.getElementById('feedback');
+  fb.textContent = text;
+  fb.className = 'feedback misconception show';
+  setTimeout(function() { fb.classList.remove('show'); }, 2800);
+}
+
+// ════════════════════════════════════════
+// MODE / DIFF SWITCHING
+// ════════════════════════════════════════
+function setMode(mode) {
+  S.mode = mode;
+  document.querySelectorAll('.vinculum-mode-tab').forEach(function(t) {
+    t.classList.remove('active-explore','active-practice','active-play');
+  });
+  var tabEl = document.getElementById('tab' + mode.charAt(0).toUpperCase() + mode.slice(1));
+  if (tabEl) tabEl.classList.add('active-' + mode);
+
+  if (mode === 'explore') {
+    if (!S.leftItem || !S.rightItem) randomPair();
+  } else if (mode === 'practice') {
+    newPractice();
+  } else if (mode === 'play') {
+    S.score = 0; S.streak = 0; S.round = 0;
+    newPlayRound();
+  }
+  render();
+}
+
+function setDiff(diff) {
+  S.diff = diff;
+  S.attribute = 'length';
+  document.querySelectorAll('.vinculum-diff-btn').forEach(function(b) { b.classList.remove('active'); });
+  document.getElementById('diff' + diff.charAt(0).toUpperCase()).classList.add('active');
+  setMode(S.mode);
+}
+
+// ════════════════════════════════════════
+// EXPLORE
+// ════════════════════════════════════════
+function randomPair() {
+  var pair = pickTwo();
+  S.leftItem = pair[0];
+  S.rightItem = pair[1];
+}
+
+function selectLeft(idx) {
+  S.leftItem = ITEMS[idx];
+  render();
+}
+
+function selectRight(idx) {
+  S.rightItem = ITEMS[idx];
+  render();
+}
+
+function setExploreAttribute(attr) {
+  S.attribute = attr;
+  render();
+}
+
+function doRandomPair() {
+  randomPair();
+  render();
+}
+
+function renderExplore(ws, sp) {
+  if (!S.leftItem || !S.rightItem) randomPair();
+  var attr = S.attribute;
+  var result = compareItems(S.leftItem, S.rightItem, attr);
+  var attrs = getAttributes();
+
+  var html = '';
+
+  // Instruction
+  html += '<div class="instruction-box">Compare two objects \u2014 pick an attribute and see which has more!</div>';
+
+  // Attribute toggle
+  html += '<div class="attribute-toggle">';
+  attrs.forEach(function(a) {
+    html += '<button class="attr-btn' + (attr === a ? ' active' : '') + '" onclick="setExploreAttribute(\'' + a + '\')">' + a.charAt(0).toUpperCase() + a.slice(1) + '</button>';
+  });
+  html += '</div>';
+
+  // Compare cards
+  html += '<div class="compare-cards" style="margin-top:20px;">';
+  // Left
+  html += '<div class="item-card' + (result === 'left' ? ' winner' : '') + '">';
+  html += '<div class="item-emoji">' + S.leftItem.emoji + '</div>';
+  html += '<div class="item-name">' + S.leftItem.name + '</div>';
+  html += '<div class="compare-bar-track"><div class="' + barClass(attr) + '" style="width:' + barWidth(S.leftItem, attr) + ';"></div></div>';
+  html += '<div style="font-size:11px;color:var(--muted);margin-top:4px;">' + attr + ': ' + S.leftItem[attr] + '</div>';
+  html += '</div>';
+
+  // VS
+  html += '<div style="display:flex;align-items:center;font-size:24px;font-weight:900;color:var(--muted);">VS</div>';
+
+  // Right
+  html += '<div class="item-card' + (result === 'right' ? ' winner' : '') + '">';
+  html += '<div class="item-emoji">' + S.rightItem.emoji + '</div>';
+  html += '<div class="item-name">' + S.rightItem.name + '</div>';
+  html += '<div class="compare-bar-track"><div class="' + barClass(attr) + '" style="width:' + barWidth(S.rightItem, attr) + ';"></div></div>';
+  html += '<div style="font-size:11px;color:var(--muted);margin-top:4px;">' + attr + ': ' + S.rightItem[attr] + '</div>';
+  html += '</div>';
+  html += '</div>';
+
+  // Comparison result
+  var resultText = '';
+  if (result === 'left') {
+    resultText = S.leftItem.emoji + ' ' + S.leftItem.name + ' is ' + attrVerbShort(attr) + ' than ' + S.rightItem.emoji + ' ' + S.rightItem.name;
+  } else if (result === 'right') {
+    resultText = S.rightItem.emoji + ' ' + S.rightItem.name + ' is ' + attrVerbShort(attr) + ' than ' + S.leftItem.emoji + ' ' + S.leftItem.name;
+  } else {
+    resultText = S.leftItem.emoji + ' ' + S.leftItem.name + ' and ' + S.rightItem.emoji + ' ' + S.rightItem.name + ' are the SAME ' + attr + '!';
+  }
+  html += '<div class="compare-result slide-up">' + resultText + '</div>';
+
+  // Item selectors
+  html += '<div style="margin-top:20px;text-align:center;">';
+  html += '<div style="font-size:11px;color:var(--muted);font-weight:700;text-transform:uppercase;letter-spacing:1px;margin-bottom:6px;">Left Item</div>';
+  html += '<div class="item-selector">';
+  ITEMS.forEach(function(item, i) {
+    html += '<button class="item-sel-btn' + (S.leftItem === item ? ' active' : '') + '" onclick="selectLeft(' + i + ')" title="' + item.name + '">' + item.emoji + '</button>';
+  });
+  html += '</div>';
+  html += '<div style="font-size:11px;color:var(--muted);font-weight:700;text-transform:uppercase;letter-spacing:1px;margin-top:12px;margin-bottom:6px;">Right Item</div>';
+  html += '<div class="item-selector">';
+  ITEMS.forEach(function(item, i) {
+    html += '<button class="item-sel-btn' + (S.rightItem === item ? ' active' : '') + '" onclick="selectRight(' + i + ')" title="' + item.name + '">' + item.emoji + '</button>';
+  });
+  html += '</div>';
+  html += '</div>';
+
+  // Controls
+  html += '<div class="controls">';
+  html += '<button class="ctrl-btn primary" onclick="doRandomPair()">&#x1F3B2; Random Pair</button>';
+  html += '</div>';
+
+  ws.innerHTML = html;
+
+  // Side panel
+  sp.innerHTML = '<div class="panel-section">' +
+    '<div class="panel-title">How to Use</div>' +
+    '<div class="panel-text">' +
+      '1. Choose two items using the selectors below the cards<br><br>' +
+      '2. Pick an attribute: <strong>Length</strong>, <strong>Weight</strong>, or <strong>Capacity</strong><br><br>' +
+      '3. Compare the bars to see which item has more<br><br>' +
+      '4. Try <strong>Random Pair</strong> for a surprise!' +
+    '</div>' +
+  '</div>' +
+  '<div class="panel-section">' +
+    '<div class="panel-title">Attribute Definitions</div>' +
+    '<div class="panel-text">' +
+      '<strong>Length</strong> \u2014 how long or tall something is<br><br>' +
+      '<strong>Weight</strong> \u2014 how heavy something is<br><br>' +
+      '<strong>Capacity</strong> \u2014 how much something can hold inside' +
+    '</div>' +
+  '</div>' +
+  '<div class="panel-section">' +
+    '<div class="panel-title">Key Concept</div>' +
+    '<div class="panel-text">' +
+      'We can <strong>describe and compare</strong> objects by their measurable attributes. ' +
+      'An object can be longer but lighter \u2014 different attributes tell us different things!' +
+    '</div>' +
+  '</div>';
+}
+
+// ════════════════════════════════════════
+// PRACTICE
+// ════════════════════════════════════════
+function newPractice() {
+  var pair = pickTwo();
+  S.pLeft = pair[0];
+  S.pRight = pair[1];
+  var attrs = getAttributes();
+  S.pAttribute = pick(attrs);
+  S.pAnswer = '';
+}
+
+function practiceAnswer(ans) {
+  if (S.pAnswer) return; // already answered
+  S.pAnswer = ans;
+  var correct = compareItems(S.pLeft, S.pRight, S.pAttribute);
+
+  if (ans === correct) {
+    showFeedback('\u2713 Correct!', 'correct');
+    setTimeout(function() { newPractice(); render(); }, 1500);
+  } else {
+    // Misconception detection
+    var attr = S.pAttribute;
+    if (attr === 'length' && ans !== 'same' && correct !== 'same') {
+      // Picked the wrong one for length — might confuse length with area/size
+      showMisconception(MISCONCEPTIONS.lengthArea.msg());
+    } else if (attr === 'weight' && ans !== 'same' && correct !== 'same') {
+      // Picked wrong for weight — might think bigger = heavier
+      var chosen = ans === 'left' ? S.pLeft : S.pRight;
+      var other = ans === 'left' ? S.pRight : S.pLeft;
+      if (chosen.length > other.length && chosen.weight < other.weight) {
+        showMisconception(MISCONCEPTIONS.sizeWeight.msg());
+      } else {
+        showMisconception(MISCONCEPTIONS.randomGuess.msg(attrLabel(attr)));
+      }
+    } else if (ans === 'same' && correct !== 'same') {
+      showMisconception(MISCONCEPTIONS.offByOne.msg());
+    } else {
+      showMisconception(MISCONCEPTIONS.randomGuess.msg(attrLabel(attr)));
+    }
+    setTimeout(function() { S.pAnswer = ''; render(); }, 2800);
+  }
+  render();
+}
+
+function practiceSkip() {
+  newPractice();
+  render();
+}
+
+function renderPractice(ws, sp) {
+  if (!S.pLeft || !S.pRight) newPractice();
+  var attr = S.pAttribute;
+  var showBars = S.diff !== 'advanced';
+  var correct = compareItems(S.pLeft, S.pRight, attr);
+  var answered = S.pAnswer !== '';
+
+  var html = '';
+
+  // Question
+  html += '<div class="instruction-box">' + attrQuestion(attr) + '</div>';
+
+  // Compare cards
+  html += '<div class="compare-cards">';
+  // Left
+  html += '<div class="item-card' + (answered && S.pAnswer === 'left' ? (correct === 'left' ? ' winner' : '') : '') + '">';
+  html += '<div class="item-emoji">' + S.pLeft.emoji + '</div>';
+  html += '<div class="item-name">' + S.pLeft.name + '</div>';
+  if (showBars) {
+    html += '<div class="compare-bar-track"><div class="' + barClass(attr) + '" style="width:' + barWidth(S.pLeft, attr) + ';"></div></div>';
+  }
+  html += '</div>';
+
+  html += '<div style="display:flex;align-items:center;font-size:24px;font-weight:900;color:var(--muted);">VS</div>';
+
+  // Right
+  html += '<div class="item-card' + (answered && S.pAnswer === 'right' ? (correct === 'right' ? ' winner' : '') : '') + '">';
+  html += '<div class="item-emoji">' + S.pRight.emoji + '</div>';
+  html += '<div class="item-name">' + S.pRight.name + '</div>';
+  if (showBars) {
+    html += '<div class="compare-bar-track"><div class="' + barClass(attr) + '" style="width:' + barWidth(S.pRight, attr) + ';"></div></div>';
+  }
+  html += '</div>';
+  html += '</div>';
+
+  // Choice buttons
+  html += '<div class="controls" style="margin-top:24px;">';
+  html += '<button class="choice-btn' + (answered && S.pAnswer === 'left' ? (correct === 'left' ? ' correct-flash' : ' incorrect-flash') : '') + '" onclick="practiceAnswer(\'left\')">' + S.pLeft.emoji + ' ' + S.pLeft.name + '</button>';
+  html += '<button class="choice-btn' + (answered && S.pAnswer === 'same' ? (correct === 'same' ? ' correct-flash' : ' incorrect-flash') : '') + '" onclick="practiceAnswer(\'same\')">Same!</button>';
+  html += '<button class="choice-btn' + (answered && S.pAnswer === 'right' ? (correct === 'right' ? ' correct-flash' : ' incorrect-flash') : '') + '" onclick="practiceAnswer(\'right\')">' + S.pRight.emoji + ' ' + S.pRight.name + '</button>';
+  html += '</div>';
+
+  // Skip
+  html += '<div class="controls"><button class="ctrl-btn" onclick="practiceSkip()">Skip \u27A1</button></div>';
+
+  ws.innerHTML = html;
+
+  // Side panel
+  sp.innerHTML = '<div class="panel-section">' +
+    '<div class="panel-title">Instructions</div>' +
+    '<div class="panel-text">' +
+      'Look at the two items and the question above.<br><br>' +
+      'Choose which item has <strong>more</strong> of that attribute, or if they are the <strong>same</strong>.<br><br>' +
+      (showBars ? 'Use the <strong>bars</strong> to help you compare!' : 'No bars this time \u2014 think carefully about each object!') +
+    '</div>' +
+  '</div>' +
+  '<div class="panel-section">' +
+    '<div class="panel-title">Current Attribute</div>' +
+    '<div class="panel-text" style="font-size:18px;font-weight:800;color:var(--cyan);">' + attr.charAt(0).toUpperCase() + attr.slice(1) + '</div>' +
+  '</div>' +
+  '<div class="panel-section">' +
+    '<div class="panel-title">Tip</div>' +
+    '<div class="panel-text">' +
+      (attr === 'length' ? 'Length is how <strong>long</strong> something is from end to end. Don\'t confuse it with how <strong>big</strong> it looks!' :
+       attr === 'weight' ? 'Weight is how <strong>heavy</strong> something is. Remember: bigger things aren\'t always heavier!' :
+       'Capacity is how much something can <strong>hold inside</strong>. A flat object like a ruler holds nothing!') +
+    '</div>' +
+  '</div>';
+}
+
+// ════════════════════════════════════════
+// PLAY
+// ════════════════════════════════════════
+function newPlayRound() {
+  S.round++;
+  var pair = pickTwo();
+  S.playLeft = pair[0];
+  S.playRight = pair[1];
+  var attrs = getAttributes();
+  S.playAttribute = pick(attrs);
+  S.playAnswer = '';
+}
+
+function playAnswer(ans) {
+  if (S.playAnswer) return;
+  S.playAnswer = ans;
+  var correct = compareItems(S.playLeft, S.playRight, S.playAttribute);
+
+  if (ans === correct) {
+    S.score += 10 + (S.streak * 2);
+    S.streak++;
+    if (S.streak > S.best) S.best = S.streak;
+    showFeedback('\u2713 Correct!', 'correct');
+  } else {
+    S.streak = 0;
+    // Misconception feedback
+    var attr = S.playAttribute;
+    if (attr === 'weight' && ans !== 'same' && correct !== 'same') {
+      var chosen = ans === 'left' ? S.playLeft : S.playRight;
+      var other = ans === 'left' ? S.playRight : S.playLeft;
+      if (chosen.length > other.length && chosen.weight < other.weight) {
+        showMisconception(MISCONCEPTIONS.sizeWeight.msg());
+      } else {
+        showFeedback('Not quite!', 'incorrect');
+      }
+    } else if (attr === 'length' && ans !== 'same') {
+      showMisconception(MISCONCEPTIONS.lengthArea.msg());
+    } else {
+      showFeedback('Not quite!', 'incorrect');
+    }
+  }
+
+  render();
+
+  setTimeout(function() {
+    if (S.round >= S.total) {
+      showFeedback('Game Over! Score: ' + S.score, 'correct');
+      setTimeout(function() {
+        S.score = 0; S.streak = 0; S.round = 0;
+        newPlayRound();
+        render();
+      }, 2500);
+      return;
+    }
+    newPlayRound();
+    render();
+  }, 1500);
+}
+
+function renderPlay(ws, sp) {
+  if (S.round === 0) newPlayRound();
+  var attr = S.playAttribute;
+  var answered = S.playAnswer !== '';
+  var correct = compareItems(S.playLeft, S.playRight, attr);
+
+  var html = '';
+
+  // Round indicator
+  html += '<div style="text-align:center;margin-bottom:8px;">';
+  html += '<div style="font-size:14px;color:var(--muted);">Round ' + S.round + ' of ' + S.total + '</div>';
+  html += '</div>';
+
+  // Question
+  html += '<div class="instruction-box">' + attrQuestion(attr) + '</div>';
+
+  // Compare cards (no bars in play)
+  html += '<div class="compare-cards">';
+  html += '<div class="item-card' + (answered && correct === 'left' ? ' winner' : '') + '">';
+  html += '<div class="item-emoji">' + S.playLeft.emoji + '</div>';
+  html += '<div class="item-name">' + S.playLeft.name + '</div>';
+  html += '</div>';
+  html += '<div style="display:flex;align-items:center;font-size:24px;font-weight:900;color:var(--muted);">VS</div>';
+  html += '<div class="item-card' + (answered && correct === 'right' ? ' winner' : '') + '">';
+  html += '<div class="item-emoji">' + S.playRight.emoji + '</div>';
+  html += '<div class="item-name">' + S.playRight.name + '</div>';
+  html += '</div>';
+  html += '</div>';
+
+  // Choice buttons
+  html += '<div class="controls" style="margin-top:24px;">';
+  html += '<button class="choice-btn' + (answered && S.playAnswer === 'left' ? (correct === 'left' ? ' correct-flash' : ' incorrect-flash') : '') + '" onclick="playAnswer(\'left\')">' + S.playLeft.emoji + ' ' + S.playLeft.name + '</button>';
+  html += '<button class="choice-btn' + (answered && S.playAnswer === 'same' ? (correct === 'same' ? ' correct-flash' : ' incorrect-flash') : '') + '" onclick="playAnswer(\'same\')">Same!</button>';
+  html += '<button class="choice-btn' + (answered && S.playAnswer === 'right' ? (correct === 'right' ? ' correct-flash' : ' incorrect-flash') : '') + '" onclick="playAnswer(\'right\')">' + S.playRight.emoji + ' ' + S.playRight.name + '</button>';
+  html += '</div>';
+
+  ws.innerHTML = html;
+
+  // Side panel — score
+  sp.innerHTML = '<div class="score-display">' +
+    '<div class="score-value">' + S.score + '</div>' +
+    '<div class="score-label">Score</div>' +
+  '</div>' +
+  '<div class="score-display" style="background:transparent;padding:8px;">' +
+    '<div style="font-size:18px;font-weight:700;color:var(--yellow);">\uD83D\uDD25 ' + S.streak + '</div>' +
+    '<div class="score-label">Streak</div>' +
+    '<div class="streak-bar"><div class="streak-fill" style="width:' + Math.min(S.streak * 20, 100) + '%;"></div></div>' +
+  '</div>' +
+  '<div class="panel-section">' +
+    '<div class="panel-title">How to Play</div>' +
+    '<div class="panel-text">' +
+      'Choose which item has more of the given attribute.<br><br>' +
+      '<strong>10 rounds</strong> \u2014 earn points and build your streak!<br><br>' +
+      'Streak bonus: +2 points per streak level!' +
+    '</div>' +
+  '</div>' +
+  '<div class="panel-section">' +
+    '<div class="panel-title">Best Streak</div>' +
+    '<div class="panel-text" style="font-size:24px;font-weight:800;color:var(--purple);">\uD83C\uDFC6 ' + S.best + '</div>' +
+  '</div>';
+}
+
+// ════════════════════════════════════════
+// RENDER
+// ════════════════════════════════════════
+function render() {
+  var ws = document.getElementById('workspace');
+  var sp = document.getElementById('sidePanel');
+
+  if (S.mode === 'explore') renderExplore(ws, sp);
+  else if (S.mode === 'practice') renderPractice(ws, sp);
+  else renderPlay(ws, sp);
+}
+
+// ════════════════════════════════════════
+// INIT
+// ════════════════════════════════════════
+document.querySelectorAll('.vinculum-mode-tab').forEach(function(tab) {
+  tab.addEventListener('click', function() {
+    setMode(this.dataset.mode);
+  });
+});
+
+document.querySelectorAll('.vinculum-diff-btn').forEach(function(btn) {
+  btn.addEventListener('click', function() {
+    setDiff(this.dataset.diff);
+  });
+});
+
+render();
+</script>
+<script src="../../vinculum-core.js"></script>
+<script src="../../vinculum-data.js"></script>
+<script src="../../vinculum-adaptive-hook.js"></script>
+<script src="../../vinculum-3reads.js"></script>
+<script src="../../vinculum-stories.js"></script>
+<script src="../../vinculum-feedback.js"></script>
+<script src="../../vinculum-guide.js"></script>
+<script src="../../vinculum-identity.js"></script>
+<script src="../../vinculum-indigenous.js"></script>
+<script src="../../vinculum-dashboard.js"></script>
+<script src="../../vinculum-hyperfocus.js"></script>
+<script src="../../vinculum-layout.js"></script>
+</body>
+</html>

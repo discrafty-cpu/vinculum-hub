@@ -1,0 +1,462 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Measurement Converter - Grade 4</title>
+    <link rel="stylesheet" href="../../vinculum-core.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body {
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+            user-select: none;
+            background: var(--bg);
+            color: var(--text);
+            font-family: 'Inter', sans-serif;
+        }
+
+        .content {
+            flex: 1; overflow-y: auto; padding: 1.5rem;
+            display: none; flex-direction: column; gap: 1.5rem;
+        }
+        .content.active { display: flex; }
+
+        .explore-canvas {
+            background: var(--card); border: 1px solid var(--border); border-radius: 12px;
+            padding: 1.5rem; display: flex; flex-direction: column; gap: 1rem;
+            flex: 1;
+        }
+
+        .conversion-demo {
+            display: flex; gap: 2rem; align-items: center; flex-wrap: wrap;
+            background: var(--bg2); padding: 1.5rem; border-radius: 8px;
+        }
+
+        .unit-display {
+            display: flex; align-items: center; gap: 0.5rem;
+            background: var(--card); padding: 1rem 1.5rem; border-radius: 8px;
+            border: 2px solid var(--border);
+        }
+
+        .unit-value {
+            font-size: 1.8rem; font-weight: 700; color: var(--cyan);
+            font-family: 'JetBrains Mono', monospace; min-width: 80px;
+        }
+
+        .unit-label {
+            font-size: 0.9rem; color: var(--text2); font-weight: 500;
+        }
+
+        .conversion-arrow {
+            font-size: 2rem; color: var(--green); animation: pulse 1.5s infinite;
+        }
+
+        @keyframes pulse { 0%, 100% { opacity: 0.6; } 50% { opacity: 1; } }
+
+        .split-animation {
+            display: flex; align-items: center; gap: 1rem; flex: 1;
+        }
+
+        .split-box {
+            flex: 1; background: linear-gradient(135deg, var(--cyan)40%, var(--green)40%);
+            padding: 2rem; border-radius: 8px; text-align: center; color: white;
+            font-weight: 700; font-size: 1.2rem; min-height: 100px;
+            display: flex; align-items: center; justify-content: center;
+        }
+
+        .conversion-table {
+            background: var(--card); border: 1px solid var(--border); border-radius: 8px;
+            overflow: hidden;
+        }
+
+        .table-header {
+            display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 1rem;
+            background: var(--bg2); padding: 1rem; font-weight: 600; color: var(--text2);
+            font-size: 0.9rem;
+        }
+
+        .table-row {
+            display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 1rem;
+            padding: 1rem; border-top: 1px solid var(--border);
+            align-items: center;
+        }
+
+        .table-row:hover { background: var(--bg2); }
+
+        .table-value {
+            font-family: 'JetBrains Mono', monospace; font-size: 0.95rem;
+            color: var(--cyan);
+        }
+
+        .practice-problem {
+            background: var(--card); border: 1px solid var(--border); border-radius: 8px;
+            padding: 1.5rem; display: flex; flex-direction: column; gap: 1rem;
+        }
+
+        .problem-text {
+            font-size: 1.1rem; font-weight: 500; color: var(--text);
+        }
+
+        .ruler-visual {
+            background: var(--bg2); padding: 1rem; border-radius: 8px;
+            display: flex; align-items: flex-end; gap: 2px; height: 120px;
+        }
+
+        .ruler-tick {
+            flex: 1; background: var(--border); border-radius: 2px 2px 0 0;
+            transition: all 0.3s;
+        }
+
+        .ruler-tick.major { background: var(--cyan); height: 40px; }
+        .ruler-tick.minor { height: 25px; }
+
+        .input-group {
+            display: flex; gap: 0.5rem; align-items: center;
+        }
+
+        input[type="number"] {
+            flex: 1; padding: 0.75rem; font-size: 1rem;
+            border: 2px solid var(--border); border-radius: 8px;
+            background: var(--bg2); color: var(--text);
+            font-family: 'JetBrains Mono', monospace;
+            transition: border-color 0.2s;
+        }
+
+        input[type="number"]:focus {
+            outline: none; border-color: var(--cyan);
+        }
+
+        .submit-btn {
+            padding: 0.75rem 1.5rem; background: var(--cyan); color: white;
+            border: none; border-radius: 8px; font-weight: 600; cursor: pointer;
+            font-family: 'Inter', sans-serif; transition: all 0.2s;
+        }
+
+        .submit-btn:hover { opacity: 0.9; }
+        .submit-btn:focus-visible { outline: 2px solid var(--cyan); }
+
+        .feedback {
+            position: fixed; bottom: -100px; left: 50%; transform: translateX(-50%);
+            padding: 1rem 2rem; border-radius: 8px; font-weight: 600;
+            transition: bottom 0.3s; z-index: 1000;
+            font-family: 'Inter', sans-serif;
+        }
+
+        .feedback.show { bottom: 2rem; }
+        .feedback.correct { background: var(--green); color: white; }
+        .feedback.incorrect { background: var(--red); color: white; }
+
+        .word-problem {
+            background: var(--bg2); padding: 1.5rem; border-radius: 8px;
+            border-left: 4px solid var(--green);
+        }
+
+        .word-problem-text {
+            font-size: 1rem; line-height: 1.6; color: var(--text);
+            font-style: italic; margin-bottom: 1rem;
+        }
+
+        .indigenous-context {
+            background: linear-gradient(135deg, #FFE5CC, #E5F5FF);
+            padding: 1rem; border-radius: 8px; border-left: 4px solid var(--cyan);
+            margin-top: 1rem; color: #333;
+            font-size: 0.9rem; line-height: 1.5;
+        }
+
+        .indigenous-label {
+            font-weight: 600; color: var(--cyan); display: inline-block;
+            margin-bottom: 0.5rem;
+        }
+
+        .stats {
+            display: flex; gap: 1rem; justify-content: center; padding: 1rem;
+            background: var(--bg2); border-radius: 8px;
+        }
+
+        .stat-item {
+            text-align: center;
+        }
+
+        .stat-value {
+            font-size: 1.5rem; font-weight: 700; color: var(--cyan);
+            font-family: 'JetBrains Mono', monospace;
+        }
+
+        .stat-label {
+            font-size: 0.8rem; color: var(--text2); font-weight: 500;
+        }
+
+        .sr-only {
+            position: absolute; width: 1px; height: 1px; padding: 0;
+            margin: -1px; overflow: hidden; clip: rect(0,0,0,0);
+            white-space: nowrap; border-width: 0;
+        }
+    </style>
+</head>
+<body>
+    <div class="vinculum-header">
+        <div class="vinculum-header-left">
+            <a href="../../VINCULUM-Hub.html" class="vinculum-back-btn" aria-label="Back to Hub">
+                <svg viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="2"><path d="M8 1L3 6l5 5"/></svg>
+                Hub
+            </a>
+            <div class="vinculum-header-title"><span class="brand">Measurement Conversion</span></div>
+            <span class="vinculum-header-badge">GRADE 4</span>
+        </div>
+        <div class="vinculum-header-right">
+            <div class="vinculum-std-tags">
+                <span class="vinculum-std-tag">4.MD.1</span>
+                <span class="vinculum-std-tag mn">MN 4.3.1.1</span>
+            </div>
+        </div>
+    </div>
+
+    <div class="vinculum-mode-tabs">
+        <button class="vinculum-mode-tab active-explore" data-mode="explore"><svg width="18" height="18" viewBox="0 0 48 48" fill="none"><path d="M4 24C4 24 12 12 24 12C36 12 44 24 44 24C44 24 36 36 24 36C12 36 4 24 4 24Z" stroke="currentColor" stroke-width="3" fill="none"/><circle cx="24" cy="24" r="7" stroke="currentColor" stroke-width="3" fill="none"/><circle cx="24" cy="24" r="3" fill="currentColor"/><line x1="24" y1="4" x2="24" y2="9" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" opacity="0.5"/><line x1="10" y1="8" x2="13" y2="12" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" opacity="0.5"/><line x1="38" y1="8" x2="35" y2="12" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" opacity="0.5"/></svg> Explore</button>
+        <button class="vinculum-mode-tab" data-mode="practice"><svg width="18" height="18" viewBox="0 0 48 48" fill="none"><circle cx="24" cy="24" r="20" stroke="currentColor" stroke-width="3" fill="none" opacity="0.3"/><circle cx="24" cy="24" r="20" stroke="currentColor" stroke-width="3" fill="none" stroke-dasharray="126" stroke-dashoffset="32" stroke-linecap="round"/><polyline points="16,24 22,32 34,16" stroke="currentColor" stroke-width="4" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg> Practice</button>
+        <button class="vinculum-mode-tab" data-mode="play"><svg width="18" height="18" viewBox="0 0 48 48" fill="none"><polygon points="28,4 12,28 22,28 18,44 36,18 26,18" fill="none" stroke="currentColor" stroke-width="3" stroke-linejoin="round"/><polygon points="27,8 15,27 23,27 20,40 34,19 26,19" fill="currentColor" opacity="0.15"/></svg> Play</button>
+        <div class="vinculum-diff-selector">
+            <span class="vinculum-diff-label">Level</span>
+            <button class="vinculum-diff-btn active" data-diff="emergent">Emergent</button>
+            <button class="vinculum-diff-btn" data-diff="developing">Developing</button>
+            <button class="vinculum-diff-btn" data-diff="proficient">Proficient</button>
+        </div>
+    </div>
+
+    <div id="explore" class="content active">
+        <div class="explore-canvas">
+            <h2 style="color: var(--text); font-size: 1.3rem;">Interactive Conversion</h2>
+
+            <div class="conversion-demo">
+                <div class="unit-display">
+                    <div class="unit-value" id="sourceVal">1</div>
+                    <div class="unit-label">Foot</div>
+                </div>
+                <div class="conversion-arrow">→</div>
+                <div class="unit-display">
+                    <div class="unit-value" id="targetVal">12</div>
+                    <div class="unit-label">Inches</div>
+                </div>
+            </div>
+
+            <div style="padding: 1rem; background: var(--bg2); border-radius: 8px; border-left: 4px solid var(--green);">
+                <input type="range" id="conversionSlider" min="1" max="10" value="1" style="width: 100%; cursor: pointer;">
+                <div style="margin-top: 0.5rem; color: var(--text2); font-size: 0.9rem;">Drag to convert</div>
+            </div>
+
+            <div style="background: var(--card); padding: 1.5rem; border-radius: 8px; border: 1px solid var(--border);">
+                <h3 style="margin-bottom: 1rem; color: var(--text);">Length Conversions</h3>
+                <div class="conversion-table">
+                    <div class="table-header">
+                        <div>Value</div>
+                        <div>From</div>
+                        <div>To</div>
+                    </div>
+                    <div class="table-row"><div class="table-value">1</div><div>km</div><div>= 1,000 m</div></div>
+                    <div class="table-row"><div class="table-value">1</div><div>m</div><div>= 100 cm</div></div>
+                    <div class="table-row"><div class="table-value">1</div><div>cm</div><div>= 10 mm</div></div>
+                    <div class="table-row"><div class="table-value">1</div><div>mi</div><div>= 1,760 yd</div></div>
+                    <div class="table-row"><div class="table-value">1</div><div>yd</div><div>= 3 ft</div></div>
+                    <div class="table-row"><div class="table-value">1</div><div>ft</div><div>= 12 in</div></div>
+                </div>
+            </div>
+
+            <div class="indigenous-context">
+                <div class="indigenous-label">INDIGENOUS: Yup'ik, Lakota, Anishinaabe</div>
+                <p><strong>Body Measurement Traditions:</strong> In Yup'ik culture, a fathom (arm span) is used to measure rope, nets, and fishing materials. One fathom is approximately 6 feet. How many inches is that? This body-proportional measurement connects cultural practice to standard units.</p>
+            </div>
+        </div>
+    </div>
+
+    <div id="practice" class="content">
+        <div class="practice-problem">
+            <div class="problem-text">Convert: <strong id="practiceQuestion">5 feet = ? inches</strong></div>
+
+            <div class="ruler-visual" id="rulerVisual">
+                <div class="ruler-tick major"></div>
+                <div class="ruler-tick minor"></div>
+                <div class="ruler-tick minor"></div>
+                <div class="ruler-tick major"></div>
+            </div>
+
+            <div id="vi-practice"></div>
+        </div>
+
+        <div class="stats">
+            <div class="stat-item">
+                <div class="stat-value" id="scoreDisplay">0</div>
+                <div class="stat-label">Correct</div>
+            </div>
+            <div class="stat-item">
+                <div class="stat-value" id="totalDisplay">0</div>
+                <div class="stat-label">Total</div>
+            </div>
+            <div class="stat-item">
+                <div class="stat-value" id="streakDisplay">0</div>
+                <div class="stat-label">Streak</div>
+            </div>
+        </div>
+    </div>
+
+    <div id="play" class="content">
+        <div class="word-problem">
+            <div class="word-problem-text" id="wordProblem">A rope is 3 meters long. How many centimeters is that?</div>
+
+            <div id="vi-play"></div>
+        </div>
+
+        <div class="indigenous-context">
+            <div class="indigenous-label">INDIGENOUS: Yup'ik context</div>
+            <p><strong>Fish Rack Building:</strong> A Yup'ik family prepares fish for drying using a traditional rack. They need rope that is 2 fathoms long (about 12 feet). How many inches of rope do they need? This connects traditional practices to measurement conversion.</p>
+        </div>
+
+        <div class="stats">
+            <div class="stat-item">
+                <div class="stat-value" id="playScoreDisplay">0</div>
+                <div class="stat-label">Correct</div>
+            </div>
+            <div class="stat-item">
+                <div class="stat-value" id="playStreakDisplay">0</div>
+                <div class="stat-label">Streak</div>
+            </div>
+        </div>
+    </div>
+
+    <div id="feedback" class="feedback"></div>
+
+    <span class="sr-only" role="status" aria-live="polite" id="ariaStatus"></span>
+
+    <script src="../../vinculum-feedback.js"></script><script src="../../vinculum-guide.js"></script>
+<script src="../../vinculum-input.js"></script>
+<script src="../../vinculum-identity.js"></script>
+<script src="../../vinculum-indigenous.js"></script>
+<script src="../../vinculum-dashboard.js"></script>
+    <script>
+        /* INDIGENOUS: nation=Yup'ik/Dakota/Anishinaabe, context=body_measurement_conversion */
+        const S = { mode: 'explore', diff: 'emergent', score: 0, total: 0, streak: 0, recent: [] };
+        const problems = [
+            { q: '5 feet = ? inches', a: 60, u: 'inches', context: 'length' },
+            { q: '2 meters = ? centimeters', a: 200, u: 'cm', context: 'length' },
+            { q: '3 kilometers = ? meters', a: 3000, u: 'meters', context: 'length' },
+            { q: '1 mile = ? feet', a: 5280, u: 'feet', context: 'length' },
+            { q: '4 yards = ? feet', a: 12, u: 'feet', context: 'length' }
+        ];
+
+        let currentProblem = problems[0];
+        let playProblem = { q: 'A rope is 3 meters long. How many centimeters?', a: 300, u: 'cm' };
+
+        document.querySelectorAll('.vinculum-mode-tab').forEach(function(tab) {
+            tab.addEventListener('click', function() {
+                var mode = this.dataset.mode;
+                S.mode = mode;
+                document.querySelectorAll('.vinculum-mode-tab').forEach(function(t) { t.className = 'vinculum-mode-tab'; });
+                this.classList.add(mode === 'explore' ? 'active-explore' : mode === 'practice' ? 'active-practice' : 'active-play');
+                document.querySelectorAll('.content').forEach(function(c) { c.classList.remove('active'); });
+                document.getElementById(mode).classList.add('active');
+
+                if (mode === 'practice') generatePracticeProblem();
+                if (mode === 'play') generatePlayProblem();
+                updateStats();
+            });
+        });
+
+        function generatePracticeProblem() {
+            currentProblem = problems[Math.floor(Math.random() * problems.length)];
+            document.getElementById('practiceQuestion').textContent = currentProblem.q;
+
+            // Initialize VinculumInput for practice
+            var vi = VinculumInput.create(document.getElementById('vi-practice'), {
+                type: 'auto',
+                answer: currentProblem.a,
+                onSubmit: function(value) { checkAnswer(value); }
+            });
+        }
+
+        function generatePlayProblem() {
+            const wordProblems = [
+                { q: 'A rope is 3 meters long. How many centimeters?', a: 300, u: 'cm' },
+                { q: 'A fish is 2 feet long. How many inches?', a: 24, u: 'inches' },
+                { q: 'A lake is 5 kilometers wide. How many meters?', a: 5000, u: 'meters' },
+                { q: 'A garden is 12 yards long. How many feet?', a: 36, u: 'feet' }
+            ];
+            playProblem = wordProblems[Math.floor(Math.random() * wordProblems.length)];
+            document.getElementById('wordProblem').textContent = playProblem.q;
+
+            // Initialize VinculumInput for play
+            var vi = VinculumInput.create(document.getElementById('vi-play'), {
+                type: 'auto',
+                answer: playProblem.a,
+                onSubmit: function(value) { checkPlayAnswer(value); }
+            });
+        }
+
+        function checkAnswer(answer) {
+            const correct = answer === currentProblem.a;
+
+            S.recent.push(correct ? 1 : 0);
+            if (S.recent.length > 8) S.recent.shift();
+            S.total++;
+            if (correct) S.score++;
+
+            adjustDifficulty();
+            updateStats();
+
+            if (correct) {
+                showFB('Correct! ' + currentProblem.q + ' = ' + currentProblem.a, 'correct');
+                S.streak++;
+            } else {
+                showFB('Try again. The answer is ' + currentProblem.a, 'incorrect');
+                S.streak = 0;
+            }
+
+            setTimeout(generatePracticeProblem, 1200);
+        }
+
+        function checkPlayAnswer(answer) {
+            const correct = answer === playProblem.a;
+
+            S.total++;
+            if (correct) S.score++;
+
+            updateStats();
+
+            if (correct) {
+                showFB('Great job! That\'s correct!', 'correct');
+                S.streak++;
+            } else {
+                showFB('The answer is ' + playProblem.a + ' ' + playProblem.u, 'incorrect');
+                S.streak = 0;
+            }
+
+            setTimeout(generatePlayProblem, 1200);
+        }
+
+        function adjustDifficulty() {
+            if (S.recent.length >= 8) {
+                const avg = S.recent.reduce((a,b) => a+b, 0) / 8;
+                if (avg >= 0.85 && S.diff === 'emergent') S.diff = 'developing';
+                if (avg < 0.4 && S.diff === 'proficient') S.diff = 'developing';
+            }
+        }
+
+        function updateStats() {
+            document.getElementById('scoreDisplay').textContent = S.score;
+            document.getElementById('totalDisplay').textContent = S.total;
+            document.getElementById('streakDisplay').textContent = S.streak;
+            document.getElementById('playScoreDisplay').textContent = S.score;
+            document.getElementById('playStreakDisplay').textContent = S.streak;
+        }
+
+
+        document.getElementById('conversionSlider').addEventListener('input', (e) => {
+            const val = parseInt(e.target.value);
+            document.getElementById('sourceVal').textContent = val;
+            document.getElementById('targetVal').textContent = val * 12;
+        });
+    </script>
+</body>
+</html>

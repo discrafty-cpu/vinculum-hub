@@ -1,0 +1,676 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Multi-Representation Viewer - VINCULUM Hub</title>
+    <link rel="stylesheet" href="../../vinculum-core.css">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #fa709a 0%, #fee140 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 15px;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.2);
+            padding: 30px;
+        }
+        .vinculum-header {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+        .vinculum-header h1 {
+            font-size: 2.5em;
+            margin-bottom: 10px;
+            color: #fa709a;
+        }
+        .vinculum-header p {
+            font-size: 1.1em;
+            color: #666;
+        }
+        .controls {
+            display: flex;
+            gap: 20px;
+            margin-bottom: 30px;
+            flex-wrap: wrap;
+            align-items: center;
+            justify-content: center;
+        }
+        .mode-buttons {
+            display: flex;
+            gap: 10px;
+        }
+        button {
+            padding: 10px 20px;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 1em;
+            font-weight: bold;
+            transition: all 0.3s;
+        }
+        .vinculum-mode-tab {
+            background: #e0e0e0;
+            color: #333;
+        }
+        .vinculum-mode-tab.active {
+            background: #fa709a;
+            color: white;
+            transform: scale(1.05);
+        }
+        .difficulty-selector {
+            display: flex;
+            gap: 5px;
+            align-items: center;
+        }
+        .difficulty-selector label {
+            font-weight: bold;
+            color: #333;
+            margin-right: 10px;
+        }
+        .vinculum-diff-btn {
+            padding: 8px 15px;
+            background: #f0f0f0;
+            color: #333;
+            border: 2px solid transparent;
+        }
+        .vinculum-diff-btn.active {
+            background: #fee140;
+            color: #333;
+            border-color: #fa709a;
+        }
+        .content-area {
+            min-height: 500px;
+        }
+        .representations {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+            margin-bottom: 20px;
+        }
+        .representation-box {
+            background: #f9f9f9;
+            border: 2px solid #fa709a;
+            border-radius: 10px;
+            padding: 20px;
+        }
+        .representation-box h3 {
+            color: #fa709a;
+            margin-bottom: 15px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        .rep-icon {
+            font-size: 1.5em;
+        }
+        .table-rep {
+            width: 100%;
+            border-collapse: collapse;
+        }
+        .table-rep th {
+            background: #fa709a;
+            color: white;
+            padding: 10px;
+            text-align: center;
+        }
+        .table-rep td {
+            border: 1px solid #ddd;
+            padding: 10px;
+            text-align: center;
+            background: white;
+        }
+        .input-group {
+            margin-bottom: 15px;
+        }
+        .input-group label {
+            display: block;
+            font-weight: bold;
+            margin-bottom: 5px;
+            color: #333;
+        }
+        .input-group input {
+            width: 100%;
+            padding: 10px;
+            border: 2px solid #fa709a;
+            border-radius: 6px;
+            font-size: 1em;
+        }
+        .input-group input:focus {
+            outline: none;
+            background: #fff9f0;
+        }
+        .equation-display {
+            background: white;
+            padding: 15px;
+            border-radius: 6px;
+            border: 2px dashed #fa709a;
+            font-size: 1.3em;
+            text-align: center;
+            font-weight: bold;
+            color: #333;
+        }
+        .words-display {
+            background: white;
+            padding: 15px;
+            border-radius: 6px;
+            border: 2px dashed #fa709a;
+            line-height: 1.8;
+            color: #333;
+        }
+        svg {
+            width: 100%;
+            height: 300px;
+            border: 2px solid #ddd;
+            border-radius: 6px;
+            background: white;
+        }
+        .graph-axes {
+            stroke: #333;
+            stroke-width: 2;
+        }
+        .graph-grid {
+            stroke: #e0e0e0;
+            stroke-width: 1;
+        }
+        .graph-point {
+            fill: #fa709a;
+            cursor: crosshair;
+        }
+        .graph-line {
+            stroke: #fa709a;
+            stroke-width: 2;
+            fill: none;
+        }
+        .axis-label {
+            font-size: 12px;
+            fill: #333;
+        }
+        .feedback {
+            margin-top: 20px;
+            padding: 15px;
+            border-radius: 8px;
+            font-weight: bold;
+            text-align: center;
+            display: none;
+        }
+        .feedback.success {
+            background: #e8f5e9;
+            color: #2e7d32;
+            display: block;
+            border: 2px solid #4caf50;
+        }
+        .feedback.error {
+            background: #ffebee;
+            color: #c62828;
+            display: block;
+            border: 2px solid #f44336;
+        }
+        .action-buttons {
+            display: flex;
+            gap: 15px;
+            justify-content: center;
+            margin-top: 20px;
+        }
+        button.primary {
+            background: #fa709a;
+            color: white;
+            padding: 12px 30px;
+        }
+        button.primary:hover {
+            background: #f05080;
+            transform: scale(1.05);
+        }
+        button.secondary {
+            background: #f0f0f0;
+            color: #333;
+            padding: 12px 30px;
+        }
+        button.secondary:hover {
+            background: #e0e0e0;
+        }
+        .practice-prompt {
+            background: #fef5f0;
+            border-left: 4px solid #fa709a;
+            padding: 15px;
+            margin-bottom: 20px;
+            border-radius: 6px;
+            font-weight: bold;
+            color: #333;
+        }
+        .play-board {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+        .play-card {
+            background: #fa709a;
+            color: white;
+            padding: 20px;
+            border-radius: 8px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.3s;
+            font-weight: bold;
+        }
+        .play-card:hover {
+            transform: scale(1.05);
+            background: #f05080;
+        }
+        .play-card.matched {
+            background: #4caf50;
+            cursor: default;
+        }
+        .score-display {
+            text-align: center;
+            padding: 15px;
+            background: #f5f5f5;
+            border-radius: 8px;
+            margin-bottom: 20px;
+        }
+        .score-display h3 {
+            color: #fa709a;
+            margin-bottom: 10px;
+        }
+        .score-number {
+            font-size: 2em;
+            color: #fa709a;
+            font-weight: bold;
+        }
+        @media (max-width: 900px) {
+            .representations {
+                grid-template-columns: 1fr;
+            }
+        }
+        @media (max-width: 600px) {
+            .controls {
+                flex-direction: column;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="vinculum-header">
+            <h1>🔄 Multi-Representation Viewer</h1>
+            <p>See the same relationship in different ways!</p>
+        </div>
+
+        <div class="controls">
+            <div class="mode-buttons">
+                <button class="vinculum-mode-tab active" data-mode="explore"><svg width="18" height="18" viewBox="0 0 48 48" fill="none"><path d="M4 24C4 24 12 12 24 12C36 12 44 24 44 24C44 24 36 36 24 36C12 36 4 24 4 24Z" stroke="currentColor" stroke-width="3" fill="none"/><circle cx="24" cy="24" r="7" stroke="currentColor" stroke-width="3" fill="none"/><circle cx="24" cy="24" r="3" fill="currentColor"/><line x1="24" y1="4" x2="24" y2="9" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" opacity="0.5"/><line x1="10" y1="8" x2="13" y2="12" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" opacity="0.5"/><line x1="38" y1="8" x2="35" y2="12" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" opacity="0.5"/></svg> Explore</button>
+                <button class="vinculum-mode-tab" data-mode="practice"><svg width="18" height="18" viewBox="0 0 48 48" fill="none"><circle cx="24" cy="24" r="20" stroke="currentColor" stroke-width="3" fill="none" opacity="0.3"/><circle cx="24" cy="24" r="20" stroke="currentColor" stroke-width="3" fill="none" stroke-dasharray="126" stroke-dashoffset="32" stroke-linecap="round"/><polyline points="16,24 22,32 34,16" stroke="currentColor" stroke-width="4" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg> Practice</button>
+                <button class="vinculum-mode-tab" data-mode="play"><svg width="18" height="18" viewBox="0 0 48 48" fill="none"><polygon points="28,4 12,28 22,28 18,44 36,18 26,18" fill="none" stroke="currentColor" stroke-width="3" stroke-linejoin="round"/><polygon points="27,8 15,27 23,27 20,40 34,19 26,19" fill="currentColor" opacity="0.15"/></svg> Play</button>
+            </div>
+            <div class="difficulty-selector">
+                <label>Difficulty:</label>
+                <button class="vinculum-diff-btn active" data-difficulty="easy">Easy</button>
+                <button class="vinculum-diff-btn" data-difficulty="medium">Medium</button>
+                <button class="vinculum-diff-btn" data-difficulty="hard">Hard</button>
+            </div>
+        </div>
+
+        <div id="feedback" class="feedback"></div>
+
+        <div class="content-area">
+            <div id="explore-mode">
+                <div class="representations" id="explore-reps"></div>
+                <div class="action-buttons">
+                    <button class="primary" onclick="loadExploreMode()">Load New Relationship</button>
+                </div>
+            </div>
+
+            <div id="practice-mode" style="display: none;">
+                <div class="practice-prompt" id="practice-prompt"></div>
+                <div class="representations" id="practice-reps"></div>
+                <div class="action-buttons">
+                    <button class="primary" onclick="checkPracticeSolution()">Check Solution</button>
+                    <button class="secondary" onclick="loadPracticeMode()">New Problem</button>
+                </div>
+            </div>
+
+            <div id="play-mode" style="display: none;">
+                <div class="score-display">
+                    <h3>Representation Race</h3>
+                    <div class="score-number" id="play-score">0</div>
+                    <p>Matches: <span id="matches-count">0</span>/5</p>
+                </div>
+                <div class="play-board" id="play-board"></div>
+                <div class="action-buttons">
+                    <button class="secondary" onclick="resetPlay()">Reset Game</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="../../vinculum-core.css"></script>
+    <script src="../../vinculum-feedback.js"></script><script src="../../vinculum-guide.js"></script><script src="../../vinculum-indigenous.js"></script><script src="../../indigenous-context-panel.js"></script>
+    <script src="../../vinculum-input.js"></script>
+
+    <script>
+        const relationships = {
+            easy: [
+                {
+                    id: "linear1",
+                    equation: "y = 2x",
+                    table: [[0,0], [1,2], [2,4], [3,6]],
+                    words: "For every 1 unit of x, y increases by 2 units.",
+                    graph: "linear"
+                },
+                {
+                    id: "linear2",
+                    equation: "y = x + 3",
+                    table: [[0,3], [1,4], [2,5], [3,6]],
+                    words: "y is always 3 more than x.",
+                    graph: "linear2"
+                }
+            ],
+            medium: [
+                {
+                    id: "quad1",
+                    equation: "y = x²",
+                    table: [[0,0], [1,1], [2,4], [3,9]],
+                    words: "y equals x multiplied by itself.",
+                    graph: "quadratic"
+                },
+                {
+                    id: "linear3",
+                    equation: "y = 3x - 1",
+                    table: [[0,-1], [1,2], [2,5], [3,8]],
+                    words: "y is 3 times x, minus 1.",
+                    graph: "linear3"
+                }
+            ],
+            hard: [
+                {
+                    id: "expo1",
+                    equation: "y = 2^x",
+                    table: [[0,1], [1,2], [2,4], [3,8]],
+                    words: "y equals 2 raised to the power of x.",
+                    graph: "exponential"
+                },
+                {
+                    id: "quad2",
+                    equation: "y = x² + 1",
+                    table: [[0,1], [1,2], [2,5], [3,10]],
+                    words: "y equals x squared, plus 1.",
+                    graph: "quadratic2"
+                }
+            ]
+        };
+
+        let currentMode = 'explore';
+        let currentDifficulty = 'easy';
+        let currentRelationship = null;
+        let playScore = 0;
+        let matchesCount = 0;
+        let playData = [];
+
+        function getRandomRelationship(difficulty) {
+            const list = relationships[difficulty];
+            return JSON.parse(JSON.stringify(list[Math.floor(Math.random() * list.length)]));
+        }
+
+        function renderTableRep(data) {
+            let html = '<table class="table-rep"><tr><th>x</th><th>y</th></tr>';
+            data.table.forEach(([x, y]) => {
+                html += `<tr><td>${x}</td><td>${y}</td></tr>`;
+            });
+            html += '</table>';
+            return html;
+        }
+
+        function renderGraphSVG(data) {
+            const points = data.table;
+            const maxX = Math.max(...points.map(p => p[0])) + 1;
+            const maxY = Math.max(...points.map(p => p[1])) + 2;
+            const padding = 40;
+            const width = 400;
+            const height = 300;
+            const scaleX = (width - 2 * padding) / maxX;
+            const scaleY = (height - 2 * padding) / maxY;
+
+            let svg = `<svg viewBox="0 0 ${width} ${height}">`;
+
+            // Grid
+            for (let i = 0; i <= maxX; i++) {
+                const x = padding + i * scaleX;
+                svg += `<line class="graph-grid" x1="${x}" y1="${padding}" x2="${x}" y2="${height - padding}"/>`;
+            }
+            for (let i = 0; i <= maxY; i++) {
+                const y = height - padding - i * scaleY;
+                svg += `<line class="graph-grid" x1="${padding}" y1="${y}" x2="${width - padding}" y2="${y}"/>`;
+            }
+
+            // Axes
+            svg += `<line class="graph-axes" x1="${padding}" y1="${height - padding}" x2="${width}" y2="${height - padding}"/>`;
+            svg += `<line class="graph-axes" x1="${padding}" y1="0" x2="${padding}" y2="${height}"/>`;
+
+            // Labels
+            svg += `<text class="axis-label" x="${width - 20}" y="${height - 20}">x</text>`;
+            svg += `<text class="axis-label" x="${20}" y="20">y</text>`;
+
+            // Points
+            points.forEach(([x, y]) => {
+                const px = padding + x * scaleX;
+                const py = height - padding - y * scaleY;
+                svg += `<circle class="graph-point" cx="${px}" cy="${py}" r="4"/>`;
+            });
+
+            // Line
+            if (points.length > 1) {
+                let pathD = `M ${padding + points[0][0] * scaleX} ${height - padding - points[0][1] * scaleY}`;
+                for (let i = 1; i < points.length; i++) {
+                    pathD += ` L ${padding + points[i][0] * scaleX} ${height - padding - points[i][1] * scaleY}`;
+                }
+                svg += `<path class="graph-line" d="${pathD}"/>`;
+            }
+
+            svg += '</svg>';
+            return svg;
+        }
+
+        function createRepresentationHTML(data, showInputs = false) {
+            let html = '<div class="representations">';
+
+            // Table
+            html += `<div class="representation-box">
+                <h3><span class="rep-icon">📊</span>Table</h3>
+                ${renderTableRep(data)}
+            </div>`;
+
+            // Equation or input
+            if (showInputs) {
+                html += `<div class="representation-box">
+                    <h3><span class="rep-icon">🔤</span>Equation</h3>
+                    <div class="input-group">
+                        <label>Write the equation:</label>
+                        <input type="text" id="equation-input" placeholder="e.g., y = 2x">
+                    </div>
+                </div>`;
+            } else {
+                html += `<div class="representation-box">
+                    <h3><span class="rep-icon">🔤</span>Equation</h3>
+                    <div class="equation-display">${data.equation}</div>
+                </div>`;
+            }
+
+            // Graph
+            html += `<div class="representation-box">
+                <h3><span class="rep-icon">📈</span>Graph</h3>
+                ${renderGraphSVG(data)}
+            </div>`;
+
+            // Words or input
+            if (showInputs) {
+                html += `<div class="representation-box">
+                    <h3><span class="rep-icon">💬</span>Words</h3>
+                    <div class="input-group">
+                        <label>Describe the relationship:</label>
+                        <input type="text" id="words-input" placeholder="Describe the pattern...">
+                    </div>
+                </div>`;
+            } else {
+                html += `<div class="representation-box">
+                    <h3><span class="rep-icon">💬</span>Words</h3>
+                    <div class="words-display">${data.words}</div>
+                </div>`;
+            }
+
+            html += '</div>';
+            return html;
+        }
+
+        function loadExploreMode() {
+            currentRelationship = getRandomRelationship(currentDifficulty);
+            document.getElementById('explore-reps').innerHTML = createRepresentationHTML(currentRelationship, false);
+            document.getElementById('feedback').style.display = 'none';
+        }
+
+        function loadPracticeMode() {
+            currentRelationship = getRandomRelationship(currentDifficulty);
+            const prompt = document.getElementById('practice-prompt');
+            prompt.textContent = '📝 Try to complete the missing representations by looking at the table and graph!';
+            document.getElementById('practice-reps').innerHTML = createRepresentationHTML(currentRelationship, true);
+            document.getElementById('feedback').style.display = 'none';
+        }
+
+        function checkPracticeSolution() {
+            const equationInput = document.getElementById('equation-input').value.toLowerCase().trim();
+            const wordsInput = document.getElementById('words-input').value.toLowerCase().trim();
+            const expectedEquation = currentRelationship.equation.toLowerCase();
+            const expectedWords = currentRelationship.words.toLowerCase();
+
+            let correct = 0;
+            const feedback = document.getElementById('feedback');
+
+            if (equationInput === expectedEquation || equationInput.includes('=') && equationInput.includes('x')) {
+                correct++;
+            }
+
+            if (wordsInput.includes('x') && (wordsInput.includes('multiply') || wordsInput.includes('times') || wordsInput.includes('power'))) {
+                correct++;
+            }
+
+            if (correct === 2) {
+                feedback.className = 'feedback success';
+                feedback.textContent = '✅ Great! Both representations are close to correct!';
+            } else if (correct === 1) {
+                feedback.className = 'feedback error';
+                feedback.textContent = '❌ One representation is correct, but check the other one!';
+            } else {
+                feedback.className = 'feedback error';
+                feedback.textContent = '❌ Keep trying! Look at the patterns in the table and graph.';
+            }
+        }
+
+        function loadPlayMode() {
+            playScore = 0;
+            matchesCount = 0;
+            document.getElementById('play-score').textContent = playScore;
+            document.getElementById('matches-count').textContent = matchesCount;
+
+            playData = [];
+            for (let i = 0; i < 5; i++) {
+                const rel = getRandomRelationship(currentDifficulty);
+                playData.push({
+                    ...rel,
+                    type: ['equation', 'table', 'words', 'graph'][Math.floor(Math.random() * 4)]
+                });
+            }
+
+            const board = document.getElementById('play-board');
+            board.innerHTML = '';
+
+            playData.forEach((item, index) => {
+                const card = document.createElement('div');
+                card.className = 'play-card';
+                if (item.type === 'equation') {
+                    card.textContent = item.equation;
+                } else if (item.type === 'table') {
+                    card.textContent = `(${item.table[1][0]},${item.table[1][1]})`;
+                } else if (item.type === 'words') {
+                    card.textContent = item.words.substring(0, 15) + '...';
+                } else {
+                    card.textContent = '📈 Graph';
+                }
+                card.onclick = () => matchRepresentation(index);
+                board.appendChild(card);
+            });
+        }
+
+        function matchRepresentation(index) {
+            const cards = document.querySelectorAll('.play-card');
+            if (cards[index].classList.contains('matched')) return;
+
+            cards[index].classList.add('matched');
+            playScore += 10;
+            matchesCount++;
+            document.getElementById('play-score').textContent = playScore;
+            document.getElementById('matches-count').textContent = matchesCount;
+
+            if (matchesCount >= 5) {
+                const feedback = document.getElementById('feedback');
+                feedback.className = 'feedback success';
+                feedback.textContent = `🎉 Perfect! All matched! Score: ${playScore}`;
+            }
+        }
+
+        function resetPlay() {
+            loadPlayMode();
+        }
+
+        document.querySelectorAll('.vinculum-mode-tab').forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                document.querySelectorAll('.vinculum-mode-tab').forEach(b => b.classList.remove('active'));
+                e.target.classList.add('active');
+                currentMode = e.target.dataset.mode;
+
+                document.getElementById('explore-mode').style.display = 'none';
+                document.getElementById('practice-mode').style.display = 'none';
+                document.getElementById('play-mode').style.display = 'none';
+
+                if (currentMode === 'explore') {
+                    document.getElementById('explore-mode').style.display = 'block';
+                    loadExploreMode();
+                } else if (currentMode === 'practice') {
+                    document.getElementById('practice-mode').style.display = 'block';
+                    loadPracticeMode();
+                } else if (currentMode === 'play') {
+                    document.getElementById('play-mode').style.display = 'block';
+                    loadPlayMode();
+                }
+            });
+        });
+
+        document.querySelectorAll('.vinculum-diff-btn').forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                document.querySelectorAll('.vinculum-diff-btn').forEach(b => b.classList.remove('active'));
+                e.target.classList.add('active');
+                currentDifficulty = e.target.dataset.difficulty;
+
+                if (currentMode === 'explore') {
+                    loadExploreMode();
+                } else if (currentMode === 'practice') {
+                    loadPracticeMode();
+                } else if (currentMode === 'play') {
+                    loadPlayMode();
+                }
+            });
+        });
+
+        loadExploreMode();
+    </script>
+</body>
+</html>

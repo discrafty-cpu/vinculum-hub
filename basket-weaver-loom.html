@@ -1,0 +1,1295 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>The Basket Weaver's Loom — Interactive Coordinate Grid</title>
+    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@600;700;900&family=Source+Sans+Pro:wght@400;600;700&display=swap" rel="stylesheet">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Source Sans Pro', sans-serif;
+            background-color: #FFF8E1;
+            color: #3E2723;
+            line-height: 1.6;
+        }
+
+        .demo-banner {
+            position: sticky;
+            top: 0;
+            z-index: 1000;
+            background: linear-gradient(90deg, #FF8F00, #FFB74D);
+            color: white;
+            padding: 12px 20px;
+            text-align: center;
+            font-weight: 700;
+            font-size: 14px;
+            letter-spacing: 1px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+        }
+
+        header {
+            background: linear-gradient(135deg, #3E2723 0%, #5D4037 100%);
+            color: #FFF8E1;
+            padding: 30px 20px;
+            text-align: center;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+        }
+
+        header h1 {
+            font-family: 'Playfair Display', serif;
+            font-size: 36px;
+            margin-bottom: 8px;
+        }
+
+        .back-link {
+            display: inline-block;
+            margin-bottom: 15px;
+            color: #FFB74D;
+            text-decoration: none;
+            font-weight: 600;
+            transition: all 0.3s ease;
+        }
+
+        .back-link:hover {
+            transform: translateX(-5px);
+        }
+
+        header p {
+            font-size: 16px;
+            opacity: 0.95;
+        }
+
+        .container {
+            display: flex;
+            gap: 20px;
+            padding: 30px 20px;
+            max-width: 1600px;
+            margin: 0 auto;
+            flex-wrap: wrap;
+        }
+
+        .loom-panel {
+            flex: 0 0 60%;
+            min-width: 300px;
+        }
+
+        .control-panel {
+            flex: 0 0 35%;
+            min-width: 280px;
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+
+        .card {
+            background: white;
+            border-radius: 12px;
+            padding: 20px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+
+        .card h2 {
+            font-family: 'Playfair Display', serif;
+            font-size: 22px;
+            margin-bottom: 15px;
+            color: #3E2723;
+        }
+
+        .card h3 {
+            font-size: 16px;
+            margin-top: 15px;
+            margin-bottom: 10px;
+            color: #2E7D32;
+        }
+
+        canvas {
+            border: 4px solid #3E2723;
+            background: #FFFEF5;
+            border-radius: 8px;
+            display: block;
+            cursor: crosshair;
+            margin-bottom: 15px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+            max-width: 100%;
+            height: auto;
+        }
+
+        .tooltip {
+            position: absolute;
+            background: #3E2723;
+            color: #FFF8E1;
+            padding: 8px 12px;
+            border-radius: 6px;
+            font-size: 13px;
+            pointer-events: none;
+            z-index: 100;
+            display: none;
+            white-space: nowrap;
+        }
+
+        .button-group {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+            margin-bottom: 15px;
+        }
+
+        button, select {
+            flex: 1;
+            min-width: 80px;
+            padding: 12px 16px;
+            border: none;
+            border-radius: 8px;
+            font-family: 'Source Sans Pro', sans-serif;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-size: 14px;
+        }
+
+        button {
+            background: #2E7D32;
+            color: white;
+        }
+
+        button:hover {
+            background: #1B5E20;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+        }
+
+        button:active {
+            transform: translateY(0);
+        }
+
+        button.secondary {
+            background: #FF8F00;
+        }
+
+        button.secondary:hover {
+            background: #E65100;
+        }
+
+        button.danger {
+            background: #C62828;
+        }
+
+        button.danger:hover {
+            background: #7D0000;
+        }
+
+        select {
+            background: #FFF8E1;
+            border: 2px solid #FF8F00;
+            color: #3E2723;
+            padding: 10px;
+        }
+
+        .tabs {
+            display: flex;
+            gap: 8px;
+            margin-bottom: 15px;
+            border-bottom: 2px solid #E0E0E0;
+        }
+
+        .tab {
+            padding: 12px 16px;
+            background: none;
+            border: none;
+            border-bottom: 3px solid transparent;
+            cursor: pointer;
+            font-weight: 600;
+            color: #999;
+            transition: all 0.3s ease;
+            font-size: 13px;
+            min-width: auto;
+            flex: 1;
+        }
+
+        .tab:hover {
+            color: #FF8F00;
+            transform: none;
+        }
+
+        .tab.active {
+            color: #2E7D32;
+            border-bottom-color: #2E7D32;
+            background: none;
+        }
+
+        .tab-content {
+            display: none;
+        }
+
+        .tab-content.active {
+            display: block;
+        }
+
+        .info-card {
+            background: linear-gradient(135deg, #E8F5E9 0%, #F1F8E9 100%);
+            border-left: 4px solid #2E7D32;
+            padding: 15px;
+            border-radius: 8px;
+            font-size: 13px;
+            line-height: 1.7;
+        }
+
+        .color-picker {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+            margin: 10px 0;
+        }
+
+        .color-button {
+            width: 45px;
+            height: 45px;
+            border: 3px solid transparent;
+            border-radius: 50%;
+            font-size: 24px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: white;
+        }
+
+        .color-button:hover {
+            transform: scale(1.15);
+        }
+
+        .color-button.selected {
+            border-color: #3E2723;
+            box-shadow: 0 0 10px rgba(62,39,35,0.3);
+        }
+
+        .challenge {
+            margin: 15px 0;
+            padding: 15px;
+            background: #F5F5F5;
+            border-radius: 8px;
+            border-left: 4px solid #FF8F00;
+        }
+
+        .challenge h4 {
+            font-weight: 700;
+            margin-bottom: 8px;
+            color: #3E2723;
+        }
+
+        .challenge p {
+            font-size: 13px;
+            margin-bottom: 10px;
+        }
+
+        .challenge button {
+            width: 100%;
+            padding: 10px;
+        }
+
+        .success-message {
+            background: #E8F5E9;
+            border-left: 4px solid #4CAF50;
+            padding: 15px;
+            border-radius: 8px;
+            margin: 10px 0;
+            font-weight: 600;
+            color: #2E7D32;
+            display: none;
+        }
+
+        .success-message.show {
+            display: block;
+            animation: slideIn 0.3s ease;
+        }
+
+        @keyframes slideIn {
+            from {
+                opacity: 0;
+                transform: translateX(-20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateX(0);
+            }
+        }
+
+        .wisdom-popup {
+            background: linear-gradient(135deg, #FFF8E1 0%, #FFE0B2 100%);
+            border: 2px solid #FF8F00;
+            padding: 20px;
+            border-radius: 12px;
+            margin: 15px 0;
+            font-size: 14px;
+            line-height: 1.8;
+        }
+
+        .wisdom-popup strong {
+            color: #E65100;
+        }
+
+        .coordinate-log {
+            background: #F5F5F5;
+            border-radius: 8px;
+            padding: 15px;
+            max-height: 300px;
+            overflow-y: auto;
+            font-size: 12px;
+            font-family: 'Courier New', monospace;
+        }
+
+        .log-entry {
+            padding: 5px 0;
+            border-bottom: 1px solid #E0E0E0;
+        }
+
+        .log-entry:last-child {
+            border-bottom: none;
+        }
+
+        .controls-section {
+            margin: 15px 0;
+        }
+
+        .controls-section label {
+            display: block;
+            font-weight: 600;
+            margin-bottom: 8px;
+            font-size: 13px;
+            color: #3E2723;
+        }
+
+        .toggle-group {
+            display: flex;
+            gap: 8px;
+        }
+
+        .toggle-button {
+            flex: 1;
+            padding: 10px;
+            background: #E0E0E0;
+            color: #3E2723;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-weight: 600;
+            font-size: 12px;
+            transition: all 0.2s ease;
+        }
+
+        .toggle-button.active {
+            background: #2E7D32;
+            color: white;
+        }
+
+        footer {
+            background: #3E2723;
+            color: #FFF8E1;
+            padding: 30px 20px;
+            text-align: center;
+            margin-top: 40px;
+        }
+
+        footer h3 {
+            font-family: 'Playfair Display', serif;
+            margin-bottom: 15px;
+        }
+
+        footer p {
+            font-size: 13px;
+            margin-bottom: 8px;
+            opacity: 0.9;
+        }
+
+        .footer-links {
+            display: flex;
+            gap: 15px;
+            justify-content: center;
+            flex-wrap: wrap;
+            margin-top: 15px;
+            font-size: 12px;
+        }
+
+        .footer-links a {
+            color: #FFB74D;
+            text-decoration: none;
+            transition: opacity 0.3s ease;
+        }
+
+        .footer-links a:hover {
+            opacity: 0.7;
+        }
+
+        @media (max-width: 1200px) {
+            .container {
+                flex-direction: column;
+            }
+
+            .loom-panel, .control-panel {
+                flex: 0 0 100%;
+            }
+
+            header h1 {
+                font-size: 28px;
+            }
+        }
+
+        @media (max-width: 600px) {
+            .demo-banner {
+                font-size: 12px;
+                padding: 10px 15px;
+            }
+
+            header {
+                padding: 20px 15px;
+            }
+
+            header h1 {
+                font-size: 22px;
+            }
+
+            header p {
+                font-size: 14px;
+            }
+
+            .container {
+                padding: 15px 10px;
+                gap: 15px;
+            }
+
+            .card {
+                padding: 15px;
+            }
+
+            .button-group {
+                gap: 8px;
+            }
+
+            button, select {
+                min-width: 60px;
+                padding: 10px 12px;
+                font-size: 12px;
+            }
+
+            .color-button {
+                width: 40px;
+                height: 40px;
+                font-size: 20px;
+            }
+
+            canvas {
+                border-width: 3px;
+            }
+        }
+
+        .stats {
+            background: #F5F5F5;
+            padding: 12px;
+            border-radius: 8px;
+            font-size: 13px;
+            margin: 10px 0;
+        }
+
+        .stats p {
+            margin: 5px 0;
+            font-weight: 600;
+        }
+
+        .export-button {
+            width: 100%;
+            margin-top: 10px;
+        }
+    </style>
+</head>
+<body>
+    <div class="demo-banner">
+        🧶 DEMONSTRATION PROTOTYPE — For Review and Demonstration Purposes Only
+    </div>
+
+    <header>
+        <a href="index.html" class="back-link">← Back to Hub</a>
+        <h1>The Basket Weaver's Loom 🧶</h1>
+        <p>Interactive Coordinate Grid — Learn How Weavers Use Coordinates to Create Beautiful Patterns</p>
+    </header>
+
+    <div class="container">
+        <!-- LEFT PANEL: LOOM GRID -->
+        <div class="loom-panel">
+            <div class="card">
+                <h2>🪵 The Loom</h2>
+                <canvas id="loomCanvas"></canvas>
+                <div class="tooltip" id="tooltip"></div>
+
+                <div class="button-group">
+                    <button id="undoBtn" class="secondary">↶ Undo Last</button>
+                    <button id="clearBtn" class="danger">🗑️ Clear All</button>
+                </div>
+
+                <div class="controls-section">
+                    <label>Grid Size:</label>
+                    <div class="toggle-group">
+                        <button class="toggle-button" data-grid-size="10">10×10</button>
+                        <button class="toggle-button active" data-grid-size="20">20×20</button>
+                    </div>
+                </div>
+
+                <div class="controls-section">
+                    <label>Quadrants:</label>
+                    <div class="toggle-group">
+                        <button class="toggle-button active" data-quadrants="1">Q1 Only</button>
+                        <button class="toggle-button" data-quadrants="4">All 4 Quadrants</button>
+                    </div>
+                </div>
+
+                <div class="stats">
+                    <p id="fiberCount">🧶 Fibers placed: 0</p>
+                    <p id="lastCoord">📍 Last placed: —</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- RIGHT PANEL: CONTROLS & LEARNING -->
+        <div class="control-panel">
+            <!-- MODE TABS -->
+            <div class="card">
+                <div class="tabs">
+                    <button class="tab active" data-tab="freeweave">🎨 Free Weave</button>
+                    <button class="tab" data-tab="challenges">🎯 Challenges</button>
+                    <button class="tab" data-tab="patterns">✨ Patterns</button>
+                </div>
+
+                <!-- FREE WEAVE TAB -->
+                <div id="freeweave" class="tab-content active">
+                    <h3>Choose Your Fiber Color:</h3>
+                    <div class="color-picker">
+                        <button class="color-button selected" data-color="brown" title="Brown" style="font-size:28px;">🟤</button>
+                        <button class="color-button" data-color="red" title="Red" style="font-size:28px;">🔴</button>
+                        <button class="color-button" data-color="yellow" title="Yellow" style="font-size:28px;">🟡</button>
+                        <button class="color-button" data-color="green" title="Green" style="font-size:28px;">🟢</button>
+                        <button class="color-button" data-color="blue" title="Blue" style="font-size:28px;">🔵</button>
+                        <button class="color-button" data-color="purple" title="Purple" style="font-size:28px;">🟣</button>
+                    </div>
+                    <div class="info-card">
+                        <strong>🪢 The Weaver's Secret:</strong> The axes on a coordinate grid work just like the warp threads on a loom. They're not abstract lines — they're reference threads that help you find exactly where to place each fiber. When a weaver says "go 3 across and 5 up," they're using coordinates!
+                    </div>
+                </div>
+
+                <!-- CHALLENGES TAB -->
+                <div id="challenges" class="tab-content">
+                    <div class="controls-section">
+                        <label>Select Challenge Level:</label>
+                        <select id="levelSelect">
+                            <option value="1">Level 1 (K-1): Find the Point</option>
+                            <option value="2">Level 2 (K-1): Make a Diagonal</option>
+                            <option value="3">Level 3 (Grade 2): The x-Axis Line</option>
+                            <option value="4">Level 4 (Grade 3): Build a Rectangle</option>
+                            <option value="5">Level 5 (Grade 4): Mirror Reflection</option>
+                            <option value="6">Level 6 (Grade 5): Triangle Area</option>
+                            <option value="7">Level 7 (Grade 6): Linear Function</option>
+                            <option value="8">Level 8 (Grade 7): Rotational Symmetry</option>
+                            <option value="9">Level 9 (Grade 8): Parabola</option>
+                            <option value="10">Level 10 (Grade 9+): Spiral</option>
+                        </select>
+                    </div>
+                    <div id="challengeDisplay"></div>
+                    <button id="startChallengeBtn" class="secondary">Start Challenge</button>
+                    <div id="successMessage" class="success-message"></div>
+                </div>
+
+                <!-- PATTERNS TAB -->
+                <div id="patterns" class="tab-content">
+                    <h3>Symmetry Builder:</h3>
+                    <select id="symmetrySelect">
+                        <option value="none">None — Freeform</option>
+                        <option value="horizontal">Horizontal Mirror (Left-Right)</option>
+                        <option value="vertical">Vertical Mirror (Up-Down)</option>
+                        <option value="fourfold">4-Fold (Both Mirrors)</option>
+                        <option value="rotational">Rotational (90° Turns)</option>
+                    </select>
+                    <div class="info-card" style="margin-top: 15px;">
+                        <strong>✨ Symmetry Magic:</strong> Select a symmetry mode and place one fiber. It will automatically create a beautiful symmetric pattern. This is how traditional weavers designed repeating patterns!
+                    </div>
+                </div>
+            </div>
+
+            <!-- COORDINATE LOG -->
+            <div class="card">
+                <h2>📋 Fiber Log</h2>
+                <div class="coordinate-log" id="coordinateLog">
+                    <div style="color: #999; text-align: center; padding: 30px 0;">No fibers placed yet. Click on the loom to begin!</div>
+                </div>
+                <button id="exportBtn" class="export-button secondary">📤 Export Pattern</button>
+            </div>
+
+            <!-- WISDOM CARD -->
+            <div class="card">
+                <h2>💡 Weaver's Wisdom</h2>
+                <div id="wisdomText" class="info-card">
+                    <strong>🌿 The Warp Threads:</strong><br>
+                    On a real loom, the warp threads run vertically (up-down). But here, we use them differently — the horizontal thread (x-axis) and vertical thread (y-axis) work together as reference guides. The x-axis tells you how far LEFT or RIGHT to go. The y-axis tells you how far UP or DOWN to go. Together, they help you find any spot on the loom!
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <footer>
+        <h3>🧺 The Basket Weaver's Path</h3>
+        <p><strong>Draft v0.1.0 — Pending Cultural Review</strong></p>
+        <p>Inspired by Ron Eglash's Culturally Situated Design Tools (CSDT.org)</p>
+        <p style="font-style: italic; margin-top: 15px;">The axes are warp threads. Coordinates are weaving instructions. Math is craft.</p>
+        <div class="footer-links">
+            <a href="index.html">🏠 Hub</a>
+            <a href="basket-weaver-loom.html">🧶 Loom</a>
+            <a href="pattern-explorer.html">🎨 Patterns</a>
+            <a href="symmetry-studio.html">✨ Symmetry</a>
+            <a href="about.html">ℹ️ About</a>
+        </div>
+    </footer>
+
+    <script>
+        // ============================================================
+        // FIBER LOOM INTERACTIVE TOOL
+        // ============================================================
+
+        class FiberLoom {
+            constructor() {
+                this.canvas = document.getElementById('loomCanvas');
+                this.ctx = this.canvas.getContext('2d');
+                this.tooltip = document.getElementById('tooltip');
+
+                this.gridSize = 20;
+                this.quadrants = 1;
+                this.selectedColor = 'brown';
+                this.fibers = [];
+                this.colors = {
+                    brown: '#8D6E63',
+                    red: '#E53935',
+                    yellow: '#FBC02D',
+                    green: '#43A047',
+                    blue: '#1E88E5',
+                    purple: '#8E24AA'
+                };
+
+                this.emojiMap = {
+                    brown: '🟤',
+                    red: '🔴',
+                    yellow: '🟡',
+                    green: '🟢',
+                    blue: '🔵',
+                    purple: '🟣'
+                };
+
+                this.currentChallenge = null;
+                this.challengeMode = false;
+                this.symmetryMode = 'none';
+
+                this.setupCanvas();
+                this.setupEventListeners();
+                this.resizeCanvas();
+                window.addEventListener('resize', () => this.resizeCanvas());
+            }
+
+            setupCanvas() {
+                // Make canvas high DPI aware
+                const dpr = window.devicePixelRatio || 1;
+                const rect = this.canvas.getBoundingClientRect();
+                this.canvas.width = rect.width * dpr;
+                this.canvas.height = rect.height * dpr;
+                this.ctx.scale(dpr, dpr);
+                this.displayWidth = rect.width;
+                this.displayHeight = rect.height;
+            }
+
+            resizeCanvas() {
+                this.setupCanvas();
+                this.redraw();
+            }
+
+            calculateGridMetrics() {
+                const padding = 60;
+                const availWidth = this.displayWidth - padding * 2;
+                const availHeight = this.displayHeight - padding * 2;
+
+                const cellWidth = availWidth / this.gridSize;
+                const cellHeight = availHeight / this.gridSize;
+
+                const minRange = this.quadrants === 1 ? this.gridSize : this.gridSize;
+                const startX = this.quadrants === 1 ? padding : padding + availWidth / 2;
+                const startY = this.quadrants === 1 ? this.displayHeight - padding : this.displayHeight - padding - availHeight / 2;
+
+                return {
+                    padding,
+                    cellWidth,
+                    cellHeight,
+                    availWidth,
+                    availHeight,
+                    startX,
+                    startY,
+                    gridSize: this.gridSize
+                };
+            }
+
+            redraw() {
+                this.ctx.fillStyle = '#FFFEF5';
+                this.ctx.fillRect(0, 0, this.displayWidth, this.displayHeight);
+
+                const metrics = this.calculateGridMetrics();
+
+                // Draw frame
+                this.ctx.strokeStyle = '#3E2723';
+                this.ctx.lineWidth = 3;
+                this.ctx.strokeRect(metrics.padding, metrics.padding, metrics.availWidth, metrics.availHeight);
+
+                // Draw grid lines (light)
+                this.ctx.strokeStyle = '#E8D7C3';
+                this.ctx.lineWidth = 0.5;
+
+                const xStart = this.quadrants === 1 ? 0 : -this.gridSize / 2;
+                const yStart = this.quadrants === 1 ? 0 : -this.gridSize / 2;
+
+                for (let i = 0; i <= this.gridSize; i++) {
+                    // Vertical lines
+                    const x = metrics.startX + i * metrics.cellWidth;
+                    this.ctx.beginPath();
+                    this.ctx.moveTo(x, metrics.padding);
+                    this.ctx.lineTo(x, metrics.padding + metrics.availHeight);
+                    this.ctx.stroke();
+
+                    // Horizontal lines
+                    const y = metrics.startY - i * metrics.cellHeight;
+                    this.ctx.beginPath();
+                    this.ctx.moveTo(metrics.padding, y);
+                    this.ctx.lineTo(metrics.padding + metrics.availWidth, y);
+                    this.ctx.stroke();
+                }
+
+                // Draw axes (thick brown warp threads with texture)
+                this.drawWarpThread(metrics, true);  // x-axis
+                this.drawWarpThread(metrics, false); // y-axis
+
+                // Draw origin knot
+                const originX = metrics.startX;
+                const originY = metrics.startY;
+                this.ctx.fillStyle = '#3E2723';
+                this.ctx.font = '24px sans-serif';
+                this.ctx.textAlign = 'center';
+                this.ctx.textBaseline = 'middle';
+                this.ctx.fillText('🪢', originX, originY);
+
+                // Draw grid intersection points
+                this.ctx.fillStyle = '#D7CCC8';
+                for (let i = 0; i <= this.gridSize; i++) {
+                    for (let j = 0; j <= this.gridSize; j++) {
+                        const x = metrics.startX + i * metrics.cellWidth;
+                        const y = metrics.startY - j * metrics.cellHeight;
+                        this.ctx.beginPath();
+                        this.ctx.arc(x, y, 2, 0, Math.PI * 2);
+                        this.ctx.fill();
+                    }
+                }
+
+                // Draw all placed fibers
+                this.fibers.forEach(fiber => {
+                    this.drawFiber(fiber, metrics);
+                });
+            }
+
+            drawWarpThread(metrics, isXAxis) {
+                this.ctx.strokeStyle = '#6D4C41';
+                this.ctx.lineWidth = 8;
+                this.ctx.lineCap = 'round';
+
+                if (isXAxis) {
+                    // Horizontal warp thread (x-axis)
+                    this.ctx.beginPath();
+                    this.ctx.moveTo(metrics.padding, metrics.startY);
+                    this.ctx.lineTo(metrics.padding + metrics.availWidth, metrics.startY);
+                    this.ctx.stroke();
+
+                    // Label
+                    this.ctx.fillStyle = '#3E2723';
+                    this.ctx.font = 'bold 13px "Source Sans Pro"';
+                    this.ctx.textAlign = 'center';
+                    this.ctx.textBaseline = 'top';
+                    this.ctx.fillText('Horizontal Warp Thread (x-axis)', metrics.padding + metrics.availWidth / 2, metrics.startY + 15);
+                } else {
+                    // Vertical warp thread (y-axis)
+                    this.ctx.beginPath();
+                    this.ctx.moveTo(metrics.startX, metrics.padding);
+                    this.ctx.lineTo(metrics.startX, metrics.padding + metrics.availHeight);
+                    this.ctx.stroke();
+
+                    // Label
+                    this.ctx.fillStyle = '#3E2723';
+                    this.ctx.font = 'bold 13px "Source Sans Pro"';
+                    this.ctx.textAlign = 'right';
+                    this.ctx.textBaseline = 'middle';
+                    this.ctx.save();
+                    this.ctx.translate(metrics.startX - 20, metrics.padding + metrics.availHeight / 2);
+                    this.ctx.rotate(-Math.PI / 2);
+                    this.ctx.fillText('Vertical Warp Thread (y-axis)', 0, 0);
+                    this.ctx.restore();
+                }
+            }
+
+            drawFiber(fiber, metrics) {
+                const canvasX = metrics.startX + fiber.x * metrics.cellWidth;
+                const canvasY = metrics.startY - fiber.y * metrics.cellHeight;
+
+                // Draw colored circle with slight shadow
+                this.ctx.fillStyle = this.colors[fiber.color];
+                this.ctx.shadowColor = 'rgba(0,0,0,0.2)';
+                this.ctx.shadowBlur = 4;
+                this.ctx.beginPath();
+                this.ctx.arc(canvasX, canvasY, 12, 0, Math.PI * 2);
+                this.ctx.fill();
+                this.ctx.shadowColor = 'transparent';
+
+                // Draw emoji on top
+                this.ctx.font = 'bold 16px sans-serif';
+                this.ctx.textAlign = 'center';
+                this.ctx.textBaseline = 'middle';
+                this.ctx.fillText(this.emojiMap[fiber.color], canvasX, canvasY);
+            }
+
+            canvasToGrid(canvasX, canvasY) {
+                const metrics = this.calculateGridMetrics();
+                const x = Math.round((canvasX - metrics.startX) / metrics.cellWidth);
+                const y = Math.round((metrics.startY - canvasY) / metrics.cellHeight);
+
+                // Clamp to valid range
+                const minVal = this.quadrants === 1 ? 0 : -Math.floor(this.gridSize / 2);
+                const maxVal = this.quadrants === 1 ? this.gridSize : Math.floor(this.gridSize / 2);
+
+                return {
+                    x: Math.max(minVal, Math.min(maxVal, x)),
+                    y: Math.max(minVal, Math.min(maxVal, y))
+                };
+            }
+
+            gridToCanvas(x, y) {
+                const metrics = this.calculateGridMetrics();
+                return {
+                    canvasX: metrics.startX + x * metrics.cellWidth,
+                    canvasY: metrics.startY - y * metrics.cellHeight
+                };
+            }
+
+            setupEventListeners() {
+                // Color picker
+                document.querySelectorAll('.color-button').forEach(btn => {
+                    btn.addEventListener('click', (e) => {
+                        document.querySelectorAll('.color-button').forEach(b => b.classList.remove('selected'));
+                        btn.classList.add('selected');
+                        this.selectedColor = btn.dataset.color;
+                    });
+                });
+
+                // Canvas interactions
+                this.canvas.addEventListener('mousemove', (e) => this.handleMouseMove(e));
+                this.canvas.addEventListener('mouseleave', () => {
+                    this.tooltip.style.display = 'none';
+                });
+                this.canvas.addEventListener('click', (e) => this.handleCanvasClick(e));
+                this.canvas.addEventListener('touchstart', (e) => {
+                    e.preventDefault();
+                    const touch = e.touches[0];
+                    const rect = this.canvas.getBoundingClientRect();
+                    this.handleCanvasClick({
+                        clientX: touch.clientX,
+                        clientY: touch.clientY,
+                        target: this.canvas
+                    });
+                });
+                this.canvas.addEventListener('touchmove', (e) => {
+                    e.preventDefault();
+                    const touch = e.touches[0];
+                    this.handleMouseMove({
+                        clientX: touch.clientX,
+                        clientY: touch.clientY,
+                        target: this.canvas
+                    });
+                });
+
+                // Buttons
+                document.getElementById('undoBtn').addEventListener('click', () => this.undo());
+                document.getElementById('clearBtn').addEventListener('click', () => this.clear());
+                document.getElementById('exportBtn').addEventListener('click', () => this.exportPattern());
+
+                // Grid size toggle
+                document.querySelectorAll('[data-grid-size]').forEach(btn => {
+                    btn.addEventListener('click', (e) => {
+                        document.querySelectorAll('[data-grid-size]').forEach(b => b.classList.remove('active'));
+                        btn.classList.add('active');
+                        this.gridSize = parseInt(btn.dataset.gridSize);
+                        this.redraw();
+                    });
+                });
+
+                // Quadrants toggle
+                document.querySelectorAll('[data-quadrants]').forEach(btn => {
+                    btn.addEventListener('click', (e) => {
+                        document.querySelectorAll('[data-quadrants]').forEach(b => b.classList.remove('active'));
+                        btn.classList.add('active');
+                        this.quadrants = parseInt(btn.dataset.quadrants);
+                        this.resizeCanvas();
+                    });
+                });
+
+                // Tabs
+                document.querySelectorAll('.tab').forEach(tab => {
+                    tab.addEventListener('click', (e) => {
+                        const tabName = tab.dataset.tab;
+                        document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+                        document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
+                        tab.classList.add('active');
+                        document.getElementById(tabName).classList.add('active');
+                    });
+                });
+
+                // Challenges
+                document.getElementById('startChallengeBtn').addEventListener('click', () => this.startChallenge());
+                document.getElementById('levelSelect').addEventListener('change', (e) => this.updateChallengeDisplay(parseInt(e.target.value)));
+                this.updateChallengeDisplay(1);
+
+                // Symmetry
+                document.getElementById('symmetrySelect').addEventListener('change', (e) => {
+                    this.symmetryMode = e.target.value;
+                });
+            }
+
+            handleMouseMove(e) {
+                const rect = this.canvas.getBoundingClientRect();
+                const x = e.clientX - rect.left;
+                const y = e.clientY - rect.top;
+
+                const grid = this.canvasToGrid(x, y);
+
+                // Show tooltip
+                this.tooltip.style.left = (e.clientX + 10) + 'px';
+                this.tooltip.style.top = (e.clientY + 10) + 'px';
+                this.tooltip.textContent = `(${grid.x}, ${grid.y})`;
+                this.tooltip.style.display = 'block';
+            }
+
+            handleCanvasClick(e) {
+                const rect = this.canvas.getBoundingClientRect();
+                const x = e.clientX - rect.left;
+                const y = e.clientY - rect.top;
+
+                const grid = this.canvasToGrid(x, y);
+                this.placeFiber(grid.x, grid.y);
+            }
+
+            placeFiber(x, y) {
+                // Check if fiber already exists at this location
+                const exists = this.fibers.some(f => f.x === x && f.y === y);
+                if (exists) {
+                    // Remove it
+                    this.fibers = this.fibers.filter(f => !(f.x === x && f.y === y));
+                } else {
+                    // Add it
+                    this.fibers.push({
+                        x,
+                        y,
+                        color: this.selectedColor
+                    });
+
+                    // Announce placement
+                    this.announceMessage(`Fiber placed at (${x}, ${y})`);
+
+                    // Apply symmetry if enabled
+                    if (this.symmetryMode !== 'none') {
+                        this.applySymmetry(x, y);
+                    }
+                }
+
+                this.updateStats();
+                this.updateCoordinateLog();
+                this.redraw();
+
+                // Check challenge completion
+                if (this.challengeMode) {
+                    this.checkChallengeProgress();
+                }
+            }
+
+            applySymmetry(x, y) {
+                const symmetricPoints = [];
+
+                if (this.symmetryMode === 'horizontal') {
+                    symmetricPoints.push({ x: -x, y });
+                } else if (this.symmetryMode === 'vertical') {
+                    symmetricPoints.push({ x, y: -y });
+                } else if (this.symmetryMode === 'fourfold') {
+                    symmetricPoints.push({ x: -x, y });
+                    symmetricPoints.push({ x, y: -y });
+                    symmetricPoints.push({ x: -x, y: -y });
+                } else if (this.symmetryMode === 'rotational') {
+                    // 90° rotations: (x,y) -> (-y,x) -> (-x,-y) -> (y,-x)
+                    symmetricPoints.push({ x: -y, y: x });
+                    symmetricPoints.push({ x: -x, y: -y });
+                    symmetricPoints.push({ x: y, y: -x });
+                }
+
+                symmetricPoints.forEach(point => {
+                    const exists = this.fibers.some(f => f.x === point.x && f.y === point.y);
+                    if (!exists) {
+                        this.fibers.push({
+                            x: point.x,
+                            y: point.y,
+                            color: this.selectedColor
+                        });
+                    }
+                });
+            }
+
+            announceMessage(msg) {
+                // Visual feedback
+                document.getElementById('lastCoord').textContent = `📍 Last placed: ${msg.split(' at ')[1]}`;
+            }
+
+            updateStats() {
+                document.getElementById('fiberCount').textContent = `🧶 Fibers placed: ${this.fibers.length}`;
+            }
+
+            updateCoordinateLog() {
+                const log = document.getElementById('coordinateLog');
+                if (this.fibers.length === 0) {
+                    log.innerHTML = '<div style="color: #999; text-align: center; padding: 30px 0;">No fibers placed yet. Click on the loom to begin!</div>';
+                    return;
+                }
+
+                let html = '';
+                this.fibers.forEach((fiber, idx) => {
+                    html += `<div class="log-entry">${this.emojiMap[fiber.color]} (${fiber.x}, ${fiber.y})</div>`;
+                });
+                log.innerHTML = html;
+            }
+
+            undo() {
+                if (this.fibers.length > 0) {
+                    this.fibers.pop();
+                    this.updateStats();
+                    this.updateCoordinateLog();
+                    this.redraw();
+                }
+            }
+
+            clear() {
+                if (confirm('Clear all fibers? This cannot be undone.')) {
+                    this.fibers = [];
+                    this.updateStats();
+                    this.updateCoordinateLog();
+                    this.redraw();
+                    this.challengeMode = false;
+                }
+            }
+
+            exportPattern() {
+                if (this.fibers.length === 0) {
+                    alert('No fibers to export. Create a pattern first!');
+                    return;
+                }
+
+                let text = 'Fiber Loom Pattern Export\n';
+                text += '========================\n\n';
+                text += `Grid Size: ${this.gridSize}×${this.gridSize}\n`;
+                text += `Quadrants: ${this.quadrants === 1 ? 'Q1 Only' : 'All 4'}\n`;
+                text += `Total Fibers: ${this.fibers.length}\n\n`;
+                text += 'Coordinates (color):\n';
+                text += '-------------------\n';
+
+                this.fibers.forEach(fiber => {
+                    text += `${this.emojiMap[fiber.color]} (${fiber.x}, ${fiber.y})\n`;
+                });
+
+                // Copy to clipboard
+                navigator.clipboard.writeText(text).then(() => {
+                    alert('Pattern exported to clipboard!');
+                }).catch(() => {
+                    // Fallback
+                    const textarea = document.createElement('textarea');
+                    textarea.value = text;
+                    document.body.appendChild(textarea);
+                    textarea.select();
+                    document.execCommand('copy');
+                    document.body.removeChild(textarea);
+                    alert('Pattern exported to clipboard!');
+                });
+            }
+
+            // ============================================================
+            // CHALLENGES
+            // ============================================================
+
+            updateChallengeDisplay(level) {
+                const display = document.getElementById('challengeDisplay');
+                const challenge = this.challenges[level];
+
+                let html = `<div class="challenge">`;
+                html += `<h4>Level ${level}: ${challenge.title}</h4>`;
+                html += `<p><strong>Target Grade:</strong> ${challenge.grade}</p>`;
+                html += `<p>${challenge.description}</p>`;
+                html += `</div>`;
+
+                display.innerHTML = html;
+            }
+
+            startChallenge() {
+                const level = parseInt(document.getElementById('levelSelect').value);
+                this.currentChallenge = {
+                    level,
+                    ...this.challenges[level],
+                    completed: false
+                };
+
+                this.challengeMode = true;
+                this.clear();
+
+                // Visual indication
+                const display = document.getElementById('challengeDisplay');
+                display.style.borderLeft = '4px solid #2E7D32';
+                display.querySelector('.challenge').style.background = '#E8F5E9';
+            }
+
+            checkChallengeProgress() {
+                if (!this.challengeMode) return;
+
+                const challenge = this.currentChallenge;
+                let isComplete = false;
+
+                // Check each challenge type
+                if (challenge.level === 1) {
+                    isComplete = this.fibers.some(f => f.x === 2 && f.y === 3);
+                } else if (challenge.level === 2) {
+                    isComplete = [
+                        {x:1,y:1}, {x:2,y:2}, {x:3,y:3}, {x:4,y:4}
+                    ].every(p => this.fibers.some(f => f.x === p.x && f.y === p.y));
+                } else if (challenge.level === 3) {
+                    isComplete = [
+                        {x:0,y:0}, {x:1,y:0}, {x:2,y:0}, {x:3,y:0}, {x:4,y:0}
+                    ].every(p => this.fibers.some(f => f.x === p.x && f.y === p.y));
+                } else if (challenge.level === 4) {
+                    // Just check corners
+                    isComplete = [
+                        {x:1,y:1}, {x:1,y:4}, {x:5,y:1}, {x:5,y:4}
+                    ].every(p => this.fibers.some(f => f.x === p.x && f.y === p.y));
+                } else if (challenge.level === 5) {
+                    // Mirror across y-axis
+                    isComplete = [
+                        {x:2,y:1}, {x:3,y:3}, {x:1,y:4},
+                        {x:-2,y:1}, {x:-3,y:3}, {x:-1,y:4}
+                    ].every(p => this.fibers.some(f => f.x === p.x && f.y === p.y));
+                }
+
+                if (isComplete) {
+                    this.showChallengeSuccess();
+                }
+            }
+
+            showChallengeSuccess() {
+                const successMsg = document.getElementById('successMessage');
+                const challenge = this.currentChallenge;
+
+                let msg = `🌟 Challenge Complete!<br>`;
+                msg += `<strong>${challenge.successMessage}</strong><br>`;
+                msg += `<em>💡 ${challenge.wisdom}</em>`;
+
+                successMsg.innerHTML = msg;
+                successMsg.classList.add('show');
+
+                this.challengeMode = false;
+                setTimeout(() => {
+                    successMsg.classList.remove('show');
+                }, 5000);
+            }
+
+            challenges = {
+                1: {
+                    title: 'Find the Point',
+                    grade: 'K-1',
+                    description: 'Place a 🟤 fiber at (2, 3). Watch how the warp threads guide you! Go 2 across the horizontal warp thread, then 3 up the vertical warp thread.',
+                    successMessage: 'You found the spot! The horizontal warp thread told you to go 2 spaces right, and the vertical warp thread told you to go 3 spaces up.',
+                    wisdom: 'This is how coordinates work — they\'re instructions written in the language of the loom!'
+                },
+                2: {
+                    title: 'Make a Diagonal',
+                    grade: 'K-1',
+                    description: 'Place 🟤 fibers at: (1,1), (2,2), (3,3), (4,4). What pattern do you see?',
+                    successMessage: 'You made a diagonal! Weavers call this a twill pattern. Notice how the x and y coordinates match — that\'s what makes the line go straight across.',
+                    wisdom: 'When x and y increase together, you create a diagonal line. This is a simple but powerful pattern in weaving!'
+                },
+                3: {
+                    title: 'The x-Axis Line',
+                    grade: 'Grade 2',
+                    description: 'Nokomis wants a red border. Place 🔴 fibers at: (0,0), (1,0), (2,0), (3,0), (4,0). What do you notice about the y-coordinate?',
+                    successMessage: 'All points have y=0! When y=0, all fibers sit right on the horizontal warp thread. That\'s what the x-axis IS — the thread itself!',
+                    wisdom: 'The axes aren\'t just lines on paper — they\'re actual threads weavers use. When you place a fiber on the x-axis (y=0), you\'re placing it directly ON that thread.'
+                },
+                4: {
+                    title: 'Build a Rectangle',
+                    grade: 'Grade 3',
+                    description: 'Place 🟤 fibers at the corners: (1,1), (1,4), (5,1), (5,4). Then fill in the edges.',
+                    successMessage: 'You used coordinates to build a shape. Every basket starts with a shape plan! Notice how two corners share the same x-coordinate (1) and two share x-coordinate (5).',
+                    wisdom: 'Rectangles are perfect for basket patterns. The coordinates help you plan exactly where each edge goes.'
+                },
+                5: {
+                    title: 'Mirror Reflection',
+                    grade: 'Grade 4',
+                    description: 'Create a symmetric pattern. Place 🟤 fibers at: (2,1), (3,3), (1,4). Then mirror them across the vertical warp thread (y-axis). Where do the mirrored fibers go?',
+                    successMessage: 'You found the reflections! (-2,1), (-3,3), (-1,4). Reflection flips the x-coordinate but keeps y the same. This is how traditional patterns get their perfect symmetry!',
+                    wisdom: 'Reflection is one of the oldest weaving techniques. When you use the y-axis as a mirror, you create balanced, beautiful designs.'
+                },
+                6: {
+                    title: 'Triangle Area',
+                    grade: 'Grade 5',
+                    description: 'Place 🟤 fibers at: (0,0), (3,2), (6,0). Connect them to form a triangle. What\'s the area?',
+                    successMessage: 'You created a triangle! The base goes from (0,0) to (6,0) = 6 units. The height is 2 units. Area = ½ × base × height = 6 square units.',
+                    wisdom: 'Geometric shapes like triangles appear in basket designs. Understanding coordinates helps you calculate the space each design element takes up.'
+                },
+                7: {
+                    title: 'Linear Function',
+                    grade: 'Grade 6',
+                    description: 'The dye pattern follows the rule: y = 2x. Place 🔴 fibers at x = 0, 1, 2, 3, 4. Calculate and place each fiber at the right y-coordinate.',
+                    successMessage: 'Perfect! You traced a line: (0,0), (1,2), (2,4), (3,6), (4,8). When x increases by 1, y increases by 2. That\'s the pattern y = 2x!',
+                    wisdom: 'Functions describe patterns. The equation y = 2x tells you exactly where to place each fiber. Weavers use pattern rules like this all the time.'
+                },
+                8: {
+                    title: 'Rotational Symmetry',
+                    grade: 'Grade 7',
+                    description: 'Create a design with rotational symmetry. Place 🟢 at (3,0). Then rotate it 90° three more times. Where are the other 3 fibers?',
+                    successMessage: 'Rotations: 90° → (0,3), 180° → (-3,0), 270° → (0,-3). Rotating 90° turns (x,y) into (-y,x)!',
+                    wisdom: 'Rotation creates dynamic, spinning patterns. Many traditional baskets use 4-fold rotational symmetry for strength and beauty.'
+                },
+                9: {
+                    title: 'Parabola',
+                    grade: 'Grade 8',
+                    description: 'Model the basket handle: y = -x² + 9. Place 🔵 fibers at x = -3, -2, -1, 0, 1, 2, 3. Calculate each y and place the fiber.',
+                    successMessage: 'You traced a parabola! The curve shows a perfect arch — exactly like a basket handle. The handle reaches its peak (9 units high) at x = 0.',
+                    wisdom: 'Parabolas describe many things in nature and craft — falling water, hanging cables, arched baskets. This is real math you can touch.'
+                },
+                10: {
+                    title: 'Spiral Pattern',
+                    grade: 'Grade 9-12',
+                    description: 'Create a spiral using polar coordinates. Place fibers at angles 0°, 45°, 90°, 135°, 180° with radius r increasing by 1 each step. Convert to Cartesian: (r·cos θ, r·sin θ).',
+                    successMessage: 'You created a spiral! This advanced pattern teaches how polar and Cartesian coordinates connect. Spirals appear in shells, galaxies, and traditional baskets.',
+                    wisdom: 'Spirals are found throughout nature. Ancient weavers used spirals intuitively; today you can model them mathematically and see exactly how they grow.'
+                }
+            };
+        }
+
+        // Initialize on page load
+        document.addEventListener('DOMContentLoaded', () => {
+            const loom = new FiberLoom();
+        });
+    </script>
+</body>
+</html>

@@ -1,0 +1,574 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Lines, Rays & Angles - Grade 4</title>
+    <link rel="stylesheet" href="../../vinculum-core.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body {
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+            user-select: none;
+            background: var(--bg);
+            color: var(--text);
+            font-family: 'Inter', sans-serif;
+        }
+
+        .content {
+            flex: 1; overflow-y: auto; padding: 1.5rem;
+            display: none; flex-direction: column; gap: 1.5rem;
+        }
+        .content.active { display: flex; }
+
+        canvas {
+            width: 100%; height: 350px; border: 2px solid var(--border);
+            border-radius: 8px; background: var(--bg2); cursor: crosshair;
+            display: block;
+        }
+
+        .canvas-container {
+            background: var(--card); border: 1px solid var(--border); border-radius: 12px;
+            padding: 1.5rem; display: flex; flex-direction: column; gap: 1rem;
+        }
+
+        .tool-panel {
+            background: var(--bg2); padding: 1rem; border-radius: 8px;
+            display: flex; gap: 0.5rem; flex-wrap: wrap; align-items: center;
+        }
+
+        .tool-btn {
+            padding: 0.6rem 1rem; background: var(--card); border: 2px solid var(--border);
+            border-radius: 6px; cursor: pointer; font-weight: 500; color: var(--text);
+            font-family: 'Inter', sans-serif; transition: all 0.2s;
+            font-size: 0.9rem;
+        }
+
+        .tool-btn:hover { background: var(--cyan); color: white; border-color: var(--cyan); }
+        .tool-btn.active { background: var(--cyan); color: white; border-color: var(--cyan); }
+        .tool-btn:focus-visible { outline: 2px solid var(--cyan); }
+
+        .practice-grid {
+            display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 1.5rem; flex: 1;
+        }
+
+        .practice-card {
+            background: var(--card); border: 1px solid var(--border); border-radius: 12px;
+            padding: 1.5rem; display: flex; flex-direction: column; gap: 1rem;
+        }
+
+        .question-text {
+            font-weight: 500; color: var(--text); font-size: 0.95rem;
+        }
+
+        .options {
+            display: flex; flex-direction: column; gap: 0.5rem;
+        }
+
+        .option-btn {
+            padding: 0.75rem; background: var(--bg2); border: 2px solid var(--border);
+            border-radius: 6px; cursor: pointer; text-align: left; color: var(--text);
+            font-family: 'Inter', sans-serif; font-size: 0.9rem; transition: all 0.2s;
+        }
+
+        .option-btn:hover { border-color: var(--cyan); background: var(--bg2); }
+        .option-btn.selected { border-color: var(--green); background: var(--green)20; }
+        .option-btn:focus-visible { outline: 2px solid var(--cyan); }
+
+        .feedback {
+            position: fixed; bottom: -100px; left: 50%; transform: translateX(-50%);
+            padding: 1rem 2rem; border-radius: 8px; font-weight: 600;
+            transition: bottom 0.3s; z-index: 1000;
+            font-family: 'Inter', sans-serif;
+        }
+
+        .feedback.show { bottom: 2rem; }
+        .feedback.correct { background: var(--green); color: white; }
+        .feedback.incorrect { background: var(--red); color: white; }
+
+        .indigenous-context {
+            background: linear-gradient(135deg, #FFE5CC, #E5F5FF);
+            padding: 1.5rem; border-radius: 8px; border-left: 4px solid var(--cyan);
+            color: #333; font-size: 0.95rem; line-height: 1.6;
+        }
+
+        .indigenous-label {
+            font-weight: 600; color: var(--cyan); display: inline-block;
+            margin-bottom: 0.75rem;
+        }
+
+        .notation-guide {
+            background: var(--bg2); padding: 1rem; border-radius: 8px;
+            border-left: 4px solid var(--green); font-size: 0.9rem;
+        }
+
+        .notation-item {
+            display: flex; align-items: center; gap: 0.75rem; margin-bottom: 0.5rem;
+        }
+
+        .notation-symbol {
+            font-family: 'JetBrains Mono', monospace; font-weight: 600;
+            color: var(--cyan); min-width: 40px;
+        }
+
+        .stats {
+            display: flex; gap: 1rem; justify-content: center; padding: 1rem;
+            background: var(--bg2); border-radius: 8px;
+        }
+
+        .stat-item {
+            text-align: center;
+        }
+
+        .stat-value {
+            font-size: 1.5rem; font-weight: 700; color: var(--cyan);
+            font-family: 'JetBrains Mono', monospace;
+        }
+
+        .stat-label {
+            font-size: 0.8rem; color: var(--text2); font-weight: 500;
+        }
+
+        .sr-only {
+            position: absolute; width: 1px; height: 1px; padding: 0;
+            margin: -1px; overflow: hidden; clip: rect(0,0,0,0);
+            white-space: nowrap; border-width: 0;
+        }
+    </style>
+</head>
+<body>
+    <div class="vinculum-header">
+        <div class="vinculum-header-left">
+            <a href="../../VINCULUM-Hub.html" class="vinculum-back-btn" aria-label="Back to Hub">
+                <svg viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="2"><path d="M8 1L3 6l5 5"/></svg>
+                Hub
+            </a>
+            <div class="vinculum-header-title"><span class="brand">Lines & Angles</span></div>
+            <span class="vinculum-header-badge">GRADE 4</span>
+        </div>
+        <div class="vinculum-header-right">
+            <div class="vinculum-std-tags">
+                <span class="vinculum-std-tag">4.G.1</span>
+                <span class="vinculum-std-tag mn">MN 4.3.3.1</span>
+            </div>
+        </div>
+    </div>
+
+    <div class="vinculum-mode-tabs">
+        <button class="vinculum-mode-tab active-explore" data-mode="explore"><svg width="18" height="18" viewBox="0 0 48 48" fill="none"><path d="M4 24C4 24 12 12 24 12C36 12 44 24 44 24C44 24 36 36 24 36C12 36 4 24 4 24Z" stroke="currentColor" stroke-width="3" fill="none"/><circle cx="24" cy="24" r="7" stroke="currentColor" stroke-width="3" fill="none"/><circle cx="24" cy="24" r="3" fill="currentColor"/><line x1="24" y1="4" x2="24" y2="9" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" opacity="0.5"/><line x1="10" y1="8" x2="13" y2="12" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" opacity="0.5"/><line x1="38" y1="8" x2="35" y2="12" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" opacity="0.5"/></svg> Explore</button>
+        <button class="vinculum-mode-tab" data-mode="practice"><svg width="18" height="18" viewBox="0 0 48 48" fill="none"><circle cx="24" cy="24" r="20" stroke="currentColor" stroke-width="3" fill="none" opacity="0.3"/><circle cx="24" cy="24" r="20" stroke="currentColor" stroke-width="3" fill="none" stroke-dasharray="126" stroke-dashoffset="32" stroke-linecap="round"/><polyline points="16,24 22,32 34,16" stroke="currentColor" stroke-width="4" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg> Practice</button>
+        <button class="vinculum-mode-tab" data-mode="play"><svg width="18" height="18" viewBox="0 0 48 48" fill="none"><polygon points="28,4 12,28 22,28 18,44 36,18 26,18" fill="none" stroke="currentColor" stroke-width="3" stroke-linejoin="round"/><polygon points="27,8 15,27 23,27 20,40 34,19 26,19" fill="currentColor" opacity="0.15"/></svg> Play</button>
+        <div class="vinculum-diff-selector">
+            <span class="vinculum-diff-label">Level</span>
+            <button class="vinculum-diff-btn active" data-diff="emergent">Emergent</button>
+            <button class="vinculum-diff-btn" data-diff="developing">Developing</button>
+            <button class="vinculum-diff-btn" data-diff="proficient">Proficient</button>
+        </div>
+    </div>
+
+    <div id="explore" class="content active">
+        <div class="canvas-container">
+            <h2 style="color: var(--text); font-size: 1.3rem;">Draw Geometric Elements</h2>
+
+            <div class="tool-panel">
+                <button class="tool-btn active" onclick="setTool('point')">Point</button>
+                <button class="tool-btn" onclick="setTool('segment')">Segment</button>
+                <button class="tool-btn" onclick="setTool('line')">Line</button>
+                <button class="tool-btn" onclick="setTool('ray')">Ray</button>
+                <button class="tool-btn" onclick="setTool('parallel')">Parallel Lines</button>
+                <button class="tool-btn" onclick="setTool('perpendicular')">Perpendicular</button>
+                <button class="tool-btn" onclick="clearCanvas()">Clear</button>
+            </div>
+
+            <canvas id="exploreCanvas"></canvas>
+
+            <div class="notation-guide">
+                <div style="font-weight: 600; margin-bottom: 0.5rem; color: var(--text);">Geometric Notation</div>
+                <div class="notation-item">
+                    <div class="notation-symbol">•</div>
+                    <div>Point: A single location in space</div>
+                </div>
+                <div class="notation-item">
+                    <div class="notation-symbol">―</div>
+                    <div>Line Segment: Two points with straight line between</div>
+                </div>
+                <div class="notation-item">
+                    <div class="notation-symbol">↔</div>
+                    <div>Line: Extends infinitely in both directions</div>
+                </div>
+                <div class="notation-item">
+                    <div class="notation-symbol">→</div>
+                    <div>Ray: Starts at point, extends infinitely in one direction</div>
+                </div>
+                <div class="notation-item">
+                    <div class="notation-symbol">∥</div>
+                    <div>Parallel: Lines never intersect</div>
+                </div>
+                <div class="notation-item">
+                    <div class="notation-symbol">⊥</div>
+                    <div>Perpendicular: Lines meet at right angle (90°)</div>
+                </div>
+            </div>
+
+            <div class="indigenous-context">
+                <div class="indigenous-label">INDIGENOUS: Yup'ik context</div>
+                <p><strong>Fish Rack Construction:</strong> In building a traditional Yup'ik fish drying rack, vertical posts must be perpendicular to the ground (at a 90° angle), and horizontal bars must be parallel to each other. These geometric relationships ensure the structure is stable and functional. Understanding geometric precision connects to traditional building practices.</p>
+            </div>
+        </div>
+    </div>
+
+    <div id="practice" class="content">
+        <div class="practice-grid">
+            <div class="practice-card">
+                <div class="question-text">Are these lines parallel, perpendicular, or neither?</div>
+                <canvas style="height: 200px; border: 2px solid var(--border);" id="practiceCanvas1"></canvas>
+                <div class="options">
+                    <button class="option-btn" onclick="checkRelationship(1, 'parallel')">Parallel (∥)</button>
+                    <button class="option-btn" onclick="checkRelationship(1, 'perpendicular')">Perpendicular (⊥)</button>
+                    <button class="option-btn" onclick="checkRelationship(1, 'neither')">Neither</button>
+                </div>
+            </div>
+
+            <div class="practice-card">
+                <div class="question-text">Name this geometric element</div>
+                <canvas style="height: 200px; border: 2px solid var(--border);" id="practiceCanvas2"></canvas>
+                <div class="options">
+                    <button class="option-btn" onclick="checkName(2, 'segment')">Line Segment</button>
+                    <button class="option-btn" onclick="checkName(2, 'ray')">Ray</button>
+                    <button class="option-btn" onclick="checkName(2, 'line')">Line</button>
+                </div>
+            </div>
+        </div>
+
+        <div class="stats">
+            <div class="stat-item">
+                <div class="stat-value" id="practiceScoreDisplay">0</div>
+                <div class="stat-label">Correct</div>
+            </div>
+            <div class="stat-item">
+                <div class="stat-value" id="practiceTotalDisplay">0</div>
+                <div class="stat-label">Total</div>
+            </div>
+        </div>
+    </div>
+
+    <div id="play" class="content">
+        <div style="display: flex; flex-direction: column; gap: 1.5rem; flex: 1;">
+            <div class="canvas-container">
+                <h3 style="color: var(--text); font-size: 1.1rem;" id="playTitle">Draw Parallel Lines</h3>
+                <canvas id="playCanvas" style="height: 350px;"></canvas>
+
+                <div style="display: flex; gap: 0.5rem;">
+                    <button class="tool-btn" onclick="clearPlayCanvas()">Clear</button>
+                    <button class="tool-btn" onclick="checkPlayChallenge()">Check</button>
+                </div>
+            </div>
+
+            <div class="indigenous-context">
+                <div class="indigenous-label">INDIGENOUS: Multiple nations</div>
+                <p><strong>Architecture & Building:</strong> Contemporary and traditional Indigenous building practices demonstrate sophisticated understanding of geometric relationships. Lines and angles appear in lodge construction, longhouse architecture, and the structural planning of community spaces.</p>
+            </div>
+        </div>
+    </div>
+
+    <div id="feedback" class="feedback"></div>
+    <span class="sr-only" role="status" aria-live="polite" id="ariaStatus"></span>
+
+    <script src="../../vinculum-feedback.js"></script><script src="../../vinculum-guide.js"></script>
+<script src="../../vinculum-input.js"></script>
+<script src="../../vinculum-identity.js"></script>
+<script src="../../vinculum-indigenous.js"></script>
+<script src="../../vinculum-dashboard.js"></script>
+    <script>
+        /* INDIGENOUS: nation=Yup'ik, context=fish_rack_construction */
+        const S = { mode: 'explore', tool: 'point', practiceScore: 0, practiceTotal: 0, playScore: 0, points: [] };
+        const canvases = {};
+        let currentChallenge = 0;
+
+        function initCanvases() {
+            canvases.explore = document.getElementById('exploreCanvas');
+            canvases.practice1 = document.getElementById('practiceCanvas1');
+            canvases.practice2 = document.getElementById('practiceCanvas2');
+            canvases.play = document.getElementById('playCanvas');
+
+            canvases.explore.addEventListener('click', drawOnCanvas);
+            canvases.play.addEventListener('click', drawOnPlayCanvas);
+
+            // Generate practice problems
+            generatePracticeProblems();
+        }
+
+        function setTool(tool) {
+            S.tool = tool;
+            document.querySelectorAll('.tool-btn').forEach(b => b.classList.remove('active'));
+            event.target.classList.add('active');
+            S.points = [];
+            redrawCanvas();
+        }
+
+        function drawOnCanvas(e) {
+            const rect = canvases.explore.getBoundingClientRect();
+            const x = e.clientX - rect.left;
+            const y = e.clientY - rect.top;
+
+            S.points.push({ x, y });
+
+            if (S.tool === 'point' && S.points.length === 1) {
+                S.points = [];
+            } else if ((S.tool === 'segment' || S.tool === 'ray' || S.tool === 'line') && S.points.length === 2) {
+                S.points = [];
+            } else if ((S.tool === 'parallel' || S.tool === 'perpendicular') && S.points.length === 4) {
+                S.points = [];
+            }
+
+            redrawCanvas();
+        }
+
+        function redrawCanvas() {
+            const ctx = canvases.explore.getContext('2d');
+            ctx.clearRect(0, 0, canvases.explore.width, canvases.explore.height);
+
+            // Draw grid
+            ctx.strokeStyle = 'var(--border)';
+            ctx.lineWidth = 0.5;
+            for (let i = 0; i < canvases.explore.width; i += 20) {
+                ctx.beginPath();
+                ctx.moveTo(i, 0);
+                ctx.lineTo(i, canvases.explore.height);
+                ctx.stroke();
+            }
+            for (let i = 0; i < canvases.explore.height; i += 20) {
+                ctx.beginPath();
+                ctx.moveTo(0, i);
+                ctx.lineTo(canvases.explore.width, i);
+                ctx.stroke();
+            }
+
+            // Draw current tool
+            if (S.points.length > 0) {
+                ctx.strokeStyle = 'var(--cyan)';
+                ctx.lineWidth = 2;
+                ctx.fillStyle = 'var(--cyan)';
+
+                if (S.tool === 'point') {
+                    S.points.forEach(p => {
+                        ctx.beginPath();
+                        ctx.arc(p.x, p.y, 5, 0, Math.PI * 2);
+                        ctx.fill();
+                    });
+                } else if (S.tool === 'segment' && S.points.length >= 1) {
+                    ctx.beginPath();
+                    ctx.moveTo(S.points[0].x, S.points[0].y);
+                    if (S.points.length >= 2) ctx.lineTo(S.points[1].x, S.points[1].y);
+                    ctx.stroke();
+                } else if (S.tool === 'line' && S.points.length >= 1) {
+                    const p1 = S.points[0];
+                    const p2 = S.points.length > 1 ? S.points[1] : { x: p1.x + 100, y: p1.y };
+                    const dx = p2.x - p1.x;
+                    const dy = p2.y - p1.y;
+                    const len = Math.sqrt(dx * dx + dy * dy);
+                    const ux = dx / len;
+                    const uy = dy / len;
+
+                    ctx.beginPath();
+                    ctx.moveTo(p1.x - ux * 500, p1.y - uy * 500);
+                    ctx.lineTo(p1.x + ux * 500, p1.y + uy * 500);
+                    ctx.stroke();
+
+                    // Draw arrows
+                    ctx.fillStyle = 'var(--cyan)';
+                    drawArrow(ctx, p1.x - ux * 500, p1.y - uy * 500, ux, uy);
+                    drawArrow(ctx, p1.x + ux * 500, p1.y + uy * 500, -ux, -uy);
+                } else if (S.tool === 'ray' && S.points.length >= 1) {
+                    const p1 = S.points[0];
+                    const p2 = S.points.length > 1 ? S.points[1] : { x: p1.x + 100, y: p1.y };
+                    const dx = p2.x - p1.x;
+                    const dy = p2.y - p1.y;
+                    const len = Math.sqrt(dx * dx + dy * dy);
+                    const ux = dx / len;
+                    const uy = dy / len;
+
+                    ctx.beginPath();
+                    ctx.moveTo(p1.x, p1.y);
+                    ctx.lineTo(p1.x + ux * 500, p1.y + uy * 500);
+                    ctx.stroke();
+
+                    drawArrow(ctx, p1.x + ux * 500, p1.y + uy * 500, -ux, -uy);
+                }
+            }
+        }
+
+        function drawArrow(ctx, x, y, dx, dy) {
+            const size = 10;
+            const angle = Math.atan2(dy, dx);
+            ctx.beginPath();
+            ctx.moveTo(x, y);
+            ctx.lineTo(x - size * Math.cos(angle - Math.PI / 6), y - size * Math.sin(angle - Math.PI / 6));
+            ctx.lineTo(x - size * Math.cos(angle + Math.PI / 6), y - size * Math.sin(angle + Math.PI / 6));
+            ctx.closePath();
+            ctx.fill();
+        }
+
+        function clearCanvas() {
+            S.points = [];
+            redrawCanvas();
+        }
+
+        function generatePracticeProblems() {
+            // Practice problem 1: Parallel lines
+            const ctx1 = canvases.practice1.getContext('2d');
+            ctx1.clearRect(0, 0, canvases.practice1.width, canvases.practice1.height);
+            ctx1.strokeStyle = 'var(--cyan)';
+            ctx1.lineWidth = 3;
+            ctx1.beginPath();
+            ctx1.moveTo(20, 50);
+            ctx1.lineTo(180, 50);
+            ctx1.stroke();
+            ctx1.beginPath();
+            ctx1.moveTo(20, 120);
+            ctx1.lineTo(180, 120);
+            ctx1.stroke();
+            S.practiceAnswers = ['parallel', 'ray'];
+
+            // Practice problem 2: Ray
+            const ctx2 = canvases.practice2.getContext('2d');
+            ctx2.clearRect(0, 0, canvases.practice2.width, canvases.practice2.height);
+            ctx2.strokeStyle = 'var(--green)';
+            ctx2.lineWidth = 3;
+            ctx2.beginPath();
+            ctx2.moveTo(50, 100);
+            ctx2.lineTo(180, 100);
+            ctx2.stroke();
+            drawArrow(ctx2, 180, 100, -1, 0);
+            ctx2.fillStyle = 'var(--green)';
+            ctx2.beginPath();
+            ctx2.arc(50, 100, 4, 0, Math.PI * 2);
+            ctx2.fill();
+        }
+
+        function checkRelationship(num, answer) {
+            const correct = answer === S.practiceAnswers[num - 1];
+            S.practiceTotal++;
+            if (correct) {
+                S.practiceScore++;
+                showFB('Correct!', 'correct');
+            } else {
+                showFB('Try again! The answer is: ' + S.practiceAnswers[num - 1], 'incorrect');
+            }
+            updateStats();
+        }
+
+        function checkName(num, answer) {
+            const correct = answer === S.practiceAnswers[num - 1];
+            S.practiceTotal++;
+            if (correct) {
+                S.practiceScore++;
+                showFB('Correct!', 'correct');
+            } else {
+                showFB('Try again! The answer is: ' + S.practiceAnswers[num - 1], 'incorrect');
+            }
+            updateStats();
+        }
+
+        function drawOnPlayCanvas(e) {
+            const rect = canvases.play.getBoundingClientRect();
+            const x = e.clientX - rect.left;
+            const y = e.clientY - rect.top;
+
+            if (!S.playPoints) S.playPoints = [];
+            S.playPoints.push({ x, y });
+
+            if (S.playPoints.length === 4) {
+                S.playPoints = [];
+            }
+
+            redrawPlayCanvas();
+        }
+
+        function redrawPlayCanvas() {
+            const ctx = canvases.play.getContext('2d');
+            ctx.clearRect(0, 0, canvases.play.width, canvases.play.height);
+
+            if (S.playPoints && S.playPoints.length > 0) {
+                ctx.strokeStyle = 'var(--cyan)';
+                ctx.lineWidth = 2;
+
+                S.playPoints.forEach((p, i) => {
+                    if (i % 2 === 0 && i + 1 < S.playPoints.length) {
+                        ctx.beginPath();
+                        ctx.moveTo(p.x, p.y);
+                        ctx.lineTo(S.playPoints[i + 1].x, S.playPoints[i + 1].y);
+                        ctx.stroke();
+                    }
+                });
+
+                ctx.fillStyle = 'var(--cyan)';
+                S.playPoints.forEach(p => {
+                    ctx.beginPath();
+                    ctx.arc(p.x, p.y, 4, 0, Math.PI * 2);
+                    ctx.fill();
+                });
+            }
+        }
+
+        function clearPlayCanvas() {
+            S.playPoints = [];
+            redrawPlayCanvas();
+        }
+
+        function checkPlayChallenge() {
+            showFB('Great effort! Keep practicing your geometry skills.', 'correct');
+        }
+
+        document.querySelectorAll('.vinculum-mode-tab').forEach(function(tab) {
+            tab.addEventListener('click', function() {
+                var mode = this.dataset.mode;
+                S.mode = mode;
+                document.querySelectorAll('.vinculum-mode-tab').forEach(function(t) { t.className = 'vinculum-mode-tab'; });
+                this.classList.add(mode === 'explore' ? 'active-explore' : mode === 'practice' ? 'active-practice' : 'active-play');
+                document.querySelectorAll('.content').forEach(function(c) { c.classList.remove('active'); });
+                document.getElementById(mode).classList.add('active');
+
+                setTimeout(() => {
+                    Object.values(canvases).forEach(c => {
+                        if (c && c.width === 0) {
+                            c.width = c.offsetWidth * window.devicePixelRatio;
+                            c.height = c.offsetHeight * window.devicePixelRatio;
+                            c.getContext('2d').scale(window.devicePixelRatio, window.devicePixelRatio);
+                        }
+                    });
+                    if (mode === 'explore') redrawCanvas();
+                    if (mode === 'practice') generatePracticeProblems();
+                    if (mode === 'play') redrawPlayCanvas();
+                }, 100);
+            });
+        });
+
+        function updateStats() {
+            document.getElementById('practiceScoreDisplay').textContent = S.practiceScore;
+            document.getElementById('practiceTotalDisplay').textContent = S.practiceTotal;
+        }
+
+
+        // Initialize canvas sizes on load
+        window.addEventListener('load', () => {
+            Object.keys(canvases).forEach(key => {
+                const c = document.getElementById(key + 'Canvas');
+                if (c) {
+                    c.width = c.offsetWidth * window.devicePixelRatio;
+                    c.height = c.offsetHeight * window.devicePixelRatio;
+                    c.getContext('2d').scale(window.devicePixelRatio, window.devicePixelRatio);
+                    canvases[key] = c;
+                }
+            });
+            initCanvases();
+            redrawCanvas();
+        });
+    </script>
+</body>
+</html>

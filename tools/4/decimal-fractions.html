@@ -1,0 +1,698 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Decimal Fractions</title>
+    <link rel="stylesheet" href="../../vinculum-core.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700;900&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+    <style>
+        * { box-sizing: border-box; }
+        body {
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+            background: var(--bg);
+            color: var(--text);
+            font-family: 'Inter', sans-serif;
+            user-select: none;
+            margin: 0;
+            padding: 0;
+        }
+        .container {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            overflow-y: auto;
+            padding: 1.5rem;
+            gap: 1rem;
+        }
+        .mode { display: none; }
+        .mode.active { display: flex; flex-direction: column; gap: 1rem; }
+        .card {
+            background: var(--card);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 1.5rem;
+            box-shadow: 0 2px 6px rgba(0,0,0,0.05);
+        }
+        .label {
+            font-size: 0.95rem;
+            font-weight: 600;
+            color: var(--text);
+            margin-bottom: 0.5rem;
+        }
+        .slider-group {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            margin: 1rem 0;
+        }
+        .slider-group input[type="range"] {
+            flex: 1;
+            cursor: pointer;
+            accent-color: var(--cyan);
+        }
+        .slider-value {
+            min-width: 40px;
+            text-align: center;
+            font-weight: 600;
+            color: var(--cyan);
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 1rem;
+        }
+        .grid-controls {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(100px, 1fr));
+            gap: 0.8rem;
+            margin: 1rem 0;
+        }
+        .grid-btn {
+            padding: 0.6rem;
+            background: var(--bg2);
+            border: 2px solid var(--border);
+            border-radius: 6px;
+            cursor: pointer;
+            font-weight: 600;
+            transition: all 0.2s;
+        }
+        .grid-btn.active {
+            background: var(--cyan);
+            color: white;
+            border-color: var(--cyan);
+        }
+        .grid-btn:hover { border-color: var(--cyan); }
+        .visual-section {
+            display: flex;
+            flex-direction: column;
+            gap: 1.5rem;
+            margin: 1.5rem 0;
+            align-items: center;
+        }
+        .hundredths-grid {
+            display: grid;
+            grid-template-columns: repeat(10, 1fr);
+            gap: 1px;
+            background: var(--border);
+            padding: 1px;
+            width: 280px;
+            height: 280px;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+        .grid-cell {
+            background: var(--bg2);
+            border-radius: 2px;
+            transition: all 0.2s;
+            cursor: pointer;
+        }
+        .grid-cell:hover { background: var(--cyan); opacity: 0.7; }
+        .grid-cell.filled {
+            background: var(--green);
+        }
+        .tenths-strip {
+            display: flex;
+            gap: 1px;
+            background: var(--border);
+            padding: 1px;
+            width: 280px;
+            height: 40px;
+            border-radius: 4px;
+            margin: 1rem 0;
+        }
+        .tenths-cell {
+            flex: 1;
+            background: var(--bg2);
+            border-radius: 2px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        .tenths-cell:hover { background: var(--cyan); opacity: 0.7; }
+        .tenths-cell.filled {
+            background: var(--green);
+        }
+        .display-values {
+            display: flex;
+            gap: 2rem;
+            justify-content: center;
+            flex-wrap: wrap;
+            font-size: 1.1rem;
+            font-weight: 600;
+        }
+        .display-item {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+        .display-label {
+            font-size: 0.85rem;
+            color: var(--text2);
+            text-transform: uppercase;
+            margin-bottom: 0.3rem;
+        }
+        .display-value {
+            font-size: 1.5rem;
+            color: var(--cyan);
+            font-family: 'JetBrains Mono', monospace;
+        }
+        .number-line {
+            width: 100%;
+            max-width: 400px;
+        }
+        .line {
+            position: relative;
+            height: 4px;
+            background: var(--border);
+            border-radius: 2px;
+            margin: 1.5rem 0;
+        }
+        .tick {
+            position: absolute;
+            top: -8px;
+            width: 2px;
+            height: 20px;
+            background: var(--text2);
+        }
+        .point {
+            position: absolute;
+            top: -10px;
+            width: 14px;
+            height: 14px;
+            background: var(--green);
+            border: 3px solid white;
+            border-radius: 50%;
+            transform: translateX(-50%);
+            box-shadow: 0 0 0 3px var(--green);
+        }
+        .tick-label {
+            position: absolute;
+            font-size: 0.75rem;
+            color: var(--text2);
+            transform: translateX(-50%);
+            top: 20px;
+        }
+        .question {
+            font-size: 1.1rem;
+            font-weight: 600;
+            color: var(--text);
+            margin-bottom: 1rem;
+        }
+        .input-group {
+            display: flex;
+            gap: 0.8rem;
+            align-items: center;
+            margin: 1rem 0;
+            flex-wrap: wrap;
+        }
+        input[type="text"], input[type="number"] {
+            padding: 0.6rem;
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            font-size: 0.95rem;
+            background: var(--bg);
+            color: var(--text);
+            font-family: 'JetBrains Mono', monospace;
+        }
+        input[type="text"]:focus-visible, input[type="number"]:focus-visible {
+            outline: 2px solid var(--cyan);
+            outline-offset: 2px;
+        }
+        .button-group {
+            display: flex;
+            gap: 0.8rem;
+            margin-top: 1rem;
+            flex-wrap: wrap;
+        }
+        .btn {
+            padding: 0.7rem 1.4rem;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 0.95rem;
+            font-weight: 600;
+            transition: all 0.2s;
+        }
+        .btn-primary {
+            background: var(--cyan);
+            color: white;
+            flex: 1;
+            min-width: 120px;
+        }
+        .btn-primary:hover { background: var(--green); }
+        .btn-secondary {
+            background: var(--bg2);
+            color: var(--text);
+            border: 1px solid var(--border);
+            flex: 1;
+            min-width: 100px;
+        }
+        .btn-secondary:hover { background: var(--card); }
+        .btn:focus-visible { outline: 2px solid var(--cyan); outline-offset: 2px; }
+        .feedback {
+            position: fixed;
+            top: 2rem;
+            right: 2rem;
+            padding: 1rem 1.5rem;
+            background: var(--card);
+            border: 2px solid var(--border);
+            border-radius: 8px;
+            font-weight: 600;
+            opacity: 0;
+            transform: translateY(-20px);
+            transition: all 0.3s;
+            pointer-events: none;
+            z-index: 1000;
+        }
+        .feedback.show {
+            opacity: 1;
+            transform: translateY(0);
+        }
+        .feedback.correct {
+            border-color: var(--green);
+            color: var(--green);
+        }
+        .feedback.incorrect {
+            border-color: var(--red);
+            color: var(--red);
+        }
+        .stats {
+            display: flex;
+            gap: 1.5rem;
+            padding: 1rem;
+            background: var(--bg2);
+            border-radius: 8px;
+            justify-content: center;
+        }
+        .stat {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+        .stat-value {
+            font-size: 1.8rem;
+            font-weight: 700;
+            color: var(--cyan);
+            font-family: 'JetBrains Mono', monospace;
+        }
+        .stat-label {
+            font-size: 0.8rem;
+            color: var(--text2);
+            text-transform: uppercase;
+            margin-top: 0.2rem;
+        }
+        .cultural-note {
+            background: rgba(200, 100, 0, 0.1);
+            border-left: 4px solid var(--red);
+            padding: 0.8rem;
+            border-radius: 4px;
+            font-size: 0.9rem;
+            color: var(--text2);
+            margin-top: 1rem;
+        }
+        .sr-only {
+            position: absolute;
+            width: 1px;
+            height: 1px;
+            padding: 0;
+            margin: -1px;
+            overflow: hidden;
+            clip: rect(0,0,0,0);
+            border: 0;
+        }
+    </style>
+</head>
+<body>
+    <div class="vinculum-header">
+      <div class="vinculum-header-left">
+        <a href="../../VINCULUM-Hub.html" class="vinculum-back-btn" aria-label="Back to Hub">
+          <svg viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="2"><path d="M8 1L3 6l5 5"/></svg>
+          Hub
+        </a>
+        <div class="vinculum-header-title"><span class="brand">Decimal Fractions</span></div>
+        <span class="vinculum-header-badge">GRADE 4</span>
+      </div>
+      <div class="vinculum-header-right">
+        <div class="vinculum-std-tags">
+          <span class="vinculum-std-tag">CCSS.4.NF.6</span>
+          <span class="vinculum-std-tag mn">MN 4.1.3.5</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="vinculum-mode-tabs">
+      <button class="vinculum-mode-tab active-explore" data-mode="explore"><svg width="18" height="18" viewBox="0 0 48 48" fill="none"><path d="M4 24C4 24 12 12 24 12C36 12 44 24 44 24C44 24 36 36 24 36C12 36 4 24 4 24Z" stroke="currentColor" stroke-width="3" fill="none"/><circle cx="24" cy="24" r="7" stroke="currentColor" stroke-width="3" fill="none"/><circle cx="24" cy="24" r="3" fill="currentColor"/><line x1="24" y1="4" x2="24" y2="9" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" opacity="0.5"/><line x1="10" y1="8" x2="13" y2="12" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" opacity="0.5"/><line x1="38" y1="8" x2="35" y2="12" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" opacity="0.5"/></svg> Explore</button>
+      <button class="vinculum-mode-tab" data-mode="practice"><svg width="18" height="18" viewBox="0 0 48 48" fill="none"><circle cx="24" cy="24" r="20" stroke="currentColor" stroke-width="3" fill="none" opacity="0.3"/><circle cx="24" cy="24" r="20" stroke="currentColor" stroke-width="3" fill="none" stroke-dasharray="126" stroke-dashoffset="32" stroke-linecap="round"/><polyline points="16,24 22,32 34,16" stroke="currentColor" stroke-width="4" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg> Practice</button>
+      <button class="vinculum-mode-tab" data-mode="play"><svg width="18" height="18" viewBox="0 0 48 48" fill="none"><polygon points="28,4 12,28 22,28 18,44 36,18 26,18" fill="none" stroke="currentColor" stroke-width="3" stroke-linejoin="round"/><polygon points="27,8 15,27 23,27 20,40 34,19 26,19" fill="currentColor" opacity="0.15"/></svg> Play</button>
+      <div class="vinculum-diff-selector">
+        <span class="vinculum-diff-label">Level</span>
+        <button class="vinculum-diff-btn active" data-diff="emergent">Emergent</button>
+        <button class="vinculum-diff-btn" data-diff="developing">Developing</button>
+        <button class="vinculum-diff-btn" data-diff="proficient">Proficient</button>
+      </div>
+    </div>
+
+    <div class="container">
+        <div id="feedback" class="feedback"></div>
+
+        <!-- EXPLORE MODE -->
+        <div class="mode active" data-mode="explore">
+            <div class="card">
+                <div class="label">Choose grid type</div>
+                <div class="grid-controls">
+                    <button class="grid-btn active" data-grid="tenths">Tenths (1/10)</button>
+                    <button class="grid-btn" data-grid="hundredths">Hundredths (1/100)</button>
+                </div>
+                <div class="slider-group">
+                    <span>Shade cells</span>
+                    <input type="range" id="explorerCells" min="0" max="100" value="30">
+                    <span class="slider-value" id="explorerCellsVal">30</span>
+                </div>
+            </div>
+
+            <div class="card">
+                <div class="label">Visual Representation</div>
+                <div class="visual-section">
+                    <div id="exploreGridContainer"></div>
+                    <div class="display-values">
+                        <div class="display-item">
+                            <div class="display-label">Fraction</div>
+                            <div class="display-value" id="exploreFraction">3/10</div>
+                        </div>
+                        <div class="display-item">
+                            <div class="display-label">Decimal</div>
+                            <div class="display-value" id="exploreDecimal">0.3</div>
+                        </div>
+                        <div class="display-item">
+                            <div class="display-label">Percent</div>
+                            <div class="display-value" id="explorePercent">30%</div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="number-line">
+                    <div class="label">Number Line</div>
+                    <div class="line">
+                        <div class="tick" style="left: 0%;"></div>
+                        <div class="tick" style="left: 100%;"></div>
+                        <div class="point" id="explorePoint" style="left: 30%;"></div>
+                    </div>
+                    <div style="position: relative; height: 20px;">
+                        <div class="tick-label" style="left: 0%;">0</div>
+                        <div class="tick-label" style="left: 100%;">1</div>
+                    </div>
+                </div>
+
+                <div class="cultural-note">
+                    💰 <strong>Contemporary Context:</strong> A beadwork artist sells earrings for $4.75 each. A handmade item costs $24.50. Understanding decimals helps us buy, sell, and share fairly in the modern marketplace.
+                    <!-- INDIGENOUS: nation=Multiple_nations, context=modern_commerce -->
+                </div>
+            </div>
+        </div>
+
+        <!-- PRACTICE MODE -->
+        <div class="mode" data-mode="practice">
+            <div class="card">
+                <div class="question" id="practiceQuestion"></div>
+                <div class="visual-section" id="practiceVisual"></div>
+                <div class="input-group">
+                    <span style="min-width: 80px;">Decimal:</span>
+                    <input type="text" id="practiceDecimal" placeholder="0.00" style="width: 100px;">
+                </div>
+                <div class="button-group">
+                    <button class="btn btn-primary" id="checkBtn">Check Answer</button>
+                    <button class="btn btn-secondary" id="nextBtn" style="display: none;">Next Problem</button>
+                </div>
+            </div>
+            <div class="stats">
+                <div class="stat">
+                    <div class="stat-value" id="practiceScore">0</div>
+                    <div class="stat-label">Correct</div>
+                </div>
+                <div class="stat">
+                    <div class="stat-value" id="practiceTotal">0</div>
+                    <div class="stat-label">Total</div>
+                </div>
+                <div class="stat">
+                    <div class="stat-value" id="practiceStreak">0</div>
+                    <div class="stat-label">Streak</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- PLAY MODE -->
+        <div class="mode" data-mode="play">
+            <div class="card">
+                <div class="question" id="playQuestion"></div>
+                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(100px, 1fr)); gap: 0.8rem; margin: 1.5rem 0;">
+                    <button class="btn btn-secondary" id="playOpt1" style="padding: 1rem;"></button>
+                    <button class="btn btn-secondary" id="playOpt2" style="padding: 1rem;"></button>
+                    <button class="btn btn-secondary" id="playOpt3" style="padding: 1rem;"></button>
+                    <button class="btn btn-secondary" id="playOpt4" style="padding: 1rem;"></button>
+                </div>
+                <button class="btn btn-secondary" id="playSkip" style="width: 100%;">Skip</button>
+            </div>
+            <div class="stats">
+                <div class="stat">
+                    <div class="stat-value" id="playScore">0</div>
+                    <div class="stat-label">Correct</div>
+                </div>
+                <div class="stat">
+                    <div class="stat-value" id="playTotal">0</div>
+                    <div class="stat-label">Total</div>
+                </div>
+                <div class="stat">
+                    <div class="stat-value" id="playStreak">0</div>
+                    <div class="stat-label">Streak</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="../../vinculum-feedback.js"></script><script src="../../vinculum-guide.js"></script>
+<script src="../../vinculum-input.js"></script>
+<script src="../../vinculum-identity.js"></script>
+<script src="../../vinculum-indigenous.js"></script>
+<script src="../../vinculum-dashboard.js"></script>
+    <script>
+        const S = { mode: 'explore', diff: 'emergent', score: 0, total: 0, streak: 0, answers: [], gridType: 'tenths' };
+
+
+        // Grid type switching
+        document.querySelectorAll('.grid-btn').forEach(btn => {
+            btn.addEventListener('click', function() {
+                document.querySelectorAll('.grid-btn').forEach(b => b.classList.remove('active'));
+                this.classList.add('active');
+                S.gridType = this.dataset.grid;
+                document.getElementById('explorerCells').max = S.gridType === 'tenths' ? 10 : 100;
+                document.getElementById('explorerCells').value = 0;
+                updateExplore();
+            });
+        });
+
+        // Tab switching
+        document.querySelectorAll('.vinculum-mode-tab').forEach(function(tab) {
+          tab.addEventListener('click', function() {
+            var mode = this.dataset.mode;
+            S.mode = mode;
+            document.querySelectorAll('.vinculum-mode-tab').forEach(function(t) { t.className = 'vinculum-mode-tab'; });
+            this.classList.add(mode === 'explore' ? 'active-explore' : mode === 'practice' ? 'active-practice' : 'active-play');
+            document.querySelectorAll('.mode').forEach(function(m) { m.classList.remove('active'); });
+            document.querySelector(`.mode[data-mode="${mode}"]`).classList.add('active');
+            if (mode === 'practice') initPractice();
+            if (mode === 'play') initPlay();
+          });
+        });
+
+        // EXPLORE MODE
+        document.getElementById('explorerCells').addEventListener('input', updateExplore);
+
+        function drawTenthsGrid(filled) {
+            let html = '<div class="tenths-strip">';
+            for (let i = 0; i < 10; i++) {
+                html += `<div class="tenths-cell ${i < filled ? 'filled' : ''}"></div>`;
+            }
+            html += '</div>';
+            return html;
+        }
+
+        function drawHundredthsGrid(filled) {
+            let html = '<div class="hundredths-grid">';
+            for (let i = 0; i < 100; i++) {
+                html += `<div class="grid-cell ${i < filled ? 'filled' : ''}"></div>`;
+            }
+            html += '</div>';
+            return html;
+        }
+
+        function updateExplore() {
+            let filled = parseInt(document.getElementById('explorerCells').value);
+            document.getElementById('explorerCellsVal').textContent = filled;
+
+            let html;
+            if (S.gridType === 'tenths') {
+                html = drawTenthsGrid(filled);
+                const decimal = (filled / 10).toFixed(1);
+                const fraction = filled + '/10';
+                const percent = filled * 10 + '%';
+                document.getElementById('exploreFraction').textContent = fraction;
+                document.getElementById('exploreDecimal').textContent = decimal;
+                document.getElementById('explorePercent').textContent = percent;
+                const pos = (filled / 10) * 100;
+                document.getElementById('explorePoint').style.left = pos + '%';
+            } else {
+                html = drawHundredthsGrid(filled);
+                const decimal = (filled / 100).toFixed(2);
+                const fraction = filled + '/100';
+                const percent = filled + '%';
+                document.getElementById('exploreFraction').textContent = fraction;
+                document.getElementById('exploreDecimal').textContent = decimal;
+                document.getElementById('explorePercent').textContent = percent;
+                const pos = (filled / 100) * 100;
+                document.getElementById('explorePoint').style.left = pos + '%';
+            }
+
+            document.getElementById('exploreGridContainer').innerHTML = html;
+        }
+
+        // PRACTICE MODE
+        const practiceProblems = [
+            { type: 'tenths', frac: '3/10', decimal: '0.3' },
+            { type: 'tenths', frac: '7/10', decimal: '0.7' },
+            { type: 'hundredths', frac: '25/100', decimal: '0.25' },
+            { type: 'hundredths', frac: '50/100', decimal: '0.50' },
+            { type: 'hundredths', frac: '75/100', decimal: '0.75' },
+        ];
+
+        let practiceProblemIdx = 0;
+
+        function initPractice() {
+            practiceProblemIdx = 0;
+            S.score = 0;
+            S.total = 0;
+            S.streak = 0;
+            updatePracticeStats();
+            generatePracticeProblem();
+        }
+
+        function generatePracticeProblem() {
+            const p = practiceProblems[practiceProblemIdx % practiceProblems.length];
+            const parts = p.frac.split('/');
+            const filled = parseInt(parts[0]);
+            const total = parseInt(parts[1]);
+
+            document.getElementById('practiceQuestion').textContent = `Write ${p.frac} as a decimal.`;
+
+            let html;
+            if (p.type === 'tenths') {
+                html = drawTenthsGrid(filled);
+            } else {
+                html = drawHundredthsGrid(filled);
+            }
+            document.getElementById('practiceVisual').innerHTML = html;
+
+            document.getElementById('practiceDecimal').value = '';
+            document.getElementById('practiceDecimal').focus();
+            document.getElementById('checkBtn').style.display = 'inline-block';
+            document.getElementById('nextBtn').style.display = 'none';
+
+            document.getElementById('checkBtn').onclick = function() {
+                const ans = document.getElementById('practiceDecimal').value.trim();
+                if (ans === p.decimal || ans === (filled / total).toString()) {
+                    showFB('✓ Correct!', 'correct');
+                    S.score++;
+                    S.streak++;
+                    S.answers.push(1);
+                } else {
+                    showFB('✗ Try again! The answer is ' + p.decimal, 'incorrect');
+                    S.streak = 0;
+                    S.answers.push(0);
+                }
+                S.total++;
+                updatePracticeStats();
+                adaptDifficulty();
+                document.getElementById('checkBtn').style.display = 'none';
+                document.getElementById('nextBtn').style.display = 'inline-block';
+            };
+
+            document.getElementById('nextBtn').onclick = function() {
+                practiceProblemIdx++;
+                generatePracticeProblem();
+            };
+        }
+
+        function updatePracticeStats() {
+            document.getElementById('practiceScore').textContent = S.score;
+            document.getElementById('practiceTotal').textContent = S.total;
+            document.getElementById('practiceStreak').textContent = S.streak;
+        }
+
+        // PLAY MODE
+        let playProblemIdx = 0;
+        const playProblems = [
+            { frac: '3/10', opts: ['0.3', '0.03', '0.30', '3.0'] },
+            { frac: '7/10', opts: ['0.7', '0.07', '0.77', '7.0'] },
+            { frac: '25/100', opts: ['0.25', '0.025', '2.5', '0.52'] },
+            { frac: '50/100', opts: ['0.50', '0.05', '0.5', '5.0'] },
+            { frac: '75/100', opts: ['0.75', '0.075', '7.5', '0.57'] },
+        ];
+
+        function initPlay() {
+            playProblemIdx = 0;
+            S.score = 0;
+            S.total = 0;
+            S.streak = 0;
+            updatePlayStats();
+            generatePlayProblem();
+        }
+
+        function generatePlayProblem() {
+            const p = playProblems[playProblemIdx % playProblems.length];
+            document.getElementById('playQuestion').textContent = `What decimal equals ${p.frac}?`;
+
+            const shuffled = [...p.opts].sort(() => Math.random() - 0.5);
+            ['playOpt1', 'playOpt2', 'playOpt3', 'playOpt4'].forEach((id, i) => {
+                const btn = document.getElementById(id);
+                btn.textContent = shuffled[i];
+                btn.className = 'btn btn-secondary';
+                btn.style.padding = '1rem';
+                btn.onclick = function() {
+                    if (shuffled[i] === p.opts[0]) {
+                        showFB('✓ Correct!', 'correct');
+                        S.score++;
+                        S.streak++;
+                        btn.style.background = 'var(--green)';
+                    } else {
+                        showFB('✗ Try again!', 'incorrect');
+                        S.streak = 0;
+                        btn.style.background = 'var(--red)';
+                    }
+                    S.total++;
+                    updatePlayStats();
+                    adaptDifficulty();
+                    setTimeout(() => {
+                        playProblemIdx++;
+                        generatePlayProblem();
+                    }, 800);
+                };
+            });
+
+            document.getElementById('playSkip').onclick = function() {
+                playProblemIdx++;
+                generatePlayProblem();
+            };
+        }
+
+        function updatePlayStats() {
+            document.getElementById('playScore').textContent = S.score;
+            document.getElementById('playTotal').textContent = S.total;
+            document.getElementById('playStreak').textContent = S.streak;
+        }
+
+
+        updateExplore();
+    </script>
+</body>
+</html>

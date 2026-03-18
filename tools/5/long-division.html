@@ -1,0 +1,607 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>VINCULUM — Long Division</title>
+  <link rel="stylesheet" href="../../vinculum-core.css">
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;600&display=swap');
+
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      font-family: 'Inter', sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      height: 100vh;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+      user-select: none;
+    }
+
+    .vinculum-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 12px 24px;
+      background: var(--bg2);
+      border-bottom: 1px solid var(--border);
+      flex-shrink: 0;
+    }
+    .vinculum-header-left {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+    }
+    .vinculum-back-btn {
+      padding: 6px 12px;
+      border-radius: 8px;
+      border: 1px solid var(--border);
+      background: transparent;
+      color: var(--text2);
+      font-size: 13px;
+      font-family: inherit;
+      cursor: pointer;
+      transition: all 0.2s;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .vinculum-back-btn:hover { background: var(--card); color: var(--cyan); }
+    .vinculum-title-group {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+    .vinculum-title {
+      font-size: 20px;
+      font-weight: 800;
+      background: var(--grad);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+    .vinculum-badges {
+      display: flex;
+      gap: 8px;
+    }
+    .badge {
+      font-size: 10px;
+      font-weight: 700;
+      padding: 4px 10px;
+      border-radius: 6px;
+      background: rgba(0,212,255,0.1);
+      color: var(--cyan);
+      border: 1px solid rgba(0,212,255,0.2);
+    }
+    .tag {
+      font-size: 10px;
+      font-weight: 600;
+      padding: 4px 8px;
+      border-radius: 5px;
+      background: rgba(0,212,255,0.08);
+      color: var(--cyan);
+      font-family: 'JetBrains Mono', monospace;
+    }
+    .vinculum-header-right {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+.vinculum-mode-tabs {
+      display: flex;
+      gap: 4px;
+      padding: 8px 24px;
+      background: var(--bg2);
+      border-bottom: 1px solid var(--border);
+      flex-shrink: 0;
+      align-items: center;
+    }
+    .vinculum-mode-tab {
+      padding: 8px 20px;
+      border-radius: 8px;
+      border: 1px solid transparent;
+      background: transparent;
+      color: var(--muted);
+      font-size: 13px;
+      font-weight: 600;
+      font-family: inherit;
+      cursor: pointer;
+      transition: all 0.2s;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .vinculum-mode-tab:hover { color: var(--text2); background: var(--card); }
+    .vinculum-mode-tab.active-explore { background: rgba(0,212,255,0.1); color: var(--cyan); border-color: rgba(0,212,255,0.3); }
+    .vinculum-mode-tab.active-practice { background: rgba(0,230,118,0.1); color: var(--green); border-color: rgba(0,230,118,0.3); }
+    .vinculum-mode-tab.active-play { background: rgba(255,59,139,0.1); color: var(--pink); border-color: rgba(255,59,139,0.3); }
+
+    .vinculum-diff-selector {
+      margin-left: auto;
+      display: flex;
+      gap: 4px;
+      align-items: center;
+    }
+    .vinculum-diff-label {
+      font-size: 11px;
+      color: var(--muted);
+      margin-right: 8px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+    }
+    .vinculum-diff-btn {
+      padding: 5px 12px;
+      border-radius: 6px;
+      border: 1px solid var(--border);
+      background: transparent;
+      color: var(--muted);
+      font-size: 11px;
+      font-weight: 600;
+      font-family: inherit;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+    .vinculum-diff-btn:hover { color: var(--text2); }
+    .vinculum-diff-btn.active { background: rgba(0,212,255,0.1); color: var(--cyan); border-color: rgba(0,212,255,0.3); }
+
+    .main {
+      flex: 1;
+      overflow-y: auto;
+      padding: 24px;
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 20px;
+    }
+    .main::-webkit-scrollbar { width: 8px; }
+    .main::-webkit-scrollbar-track { background: var(--bg); }
+    .main::-webkit-scrollbar-thumb {
+      background: var(--border);
+      border-radius: 4px;
+    }
+
+    .mode { display: none; }
+    .mode.active { display: block; }
+
+    /* EXPLORE MODE */
+    .explore-section {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 24px;
+    }
+    .explore-title {
+      font-size: 14px;
+      font-weight: 700;
+      color: var(--cyan);
+      margin-bottom: 20px;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+    .division-bracket {
+      background: var(--bg);
+      border: 2px solid var(--border);
+      border-radius: 8px;
+      padding: 20px;
+      margin-bottom: 20px;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 16px;
+      font-weight: 600;
+      line-height: 2;
+      color: var(--text);
+      white-space: pre;
+    }
+
+    /* PRACTICE MODE */
+    .practice-container {
+      max-width: 700px;
+    }
+    .problem-card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 24px;
+      margin-bottom: 20px;
+    }
+    .problem-statement {
+      font-size: 16px;
+      font-weight: 600;
+      color: var(--text);
+      margin-bottom: 20px;
+    }
+    .step-box {
+      background: var(--bg2);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 16px;
+      margin-bottom: 16px;
+      font-size: 14px;
+    }
+    .step-title {
+      font-weight: 600;
+      color: var(--cyan);
+      margin-bottom: 8px;
+      text-transform: uppercase;
+      font-size: 12px;
+    }
+    input[type="number"] {
+      padding: 10px 12px;
+      border-radius: 8px;
+      border: 1px solid var(--border);
+      background: var(--bg);
+      color: var(--text);
+      font-size: 14px;
+      font-family: inherit;
+      width: 100%;
+      margin-bottom: 12px;
+    }
+    input:focus {
+      outline: none;
+      border-color: var(--cyan);
+    }
+    .submit-btn {
+      padding: 12px 24px;
+      border-radius: 8px;
+      border: 1px solid var(--green);
+      background: rgba(0,230,118,0.1);
+      color: var(--green);
+      font-size: 14px;
+      font-weight: 600;
+      font-family: inherit;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+    .submit-btn:hover {
+      background: rgba(0,230,118,0.2);
+      transform: translateY(-2px);
+    }
+
+    /* PLAY MODE */
+    .game-container {
+      max-width: 600px;
+      margin: 0 auto;
+    }
+    .game-header {
+      display: flex;
+      justify-content: space-between;
+      margin-bottom: 20px;
+    }
+    .score-display {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 12px 20px;
+      font-size: 14px;
+      font-weight: 600;
+    }
+    .game-card {
+      background: var(--card);
+      border: 2px solid var(--border);
+      border-radius: 12px;
+      padding: 32px;
+      text-align: center;
+      margin-bottom: 20px;
+    }
+    .game-problem {
+      font-size: 24px;
+      font-weight: 800;
+      color: var(--cyan);
+      margin-bottom: 20px;
+      font-family: 'JetBrains Mono', monospace;
+    }
+    .game-input {
+      padding: 12px 16px;
+      border-radius: 8px;
+      border: 2px solid var(--border);
+      background: var(--bg);
+      color: var(--text);
+      font-size: 18px;
+      font-weight: 600;
+      font-family: 'JetBrains Mono', monospace;
+      text-align: center;
+      margin-bottom: 16px;
+      width: 100%;
+    }
+    .game-input:focus {
+      outline: none;
+      border-color: var(--cyan);
+    }
+    .game-btn {
+      padding: 14px 32px;
+      border-radius: 8px;
+      border: none;
+      background: var(--grad);
+      color: #fff;
+      font-size: 16px;
+      font-weight: 700;
+      font-family: inherit;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+    .game-btn:hover { transform: translateY(-2px); }
+
+    #feedback {
+      position: fixed;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%) scale(0.8);
+      padding: 24px 48px;
+      border-radius: 20px;
+      font-size: 28px;
+      font-weight: 800;
+      pointer-events: none;
+      opacity: 0;
+      z-index: 9999;
+      transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275), opacity 0.3s;
+      text-align: center;
+      font-family: inherit;
+      backdrop-filter: blur(12px);
+    }
+    #feedback.show {
+      opacity: 1;
+      transform: translate(-50%, -50%) scale(1);
+    }
+    #feedback.correct {
+      background: rgba(0,230,118,0.2);
+      border: 2px solid var(--green);
+      color: var(--green);
+    }
+    #feedback.incorrect {
+      background: rgba(255,59,139,0.2);
+      border: 2px solid var(--pink);
+      color: var(--pink);
+    }
+  </style>
+</head>
+<body>
+
+<div class="vinculum-header">
+  <div class="vinculum-header-left">
+    <a href="../../VINCULUM-Hub.html" class="vinculum-back-btn" aria-label="Back to Hub">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>
+    </a>
+    <div class="vinculum-title-group">
+      <h1 class="vinculum-title">Long Division</h1>
+      <div class="vinculum-badges">
+        <span class="badge">5.NBT.6</span>
+        <span class="tag">5.1.2.3</span>
+      </div>
+    </div>
+  </div>
+  <div class="vinculum-header-right"></div>
+</div>
+
+<div class="vinculum-mode-tabs">
+  <button class="vinculum-mode-tab active-explore" onclick="switchMode('explore')"><svg width="18" height="18" viewBox="0 0 48 48" fill="none"><path d="M4 24C4 24 12 12 24 12C36 12 44 24 44 24C44 24 36 36 24 36C12 36 4 24 4 24Z" stroke="currentColor" stroke-width="3" fill="none"/><circle cx="24" cy="24" r="7" stroke="currentColor" stroke-width="3" fill="none"/><circle cx="24" cy="24" r="3" fill="currentColor"/><line x1="24" y1="4" x2="24" y2="9" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" opacity="0.5"/><line x1="10" y1="8" x2="13" y2="12" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" opacity="0.5"/><line x1="38" y1="8" x2="35" y2="12" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" opacity="0.5"/></svg> Explore</button>
+  <button class="vinculum-mode-tab" onclick="switchMode('practice')"><svg width="18" height="18" viewBox="0 0 48 48" fill="none"><circle cx="24" cy="24" r="20" stroke="currentColor" stroke-width="3" fill="none" opacity="0.3"/><circle cx="24" cy="24" r="20" stroke="currentColor" stroke-width="3" fill="none" stroke-dasharray="126" stroke-dashoffset="32" stroke-linecap="round"/><polyline points="16,24 22,32 34,16" stroke="currentColor" stroke-width="4" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg> Practice</button>
+  <button class="vinculum-mode-tab" onclick="switchMode('play')"><svg width="18" height="18" viewBox="0 0 48 48" fill="none"><polygon points="28,4 12,28 22,28 18,44 36,18 26,18" fill="none" stroke="currentColor" stroke-width="3" stroke-linejoin="round"/><polygon points="27,8 15,27 23,27 20,40 34,19 26,19" fill="currentColor" opacity="0.15"/></svg> Play</button>
+  <div class="vinculum-diff-selector">
+    <span class="vinculum-diff-label">Level</span>
+    <button class="vinculum-diff-btn active" data-diff="easy" onclick="setDifficulty('easy')">Easy</button>
+    <button class="vinculum-diff-btn" data-diff="medium" onclick="setDifficulty('medium')">Medium</button>
+    <button class="vinculum-diff-btn" data-diff="hard" onclick="setDifficulty('hard')">Hard</button>
+  </div>
+</div>
+
+<div class="main">
+  <!-- EXPLORE MODE -->
+  <div class="mode active" id="explore-mode">
+    <div class="explore-section">
+      <div class="explore-title">📐 Long Division Steps</div>
+      <p style="color: var(--text2); font-size: 14px; margin-bottom: 20px;">Long division follows 4 steps: Divide, Multiply, Subtract, Bring down.</p>
+      <div class="division-bracket" id="division-display"></div>
+    </div>
+
+    <div class="explore-section">
+      <div class="explore-title">🔍 Step Breakdown</div>
+      <div id="step-breakdown" style="font-size: 13px; color: var(--text2); line-height: 1.8;"></div>
+    </div>
+  </div>
+
+  <!-- PRACTICE MODE -->
+  <div class="mode" id="practice-mode">
+    <div class="practice-container">
+      <div class="problem-card">
+        <div class="problem-statement" id="practice-statement">Divide 456 ÷ 12</div>
+        <div class="step-box">
+          <div class="step-title">Step 1: Divide</div>
+          <p>How many times does <span id="prac-divisor">12</span> go into <span id="prac-dividend-part">45</span>? (first digits)</p>
+          <input type="number" id="prac-step1" placeholder="Your answer" min="0" max="9">
+        </div>
+        <div class="step-box">
+          <div class="step-title">Step 2: Multiply</div>
+          <p id="prac-mult"></p>
+          <input type="number" id="prac-step2" placeholder="Your answer" min="0">
+        </div>
+        <div class="step-box">
+          <div class="step-title">Step 3: Subtract</div>
+          <p id="prac-sub"></p>
+          <input type="number" id="prac-step3" placeholder="Your answer" min="0">
+        </div>
+        <div class="step-box">
+          <div class="step-title">Final Answer</div>
+          <p>What is the quotient?</p>
+          <input type="number" id="prac-final" placeholder="Your answer" min="0">
+        </div>
+        <button class="submit-btn" onclick="checkPracticeAnswer()">Check All Steps</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- PLAY MODE -->
+  <div class="mode" id="play-mode">
+    <div class="game-container">
+      <div class="game-header">
+        <div class="score-display">Level: <span id="game-level">1</span>/5</div>
+      </div>
+      <div class="game-card">
+        <div class="game-problem" id="game-problem">456 ÷ 12</div>
+        <input type="number" class="game-input" id="game-input" placeholder="Quotient" min="0" onkeydown="if(event.key==='Enter') submitGameAnswer()">
+        <button class="game-btn" onclick="submitGameAnswer()">Submit</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div id="feedback"></div>
+
+<script src="../../vinculum-feedback.js"></script><script src="../../vinculum-guide.js"></script>
+<script src="../../vinculum-input.js"></script>
+<script src="../../vinculum-identity.js"></script>
+<script src="../../vinculum-indigenous.js"></script>
+<script src="../../vinculum-dashboard.js"></script>
+<script>
+  let difficulty = 'easy';
+  let currentMode = 'explore';
+  let gameLevel = 1;
+  let currentGameProblem = null;
+  let currentPracticeProblem = null;
+
+  function displayLongDivision(dividend, divisor) {
+    const quotient = Math.floor(dividend / divisor);
+    const remainder = dividend % divisor;
+
+    const display = `
+        ${quotient}
+      ┌─────
+  ${divisor} │ ${dividend}
+      - ${divisor * quotient}
+      ─────
+        ${remainder}
+    `;
+    document.getElementById('division-display').textContent = display;
+
+    // Step breakdown
+    const stepText = `
+STEP 1: How many times does ${divisor} go into ${String(dividend).substring(0, String(dividend).length - 1) || dividend}? Answer: ${quotient}
+STEP 2: Multiply ${quotient} × ${divisor} = ${quotient * divisor}
+STEP 3: Subtract ${dividend} - ${quotient * divisor} = ${remainder}
+STEP 4: Quotient = ${quotient}, Remainder = ${remainder}
+    `;
+    document.getElementById('step-breakdown').textContent = stepText;
+  }
+
+  function switchMode(mode) {
+    currentMode = mode;
+    document.querySelectorAll('.mode').forEach(el => el.classList.remove('active'));
+    document.getElementById(mode + '-mode').classList.add('active');
+    document.querySelectorAll('.vinculum-mode-tab').forEach(btn => btn.classList.remove('active-explore', 'active-practice', 'active-play'));
+    event.target.classList.add('active-' + mode);
+
+    if (mode === 'explore') {
+      displayLongDivision(456, 12);
+    } else if (mode === 'practice') {
+      generatePracticeProblem();
+    } else if (mode === 'play') {
+      generateGameProblem();
+    }
+  }
+
+  function setDifficulty(diff) {
+    difficulty = diff;
+    document.querySelectorAll('.vinculum-diff-btn').forEach(btn => btn.classList.remove('active'));
+    event.target.classList.add('active');
+
+    if (currentMode === 'practice') {
+      generatePracticeProblem();
+    } else if (currentMode === 'play') {
+      gameLevel = 1;
+      document.getElementById('game-level').textContent = '1';
+      generateGameProblem();
+    }
+  }
+
+  const problems = {
+    easy: [
+      { dividend: 144, divisor: 12, answer: 12 },
+      { dividend: 156, divisor: 13, answer: 12 },
+      { dividend: 168, divisor: 12, answer: 14 },
+      { dividend: 182, divisor: 13, answer: 14 },
+      { dividend: 143, divisor: 11, answer: 13 }
+    ],
+    medium: [
+      { dividend: 456, divisor: 12, answer: 38 },
+      { dividend: 624, divisor: 16, answer: 39 },
+      { dividend: 765, divisor: 15, answer: 51 },
+      { dividend: 832, divisor: 16, answer: 52 }
+    ],
+    hard: [
+      { dividend: 1248, divisor: 24, answer: 52 },
+      { dividend: 1456, divisor: 28, answer: 52 },
+      { dividend: 2145, divisor: 35, answer: 61 },
+      { dividend: 2304, divisor: 48, answer: 48 }
+    ]
+  };
+
+  function generatePracticeProblem() {
+    const problemList = problems[difficulty];
+    currentPracticeProblem = problemList[Math.floor(Math.random() * problemList.length)];
+    document.getElementById('practice-statement').textContent = `Divide ${currentPracticeProblem.dividend} ÷ ${currentPracticeProblem.divisor}`;
+    document.getElementById('prac-divisor').textContent = currentPracticeProblem.divisor;
+
+    const dividendStr = String(currentPracticeProblem.dividend);
+    document.getElementById('prac-dividend-part').textContent = dividendStr.substring(0, 2);
+    document.getElementById('prac-mult').textContent = `${currentPracticeProblem.divisor} × ? = ?`;
+    document.getElementById('prac-sub').textContent = `? - ? = ?`;
+
+    document.getElementById('prac-step1').value = '';
+    document.getElementById('prac-step2').value = '';
+    document.getElementById('prac-step3').value = '';
+    document.getElementById('prac-final').value = '';
+  }
+
+  function checkPracticeAnswer() {
+    const step1 = parseInt(document.getElementById('prac-step1').value);
+    const final = parseInt(document.getElementById('prac-final').value);
+
+    if (final === currentPracticeProblem.answer) {
+      VinculumFB.show('🎉 Correct!', 'correct', 2000);
+      setTimeout(() => generatePracticeProblem(), 2000);
+    } else {
+      VinculumFB.show(`Answer: ${currentPracticeProblem.answer}`, 'incorrect', 2000);
+    }
+  }
+
+  function generateGameProblem() {
+    const problemList = problems[difficulty];
+    currentGameProblem = problemList[Math.floor(Math.random() * problemList.length)];
+    document.getElementById('game-problem').textContent = `${currentGameProblem.dividend} ÷ ${currentGameProblem.divisor}`;
+    document.getElementById('game-input').value = '';
+    document.getElementById('game-input').focus();
+  }
+
+  function submitGameAnswer() {
+    if (!currentGameProblem) return;
+    const userAnswer = parseInt(document.getElementById('game-input').value);
+
+    if (isNaN(userAnswer)) {
+      VinculumFB.show('Enter a number!', 'incorrect', 800);
+      return;
+    }
+
+    if (userAnswer === currentGameProblem.answer) {
+      VinculumFB.show('✓ Correct!', 'correct', 800);
+      gameLevel++;
+      document.getElementById('game-level').textContent = gameLevel;
+
+      if (gameLevel > 5) {
+        VinculumFB.show('🏆 Quest Complete!', 'correct', 2000);
+        gameLevel = 1;
+        document.getElementById('game-level').textContent = '1';
+        setTimeout(() => generateGameProblem(), 2000);
+      } else {
+        setTimeout(() => generateGameProblem(), 800);
+      }
+    } else {
+      VinculumFB.show('✗ Try again', 'incorrect', 800);
+      document.getElementById('game-input').value = '';
+    }
+  }
+
+  // Initialize on load
+  displayLongDivision(456, 12);
+</script>
+
+</body>
+</html>

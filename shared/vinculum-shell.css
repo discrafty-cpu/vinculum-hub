@@ -1,0 +1,360 @@
+/* ═══════════════════════════════════════════════════════════
+   VINCULUM SHELL CSS — Dynamic Grid Layout System
+   v1.0 — March 2026
+
+   Provides a CSS Grid shell that adapts to what each app needs.
+   Replaces the fragile position:fixed approach with a stable grid.
+
+   USAGE:
+   Add to any tool's <head>:
+     <link rel="stylesheet" href="../../shared/vinculum-shell.css">
+
+   The grid auto-detects panels via body attributes:
+     body[data-has-guide]    → Shows left guide column (260px)
+     body[data-has-sidebar]  → Shows right sidebar column (280px)
+     body (default)          → Full-width content only
+
+   LAYOUT (3-row, dynamic columns):
+   ┌──────────────────────────────────────────┐
+   │             HEADER BAR (row 1)            │
+   ├──────────┬──────────────────┬────────────┤
+   │  GUIDE   │     CONTENT      │  SIDEBAR   │
+   │  (opt.)  │   (always)       │  (opt.)    │
+   │  260px   │     1fr          │  280px     │
+   ├──────────┴──────────────────┴────────────┤
+   │        FOOTER / FEEDBACK (row 3)          │
+   └──────────────────────────────────────────┘
+
+   HOW IT WORKS:
+   - The grid template is defined with CSS custom properties
+   - JavaScript modules (vinculum-guide.js, etc.) set data attributes
+     on <body> to tell the grid which columns to show
+   - Existing tool HTML (.container, .workspace, etc.) goes in the
+     "content" area automatically
+   - No z-index wars — everything lives in its grid cell
+   - Overlays (feedback, modals) still use position:fixed but with
+     a CENTRALIZED z-index scale
+
+   ═══════════════════════════════════════════════════════════ */
+
+/* ════════════════════════════════════════
+   1. CSS CUSTOM PROPERTIES (the "knobs")
+   ════════════════════════════════════════ */
+:root {
+  /* Grid column widths — can be overridden per-app */
+  --shell-guide-width: 260px;
+  --shell-sidebar-width: 280px;
+
+  /* Header height */
+  --shell-header-height: auto;
+
+  /* Z-INDEX SCALE (centralized — no more z-index: 9999 everywhere) */
+  --z-base:         1;
+  --z-guide:       10;     /* Guide panel */
+  --z-sidebar:     10;     /* Right sidebar */
+  --z-header:      50;     /* Sticky header */
+  --z-theme:      100;     /* Theme chooser dropdown */
+  --z-feedback:   500;     /* Feedback toast */
+  --z-teacher:    600;     /* Teacher panel */
+  --z-indigenous: 600;     /* Indigenous context panel */
+  --z-modal:     1000;     /* Modals, overlays */
+  --z-fullscreen: 9999;    /* Fullscreen mode only */
+}
+
+
+/* ════════════════════════════════════════
+   2. GRID SHELL — Base Layout
+   ════════════════════════════════════════ */
+
+/* Default: content fills everything */
+body.vinculum-shell {
+  display: grid;
+  grid-template-rows: var(--shell-header-height) 1fr auto;
+  grid-template-columns: 1fr;
+  grid-template-areas:
+    "header"
+    "content"
+    "footer";
+  min-height: 100vh;
+  margin: 0;
+  padding: 0;
+  overflow-x: hidden;
+}
+
+
+/* ════════════════════════════════════════
+   3. GRID VARIANTS (data-attribute driven)
+   ════════════════════════════════════════ */
+
+/* Guide panel on left */
+body.vinculum-shell[data-has-guide] {
+  grid-template-columns: var(--shell-guide-width) 1fr;
+  grid-template-areas:
+    "guide  header"
+    "guide  content"
+    "guide  footer";
+}
+
+/* Sidebar on right */
+body.vinculum-shell[data-has-sidebar] {
+  grid-template-columns: 1fr var(--shell-sidebar-width);
+  grid-template-areas:
+    "header  sidebar"
+    "content sidebar"
+    "footer  sidebar";
+}
+
+/* Both guide AND sidebar */
+body.vinculum-shell[data-has-guide][data-has-sidebar] {
+  grid-template-columns: var(--shell-guide-width) 1fr var(--shell-sidebar-width);
+  grid-template-areas:
+    "guide  header  sidebar"
+    "guide  content sidebar"
+    "guide  footer  sidebar";
+}
+
+/* Guide collapsed (toggle state) */
+body.vinculum-shell[data-guide-collapsed] {
+  grid-template-columns: 0px 1fr;
+}
+body.vinculum-shell[data-guide-collapsed][data-has-sidebar] {
+  grid-template-columns: 0px 1fr var(--shell-sidebar-width);
+}
+
+
+/* ════════════════════════════════════════
+   4. GRID AREA ASSIGNMENTS
+   ════════════════════════════════════════ */
+
+/* Header */
+.vinculum-shell-header,
+.vinculum-shell .vinculum-header {
+  grid-area: header;
+  position: sticky;
+  top: 0;
+  z-index: var(--z-header);
+}
+
+/* Guide Panel (left) */
+.vinculum-shell-guide,
+.vinculum-shell .vinculum-guide-panel {
+  grid-area: guide;
+  overflow-y: auto;
+  z-index: var(--z-guide);
+  /* Remove old position:fixed from vinculum-guide.js */
+  position: static !important;
+  height: auto !important;
+  transform: none !important;
+}
+
+/* Main Content */
+.vinculum-shell-content,
+.vinculum-shell .container,
+.vinculum-shell .workspace,
+.vinculum-shell .main-area,
+.vinculum-shell [role="main"] {
+  grid-area: content;
+  overflow-y: auto;
+  min-width: 0; /* prevent grid blowout */
+}
+
+/* Right Sidebar */
+.vinculum-shell-sidebar {
+  grid-area: sidebar;
+  overflow-y: auto;
+  z-index: var(--z-sidebar);
+}
+
+/* Footer area */
+.vinculum-shell-footer {
+  grid-area: footer;
+}
+
+
+/* ════════════════════════════════════════
+   5. TRANSITION ANIMATIONS
+   ════════════════════════════════════════ */
+body.vinculum-shell {
+  transition: grid-template-columns 0.3s ease;
+}
+
+/* Guide collapse/expand animation */
+body.vinculum-shell[data-guide-collapsed] .vinculum-guide-panel,
+body.vinculum-shell[data-guide-collapsed] .vinculum-shell-guide {
+  overflow: hidden;
+  width: 0;
+  min-width: 0;
+  padding: 0;
+  opacity: 0;
+  transition: opacity 0.2s ease, width 0.3s ease, padding 0.3s ease;
+}
+
+body.vinculum-shell[data-has-guide]:not([data-guide-collapsed]) .vinculum-guide-panel,
+body.vinculum-shell[data-has-guide]:not([data-guide-collapsed]) .vinculum-shell-guide {
+  opacity: 1;
+  transition: opacity 0.3s ease 0.1s;
+}
+
+
+/* ════════════════════════════════════════
+   6. OVERLAY ELEMENTS (still use fixed position)
+   Only these specific elements need fixed positioning.
+   Everything else should live in the grid.
+   ════════════════════════════════════════ */
+
+/* Feedback toast */
+.vinculum-shell .vinculum-feedback,
+.vinculum-shell .feedback.show {
+  position: fixed;
+  z-index: var(--z-feedback);
+}
+
+/* Theme chooser (fixed in top-right) */
+.vinculum-shell .vtc-wrap {
+  z-index: var(--z-theme);
+}
+
+/* Fullscreen button */
+.vinculum-shell .vinculum-fullscreen-btn {
+  z-index: var(--z-header);
+}
+
+/* Teacher panel */
+.vinculum-shell #vinculum-teacher-panel {
+  z-index: var(--z-teacher);
+}
+
+/* Indigenous context panel */
+.vinculum-shell .vinculum-indigenous-panel {
+  z-index: var(--z-indigenous);
+}
+
+/* Modal overlays */
+.vinculum-shell .vinculum-modal,
+.vinculum-shell .modal-overlay {
+  z-index: var(--z-modal);
+}
+
+
+/* ════════════════════════════════════════
+   7. GUIDE TOGGLE BUTTON (grid-aware)
+   ════════════════════════════════════════ */
+.vinculum-shell .vinculum-guide-toggle {
+  position: absolute;
+  right: -36px;
+  top: 12px;
+  width: 32px;
+  height: 32px;
+  border-radius: 0 8px 8px 0;
+  background: var(--card, #16213e);
+  border: 1px solid var(--border, #333);
+  border-left: none;
+  color: var(--cyan, #00d9ff);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 14px;
+  z-index: var(--z-guide);
+  transition: all 0.2s;
+}
+
+.vinculum-shell .vinculum-guide-toggle:hover {
+  background: var(--cyan, #00d9ff);
+  color: var(--bg, #0f0f1e);
+}
+
+/* When collapsed, position toggle at left edge of viewport */
+body.vinculum-shell[data-guide-collapsed] .vinculum-guide-toggle {
+  position: fixed;
+  left: 0;
+  right: auto;
+  border-radius: 0 8px 8px 0;
+}
+
+
+/* ════════════════════════════════════════
+   8. RESPONSIVE — Mobile & Tablet
+   ════════════════════════════════════════ */
+@media (max-width: 768px) {
+  /* On small screens, guide becomes a slide-over panel */
+  body.vinculum-shell[data-has-guide] {
+    grid-template-columns: 1fr;
+    grid-template-areas:
+      "header"
+      "content"
+      "footer";
+  }
+
+  body.vinculum-shell .vinculum-guide-panel,
+  body.vinculum-shell .vinculum-shell-guide {
+    position: fixed !important;
+    left: 0;
+    top: 0;
+    bottom: 0;
+    width: var(--shell-guide-width);
+    z-index: var(--z-modal);
+    transform: translateX(-100%);
+    transition: transform 0.3s ease;
+    background: var(--bg2, #1a1a2e);
+  }
+
+  body.vinculum-shell[data-has-guide]:not([data-guide-collapsed]) .vinculum-guide-panel {
+    transform: translateX(0);
+  }
+
+  /* Sidebar also overlays on mobile */
+  body.vinculum-shell[data-has-sidebar] {
+    grid-template-columns: 1fr;
+  }
+
+  body.vinculum-shell .vinculum-shell-sidebar {
+    position: fixed;
+    right: 0;
+    top: 0;
+    bottom: 0;
+    width: var(--shell-sidebar-width);
+    z-index: var(--z-modal);
+    background: var(--bg2, #1a1a2e);
+  }
+}
+
+@media (max-width: 480px) {
+  :root {
+    --shell-guide-width: 100vw;
+  }
+}
+
+
+/* ════════════════════════════════════════
+   9. EMBED MODE — Strip chrome
+   ════════════════════════════════════════ */
+body.vinculum-shell.vinculum-embed {
+  grid-template-rows: 0 1fr 0;
+  grid-template-columns: 1fr;
+  grid-template-areas:
+    "."
+    "content"
+    ".";
+}
+
+body.vinculum-shell.vinculum-embed .vinculum-shell-header,
+body.vinculum-shell.vinculum-embed .vinculum-shell-guide,
+body.vinculum-shell.vinculum-embed .vinculum-shell-sidebar,
+body.vinculum-shell.vinculum-embed .vinculum-shell-footer,
+body.vinculum-shell.vinculum-embed .vtc-wrap,
+body.vinculum-shell.vinculum-embed .vinculum-guide-panel {
+  display: none !important;
+}
+
+
+/* ════════════════════════════════════════
+   10. UTILITY — Override old body margin-left
+   Cleans up the vinculum-guide.js body margin hack
+   ════════════════════════════════════════ */
+body.vinculum-shell,
+body.vinculum-shell.guide-panel-open,
+body.vinculum-shell.guide-panel-closed {
+  margin-left: 0 !important;
+  margin-right: 0 !important;
+}

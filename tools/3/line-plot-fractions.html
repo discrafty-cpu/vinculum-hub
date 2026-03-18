@@ -1,0 +1,1327 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>VINCULUM — Line Plot Fractions</title>
+<link rel="stylesheet" href="../../vinculum-core.css">
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;600&display=swap');
+
+/* Theme system loaded from vinculum-core.css */
+.vinculum-rtm-btn .rtm-icon{font-size:14px;}
+
+/* ═══ FOCUS VISIBLE (Keyboard Navigation) ═══ */
+*:focus-visible {
+  outline:2px solid var(--cyan);outline-offset:2px;border-radius:4px;
+}
+.sr-only {
+  position:absolute;width:1px;height:1px;padding:0;margin:-1px;
+  overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0;
+}
+
+* { margin:0; padding:0; box-sizing:border-box; }
+body {
+  font-family: 'Inter', sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  height: 100vh;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  user-select: none;
+}
+
+/* ── HEADER ── */
+.vinculum-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 24px;
+  background: var(--bg2);
+  border-bottom: 1px solid var(--border);
+  flex-shrink: 0;
+}
+.vinculum-header-left {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+.vinculum-back-btn {
+  padding: 6px 12px;
+  border-radius: 8px;
+  border: 1px solid var(--border);
+  background: transparent;
+  color: var(--text2);
+  font-size: 13px;
+  font-family: inherit;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+.vinculum-back-btn:hover { background: var(--card); color: var(--cyan); }
+.vinculum-header-title {
+  font-size: 18px;
+  font-weight: 800;
+}
+.vinculum-header-title span {
+  background: var(--grad);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+.vinculum-header-badge {
+  font-size: 10px;
+  font-weight: 700;
+  padding: 3px 10px;
+  border-radius: 6px;
+  background: rgba(0,212,255,0.1);
+  color: var(--cyan);
+  border: 1px solid rgba(0,212,255,0.2);
+  letter-spacing: 1px;
+}
+.vinculum-std-tags {
+  display: flex;
+  gap: 6px;
+}
+.vinculum-std-tag {
+  font-size: 10px;
+  font-family: 'JetBrains Mono', monospace;
+  font-weight: 600;
+  padding: 3px 8px;
+  border-radius: 5px;
+  background: rgba(0,212,255,0.08);
+  color: var(--cyan);
+}
+.vinculum-std-tag.mn { background: rgba(255,145,0,0.08); color: var(--orange); }
+
+/* ── MODE TABS ── */
+.vinculum-mode-tabs {
+  display: flex;
+  gap: 4px;
+  padding: 8px 24px;
+  background: var(--bg2);
+  border-bottom: 1px solid var(--border);
+  flex-shrink: 0;
+}
+.vinculum-mode-tab {
+  padding: 8px 20px;
+  border-radius: 8px;
+  border: 1px solid transparent;
+  background: transparent;
+  color: var(--muted);
+  font-size: 13px;
+  font-weight: 600;
+  font-family: inherit;
+  cursor: pointer;
+  transition: all 0.2s;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.vinculum-mode-tab:hover { color: var(--text2); background: var(--card); }
+.vinculum-mode-tab.active-explore { background: rgba(0,212,255,0.1); color: var(--cyan); border-color: rgba(0,212,255,0.3); }
+.vinculum-mode-tab.active-practice { background: rgba(0,230,118,0.1); color: var(--green); border-color: rgba(0,230,118,0.3); }
+.vinculum-mode-tab.active-play { background: rgba(255,59,139,0.1); color: var(--pink); border-color: rgba(255,59,139,0.3); }
+
+/* Difficulty selector */
+.vinculum-diff-selector {
+  margin-left: auto;
+  display: flex;
+  gap: 4px;
+  align-items: center;
+}
+.vinculum-diff-label {
+  font-size: 11px;
+  color: var(--muted);
+  margin-right: 8px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+}
+.vinculum-diff-btn {
+  padding: 5px 12px;
+  border-radius: 6px;
+  border: 1px solid var(--border);
+  background: transparent;
+  color: var(--muted);
+  font-size: 11px;
+  font-weight: 600;
+  font-family: inherit;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+.vinculum-diff-btn:hover { color: var(--text2); }
+.vinculum-diff-btn.active { background: rgba(0,212,255,0.1); color: var(--cyan); border-color: rgba(0,212,255,0.3); }
+
+/* ── MAIN AREA ── */
+.main {
+  flex: 1;
+  display: flex;
+  overflow: hidden;
+}
+
+/* ── WORKSPACE ── */
+.workspace {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+  position: relative;
+  overflow-y: auto;
+}
+
+/* ── LINE PLOT SPECIFIC ── */
+.plot-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 24px;
+  width: 100%;
+  max-width: 800px;
+}
+
+.ruler-area {
+  display: flex;
+  align-items: center;
+  padding: 20px;
+  background: var(--card);
+  border-radius: 16px;
+  border: 2px solid var(--border);
+  width: 100%;
+  position: relative;
+  min-height: 120px;
+}
+
+.ruler {
+  display: flex;
+  align-items: flex-end;
+  position: relative;
+  width: 100%;
+  height: 60px;
+}
+
+.ruler-segment {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  flex: 1;
+  position: relative;
+  cursor: grab;
+}
+
+.ruler-segment:active { cursor: grabbing; }
+
+.ruler-tick {
+  width: 2px;
+  background: var(--text);
+  margin-bottom: 4px;
+}
+
+.ruler-tick.major { height: 16px; }
+.ruler-tick.half { height: 12px; }
+.ruler-tick.quarter { height: 8px; }
+
+.ruler-label {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--text2);
+  margin-top: 4px;
+  white-space: nowrap;
+  min-width: 40px;
+  text-align: center;
+}
+
+.measure-objects {
+  display: flex;
+  gap: 16px;
+  align-items: flex-end;
+  width: 100%;
+  justify-content: center;
+  flex-wrap: wrap;
+  padding: 12px;
+}
+
+.object-card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  padding: 12px;
+  background: rgba(0,212,255,0.05);
+  border: 2px solid var(--border);
+  border-radius: 12px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.object-card:hover { border-color: var(--cyan); background: rgba(0,212,255,0.1); }
+
+.object-visual {
+  font-size: 48px;
+  line-height: 1;
+}
+
+.object-label {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text2);
+}
+
+.object-length {
+  font-size: 11px;
+  color: var(--muted);
+  font-family: 'JetBrains Mono', monospace;
+}
+
+/* Line plot */
+.line-plot-area {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 20px;
+  background: var(--card);
+  border-radius: 16px;
+  border: 2px solid var(--border);
+  width: 100%;
+}
+
+.line-plot-title {
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--text2);
+  text-align: center;
+}
+
+.plot-grid {
+  display: flex;
+  align-items: flex-end;
+  gap: 2px;
+  position: relative;
+  min-height: 180px;
+  padding: 12px;
+  background: rgba(255,255,255,0.02);
+  border-radius: 8px;
+}
+
+.plot-column {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 2px;
+  flex: 1;
+  min-width: 30px;
+  position: relative;
+}
+
+.plot-x {
+  text-align: center;
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--text2);
+  margin-top: 8px;
+  padding-bottom: 8px;
+  border-bottom: 2px solid var(--border);
+  flex: 1;
+  width: 100%;
+}
+
+.data-point {
+  width: 24px;
+  height: 24px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 16px;
+  font-weight: 800;
+  color: var(--cyan);
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.data-point:hover { transform: scale(1.2); }
+.data-point.remove:hover { color: var(--pink); }
+
+/* Practice question */
+.practice-question {
+  text-align: center;
+  padding: 20px;
+  background: var(--card);
+  border-radius: 12px;
+  border: 1px solid var(--border);
+  width: 100%;
+  max-width: 500px;
+}
+
+.question-text {
+  font-size: 16px;
+  color: var(--text2);
+  margin-bottom: 12px;
+  font-weight: 600;
+}
+
+.question-highlight {
+  font-size: 24px;
+  font-weight: 800;
+  font-family: 'JetBrains Mono', monospace;
+  color: var(--green);
+  margin: 12px 0;
+}
+
+/* Input fields */
+.input-group {
+  display: flex;
+  gap: 8px;
+  justify-content: center;
+  align-items: center;
+  margin-top: 12px;
+  flex-wrap: wrap;
+}
+
+.number-input {
+  padding: 10px 16px;
+  border-radius: 8px;
+  border: 2px solid var(--border);
+  background: var(--card);
+  color: var(--text);
+  font-size: 16px;
+  font-family: 'JetBrains Mono', monospace;
+  text-align: center;
+  width: 70px;
+  transition: all 0.2s;
+}
+
+.number-input:focus {
+  border-color: var(--cyan);
+  outline: none;
+}
+
+/* Play mode game */
+.game-info {
+  display: flex;
+  gap: 20px;
+  justify-content: center;
+  align-items: center;
+  font-size: 14px;
+  color: var(--text2);
+  margin-bottom: 12px;
+}
+
+.info-item {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.info-label {
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+}
+
+.play-btn {
+  padding: 12px 24px;
+  border-radius: 10px;
+  border: 1px solid var(--border);
+  background: var(--card);
+  color: var(--text2);
+  font-size: 14px;
+  font-weight: 600;
+  font-family: inherit;
+  cursor: pointer;
+  transition: all 0.2s;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.play-btn:hover { background: rgba(0,212,255,0.1); color: var(--cyan); }
+
+.play-btn.primary {
+  background: var(--grad);
+  color: var(--bg);
+  border-color: transparent;
+  font-weight: 700;
+}
+
+.play-btn.primary:hover { opacity: 0.9; }
+
+/* ── FEEDBACK ── */
+.feedback {
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%) scale(0);
+  padding: 24px 48px;
+  border-radius: 20px;
+  font-size: 28px;
+  font-weight: 800;
+  z-index: 200;
+  pointer-events: none;
+  transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275), opacity 0.3s;
+  opacity: 0;
+}
+.feedback.show {
+  transform: translate(-50%, -50%) scale(1);
+  opacity: 1;
+}
+.feedback.correct {
+  background: rgba(0,230,118,0.15);
+  color: var(--green);
+  border: 2px solid var(--green);
+}
+.feedback.incorrect {
+  background: rgba(255,59,139,0.15);
+  color: var(--pink);
+  border: 2px solid var(--pink);
+}
+.feedback.try-again {
+  background: rgba(255,193,7,0.15);
+  color: var(--yellow);
+  border: 2px solid var(--yellow);
+}
+
+/* ── SIDE PANEL (Instructions / Score) ── */
+.side-panel {
+  width: 280px;
+  background: var(--bg2);
+  border-left: 1px solid var(--border);
+  padding: 20px;
+  overflow-y: auto;
+  flex-shrink: 0;
+}
+.panel-section {
+  margin-bottom: 20px;
+}
+.panel-title {
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 1.5px;
+  color: var(--muted);
+  margin-bottom: 8px;
+}
+.panel-text {
+  font-size: 13px;
+  color: var(--text2);
+  line-height: 1.6;
+}
+.score-display {
+  text-align: center;
+  padding: 16px;
+  background: var(--card);
+  border-radius: 12px;
+  margin-bottom: 12px;
+}
+.score-value {
+  font-size: 36px;
+  font-weight: 900;
+  font-family: 'JetBrains Mono', monospace;
+  background: var(--grad);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+.score-label {
+  font-size: 11px;
+  color: var(--muted);
+  text-transform: uppercase;
+  letter-spacing: 1px;
+}
+.streak-bar {
+  height: 6px;
+  background: var(--card);
+  border-radius: 3px;
+  overflow: hidden;
+  margin-top: 8px;
+}
+.streak-fill {
+  height: 100%;
+  background: var(--grad);
+  border-radius: 3px;
+  transition: width 0.3s;
+}
+
+/* ── ANIMATIONS ── */
+@keyframes pop {
+  0% { transform: scale(0); opacity: 0; }
+  70% { transform: scale(1.2); }
+  100% { transform: scale(1); opacity: 1; }
+}
+
+@keyframes shake {
+  0%, 100% { transform: translateX(0); }
+  25% { transform: translateX(-8px); }
+  75% { transform: translateX(8px); }
+}
+
+@keyframes hop {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-12px); }
+}
+
+.pop-in { animation: pop 0.3s ease-out forwards; }
+.shake { animation: shake 0.3s ease-in-out; }
+.hop { animation: hop 0.4s ease-in-out; }
+
+/* scrollbar */
+::-webkit-scrollbar { width: 6px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+
+/* Responsive */
+@media (max-width: 768px) {
+  .plot-container {
+    max-width: 100%;
+  }
+  .ruler-area {
+    min-height: 100px;
+    padding: 16px;
+  }
+  .ruler {
+    height: 50px;
+  }
+  .measure-objects {
+    gap: 12px;
+  }
+  .object-card {
+    min-width: 70px;
+  }
+  .side-panel {
+    width: 220px;
+  }
+  .plot-grid {
+    min-height: 150px;
+  }
+}
+</style>
+</head>
+<body>
+
+<!-- ═══ HEADER ═══ -->
+<div class="vinculum-header">
+  <div class="vinculum-header-left">
+    <a class="vinculum-back-btn" href="../../VINCULUM-Hub.html" style="text-decoration:none;">◀ Hub</a>
+    <div class="vinculum-header-title"><span>VINCULUM</span> Line Plot Fractions</div>
+    <span class="vinculum-header-badge">3 · MD</span>
+    <button class="vinculum-back-btn" id="readAloudBtn" onclick="toggleReadAloud()" aria-label="Read Aloud" title="Read instructions aloud">🔊 Read to Me</button>
+  </div>
+  <div class="vinculum-std-tags">
+    <span class="vinculum-std-tag">3.MD.4</span>
+  </div>
+</div>
+
+<!-- ═══ MODE TABS ═══ -->
+<div class="vinculum-mode-tabs">
+  <button class="vinculum-mode-tab active-explore" id="tabExplore" onclick="setMode('explore')">
+    <svg width="18" height="18" viewBox="0 0 48 48" fill="none"><path d="M4 24C4 24 12 12 24 12C36 12 44 24 44 24C44 24 36 36 24 36C12 36 4 24 4 24Z" stroke="currentColor" stroke-width="3" fill="none"/><circle cx="24" cy="24" r="7" stroke="currentColor" stroke-width="3" fill="none"/><circle cx="24" cy="24" r="3" fill="currentColor"/><line x1="24" y1="4" x2="24" y2="9" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" opacity="0.5"/><line x1="10" y1="8" x2="13" y2="12" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" opacity="0.5"/><line x1="38" y1="8" x2="35" y2="12" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" opacity="0.5"/></svg> Explore
+  </button>
+  <button class="vinculum-mode-tab" id="tabPractice" onclick="setMode('practice')">
+    <svg width="18" height="18" viewBox="0 0 48 48" fill="none"><circle cx="24" cy="24" r="20" stroke="currentColor" stroke-width="3" fill="none" opacity="0.3"/><circle cx="24" cy="24" r="20" stroke="currentColor" stroke-width="3" fill="none" stroke-dasharray="126" stroke-dashoffset="32" stroke-linecap="round"/><polyline points="16,24 22,32 34,16" stroke="currentColor" stroke-width="4" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg> Practice
+  </button>
+  <button class="vinculum-mode-tab" id="tabPlay" onclick="setMode('play')">
+    <svg width="18" height="18" viewBox="0 0 48 48" fill="none"><polygon points="28,4 12,28 22,28 18,44 36,18 26,18" fill="none" stroke="currentColor" stroke-width="3" stroke-linejoin="round"/><polygon points="27,8 15,27 23,27 20,40 34,19 26,19" fill="currentColor" opacity="0.15"/></svg> Play
+  </button>
+  <div class="vinculum-diff-selector">
+    <span class="vinculum-diff-label">Level</span>
+    <button class="vinculum-diff-btn active" id="diffE" onclick="setDiff('emergent')" data-diff="emergent">1–2</button>
+    <button class="vinculum-diff-btn" id="diffD" onclick="setDiff('developing')" data-diff="developing">1–5</button>
+    <button class="vinculum-diff-btn" id="diffS" onclick="setDiff('secure')" data-diff="secure">1–10</button>
+  </div>
+</div>
+
+<!-- ═══ MAIN ═══ -->
+<div class="main">
+  <div class="workspace" role="main" id="workspace"></div>
+  <div class="side-panel" id="sidePanel"></div>
+</div>
+
+<!-- ═══ FEEDBACK POPUP ═══ -->
+<div class="feedback" id="feedback"></div>
+
+<script src="../../vinculum-input.js"></script>
+<script>
+
+// ════════════════════════════════════════
+// STATE
+// ════════════════════════════════════════
+const S = {
+  mode: 'explore',      // explore | practice | play
+  diff: 'emergent',     // emergent | developing | secure
+
+  // Explore data (line plot)
+  dataPoints: [],       // Array of { label: 'pencil', value: 1.5 }
+  objects: [
+    { label: 'Pencil', emoji: '✏️', value: 2 },
+    { label: 'Crayon', emoji: '🖍️', value: 1.25 },
+    { label: 'Clip', emoji: '📎', value: 0.75 }
+  ],
+
+  // Practice
+  questionType: null,   // read-plot | count-data | compare-plot | find-mode
+  plotData: {},
+  userAnswers: {},
+  score: 0,
+  total: 0,
+
+  // Play
+  playScore: 0,
+  playStreak: 0,
+  playRound: 0,
+  gameEnded: false
+};
+
+// ════════════════════════════════════════
+// READ-ALOUD
+// ════════════════════════════════════════
+function toggleReadAloud() {
+  if (window.VinculumStories && VinculumStories.isReading()) {
+    VinculumStories.stopReading();
+    document.getElementById('readAloudBtn').textContent = '🔊 Read to Me';
+  } else {
+    const text = document.getElementById('sidePanel')?.textContent || 'Line plots show measurement data using fractions of inches.';
+    if (window.VinculumStories) {
+      VinculumStories.readAloud(text, { rate: 0.85, onComplete: () => {
+        document.getElementById('readAloudBtn').textContent = '🔊 Read to Me';
+      }});
+      document.getElementById('readAloudBtn').textContent = '⏹ Stop';
+    }
+  }
+}
+
+// ════════════════════════════════════════
+// HELPERS
+// ════════════════════════════════════════
+function formatFraction(num) {
+  // Format 0.25 → 1/4, 0.5 → 1/2, 0.75 → 3/4, 1.5 → 1 1/2, etc.
+  const whole = Math.floor(num);
+  const decimal = num - whole;
+
+  let frac = '';
+  if (Math.abs(decimal - 0.25) < 0.01) frac = '1/4';
+  else if (Math.abs(decimal - 0.5) < 0.01) frac = '1/2';
+  else if (Math.abs(decimal - 0.75) < 0.01) frac = '3/4';
+
+  if (whole === 0) return frac || num.toString();
+  if (frac) return `${whole} ${frac}`;
+  return whole.toString();
+}
+
+function randInt(min, max) {
+  return Math.floor(Math.random() * (max - min + 1)) + min;
+}
+
+function getRandomItem(arr) {
+  return arr[Math.floor(Math.random() * arr.length)];
+}
+
+function getPlotRange(diff) {
+  if (diff === 'emergent') return [0, 2];
+  if (diff === 'developing') return [0, 3.5];
+  return [0, 4];
+}
+
+function getDataPointCount(diff) {
+  if (diff === 'emergent') return 4;
+  if (diff === 'developing') return 6;
+  return 8;
+}
+
+// ════════════════════════════════════════
+// MODE SWITCHING
+// ════════════════════════════════════════
+function setMode(mode) {
+  S.mode = mode;
+
+  if (mode === 'practice' && S.total === 0) {
+    S.score = 0;
+    S.total = 0;
+    newPracticeQuestion();
+  }
+
+  if (mode === 'play' && S.playRound === 0) {
+    S.playScore = 0;
+    S.playStreak = 0;
+    S.playRound = 1;
+    S.gameEnded = false;
+  }
+
+  document.querySelectorAll('.vinculum-mode-tab').forEach(t => t.className = 'vinculum-mode-tab');
+  const tabEl = document.getElementById('tab' + mode.charAt(0).toUpperCase() + mode.slice(1));
+  tabEl.className = 'vinculum-mode-tab active-' + mode;
+
+  render();
+}
+
+function setDiff(diff) {
+  S.diff = diff;
+  S.dataPoints = [];
+  S.score = 0;
+  S.total = 0;
+  S.playScore = 0;
+  S.playStreak = 0;
+  S.playRound = 0;
+
+  document.querySelectorAll('.vinculum-diff-btn').forEach(b => b.classList.remove('active'));
+  document.getElementById('diff' + diff.charAt(0).toUpperCase()).classList.add('active');
+
+  setMode(S.mode);
+}
+
+// ════════════════════════════════════════
+// RENDER MAIN
+// ════════════════════════════════════════
+function render() {
+  const ws = document.getElementById('workspace');
+  const sp = document.getElementById('sidePanel');
+
+  if (S.mode === 'explore') renderExplore(ws, sp);
+  else if (S.mode === 'practice') renderPractice(ws, sp);
+  else renderPlay(ws, sp);
+}
+
+// ─── EXPLORE MODE ───
+function renderExplore(ws, sp) {
+  let html = '<div class="plot-container">';
+
+  // Ruler area
+  html += '<div class="ruler-area"><div class="ruler" id="ruler">';
+  const range = getPlotRange(S.diff);
+  const maxInches = range[1];
+
+  // Increments: emergent=1", developing=0.5", secure=0.25"
+  const increment = S.diff === 'emergent' ? 1 : (S.diff === 'developing' ? 0.5 : 0.25);
+
+  for (let i = 0; i <= maxInches; i += increment) {
+    const isWhole = i % 1 === 0;
+    const isHalf = !isWhole && Math.abs((i % 1) - 0.5) < 0.01;
+
+    html += '<div class="ruler-segment">';
+    html += `<div class="ruler-tick ${isWhole ? 'major' : isHalf ? 'half' : 'quarter'}"></div>`;
+    if (isWhole || isHalf) {
+      html += `<div class="ruler-label">${formatFraction(i)}"</div>`;
+    }
+    html += '</div>';
+  }
+  html += '</div></div>';
+
+  // Measure objects
+  html += '<div class="measure-objects">';
+  S.objects.forEach((obj, idx) => {
+    const hasData = S.dataPoints.some(dp => dp.label === obj.label);
+    html += `<div class="object-card" onclick="measureObject(${idx})" style="${hasData ? 'opacity:0.5;' : ''}" title="Click to measure">
+      <div class="object-visual">${obj.emoji}</div>
+      <div class="object-label">${obj.label}</div>
+      ${hasData ? `<div class="object-length">${formatFraction(obj.value)}"</div>` : '<div class="object-length">Measure me</div>'}
+    </div>`;
+  });
+  html += '</div>';
+
+  // Line plot
+  html += '<div class="line-plot-area">';
+  html += '<div class="line-plot-title">📊 Line Plot: Object Measurements</div>';
+  html += '<div class="plot-grid" id="plotGrid">';
+
+  const step = S.diff === 'emergent' ? 1 : (S.diff === 'developing' ? 0.5 : 0.25);
+  let x = 0;
+  const columns = {};
+
+  while (x <= maxInches + 0.01) {
+    const label = formatFraction(x);
+    columns[x] = [];
+    html += `<div class="plot-column">`;
+
+    // Count data points at this value
+    const count = S.dataPoints.filter(dp => Math.abs(dp.value - x) < 0.01).length;
+    for (let i = 0; i < count; i++) {
+      html += `<div class="data-point" onclick="removeDataPoint(${x})">✕</div>`;
+    }
+
+    html += `<div class="plot-x">${label}"</div></div>`;
+    x = Math.round((x + step) * 100) / 100;
+  }
+
+  html += '</div>';
+  html += '</div>';
+
+  html += '</div>';
+  ws.innerHTML = html;
+
+  // Side panel
+  sp.innerHTML = `
+    <div class="panel-section">
+      <div class="panel-title">How It Works</div>
+      <div class="panel-text">
+        Use the <strong>ruler</strong> to measure each object's length in inches (with halves and quarters).<br><br>
+        Click an object to measure it. A data point will appear on the line plot.
+      </div>
+    </div>
+    <div class="panel-section">
+      <div class="panel-title">Fractions on a Ruler</div>
+      <div class="panel-text">
+        <strong>Whole inch:</strong> 0, 1, 2, 3<br>
+        <strong>Half inch:</strong> 1/2<br>
+        <strong>Quarter inch:</strong> 1/4, 3/4
+      </div>
+    </div>
+    <div class="panel-section">
+      <div class="panel-title">Reading Line Plots</div>
+      <div class="panel-text">
+        Each <strong>✕</strong> represents one measurement. Stack them above the length they represent on the number line.
+      </div>
+    </div>
+    <div class="panel-section">
+      <div class="panel-title">Data & Fractions Thread</div>
+      <div class="panel-text">
+        Line plots are an early form of <strong>data visualization</strong>—the same concept used in scatter plots and function graphs. Fractions on the number line connect to the <strong>rational number system</strong>.
+      </div>
+    </div>
+    <div class="panel-section">
+      <div class="panel-title">Standards</div>
+      <div class="panel-text">
+        <strong>3.MD.4</strong> — Generate measurement data by measuring lengths using rulers marked with halves and fourths of an inch
+      </div>
+    </div>
+  `;
+}
+
+function measureObject(idx) {
+  const obj = S.objects[idx];
+  const existing = S.dataPoints.find(dp => dp.label === obj.label);
+
+  if (!existing) {
+    S.dataPoints.push({ label: obj.label, value: obj.value });
+    showFB(`✓ Measured: ${formatFraction(obj.value)}"`, 'correct');
+    render();
+  }
+}
+
+function removeDataPoint(value) {
+  S.dataPoints = S.dataPoints.filter(dp => Math.abs(dp.value - value) > 0.01 || S.dataPoints.indexOf({ label: '', value }) > 0);
+  render();
+}
+
+// ─── PRACTICE MODE ───
+function renderPractice(ws, sp) {
+  let html = '<div class="plot-container">';
+
+  html += `<div style="text-align:center;margin-bottom:12px;">
+    <div style="font-size:14px;color:var(--muted);">⭐ ${S.score}/${S.total}</div>
+  </div>`;
+
+  const types = S.questionType;
+  const range = getPlotRange(S.diff);
+  const maxInches = range[1];
+  const step = S.diff === 'emergent' ? 1 : (S.diff === 'developing' ? 0.5 : 0.25);
+
+  if (types === 'read-plot') {
+    // Show a line plot, ask "How many objects are X inches?"
+    const keys = Object.keys(S.plotData);
+    const targetKey = keys[Math.floor(Math.random() * keys.length)];
+    const count = S.plotData[targetKey];
+
+    html += `<div style="margin-bottom:20px;"><strong style="color:var(--text2);">Reading Line Plots:</strong></div>`;
+    html += '<div class="line-plot-area">';
+    html += '<div class="plot-grid">';
+
+    let x = 0;
+    while (x <= maxInches + 0.01) {
+      const label = formatFraction(x);
+      const dataCount = S.plotData[label] || 0;
+
+      html += `<div class="plot-column">`;
+      for (let i = 0; i < dataCount; i++) {
+        html += `<div class="data-point">✕</div>`;
+      }
+      html += `<div class="plot-x">${label}"</div></div>`;
+      x = Math.round((x + step) * 100) / 100;
+    }
+    html += '</div>';
+    html += '</div>';
+
+    html += `<div class="practice-question">
+      <div class="question-text">How many objects are <strong>${targetKey}</strong> inches?</div>
+      <div class="input-group">
+        <div id="vi-container"></div>
+        <button class="play-btn primary" onclick="submitPracticeAnswer(${count})">✓ Check</button>
+      </div>
+    </div>`;
+
+  } else if (types === 'count-data') {
+    // Show plot, ask total count
+    const total = Object.values(S.plotData).reduce((a, b) => a + b, 0);
+
+    html += `<div style="margin-bottom:20px;"><strong style="color:var(--text2);">Counting Data Points:</strong></div>`;
+    html += '<div class="line-plot-area">';
+    html += '<div class="plot-grid">';
+
+    let x = 0;
+    while (x <= maxInches + 0.01) {
+      const label = formatFraction(x);
+      const dataCount = S.plotData[label] || 0;
+
+      html += `<div class="plot-column">`;
+      for (let i = 0; i < dataCount; i++) {
+        html += `<div class="data-point">✕</div>`;
+      }
+      html += `<div class="plot-x">${label}"</div></div>`;
+      x = Math.round((x + step) * 100) / 100;
+    }
+    html += '</div>';
+    html += '</div>';
+
+    html += `<div class="practice-question">
+      <div class="question-text">How many total objects were measured?</div>
+      <div class="input-group">
+        <div id="vi-container"></div>
+        <button class="play-btn primary" onclick="submitPracticeAnswer(${total})">✓ Check</button>
+      </div>
+    </div>`;
+
+  } else if (types === 'find-mode') {
+    // Show plot, ask for most common value
+    const entries = Object.entries(S.plotData);
+    const mode = entries.reduce((a, b) => b[1] > a[1] ? b : a)[0];
+
+    html += `<div style="margin-bottom:20px;"><strong style="color:var(--text2);">Finding the Mode:</strong></div>`;
+    html += '<div class="line-plot-area">';
+    html += '<div class="plot-grid">';
+
+    let x = 0;
+    while (x <= maxInches + 0.01) {
+      const label = formatFraction(x);
+      const dataCount = S.plotData[label] || 0;
+
+      html += `<div class="plot-column">`;
+      for (let i = 0; i < dataCount; i++) {
+        html += `<div class="data-point">✕</div>`;
+      }
+      html += `<div class="plot-x">${label}"</div></div>`;
+      x = Math.round((x + step) * 100) / 100;
+    }
+    html += '</div>';
+    html += '</div>';
+
+    html += `<div class="practice-question">
+      <div class="question-text">What is the most common measurement?</div>
+      <div style="display:flex;gap:8px;justify-content:center;margin-top:12px;flex-wrap:wrap;">
+        ${Object.keys(S.plotData).map(k => `<button class="play-btn" onclick="submitModeAnswer('${k}')" style="background:rgba(0,212,255,0.05);">${k}"</button>`).join('')}
+      </div>
+    </div>`;
+
+  } else if (types === 'compare-plot') {
+    // Show plot, ask "How many more X than Y?"
+    const keys = Object.keys(S.plotData).sort();
+    const val1 = S.plotData[keys[0]];
+    const val2 = S.plotData[keys[keys.length - 1]];
+    const diff = Math.abs(val1 - val2);
+
+    html += `<div style="margin-bottom:20px;"><strong style="color:var(--text2);">Comparing Data:</strong></div>`;
+    html += '<div class="line-plot-area">';
+    html += '<div class="plot-grid">';
+
+    let x = 0;
+    while (x <= maxInches + 0.01) {
+      const label = formatFraction(x);
+      const dataCount = S.plotData[label] || 0;
+
+      html += `<div class="plot-column">`;
+      for (let i = 0; i < dataCount; i++) {
+        html += `<div class="data-point">✕</div>`;
+      }
+      html += `<div class="plot-x">${label}"</div></div>`;
+      x = Math.round((x + step) * 100) / 100;
+    }
+    html += '</div>';
+    html += '</div>';
+
+    html += `<div class="practice-question">
+      <div class="question-text">How many more objects are <strong>${keys[keys.length - 1]}"</strong> than <strong>${keys[0]}"</strong>?</div>
+      <div class="input-group">
+        <div id="vi-container"></div>
+        <button class="play-btn primary" onclick="submitPracticeAnswer(${diff})">✓ Check</button>
+      </div>
+    </div>`;
+  }
+
+  html += '</div>';
+  ws.innerHTML = html;
+
+  setTimeout(() => {
+    let correctAnswer;
+    if (types === 'read-plot') {
+      const keys = Object.keys(S.plotData);
+      const targetKey = keys[Math.floor(Math.random() * keys.length)];
+      correctAnswer = S.plotData[targetKey];
+    } else if (types === 'count-data') {
+      correctAnswer = Object.values(S.plotData).reduce((a, b) => a + b, 0);
+    } else if (types === 'compare-plot') {
+      const keys = Object.keys(S.plotData).sort();
+      const val1 = S.plotData[keys[0]];
+      const val2 = S.plotData[keys[keys.length - 1]];
+      correctAnswer = Math.abs(val1 - val2);
+    }
+    if (correctAnswer !== undefined && types !== 'find-mode') {
+      var vi = VinculumInput.create(document.getElementById('vi-container'), {
+        type: 'auto',
+        answer: correctAnswer,
+        onSubmit: function(value) { submitPracticeAnswer(correctAnswer, value); }
+      });
+    }
+  }, 50);
+
+  // Side panel
+  sp.innerHTML = `
+    <div class="score-display">
+      <div class="score-value">${S.score}/${S.total}</div>
+      <div class="score-label">Score</div>
+    </div>
+    <div class="panel-section">
+      <div class="panel-title">Instructions</div>
+      <div class="panel-text">
+        ${types === 'read-plot' ? 'Count the ✕ marks stacked above a measurement.' : ''}
+        ${types === 'count-data' ? 'Add up all the ✕ marks in the entire plot.' : ''}
+        ${types === 'find-mode' ? 'Click the measurement with the most ✕ marks.' : ''}
+        ${types === 'compare-plot' ? 'Subtract the smaller group from the larger.' : ''}
+      </div>
+    </div>
+    <div class="panel-section">
+      <div class="panel-title">Hint</div>
+      <div class="panel-text">
+        ${types === 'read-plot' ? 'Look straight up from the label to count.' : ''}
+        ${types === 'count-data' ? 'Count column by column, then add them all.' : ''}
+        ${types === 'find-mode' ? 'The tallest stack is the mode!' : ''}
+        ${types === 'compare-plot' ? 'Find the heights of both columns first.' : ''}
+      </div>
+    </div>
+  `;
+}
+
+function newPracticeQuestion() {
+  S.total = (S.total || 0) + 1;
+
+  const types = ['read-plot', 'count-data'];
+  if (S.diff !== 'emergent') types.push('find-mode');
+  if (S.diff === 'secure') types.push('compare-plot');
+
+  S.questionType = types[Math.floor(Math.random() * types.length)];
+
+  // Generate random plot data
+  const range = getPlotRange(S.diff);
+  const maxInches = range[1];
+  const step = S.diff === 'emergent' ? 1 : (S.diff === 'developing' ? 0.5 : 0.25);
+  const maxCount = getDataPointCount(S.diff);
+
+  S.plotData = {};
+  let x = 0;
+  while (x <= maxInches + 0.01) {
+    const label = formatFraction(x);
+    S.plotData[label] = randInt(0, Math.min(3, maxCount / 4));
+    x = Math.round((x + step) * 100) / 100;
+  }
+
+  S.userAnswers = {};
+}
+
+function submitPracticeAnswer(correct, value) {
+  const val = value !== undefined ? value : parseInt(document.getElementById('answerInput')?.value || 0);
+
+  if (val === correct) {
+    showFB('✓ Correct!', 'correct');
+    S.score++;
+    setTimeout(() => {
+      newPracticeQuestion();
+      render();
+    }, 800);
+  } else {
+    showFB('✗ Try again', 'incorrect');
+  }
+}
+
+function submitModeAnswer(selected) {
+  const entries = Object.entries(S.plotData);
+  const correct = entries.reduce((a, b) => b[1] > a[1] ? b : a)[0];
+
+  if (selected === correct) {
+    showFB('✓ Correct!', 'correct');
+    S.score++;
+    setTimeout(() => {
+      newPracticeQuestion();
+      render();
+    }, 800);
+  } else {
+    showFB('✗ Try again', 'incorrect');
+  }
+}
+
+// ─── PLAY MODE ───
+function renderPlay(ws, sp) {
+  let html = '<div class="plot-container">';
+
+  if (S.gameEnded) {
+    html += `<div style="text-align:center;padding:40px;font-size:32px;font-weight:800;">
+      Game Complete!<br>
+      <div style="font-size:48px;margin:20px 0;background:var(--grad);-webkit-background-clip:text;-webkit-text-fill-color:transparent;">
+        ${S.playScore}
+      </div>
+      <button class="play-btn primary" onclick="playAgain()" style="margin-top:20px;">▶ Play Again</button>
+    </div>`;
+  } else {
+    const range = getPlotRange(S.diff);
+    const maxInches = range[1];
+    const step = S.diff === 'emergent' ? 1 : (S.diff === 'developing' ? 0.5 : 0.25);
+
+    html += `<div class="game-info">
+      <div class="info-item">
+        <span class="info-label">Round</span>
+        <span>${S.playRound} / 10</span>
+      </div>
+      <div class="info-item">
+        <span class="info-label">⭐ Score</span>
+        <span>${S.playScore}</span>
+      </div>
+      <div class="info-item">
+        <span class="info-label">🔥 Streak</span>
+        <span>${S.playStreak}</span>
+      </div>
+    </div>`;
+
+    // Generate challenge plot
+    const challengeData = {};
+    let x = 0;
+    while (x <= maxInches + 0.01) {
+      const label = formatFraction(x);
+      challengeData[label] = randInt(0, 3);
+      x = Math.round((x + step) * 100) / 100;
+    }
+
+    html += '<div class="line-plot-area">';
+    html += '<div class="plot-grid">';
+
+    x = 0;
+    while (x <= maxInches + 0.01) {
+      const label = formatFraction(x);
+      const dataCount = challengeData[label] || 0;
+
+      html += `<div class="plot-column">`;
+      for (let i = 0; i < dataCount; i++) {
+        html += `<div class="data-point">✕</div>`;
+      }
+      html += `<div class="plot-x">${label}"</div></div>`;
+      x = Math.round((x + step) * 100) / 100;
+    }
+    html += '</div>';
+    html += '</div>';
+
+    const keys = Object.keys(challengeData).filter(k => challengeData[k] > 0);
+    const q = getRandomItem(keys);
+    const answer = challengeData[q];
+
+    html += `<div class="practice-question">
+      <div class="question-text">How many objects are <strong>${q}</strong> inches?</div>
+      <div class="input-group">
+        <div id="vi-play-container"></div>
+        <button class="play-btn primary" onclick="submitPlayAnswer(${answer})">✓ Check</button>
+      </div>
+    </div>`;
+  }
+
+  html += '</div>';
+  ws.innerHTML = html;
+
+  if (!S.gameEnded) {
+    setTimeout(() => {
+      const keys = Object.keys(challengeData).filter(k => challengeData[k] > 0);
+      const q = keys[0];
+      const answer = challengeData[q];
+      var vi = VinculumInput.create(document.getElementById('vi-play-container'), {
+        type: 'auto',
+        answer: answer,
+        onSubmit: function(value) { submitPlayAnswer(answer, value); }
+      });
+    }, 50);
+  }
+
+  // Side panel
+  sp.innerHTML = `
+    <div class="score-display">
+      <div class="score-value">${S.playScore}</div>
+      <div class="score-label">Score</div>
+    </div>
+    <div class="score-display" style="background:transparent; padding:8px;">
+      <div style="font-size:18px; font-weight:700; color:var(--yellow);">🔥 ${S.playStreak}</div>
+      <div class="score-label">Streak</div>
+      <div class="streak-bar"><div class="streak-fill" style="width:${Math.min(S.playStreak * 10, 100)}%;"></div></div>
+    </div>
+    <div class="panel-section">
+      <div class="panel-title">How to Play</div>
+      <div class="panel-text">
+        Read the <strong>line plot</strong> each round.<br><br>
+        Count the data points (✕) at each measurement.<br><br>
+        <strong>Streak</strong> bonus for consecutive correct!
+      </div>
+    </div>
+    <div class="panel-section">
+      <div class="panel-title">Scoring</div>
+      <div class="panel-text">
+        Base: <strong>10 points</strong><br>
+        Streak bonus: <strong>+5 × streak</strong><br>
+        <strong>Max: 50 pts/round</strong>
+      </div>
+    </div>
+  `;
+}
+
+function submitPlayAnswer(correct, value) {
+  const val = value !== undefined ? value : parseInt(document.getElementById('answerInput')?.value || 0);
+
+  if (val === correct) {
+    showFB('✓ Yes!', 'correct');
+    S.playScore += 10 + (S.playStreak * 5);
+    S.playStreak++;
+    S.playRound++;
+
+    if (S.playRound > 10) {
+      setTimeout(() => {
+        S.gameEnded = true;
+        render();
+      }, 800);
+    } else {
+      setTimeout(() => {
+        render();
+      }, 800);
+    }
+  } else {
+    showFB('✗ Try again', 'incorrect');
+    S.playStreak = 0;
+  }
+}
+
+function playAgain() {
+  S.playScore = 0;
+  S.playStreak = 0;
+  S.playRound = 1;
+  S.gameEnded = false;
+  render();
+}
+
+// ════════════════════════════════════════
+// INIT
+// ════════════════════════════════════════
+render();
+</script>
+<script src="../../vinculum-core.js"></script>
+<script src="../../vinculum-data.js"></script>
+<script src="../../vinculum-adaptive-hook.js"></script>
+<script src="../../vinculum-3reads.js"></script>
+<script src="../../vinculum-stories.js"></script>
+<script src="../../vinculum-feedback.js"></script>
+  <script src="../../vinculum-guide.js"></script>
+<script src="../../vinculum-identity.js"></script>
+<script src="../../vinculum-indigenous.js"></script>
+<script src="../../vinculum-dashboard.js"></script>
+<!-- Foundation loaded from vinculum-core.js -->
+</body>
+</html>

@@ -1,0 +1,1408 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<title>VINCULUM — Shape Builder</title>
+<link rel="stylesheet" href="../../vinculum-core.css">
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;600&display=swap');
+
+.vinculum-rtm-btn .rtm-icon{font-size:14px;}
+*:focus-visible { outline:2px solid var(--cyan);outline-offset:2px;border-radius:4px; }
+.sr-only { position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0; }
+
+* { margin:0; padding:0; box-sizing:border-box; }
+body {
+  font-family: 'Inter', sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  height: 100vh;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+.vinculum-diff-btn:hover { color: var(--text2); }
+.main { flex:1; display:flex; overflow:hidden; }
+
+/* ── WORKSPACE ── */
+.workspace {
+  flex:1; display:flex; flex-direction:column;
+  align-items:center; justify-content:flex-start;
+  padding:16px 24px; position:relative; overflow-y:auto;
+}
+
+/* ── GRID WORKSPACE ── */
+.grid-container {
+  position:relative;
+  border:2px solid var(--border);
+  border-radius:16px;
+  background: var(--card);
+  overflow:visible;
+  touch-action:none;
+  -webkit-touch-callout:none;
+}
+.grid-container.drop-active {
+  border-color: var(--cyan);
+  box-shadow: 0 0 20px rgba(0,212,255,0.15);
+}
+.grid-svg {
+  display:block;
+}
+.lattice-dot {
+  fill: var(--border);
+  opacity: 0.5;
+}
+.grid-container:hover .lattice-dot {
+  opacity: 0.7;
+}
+
+/* ── GHOST / SCAFFOLD PIECES ── */
+.ghost-piece {
+  position:absolute;
+  pointer-events:none;
+  opacity:0.18;
+  transition: opacity 0.3s;
+}
+.ghost-piece.matched {
+  opacity:0;
+}
+.ghost-piece svg {
+  filter: grayscale(0.5);
+}
+.ghost-label {
+  position:absolute;
+  font-size:9px;
+  font-weight:700;
+  color:var(--muted);
+  text-align:center;
+  pointer-events:none;
+  white-space:nowrap;
+  text-transform:uppercase;
+  letter-spacing:0.5px;
+}
+
+/* ── PLACED PIECES ON GRID ── */
+.grid-piece {
+  position:absolute;
+  cursor:grab;
+  transition: filter 0.3s, box-shadow 0.3s;
+  z-index:10;
+  touch-action:none;
+  border-radius:4px;
+}
+.grid-piece:active { cursor:grabbing; }
+.grid-piece.correct-glow {
+  filter: drop-shadow(0 0 10px var(--green)) drop-shadow(0 0 4px var(--green));
+  z-index:5;
+}
+.grid-piece.snap-anim {
+  transition: left 0.15s ease-out, top 0.15s ease-out, filter 0.3s;
+}
+.grid-piece.wrong-shake {
+  animation: gridShake 0.4s ease-in-out;
+}
+
+/* ── PALETTE ── */
+.palette-bar {
+  display:flex; gap:10px; justify-content:center; flex-wrap:wrap;
+  margin-top:12px; padding:8px 12px;
+  background:var(--bg2); border:1px solid var(--border); border-radius:12px;
+}
+.palette-piece {
+  width:64px; height:64px;
+  border:2px solid var(--border); border-radius:12px;
+  cursor:grab; display:flex; align-items:center; justify-content:center;
+  background:var(--card); transition:all 0.2s;
+  touch-action:none; -webkit-tap-highlight-color:transparent;
+  position:relative;
+}
+.palette-piece:hover {
+  border-color:var(--cyan); transform:scale(1.08);
+  box-shadow:0 0 12px rgba(0,212,255,0.15);
+}
+.palette-piece.used {
+  opacity:0.25; pointer-events:none;
+  border-style:dashed;
+}
+.palette-piece .piece-name {
+  position:absolute; bottom:-16px; left:50%; transform:translateX(-50%);
+  font-size:8px; color:var(--muted); white-space:nowrap; font-weight:600;
+  text-transform:uppercase; letter-spacing:0.5px;
+}
+
+/* ── DRAG ELEMENT ── */
+.drag-float {
+  position:fixed; z-index:9999; pointer-events:none;
+  opacity:0.85; transform:scale(1.15);
+  filter: drop-shadow(0 4px 12px rgba(0,0,0,0.3));
+  transition: transform 0.1s;
+}
+
+/* ── INSTRUCTION BOX ── */
+.instruction-box {
+  text-align:center; padding:12px 16px; background:var(--card);
+  border:1px solid var(--border); border-radius:12px;
+  margin-bottom:12px; max-width:520px; width:100%;
+}
+.instruction-box .inst-label {
+  font-size:11px; color:var(--cyan); font-weight:700;
+  text-transform:uppercase; letter-spacing:1px; margin-bottom:2px;
+}
+.instruction-box .inst-text {
+  font-size:16px; font-weight:700; color:var(--text); line-height:1.4;
+}
+
+/* ── CONTROLS ── */
+.controls { display:flex; gap:8px; margin-top:10px; flex-wrap:wrap; justify-content:center; }
+.ctrl-btn {
+  padding:8px 16px; border-radius:10px; border:1px solid var(--border);
+  background:var(--card); color:var(--text2); font-size:13px; font-weight:600;
+  font-family:inherit; cursor:pointer; transition:all 0.2s;
+  display:flex; align-items:center; gap:6px; -webkit-tap-highlight-color:transparent;
+}
+.ctrl-btn:hover { background:var(--card-hover,var(--bg2)); color:var(--text); }
+.ctrl-btn.primary { background:var(--grad); color:var(--bg); border-color:transparent; }
+.ctrl-btn.primary:hover { opacity:0.9; }
+.ctrl-btn.danger { color:var(--pink); }
+.ctrl-btn.danger:hover { background:rgba(255,59,139,0.1); }
+
+/* ── RECOGNITION BANNER ── */
+.recognition-banner {
+  text-align:center; padding:10px 16px; border-radius:10px;
+  margin-top:8px; font-weight:700; font-size:15px;
+  background:rgba(0,230,118,0.1); color:var(--green);
+  border:1px solid var(--green); max-width:520px; width:100%;
+  animation: pop 0.4s ease-out;
+}
+
+/* ── SCORE DISPLAY ── */
+.score-display { text-align:center; padding:14px; background:var(--card); border-radius:12px; margin-bottom:12px; }
+.score-value {
+  font-size:36px; font-weight:900; font-family:'JetBrains Mono',monospace;
+  background:var(--grad); -webkit-background-clip:text; -webkit-text-fill-color:transparent;
+}
+.score-label { font-size:11px; color:var(--muted); text-transform:uppercase; letter-spacing:1px; }
+.streak-bar { height:6px; background:var(--card); border-radius:3px; overflow:hidden; margin-top:8px; }
+.streak-fill { height:100%; background:var(--grad); border-radius:3px; transition:width 0.3s; }
+
+/* ── PROGRESS DOTS ── */
+.progress-dots { display:flex; gap:6px; justify-content:center; margin-bottom:8px; }
+.progress-dot {
+  width:10px; height:10px; border-radius:50%;
+  background:var(--border); transition:background 0.3s;
+}
+.progress-dot.correct { background:var(--green); }
+.progress-dot.wrong { background:var(--pink); }
+.progress-dot.current { background:var(--cyan); box-shadow:0 0 6px var(--cyan); }
+
+/* ── FEEDBACK ── */
+.feedback {
+  position:fixed; top:50%; left:50%; transform:translate(-50%,-50%) scale(0);
+  padding:24px 48px; border-radius:20px; font-size:20px; font-weight:700;
+  z-index:200; pointer-events:none;
+  transition:transform 0.3s cubic-bezier(0.175,0.885,0.32,1.275), opacity 0.3s;
+  opacity:0; text-align:center; max-width:90vw; line-height:1.4;
+}
+.feedback.show { transform:translate(-50%,-50%) scale(1); opacity:1; }
+.feedback.correct { background:rgba(0,230,118,0.15); color:var(--green); border:2px solid var(--green); }
+.feedback.incorrect { background:rgba(255,59,139,0.15); color:var(--pink); border:2px solid var(--pink); }
+.feedback.try-again { background:rgba(255,193,7,0.15); color:var(--yellow); border:2px solid var(--yellow); }
+
+/* ── SIDE PANEL ── */
+.side-panel { width:280px; background:var(--bg2); border-left:1px solid var(--border); padding:20px; overflow-y:auto; flex-shrink:0; }
+.panel-section { margin-bottom:20px; }
+.panel-title { font-size:10px; font-weight:700; text-transform:uppercase; letter-spacing:1.5px; color:var(--muted); margin-bottom:8px; }
+.panel-text { font-size:13px; color:var(--text2); line-height:1.6; }
+
+/* ── ANIMATIONS ── */
+@keyframes pop { 0%{transform:scale(0)} 70%{transform:scale(1.2)} 100%{transform:scale(1)} }
+@keyframes gridShake { 0%,100%{transform:translateX(0)} 25%{transform:translateX(-6px)} 75%{transform:translateX(6px)} }
+.pop-in { animation: pop 0.3s ease-out forwards; }
+
+::-webkit-scrollbar { width:6px; }
+::-webkit-scrollbar-track { background:transparent; }
+::-webkit-scrollbar-thumb { background:var(--border); border-radius:3px; }
+</style>
+</head>
+<body>
+
+<!-- ═══ HEADER ═══ -->
+<div class="vinculum-header">
+  <div class="vinculum-header-left">
+    <a class="vinculum-back-btn" href="../../VINCULUM-Hub.html" style="text-decoration:none;">◀ Hub</a>
+    <div class="vinculum-header-title"><span>VINCULUM</span> Shape Builder</div>
+    <span class="vinculum-header-badge">K.G</span>
+  </div>
+  <div class="vinculum-header-right">
+    <div class="vinculum-std-tags">
+      <span class="vinculum-std-tag">K.G.5</span>
+      <span class="vinculum-std-tag">K.G.6</span>
+      <span class="vinculum-std-tag mn">MN K.3.1.2</span>
+    </div>
+    <button class="vinculum-back-btn" id="readAloudBtn" onclick="toggleReadAloud()" aria-label="Read Aloud" title="Read instructions aloud" style="margin-left:8px;white-space:nowrap;">🔊 Read to Me</button>
+  </div>
+</div>
+
+<!-- ═══ MODE TABS ═══ -->
+<div class="vinculum-mode-tabs">
+  <button class="vinculum-mode-tab active-explore" id="tabExplore" data-mode="explore">
+    <svg width="18" height="18" viewBox="0 0 48 48" fill="none"><path d="M4 24C4 24 12 12 24 12C36 12 44 24 44 24C44 24 36 36 24 36C12 36 4 24 4 24Z" stroke="currentColor" stroke-width="3" fill="none"/><circle cx="24" cy="24" r="7" stroke="currentColor" stroke-width="3" fill="none"/><circle cx="24" cy="24" r="3" fill="currentColor"/></svg> Explore
+  </button>
+  <button class="vinculum-mode-tab" id="tabPractice" data-mode="practice">
+    <svg width="18" height="18" viewBox="0 0 48 48" fill="none"><circle cx="24" cy="24" r="20" stroke="currentColor" stroke-width="3" fill="none" opacity="0.3"/><circle cx="24" cy="24" r="20" stroke="currentColor" stroke-width="3" fill="none" stroke-dasharray="126" stroke-dashoffset="32" stroke-linecap="round"/><polyline points="16,24 22,32 34,16" stroke="currentColor" stroke-width="4" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg> Practice
+  </button>
+  <button class="vinculum-mode-tab" id="tabPlay" data-mode="play">
+    <svg width="18" height="18" viewBox="0 0 48 48" fill="none"><polygon points="28,4 12,28 22,28 18,44 36,18 26,18" fill="none" stroke="currentColor" stroke-width="3" stroke-linejoin="round"/></svg> Play
+  </button>
+  <div class="vinculum-diff-selector">
+    <span class="vinculum-diff-label">Level</span>
+    <button class="vinculum-diff-btn active" id="diffE" data-diff="emergent">2 Pieces</button>
+    <button class="vinculum-diff-btn" id="diffP" data-diff="proficient">3-4 Pieces</button>
+    <button class="vinculum-diff-btn" id="diffA" data-diff="advanced">Create</button>
+  </div>
+</div>
+
+<!-- ═══ MAIN ═══ -->
+<div class="main">
+  <div class="workspace" role="main" id="workspace"></div>
+  <div class="side-panel" id="sidePanel"></div>
+</div>
+
+<!-- ═══ FEEDBACK POPUP ═══ -->
+<div class="feedback" id="feedback"></div>
+
+<script src="../../vinculum-input.js"></script>
+<script>
+// ════════════════════════════════════════════════════
+// SHAPE BUILDER — DRAG-TO-GRID WITH SNAP & SCAFFOLDS
+// ════════════════════════════════════════════════════
+
+var CELL = 60;
+var COLS = 8;
+var ROWS = 6;
+var GRID_W = COLS * CELL;
+var GRID_H = ROWS * CELL;
+var SNAP_TOLERANCE = 1; // grid cells tolerance for correct placement
+
+// ═══ SHAPE DEFINITIONS ═══
+var SHAPES = {
+  'triangle':     { w:1, h:1, name:'Triangle' },
+  'big-triangle': { w:2, h:2, name:'Big Triangle' },
+  'square':       { w:1, h:1, name:'Square' },
+  'big-square':   { w:2, h:2, name:'Big Square' },
+  'rectangle':    { w:2, h:1, name:'Rectangle' },
+  'tall-rect':    { w:1, h:2, name:'Tall Rectangle' },
+  'half-circle':  { w:2, h:1, name:'Half Circle' },
+  'circle':       { w:1, h:1, name:'Circle' }
+};
+
+var COLORS = ['#00d4ff','#ff3b8b','#ffc107','#00e676','#b388ff','#ff6e40','#40c4ff','#ea80fc'];
+
+function shapeSVG(shapeId, fill, cellSize) {
+  var cs = cellSize || CELL;
+  var s = SHAPES[shapeId];
+  var pw = s.w * cs;
+  var ph = s.h * cs;
+  var m = 3; // margin inside shape
+  var svg = '';
+
+  switch(shapeId) {
+    case 'triangle':
+      svg = '<polygon points="' + (pw/2) + ',' + m + ' ' + m + ',' + (ph-m) + ' ' + (pw-m) + ',' + (ph-m) + '" fill="' + fill + '" stroke="#fff" stroke-width="2.5" stroke-linejoin="round"/>';
+      break;
+    case 'big-triangle':
+      svg = '<polygon points="' + (pw/2) + ',' + m + ' ' + m + ',' + (ph-m) + ' ' + (pw-m) + ',' + (ph-m) + '" fill="' + fill + '" stroke="#fff" stroke-width="2.5" stroke-linejoin="round"/>';
+      break;
+    case 'square':
+      svg = '<rect x="' + m + '" y="' + m + '" width="' + (pw-m*2) + '" height="' + (ph-m*2) + '" fill="' + fill + '" stroke="#fff" stroke-width="2.5" rx="4"/>';
+      break;
+    case 'big-square':
+      svg = '<rect x="' + m + '" y="' + m + '" width="' + (pw-m*2) + '" height="' + (ph-m*2) + '" fill="' + fill + '" stroke="#fff" stroke-width="2.5" rx="6"/>';
+      break;
+    case 'rectangle':
+      svg = '<rect x="' + m + '" y="' + m + '" width="' + (pw-m*2) + '" height="' + (ph-m*2) + '" fill="' + fill + '" stroke="#fff" stroke-width="2.5" rx="4"/>';
+      break;
+    case 'tall-rect':
+      svg = '<rect x="' + m + '" y="' + m + '" width="' + (pw-m*2) + '" height="' + (ph-m*2) + '" fill="' + fill + '" stroke="#fff" stroke-width="2.5" rx="4"/>';
+      break;
+    case 'half-circle':
+      svg = '<path d="M' + m + ',' + (ph-m) + ' A' + (pw/2-m) + ',' + (ph-m*2) + ' 0 0,1 ' + (pw-m) + ',' + (ph-m) + ' Z" fill="' + fill + '" stroke="#fff" stroke-width="2.5"/>';
+      break;
+    case 'circle':
+      var r = Math.min(pw,ph)/2 - m;
+      svg = '<circle cx="' + (pw/2) + '" cy="' + (ph/2) + '" r="' + r + '" fill="' + fill + '" stroke="#fff" stroke-width="2.5"/>';
+      break;
+  }
+  return '<svg width="' + pw + '" height="' + ph + '" viewBox="0 0 ' + pw + ' ' + ph + '">' + svg + '</svg>';
+}
+
+function ghostSVG(shapeId, cellSize) {
+  var cs = cellSize || CELL;
+  var s = SHAPES[shapeId];
+  var pw = s.w * cs;
+  var ph = s.h * cs;
+  var m = 3;
+  var col = 'var(--muted, #666)';
+  var svg = '';
+
+  switch(shapeId) {
+    case 'triangle': case 'big-triangle':
+      svg = '<polygon points="' + (pw/2) + ',' + m + ' ' + m + ',' + (ph-m) + ' ' + (pw-m) + ',' + (ph-m) + '" fill="none" stroke="' + col + '" stroke-width="2" stroke-dasharray="6,4" stroke-linejoin="round"/>';
+      break;
+    case 'square': case 'big-square':
+      svg = '<rect x="' + m + '" y="' + m + '" width="' + (pw-m*2) + '" height="' + (ph-m*2) + '" fill="none" stroke="' + col + '" stroke-width="2" stroke-dasharray="6,4" rx="4"/>';
+      break;
+    case 'rectangle': case 'tall-rect':
+      svg = '<rect x="' + m + '" y="' + m + '" width="' + (pw-m*2) + '" height="' + (ph-m*2) + '" fill="none" stroke="' + col + '" stroke-width="2" stroke-dasharray="6,4" rx="4"/>';
+      break;
+    case 'half-circle':
+      svg = '<path d="M' + m + ',' + (ph-m) + ' A' + (pw/2-m) + ',' + (ph-m*2) + ' 0 0,1 ' + (pw-m) + ',' + (ph-m) + ' Z" fill="none" stroke="' + col + '" stroke-width="2" stroke-dasharray="6,4"/>';
+      break;
+    case 'circle':
+      var r = Math.min(pw,ph)/2 - m;
+      svg = '<circle cx="' + (pw/2) + '" cy="' + (ph/2) + '" r="' + r + '" fill="none" stroke="' + col + '" stroke-width="2" stroke-dasharray="6,4"/>';
+      break;
+  }
+  return '<svg width="' + pw + '" height="' + ph + '" viewBox="0 0 ' + pw + ' ' + ph + '">' + svg + '</svg>';
+}
+
+// ═══ TARGET DEFINITIONS ═══
+// Positions are in grid cell units (col, row = top-left of piece)
+var TARGETS = [
+  // --- 2-piece (emergent) ---
+  { name:'House', emoji:'🏠', difficulty:2,
+    desc:'Build a house — square body with triangle roof!',
+    pieces:[
+      { shape:'big-square', col:3, row:3 },
+      { shape:'big-triangle', col:3, row:1 }
+    ]},
+  { name:'Lollipop', emoji:'🍭', difficulty:2,
+    desc:'Build a lollipop — circle on top of a stick!',
+    pieces:[
+      { shape:'circle', col:4, row:2 },
+      { shape:'tall-rect', col:4, row:3 }
+    ]},
+  { name:'Mushroom', emoji:'🍄', difficulty:2,
+    desc:'Build a mushroom — half circle cap on a stem!',
+    pieces:[
+      { shape:'half-circle', col:3, row:2 },
+      { shape:'tall-rect', col:4, row:3 }
+    ]},
+  { name:'Tree', emoji:'🌲', difficulty:2,
+    desc:'Build a tree — big triangle top, tall trunk!',
+    pieces:[
+      { shape:'big-triangle', col:3, row:1 },
+      { shape:'tall-rect', col:4, row:3 }
+    ]},
+  // --- 3-piece (proficient) ---
+  { name:'Cat Face', emoji:'🐱', difficulty:3,
+    desc:'Build a cat face — two triangle ears on a big square!',
+    pieces:[
+      { shape:'big-square', col:3, row:3 },
+      { shape:'triangle', col:3, row:2 },
+      { shape:'triangle', col:4, row:2 }
+    ]},
+  { name:'Snowman', emoji:'⛛', difficulty:3,
+    desc:'Build a snowman — three circles stacked!',
+    pieces:[
+      { shape:'circle', col:4, row:2 },
+      { shape:'circle', col:4, row:3 },
+      { shape:'circle', col:4, row:4 }
+    ]},
+  { name:'Train', emoji:'🚂', difficulty:3,
+    desc:'Build a train — rectangle car, square cabin, circle wheel!',
+    pieces:[
+      { shape:'rectangle', col:3, row:3 },
+      { shape:'square', col:3, row:2 },
+      { shape:'circle', col:4, row:4 }
+    ]},
+  // --- 4+ piece (advanced) ---
+  { name:'Castle', emoji:'🏰', difficulty:4,
+    desc:'Build a castle — big square base, two tall towers with triangle roofs!',
+    pieces:[
+      { shape:'big-square', col:3, row:3 },
+      { shape:'tall-rect', col:2, row:2 },
+      { shape:'tall-rect', col:5, row:2 },
+      { shape:'triangle', col:2, row:1 },
+      { shape:'triangle', col:5, row:1 }
+    ]},
+  { name:'Rocket', emoji:'🚀', difficulty:4,
+    desc:'Build a rocket — tall body, triangle nose, two triangle fins!',
+    pieces:[
+      { shape:'tall-rect', col:4, row:2 },
+      { shape:'triangle', col:4, row:1 },
+      { shape:'triangle', col:3, row:4 },
+      { shape:'triangle', col:5, row:4 }
+    ]},
+  { name:'Robot', emoji:'🤖', difficulty:4,
+    desc:'Build a robot — square head, rectangle body, two square feet!',
+    pieces:[
+      { shape:'square', col:4, row:1 },
+      { shape:'rectangle', col:3, row:2 },
+      { shape:'square', col:3, row:3 },
+      { shape:'square', col:4, row:3 }
+    ]}
+];
+
+// ═══ MISCONCEPTIONS DATABASE ═══
+var MISCONCEPTIONS = {
+  wrongSpot: { id:'wrong-spot', msg:function(p) { return 'Almost! That ' + p.name + ' goes in a different spot. Look at the outline!'; } },
+  wrongPiece: { id:'wrong-piece', msg:function(p,t) { return 'Hmm, a ' + p.name + ' doesn\'t go there. What shape fits the dotted outline?'; } },
+  sizeConfusion: { id:'size-confusion', msg:function() { return 'Check the size! A big shape and a small shape are different even if they have the same name.'; } },
+  closeButOff: { id:'close', msg:function() { return 'You\'re very close! Try moving it just a little to match the dotted line.'; } },
+  randomDrop: { id:'random', msg:function() { return 'Look at the dotted shapes on the grid. Drag your piece to match one of those outlines!'; } }
+};
+
+// ═══ STATE ═══
+var S = {
+  mode: 'explore',
+  diff: 'emergent',
+  // Grid pieces (placed on grid)
+  gridPieces: [], // [{id, shape, col, row, color}]
+  nextId: 0,
+  // Practice
+  target: null,
+  targetPositions: null, // computed from target
+  matched: {}, // pieceId -> targetIdx
+  palette: [], // [{id, shape, color, used}]
+  // Play
+  score: 0,
+  streak: 0,
+  best: 0,
+  round: 0,
+  total: 10,
+  roundResults: [], // ['correct','wrong',...]
+  playLocked: false,
+  // Recognition
+  recognized: null
+};
+
+// ═══ READ-ALOUD ═══
+function toggleReadAloud() {
+  if (window.VinculumStories && VinculumStories.isReading()) {
+    VinculumStories.stopReading();
+    document.getElementById('readAloudBtn').textContent = '🔊 Read to Me';
+  } else {
+    var text = S.target ? S.target.desc : 'Welcome to Shape Builder! Drag shapes onto the grid to build!';
+    if (window.VinculumStories) {
+      VinculumStories.readAloud(text, { rate:0.85, onComplete:function() {
+        document.getElementById('readAloudBtn').textContent = '🔊 Read to Me';
+      }});
+      document.getElementById('readAloudBtn').textContent = '⏹ Stop';
+    }
+  }
+}
+
+// ═══ HELPERS ═══
+function randInt(a,b) { return Math.floor(Math.random()*(b-a+1))+a; }
+function shuffle(arr) { var a=arr.slice(); for(var i=a.length-1;i>0;i--){var j=randInt(0,i);var t=a[i];a[i]=a[j];a[j]=t;} return a; }
+function showFB(text,type) {
+  var fb=document.getElementById('feedback');
+  fb.textContent=text; fb.className='feedback '+type+' show';
+  setTimeout(function(){fb.classList.remove('show');},2200);
+}
+
+// ═══ GRID RENDERING ═══
+function buildGridHTML() {
+  var html = '';
+  // SVG with lattice dots
+  html += '<svg class="grid-svg" width="' + GRID_W + '" height="' + GRID_H + '" viewBox="0 0 ' + GRID_W + ' ' + GRID_H + '">';
+  // Background
+  html += '<rect width="' + GRID_W + '" height="' + GRID_H + '" fill="transparent"/>';
+  // Lattice dots at every grid intersection
+  for (var c = 0; c <= COLS; c++) {
+    for (var r = 0; r <= ROWS; r++) {
+      var cx = c * CELL;
+      var cy = r * CELL;
+      html += '<circle class="lattice-dot" cx="' + cx + '" cy="' + cy + '" r="3"/>';
+    }
+  }
+  html += '</svg>';
+  return html;
+}
+
+function getTargetForDiff() {
+  var maxPieces = S.diff === 'emergent' ? 2 : (S.diff === 'proficient' ? 3 : 99);
+  var minPieces = S.diff === 'emergent' ? 1 : (S.diff === 'proficient' ? 3 : 4);
+  var pool = TARGETS.filter(function(t) {
+    return t.pieces.length >= minPieces && t.pieces.length <= maxPieces;
+  });
+  if (pool.length === 0) pool = TARGETS;
+  return pool[randInt(0, pool.length - 1)];
+}
+
+function buildPalette(target, addDistractors) {
+  var palette = [];
+  var usedColors = {};
+
+  // Add correct pieces
+  target.pieces.forEach(function(tp, i) {
+    var ci = i % COLORS.length;
+    palette.push({ id:'pal_' + i, shape:tp.shape, color:COLORS[ci], used:false });
+    usedColors[ci] = true;
+  });
+
+  // Add distractors
+  if (addDistractors) {
+    var numDist = S.diff === 'emergent' ? 1 : 2;
+    var shapeKeys = Object.keys(SHAPES);
+    var correctShapes = target.pieces.map(function(p) { return p.shape; });
+    for (var d = 0; d < numDist; d++) {
+      var distShape = shapeKeys[randInt(0, shapeKeys.length - 1)];
+      var tries = 0;
+      while (correctShapes.indexOf(distShape) !== -1 && tries < 15) {
+        distShape = shapeKeys[randInt(0, shapeKeys.length - 1)];
+        tries++;
+      }
+      var ci = (target.pieces.length + d) % COLORS.length;
+      palette.push({ id:'dist_' + d, shape:distShape, color:COLORS[ci], used:false });
+    }
+  }
+
+  return shuffle(palette);
+}
+
+// ═══ DRAG & DROP SYSTEM ═══
+var drag = null;
+
+function initDragFromPalette(e, palIdx) {
+  if (drag) return;
+  if (S.playLocked) return;
+  e.preventDefault();
+  e.stopPropagation();
+
+  var pal = S.palette[palIdx];
+  if (!pal || pal.used) return;
+
+  var el = document.createElement('div');
+  el.className = 'drag-float';
+  el.innerHTML = shapeSVG(pal.shape, pal.color, CELL);
+  document.body.appendChild(el);
+
+  var sh = SHAPES[pal.shape];
+  var pw = sh.w * CELL;
+  var ph = sh.h * CELL;
+
+  var clientX = e.clientX || (e.touches && e.touches[0].clientX) || 0;
+  var clientY = e.clientY || (e.touches && e.touches[0].clientY) || 0;
+  el.style.left = (clientX - pw/2) + 'px';
+  el.style.top = (clientY - ph - 10) + 'px';
+
+  drag = {
+    el: el,
+    source: 'palette',
+    palIdx: palIdx,
+    shape: pal.shape,
+    color: pal.color,
+    pw: pw, ph: ph
+  };
+
+  document.addEventListener('pointermove', onDragMove, {passive:false});
+  document.addEventListener('pointerup', onDragEnd);
+  document.addEventListener('pointercancel', onDragEnd);
+}
+
+function initDragFromGrid(e, gridIdx) {
+  if (drag) return;
+  if (S.playLocked) return;
+  e.preventDefault();
+  e.stopPropagation();
+
+  var gp = S.gridPieces[gridIdx];
+  if (!gp) return;
+
+  // If this piece is already matched (correct position), don't allow re-drag in practice/play
+  if ((S.mode === 'practice' || S.mode === 'play') && S.matched[gp.id]) return;
+
+  var el = document.createElement('div');
+  el.className = 'drag-float';
+  el.innerHTML = shapeSVG(gp.shape, gp.color, CELL);
+  document.body.appendChild(el);
+
+  var sh = SHAPES[gp.shape];
+  var pw = sh.w * CELL;
+  var ph = sh.h * CELL;
+
+  var clientX = e.clientX || (e.touches && e.touches[0].clientX) || 0;
+  var clientY = e.clientY || (e.touches && e.touches[0].clientY) || 0;
+  el.style.left = (clientX - pw/2) + 'px';
+  el.style.top = (clientY - ph - 10) + 'px';
+
+  drag = {
+    el: el,
+    source: 'grid',
+    gridIdx: gridIdx,
+    pieceId: gp.id,
+    shape: gp.shape,
+    color: gp.color,
+    pw: pw, ph: ph
+  };
+
+  // Temporarily hide the grid piece
+  var gpEl = document.querySelector('[data-grid-id="' + gp.id + '"]');
+  if (gpEl) gpEl.style.opacity = '0.2';
+
+  document.addEventListener('pointermove', onDragMove, {passive:false});
+  document.addEventListener('pointerup', onDragEnd);
+  document.addEventListener('pointercancel', onDragEnd);
+}
+
+function onDragMove(e) {
+  if (!drag) return;
+  e.preventDefault();
+  var clientX = e.clientX || (e.touches && e.touches[0].clientX) || 0;
+  var clientY = e.clientY || (e.touches && e.touches[0].clientY) || 0;
+  drag.el.style.left = (clientX - drag.pw/2) + 'px';
+  drag.el.style.top = (clientY - drag.ph - 10) + 'px';
+
+  // Highlight grid when hovering over it
+  var gridEl = document.getElementById('gridArea');
+  if (gridEl) {
+    var gr = gridEl.getBoundingClientRect();
+    var over = clientX >= gr.left && clientX <= gr.right && clientY >= gr.top && clientY <= gr.bottom;
+    gridEl.classList.toggle('drop-active', over);
+  }
+}
+
+function onDragEnd(e) {
+  if (!drag) return;
+  e.preventDefault();
+
+  var clientX = e.clientX || (e.changedTouches && e.changedTouches[0].clientX) || 0;
+  var clientY = e.clientY || (e.changedTouches && e.changedTouches[0].clientY) || 0;
+
+  var gridEl = document.getElementById('gridArea');
+  var placed = false;
+
+  if (gridEl) {
+    var gr = gridEl.getBoundingClientRect();
+    var gx = clientX - gr.left;
+    var gy = clientY - gr.top;
+
+    // Snap to nearest grid point
+    var col = Math.round(gx / CELL - SHAPES[drag.shape].w / 2);
+    var row = Math.round(gy / CELL - SHAPES[drag.shape].h / 2);
+
+    // Clamp within grid bounds
+    col = Math.max(0, Math.min(col, COLS - SHAPES[drag.shape].w));
+    row = Math.max(0, Math.min(row, ROWS - SHAPES[drag.shape].h));
+
+    // Check if drop is within or near grid area
+    var nearGrid = gx > -CELL && gx < GRID_W + CELL && gy > -CELL && gy < GRID_H + CELL;
+
+    if (nearGrid) {
+      if (drag.source === 'palette') {
+        // Place new piece from palette
+        var newPiece = {
+          id: 'gp_' + S.nextId++,
+          shape: drag.shape,
+          col: col,
+          row: row,
+          color: drag.color
+        };
+        S.gridPieces.push(newPiece);
+        S.palette[drag.palIdx].used = true;
+        placed = true;
+      } else if (drag.source === 'grid') {
+        // Move existing grid piece
+        S.gridPieces[drag.gridIdx].col = col;
+        S.gridPieces[drag.gridIdx].row = row;
+        placed = true;
+      }
+    }
+  }
+
+  // If dragged from grid but dropped outside grid, return piece to palette
+  if (!placed && drag.source === 'grid') {
+    var removedPiece = S.gridPieces.splice(drag.gridIdx, 1)[0];
+    // Find matching palette piece and un-use it
+    if (S.mode !== 'explore') {
+      for (var i = 0; i < S.palette.length; i++) {
+        if (S.palette[i].used && S.palette[i].shape === removedPiece.shape) {
+          S.palette[i].used = false;
+          break;
+        }
+      }
+    }
+  }
+
+  // Cleanup drag
+  drag.el.remove();
+  drag = null;
+  document.removeEventListener('pointermove', onDragMove);
+  document.removeEventListener('pointerup', onDragEnd);
+  document.removeEventListener('pointercancel', onDragEnd);
+
+  var gridElRef = document.getElementById('gridArea');
+  if (gridElRef) gridElRef.classList.remove('drop-active');
+
+  // Check matches and re-render
+  if (S.mode === 'practice' || S.mode === 'play') {
+    checkMatches();
+  }
+  if (S.mode === 'explore') {
+    S.recognized = recognizeBuild();
+  }
+  render();
+}
+
+// ═══ MATCH CHECKING ═══
+function checkMatches() {
+  if (!S.target) return;
+  S.matched = {};
+
+  var tp = S.target.pieces;
+  var used = {};
+
+  // For each grid piece, find best matching target piece
+  S.gridPieces.forEach(function(gp) {
+    var bestDist = Infinity;
+    var bestIdx = -1;
+
+    tp.forEach(function(t, ti) {
+      if (used[ti]) return;
+      if (gp.shape !== t.shape) return;
+      var dc = Math.abs(gp.col - t.col);
+      var dr = Math.abs(gp.row - t.row);
+      var dist = dc + dr;
+      if (dist <= SNAP_TOLERANCE && dist < bestDist) {
+        bestDist = dist;
+        bestIdx = ti;
+      }
+    });
+
+    if (bestIdx >= 0) {
+      S.matched[gp.id] = bestIdx;
+      used[bestIdx] = true;
+
+      // Snap to exact position
+      gp.col = tp[bestIdx].col;
+      gp.row = tp[bestIdx].row;
+    }
+  });
+
+  // Check if all target pieces are matched
+  var allMatched = Object.keys(S.matched).length === tp.length;
+  if (allMatched) {
+    onBuildComplete();
+  }
+}
+
+function onBuildComplete() {
+  if (S.mode === 'practice') {
+    showFB('Great job! You built ' + S.target.emoji + ' ' + S.target.name + '!', 'correct');
+    setTimeout(function() {
+      newTarget();
+      render();
+    }, 2200);
+  } else if (S.mode === 'play') {
+    S.playLocked = true;
+    var pts = 10 + (S.streak * 2);
+    S.score += pts;
+    S.streak++;
+    if (S.streak > S.best) S.best = S.streak;
+    S.roundResults.push('correct');
+    showFB(S.target.emoji + ' Correct! +' + pts + ' points!', 'correct');
+    setTimeout(function() {
+      advancePlayRound();
+    }, 1800);
+  }
+}
+
+// ═══ RECOGNITION (Explore mode) ═══
+function recognizeBuild() {
+  if (S.gridPieces.length < 2) return null;
+
+  for (var t = 0; t < TARGETS.length; t++) {
+    var target = TARGETS[t];
+    if (S.gridPieces.length !== target.pieces.length) continue;
+
+    // Check if all target pieces have a matching grid piece (same shape, nearby position)
+    var tempUsed = {};
+    var allFound = true;
+
+    target.pieces.forEach(function(tp) {
+      var found = false;
+      S.gridPieces.forEach(function(gp, gi) {
+        if (tempUsed[gi]) return;
+        if (gp.shape !== tp.shape) return;
+        if (Math.abs(gp.col - tp.col) <= 2 && Math.abs(gp.row - tp.row) <= 2) {
+          tempUsed[gi] = true;
+          found = true;
+        }
+      });
+      if (!found) allFound = false;
+    });
+
+    if (allFound) return target;
+  }
+
+  // Try relative position matching (shapes in right arrangement but shifted)
+  for (var t2 = 0; t2 < TARGETS.length; t2++) {
+    var tgt = TARGETS[t2];
+    if (S.gridPieces.length !== tgt.pieces.length) continue;
+
+    // Get shape type sets
+    var tgtShapes = tgt.pieces.map(function(p){return p.shape;}).sort().join(',');
+    var gridShapes = S.gridPieces.map(function(p){return p.shape;}).sort().join(',');
+    if (tgtShapes !== gridShapes) continue;
+
+    // Check relative positions: compute relative offsets between pieces
+    var tgtRels = [];
+    for (var i = 1; i < tgt.pieces.length; i++) {
+      tgtRels.push({
+        dc: tgt.pieces[i].col - tgt.pieces[0].col,
+        dr: tgt.pieces[i].row - tgt.pieces[0].row,
+        s0: tgt.pieces[0].shape,
+        s1: tgt.pieces[i].shape
+      });
+    }
+
+    // Try each grid piece as the "anchor" (first piece)
+    var matchFound = false;
+    S.gridPieces.forEach(function(anchor, ai) {
+      if (matchFound) return;
+      if (anchor.shape !== tgt.pieces[0].shape) return;
+
+      var relOk = tgtRels.every(function(tr) {
+        return S.gridPieces.some(function(gp, gi) {
+          if (gi === ai) return false;
+          if (gp.shape !== tr.s1) return false;
+          var dc = gp.col - anchor.col;
+          var dr = gp.row - anchor.row;
+          return Math.abs(dc - tr.dc) <= 1 && Math.abs(dr - tr.dr) <= 1;
+        });
+      });
+
+      if (relOk) matchFound = true;
+    });
+
+    if (matchFound) return tgt;
+  }
+
+  return null;
+}
+
+// ═══ MODE SWITCHING ═══
+function setMode(mode) {
+  S.mode = mode;
+  S.gridPieces = [];
+  S.target = null;
+  S.targetPositions = null;
+  S.matched = {};
+  S.palette = [];
+  S.recognized = null;
+  S.round = 0;
+  S.score = 0;
+  S.streak = 0;
+  S.roundResults = [];
+  S.playLocked = false;
+
+  document.querySelectorAll('.vinculum-mode-tab').forEach(function(t) {
+    t.classList.remove('active-explore','active-practice','active-play');
+  });
+  var tabEl = document.querySelector('[data-mode="' + mode + '"]');
+  if (tabEl) tabEl.classList.add('active-' + mode);
+
+  if (mode === 'practice' || mode === 'play') {
+    newTarget();
+  }
+  if (mode === 'play') {
+    S.round = 1;
+  }
+
+  render();
+}
+
+function setDiff(diff) {
+  S.diff = diff;
+  document.querySelectorAll('.vinculum-diff-btn').forEach(function(b){b.classList.remove('active');});
+  document.getElementById('diff' + diff.charAt(0).toUpperCase()).classList.add('active');
+  setMode(S.mode);
+}
+
+function newTarget() {
+  S.gridPieces = [];
+  S.matched = {};
+  S.playLocked = false;
+
+  S.target = getTargetForDiff();
+  S.palette = buildPalette(S.target, true);
+}
+
+function advancePlayRound() {
+  if (S.round >= S.total) {
+    showFB('Game Over! Final Score: ' + S.score + ' 🏆', 'correct');
+    S.playLocked = true;
+    setTimeout(function() {
+      S.round = 0;
+      S.score = 0;
+      S.streak = 0;
+      S.roundResults = [];
+      render();
+    }, 3000);
+    return;
+  }
+  S.round++;
+  newTarget();
+  render();
+}
+
+// ═══ RENDER ═══
+function render() {
+  var ws = document.getElementById('workspace');
+  var sp = document.getElementById('sidePanel');
+
+  if (S.mode === 'explore') renderExplore(ws, sp);
+  else if (S.mode === 'practice') renderPractice(ws, sp);
+  else renderPlay(ws, sp);
+
+  // Attach drag listeners after render
+  setTimeout(attachDragListeners, 0);
+}
+
+function attachDragListeners() {
+  // Palette pieces
+  document.querySelectorAll('.palette-piece[data-pal-idx]').forEach(function(el) {
+    el.addEventListener('pointerdown', function(e) {
+      initDragFromPalette(e, parseInt(el.getAttribute('data-pal-idx')));
+    }, {passive:false});
+  });
+
+  // Grid pieces
+  document.querySelectorAll('.grid-piece[data-grid-idx]').forEach(function(el) {
+    el.addEventListener('pointerdown', function(e) {
+      initDragFromGrid(e, parseInt(el.getAttribute('data-grid-idx')));
+    }, {passive:false});
+  });
+}
+
+// ─── EXPLORE MODE ───
+function renderExplore(ws, sp) {
+  var html = '';
+
+  html += '<div class="instruction-box"><div class="inst-label">Explore</div>';
+  html += '<div class="inst-text">Drag shapes onto the grid to build anything!</div></div>';
+
+  // Grid container
+  html += '<div class="grid-container" id="gridArea" style="width:' + GRID_W + 'px; height:' + GRID_H + 'px;">';
+  html += buildGridHTML();
+
+  // Placed pieces
+  S.gridPieces.forEach(function(gp, i) {
+    var sh = SHAPES[gp.shape];
+    var left = gp.col * CELL;
+    var top = gp.row * CELL;
+    html += '<div class="grid-piece" data-grid-idx="' + i + '" data-grid-id="' + gp.id + '" style="left:' + left + 'px;top:' + top + 'px;width:' + (sh.w*CELL) + 'px;height:' + (sh.h*CELL) + 'px;">';
+    html += shapeSVG(gp.shape, gp.color, CELL);
+    html += '</div>';
+  });
+
+  if (S.gridPieces.length === 0) {
+    html += '<div style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);color:var(--muted);font-size:14px;pointer-events:none;text-align:center;">Drag shapes here<br><span style="font-size:11px;">They snap to the dots!</span></div>';
+  }
+  html += '</div>';
+
+  // Recognition banner
+  if (S.recognized) {
+    html += '<div class="recognition-banner">' + S.recognized.emoji + ' I see a <strong>' + S.recognized.name + '</strong>!</div>';
+  }
+
+  // Palette — all shapes, unlimited
+  html += '<div class="palette-bar">';
+  var allShapes = Object.keys(SHAPES);
+  allShapes.forEach(function(shapeId, i) {
+    var s = SHAPES[shapeId];
+    var displaySize = Math.min(40, CELL * 0.7);
+    html += '<div class="palette-piece" data-pal-idx="' + i + '" data-explore-shape="' + shapeId + '" title="' + s.name + '">';
+    html += shapeSVG(shapeId, COLORS[i % COLORS.length], displaySize / Math.max(s.w, s.h));
+    html += '<span class="piece-name">' + s.name.split(' ').pop() + '</span>';
+    html += '</div>';
+  });
+  html += '</div>';
+
+  // Controls
+  html += '<div class="controls">';
+  html += '<button class="ctrl-btn" onclick="exploreUndo()">↺ Undo</button>';
+  html += '<button class="ctrl-btn danger" onclick="exploreClear()">✕ Clear</button>';
+  html += '</div>';
+
+  ws.innerHTML = html;
+
+  // Override palette drag for explore (unlimited supply)
+  setTimeout(function() {
+    document.querySelectorAll('.palette-piece[data-explore-shape]').forEach(function(el) {
+      el.removeEventListener('pointerdown', el._handler);
+      el._handler = function(e) {
+        exploreStartDrag(e, el.getAttribute('data-explore-shape'), parseInt(el.getAttribute('data-pal-idx')));
+      };
+      el.addEventListener('pointerdown', el._handler, {passive:false});
+    });
+  }, 10);
+
+  // Side panel
+  sp.innerHTML = '<div class="panel-section">' +
+    '<div class="panel-title">How to Use</div>' +
+    '<div class="panel-text">' +
+      '1. <strong>Drag</strong> a shape from below onto the grid<br><br>' +
+      '2. Shapes <strong>snap</strong> to the dots automatically<br><br>' +
+      '3. <strong>Drag pieces on the grid</strong> to rearrange them<br><br>' +
+      '4. Drag a piece <strong>off the grid</strong> to remove it<br><br>' +
+      '5. I\'ll try to <strong>recognize</strong> what you build!' +
+    '</div></div>' +
+    '<div class="panel-section">' +
+    '<div class="panel-title">Shape Vocabulary</div>' +
+    '<div class="panel-text">' +
+      '<strong>Triangle</strong> — 3 sides, 3 corners<br><br>' +
+      '<strong>Square</strong> — 4 equal sides<br><br>' +
+      '<strong>Rectangle</strong> — 4 sides, opposite sides equal<br><br>' +
+      '<strong>Half circle</strong> — half of a circle<br><br>' +
+      '<strong>Circle</strong> — perfectly round' +
+    '</div></div>' +
+    '<div class="panel-section">' +
+    '<div class="panel-title">Try Building</div>' +
+    '<div class="panel-text">' +
+      '🏠 <strong>House</strong> = big square + big triangle<br><br>' +
+      '🌲 <strong>Tree</strong> = big triangle + tall rectangle<br><br>' +
+      '🐱 <strong>Cat</strong> = big square + 2 triangles<br><br>' +
+      '🚀 <strong>Rocket</strong> = tall rectangle + 3 triangles' +
+    '</div></div>' +
+    '<div class="panel-section">' +
+    '<div class="panel-title">Standards</div>' +
+    '<div class="panel-text">' +
+      '<strong>K.G.5</strong> — Model shapes by building and drawing<br><br>' +
+      '<strong>K.G.6</strong> — Compose simple shapes to form larger shapes' +
+    '</div></div>';
+}
+
+function exploreStartDrag(e, shapeId, colorIdx) {
+  if (drag) return;
+  e.preventDefault();
+  e.stopPropagation();
+
+  var el = document.createElement('div');
+  el.className = 'drag-float';
+  var color = COLORS[colorIdx % COLORS.length];
+  el.innerHTML = shapeSVG(shapeId, color, CELL);
+  document.body.appendChild(el);
+
+  var sh = SHAPES[shapeId];
+  var pw = sh.w * CELL;
+  var ph = sh.h * CELL;
+
+  var clientX = e.clientX || 0;
+  var clientY = e.clientY || 0;
+  el.style.left = (clientX - pw/2) + 'px';
+  el.style.top = (clientY - ph - 10) + 'px';
+
+  drag = {
+    el: el,
+    source: 'explore-palette',
+    shape: shapeId,
+    color: color,
+    pw: pw, ph: ph
+  };
+
+  document.addEventListener('pointermove', onDragMove, {passive:false});
+  document.addEventListener('pointerup', onExploreEnd);
+  document.addEventListener('pointercancel', onExploreEnd);
+}
+
+function onExploreEnd(e) {
+  if (!drag) return;
+  e.preventDefault();
+
+  var clientX = e.clientX || 0;
+  var clientY = e.clientY || 0;
+
+  var gridEl = document.getElementById('gridArea');
+  if (gridEl) {
+    var gr = gridEl.getBoundingClientRect();
+    var gx = clientX - gr.left;
+    var gy = clientY - gr.top;
+
+    var col = Math.round(gx / CELL - SHAPES[drag.shape].w / 2);
+    var row = Math.round(gy / CELL - SHAPES[drag.shape].h / 2);
+    col = Math.max(0, Math.min(col, COLS - SHAPES[drag.shape].w));
+    row = Math.max(0, Math.min(row, ROWS - SHAPES[drag.shape].h));
+
+    var nearGrid = gx > -CELL && gx < GRID_W + CELL && gy > -CELL && gy < GRID_H + CELL;
+    if (nearGrid) {
+      S.gridPieces.push({
+        id: 'gp_' + S.nextId++,
+        shape: drag.shape,
+        col: col,
+        row: row,
+        color: drag.color
+      });
+    }
+  }
+
+  drag.el.remove();
+  drag = null;
+  document.removeEventListener('pointermove', onDragMove);
+  document.removeEventListener('pointerup', onExploreEnd);
+  document.removeEventListener('pointercancel', onExploreEnd);
+
+  var gridRef = document.getElementById('gridArea');
+  if (gridRef) gridRef.classList.remove('drop-active');
+
+  S.recognized = recognizeBuild();
+  render();
+}
+
+function exploreUndo() {
+  if (S.gridPieces.length === 0) return;
+  S.gridPieces.pop();
+  S.recognized = recognizeBuild();
+  render();
+}
+
+function exploreClear() {
+  S.gridPieces = [];
+  S.recognized = null;
+  render();
+}
+
+// ─── PRACTICE MODE ───
+function renderPractice(ws, sp) {
+  if (!S.target) newTarget();
+  var target = S.target;
+  var html = '';
+
+  html += '<div class="instruction-box"><div class="inst-label">Build this!</div>';
+  html += '<div class="inst-text">' + target.emoji + ' ' + target.desc + '</div></div>';
+
+  // Grid with ghost scaffolds
+  html += '<div class="grid-container" id="gridArea" style="width:' + GRID_W + 'px; height:' + GRID_H + 'px;">';
+  html += buildGridHTML();
+
+  // Ghost scaffolds (dashed outlines showing where pieces go)
+  if (S.diff !== 'advanced') {
+    target.pieces.forEach(function(tp, ti) {
+      var sh = SHAPES[tp.shape];
+      var left = tp.col * CELL;
+      var top = tp.row * CELL;
+      var isMatched = false;
+      for (var pid in S.matched) {
+        if (S.matched[pid] === ti) { isMatched = true; break; }
+      }
+      html += '<div class="ghost-piece' + (isMatched ? ' matched' : '') + '" style="left:' + left + 'px;top:' + top + 'px;width:' + (sh.w*CELL) + 'px;height:' + (sh.h*CELL) + 'px;">';
+      html += ghostSVG(tp.shape, CELL);
+      html += '</div>';
+      // Label under ghost
+      if (!isMatched) {
+        html += '<div class="ghost-label" style="left:' + left + 'px;top:' + (top + sh.h*CELL + 2) + 'px;width:' + (sh.w*CELL) + 'px;">' + SHAPES[tp.shape].name + '</div>';
+      }
+    });
+  }
+
+  // Placed pieces
+  S.gridPieces.forEach(function(gp, i) {
+    var sh = SHAPES[gp.shape];
+    var left = gp.col * CELL;
+    var top = gp.row * CELL;
+    var isCorrect = !!S.matched[gp.id];
+    html += '<div class="grid-piece' + (isCorrect ? ' correct-glow snap-anim' : '') + '" data-grid-idx="' + i + '" data-grid-id="' + gp.id + '" style="left:' + left + 'px;top:' + top + 'px;width:' + (sh.w*CELL) + 'px;height:' + (sh.h*CELL) + 'px;">';
+    html += shapeSVG(gp.shape, gp.color, CELL);
+    html += '</div>';
+  });
+
+  html += '</div>';
+
+  // Palette (limited supply)
+  html += '<div class="palette-bar">';
+  S.palette.forEach(function(pal, i) {
+    var s = SHAPES[pal.shape];
+    var displaySize = Math.min(40, CELL * 0.7);
+    html += '<div class="palette-piece' + (pal.used ? ' used' : '') + '" data-pal-idx="' + i + '" title="' + s.name + '">';
+    html += shapeSVG(pal.shape, pal.color, displaySize / Math.max(s.w, s.h));
+    html += '<span class="piece-name">' + s.name.split(' ').pop() + '</span>';
+    html += '</div>';
+  });
+  html += '</div>';
+
+  // Controls
+  html += '<div class="controls">';
+  html += '<button class="ctrl-btn" onclick="practiceSkip()">Skip →</button>';
+  html += '</div>';
+
+  ws.innerHTML = html;
+
+  // Side panel
+  var matchCount = Object.keys(S.matched).length;
+  sp.innerHTML = '<div class="panel-section">' +
+    '<div class="panel-title">Instructions</div>' +
+    '<div class="panel-text">' +
+      '1. Look at the <strong>dotted outlines</strong> on the grid<br><br>' +
+      '2. <strong>Drag</strong> matching shapes from below<br><br>' +
+      '3. Drop them <strong>on top of the outlines</strong><br><br>' +
+      '4. Pieces <strong>snap into place</strong> when close!' +
+    '</div></div>' +
+    '<div class="panel-section">' +
+    '<div class="panel-title">Progress</div>' +
+    '<div class="panel-text" style="background:var(--card);padding:12px;border-radius:8px;">' +
+      'Building: <strong style="color:var(--cyan);">' + target.emoji + ' ' + target.name + '</strong><br>' +
+      'Pieces placed: <strong style="color:var(--green);">' + matchCount + '</strong> / <strong>' + target.pieces.length + '</strong>' +
+    '</div></div>' +
+    '<div class="panel-section">' +
+    '<div class="panel-title">Key Idea</div>' +
+    '<div class="panel-text">You can put <strong>simple shapes together</strong> to make bigger, more interesting shapes. This is called <strong>composing</strong>.</div>' +
+    '</div>';
+}
+
+function practiceSkip() {
+  newTarget();
+  render();
+}
+
+// ─── PLAY MODE ───
+function renderPlay(ws, sp) {
+  if (S.round === 0) {
+    S.round = 1;
+    S.score = 0;
+    S.streak = 0;
+    S.best = 0;
+    S.roundResults = [];
+    newTarget();
+  }
+
+  var target = S.target;
+  var html = '';
+
+  // Progress dots
+  html += '<div class="progress-dots">';
+  for (var i = 1; i <= S.total; i++) {
+    var cls = 'progress-dot';
+    if (i < S.round) cls += ' ' + (S.roundResults[i-1] || '');
+    else if (i === S.round) cls += ' current';
+    html += '<div class="' + cls + '"></div>';
+  }
+  html += '</div>';
+
+  html += '<div class="instruction-box"><div class="inst-label">Round ' + S.round + ' of ' + S.total + '</div>';
+  html += '<div class="inst-text">' + target.emoji + ' ' + target.desc + '</div></div>';
+
+  // Grid with ghost scaffolds (fainter in play, none in advanced)
+  html += '<div class="grid-container" id="gridArea" style="width:' + GRID_W + 'px; height:' + GRID_H + 'px;">';
+  html += buildGridHTML();
+
+  // Ghost scaffolds — visible in emergent/proficient, hidden in advanced
+  if (S.diff !== 'advanced') {
+    var ghostOpacity = S.diff === 'emergent' ? '0.2' : '0.12';
+    target.pieces.forEach(function(tp, ti) {
+      var sh = SHAPES[tp.shape];
+      var left = tp.col * CELL;
+      var top = tp.row * CELL;
+      var isMatched = false;
+      for (var pid in S.matched) {
+        if (S.matched[pid] === ti) { isMatched = true; break; }
+      }
+      html += '<div class="ghost-piece' + (isMatched ? ' matched' : '') + '" style="left:' + left + 'px;top:' + top + 'px;width:' + (sh.w*CELL) + 'px;height:' + (sh.h*CELL) + 'px;opacity:' + (isMatched ? '0' : ghostOpacity) + ';">';
+      html += ghostSVG(tp.shape, CELL);
+      html += '</div>';
+    });
+  }
+
+  // Placed pieces
+  S.gridPieces.forEach(function(gp, i) {
+    var sh = SHAPES[gp.shape];
+    var left = gp.col * CELL;
+    var top = gp.row * CELL;
+    var isCorrect = !!S.matched[gp.id];
+    html += '<div class="grid-piece' + (isCorrect ? ' correct-glow snap-anim' : '') + '" data-grid-idx="' + i + '" data-grid-id="' + gp.id + '" style="left:' + left + 'px;top:' + top + 'px;width:' + (sh.w*CELL) + 'px;height:' + (sh.h*CELL) + 'px;">';
+    html += shapeSVG(gp.shape, gp.color, CELL);
+    html += '</div>';
+  });
+
+  html += '</div>';
+
+  // Palette
+  html += '<div class="palette-bar">';
+  S.palette.forEach(function(pal, i) {
+    var s = SHAPES[pal.shape];
+    var displaySize = Math.min(40, CELL * 0.7);
+    html += '<div class="palette-piece' + (pal.used ? ' used' : '') + '" data-pal-idx="' + i + '" title="' + s.name + '">';
+    html += shapeSVG(pal.shape, pal.color, displaySize / Math.max(s.w, s.h));
+    html += '<span class="piece-name">' + s.name.split(' ').pop() + '</span>';
+    html += '</div>';
+  });
+  html += '</div>';
+
+  // Controls
+  html += '<div class="controls">';
+  html += '<button class="ctrl-btn" onclick="playGiveUp()">Skip (−5pts)</button>';
+  html += '</div>';
+
+  ws.innerHTML = html;
+
+  // Side panel with score
+  var matchCount = Object.keys(S.matched).length;
+  sp.innerHTML = '<div class="score-display">' +
+    '<div class="score-value">' + S.score + '</div>' +
+    '<div class="score-label">Score</div>' +
+  '</div>' +
+  '<div class="score-display" style="background:transparent;padding:8px;">' +
+    '<div style="font-size:18px;font-weight:700;color:var(--yellow);">🔥 ' + S.streak + '</div>' +
+    '<div class="score-label">Streak</div>' +
+    '<div class="streak-bar"><div class="streak-fill" style="width:' + Math.min(S.streak*20,100) + '%;"></div></div>' +
+  '</div>' +
+  '<div class="panel-section">' +
+    '<div class="panel-title">This Round</div>' +
+    '<div class="panel-text" style="background:var(--card);padding:12px;border-radius:8px;">' +
+      'Building: <strong style="color:var(--cyan);">' + target.emoji + ' ' + target.name + '</strong><br>' +
+      'Placed: <strong style="color:var(--green);">' + matchCount + '</strong> / <strong>' + target.pieces.length + '</strong>' +
+    '</div></div>' +
+  '<div class="panel-section">' +
+    '<div class="panel-title">How to Play</div>' +
+    '<div class="panel-text">' +
+      'Drag pieces onto the grid to match the target shape.<br><br>' +
+      '<strong>Correct build</strong> = 10 pts + streak bonus<br><br>' +
+      'Skipping costs 5 points.' +
+    '</div></div>' +
+  '<div class="panel-section">' +
+    '<div class="panel-title">Best Streak</div>' +
+    '<div class="panel-text" style="font-size:24px;font-weight:800;color:var(--purple);">🏆 ' + S.best + '</div>' +
+  '</div>';
+}
+
+function playGiveUp() {
+  if (S.playLocked) return;
+  S.score = Math.max(0, S.score - 5);
+  S.streak = 0;
+  S.roundResults.push('wrong');
+  showFB('Skipped! The ' + S.target.name + ' needs: ' + S.target.pieces.map(function(p){return SHAPES[p.shape].name;}).join(' + '), 'try-again');
+  S.playLocked = true;
+  setTimeout(function() {
+    advancePlayRound();
+  }, 2200);
+}
+
+// ═══ INIT ═══
+document.querySelectorAll('.vinculum-mode-tab').forEach(function(tab) {
+  tab.addEventListener('click', function() { setMode(this.dataset.mode); });
+});
+document.querySelectorAll('.vinculum-diff-btn').forEach(function(btn) {
+  btn.addEventListener('click', function() { setDiff(this.dataset.diff); });
+});
+
+render();
+</script>
+<script src="../../vinculum-core.js"></script>
+<script src="../../vinculum-data.js"></script>
+<script src="../../vinculum-adaptive-hook.js"></script>
+<script src="../../vinculum-3reads.js"></script>
+<script src="../../vinculum-stories.js"></script>
+<script src="../../vinculum-feedback.js"></script>
+<script src="../../vinculum-guide.js"></script>
+<script src="../../vinculum-identity.js"></script>
+<script src="../../vinculum-indigenous.js"></script>
+<script src="../../vinculum-dashboard.js"></script>
+<script src="../../vinculum-hyperfocus.js"></script>
+<script src="../../vinculum-layout.js"></script>
+</body>
+</html>

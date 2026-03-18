@@ -1,0 +1,1510 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Lesson Digester — UI Redesign Proposals</title>
+<style>
+  :root {
+    --navy: #0F172A;
+    --navy2: #1E293B;
+    --slate: #334155;
+    --mid: #64748B;
+    --light: #94A3B8;
+    --pale: #CBD5E1;
+    --ghost: #E2E8F0;
+    --white: #F8FAFC;
+    --amber: #F59E0B;
+    --amber2: #FCD34D;
+    --teal: #14B8A6;
+    --blue: #3B82F6;
+    --pink: #EC4899;
+    --cyan: #06B6D4;
+    --green: #10B981;
+    --red: #EF4444;
+    --purple: #8B5CF6;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+    background: var(--navy);
+    color: var(--ghost);
+    line-height: 1.6;
+  }
+
+  /* ── PROPOSAL NAVIGATION ── */
+  .proposal-nav {
+    position: sticky;
+    top: 0;
+    z-index: 100;
+    background: rgba(15,23,42,0.95);
+    backdrop-filter: blur(12px);
+    border-bottom: 1px solid rgba(248,250,252,0.08);
+    padding: 12px 24px;
+    display: flex;
+    align-items: center;
+    gap: 16px;
+  }
+  .proposal-nav h1 {
+    font-size: 15px;
+    color: var(--amber);
+    font-weight: 700;
+    letter-spacing: 0.5px;
+    white-space: nowrap;
+  }
+  .proposal-tabs {
+    display: flex;
+    gap: 4px;
+    flex-wrap: wrap;
+  }
+  .proposal-tab {
+    padding: 6px 16px;
+    border-radius: 20px;
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+    border: 1px solid rgba(248,250,252,0.1);
+    background: transparent;
+    color: var(--light);
+    transition: all 0.2s;
+  }
+  .proposal-tab:hover { background: rgba(248,250,252,0.05); color: var(--white); }
+  .proposal-tab.active {
+    background: var(--amber);
+    color: var(--navy);
+    border-color: var(--amber);
+  }
+
+  /* ── PROPOSAL SECTIONS ── */
+  .proposal {
+    display: none;
+    max-width: 1100px;
+    margin: 0 auto;
+    padding: 40px 24px 80px;
+  }
+  .proposal.active { display: block; }
+
+  .proposal-header {
+    margin-bottom: 32px;
+  }
+  .proposal-header h2 {
+    font-size: 28px;
+    color: var(--white);
+    margin-bottom: 8px;
+  }
+  .proposal-header .subtitle {
+    color: var(--light);
+    font-size: 15px;
+    max-width: 700px;
+  }
+  .design-note {
+    background: rgba(245,158,11,0.08);
+    border-left: 3px solid var(--amber);
+    padding: 12px 16px;
+    border-radius: 0 8px 8px 0;
+    margin: 20px 0;
+    font-size: 13px;
+    color: var(--pale);
+  }
+  .design-note strong { color: var(--amber); }
+
+  /* ── MOCKUP FRAMES ── */
+  .mockup-frame {
+    background: var(--navy2);
+    border: 1px solid rgba(248,250,252,0.08);
+    border-radius: 16px;
+    overflow: hidden;
+    margin: 24px 0;
+    box-shadow: 0 8px 32px rgba(0,0,0,0.3);
+  }
+  .mockup-toolbar {
+    background: rgba(248,250,252,0.03);
+    border-bottom: 1px solid rgba(248,250,252,0.06);
+    padding: 8px 16px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .mockup-dot {
+    width: 10px; height: 10px;
+    border-radius: 50%;
+    background: var(--slate);
+  }
+  .mockup-dot:nth-child(1) { background: #EF4444; }
+  .mockup-dot:nth-child(2) { background: #F59E0B; }
+  .mockup-dot:nth-child(3) { background: #10B981; }
+  .mockup-label {
+    margin-left: auto;
+    font-size: 11px;
+    color: var(--mid);
+    text-transform: uppercase;
+    letter-spacing: 1px;
+  }
+  .mockup-body {
+    padding: 24px;
+  }
+
+  /* ══════════════════════════════════════
+     PROPOSAL A: POST-DROP THEME PICKER
+     ══════════════════════════════════════ */
+
+  /* Drop zone states */
+  .mock-drop-zone {
+    border: 2px dashed var(--slate);
+    border-radius: 16px;
+    padding: 48px 24px;
+    text-align: center;
+    transition: all 0.3s;
+    cursor: pointer;
+  }
+  .mock-drop-zone:hover {
+    border-color: var(--amber);
+    background: rgba(245,158,11,0.04);
+  }
+  .mock-drop-zone .icon { font-size: 40px; margin-bottom: 12px; }
+  .mock-drop-zone .label { font-size: 16px; color: var(--pale); font-weight: 600; }
+  .mock-drop-zone .hint { font-size: 13px; color: var(--mid); margin-top: 4px; }
+
+  /* File accepted state */
+  .file-accepted {
+    background: rgba(20,184,166,0.06);
+    border: 2px solid var(--teal);
+    border-radius: 16px;
+    padding: 20px 24px;
+    display: flex;
+    align-items: center;
+    gap: 16px;
+  }
+  .file-accepted .file-icon {
+    width: 48px; height: 48px;
+    background: rgba(20,184,166,0.15);
+    border-radius: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 22px;
+    flex-shrink: 0;
+  }
+  .file-accepted .file-info { flex: 1; }
+  .file-accepted .file-name { font-weight: 600; color: var(--white); font-size: 15px; }
+  .file-accepted .file-meta { font-size: 12px; color: var(--light); }
+  .file-accepted .check { color: var(--teal); font-size: 22px; }
+
+  /* Theme strip */
+  .theme-strip {
+    margin-top: 20px;
+  }
+  .theme-strip-label {
+    font-size: 13px;
+    color: var(--light);
+    margin-bottom: 10px;
+    font-weight: 600;
+  }
+  .theme-strip-row {
+    display: flex;
+    gap: 8px;
+    overflow-x: auto;
+    padding-bottom: 8px;
+  }
+  .theme-chip {
+    flex-shrink: 0;
+    padding: 8px 12px;
+    border-radius: 10px;
+    border: 2px solid rgba(248,250,252,0.08);
+    background: rgba(248,250,252,0.03);
+    cursor: pointer;
+    transition: all 0.2s;
+    text-align: center;
+    min-width: 90px;
+  }
+  .theme-chip:hover {
+    border-color: rgba(248,250,252,0.2);
+    background: rgba(248,250,252,0.06);
+  }
+  .theme-chip.selected {
+    border-color: var(--amber);
+    background: rgba(245,158,11,0.08);
+  }
+  .theme-dots {
+    display: flex;
+    gap: 3px;
+    justify-content: center;
+    margin-bottom: 4px;
+  }
+  .theme-dots span {
+    width: 10px; height: 10px;
+    border-radius: 50%;
+    display: inline-block;
+  }
+  .theme-chip-name {
+    font-size: 10px;
+    color: var(--light);
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.3px;
+  }
+  .theme-chip.selected .theme-chip-name { color: var(--amber2); }
+  .theme-group-label {
+    font-size: 10px;
+    color: var(--mid);
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    margin: 12px 0 6px;
+    font-weight: 700;
+  }
+
+  /* Analyze button */
+  .analyze-btn {
+    margin-top: 20px;
+    width: 100%;
+    padding: 14px;
+    border: none;
+    border-radius: 12px;
+    background: linear-gradient(135deg, var(--amber), #D97706);
+    color: var(--navy);
+    font-size: 15px;
+    font-weight: 700;
+    cursor: pointer;
+    letter-spacing: 0.3px;
+    transition: all 0.2s;
+    box-shadow: 0 4px 12px rgba(245,158,11,0.25);
+  }
+  .analyze-btn:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 6px 20px rgba(245,158,11,0.35);
+  }
+
+  /* ══════════════════════════════════════
+     PROPOSAL B: TABBED RESULTS
+     ══════════════════════════════════════ */
+
+  .results-tabs {
+    display: flex;
+    gap: 2px;
+    background: rgba(248,250,252,0.03);
+    border-radius: 12px;
+    padding: 4px;
+    margin-bottom: 20px;
+    overflow-x: auto;
+  }
+  .results-tab {
+    padding: 10px 16px;
+    border-radius: 8px;
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+    color: var(--light);
+    transition: all 0.2s;
+    white-space: nowrap;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    border: none;
+    background: none;
+  }
+  .results-tab:hover { background: rgba(248,250,252,0.05); color: var(--white); }
+  .results-tab.active {
+    background: var(--navy);
+    color: var(--amber);
+    box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+  }
+  .results-tab .badge {
+    background: rgba(245,158,11,0.2);
+    color: var(--amber);
+    font-size: 10px;
+    padding: 1px 6px;
+    border-radius: 10px;
+    font-weight: 700;
+  }
+
+  .tab-panel {
+    display: none;
+    animation: fadeIn 0.3s ease;
+  }
+  .tab-panel.active { display: block; }
+  @keyframes fadeIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
+
+  /* Stat cards */
+  .stat-row {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 12px;
+    margin-bottom: 20px;
+  }
+  .stat-card {
+    background: rgba(248,250,252,0.04);
+    border: 1px solid rgba(248,250,252,0.06);
+    border-radius: 12px;
+    padding: 16px;
+    text-align: center;
+  }
+  .stat-card .val { font-size: 24px; font-weight: 700; color: var(--white); }
+  .stat-card .lbl { font-size: 11px; color: var(--mid); text-transform: uppercase; letter-spacing: 0.5px; margin-top: 4px; }
+
+  /* Topic tags */
+  .tag-row { display: flex; flex-wrap: wrap; gap: 6px; margin: 12px 0; }
+  .tag {
+    padding: 4px 12px;
+    border-radius: 20px;
+    font-size: 12px;
+    font-weight: 600;
+  }
+  .tag-teal { background: rgba(20,184,166,0.15); color: var(--teal); }
+  .tag-blue { background: rgba(59,130,246,0.15); color: var(--blue); }
+  .tag-amber { background: rgba(245,158,11,0.15); color: var(--amber); }
+  .tag-purple { background: rgba(139,92,246,0.15); color: var(--purple); }
+
+  /* Slide map compact */
+  .slide-map-compact {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(36px, 1fr));
+    gap: 4px;
+    margin: 12px 0;
+  }
+  .slide-dot {
+    width: 36px; height: 36px;
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 10px;
+    font-weight: 700;
+    color: var(--white);
+    cursor: default;
+    position: relative;
+  }
+
+  /* ══════════════════════════════════════
+     PROPOSAL C: ACCORDION RESULTS
+     ══════════════════════════════════════ */
+
+  .accordion-section {
+    border: 1px solid rgba(248,250,252,0.06);
+    border-radius: 12px;
+    margin-bottom: 8px;
+    overflow: hidden;
+    transition: all 0.3s;
+  }
+  .accordion-section:hover {
+    border-color: rgba(248,250,252,0.12);
+  }
+  .accordion-header {
+    padding: 16px 20px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    cursor: pointer;
+    background: rgba(248,250,252,0.02);
+    transition: all 0.2s;
+  }
+  .accordion-header:hover { background: rgba(248,250,252,0.04); }
+  .accordion-icon {
+    width: 32px; height: 32px;
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 16px;
+    flex-shrink: 0;
+  }
+  .accordion-title {
+    flex: 1;
+    font-weight: 600;
+    font-size: 14px;
+    color: var(--white);
+  }
+  .accordion-preview {
+    font-size: 12px;
+    color: var(--mid);
+    margin-right: 8px;
+  }
+  .accordion-chevron {
+    color: var(--mid);
+    transition: transform 0.3s;
+    font-size: 14px;
+  }
+  .accordion-section.open .accordion-chevron {
+    transform: rotate(180deg);
+  }
+  .accordion-body {
+    max-height: 0;
+    overflow: hidden;
+    transition: max-height 0.4s ease;
+  }
+  .accordion-section.open .accordion-body {
+    max-height: 800px;
+  }
+  .accordion-content {
+    padding: 0 20px 20px;
+    border-top: 1px solid rgba(248,250,252,0.04);
+  }
+
+  /* Summary strip at top of accordion */
+  .summary-strip {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 12px;
+    margin-bottom: 16px;
+    padding: 16px;
+    background: rgba(248,250,252,0.03);
+    border-radius: 12px;
+  }
+  .summary-item {
+    text-align: center;
+  }
+  .summary-item .val {
+    font-size: 20px;
+    font-weight: 700;
+    color: var(--amber);
+  }
+  .summary-item .lbl {
+    font-size: 11px;
+    color: var(--mid);
+    text-transform: uppercase;
+  }
+
+  /* ══════════════════════════════════════
+     PROPOSAL D: SIDEBAR + MAIN CONTENT
+     ══════════════════════════════════════ */
+
+  .sidebar-layout {
+    display: grid;
+    grid-template-columns: 200px 1fr;
+    gap: 0;
+    min-height: 500px;
+    border: 1px solid rgba(248,250,252,0.06);
+    border-radius: 12px;
+    overflow: hidden;
+  }
+  .sidebar-nav {
+    background: rgba(248,250,252,0.02);
+    border-right: 1px solid rgba(248,250,252,0.06);
+    padding: 12px 0;
+  }
+  .sidebar-item {
+    padding: 10px 16px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    cursor: pointer;
+    font-size: 13px;
+    color: var(--light);
+    transition: all 0.2s;
+    border-left: 3px solid transparent;
+  }
+  .sidebar-item:hover {
+    background: rgba(248,250,252,0.04);
+    color: var(--white);
+  }
+  .sidebar-item.active {
+    background: rgba(245,158,11,0.06);
+    color: var(--amber);
+    border-left-color: var(--amber);
+    font-weight: 600;
+  }
+  .sidebar-item .s-icon { font-size: 16px; width: 20px; text-align: center; }
+  .sidebar-main {
+    padding: 24px;
+    overflow-y: auto;
+    max-height: 500px;
+  }
+
+  /* ══════════════════════════════════════
+     COMPARISON TABLE
+     ══════════════════════════════════════ */
+
+  .compare-table {
+    width: 100%;
+    border-collapse: separate;
+    border-spacing: 0;
+    margin: 24px 0;
+    font-size: 13px;
+  }
+  .compare-table th {
+    background: rgba(248,250,252,0.04);
+    padding: 10px 16px;
+    text-align: left;
+    color: var(--light);
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    border-bottom: 1px solid rgba(248,250,252,0.08);
+  }
+  .compare-table td {
+    padding: 10px 16px;
+    border-bottom: 1px solid rgba(248,250,252,0.04);
+    color: var(--pale);
+  }
+  .compare-table tr:hover td { background: rgba(248,250,252,0.02); }
+  .good { color: var(--green); }
+  .ok { color: var(--amber); }
+  .bad { color: var(--red); }
+
+  /* ── Misconception compact styles ── */
+  .miscon-compact {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+    margin: 12px 0;
+  }
+  .miscon-chip {
+    padding: 10px 14px;
+    border-radius: 10px;
+    background: rgba(236,72,153,0.06);
+    border-left: 3px solid var(--pink);
+    font-size: 12px;
+    color: var(--pale);
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+  .miscon-chip:hover {
+    background: rgba(236,72,153,0.1);
+  }
+  .miscon-chip .miscon-label {
+    font-weight: 600;
+    color: var(--pink);
+    font-size: 11px;
+    text-transform: uppercase;
+    margin-bottom: 2px;
+  }
+  .miscon-expand {
+    max-height: 0;
+    overflow: hidden;
+    transition: max-height 0.3s ease;
+    margin-top: 6px;
+    font-size: 11px;
+    color: var(--light);
+  }
+  .miscon-chip.open .miscon-expand {
+    max-height: 200px;
+  }
+  .miscon-chip.open {
+    grid-column: 1 / -1;
+  }
+
+  /* ── Download panel compact ── */
+  .download-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 8px;
+  }
+  .dl-card {
+    background: rgba(248,250,252,0.04);
+    border: 1px solid rgba(248,250,252,0.08);
+    border-radius: 10px;
+    padding: 14px;
+    text-align: center;
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+  .dl-card:hover {
+    background: rgba(248,250,252,0.06);
+    border-color: var(--amber);
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+  }
+  .dl-card .dl-icon { font-size: 24px; margin-bottom: 6px; }
+  .dl-card .dl-label { font-size: 12px; font-weight: 600; color: var(--white); }
+  .dl-card .dl-sub { font-size: 10px; color: var(--mid); margin-top: 2px; }
+
+  /* ── General helpers ── */
+  .section-title {
+    font-size: 16px;
+    font-weight: 700;
+    color: var(--white);
+    margin-bottom: 12px;
+  }
+  .text-muted { color: var(--mid); }
+  .mt-16 { margin-top: 16px; }
+  .mb-8 { margin-bottom: 8px; }
+
+  /* Workflow arrow */
+  .flow-arrow {
+    text-align: center;
+    padding: 16px 0;
+    color: var(--mid);
+    font-size: 20px;
+  }
+
+  /* Insight cards compact */
+  .insight-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr;
+    gap: 8px;
+    margin: 12px 0;
+  }
+  .insight-card {
+    padding: 12px;
+    border-radius: 10px;
+    border: 1px solid rgba(248,250,252,0.06);
+  }
+  .insight-card h4 {
+    font-size: 12px;
+    font-weight: 700;
+    margin-bottom: 6px;
+    text-transform: uppercase;
+    letter-spacing: 0.3px;
+  }
+  .insight-card p { font-size: 12px; color: var(--light); }
+
+  .vs-badge {
+    display: inline-block;
+    padding: 2px 8px;
+    border-radius: 4px;
+    font-size: 10px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+  }
+  .vs-current { background: rgba(239,68,68,0.15); color: var(--red); }
+  .vs-proposed { background: rgba(16,185,129,0.15); color: var(--green); }
+
+  @media (max-width: 768px) {
+    .stat-row { grid-template-columns: repeat(2, 1fr); }
+    .miscon-compact { grid-template-columns: 1fr; }
+    .download-grid { grid-template-columns: repeat(2, 1fr); }
+    .sidebar-layout { grid-template-columns: 1fr; }
+    .sidebar-nav { border-right: none; border-bottom: 1px solid rgba(248,250,252,0.06); }
+    .insight-row { grid-template-columns: 1fr; }
+    .compare-table { font-size: 11px; }
+  }
+</style>
+</head>
+<body>
+
+<!-- ─── TOP NAVIGATION ─── -->
+<nav class="proposal-nav">
+  <h1>REDESIGN PROPOSALS</h1>
+  <div class="proposal-tabs">
+    <button class="proposal-tab active" data-target="overview">Overview</button>
+    <button class="proposal-tab" data-target="proposal-a">A: Theme After Drop</button>
+    <button class="proposal-tab" data-target="proposal-b">B: Tabbed Results</button>
+    <button class="proposal-tab" data-target="proposal-c">C: Accordion Stack</button>
+    <button class="proposal-tab" data-target="proposal-d">D: Sidebar Nav</button>
+    <button class="proposal-tab" data-target="compare">Compare</button>
+  </div>
+</nav>
+
+<!-- ═══════════════════════════════════════════════
+     OVERVIEW
+     ═══════════════════════════════════════════════ -->
+<section class="proposal active" id="overview">
+  <div class="proposal-header">
+    <h2>Current Pain Points & Solutions</h2>
+    <p class="subtitle">Three problems, four design directions. Everything can mix and match.</p>
+  </div>
+
+  <div class="design-note">
+    <strong>Problem 1 — Theme is buried.</strong> Users don't see the style picker until they scroll past all results. Moving it to <em>right after the drop</em> lets them choose before analysis runs, and the results render in their chosen theme instantly.
+  </div>
+  <div class="design-note">
+    <strong>Problem 2 — Scroll overload.</strong> 8 stacked sections create ~3000px of content. Topics → Standards → Rubric → Insights → Script is a lot of vertical real estate. The information is great, but the user loses context of where they are.
+  </div>
+  <div class="design-note">
+    <strong>Problem 3 — Repetition.</strong> Standards + Rubric + Insights can repeat similar info (e.g., the same benchmark appears in alignment AND rubric AND drives differentiation strategies). Grouping related content by topic rather than by type eliminates this.
+  </div>
+
+  <h3 style="color:var(--white); margin: 28px 0 16px;">Four Proposals</h3>
+
+  <table class="compare-table">
+    <thead>
+      <tr>
+        <th>Proposal</th>
+        <th>Scroll Reduction</th>
+        <th>Complexity</th>
+        <th>Best For</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td style="color:var(--white); font-weight:600;">A: Theme After Drop</td>
+        <td>Solves theme placement only</td>
+        <td class="good">Low — 1 new UI element</td>
+        <td>Quick win, can combine with B/C/D</td>
+      </tr>
+      <tr>
+        <td style="color:var(--white); font-weight:600;">B: Tabbed Results</td>
+        <td class="good">~75% less scroll</td>
+        <td class="ok">Medium — rewires displayResults</td>
+        <td>Dense info, power users who jump around</td>
+      </tr>
+      <tr>
+        <td style="color:var(--white); font-weight:600;">C: Accordion Stack</td>
+        <td class="good">~60% less scroll</td>
+        <td class="good">Low — extends existing rubric pattern</td>
+        <td>Progressive disclosure, scan-then-dive</td>
+      </tr>
+      <tr>
+        <td style="color:var(--white); font-weight:600;">D: Sidebar Nav</td>
+        <td class="good">~80% less scroll</td>
+        <td class="bad">Higher — new layout system</td>
+        <td>Dashboard feel, frequent section switching</td>
+      </tr>
+    </tbody>
+  </table>
+
+  <div class="design-note">
+    <strong>Recommendation:</strong> Combine <strong>A + B</strong> (theme picker after drop + tabbed results). This gives maximum scroll reduction with moderate implementation effort. The tab pattern is familiar, and the 5 tabs map naturally to the user's workflow: Overview → Insights → Downloads — see it, learn from it, build from it.
+  </div>
+</section>
+
+<!-- ═══════════════════════════════════════════════
+     PROPOSAL A: THEME AFTER DROP
+     ═══════════════════════════════════════════════ -->
+<section class="proposal" id="proposal-a">
+  <div class="proposal-header">
+    <h2>A: Theme Picker After Drop</h2>
+    <p class="subtitle">Move theme selection to the moment after file acceptance — before analysis begins. The drop zone transforms into a "configure & go" panel.</p>
+  </div>
+
+  <div class="design-note">
+    <strong>How it works:</strong> User drops file → drop zone morphs to show file info + theme strip + "Analyze" button. One click and the analysis runs with the chosen theme. Theme can also be changed later in the Downloads tab.
+  </div>
+
+  <!-- Before: empty drop zone -->
+  <h3 style="color:var(--light); font-size:13px; text-transform:uppercase; letter-spacing:1px; margin-bottom:12px;">Step 1 — Drop Zone (Before)</h3>
+  <div class="mockup-frame">
+    <div class="mockup-toolbar">
+      <span class="mockup-dot"></span>
+      <span class="mockup-dot"></span>
+      <span class="mockup-dot"></span>
+      <span class="mockup-label">Drop State</span>
+    </div>
+    <div class="mockup-body">
+      <div class="mock-drop-zone">
+        <div class="icon">📄</div>
+        <div class="label">Drop your lesson PPTX here</div>
+        <div class="hint">or click to browse</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="flow-arrow">↓</div>
+
+  <!-- After: file accepted + theme picker -->
+  <h3 style="color:var(--light); font-size:13px; text-transform:uppercase; letter-spacing:1px; margin-bottom:12px;">Step 2 — File Accepted + Choose Theme</h3>
+  <div class="mockup-frame">
+    <div class="mockup-toolbar">
+      <span class="mockup-dot"></span>
+      <span class="mockup-dot"></span>
+      <span class="mockup-dot"></span>
+      <span class="mockup-label">Configure & Go</span>
+    </div>
+    <div class="mockup-body">
+      <div class="file-accepted">
+        <div class="file-icon">📊</div>
+        <div class="file-info">
+          <div class="file-name">Module-3-Lesson-14-Fractions.pptx</div>
+          <div class="file-meta">42 slides · 8.2 MB · Ready to analyze</div>
+        </div>
+        <div class="check">✓</div>
+      </div>
+
+      <div class="theme-strip">
+        <div class="theme-strip-label">Choose Presentation Style</div>
+        <div class="theme-group-label">Original</div>
+        <div class="theme-strip-row">
+          <div class="theme-chip" onclick="selectTheme(this)">
+            <div class="theme-dots">
+              <span style="background:#0F172A"></span>
+              <span style="background:#F59E0B"></span>
+              <span style="background:#3B82F6"></span>
+            </div>
+            <div class="theme-chip-name">Classic</div>
+          </div>
+          <div class="theme-chip" onclick="selectTheme(this)">
+            <div class="theme-dots">
+              <span style="background:#FDF2E9"></span>
+              <span style="background:#E67E22"></span>
+              <span style="background:#F39C12"></span>
+            </div>
+            <div class="theme-chip-name">Warm</div>
+          </div>
+          <div class="theme-chip" onclick="selectTheme(this)">
+            <div class="theme-dots">
+              <span style="background:#111827"></span>
+              <span style="background:#3B82F6"></span>
+              <span style="background:#06B6D4"></span>
+            </div>
+            <div class="theme-chip-name">Bold</div>
+          </div>
+          <div class="theme-chip" onclick="selectTheme(this)">
+            <div class="theme-dots">
+              <span style="background:#F0FDFA"></span>
+              <span style="background:#14B8A6"></span>
+              <span style="background:#0D9488"></span>
+            </div>
+            <div class="theme-chip-name">Visual</div>
+          </div>
+          <div class="theme-chip" onclick="selectTheme(this)">
+            <div class="theme-dots">
+              <span style="background:#FFFBEB"></span>
+              <span style="background:#78716C"></span>
+              <span style="background:#A16207"></span>
+            </div>
+            <div class="theme-chip-name">Notebook</div>
+          </div>
+        </div>
+
+        <div class="theme-group-label">Vinculum</div>
+        <div class="theme-strip-row">
+          <div class="theme-chip selected" onclick="selectTheme(this)">
+            <div class="theme-dots">
+              <span style="background:#0F172A"></span>
+              <span style="background:#06B6D4"></span>
+              <span style="background:#A855F7"></span>
+            </div>
+            <div class="theme-chip-name">Dark Core</div>
+          </div>
+          <div class="theme-chip" onclick="selectTheme(this)">
+            <div class="theme-dots">
+              <span style="background:#18181B"></span>
+              <span style="background:#EC4899"></span>
+              <span style="background:#F97316"></span>
+            </div>
+            <div class="theme-chip-name">Neon</div>
+          </div>
+          <div class="theme-chip" onclick="selectTheme(this)">
+            <div class="theme-dots">
+              <span style="background:#F0F9FF"></span>
+              <span style="background:#0EA5E9"></span>
+              <span style="background:#38BDF8"></span>
+            </div>
+            <div class="theme-chip-name">Arctic</div>
+          </div>
+          <div class="theme-chip" onclick="selectTheme(this)">
+            <div class="theme-dots">
+              <span style="background:#ECFDF5"></span>
+              <span style="background:#10B981"></span>
+              <span style="background:#3B82F6"></span>
+            </div>
+            <div class="theme-chip-name">CRA</div>
+          </div>
+          <div class="theme-chip" onclick="selectTheme(this)">
+            <div class="theme-dots">
+              <span style="background:#0C4A6E"></span>
+              <span style="background:#14B8A6"></span>
+              <span style="background:#06B6D4"></span>
+            </div>
+            <div class="theme-chip-name">Ocean</div>
+          </div>
+        </div>
+      </div>
+
+      <button class="analyze-btn">⚡ Analyze & Build</button>
+    </div>
+  </div>
+
+  <div class="design-note">
+    <strong>Why this works:</strong> The theme choice feels like part of the setup, not an afterthought. The user sees color swatches immediately and gets a sense of control. The "Analyze & Build" button makes the action intentional — no surprise scroll. Remembers last choice via localStorage, so repeat users skip straight to Analyze.
+  </div>
+</section>
+
+<!-- ═══════════════════════════════════════════════
+     PROPOSAL B: TABBED RESULTS
+     ═══════════════════════════════════════════════ -->
+<section class="proposal" id="proposal-b">
+  <div class="proposal-header">
+    <h2>B: Tabbed Results Panel</h2>
+    <p class="subtitle">Replace the 8-section vertical scroll with 5 focused tabs. Each tab shows one "job" the teacher wants to do: scan, understand, teach, or download.</p>
+  </div>
+
+  <div class="design-note">
+    <strong>Grouping logic — from 8 sections to 5 tabs:</strong><br>
+    <strong>Overview</strong> = Lesson Details + Slide Map + Topics (the "what did I upload?" scan)<br>
+    <strong>Standards</strong> = Standards Alignment + Rubric (the "what should students know?" reference)<br>
+    <strong>Insights</strong> = Misconceptions + Differentiation + Essential Understandings (the "how do I teach this?" guide)<br>
+    <strong>Script</strong> = Build Script (the "what's under the hood?" view for debugging)<br>
+    <strong>Downloads</strong> = All output files + theme re-picker (the "give me my stuff" action)
+  </div>
+
+  <div class="mockup-frame">
+    <div class="mockup-toolbar">
+      <span class="mockup-dot"></span>
+      <span class="mockup-dot"></span>
+      <span class="mockup-dot"></span>
+      <span class="mockup-label">Tabbed Results</span>
+    </div>
+    <div class="mockup-body">
+      <!-- Tab Bar -->
+      <div class="results-tabs" id="mockTabs">
+        <button class="results-tab active" data-tab="tab-overview" onclick="switchMockTab(this)">📄 Overview</button>
+        <button class="results-tab" data-tab="tab-standards" onclick="switchMockTab(this)">🎯 Standards <span class="badge">3</span></button>
+        <button class="results-tab" data-tab="tab-insights" onclick="switchMockTab(this)">💡 Insights</button>
+        <button class="results-tab" data-tab="tab-script" onclick="switchMockTab(this)">⚙️ Script</button>
+        <button class="results-tab" data-tab="tab-downloads" onclick="switchMockTab(this)">📥 Downloads</button>
+      </div>
+
+      <!-- Tab: Overview -->
+      <div class="tab-panel active" id="tab-overview">
+        <div class="stat-row">
+          <div class="stat-card"><div class="val">42</div><div class="lbl">Slides</div></div>
+          <div class="stat-card"><div class="val">3</div><div class="lbl">Topics</div></div>
+          <div class="stat-card"><div class="val">5</div><div class="lbl">Grade</div></div>
+          <div class="stat-card"><div class="val">3</div><div class="lbl">Standards</div></div>
+        </div>
+
+        <div class="section-title">Topics Detected</div>
+        <div class="tag-row">
+          <span class="tag tag-teal">Fraction Addition</span>
+          <span class="tag tag-teal">Equivalent Fractions</span>
+          <span class="tag tag-teal">Mixed Numbers</span>
+        </div>
+
+        <div class="section-title mt-16">Slide Map</div>
+        <div class="slide-map-compact">
+          <div class="slide-dot" style="background:var(--blue)" title="Title">1</div>
+          <div class="slide-dot" style="background:var(--teal)" title="Warm-Up">2</div>
+          <div class="slide-dot" style="background:var(--teal)" title="Warm-Up">3</div>
+          <div class="slide-dot" style="background:var(--green)" title="Lesson">4</div>
+          <div class="slide-dot" style="background:var(--green)" title="Lesson">5</div>
+          <div class="slide-dot" style="background:var(--green)" title="Lesson">6</div>
+          <div class="slide-dot" style="background:var(--green)" title="Lesson">7</div>
+          <div class="slide-dot" style="background:var(--amber)" title="Practice">8</div>
+          <div class="slide-dot" style="background:var(--amber)" title="Practice">9</div>
+          <div class="slide-dot" style="background:var(--amber)" title="Practice">10</div>
+          <div class="slide-dot" style="background:var(--purple)" title="Check">11</div>
+          <div class="slide-dot" style="background:var(--purple)" title="Check">12</div>
+          <div class="slide-dot" style="background:var(--pink)" title="Exit">13</div>
+        </div>
+        <div class="tag-row" style="gap:12px; margin-top:8px;">
+          <span style="font-size:10px;color:var(--mid);">
+            <span style="display:inline-block;width:10px;height:10px;border-radius:3px;background:var(--blue);vertical-align:middle;margin-right:3px;"></span>Title
+          </span>
+          <span style="font-size:10px;color:var(--mid);">
+            <span style="display:inline-block;width:10px;height:10px;border-radius:3px;background:var(--teal);vertical-align:middle;margin-right:3px;"></span>Warm-Up
+          </span>
+          <span style="font-size:10px;color:var(--mid);">
+            <span style="display:inline-block;width:10px;height:10px;border-radius:3px;background:var(--green);vertical-align:middle;margin-right:3px;"></span>Lesson
+          </span>
+          <span style="font-size:10px;color:var(--mid);">
+            <span style="display:inline-block;width:10px;height:10px;border-radius:3px;background:var(--amber);vertical-align:middle;margin-right:3px;"></span>Practice
+          </span>
+          <span style="font-size:10px;color:var(--mid);">
+            <span style="display:inline-block;width:10px;height:10px;border-radius:3px;background:var(--purple);vertical-align:middle;margin-right:3px;"></span>Check
+          </span>
+          <span style="font-size:10px;color:var(--mid);">
+            <span style="display:inline-block;width:10px;height:10px;border-radius:3px;background:var(--pink);vertical-align:middle;margin-right:3px;"></span>Exit
+          </span>
+        </div>
+      </div>
+
+      <!-- Tab: Standards -->
+      <div class="tab-panel" id="tab-standards">
+        <div class="section-title">MCA-III Alignment</div>
+        <div style="margin:12px 0;">
+          <div style="padding:12px 16px; border-radius:10px; background:rgba(59,130,246,0.06); border:1px solid rgba(59,130,246,0.15); margin-bottom:8px;">
+            <div style="font-weight:700; color:var(--blue); font-size:13px;">5.NF.A.1</div>
+            <div style="font-size:12px; color:var(--pale); margin-top:4px;">Add and subtract fractions with unlike denominators</div>
+          </div>
+          <div style="padding:12px 16px; border-radius:10px; background:rgba(59,130,246,0.06); border:1px solid rgba(59,130,246,0.15); margin-bottom:8px;">
+            <div style="font-weight:700; color:var(--blue); font-size:13px;">5.NF.A.2</div>
+            <div style="font-size:12px; color:var(--pale); margin-top:4px;">Solve word problems involving addition and subtraction of fractions</div>
+          </div>
+        </div>
+        <div class="section-title mt-16">Proficiency Rubric</div>
+        <div style="font-size:12px; color:var(--light);">(Accordion rubric renders here — same as current, already compact)</div>
+      </div>
+
+      <!-- Tab: Insights -->
+      <div class="tab-panel" id="tab-insights">
+        <div class="section-title">Common Misconceptions</div>
+        <div class="miscon-compact">
+          <div class="miscon-chip" onclick="this.classList.toggle('open')">
+            <div class="miscon-label">❌ Adding denominators</div>
+            <div>Students add 1/3 + 1/4 = 2/7 instead of finding common denominator</div>
+            <div class="miscon-expand">
+              <strong>Why:</strong> Treating numerator and denominator as separate whole numbers.<br>
+              <strong>Address:</strong> Use fraction strips to show that 2/7 is a different size than 7/12.
+            </div>
+          </div>
+          <div class="miscon-chip" onclick="this.classList.toggle('open')">
+            <div class="miscon-label">❌ Larger denominator = larger fraction</div>
+            <div>Students think 1/8 > 1/4 because 8 > 4</div>
+            <div class="miscon-expand">
+              <strong>Why:</strong> Applying whole number logic to fraction denominators.<br>
+              <strong>Address:</strong> Compare using fraction bars — see that 1/4 covers more area.
+            </div>
+          </div>
+          <div class="miscon-chip" onclick="this.classList.toggle('open')">
+            <div class="miscon-label">❌ Cross-multiplying fractions</div>
+            <div>Applying cross-multiplication when adding instead of only for comparison</div>
+            <div class="miscon-expand">
+              <strong>Why:</strong> Procedure confusion from multiple fraction operations.<br>
+              <strong>Address:</strong> Anchor to Vinculum Giant One method — multiply by n/n = 1.
+            </div>
+          </div>
+          <div class="miscon-chip" onclick="this.classList.toggle('open')">
+            <div class="miscon-label">❌ Not simplifying results</div>
+            <div>Leaving answers like 4/8 instead of reducing to 1/2</div>
+            <div class="miscon-expand">
+              <strong>Why:</strong> Doesn't connect equivalent fractions to final answers.<br>
+              <strong>Address:</strong> Use "Is there a Giant One hiding?" check at the end.
+            </div>
+          </div>
+        </div>
+        <div style="text-align:center; font-size:11px; color:var(--mid); margin-top:4px;">Click any card to expand details</div>
+
+        <div class="section-title mt-16">Differentiation Strategies</div>
+        <div class="insight-row">
+          <div class="insight-card" style="border-color:rgba(16,185,129,0.3);">
+            <h4 style="color:var(--green);">🌱 Emergent</h4>
+            <p>Use fraction strips and visual models before any symbolic work. Focus on unit fractions first.</p>
+          </div>
+          <div class="insight-card" style="border-color:rgba(59,130,246,0.3);">
+            <h4 style="color:var(--blue);">🌍 ELL Support</h4>
+            <p>Provide bilingual vocabulary cards. Use visual sentence frames with fraction diagrams.</p>
+          </div>
+          <div class="insight-card" style="border-color:rgba(245,158,11,0.3);">
+            <h4 style="color:var(--amber);">⭐ Extending</h4>
+            <p>Challenge with fractions > 1 and mixed number operations. Introduce fraction of a set problems.</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- Tab: Script -->
+      <div class="tab-panel" id="tab-script">
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
+          <div class="section-title" style="margin:0;">Build Script</div>
+          <button style="padding:6px 14px; border-radius:8px; border:1px solid var(--slate); background:transparent; color:var(--light); font-size:12px; cursor:pointer;">📋 Copy</button>
+        </div>
+        <div style="background:rgba(0,0,0,0.3); border-radius:10px; padding:16px; font-family:monospace; font-size:12px; color:var(--light); max-height:300px; overflow-y:auto;">
+          <div style="color:var(--mid);"># rebuild.py — Auto-generated build script</div>
+          <div style="color:var(--cyan);">from</div> pptxgen <div style="color:var(--cyan);">import</div> Presentation<br>
+          <br>
+          <div style="color:var(--mid);"># Slide 1: Title</div>
+          <div>slide = prs.slides.add_slide(layout[0])</div>
+          <div>slide.shapes.title.text = <span style="color:var(--green);">"Fraction Addition"</span></div>
+          <div style="color:var(--mid);">...</div>
+        </div>
+      </div>
+
+      <!-- Tab: Downloads -->
+      <div class="tab-panel" id="tab-downloads">
+        <div class="section-title">Presentation Outputs</div>
+        <div class="download-grid">
+          <div class="dl-card">
+            <div class="dl-icon">📊</div>
+            <div class="dl-label">Rebuilt Lesson</div>
+            <div class="dl-sub">.pptx · Vinculum Dark Core</div>
+          </div>
+          <div class="dl-card">
+            <div class="dl-icon">📝</div>
+            <div class="dl-label">Student Notes</div>
+            <div class="dl-sub">.pptx · guided notes</div>
+          </div>
+          <div class="dl-card">
+            <div class="dl-icon">🎯</div>
+            <div class="dl-label">Tier 2 Intervention</div>
+            <div class="dl-sub">.pptx · small group</div>
+          </div>
+        </div>
+
+        <div class="section-title mt-16">Worksheets</div>
+        <div class="download-grid">
+          <div class="dl-card">
+            <div class="dl-icon" style="font-size:16px;">L1</div>
+            <div class="dl-label">Foundation</div>
+            <div class="dl-sub">.pdf</div>
+          </div>
+          <div class="dl-card">
+            <div class="dl-icon" style="font-size:16px;">L2</div>
+            <div class="dl-label">Developing</div>
+            <div class="dl-sub">.pdf</div>
+          </div>
+          <div class="dl-card">
+            <div class="dl-icon" style="font-size:16px;">L3</div>
+            <div class="dl-label">On-Level</div>
+            <div class="dl-sub">.pdf</div>
+          </div>
+          <div class="dl-card">
+            <div class="dl-icon" style="font-size:16px;">L4</div>
+            <div class="dl-label">Proficient</div>
+            <div class="dl-sub">.pdf</div>
+          </div>
+          <div class="dl-card">
+            <div class="dl-icon" style="font-size:16px;">L5</div>
+            <div class="dl-label">Advanced</div>
+            <div class="dl-sub">.pdf</div>
+          </div>
+          <div class="dl-card">
+            <div class="dl-icon" style="font-size:16px;">L6</div>
+            <div class="dl-label">Challenge</div>
+            <div class="dl-sub">.pdf</div>
+          </div>
+        </div>
+
+        <div class="section-title mt-16">Dialogue & Analysis</div>
+        <div class="download-grid">
+          <div class="dl-card">
+            <div class="dl-icon">💬</div>
+            <div class="dl-label">Dialogue Cards</div>
+            <div class="dl-sub">.pdf · printable</div>
+          </div>
+          <div class="dl-card">
+            <div class="dl-icon">🔍</div>
+            <div class="dl-label">Error Analysis</div>
+            <div class="dl-sub">.pptx</div>
+          </div>
+          <div class="dl-card">
+            <div class="dl-icon">📈</div>
+            <div class="dl-label">Progress Monitor</div>
+            <div class="dl-sub">.pdf · tracker</div>
+          </div>
+        </div>
+
+        <div class="section-title mt-16" style="font-size:13px; color:var(--light);">Change Theme</div>
+        <div class="theme-strip-row" style="margin-top:8px;">
+          <div class="theme-chip selected" onclick="selectTheme(this)">
+            <div class="theme-dots">
+              <span style="background:#0F172A"></span>
+              <span style="background:#06B6D4"></span>
+              <span style="background:#A855F7"></span>
+            </div>
+            <div class="theme-chip-name">Dark Core</div>
+          </div>
+          <div class="theme-chip" onclick="selectTheme(this)">
+            <div class="theme-dots">
+              <span style="background:#0F172A"></span>
+              <span style="background:#F59E0B"></span>
+              <span style="background:#3B82F6"></span>
+            </div>
+            <div class="theme-chip-name">Classic</div>
+          </div>
+          <div class="theme-chip" onclick="selectTheme(this)">
+            <div class="theme-dots">
+              <span style="background:#F0F9FF"></span>
+              <span style="background:#0EA5E9"></span>
+              <span style="background:#38BDF8"></span>
+            </div>
+            <div class="theme-chip-name">Arctic</div>
+          </div>
+        </div>
+        <div style="font-size:11px; color:var(--mid); margin-top:6px;">Rebuilds all .pptx outputs with the selected theme</div>
+      </div>
+
+    </div>
+  </div>
+
+  <div class="design-note">
+    <strong>Why tabs over scroll:</strong> Teachers have a clear workflow — they scan what was uploaded (Overview), check alignment (Standards), read teaching guidance (Insights), then grab their files (Downloads). Tabs match this mental model. Each tab is self-contained and never more than one screen tall. The Script tab is there for the curious but doesn't clutter the main flow.
+  </div>
+</section>
+
+<!-- ═══════════════════════════════════════════════
+     PROPOSAL C: ACCORDION STACK
+     ═══════════════════════════════════════════════ -->
+<section class="proposal" id="proposal-c">
+  <div class="proposal-header">
+    <h2>C: Accordion Stack</h2>
+    <p class="subtitle">Keep the vertical flow but collapse everything. A summary strip at top, then expand what you need. This extends the pattern already used in the Rubric section.</p>
+  </div>
+
+  <div class="mockup-frame">
+    <div class="mockup-toolbar">
+      <span class="mockup-dot"></span>
+      <span class="mockup-dot"></span>
+      <span class="mockup-dot"></span>
+      <span class="mockup-label">Accordion Results</span>
+    </div>
+    <div class="mockup-body">
+
+      <!-- Summary strip -->
+      <div class="summary-strip">
+        <div class="summary-item"><div class="val">42</div><div class="lbl">Slides</div></div>
+        <div class="summary-item"><div class="val">3</div><div class="lbl">Topics</div></div>
+        <div class="summary-item"><div class="val">5</div><div class="lbl">Standards</div></div>
+      </div>
+
+      <!-- Accordion items -->
+      <div class="accordion-section open" onclick="toggleAccordion(this)">
+        <div class="accordion-header">
+          <div class="accordion-icon" style="background:rgba(59,130,246,0.15); color:var(--blue);">📄</div>
+          <div class="accordion-title">Lesson Overview</div>
+          <div class="accordion-preview">Fraction Addition · Grade 5</div>
+          <div class="accordion-chevron">▼</div>
+        </div>
+        <div class="accordion-body">
+          <div class="accordion-content">
+            <div class="tag-row" style="margin-top:12px;">
+              <span class="tag tag-teal">Fraction Addition</span>
+              <span class="tag tag-teal">Equivalent Fractions</span>
+              <span class="tag tag-teal">Mixed Numbers</span>
+            </div>
+            <div class="slide-map-compact" style="margin-top:12px;">
+              <div class="slide-dot" style="background:var(--blue)">1</div>
+              <div class="slide-dot" style="background:var(--teal)">2</div>
+              <div class="slide-dot" style="background:var(--teal)">3</div>
+              <div class="slide-dot" style="background:var(--green)">4</div>
+              <div class="slide-dot" style="background:var(--green)">5</div>
+              <div class="slide-dot" style="background:var(--green)">6</div>
+              <div class="slide-dot" style="background:var(--amber)">7</div>
+              <div class="slide-dot" style="background:var(--amber)">8</div>
+              <div class="slide-dot" style="background:var(--purple)">9</div>
+              <div class="slide-dot" style="background:var(--pink)">10</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="accordion-section" onclick="toggleAccordion(this)">
+        <div class="accordion-header">
+          <div class="accordion-icon" style="background:rgba(20,184,166,0.15); color:var(--teal);">🎯</div>
+          <div class="accordion-title">Standards & Rubric</div>
+          <div class="accordion-preview">5.NF.A.1, 5.NF.A.2 + 3 more</div>
+          <div class="accordion-chevron">▼</div>
+        </div>
+        <div class="accordion-body"><div class="accordion-content"><div style="padding:12px 0; color:var(--light); font-size:13px;">Standards alignment cards + rubric accordion renders here</div></div></div>
+      </div>
+
+      <div class="accordion-section" onclick="toggleAccordion(this)">
+        <div class="accordion-header">
+          <div class="accordion-icon" style="background:rgba(236,72,153,0.15); color:var(--pink);">💡</div>
+          <div class="accordion-title">Teaching Insights</div>
+          <div class="accordion-preview">4 misconceptions · 3 strategies</div>
+          <div class="accordion-chevron">▼</div>
+        </div>
+        <div class="accordion-body"><div class="accordion-content"><div style="padding:12px 0; color:var(--light); font-size:13px;">Compact misconception chips + differentiation cards render here</div></div></div>
+      </div>
+
+      <div class="accordion-section" onclick="toggleAccordion(this)">
+        <div class="accordion-header">
+          <div class="accordion-icon" style="background:rgba(100,116,139,0.15); color:var(--light);">⚙️</div>
+          <div class="accordion-title">Build Script</div>
+          <div class="accordion-preview">rebuild.py · 42 slides</div>
+          <div class="accordion-chevron">▼</div>
+        </div>
+        <div class="accordion-body"><div class="accordion-content"><div style="padding:12px 0; color:var(--light); font-size:13px;">Code view renders here</div></div></div>
+      </div>
+
+      <div class="accordion-section" onclick="toggleAccordion(this)">
+        <div class="accordion-header">
+          <div class="accordion-icon" style="background:rgba(245,158,11,0.15); color:var(--amber);">📥</div>
+          <div class="accordion-title">Downloads</div>
+          <div class="accordion-preview">12 files ready</div>
+          <div class="accordion-chevron">▼</div>
+        </div>
+        <div class="accordion-body"><div class="accordion-content"><div style="padding:12px 0; color:var(--light); font-size:13px;">Download grid renders here</div></div></div>
+      </div>
+
+    </div>
+  </div>
+
+  <div class="design-note">
+    <strong>Pros:</strong> Lowest implementation cost — you already have the accordion pattern from the Rubric section. The summary strip at top gives instant context. Preview text on each header lets teachers scan without opening anything.<br>
+    <strong>Trade-off:</strong> Still vertical, so the mental model is "scroll and open" rather than "navigate to." Works great on mobile where tabs can feel cramped.
+  </div>
+</section>
+
+<!-- ═══════════════════════════════════════════════
+     PROPOSAL D: SIDEBAR NAV
+     ═══════════════════════════════════════════════ -->
+<section class="proposal" id="proposal-d">
+  <div class="proposal-header">
+    <h2>D: Sidebar Navigation</h2>
+    <p class="subtitle">A dashboard-style layout with a persistent sidebar. Best for when the tool feels less like a one-shot analyzer and more like a lesson workbench. Most complex to build.</p>
+  </div>
+
+  <div class="mockup-frame">
+    <div class="mockup-toolbar">
+      <span class="mockup-dot"></span>
+      <span class="mockup-dot"></span>
+      <span class="mockup-dot"></span>
+      <span class="mockup-label">Sidebar Layout</span>
+    </div>
+    <div class="mockup-body" style="padding:0;">
+      <div class="sidebar-layout">
+        <nav class="sidebar-nav">
+          <div class="sidebar-item active" onclick="switchSidebar(this, 'sb-overview')">
+            <span class="s-icon">📄</span> Overview
+          </div>
+          <div class="sidebar-item" onclick="switchSidebar(this, 'sb-standards')">
+            <span class="s-icon">🎯</span> Standards
+          </div>
+          <div class="sidebar-item" onclick="switchSidebar(this, 'sb-insights')">
+            <span class="s-icon">💡</span> Insights
+          </div>
+          <div class="sidebar-item" onclick="switchSidebar(this, 'sb-script')">
+            <span class="s-icon">⚙️</span> Script
+          </div>
+          <div class="sidebar-item" onclick="switchSidebar(this, 'sb-downloads')">
+            <span class="s-icon">📥</span> Downloads
+          </div>
+          <div style="border-top:1px solid rgba(248,250,252,0.06); margin:8px 0;"></div>
+          <div class="sidebar-item" onclick="switchSidebar(this, 'sb-theme')">
+            <span class="s-icon">🎨</span> Theme
+          </div>
+        </nav>
+        <div class="sidebar-main">
+          <div class="tab-panel active" id="sb-overview">
+            <div class="stat-row">
+              <div class="stat-card"><div class="val">42</div><div class="lbl">Slides</div></div>
+              <div class="stat-card"><div class="val">3</div><div class="lbl">Topics</div></div>
+              <div class="stat-card"><div class="val">5</div><div class="lbl">Grade</div></div>
+              <div class="stat-card"><div class="val">3</div><div class="lbl">Standards</div></div>
+            </div>
+            <div class="section-title">Topics</div>
+            <div class="tag-row">
+              <span class="tag tag-teal">Fraction Addition</span>
+              <span class="tag tag-teal">Equivalent Fractions</span>
+              <span class="tag tag-teal">Mixed Numbers</span>
+            </div>
+          </div>
+          <div class="tab-panel" id="sb-standards">
+            <div class="section-title">Standards loaded here</div>
+          </div>
+          <div class="tab-panel" id="sb-insights">
+            <div class="section-title">Teaching insights here</div>
+          </div>
+          <div class="tab-panel" id="sb-script">
+            <div class="section-title">Build script here</div>
+          </div>
+          <div class="tab-panel" id="sb-downloads">
+            <div class="section-title">Downloads here</div>
+          </div>
+          <div class="tab-panel" id="sb-theme">
+            <div class="section-title">Theme picker here</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="design-note">
+    <strong>Pros:</strong> Most "app-like" feel. Navigation is always visible. Zero scroll within each view if content fits. Works well on wide screens.<br>
+    <strong>Trade-off:</strong> Significantly more work to implement. Mobile needs a drawer/hamburger pattern. Feels heavier than the current single-page tool. Best if the Digester evolves into a multi-feature platform.
+  </div>
+</section>
+
+<!-- ═══════════════════════════════════════════════
+     COMPARISON
+     ═══════════════════════════════════════════════ -->
+<section class="proposal" id="compare">
+  <div class="proposal-header">
+    <h2>Side-by-Side Comparison</h2>
+    <p class="subtitle">Pick what matters most to you. All proposals can be combined — A is independent and works with any of B/C/D.</p>
+  </div>
+
+  <table class="compare-table">
+    <thead>
+      <tr>
+        <th>Criteria</th>
+        <th>A: Theme Picker</th>
+        <th>B: Tabs</th>
+        <th>C: Accordion</th>
+        <th>D: Sidebar</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td style="color:var(--white);">Scroll Reduction</td>
+        <td>—</td>
+        <td class="good">~75%</td>
+        <td class="good">~60%</td>
+        <td class="good">~80%</td>
+      </tr>
+      <tr>
+        <td style="color:var(--white);">Implementation Effort</td>
+        <td class="good">1-2 hours</td>
+        <td class="ok">3-4 hours</td>
+        <td class="good">2-3 hours</td>
+        <td class="bad">5-6 hours</td>
+      </tr>
+      <tr>
+        <td style="color:var(--white);">Mobile Experience</td>
+        <td class="good">Great</td>
+        <td class="ok">Good (horizontal scroll on tabs)</td>
+        <td class="good">Great (native vertical)</td>
+        <td class="bad">Needs drawer</td>
+      </tr>
+      <tr>
+        <td style="color:var(--white);">Reduces Repetition</td>
+        <td>No</td>
+        <td class="good">Yes (grouped by job)</td>
+        <td class="ok">Somewhat (hidden by default)</td>
+        <td class="good">Yes (grouped by job)</td>
+      </tr>
+      <tr>
+        <td style="color:var(--white);">Theme Before Analysis</td>
+        <td class="good">Yes</td>
+        <td>No (add A for this)</td>
+        <td>No (add A for this)</td>
+        <td>No (add A for this)</td>
+      </tr>
+      <tr>
+        <td style="color:var(--white);">Existing Pattern Match</td>
+        <td class="good">Drop zone transform</td>
+        <td class="ok">New pattern</td>
+        <td class="good">Extends rubric accordion</td>
+        <td class="bad">New layout system</td>
+      </tr>
+      <tr>
+        <td style="color:var(--white);">Info Discoverability</td>
+        <td>—</td>
+        <td class="ok">Hidden behind tabs</td>
+        <td class="good">Headers visible, preview text</td>
+        <td class="ok">Hidden behind nav</td>
+      </tr>
+    </tbody>
+  </table>
+
+  <div class="design-note" style="border-left-color:var(--teal);">
+    <strong style="color:var(--teal);">My Recommendation: A + B</strong><br>
+    The theme-after-drop (A) is a quick win you can ship immediately. The tabbed results (B) gives the biggest scroll reduction with moderate effort. Together they create a clean two-phase experience: <em>configure → explore</em>. The misconception "click to expand" pattern from the Insights tab keeps those cards compact without losing the detail you already have.
+  </div>
+
+  <div class="design-note" style="border-left-color:var(--purple); margin-top:12px;">
+    <strong style="color:var(--purple);">On Repetition:</strong><br>
+    The biggest repetition win comes from grouping by <em>teacher job</em> rather than <em>data type</em>. Currently a benchmark appears in Standards Alignment, then again in Rubric, and again drives Differentiation. With tabs, Standards + Rubric merge into one "Standards" tab — you see the standard, its rubric, and related teaching notes in one place. That's the structural fix for repetition.
+  </div>
+</section>
+
+<script>
+  // Proposal navigation
+  document.querySelectorAll('.proposal-tab').forEach(tab => {
+    tab.addEventListener('click', () => {
+      document.querySelectorAll('.proposal-tab').forEach(t => t.classList.remove('active'));
+      document.querySelectorAll('.proposal').forEach(p => p.classList.remove('active'));
+      tab.classList.add('active');
+      document.getElementById(tab.dataset.target).classList.add('active');
+    });
+  });
+
+  // Mock tab switching (Proposal B)
+  function switchMockTab(btn) {
+    const parent = btn.closest('.mockup-body');
+    parent.querySelectorAll('.results-tab').forEach(t => t.classList.remove('active'));
+    parent.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
+    btn.classList.add('active');
+    document.getElementById(btn.dataset.tab).classList.add('active');
+  }
+
+  // Theme chip selection
+  function selectTheme(el) {
+    const strip = el.closest('.theme-strip, .mockup-body, .tab-panel');
+    if (strip) {
+      strip.querySelectorAll('.theme-chip').forEach(c => c.classList.remove('selected'));
+    } else {
+      el.parentElement.querySelectorAll('.theme-chip').forEach(c => c.classList.remove('selected'));
+    }
+    el.classList.add('selected');
+  }
+
+  // Accordion toggle
+  function toggleAccordion(section) {
+    section.classList.toggle('open');
+  }
+
+  // Sidebar nav
+  function switchSidebar(item, panelId) {
+    const layout = item.closest('.sidebar-layout');
+    layout.querySelectorAll('.sidebar-item').forEach(i => i.classList.remove('active'));
+    layout.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
+    item.classList.add('active');
+    document.getElementById(panelId).classList.add('active');
+  }
+</script>
+
+</body>
+</html>

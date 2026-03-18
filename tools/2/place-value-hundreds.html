@@ -1,0 +1,516 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>VINCULUM — Place Value: Hundreds</title>
+<link rel="stylesheet" href="../../vinculum-core.css">
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;600&display=swap');
+*:focus-visible {outline:2px solid var(--cyan);outline-offset:2px;border-radius:4px;}
+.sr-only {position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0;}
+*{margin:0;padding:0;box-sizing:border-box;}
+body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);height:100vh;display:flex;flex-direction:column;overflow:hidden;user-select:none;}
+
+.vinculum-header {display:flex;align-items:center;justify-content:space-between;padding:12px 24px;background:var(--bg2);border-bottom:1px solid var(--border);flex-shrink:0;}
+.vinculum-header-left {display:flex;align-items:center;gap:16px;}
+.vinculum-back-btn {padding:6px 12px;border-radius:8px;border:1px solid var(--border);background:transparent;color:var(--text2);font-size:13px;font-family:inherit;cursor:pointer;}
+.vinculum-back-btn:hover{background:var(--card);color:var(--cyan);}
+.vinculum-header-title {font-size:18px;font-weight:800;}
+.header-title span{background:var(--grad);-webkit-background-clip:text;-webkit-text-fill-color:transparent;}
+.vinculum-header-badge {font-size:10px;font-weight:700;padding:3px 10px;border-radius:6px;background:rgba(0,230,118,0.1);color:var(--green);border:1px solid rgba(0,230,118,0.2);letter-spacing:1px;}
+.vinculum-std-tags {display:flex;gap:6px;}
+.vinculum-std-tag {font-size:10px;font-family:'JetBrains Mono',monospace;font-weight:600;padding:3px 8px;border-radius:5px;background:rgba(0,212,255,0.08);color:var(--cyan);}
+.std-tag.mn{background:rgba(255,145,0,0.08);color:var(--orange);}
+
+.vinculum-mode-tabs {display:flex;gap:4px;padding:8px 24px;background:var(--bg2);border-bottom:1px solid var(--border);flex-shrink:0;}
+.vinculum-mode-tab {padding:8px 20px;border-radius:8px;border:1px solid transparent;background:transparent;color:var(--muted);font-size:13px;font-weight:600;font-family:inherit;cursor:pointer;display:flex;align-items:center;gap:6px;transition:all 0.2s;}
+.vinculum-mode-tab:hover{color:var(--text2);background:var(--card);}
+.vinculum-mode-tab.active-explore{background:rgba(0,212,255,0.1);color:var(--cyan);border-color:rgba(0,212,255,0.3);}
+.vinculum-mode-tab.active-practice{background:rgba(0,230,118,0.1);color:var(--green);border-color:rgba(0,230,118,0.3);}
+.vinculum-mode-tab.active-play{background:rgba(255,59,139,0.1);color:var(--pink);border-color:rgba(255,59,139,0.3);}
+.vinculum-diff-selector {margin-left:auto;display:flex;gap:4px;align-items:center;}
+.vinculum-diff-label {font-size:11px;color:var(--muted);margin-right:8px;font-weight:600;text-transform:uppercase;letter-spacing:1px;}
+.vinculum-diff-btn {padding:5px 12px;border-radius:6px;border:1px solid var(--border);background:transparent;color:var(--muted);font-size:11px;font-weight:600;font-family:inherit;cursor:pointer;transition:all 0.2s;}
+.diff-btn.active{background:rgba(0,212,255,0.1);color:var(--cyan);border-color:rgba(0,212,255,0.3);}
+
+.main{flex:1;display:flex;overflow:hidden;}
+.workspace{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:24px;gap:16px;overflow:hidden;}
+.side-panel{width:280px;background:var(--bg2);border-left:1px solid var(--border);padding:20px;overflow-y:auto;flex-shrink:0;}
+.panel-section{margin-bottom:20px;}
+.panel-title{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:1.5px;color:var(--muted);margin-bottom:8px;}
+.panel-text{font-size:13px;color:var(--text2);line-height:1.6;}
+
+/* Place Value Mat */
+.place-value-mat{display:flex;gap:12px;justify-content:center;align-items:flex-end;background:var(--card);border:1px solid var(--border);border-radius:12px;padding:24px;margin:12px 0;}
+.place-column{display:flex;flex-direction:column;align-items:center;gap:8px;}
+.place-label{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:1px;color:var(--muted);}
+.place-column.hundreds .place-label{color:var(--purple);}
+.place-column.tens .place-label{color:var(--blue);}
+.place-column.ones .place-label{color:var(--cyan);}
+.place-block-area{display:grid;grid-template-columns:repeat(2,40px);grid-auto-rows:40px;gap:4px;min-height:100px;background:rgba(0,0,0,0.1);border-radius:8px;padding:8px;border:2px dashed var(--border);}
+.flat{width:40px;height:40px;background:var(--purple);border:2px solid rgba(179,136,255,0.6);border-radius:4px;display:grid;grid-template-columns:repeat(10,1fr);grid-template-rows:repeat(10,1fr);gap:1px;padding:2px;}
+.flat-square{background:rgba(255,255,255,0.2);}
+.rod{width:40px;height:40px;background:var(--blue);border:2px solid rgba(100,150,255,0.6);border-radius:4px;display:flex;flex-direction:column;justify-content:space-around;padding:4px 2px;}
+.rod-line{height:2px;background:rgba(255,255,255,0.3);}
+.unit{width:20px;height:20px;background:var(--cyan);border:2px solid rgba(0,212,255,0.6);border-radius:3px;}
+.place-value{font-size:14px;font-weight:700;font-family:'JetBrains Mono',monospace;color:var(--text);}
+.place-column.hundreds .place-value{color:var(--purple);}
+.place-column.tens .place-value{color:var(--blue);}
+.place-column.ones .place-value{color:var(--cyan);}
+
+/* Form Display */
+.form-display{font-size:36px;font-weight:900;font-family:'JetBrains Mono',monospace;text-align:center;margin:12px 0;letter-spacing:2px;}
+.std-form{background:rgba(0,212,255,0.12);color:var(--cyan);padding:12px 24px;border-radius:12px;margin:6px 0;}
+.expanded-form{background:rgba(179,136,255,0.12);color:var(--purple);padding:12px 24px;border-radius:12px;margin:6px 0;font-size:16px;font-weight:600;}
+.word-form{background:rgba(255,59,139,0.12);color:var(--pink);padding:12px 24px;border-radius:12px;margin:6px 0;font-size:14px;}
+
+/* Number Selector */
+.number-selector{display:flex;gap:8px;justify-content:center;flex-wrap:wrap;margin:12px 0;}
+.num-btn{width:52px;height:52px;border-radius:10px;border:2px solid var(--border);background:var(--card);color:var(--text);font-size:18px;font-weight:700;font-family:'JetBrains Mono',monospace;cursor:pointer;transition:all 0.15s;}
+.num-btn:hover{border-color:var(--cyan);transform:scale(1.08);}
+.num-btn.active{border-color:var(--cyan);background:rgba(0,212,255,0.12);color:var(--cyan);}
+
+/* Comparison Display */
+.comparison-display{display:flex;align-items:center;gap:16px;justify-content:center;margin:12px 0;}
+.comp-num{font-size:32px;font-weight:700;font-family:'JetBrains Mono',monospace;background:var(--card);border:2px solid var(--border);padding:12px 24px;border-radius:10px;min-width:100px;text-align:center;}
+.comp-btn{width:60px;height:60px;border-radius:12px;border:2px solid var(--border);background:var(--card);color:var(--text2);font-size:28px;font-weight:700;cursor:pointer;transition:all 0.2s;}
+.comp-btn:hover{border-color:var(--cyan);color:var(--cyan);}
+.comp-btn.selected{background:rgba(0,212,255,0.1);border-color:var(--cyan);color:var(--cyan);}
+
+/* Instruction Box */
+.instruction-box{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:14px 20px;text-align:center;font-size:15px;color:var(--text2);font-weight:500;max-width:600px;transition:all 0.3s;}
+.instruction-box.highlight-green{border-color:var(--green);color:var(--green);}
+
+/* Controls */
+.controls{display:flex;gap:8px;flex-wrap:wrap;justify-content:center;}
+.ctrl-btn{padding:10px 20px;border-radius:10px;border:1px solid var(--border);background:var(--card);color:var(--text2);font-size:13px;font-weight:600;font-family:inherit;cursor:pointer;transition:all 0.2s;display:flex;align-items:center;gap:6px;}
+.ctrl-btn:hover{background:var(--card2);color:var(--text);}
+.ctrl-btn.primary{background:var(--grad);color:var(--bg);border-color:transparent;}
+
+/* Answer Buttons */
+.answer-grid{display:flex;gap:10px;flex-wrap:wrap;justify-content:center;max-width:500px;}
+.answer-btn{width:52px;height:52px;border-radius:12px;border:2px solid var(--border);background:var(--card);color:var(--text);font-size:18px;font-weight:700;font-family:'JetBrains Mono',monospace;cursor:pointer;transition:all 0.15s;display:flex;align-items:center;justify-content:center;}
+.answer-btn:hover{border-color:var(--cyan);transform:scale(1.1);}
+.answer-btn.correct-flash{border-color:var(--green);background:rgba(0,230,118,0.2);color:var(--green);animation:correctFlash 0.4s ease-out;}
+.answer-btn.incorrect-flash{border-color:var(--pink);background:rgba(255,59,139,0.2);color:var(--pink);animation:shake 0.3s ease-in-out;}
+
+/* Score Display */
+.score-display{text-align:center;padding:16px;background:var(--card);border-radius:12px;margin-bottom:12px;}
+.score-value{font-size:36px;font-weight:900;font-family:'JetBrains Mono',monospace;background:var(--grad);-webkit-background-clip:text;-webkit-text-fill-color:transparent;}
+.score-label{font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:1px;}
+.streak-bar{height:6px;background:var(--card);border-radius:3px;overflow:hidden;margin-top:8px;}
+.streak-fill{height:100%;background:var(--grad);border-radius:3px;transition:width 0.3s;}
+
+/* Feedback Popup */
+.feedback{position:fixed;top:50%;left:50%;transform:translate(-50%,-50%) scale(0);padding:24px 48px;border-radius:20px;font-size:28px;font-weight:800;z-index:200;pointer-events:none;transition:transform 0.3s cubic-bezier(0.175,0.885,0.32,1.275),opacity 0.3s;opacity:0;}
+.feedback.show{transform:translate(-50%,-50%) scale(1);opacity:1;}
+.feedback.correct{background:rgba(0,230,118,0.15);color:var(--green);border:2px solid var(--green);}
+.feedback.incorrect{background:rgba(255,59,139,0.15);color:var(--pink);border:2px solid var(--pink);}
+
+@keyframes correctFlash{0%{transform:scale(1.2);} 100%{transform:scale(1);}}
+@keyframes shake{0%,100%{transform:translateX(0);} 25%{transform:translateX(-4px);} 75%{transform:translateX(4px);}}
+
+::-webkit-scrollbar{width:6px;}::-webkit-scrollbar-track{background:transparent;}::-webkit-scrollbar-thumb{background:var(--border);border-radius:3px;}
+</style>
+</head>
+<body>
+
+<div class="vinculum-header">
+  <div class="vinculum-header-left">
+    <a class="vinculum-back-btn" href="../../VINCULUM-Hub.html" style="text-decoration:none;">◀ Hub</a>
+    <div class="vinculum-header-title"><span>VINCULUM</span> Place Value: Hundreds</div>
+    <span class="vinculum-header-badge">2.NBT</span>
+  </div>
+  <div class="vinculum-std-tags">
+    <span class="vinculum-std-tag">2.NBT.1</span>
+    <span class="vinculum-std-tag">2.NBT.3</span>
+    <span class="vinculum-std-tag">2.NBT.4</span>
+    <span class="vinculum-std-tag mn">MN 2.1.1.1</span>
+  </div>
+</div>
+
+<div class="vinculum-mode-tabs">
+  <button class="vinculum-mode-tab active-explore" id="tabExplore" onclick="setMode('explore')"><svg width="18" height="18" viewBox="0 0 48 48" fill="none"><path d="M4 24C4 24 12 12 24 12C36 12 44 24 44 24C44 24 36 36 24 36C12 36 4 24 4 24Z" stroke="currentColor" stroke-width="3" fill="none"/><circle cx="24" cy="24" r="7" stroke="currentColor" stroke-width="3" fill="none"/><circle cx="24" cy="24" r="3" fill="currentColor"/></svg> Explore</button>
+  <button class="vinculum-mode-tab" id="tabPractice" onclick="setMode('practice')"><svg width="18" height="18" viewBox="0 0 48 48" fill="none"><circle cx="24" cy="24" r="20" stroke="currentColor" stroke-width="3" fill="none" opacity="0.3"/><circle cx="24" cy="24" r="20" stroke="currentColor" stroke-width="3" fill="none" stroke-dasharray="126" stroke-dashoffset="32" stroke-linecap="round"/><polyline points="16,24 22,32 34,16" stroke="currentColor" stroke-width="4" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg> Practice</button>
+  <button class="vinculum-mode-tab" id="tabPlay" onclick="setMode('play')"><svg width="18" height="18" viewBox="0 0 48 48" fill="none"><polygon points="28,4 12,28 22,28 18,44 36,18 26,18" fill="none" stroke="currentColor" stroke-width="3" stroke-linejoin="round"/></svg> Play</button>
+  <div class="vinculum-diff-selector">
+    <span class="vinculum-diff-label">Level</span>
+    <button class="vinculum-diff-btn active" id="diffE" onclick="setDiff('emergent')">To 200</button>
+    <button class="vinculum-diff-btn" id="diffP" onclick="setDiff('proficient')">To 500</button>
+    <button class="vinculum-diff-btn" id="diffA" onclick="setDiff('advanced')">To 999</button>
+  </div>
+</div>
+
+<div class="main">
+  <div class="workspace" role="main" id="workspace"></div>
+  <div class="side-panel" id="sidePanel"></div>
+</div>
+<div class="feedback" id="feedback"></div>
+
+<script>
+let S = {
+  mode: 'explore',
+  diff: 'emergent',
+  maxN: 200,
+  number: 145,
+  hundreds: 1,
+  tens: 4,
+  ones: 5,
+  pNumber: 0,
+  pAnswer: 0,
+  pType: 'identify',
+  score: 0,
+  streak: 0,
+  best: 0,
+  round: 0,
+  total: 10,
+  playType: 'identify',
+  playChoices: []
+};
+
+function rand(a, b) {
+  return Math.floor(Math.random() * (b - a + 1)) + a;
+}
+
+
+function setMode(m) {
+  S.mode = m;
+  document.querySelectorAll('.vinculum-mode-tab').forEach(t => t.className = 'mode-tab');
+  document.getElementById('tab' + m.charAt(0).toUpperCase() + m.slice(1)).className = 'mode-tab active-' + m;
+  S.round = 0;
+  S.score = 0;
+  S.streak = 0;
+  if (m === 'practice') newPractice();
+  render();
+}
+
+function setDiff(d) {
+  S.diff = d;
+  S.maxN = d === 'emergent' ? 200 : d === 'proficient' ? 500 : 999;
+  document.querySelectorAll('.diff-btn').forEach(b => b.classList.remove('active'));
+  document.getElementById('diff' + d.charAt(0).toUpperCase()).classList.add('active');
+  S.number = Math.min(S.number, S.maxN);
+  if (S.mode === 'practice') newPractice();
+  render();
+}
+
+function updateNumber(n) {
+  S.number = Math.max(0, Math.min(n, S.maxN));
+  S.hundreds = Math.floor(S.number / 100);
+  S.tens = Math.floor((S.number % 100) / 10);
+  S.ones = S.number % 10;
+  render();
+}
+
+function render() {
+  const ws = document.getElementById('workspace');
+  const sp = document.getElementById('sidePanel');
+  if (S.mode === 'explore') renderExplore(ws, sp);
+  else if (S.mode === 'practice') renderPractice(ws, sp);
+  else renderPlay(ws, sp);
+}
+
+/* ═════ PLACE VALUE MAT RENDERING ═════ */
+function buildPlaceValueMat(h, t, o, editable = false) {
+  let html = '<div class="place-value-mat">';
+
+  // HUNDREDS
+  html += '<div class="place-column hundreds">';
+  html += '<div class="place-label">Hundreds</div>';
+  html += '<div class="place-block-area">';
+  for (let i = 0; i < h; i++) {
+    html += '<div class="flat"><div class="flat-square"></div>'.repeat(100).slice(0, -5) + '</div>';
+  }
+  html += '</div>';
+  html += `<div class="place-value">${h}</div>`;
+  html += '</div>';
+
+  // TENS
+  html += '<div class="place-column tens">';
+  html += '<div class="place-label">Tens</div>';
+  html += '<div class="place-block-area" style="grid-template-columns:repeat(1,40px);">';
+  for (let i = 0; i < t; i++) {
+    html += '<div class="rod"><div class="rod-line"></div><div class="rod-line"></div><div class="rod-line"></div></div>';
+  }
+  html += '</div>';
+  html += `<div class="place-value">${t}</div>`;
+  html += '</div>';
+
+  // ONES
+  html += '<div class="place-column ones">';
+  html += '<div class="place-label">Ones</div>';
+  html += '<div class="place-block-area" style="grid-template-columns:repeat(5,20px);">';
+  for (let i = 0; i < o; i++) {
+    html += '<div class="unit"></div>';
+  }
+  html += '</div>';
+  html += `<div class="place-value">${o}</div>`;
+  html += '</div>';
+
+  html += '</div>';
+  return html;
+}
+
+/* ═════ EXPLORE MODE ═════ */
+function renderExplore(ws, sp) {
+  let h = `<div class="instruction-box">Pick a number and watch it break down!</div>`;
+
+  // Number selector (increments of 10)
+  h += '<div class="number-selector">';
+  const increments = [100, 110, 120, 130, 140, 150, 160, 170, 180, 190];
+  if (S.maxN >= 200) {
+    increments.push(200);
+  }
+  increments.forEach(n => {
+    if (n <= S.maxN) {
+      h += `<button class="num-btn ${n === S.number ? 'active' : ''}" onclick="updateNumber(${n})">${n}</button>`;
+    }
+  });
+  h += '</div>';
+
+  // Place value mat
+  h += buildPlaceValueMat(S.hundreds, S.tens, S.ones);
+
+  // Forms display
+  h += `<div class="form-display">${S.number}</div>`;
+  h += `<div class="std-form"><strong>Standard Form:</strong> ${S.number}</div>`;
+  h += `<div class="expanded-form"><strong>Expanded Form:</strong> ${S.hundreds > 0 ? S.hundreds + ' × 100' : ''}${S.hundreds > 0 && (S.tens > 0 || S.ones > 0) ? ' + ' : ''}${S.tens > 0 ? S.tens + ' × 10' : ''}${S.tens > 0 && S.ones > 0 ? ' + ' : ''}${S.ones > 0 ? S.ones : ''}</div>`;
+  h += `<div class="word-form"><strong>Word Form:</strong> ${numberToWords(S.number)}</div>`;
+
+  // Controls
+  h += '<div class="controls">';
+  h += `<button class="ctrl-btn" onclick="S.number = Math.max(0, S.number - 10); updateNumber(S.number);">← Decrease</button>`;
+  h += `<button class="ctrl-btn primary" onclick="S.number = 145; updateNumber(145);">145</button>`;
+  h += `<button class="ctrl-btn" onclick="S.number = Math.min(S.maxN, S.number + 10); updateNumber(S.number);">Increase →</button>`;
+  h += '</div>';
+
+  ws.innerHTML = h;
+
+  // Side panel
+  let sp_html = `<div class="panel-section"><div class="panel-title">How to Use</div>
+    <div class="panel-text">
+      <strong style="color:var(--cyan);">1. Pick</strong> a number<br>
+      <strong style="color:var(--cyan);">2. Watch</strong> the blocks<br>
+      <strong style="color:var(--cyan);">3. See</strong> all the forms!
+    </div></div>`;
+
+  sp_html += `<div class="panel-section"><div class="panel-title">Vocabulary</div>
+    <div class="panel-text" style="background:var(--card);padding:12px;border-radius:8px;font-size:12px;">
+      <div style="margin-bottom:8px;"><strong style="color:var(--purple);">Hundreds</strong>: 100-blocks</div>
+      <div style="margin-bottom:8px;"><strong style="color:var(--blue);">Tens</strong>: 10-rods</div>
+      <div><strong style="color:var(--cyan);">Ones</strong>: unit cubes</div>
+    </div></div>`;
+
+  sp.innerHTML = sp_html;
+}
+
+function numberToWords(n) {
+  const ones = ['', 'one', 'two', 'three', 'four', 'five', 'six', 'seven', 'eight', 'nine'];
+  const teens = ['ten', 'eleven', 'twelve', 'thirteen', 'fourteen', 'fifteen', 'sixteen', 'seventeen', 'eighteen', 'nineteen'];
+  const tens = ['', '', 'twenty', 'thirty', 'forty', 'fifty', 'sixty', 'seventy', 'eighty', 'ninety'];
+
+  if (n === 0) return 'zero';
+  if (n < 10) return ones[n];
+  if (n < 20) return teens[n - 10];
+  if (n < 100) return tens[Math.floor(n / 10)] + (n % 10 ? ' ' + ones[n % 10] : '');
+  if (n < 1000) return ones[Math.floor(n / 100)] + ' hundred' + (n % 100 ? ' ' + numberToWords(n % 100) : '');
+  return '';
+}
+
+/* ═════ PRACTICE MODE ═════ */
+function newPractice() {
+  S.pNumber = rand(10, S.maxN);
+  const types = ['identify', 'build', 'expanded', 'compare'];
+  S.pType = types[Math.floor(Math.random() * types.length)];
+  S.pAnswer = 0;
+}
+
+function renderPractice(ws, sp) {
+  if (!S.pNumber) newPractice();
+
+  const h_val = Math.floor(S.pNumber / 100);
+  const t_val = Math.floor((S.pNumber % 100) / 10);
+  const o_val = S.pNumber % 10;
+
+  let h = '';
+
+  if (S.pType === 'identify') {
+    h += `<div class="instruction-box highlight-green">What number is shown?</div>`;
+    h += buildPlaceValueMat(h_val, t_val, o_val);
+    h += '<div class="answer-grid">';
+    const choices = new Set([S.pNumber]);
+    while (choices.size < 6) {
+      let c = S.pNumber + rand(-30, 30);
+      if (c >= 0 && c <= S.maxN && c !== S.pNumber) choices.add(c);
+    }
+    Array.from(choices).sort((a, b) => a - b).forEach(n => {
+      h += `<button class="answer-btn" onclick="checkPractice(${n}, ${S.pNumber})">${n}</button>`;
+    });
+    h += '</div>';
+  } else if (S.pType === 'build') {
+    h += `<div class="instruction-box highlight-green">Build 347 on the mat!</div>`;
+    h += buildPlaceValueMat(3, 4, 7);
+    h += `<div style="font-size:18px;font-weight:700;color:var(--cyan);text-align:center;margin:12px;">347</div>`;
+    h += '<div class="controls">';
+    h += `<button class="ctrl-btn primary" onclick="checkPractice(347, 347)">✓ Correct!</button>`;
+    h += `<button class="ctrl-btn" onclick="newPractice();render();">Skip</button>`;
+    h += '</div>';
+  } else if (S.pType === 'expanded') {
+    h += `<div class="instruction-box highlight-green">What is the expanded form?</div>`;
+    h += buildPlaceValueMat(h_val, t_val, o_val);
+    h += `<div class="form-display">${S.pNumber}</div>`;
+    h += '<div class="answer-grid">';
+    const answers = [
+      `${h_val}00 + ${t_val}0 + ${o_val}`,
+      `${(h_val + 1)}00 + 0 + 0`,
+      `${h_val}00 + ${(t_val + 1)}0`,
+      `${(h_val - 1)}00 + ${(t_val + 5)}0 + 0`
+    ];
+    answers.forEach((ans, idx) => {
+      h += `<button class="answer-btn" style="width:auto;padding:12px;" onclick="checkPractice(${idx === 0 ? 1 : 0}, 1)">${ans}</button>`;
+    });
+    h += '</div>';
+  } else {
+    h += `<div class="instruction-box highlight-green">Compare: ${S.pNumber} ○ ${S.pNumber + rand(-50, 50)}</div>`;
+    const comp = S.pNumber + rand(-50, 50);
+    h += '<div class="comparison-display">';
+    h += `<div class="comp-num">${S.pNumber}</div>`;
+    h += `<button class="comp-btn" onclick="checkPractice(1, 1)">&lt;</button>`;
+    h += `<button class="comp-btn" onclick="checkPractice(1, 1)">=</button>`;
+    h += `<button class="comp-btn" onclick="checkPractice(${S.pNumber > comp ? 1 : 0}, 1)">&gt;</button>`;
+    h += `<div class="comp-num">${comp}</div>`;
+    h += '</div>';
+  }
+
+  ws.innerHTML = h;
+
+  let sp_html = `<div class="panel-section"><div class="panel-title">Question Type</div>
+    <div class="panel-text">${S.pType === 'identify' ? 'Identify the Number' : S.pType === 'build' ? 'Build the Number' : S.pType === 'expanded' ? 'Expanded Form' : 'Compare Numbers'}</div></div>`;
+
+  sp_html += `<div class="panel-section"><div class="panel-title">Tip</div>
+    <div class="panel-text">Count the hundreds, tens, and ones to find the answer!</div></div>`;
+
+  sp.innerHTML = sp_html;
+}
+
+function checkPractice(clicked, correct) {
+  if (clicked === correct) {
+    showFB('✓ Correct!', 'correct');
+    setTimeout(() => {
+      newPractice();
+      render();
+    }, 1500);
+  } else {
+    showFB('Try again!', 'incorrect');
+  }
+}
+
+/* ═════ PLAY MODE ═════ */
+function startGame() {
+  S.round = 1;
+  S.score = 0;
+  S.streak = 0;
+  newPlayRound();
+}
+
+function newPlayRound() {
+  S.playNumber = rand(10, S.maxN);
+  const types = ['identify', 'compare'];
+  S.playType = types[Math.floor(Math.random() * types.length)];
+
+  if (S.playType === 'identify') {
+    const choices = new Set([S.playNumber]);
+    while (choices.size < 5) {
+      let c = S.playNumber + rand(-30, 30);
+      if (c >= 0 && c <= S.maxN) choices.add(c);
+    }
+    S.playChoices = Array.from(choices).sort((a, b) => a - b);
+  }
+}
+
+function renderPlay(ws, sp) {
+  if (S.round === 0) startGame();
+
+  const h_val = Math.floor(S.playNumber / 100);
+  const t_val = Math.floor((S.playNumber % 100) / 10);
+  const o_val = S.playNumber % 10;
+
+  let h = `<div style="font-size:13px;color:var(--muted);margin-bottom:12px;">Round ${S.round} of ${S.total}</div>`;
+
+  h += buildPlaceValueMat(h_val, t_val, o_val);
+
+  if (S.playType === 'identify') {
+    h += `<div style="font-size:13px;color:var(--muted);margin-bottom:12px;">What number?</div>`;
+    h += '<div class="answer-grid">';
+    S.playChoices.forEach(n => {
+      h += `<button class="answer-btn" onclick="playPick(${n}, ${S.playNumber})">${n}</button>`;
+    });
+    h += '</div>';
+  } else {
+    const comp = S.playNumber + rand(-50, 50);
+    h += '<div class="comparison-display">';
+    h += `<div class="comp-num">${S.playNumber}</div>`;
+    const correct = S.playNumber > comp ? 3 : S.playNumber < comp ? 1 : 2;
+    h += `<button class="comp-btn" onclick="playPick(1, ${correct})">&lt;</button>`;
+    h += `<button class="comp-btn" onclick="playPick(2, ${correct})">=</button>`;
+    h += `<button class="comp-btn" onclick="playPick(3, ${correct})">&gt;</button>`;
+    h += `<div class="comp-num">${comp}</div>`;
+    h += '</div>';
+  }
+
+  ws.innerHTML = h;
+
+  sp.innerHTML = `
+    <div class="score-display"><div class="score-value">${S.score}</div><div class="score-label">Score</div></div>
+    <div class="score-display" style="background:transparent;padding:8px;">
+      <div style="font-size:18px;font-weight:700;color:var(--yellow);"><svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor" style="vertical-align:-2px;"><path d="M12 23c-4.97 0-8-3.58-8-7.5 0-3.07 2.17-5.84 4.5-7.5-.28 2.5 1.5 4.5 1.5 4.5s2-2.5 2-5.5c0-1.5-.5-3-1-4 3 1.5 5 4 5 7 0 .5-.08 1-.08 1s1.08-1.18 1.58-2.5C19.78 11.72 20 14.5 20 15.5c0 3.92-3.03 7.5-8 7.5z"/></svg> ${S.streak}</div>
+      <div class="score-label">Streak</div>
+      <div class="streak-bar"><div class="streak-fill" style="width:${Math.min(S.streak * 20, 100)}%;"></div></div>
+    </div>
+    <div class="panel-section"><div class="panel-title">Best Streak</div>
+    <div class="panel-text" style="font-size:24px;font-weight:800;color:var(--purple);">🏆 ${S.best}</div></div>`;
+}
+
+function playPick(clicked, correct) {
+  if (clicked === correct) {
+    S.score += 10 + S.streak * 2;
+    S.streak++;
+    if (S.streak > S.best) S.best = S.streak;
+    showFB('✓ Yes!', 'correct');
+  } else {
+    S.streak = 0;
+    showFB('✗ No', 'incorrect');
+  }
+
+  setTimeout(() => {
+    if (S.round >= S.total) {
+      showFB(`Game Over! ${S.score}`, 'correct');
+      setTimeout(() => {
+        S.round = 0;
+        render();
+      }, 2000);
+      return;
+    }
+    S.round++;
+    newPlayRound();
+    render();
+  }, 1200);
+}
+
+render();
+</script>
+<script src="../../vinculum-input.js"></script>
+<script src="../../vinculum-core.js"></script>
+<script src="../../vinculum-data.js"></script>
+<script src="../../vinculum-adaptive-hook.js"></script>
+<script src="../../vinculum-3reads.js"></script>
+<script src="../../vinculum-stories.js"></script>
+<script src="../../vinculum-feedback.js"></script>
+  <script src="../../vinculum-guide.js"></script>
+<script src="../../vinculum-identity.js"></script>
+<script src="../../vinculum-indigenous.js"></script>
+<script src="../../vinculum-dashboard.js"></script>
+<!-- Foundation loaded from vinculum-core.js -->
+</body>
+</html>

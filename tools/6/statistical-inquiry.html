@@ -1,0 +1,822 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Statistical Inquiry Tool</title>
+    <link rel="stylesheet" href="../../vinculum-core.css">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .vinculum-header {
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+            text-align: center;
+        }
+
+        .vinculum-header h1 {
+            color: #4facfe;
+            margin-bottom: 10px;
+        }
+
+        .vinculum-header p {
+            color: #666;
+            font-size: 14px;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        .mode-selector {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+            justify-content: center;
+            flex-wrap: wrap;
+        }
+
+        .vinculum-mode-tab {
+            padding: 12px 24px;
+            border: none;
+            border-radius: 25px;
+            cursor: pointer;
+            font-weight: bold;
+            transition: all 0.3s;
+            background: white;
+            color: #4facfe;
+            border: 2px solid #4facfe;
+        }
+
+        .vinculum-mode-tab.active {
+            background: #4facfe;
+            color: white;
+        }
+
+        .vinculum-mode-tab:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+        }
+
+        .difficulty-selector {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+            justify-content: center;
+        }
+
+        .vinculum-diff-btn {
+            padding: 10px 20px;
+            border: none;
+            border-radius: 20px;
+            cursor: pointer;
+            background: #f0f0f0;
+            color: #333;
+            transition: all 0.3s;
+        }
+
+        .vinculum-diff-btn.active {
+            background: #00f2fe;
+            color: white;
+        }
+
+        .mode-content {
+            display: none;
+            background: white;
+            padding: 30px;
+            border-radius: 15px;
+            box-shadow: 0 8px 20px rgba(0,0,0,0.15);
+        }
+
+        .mode-content.active {
+            display: block;
+        }
+
+        .feedback {
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            display: none;
+            font-weight: bold;
+        }
+
+        .feedback.show {
+            display: block;
+        }
+
+        .feedback.correct {
+            background: #d4edda;
+            color: #155724;
+            border: 2px solid #28a745;
+        }
+
+        .feedback.incorrect {
+            background: #f8d7da;
+            color: #721c24;
+            border: 2px solid #f5c6cb;
+        }
+
+        .process-step {
+            background: #f8f9fa;
+            padding: 20px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+            border-left: 4px solid #4facfe;
+        }
+
+        .process-step h3 {
+            color: #4facfe;
+            margin-bottom: 15px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .step-number {
+            width: 30px;
+            height: 30px;
+            background: #4facfe;
+            color: white;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+        }
+
+        .question-box {
+            background: #e3f2fd;
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 15px;
+            border: 2px solid #4facfe;
+        }
+
+        .question-box label {
+            display: block;
+            margin-bottom: 10px;
+            color: #333;
+            font-weight: bold;
+        }
+
+        .question-box input,
+        .question-box textarea {
+            width: 100%;
+            padding: 10px;
+            border: 2px solid #ddd;
+            border-radius: 5px;
+            font-size: 14px;
+            margin-bottom: 10px;
+        }
+
+        .question-box textarea {
+            resize: vertical;
+            min-height: 60px;
+        }
+
+        .data-entry {
+            background: #e3f2fd;
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 15px;
+            border: 2px solid #4facfe;
+        }
+
+        .data-input {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 15px;
+        }
+
+        .data-input input {
+            flex: 1;
+            padding: 10px;
+            border: 2px solid #ddd;
+            border-radius: 5px;
+        }
+
+        .data-input button {
+            padding: 10px 20px;
+            background: #4facfe;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-weight: bold;
+        }
+
+        .data-input button:hover {
+            background: #00f2fe;
+        }
+
+        .data-display {
+            background: white;
+            padding: 15px;
+            border-radius: 5px;
+            border: 2px solid #ddd;
+        }
+
+        .data-values {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            margin-bottom: 10px;
+        }
+
+        .data-badge {
+            background: #4facfe;
+            color: white;
+            padding: 8px 16px;
+            border-radius: 20px;
+            font-weight: bold;
+        }
+
+        .analysis-section {
+            background: #e3f2fd;
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 15px;
+        }
+
+        .stat-box {
+            background: white;
+            padding: 15px;
+            border-radius: 5px;
+            border: 2px solid #4facfe;
+            text-align: center;
+            display: inline-block;
+            margin: 10px;
+        }
+
+        .stat-label {
+            color: #666;
+            font-size: 12px;
+            text-transform: uppercase;
+        }
+
+        .stat-value {
+            color: #4facfe;
+            font-size: 24px;
+            font-weight: bold;
+        }
+
+        .conclusion-box {
+            background: #fff3e0;
+            padding: 15px;
+            border-radius: 8px;
+            border-left: 4px solid #ff9800;
+        }
+
+        .conclusion-box label {
+            display: block;
+            margin-bottom: 10px;
+            color: #333;
+            font-weight: bold;
+        }
+
+        .conclusion-box textarea {
+            width: 100%;
+            padding: 10px;
+            border: 2px solid #ddd;
+            border-radius: 5px;
+            min-height: 80px;
+        }
+
+        .button-group {
+            display: flex;
+            gap: 10px;
+            justify-content: center;
+            flex-wrap: wrap;
+            margin-top: 20px;
+        }
+
+        .btn {
+            padding: 12px 24px;
+            background: #4facfe;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-weight: bold;
+            transition: all 0.3s;
+        }
+
+        .btn:hover {
+            background: #00f2fe;
+            transform: translateY(-2px);
+        }
+
+        .btn.secondary {
+            background: #f0f0f0;
+            color: #333;
+        }
+
+        .btn.secondary:hover {
+            background: #e0e0e0;
+        }
+
+        .score-display {
+            background: #4facfe;
+            color: white;
+            padding: 20px;
+            border-radius: 10px;
+            text-align: center;
+            margin-bottom: 20px;
+        }
+
+        .timer {
+            font-size: 32px;
+            font-weight: bold;
+            text-align: center;
+            margin-bottom: 20px;
+            color: #4facfe;
+        }
+
+        .scenario-box {
+            background: #e3f2fd;
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 15px;
+            border: 2px solid #4facfe;
+        }
+
+        .scenario-box p {
+            color: #333;
+            margin-bottom: 10px;
+        }
+
+        .progress-bar {
+            width: 100%;
+            height: 30px;
+            background: #ddd;
+            border-radius: 15px;
+            overflow: hidden;
+            margin-bottom: 20px;
+        }
+
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #4facfe 0%, #00f2fe 100%);
+            transition: width 0.3s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-weight: bold;
+        }
+
+        #playResults {
+            display: none;
+            text-align: center;
+            margin-top: 30px;
+        }
+
+        #playResults h3 {
+            color: #4facfe;
+            margin-bottom: 15px;
+        }
+
+        #playResults p {
+            font-size: 24px;
+            color: #4facfe;
+            margin: 20px 0;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="vinculum-header">
+            <h1>📈 Statistical Inquiry Tool</h1>
+            <p>Complete the full statistical process: Question → Data → Analysis → Conclusion | MN 2022 Data & Probability Strand</p>
+        </div>
+
+        <div class="mode-selector">
+            <button class="vinculum-mode-tab active" onclick="setMode('explore')"><svg width="18" height="18" viewBox="0 0 48 48" fill="none"><path d="M4 24C4 24 12 12 24 12C36 12 44 24 44 24C44 24 36 36 24 36C12 36 4 24 4 24Z" stroke="currentColor" stroke-width="3" fill="none"/><circle cx="24" cy="24" r="7" stroke="currentColor" stroke-width="3" fill="none"/><circle cx="24" cy="24" r="3" fill="currentColor"/><line x1="24" y1="4" x2="24" y2="9" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" opacity="0.5"/><line x1="10" y1="8" x2="13" y2="12" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" opacity="0.5"/><line x1="38" y1="8" x2="35" y2="12" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" opacity="0.5"/></svg> Explore</button>
+            <button class="vinculum-mode-tab" onclick="setMode('practice')"><svg width="18" height="18" viewBox="0 0 48 48" fill="none"><circle cx="24" cy="24" r="20" stroke="currentColor" stroke-width="3" fill="none" opacity="0.3"/><circle cx="24" cy="24" r="20" stroke="currentColor" stroke-width="3" fill="none" stroke-dasharray="126" stroke-dashoffset="32" stroke-linecap="round"/><polyline points="16,24 22,32 34,16" stroke="currentColor" stroke-width="4" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg> Practice</button>
+            <button class="vinculum-mode-tab" onclick="setMode('play')"><svg width="18" height="18" viewBox="0 0 48 48" fill="none"><polygon points="28,4 12,28 22,28 18,44 36,18 26,18" fill="none" stroke="currentColor" stroke-width="3" stroke-linejoin="round"/><polygon points="27,8 15,27 23,27 20,40 34,19 26,19" fill="currentColor" opacity="0.15"/></svg> Play</button>
+        </div>
+
+        <div id="feedback" class="feedback"></div>
+
+        <!-- EXPLORE MODE -->
+        <div id="explore" class="mode-content active">
+            <h2>Explore: Walk Through Statistical Inquiry</h2>
+            <p style="margin-bottom: 20px; color: #666;">Follow the four steps of statistical inquiry to understand the full process!</p>
+
+            <!-- Step 1: Question -->
+            <div class="process-step">
+                <h3><span class="step-number">1</span> Formulate Your Question</h3>
+                <p style="margin-bottom: 10px; color: #666;">What do you want to know about your data?</p>
+                <div class="question-box">
+                    <label>Statistical Question:</label>
+                    <input type="text" id="exploreQuestion" placeholder="Example: What is the average height of students in my class?">
+                </div>
+            </div>
+
+            <!-- Step 2: Data -->
+            <div class="process-step">
+                <h3><span class="step-number">2</span> Collect Data</h3>
+                <p style="margin-bottom: 10px; color: #666;">Enter your data values:</p>
+                <div class="data-entry">
+                    <div class="data-input">
+                        <input type="number" id="exploreDataInput" placeholder="Enter a data value">
+                        <button onclick="addExploreData()">Add Value</button>
+                    </div>
+                    <div class="data-display">
+                        <strong>Your Data:</strong>
+                        <div class="data-values" id="exploreDataValues"></div>
+                    </div>
+                    <button class="btn secondary" style="margin-top: 10px; width: 100%;" onclick="clearExploreData()">Clear Data</button>
+                </div>
+            </div>
+
+            <!-- Step 3: Analysis -->
+            <div class="process-step">
+                <h3><span class="step-number">3</span> Analyze the Data</h3>
+                <p style="margin-bottom: 15px; color: #666;">Statistics about your data:</p>
+                <div class="analysis-section">
+                    <div class="stat-box">
+                        <div class="stat-label">Count</div>
+                        <div class="stat-value" id="exploreCount">0</div>
+                    </div>
+                    <div class="stat-box">
+                        <div class="stat-label">Mean</div>
+                        <div class="stat-value" id="exploreMean">-</div>
+                    </div>
+                    <div class="stat-box">
+                        <div class="stat-label">Median</div>
+                        <div class="stat-value" id="exploreMedian">-</div>
+                    </div>
+                    <div class="stat-box">
+                        <div class="stat-label">Range</div>
+                        <div class="stat-value" id="exploreRange">-</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Step 4: Conclusion -->
+            <div class="process-step">
+                <h3><span class="step-number">4</span> Draw a Conclusion</h3>
+                <p style="margin-bottom: 10px; color: #666;">Summarize what the data tells you:</p>
+                <div class="conclusion-box">
+                    <label>My Conclusion:</label>
+                    <textarea id="exploreConclusion" placeholder="Based on my data, I found..."></textarea>
+                </div>
+            </div>
+
+            <div class="button-group">
+                <button class="btn secondary" onclick="clearExplore()">Start Over</button>
+            </div>
+        </div>
+
+        <!-- PRACTICE MODE -->
+        <div id="practice" class="mode-content">
+            <h2>Practice: Complete the Inquiry Cycle</h2>
+
+            <div class="difficulty-selector">
+                <button class="vinculum-diff-btn active" onclick="setPracticeDifficulty('easy')">Easy</button>
+                <button class="vinculum-diff-btn" onclick="setPracticeDifficulty('medium')">Medium</button>
+                <button class="vinculum-diff-btn" onclick="setPracticeDifficulty('hard')">Hard</button>
+            </div>
+
+            <div class="scenario-box" id="practiceScenario"></div>
+
+            <!-- Step 1: Identify Question -->
+            <div class="process-step">
+                <h3><span class="step-number">1</span> What is the statistical question?</h3>
+                <div class="question-box">
+                    <label>Statistical Question:</label>
+                    <input type="text" id="practiceQuestion" placeholder="Write the statistical question">
+                </div>
+            </div>
+
+            <!-- Step 2: Data provided -->
+            <div class="process-step">
+                <h3><span class="step-number">2</span> The Data</h3>
+                <div class="data-display">
+                    <strong>Given Data:</strong>
+                    <div class="data-values" id="practiceDataValues"></div>
+                </div>
+            </div>
+
+            <!-- Step 3: Analysis -->
+            <div class="process-step">
+                <h3><span class="step-number">3</span> Analyze the Data</h3>
+                <div class="question-box">
+                    <label>What is the mean of this data?</label>
+                    <input type="number" id="practiceMean" placeholder="Enter mean" step="0.1">
+                    <label>What is the median?</label>
+                    <input type="number" id="practiceMedian" placeholder="Enter median" step="0.1">
+                </div>
+            </div>
+
+            <!-- Step 4: Conclusion -->
+            <div class="process-step">
+                <h3><span class="step-number">4</span> Write a Conclusion</h3>
+                <div class="conclusion-box">
+                    <label>Based on the data, what can you conclude?</label>
+                    <textarea id="practiceConclusion" placeholder="My conclusion is..."></textarea>
+                </div>
+            </div>
+
+            <div class="button-group">
+                <button class="btn" onclick="checkPracticeAnswer()">Submit Inquiry</button>
+                <button class="btn secondary" onclick="nextPracticeQuestion()">Next Scenario</button>
+            </div>
+        </div>
+
+        <!-- PLAY MODE -->
+        <div id="play" class="mode-content">
+            <h2>Play: Data Scientist Challenge</h2>
+            <p style="margin-bottom: 20px; color: #666;">Complete a full inquiry cycle in 120 seconds!</p>
+
+            <div class="score-display">
+                <div class="timer" id="timer">120</div>
+                <div style="font-size: 16px;">Progress: <span id="playProgress">0</span>%</div>
+            </div>
+
+            <div class="progress-bar">
+                <div class="progress-fill" id="progressBar" style="width: 0%;"></div>
+            </div>
+
+            <div class="scenario-box" id="playScenario"></div>
+
+            <div class="process-step" style="display: none;" id="playStep1">
+                <h3><span class="step-number">1</span> Identify the Question</h3>
+                <div class="question-box">
+                    <input type="text" id="playQuestion" placeholder="What is the statistical question?">
+                </div>
+            </div>
+
+            <div class="process-step" style="display: none;" id="playStep2">
+                <h3><span class="step-number">2</span> Analyze the Data</h3>
+                <div class="data-display">
+                    <strong>Data:</strong>
+                    <div class="data-values" id="playDataValues"></div>
+                </div>
+                <div class="question-box" style="margin-top: 15px;">
+                    <label>Mean:</label>
+                    <input type="number" id="playMean" placeholder="Enter mean" step="0.1">
+                </div>
+            </div>
+
+            <div class="process-step" style="display: none;" id="playStep3">
+                <h3><span class="step-number">3</span> Draw a Conclusion</h3>
+                <div class="conclusion-box">
+                    <textarea id="playConclusion" placeholder="Based on the data..."></textarea>
+                </div>
+            </div>
+
+            <div class="button-group">
+                <button class="btn" id="playBtn" onclick="advancePlayStep()">Next Step</button>
+            </div>
+
+            <div id="playResults">
+                <h3>Inquiry Complete!</h3>
+                <p>You finished in <span id="playTime">120</span> seconds!</p>
+                <p>Score: <span id="playFinalScore">0</span>/100</p>
+                <button class="btn" onclick="startPlay()">Try Again</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="../../vinculum-feedback.js"></script><script src="../../vinculum-guide.js"></script><script src="../../vinculum-indigenous.js"></script><script src="../../indigenous-context-panel.js"></script>
+    <script src="../../vinculum-input.js"></script>
+    <script>
+        let exploreData = [];
+        let practiceQuestion = null;
+        let playScenario = null;
+        let playStep = 0;
+        let playTimeLeft = 120;
+        let playActive = false;
+
+        // MODE MANAGEMENT
+        function setMode(mode) {
+            document.querySelectorAll('.mode-content').forEach(el => el.classList.remove('active'));
+            document.querySelectorAll('.vinculum-mode-tab').forEach(el => el.classList.remove('active'));
+            document.getElementById(mode).classList.add('active');
+            event.target.classList.add('active');
+
+            if (mode === 'play') {
+                startPlay();
+            }
+        }
+
+        // EXPLORE MODE
+        function addExploreData() {
+            const val = parseFloat(document.getElementById('exploreDataInput').value);
+            if (!isNaN(val)) {
+                exploreData.push(val);
+                document.getElementById('exploreDataInput').value = '';
+                updateExploreDisplay();
+            }
+        }
+
+        function clearExploreData() {
+            exploreData = [];
+            updateExploreDisplay();
+        }
+
+        function clearExplore() {
+            exploreData = [];
+            document.getElementById('exploreQuestion').value = '';
+            document.getElementById('exploreConclusion').value = '';
+            updateExploreDisplay();
+        }
+
+        function updateExploreDisplay() {
+            const sorted = [...exploreData].sort((a, b) => a - b);
+            const html = sorted.map(v => `<div class="data-badge">${v}</div>`).join('');
+            document.getElementById('exploreDataValues').innerHTML = html;
+
+            document.getElementById('exploreCount').textContent = sorted.length;
+
+            if (sorted.length > 0) {
+                const mean = (sorted.reduce((a, b) => a + b) / sorted.length).toFixed(1);
+                const median = sorted.length % 2 === 0
+                    ? ((sorted[sorted.length/2 - 1] + sorted[sorted.length/2]) / 2).toFixed(1)
+                    : sorted[Math.floor(sorted.length/2)];
+                const range = (sorted[sorted.length - 1] - sorted[0]).toFixed(1);
+
+                document.getElementById('exploreMean').textContent = mean;
+                document.getElementById('exploreMedian').textContent = median;
+                document.getElementById('exploreRange').textContent = range;
+            } else {
+                document.getElementById('exploreMean').textContent = '-';
+                document.getElementById('exploreMedian').textContent = '-';
+                document.getElementById('exploreRange').textContent = '-';
+            }
+        }
+
+        // PRACTICE MODE
+        const scenarios = {
+            easy: {
+                question: 'What is the average time students spend reading each day?',
+                data: [15, 20, 25, 30, 20, 25, 30, 35],
+                expectedMean: 25,
+                expectedMedian: 25
+            },
+            medium: {
+                question: 'What is the typical height of students in our class?',
+                data: [60, 62, 65, 63, 61, 64, 68, 70, 62],
+                expectedMean: 64,
+                expectedMedian: 63
+            },
+            hard: {
+                question: 'How much variation is there in student test scores?',
+                data: [72, 85, 88, 90, 78, 92, 85, 88, 95, 80],
+                expectedMean: 85.3,
+                expectedMedian: 87.5
+            }
+        };
+
+        function setPracticeDifficulty(level) {
+            document.querySelectorAll('.vinculum-diff-btn').forEach(el => el.classList.remove('active'));
+            event.target.classList.add('active');
+            nextPracticeQuestion(level);
+        }
+
+        function nextPracticeQuestion(level = 'easy') {
+            practiceQuestion = scenarios[level] || scenarios.easy;
+            document.getElementById('practiceScenario').innerHTML = `<p><strong>Scenario:</strong> ${practiceQuestion.question}</p>`;
+
+            const html = practiceQuestion.data.map(v => `<div class="data-badge">${v}</div>`).join('');
+            document.getElementById('practiceDataValues').innerHTML = html;
+
+            document.getElementById('practiceQuestion').value = '';
+            document.getElementById('practiceMean').value = '';
+            document.getElementById('practiceMedian').value = '';
+            document.getElementById('practiceConclusion').value = '';
+            clearFeedback();
+        }
+
+        function checkPracticeAnswer() {
+            const question = document.getElementById('practiceQuestion').value;
+            const mean = parseFloat(document.getElementById('practiceMean').value);
+            const median = parseFloat(document.getElementById('practiceMedian').value);
+            const conclusion = document.getElementById('practiceConclusion').value;
+
+            if (!question || isNaN(mean) || isNaN(median) || !conclusion) {
+                showFeedback('Please complete all steps!', false);
+                return;
+            }
+
+            const meanClose = Math.abs(mean - practiceQuestion.expectedMean) <= 1;
+            const medianClose = Math.abs(median - practiceQuestion.expectedMedian) <= 1;
+            const conclusionGood = conclusion.length > 20;
+
+            if (meanClose && medianClose && conclusionGood) {
+                showFeedback('Excellent inquiry! You completed the cycle correctly!', true);
+            } else {
+                showFeedback('Good effort! Check your calculations and make sure your conclusion is detailed.', false);
+            }
+        }
+
+        // PLAY MODE
+        const playScenarios = [
+            {
+                question: 'What is the average score on a spelling test?',
+                data: [85, 90, 88, 92, 87, 91, 89, 93, 86, 88]
+            },
+            {
+                question: 'How many hours do students sleep per night?',
+                data: [8, 7.5, 8.5, 9, 8, 7.5, 9, 8.5, 8, 7]
+            }
+        ];
+
+        function startPlay() {
+            playScore = 0;
+            playTimeLeft = 120;
+            playActive = true;
+            playStep = 0;
+            document.getElementById('playResults').style.display = 'none';
+
+            const timer = setInterval(() => {
+                playTimeLeft--;
+                document.getElementById('timer').textContent = playTimeLeft;
+                if (playTimeLeft <= 0) {
+                    clearInterval(timer);
+                    endPlay();
+                }
+            }, 1000);
+
+            playScenario = playScenarios[Math.floor(Math.random() * playScenarios.length)];
+            document.getElementById('playScenario').innerHTML = `<p><strong>Scenario:</strong> ${playScenario.question}</p>`;
+
+            const html = playScenario.data.map(v => `<div class="data-badge">${v}</div>`).join('');
+            document.getElementById('playDataValues').innerHTML = html;
+
+            advancePlayStep();
+        }
+
+        function advancePlayStep() {
+            if (!playActive) return;
+
+            document.querySelectorAll('[id^="playStep"]').forEach(el => el.style.display = 'none');
+
+            if (playStep === 0) {
+                document.getElementById('playStep1').style.display = 'block';
+                document.getElementById('playBtn').textContent = 'Next Step';
+            } else if (playStep === 1) {
+                document.getElementById('playStep2').style.display = 'block';
+                document.getElementById('playBtn').textContent = 'Next Step';
+            } else if (playStep === 2) {
+                document.getElementById('playStep3').style.display = 'block';
+                document.getElementById('playBtn').textContent = 'Submit Inquiry';
+            } else {
+                endPlay();
+                return;
+            }
+
+            playStep++;
+            updatePlayProgress();
+        }
+
+        function updatePlayProgress() {
+            const progress = Math.min(playStep * 33, 100);
+            document.getElementById('playProgress').textContent = progress;
+            document.getElementById('progressBar').style.width = progress + '%';
+        }
+
+        function endPlay() {
+            playActive = false;
+            const timeUsed = 120 - playTimeLeft;
+            const score = Math.max(0, 100 - (timeUsed > 60 ? 20 : 0));
+            document.getElementById('playTime').textContent = timeUsed;
+            document.getElementById('playFinalScore').textContent = score;
+            document.getElementById('playResults').style.display = 'block';
+        }
+
+        function showFeedback(msg, isCorrect) {
+            const fb = document.getElementById('feedback');
+            fb.textContent = msg;
+            fb.classList.add('show');
+            fb.classList.toggle('correct', isCorrect);
+            fb.classList.toggle('incorrect', !isCorrect);
+        }
+
+        function clearFeedback() {
+            const fb = document.getElementById('feedback');
+            fb.classList.remove('show', 'correct', 'incorrect');
+        }
+
+        // Initialize
+        nextPracticeQuestion('easy');
+    </script>
+</body>
+</html>

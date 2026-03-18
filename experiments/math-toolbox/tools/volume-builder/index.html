@@ -1,0 +1,475 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Volume Builder — Math Toolbox</title>
+    <link rel="stylesheet" href="../shared/toolbox-core.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <style>
+        .cube-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr 1fr;
+            gap: 6px;
+        }
+        .formula-display {
+            background: rgba(0,0,0,0.5);
+            border: 1px solid rgba(147,51,234,0.3);
+            border-radius: 10px;
+            padding: 12px 16px;
+            text-align: center;
+            font-family: 'Fira Code', monospace;
+            font-size: 1.1rem;
+            color: #fff;
+            margin: 12px 0;
+        }
+        .formula-display .op { color: var(--amber); }
+        .formula-display .eq { color: var(--teal); font-weight: 900; }
+        .challenge-box {
+            background: rgba(147,51,234,0.08);
+            border: 1px solid rgba(147,51,234,0.25);
+            border-radius: 10px;
+            padding: 14px;
+        }
+        .challenge-box h4 {
+            font-size: 0.75rem;
+            font-weight: 900;
+            color: var(--purple);
+            text-transform: uppercase;
+            letter-spacing: 0.15em;
+            margin-bottom: 8px;
+        }
+        .challenge-text {
+            font-size: 0.9rem;
+            color: var(--text);
+            margin-bottom: 10px;
+        }
+        .check-row {
+            display: flex;
+            gap: 8px;
+            align-items: center;
+        }
+        .check-input {
+            background: rgba(0,0,0,0.4);
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            padding: 6px 10px;
+            color: #fff;
+            font-family: 'Fira Code', monospace;
+            font-size: 0.9rem;
+            width: 100px;
+            outline: none;
+        }
+        .check-input:focus {
+            border-color: var(--amber);
+        }
+        .check-result {
+            font-size: 0.85rem;
+            font-weight: 700;
+            min-height: 20px;
+        }
+        .check-result.correct { color: var(--teal); }
+        .check-result.wrong { color: var(--pink); }
+        #three-container {
+            width: 100%;
+            height: 350px;
+            cursor: grab;
+        }
+        #three-container:active { cursor: grabbing; }
+    </style>
+</head>
+<body>
+<div class="tool-app">
+    <!-- Header -->
+    <div class="tool-header">
+        <div class="tool-badge">Math Toolbox</div>
+        <div class="tool-title">Volume Builder</div>
+        <div class="tool-benchmark">6.3.1.1</div>
+        <div class="tool-benchmark-desc">Calculate the surface area and volume of prisms and use appropriate units</div>
+    </div>
+
+    <!-- 3D Viewport -->
+    <div class="tool-canvas-wrap">
+        <div id="three-container"></div>
+    </div>
+
+    <!-- Dimension Controls -->
+    <div class="tool-card">
+        <h3>Dimensions</h3>
+        <div class="tool-slider-row">
+            <span class="tool-slider-label" style="color:var(--ax-x);">L</span>
+            <input type="range" id="dim-l" min="1" max="8" step="1" value="3" oninput="updateShape()">
+            <span class="tool-slider-val" id="val-l">3</span>
+        </div>
+        <div class="tool-slider-row">
+            <span class="tool-slider-label" style="color:var(--ax-y);">W</span>
+            <input type="range" id="dim-w" min="1" max="8" step="1" value="2" oninput="updateShape()">
+            <span class="tool-slider-val" id="val-w">2</span>
+        </div>
+        <div class="tool-slider-row">
+            <span class="tool-slider-label" style="color:var(--ax-z);">H</span>
+            <input type="range" id="dim-h" min="1" max="8" step="1" value="4" oninput="updateShape()">
+            <span class="tool-slider-val" id="val-h">4</span>
+        </div>
+
+        <!-- Live Formula -->
+        <div class="formula-display">
+            V <span class="op">=</span> <span id="f-l">3</span> <span class="op">&times;</span> <span id="f-w">2</span> <span class="op">&times;</span> <span id="f-h">4</span> <span class="eq">=</span> <span id="f-vol" class="eq">24 u&sup3;</span>
+        </div>
+
+        <!-- Readout -->
+        <div class="tool-readout">
+            <div class="tool-readout-row">
+                <span class="tool-readout-label">Volume</span>
+                <span class="tool-readout-value amber" id="r-vol">24 u&sup3;</span>
+            </div>
+            <div class="tool-readout-row">
+                <span class="tool-readout-label">Surface Area</span>
+                <span class="tool-readout-value teal" id="r-sa">52 u&sup2;</span>
+            </div>
+            <div class="tool-readout-row">
+                <span class="tool-readout-label">Unit Cubes</span>
+                <span class="tool-readout-value" id="r-cubes">24</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- Display Modes -->
+    <div class="tool-card">
+        <h3>Display</h3>
+        <div class="tool-btn-group">
+            <button class="tool-btn active" onclick="setMode('solid')" id="mode-solid">Solid</button>
+            <button class="tool-btn" onclick="setMode('cubes')" id="mode-cubes">Unit Cubes</button>
+            <button class="tool-btn" onclick="setMode('glass')" id="mode-glass">Glass</button>
+            <button class="tool-btn" onclick="setMode('exploded')" id="mode-exploded">Exploded</button>
+        </div>
+    </div>
+
+    <!-- Challenge -->
+    <div class="tool-card">
+        <div class="challenge-box">
+            <h4>Check Your Thinking</h4>
+            <div class="challenge-text" id="challenge-q">If you double the height, what is the new volume?</div>
+            <div class="check-row">
+                <input type="text" class="check-input" id="challenge-input" placeholder="?" onkeydown="if(event.key==='Enter')checkAnswer()">
+                <button class="tool-btn" onclick="checkAnswer()">Check</button>
+                <button class="tool-btn" onclick="newChallenge()" style="color:var(--amber);">New</button>
+            </div>
+            <div class="check-result" id="challenge-result"></div>
+        </div>
+    </div>
+
+    <!-- Proficiency Scale Reference -->
+    <div class="proficiency-bar">
+        <div class="p-beginning">Beginning</div>
+        <div class="p-developing">Developing</div>
+        <div class="p-proficient">Proficient</div>
+        <div class="p-exemplary">Exemplary</div>
+    </div>
+</div>
+
+<script>
+// ==================== THREE.JS SETUP ====================
+const container = document.getElementById('three-container');
+const scene = new THREE.Scene();
+const camera = new THREE.PerspectiveCamera(45, container.clientWidth / container.clientHeight, 0.1, 100);
+const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+renderer.setSize(container.clientWidth, container.clientHeight);
+renderer.setPixelRatio(window.devicePixelRatio);
+container.appendChild(renderer.domElement);
+
+// Camera position
+camera.position.set(12, 10, 12);
+camera.lookAt(0, 0, 0);
+
+// Lights
+scene.add(new THREE.AmbientLight(0xffffff, 0.5));
+const dirLight = new THREE.DirectionalLight(0xffffff, 0.8);
+dirLight.position.set(10, 15, 10);
+scene.add(dirLight);
+
+// Grid floor
+const gridHelper = new THREE.GridHelper(16, 16, 0x2d3a5c, 0x1a2340);
+scene.add(gridHelper);
+
+// Axis lines
+const axMat = (c) => new THREE.LineBasicMaterial({ color: c, transparent: true, opacity: 0.4 });
+function addAxisLine(dir, color) {
+    const pts = [new THREE.Vector3(0,0,0), dir.clone().multiplyScalar(10)];
+    const geo = new THREE.BufferGeometry().setFromPoints(pts);
+    scene.add(new THREE.Line(geo, axMat(color)));
+}
+addAxisLine(new THREE.Vector3(1,0,0), 0xff4466);
+addAxisLine(new THREE.Vector3(0,1,0), 0x44ff66);
+addAxisLine(new THREE.Vector3(0,0,1), 0x4488ff);
+
+// ==================== ORBIT CONTROLS (simple) ====================
+let isDragging = false, prevX = 0, prevY = 0;
+let theta = Math.PI/4, phi = Math.PI/4, radius = 18;
+
+function updateCamera() {
+    camera.position.x = radius * Math.sin(phi) * Math.cos(theta);
+    camera.position.y = radius * Math.cos(phi);
+    camera.position.z = radius * Math.sin(phi) * Math.sin(theta);
+    camera.lookAt(0, 2, 0);
+}
+updateCamera();
+
+container.addEventListener('pointerdown', e => { isDragging = true; prevX = e.clientX; prevY = e.clientY; });
+window.addEventListener('pointerup', () => isDragging = false);
+window.addEventListener('pointermove', e => {
+    if (!isDragging) return;
+    theta -= (e.clientX - prevX) * 0.008;
+    phi = Math.max(0.2, Math.min(Math.PI - 0.2, phi + (e.clientY - prevY) * 0.008));
+    prevX = e.clientX; prevY = e.clientY;
+    updateCamera();
+});
+container.addEventListener('wheel', e => {
+    radius = Math.max(6, Math.min(35, radius + e.deltaY * 0.02));
+    updateCamera();
+    e.preventDefault();
+}, { passive: false });
+
+// ==================== SHAPE BUILDING ====================
+let shapeGroup = new THREE.Group();
+scene.add(shapeGroup);
+let currentMode = 'solid';
+
+function clearShape() {
+    while (shapeGroup.children.length) {
+        const child = shapeGroup.children[0];
+        if (child.geometry) child.geometry.dispose();
+        if (child.material) {
+            if (Array.isArray(child.material)) child.material.forEach(m => m.dispose());
+            else child.material.dispose();
+        }
+        shapeGroup.remove(child);
+    }
+}
+
+function getDims() {
+    return {
+        l: parseInt(document.getElementById('dim-l').value),
+        w: parseInt(document.getElementById('dim-w').value),
+        h: parseInt(document.getElementById('dim-h').value)
+    };
+}
+
+function buildSolid(l, w, h) {
+    const geo = new THREE.BoxGeometry(l, h, w);
+    const mat = new THREE.MeshPhongMaterial({
+        color: 0x9333ea,
+        transparent: true,
+        opacity: 0.85,
+        shininess: 40
+    });
+    const mesh = new THREE.Mesh(geo, mat);
+    mesh.position.set(l/2, h/2, w/2);
+    shapeGroup.add(mesh);
+
+    // Wireframe
+    const wire = new THREE.LineSegments(
+        new THREE.EdgesGeometry(geo),
+        new THREE.LineBasicMaterial({ color: 0xc084fc, linewidth: 1 })
+    );
+    wire.position.copy(mesh.position);
+    shapeGroup.add(wire);
+}
+
+function buildUnitCubes(l, w, h) {
+    const cubeGeo = new THREE.BoxGeometry(0.92, 0.92, 0.92);
+    for (let x = 0; x < l; x++) {
+        for (let y = 0; y < h; y++) {
+            for (let z = 0; z < w; z++) {
+                const hue = 0.75 + (y / Math.max(h, 1)) * 0.15;
+                const color = new THREE.Color().setHSL(hue, 0.7, 0.55);
+                const mat = new THREE.MeshPhongMaterial({
+                    color: color,
+                    transparent: true,
+                    opacity: 0.9,
+                    shininess: 30
+                });
+                const cube = new THREE.Mesh(cubeGeo, mat);
+                cube.position.set(x + 0.5, y + 0.5, z + 0.5);
+                shapeGroup.add(cube);
+
+                // Edge lines
+                const edges = new THREE.LineSegments(
+                    new THREE.EdgesGeometry(cubeGeo),
+                    new THREE.LineBasicMaterial({ color: 0xffffff, transparent: true, opacity: 0.15 })
+                );
+                edges.position.copy(cube.position);
+                shapeGroup.add(edges);
+            }
+        }
+    }
+}
+
+function buildGlass(l, w, h) {
+    const geo = new THREE.BoxGeometry(l, h, w);
+    const mat = new THREE.MeshPhongMaterial({
+        color: 0x4488ff,
+        transparent: true,
+        opacity: 0.15,
+        shininess: 100,
+        side: THREE.DoubleSide
+    });
+    const mesh = new THREE.Mesh(geo, mat);
+    mesh.position.set(l/2, h/2, w/2);
+    shapeGroup.add(mesh);
+
+    const wire = new THREE.LineSegments(
+        new THREE.EdgesGeometry(geo),
+        new THREE.LineBasicMaterial({ color: 0x60a5fa, linewidth: 2 })
+    );
+    wire.position.copy(mesh.position);
+    shapeGroup.add(wire);
+}
+
+function buildExploded(l, w, h) {
+    const cubeGeo = new THREE.BoxGeometry(0.85, 0.85, 0.85);
+    const spread = 0.3;
+    for (let x = 0; x < l; x++) {
+        for (let y = 0; y < h; y++) {
+            for (let z = 0; z < w; z++) {
+                const hue = 0.75 + (y / Math.max(h, 1)) * 0.15;
+                const color = new THREE.Color().setHSL(hue, 0.6, 0.5);
+                const mat = new THREE.MeshPhongMaterial({
+                    color: color,
+                    transparent: true,
+                    opacity: 0.7,
+                    shininess: 20
+                });
+                const cube = new THREE.Mesh(cubeGeo, mat);
+                const cx = l / 2, cy = h / 2, cz = w / 2;
+                cube.position.set(
+                    x + 0.5 + (x + 0.5 - cx) * spread,
+                    y + 0.5 + (y + 0.5 - cy) * spread,
+                    z + 0.5 + (z + 0.5 - cz) * spread
+                );
+                shapeGroup.add(cube);
+
+                const edges = new THREE.LineSegments(
+                    new THREE.EdgesGeometry(cubeGeo),
+                    new THREE.LineBasicMaterial({ color: 0xffffff, transparent: true, opacity: 0.1 })
+                );
+                edges.position.copy(cube.position);
+                shapeGroup.add(edges);
+            }
+        }
+    }
+}
+
+function updateShape() {
+    const { l, w, h } = getDims();
+
+    // Update UI values
+    document.getElementById('val-l').textContent = l;
+    document.getElementById('val-w').textContent = w;
+    document.getElementById('val-h').textContent = h;
+
+    // Calculations
+    const vol = l * w * h;
+    const sa = 2 * (l*w + l*h + w*h);
+
+    // Formula display
+    document.getElementById('f-l').textContent = l;
+    document.getElementById('f-w').textContent = w;
+    document.getElementById('f-h').textContent = h;
+    document.getElementById('f-vol').textContent = vol + ' u\u00B3';
+
+    // Readout
+    document.getElementById('r-vol').textContent = vol + ' u\u00B3';
+    document.getElementById('r-sa').textContent = sa + ' u\u00B2';
+    document.getElementById('r-cubes').textContent = vol;
+
+    // Rebuild 3D
+    clearShape();
+    switch (currentMode) {
+        case 'solid': buildSolid(l, w, h); break;
+        case 'cubes': buildUnitCubes(l, w, h); break;
+        case 'glass': buildGlass(l, w, h); break;
+        case 'exploded': buildExploded(l, w, h); break;
+    }
+}
+
+function setMode(mode) {
+    currentMode = mode;
+    document.querySelectorAll('.tool-btn-group .tool-btn').forEach(b => b.classList.remove('active'));
+    document.getElementById('mode-' + mode).classList.add('active');
+    updateShape();
+}
+
+// ==================== CHALLENGES ====================
+const challenges = [
+    { q: () => { const d = getDims(); return `If you double the height to ${d.h*2}, what is the new volume?`; },
+      a: () => { const d = getDims(); return d.l * d.w * (d.h * 2); } },
+    { q: () => { const d = getDims(); return `What is the surface area of a ${d.l} × ${d.w} × ${d.h} prism?`; },
+      a: () => { const d = getDims(); return 2*(d.l*d.w + d.l*d.h + d.w*d.h); } },
+    { q: () => { const d = getDims(); return `How many unit cubes fit in a ${d.l} × ${d.w} × ${d.h} prism?`; },
+      a: () => { const d = getDims(); return d.l * d.w * d.h; } },
+    { q: () => { const d = getDims(); return `If each dimension is increased by 1 (${d.l+1} × ${d.w+1} × ${d.h+1}), what is the new volume?`; },
+      a: () => { const d = getDims(); return (d.l+1) * (d.w+1) * (d.h+1); } },
+    { q: () => { const d = getDims(); return `How many faces does this rectangular prism have? What is the area of the bottom face?`; },
+      a: () => { const d = getDims(); return d.l * d.w; } },
+    { q: () => { const d = getDims(); return `What is the area of the front face (L × H) of a ${d.l} × ${d.w} × ${d.h} prism?`; },
+      a: () => { const d = getDims(); return d.l * d.h; } },
+];
+
+let currentChallenge = 0;
+let currentAnswer = 0;
+
+function newChallenge() {
+    currentChallenge = Math.floor(Math.random() * challenges.length);
+    const ch = challenges[currentChallenge];
+    document.getElementById('challenge-q').textContent = ch.q();
+    currentAnswer = ch.a();
+    document.getElementById('challenge-input').value = '';
+    document.getElementById('challenge-result').textContent = '';
+    document.getElementById('challenge-result').className = 'check-result';
+}
+
+function checkAnswer() {
+    const input = parseInt(document.getElementById('challenge-input').value);
+    const el = document.getElementById('challenge-result');
+    if (isNaN(input)) {
+        el.textContent = 'Enter a number';
+        el.className = 'check-result wrong';
+        return;
+    }
+    // Recalculate answer in case dims changed
+    currentAnswer = challenges[currentChallenge].a();
+    if (input === currentAnswer) {
+        el.textContent = 'Correct!';
+        el.className = 'check-result correct';
+    } else {
+        el.textContent = 'Try again — the answer is ' + currentAnswer;
+        el.className = 'check-result wrong';
+    }
+}
+
+// ==================== ANIMATION LOOP ====================
+function animate() {
+    requestAnimationFrame(animate);
+    renderer.render(scene, camera);
+}
+
+// ==================== RESIZE ====================
+window.addEventListener('resize', () => {
+    camera.aspect = container.clientWidth / container.clientHeight;
+    camera.updateProjectionMatrix();
+    renderer.setSize(container.clientWidth, container.clientHeight);
+});
+
+// ==================== INIT ====================
+updateShape();
+newChallenge();
+animate();
+
+// Detect iframe embedding
+if (window.self !== window.top) {
+    document.querySelector('.tool-app').classList.add('embedded');
+}
+</script>
+</body>
+</html>

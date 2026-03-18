@@ -1,0 +1,1376 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>VINCULUM — Time & Money</title>
+<link rel="stylesheet" href="../../vinculum-core.css">
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;600&display=swap');
+
+/* Theme system loaded from vinculum-core.css */
+.vinculum-rtm-btn .rtm-icon{font-size:14px;}
+
+/* ═══ FOCUS VISIBLE (Keyboard Navigation) ═══ */
+*:focus-visible {
+  outline:2px solid var(--cyan);outline-offset:2px;border-radius:4px;
+}
+.sr-only {
+  position:absolute;width:1px;height:1px;padding:0;margin:-1px;
+  overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0;
+}
+
+* { margin:0; padding:0; box-sizing:border-box; }
+body {
+  font-family: 'Inter', sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  height: 100vh;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  user-select: none;
+}
+
+/* ── MAIN AREA ── */
+.main {
+  flex: 1;
+  display: flex;
+  overflow: hidden;
+}
+
+/* ── WORKSPACE ── */
+.workspace {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: flex-start;
+  padding: 20px 24px;
+  position: relative;
+  overflow-y: auto;
+}
+
+/* ── CLOCK FACE ── */
+.clock-wrap {
+  width: 100%;
+  max-width: 280px;
+  margin: 8px auto;
+}
+.clock-wrap svg {
+  display: block;
+  width: 100%;
+  height: auto;
+  cursor: pointer;
+}
+.clock-face {
+  fill: var(--card);
+  stroke: var(--border);
+  stroke-width: 3;
+}
+.clock-tick { stroke: var(--muted); }
+.clock-tick.major { stroke: var(--text2); stroke-width: 2.5; }
+.clock-number {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 16px;
+  font-weight: 700;
+  fill: var(--text);
+  text-anchor: middle;
+  dominant-baseline: central;
+}
+.clock-hand-hour {
+  stroke: var(--purple);
+  stroke-width: 5;
+  stroke-linecap: round;
+}
+.clock-hand-minute {
+  stroke: var(--cyan);
+  stroke-width: 3.5;
+  stroke-linecap: round;
+}
+.clock-center-dot {
+  fill: var(--text);
+}
+.clock-label {
+  font-family: 'Inter', sans-serif;
+  font-size: 11px;
+  font-weight: 600;
+  fill: var(--muted);
+  text-anchor: middle;
+}
+
+/* ── COIN AREA ── */
+.coin-area {
+  width: 100%;
+  max-width: 480px;
+  margin: 12px auto;
+}
+.coin-tray {
+  display: flex;
+  gap: 10px;
+  justify-content: center;
+  flex-wrap: wrap;
+  padding: 12px;
+  border: 2px dashed var(--border);
+  border-radius: 16px;
+  min-height: 72px;
+  background: rgba(0,0,0,0.05);
+  margin-bottom: 12px;
+}
+.coin-palette {
+  display: flex;
+  gap: 12px;
+  justify-content: center;
+  flex-wrap: wrap;
+}
+.coin {
+  width: 52px;
+  height: 52px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: 'JetBrains Mono', monospace;
+  font-weight: 800;
+  font-size: 13px;
+  cursor: pointer;
+  border: 3px solid;
+  transition: transform 0.15s, box-shadow 0.15s;
+  -webkit-tap-highlight-color: transparent;
+  position: relative;
+}
+.coin:hover { transform: scale(1.12); }
+.coin:active { transform: scale(0.95); }
+.coin.penny {
+  background: linear-gradient(135deg, #b87333, #d4956a);
+  border-color: #a0613a;
+  color: #4a2a10;
+}
+.coin.nickel {
+  background: linear-gradient(135deg, #8a8a8a, #b0b0b0);
+  border-color: #707070;
+  color: #2a2a2a;
+}
+.coin.dime {
+  background: linear-gradient(135deg, #a0a0a0, #d0d0d0);
+  border-color: #888;
+  color: #333;
+  width: 42px;
+  height: 42px;
+  font-size: 11px;
+}
+.coin.quarter {
+  background: linear-gradient(135deg, #c0c0c0, #e8e8e8);
+  border-color: #999;
+  color: #222;
+  width: 60px;
+  height: 60px;
+  font-size: 14px;
+}
+.coin-tray .coin {
+  animation: coinDrop 0.25s ease-out;
+}
+@keyframes coinDrop {
+  0% { transform: scale(0) rotate(-20deg); opacity: 0; }
+  60% { transform: scale(1.15) rotate(5deg); opacity: 1; }
+  100% { transform: scale(1) rotate(0deg); opacity: 1; }
+}
+.coin-name {
+  font-size: 9px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  margin-top: 2px;
+  text-align: center;
+  color: var(--muted);
+}
+
+.coin-total {
+  text-align: center;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 28px;
+  font-weight: 900;
+  color: var(--green);
+  margin: 8px 0;
+}
+
+/* ── TIME DISPLAY ── */
+.time-display {
+  text-align: center;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 32px;
+  font-weight: 900;
+  color: var(--purple);
+  margin: 8px 0;
+}
+
+/* ── PROMPT ── */
+.prompt-label {
+  font-size: 18px;
+  font-weight: 800;
+  text-align: center;
+  color: var(--text);
+  margin: 8px 0 4px;
+}
+.prompt-sublabel {
+  font-size: 13px;
+  color: var(--muted);
+  text-align: center;
+  margin-bottom: 12px;
+}
+
+/* ── CONTROLS ── */
+.controls {
+  display: flex;
+  gap: 8px;
+  justify-content: center;
+  flex-wrap: wrap;
+  margin-top: 10px;
+}
+.ctrl-btn {
+  padding: 8px 16px;
+  border-radius: 10px;
+  border: 1.5px solid var(--border);
+  background: var(--card);
+  color: var(--text2);
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  -webkit-tap-highlight-color: transparent;
+}
+.ctrl-btn:hover { background: var(--card-hover); color: var(--text); }
+.ctrl-btn.primary {
+  background: var(--grad);
+  color: var(--bg);
+  border-color: transparent;
+}
+.ctrl-btn.primary:hover { opacity: 0.9; }
+.ctrl-btn.danger { color: var(--pink); }
+.ctrl-btn.danger:hover { background: rgba(255,59,139,0.1); }
+
+/* ── ANSWER GRID ── */
+.answer-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 8px;
+  margin-top: 16px;
+  max-width: 360px;
+}
+.answer-btn {
+  padding: 14px 8px;
+  border-radius: 12px;
+  border: 2px solid var(--border);
+  background: var(--card);
+  color: var(--text);
+  font-size: 17px;
+  font-weight: 700;
+  font-family: 'JetBrains Mono', monospace;
+  cursor: pointer;
+  transition: all 0.15s;
+  -webkit-tap-highlight-color: transparent;
+}
+.answer-btn:hover {
+  border-color: var(--cyan);
+  background: rgba(0,212,255,0.05);
+  transform: scale(1.05);
+}
+.answer-btn.correct-flash {
+  border-color: var(--green);
+  background: rgba(0,230,118,0.15);
+  color: var(--green);
+}
+.answer-btn.incorrect-flash {
+  border-color: var(--pink);
+  background: rgba(255,59,139,0.15);
+  color: var(--pink);
+}
+
+/* ── PATTERN CARD ── */
+.pattern-card {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 12px 14px;
+  margin-bottom: 10px;
+  font-size: 13px;
+  color: var(--text2);
+  line-height: 1.6;
+}
+.pattern-card strong { color: var(--text); }
+.pattern-card .pattern-label {
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 1.2px;
+  color: var(--cyan);
+  margin-bottom: 4px;
+  display: block;
+}
+
+/* ── ROUND INDICATOR ── */
+.round-indicator {
+  font-size: 12px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 1.5px;
+  color: var(--muted);
+  text-align: center;
+  margin-bottom: 4px;
+}
+
+/* ── SCORE DISPLAY ── */
+.score-display {
+  text-align: center;
+  padding: 16px;
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  margin-bottom: 12px;
+}
+.score-value {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 36px;
+  font-weight: 900;
+  background: var(--grad);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+.score-label {
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 1.5px;
+  color: var(--muted);
+  margin-top: 2px;
+}
+.streak-bar {
+  height: 6px;
+  background: var(--border);
+  border-radius: 3px;
+  margin-top: 8px;
+  overflow: hidden;
+}
+.streak-fill {
+  height: 100%;
+  background: var(--yellow);
+  border-radius: 3px;
+  transition: width 0.4s;
+}
+
+/* ── FEEDBACK ── */
+.feedback {
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%) scale(0);
+  padding: 24px 48px;
+  border-radius: 20px;
+  font-size: 22px;
+  font-weight: 800;
+  z-index: 200;
+  pointer-events: none;
+  transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275), opacity 0.3s;
+  opacity: 0;
+  max-width: 90vw;
+  text-align: center;
+  line-height: 1.4;
+}
+.feedback.show {
+  transform: translate(-50%, -50%) scale(1);
+  opacity: 1;
+}
+.feedback.correct {
+  background: rgba(0,230,118,0.15);
+  border: 2px solid var(--green);
+  color: var(--green);
+}
+.feedback.incorrect {
+  background: rgba(255,59,139,0.15);
+  border: 2px solid var(--pink);
+  color: var(--pink);
+}
+.feedback.try-again {
+  background: rgba(255,170,0,0.15);
+  border: 2px solid var(--yellow);
+  color: var(--yellow);
+}
+
+/* ── EXPLORE SECTIONS ── */
+.explore-section {
+  width: 100%;
+  max-width: 520px;
+  margin: 0 auto;
+}
+.section-label {
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 1.2px;
+  color: var(--muted);
+  margin-bottom: 6px;
+}
+
+/* ── TIME BUTTONS ── */
+.time-adj-row {
+  display: flex;
+  gap: 8px;
+  justify-content: center;
+  margin: 6px 0;
+}
+.time-adj-btn {
+  padding: 6px 14px;
+  border-radius: 8px;
+  border: 1.5px solid var(--border);
+  background: var(--card);
+  color: var(--text2);
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.15s;
+  -webkit-tap-highlight-color: transparent;
+}
+.time-adj-btn:hover {
+  border-color: var(--cyan);
+  background: rgba(0,212,255,0.05);
+}
+
+/* ── ANIMATIONS ── */
+@keyframes pop {
+  0% { transform: scale(0); }
+  70% { transform: scale(1.2); }
+  100% { transform: scale(1); }
+}
+@keyframes shake {
+  0%, 100% { transform: translateX(0); }
+  25% { transform: translateX(-8px); }
+  75% { transform: translateX(8px); }
+}
+.pop-in { animation: pop 0.3s ease-out forwards; }
+.shake { animation: shake 0.3s ease-in-out; }
+
+/* scrollbar */
+::-webkit-scrollbar { width: 6px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+</style>
+</head>
+<body>
+
+<!-- ═══ HEADER ═══ -->
+<div class="vinculum-header">
+  <div class="vinculum-header-left">
+    <a class="vinculum-back-btn" href="../../VINCULUM-Hub.html" style="text-decoration:none;">◀ Hub</a>
+    <div class="vinculum-header-title"><span>VINCULUM</span> Time & Money</div>
+    <span class="vinculum-header-badge">2.MD</span>
+  </div>
+  <div class="vinculum-header-right">
+    <div class="vinculum-std-tags">
+      <span class="vinculum-std-tag">2.MD.7</span>
+      <span class="vinculum-std-tag">2.MD.8</span>
+      <span class="vinculum-std-tag mn">MN 2.3.1.2</span>
+    </div>
+    <button class="vinculum-back-btn" id="readAloudBtn" onclick="toggleReadAloud()" aria-label="Read Aloud" title="Read instructions aloud" style="margin-left:8px;white-space:nowrap;">🔊 Read to Me</button>
+  </div>
+</div>
+
+<!-- ═══ MODE TABS ═══ -->
+<div class="vinculum-mode-tabs">
+  <button class="vinculum-mode-tab active-explore" id="tabExplore" data-mode="explore">
+    <svg width="18" height="18" viewBox="0 0 48 48" fill="none"><path d="M4 24C4 24 12 12 24 12C36 12 44 24 44 24C44 24 36 36 24 36C12 36 4 24 4 24Z" stroke="currentColor" stroke-width="3" fill="none"/><circle cx="24" cy="24" r="7" stroke="currentColor" stroke-width="3" fill="none"/><circle cx="24" cy="24" r="3" fill="currentColor"/><line x1="24" y1="4" x2="24" y2="9" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" opacity="0.5"/><line x1="10" y1="8" x2="13" y2="12" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" opacity="0.5"/><line x1="38" y1="8" x2="35" y2="12" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" opacity="0.5"/></svg> Explore
+  </button>
+  <button class="vinculum-mode-tab" id="tabPractice" data-mode="practice">
+    <svg width="18" height="18" viewBox="0 0 48 48" fill="none"><circle cx="24" cy="24" r="20" stroke="currentColor" stroke-width="3" fill="none" opacity="0.3"/><circle cx="24" cy="24" r="20" stroke="currentColor" stroke-width="3" fill="none" stroke-dasharray="126" stroke-dashoffset="32" stroke-linecap="round"/><polyline points="16,24 22,32 34,16" stroke="currentColor" stroke-width="4" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg> Practice
+  </button>
+  <button class="vinculum-mode-tab" id="tabPlay" data-mode="play">
+    <svg width="18" height="18" viewBox="0 0 48 48" fill="none"><polygon points="28,4 12,28 22,28 18,44 36,18 26,18" fill="none" stroke="currentColor" stroke-width="3" stroke-linejoin="round"/><polygon points="27,8 15,27 23,27 20,40 34,19 26,19" fill="currentColor" opacity="0.15"/></svg> Play
+  </button>
+  <div class="vinculum-diff-selector">
+    <span class="vinculum-diff-label">Level</span>
+    <button class="vinculum-diff-btn active" id="diffE" data-diff="emergent">Emergent</button>
+    <button class="vinculum-diff-btn" id="diffP" data-diff="proficient">Proficient</button>
+    <button class="vinculum-diff-btn" id="diffA" data-diff="advanced">Advanced</button>
+  </div>
+</div>
+
+<!-- ═══ MAIN ═══ -->
+<div class="main">
+  <div class="workspace" role="main" id="workspace"></div>
+  <div class="side-panel" id="sidePanel"></div>
+</div>
+
+<!-- ═══ FEEDBACK POPUP ═══ -->
+<div class="feedback" id="feedback"></div>
+
+<script src="../../vinculum-input.js"></script>
+<script>
+// ════════════════════════════════════════
+// STATE
+// ════════════════════════════════════════
+var S = {
+  mode: 'explore',
+  diff: 'emergent',
+  // Explore - Clock
+  hour: 3,
+  minute: 0,
+  // Explore - Coins
+  coins: [],     // array of coin types in tray
+  // Practice
+  pType: 'time', // 'time' or 'money'
+  pHour: 0,
+  pMinute: 0,
+  pCoinSet: [],
+  pAnswer: '',
+  pChoices: [],
+  // Play
+  score: 0,
+  streak: 0,
+  best: 0,
+  round: 0,
+  total: 10,
+  playType: 'time',
+  playHour: 0,
+  playMinute: 0,
+  playCoinSet: [],
+  playAnswer: '',
+  playChoices: []
+};
+
+// ════════════════════════════════════════
+// COIN DATA
+// ════════════════════════════════════════
+var COINS = {
+  penny:   { name: 'Penny',   value: 1,  css: 'penny',   label: '1¢' },
+  nickel:  { name: 'Nickel',  value: 5,  css: 'nickel',  label: '5¢' },
+  dime:    { name: 'Dime',    value: 10, css: 'dime',    label: '10¢' },
+  quarter: { name: 'Quarter', value: 25, css: 'quarter', label: '25¢' }
+};
+var COIN_TYPES = ['penny', 'nickel', 'dime', 'quarter'];
+
+// ════════════════════════════════════════
+// READ-ALOUD
+// ════════════════════════════════════════
+function toggleReadAloud() {
+  if (window.VinculumStories && VinculumStories.isReading()) {
+    VinculumStories.stopReading();
+    document.getElementById('readAloudBtn').textContent = '🔊 Read to Me';
+  } else {
+    var text = 'Welcome to Time and Money! Set the clock and count coins to practice telling time and counting money.';
+    if (window.VinculumStories) {
+      VinculumStories.readAloud(text, { rate: 0.85, onComplete: function() {
+        document.getElementById('readAloudBtn').textContent = '🔊 Read to Me';
+      }});
+      document.getElementById('readAloudBtn').textContent = '⏹ Stop';
+    }
+  }
+}
+
+// ════════════════════════════════════════
+// MISCONCEPTIONS DATABASE
+// ════════════════════════════════════════
+var MISCONCEPTIONS = {
+  coinValueConfusion: {
+    id: 'coin-value-confusion',
+    msg: function(coin, wrongVal, rightVal) {
+      return 'A ' + coin + ' is worth ' + rightVal + '¢, not ' + wrongVal + '¢. Remember: the size of a coin does not tell its value!';
+    }
+  },
+  countsCoinsAsOne: {
+    id: 'counts-coins-as-one',
+    msg: function(total) {
+      return 'Each coin has a different value. Do not count them as 1¢ each. The total is ' + total + '¢.';
+    }
+  },
+  clockIntervalOf5: {
+    id: 'clock-interval-of-5',
+    msg: function(correctTime) {
+      return 'The minute hand points to a number, but each number means 5 minutes. Count by 5s from 12! The time is ' + correctTime + '.';
+    }
+  },
+  confusesHands: {
+    id: 'confuses-hands',
+    msg: function() {
+      return 'The short hand shows the hour. The long hand shows the minutes. Look carefully at which is which!';
+    }
+  },
+  offBy5Min: {
+    id: 'off-by-5-min',
+    msg: function(correctTime) {
+      return 'Almost! Count by 5s carefully on the clock. The correct time is ' + correctTime + '.';
+    }
+  },
+  randomGuess: {
+    id: 'random-guess',
+    msg: function(topic) {
+      return topic === 'time' ? 'Use the clock face to help. Find the hour hand first, then count by 5s for the minute hand.' : 'Start with the largest coins and count up. Each quarter adds 25¢, each dime 10¢, each nickel 5¢, each penny 1¢.';
+    }
+  }
+};
+
+// ════════════════════════════════════════
+// HELPERS
+// ════════════════════════════════════════
+function randInt(min, max) {
+  return Math.floor(Math.random() * (max - min + 1)) + min;
+}
+
+function showFB(text, type) {
+  var fb = document.getElementById('feedback');
+  fb.textContent = text;
+  fb.className = 'feedback ' + type + ' show';
+  setTimeout(function() { fb.classList.remove('show'); }, 2200);
+}
+
+function shuffleArray(arr) {
+  var a = arr.slice();
+  for (var i = a.length - 1; i > 0; i--) {
+    var j = randInt(0, i);
+    var tmp = a[i]; a[i] = a[j]; a[j] = tmp;
+  }
+  return a;
+}
+
+function formatTime(h, m) {
+  var hour = h === 0 ? 12 : h;
+  var min = m < 10 ? '0' + m : '' + m;
+  return hour + ':' + min;
+}
+
+function coinTotal(coinArr) {
+  var total = 0;
+  for (var i = 0; i < coinArr.length; i++) {
+    total += COINS[coinArr[i]].value;
+  }
+  return total;
+}
+
+function formatCents(c) {
+  if (c >= 100) {
+    var dollars = Math.floor(c / 100);
+    var cents = c % 100;
+    return '$' + dollars + '.' + (cents < 10 ? '0' : '') + cents;
+  }
+  return c + '¢';
+}
+
+function coinDescription(coinArr) {
+  var counts = {};
+  for (var i = 0; i < coinArr.length; i++) {
+    counts[coinArr[i]] = (counts[coinArr[i]] || 0) + 1;
+  }
+  var parts = [];
+  COIN_TYPES.slice().reverse().forEach(function(type) {
+    if (counts[type]) {
+      parts.push(counts[type] + ' ' + COINS[type].name + (counts[type] > 1 ? 's' : ''));
+    }
+  });
+  return parts.join(', ');
+}
+
+// ════════════════════════════════════════
+// SVG CLOCK BUILDER
+// ════════════════════════════════════════
+function buildClockSVG(hour, minute, options) {
+  options = options || {};
+  var size = options.size || 240;
+  var cx = size / 2;
+  var cy = size / 2;
+  var r = size / 2 - 12;
+
+  var svg = '<svg viewBox="0 0 ' + size + ' ' + size + '" width="' + size + '" height="' + size + '">';
+
+  // Face
+  svg += '<circle cx="' + cx + '" cy="' + cy + '" r="' + r + '" class="clock-face"/>';
+
+  // Tick marks
+  for (var i = 0; i < 60; i++) {
+    var angle = (i * 6 - 90) * Math.PI / 180;
+    var isMajor = i % 5 === 0;
+    var innerR = isMajor ? r - 14 : r - 8;
+    var outerR = r - 3;
+    var x1 = cx + innerR * Math.cos(angle);
+    var y1 = cy + innerR * Math.sin(angle);
+    var x2 = cx + outerR * Math.cos(angle);
+    var y2 = cy + outerR * Math.sin(angle);
+    svg += '<line x1="' + x1 + '" y1="' + y1 + '" x2="' + x2 + '" y2="' + y2 + '" class="clock-tick' + (isMajor ? ' major' : '') + '" stroke-width="' + (isMajor ? '2.5' : '1') + '"/>';
+  }
+
+  // Numbers
+  var numR = r - 28;
+  for (var n = 1; n <= 12; n++) {
+    var a = (n * 30 - 90) * Math.PI / 180;
+    var nx = cx + numR * Math.cos(a);
+    var ny = cy + numR * Math.sin(a);
+    svg += '<text x="' + nx + '" y="' + ny + '" class="clock-number">' + n + '</text>';
+  }
+
+  // Hour hand
+  var hAngle = ((hour % 12) * 30 + minute * 0.5 - 90) * Math.PI / 180;
+  var hLen = r * 0.5;
+  var hx = cx + hLen * Math.cos(hAngle);
+  var hy = cy + hLen * Math.sin(hAngle);
+  svg += '<line x1="' + cx + '" y1="' + cy + '" x2="' + hx + '" y2="' + hy + '" class="clock-hand-hour"/>';
+
+  // Minute hand
+  var mAngle = (minute * 6 - 90) * Math.PI / 180;
+  var mLen = r * 0.72;
+  var mx = cx + mLen * Math.cos(mAngle);
+  var my = cy + mLen * Math.sin(mAngle);
+  svg += '<line x1="' + cx + '" y1="' + cy + '" x2="' + mx + '" y2="' + my + '" class="clock-hand-minute"/>';
+
+  // Center dot
+  svg += '<circle cx="' + cx + '" cy="' + cy + '" r="5" class="clock-center-dot"/>';
+
+  // "Hour" and "Minute" labels
+  if (!options.compact) {
+    svg += '<text x="' + (cx - 38) + '" y="' + (cy + r * 0.5 + 22) + '" class="clock-label" fill="var(--purple)">hour</text>';
+    svg += '<text x="' + (cx + 38) + '" y="' + (cy + r * 0.5 + 22) + '" class="clock-label" fill="var(--cyan)">minute</text>';
+  }
+
+  svg += '</svg>';
+  return svg;
+}
+
+// ════════════════════════════════════════
+// COIN HTML BUILDER
+// ════════════════════════════════════════
+function buildCoinHTML(type, onclick) {
+  var c = COINS[type];
+  return '<div class="coin ' + c.css + '" onclick="' + onclick + '" title="' + c.name + ' = ' + c.label + '">' + c.label + '</div>';
+}
+
+function buildCoinPalette() {
+  var html = '<div class="coin-palette">';
+  COIN_TYPES.forEach(function(type) {
+    html += '<div style="text-align:center;">';
+    html += buildCoinHTML(type, "addCoin('" + type + "')");
+    html += '<div class="coin-name">' + COINS[type].name + '</div>';
+    html += '</div>';
+  });
+  html += '</div>';
+  return html;
+}
+
+function buildCoinTray(coinArr) {
+  var html = '<div class="coin-tray">';
+  if (coinArr.length === 0) {
+    html += '<span style="color:var(--muted);font-size:13px;align-self:center;">Tap coins below to add them here</span>';
+  } else {
+    coinArr.forEach(function(type, i) {
+      html += '<div class="coin ' + COINS[type].css + '" onclick="removeCoin(' + i + ')" title="Click to remove">' + COINS[type].label + '</div>';
+    });
+  }
+  html += '</div>';
+  return html;
+}
+
+function buildDisplayCoins(coinArr) {
+  var html = '<div style="display:flex;gap:6px;justify-content:center;flex-wrap:wrap;margin:8px 0;">';
+  coinArr.forEach(function(type) {
+    var c = COINS[type];
+    html += '<div class="coin ' + c.css + '" style="cursor:default;">' + c.label + '</div>';
+  });
+  html += '</div>';
+  return html;
+}
+
+// ════════════════════════════════════════
+// EXPLORE COIN / CLOCK INTERACTIONS
+// ════════════════════════════════════════
+function addCoin(type) {
+  S.coins.push(type);
+  render();
+}
+
+function removeCoin(idx) {
+  S.coins.splice(idx, 1);
+  render();
+}
+
+function clearCoins() {
+  S.coins = [];
+  render();
+}
+
+function adjustHour(delta) {
+  S.hour = ((S.hour + delta) % 12 + 12) % 12;
+  render();
+}
+
+function adjustMinute(delta) {
+  S.minute = ((S.minute + delta) % 60 + 60) % 60;
+  render();
+}
+
+// ════════════════════════════════════════
+// MODE / DIFF SWITCHING
+// ════════════════════════════════════════
+function setMode(mode) {
+  S.mode = mode;
+  S.round = 0;
+  S.pType = 'time';
+
+  document.querySelectorAll('.vinculum-mode-tab').forEach(function(t) {
+    t.classList.remove('active-explore', 'active-practice', 'active-play');
+  });
+  var tabEl = document.querySelector('[data-mode="' + mode + '"]');
+  if (tabEl) tabEl.classList.add('active-' + mode);
+
+  render();
+}
+
+function setDiff(diff) {
+  S.diff = diff;
+  S.round = 0;
+  S.coins = [];
+  S.hour = 3;
+  S.minute = 0;
+  document.querySelectorAll('.vinculum-diff-btn').forEach(function(b) { b.classList.remove('active'); });
+  document.getElementById('diff' + diff.charAt(0).toUpperCase()).classList.add('active');
+  render();
+}
+
+// ════════════════════════════════════════
+// RANDOM TIME GENERATOR
+// ════════════════════════════════════════
+function randomTime() {
+  var h = randInt(1, 12);
+  var m;
+  if (S.diff === 'emergent') {
+    m = 0; // hour only
+  } else if (S.diff === 'proficient') {
+    m = randInt(0, 11) * 5; // nearest 5 min
+  } else {
+    m = randInt(0, 11) * 5; // same for advanced, but problems are multi-step
+  }
+  return { hour: h, minute: m };
+}
+
+// ════════════════════════════════════════
+// RANDOM COIN SET GENERATOR
+// ════════════════════════════════════════
+function randomCoinSet() {
+  var coins = [];
+  if (S.diff === 'emergent') {
+    // 2-4 coins, only pennies/nickels/dimes
+    var count = randInt(2, 4);
+    var types = ['penny', 'nickel', 'dime'];
+    for (var i = 0; i < count; i++) {
+      coins.push(types[randInt(0, types.length - 1)]);
+    }
+  } else if (S.diff === 'proficient') {
+    // 3-5 coins, all types
+    var count2 = randInt(3, 5);
+    for (var j = 0; j < count2; j++) {
+      coins.push(COIN_TYPES[randInt(0, 3)]);
+    }
+  } else {
+    // Advanced: 4-7 coins, all types, larger totals
+    var count3 = randInt(4, 7);
+    for (var k = 0; k < count3; k++) {
+      coins.push(COIN_TYPES[randInt(0, 3)]);
+    }
+  }
+  // Sort: quarters, dimes, nickels, pennies
+  coins.sort(function(a, b) {
+    return COINS[b].value - COINS[a].value;
+  });
+  return coins;
+}
+
+// ════════════════════════════════════════
+// TIME DISTRACTORS
+// ════════════════════════════════════════
+function generateTimeDistractors(h, m, correct) {
+  var choices = new Set([correct]);
+  var tries = 0;
+
+  // Common misconception: reading minute number directly (e.g., 3 instead of 15)
+  if (m > 0) {
+    var minuteNum = m / 5;
+    choices.add(formatTime(h, minuteNum));
+  }
+  // Swap hands misconception
+  var swapH = Math.round(m / 5);
+  if (swapH === 0) swapH = 12;
+  choices.add(formatTime(swapH, (h % 12) * 5));
+  // Off by 5 min
+  if (m >= 5) choices.add(formatTime(h, m - 5));
+  if (m <= 55) choices.add(formatTime(h, m + 5));
+  // Off by 1 hour
+  choices.add(formatTime(h === 12 ? 1 : h + 1, m));
+  if (h > 1) choices.add(formatTime(h - 1, m));
+
+  // Remove the correct answer, keep up to 3 distractors
+  choices.delete(correct);
+  var distArr = Array.from(choices);
+  distArr = shuffleArray(distArr).slice(0, 3);
+
+  var allChoices = [correct].concat(distArr);
+  while (allChoices.length < 4) {
+    var rh = randInt(1, 12);
+    var rm = S.diff === 'emergent' ? 0 : randInt(0, 11) * 5;
+    var t = formatTime(rh, rm);
+    if (allChoices.indexOf(t) === -1) allChoices.push(t);
+  }
+  return shuffleArray(allChoices.slice(0, 4));
+}
+
+// ════════════════════════════════════════
+// MONEY DISTRACTORS
+// ════════════════════════════════════════
+function generateMoneyDistractors(coinArr, correctTotal) {
+  var correct = formatCents(correctTotal);
+  var choices = new Set([correct]);
+
+  // Count-as-1 misconception
+  choices.add(formatCents(coinArr.length));
+  // Off by a coin value
+  var types = ['penny', 'nickel', 'dime', 'quarter'];
+  types.forEach(function(t) {
+    var v = COINS[t].value;
+    if (correctTotal + v <= 200) choices.add(formatCents(correctTotal + v));
+    if (correctTotal - v > 0) choices.add(formatCents(correctTotal - v));
+  });
+  // Swap nickel/dime
+  var swapTotal = 0;
+  coinArr.forEach(function(c) {
+    if (c === 'nickel') swapTotal += 10;
+    else if (c === 'dime') swapTotal += 5;
+    else swapTotal += COINS[c].value;
+  });
+  if (swapTotal !== correctTotal) choices.add(formatCents(swapTotal));
+
+  choices.delete(correct);
+  var distArr = shuffleArray(Array.from(choices)).slice(0, 3);
+  var allChoices = [correct].concat(distArr);
+
+  while (allChoices.length < 4) {
+    var off = randInt(-20, 20);
+    if (off === 0) off = randInt(1, 15);
+    var val = correctTotal + off;
+    if (val > 0 && val <= 200) {
+      var f = formatCents(val);
+      if (allChoices.indexOf(f) === -1) allChoices.push(f);
+    }
+  }
+  return shuffleArray(allChoices.slice(0, 4));
+}
+
+// ════════════════════════════════════════
+// EXPLORE MODE
+// ════════════════════════════════════════
+function renderExplore(ws, sp) {
+  var html = '';
+
+  html += '<div class="prompt-label">Explore Time & Money</div>';
+  html += '<div class="prompt-sublabel">Set the clock and add coins freely</div>';
+
+  html += '<div class="explore-section">';
+
+  // Clock section
+  html += '<div class="section-label">Clock</div>';
+  html += '<div class="clock-wrap">';
+  html += buildClockSVG(S.hour, S.minute);
+  html += '</div>';
+  html += '<div class="time-display">' + formatTime(S.hour === 0 ? 12 : S.hour, S.minute) + '</div>';
+
+  // Clock controls
+  html += '<div class="time-adj-row">';
+  html += '<button class="time-adj-btn" onclick="adjustHour(-1)">- Hour</button>';
+  html += '<button class="time-adj-btn" onclick="adjustHour(1)">+ Hour</button>';
+  html += '<button class="time-adj-btn" onclick="adjustMinute(-5)">- 5 min</button>';
+  html += '<button class="time-adj-btn" onclick="adjustMinute(5)">+ 5 min</button>';
+  if (S.diff === 'advanced') {
+    html += '<button class="time-adj-btn" onclick="adjustMinute(-1)">- 1 min</button>';
+    html += '<button class="time-adj-btn" onclick="adjustMinute(1)">+ 1 min</button>';
+  }
+  html += '</div>';
+
+  // Coin section
+  html += '<div class="section-label" style="margin-top:16px;">Coins</div>';
+  html += buildCoinTray(S.coins);
+
+  var total = coinTotal(S.coins);
+  if (S.coins.length > 0) {
+    html += '<div class="coin-total">' + formatCents(total) + '</div>';
+  }
+
+  html += buildCoinPalette();
+
+  if (S.coins.length > 0) {
+    html += '<div class="controls" style="margin-top:8px;">';
+    html += '<button class="ctrl-btn danger" onclick="clearCoins()">✕ Clear Coins</button>';
+    html += '</div>';
+  }
+
+  html += '</div>'; // end explore-section
+
+  ws.innerHTML = html;
+
+  // Side panel
+  sp.innerHTML = '<div class="panel-section">' +
+    '<div class="panel-title">How to Explore</div>' +
+    '<div class="panel-text">' +
+    '1. Use <strong>+ Hour</strong> and <strong>+ 5 min</strong> to set the clock<br><br>' +
+    '2. <strong>Tap coins</strong> below the tray to add them<br><br>' +
+    '3. <strong>Tap a coin</strong> in the tray to remove it<br><br>' +
+    '4. Watch how the total changes as you add coins' +
+    '</div></div>' +
+    '<div class="panel-section">' +
+    '<div class="panel-title">Coin Values</div>' +
+    '<div class="pattern-card"><span class="pattern-label">Penny</span>' +
+    '1¢ — the small copper coin. It takes <strong>100 pennies</strong> to make $1.00.' +
+    '</div>' +
+    '<div class="pattern-card"><span class="pattern-label">Nickel</span>' +
+    '5¢ — worth the same as <strong>5 pennies</strong>. Count by 5s!' +
+    '</div>' +
+    '<div class="pattern-card"><span class="pattern-label">Dime</span>' +
+    '10¢ — the smallest coin but worth <strong>10 pennies</strong>. Count by 10s!' +
+    '</div>' +
+    '<div class="pattern-card"><span class="pattern-label">Quarter</span>' +
+    '25¢ — the biggest coin. <strong>4 quarters = $1.00</strong>.' +
+    '</div>' +
+    '</div>' +
+    '<div class="panel-section">' +
+    '<div class="panel-title">Reading the Clock</div>' +
+    '<div class="pattern-card"><span class="pattern-label">Hour Hand</span>' +
+    'The <strong style="color:var(--purple);">short purple hand</strong> points to the hour.' +
+    '</div>' +
+    '<div class="pattern-card"><span class="pattern-label">Minute Hand</span>' +
+    'The <strong style="color:var(--cyan);">long blue hand</strong> points to the minutes. Each number = 5 minutes.' +
+    '</div>' +
+    '</div>';
+}
+
+// ════════════════════════════════════════
+// PRACTICE MODE
+// ════════════════════════════════════════
+function generatePractice() {
+  // Alternate between time and money questions
+  S.pType = Math.random() < 0.5 ? 'time' : 'money';
+
+  if (S.pType === 'time') {
+    var t = randomTime();
+    S.pHour = t.hour;
+    S.pMinute = t.minute;
+    S.pAnswer = formatTime(t.hour, t.minute);
+    S.pChoices = generateTimeDistractors(t.hour, t.minute, S.pAnswer);
+  } else {
+    S.pCoinSet = randomCoinSet();
+    var total = coinTotal(S.pCoinSet);
+    S.pAnswer = formatCents(total);
+    S.pChoices = generateMoneyDistractors(S.pCoinSet, total);
+  }
+}
+
+function practiceAnswer(val) {
+  if (val === S.pAnswer) {
+    showFB('Correct!', 'correct');
+    setTimeout(function() { generatePractice(); render(); }, 1200);
+  } else {
+    // Misconception feedback
+    if (S.pType === 'time') {
+      giveTimeFeedback(val, S.pHour, S.pMinute, S.pAnswer);
+    } else {
+      giveMoneyFeedback(val, S.pCoinSet, coinTotal(S.pCoinSet), S.pAnswer);
+    }
+  }
+}
+
+function giveTimeFeedback(chosen, h, m, correct) {
+  // Parse chosen time
+  var parts = chosen.split(':');
+  var ch = parseInt(parts[0]);
+  var cm = parseInt(parts[1]);
+
+  // Swapped hands?
+  var swapH = Math.round(m / 5);
+  if (swapH === 0) swapH = 12;
+  if (ch === swapH && cm === (h % 12) * 5) {
+    showFB(MISCONCEPTIONS.confusesHands.msg(), 'try-again');
+    return;
+  }
+  // Off by 5 min?
+  if (ch === h && Math.abs(cm - m) === 5) {
+    showFB(MISCONCEPTIONS.offBy5Min.msg(correct), 'try-again');
+    return;
+  }
+  // Read minute number directly?
+  if (m > 0 && cm === m / 5) {
+    showFB(MISCONCEPTIONS.clockIntervalOf5.msg(correct), 'try-again');
+    return;
+  }
+  showFB(MISCONCEPTIONS.randomGuess.msg('time'), 'incorrect');
+}
+
+function giveMoneyFeedback(chosen, coinArr, total, correct) {
+  // Count-as-1 misconception
+  if (chosen === formatCents(coinArr.length)) {
+    showFB(MISCONCEPTIONS.countsCoinsAsOne.msg(total), 'try-again');
+    return;
+  }
+  // Value confusion (nickel/dime swap)
+  var swapTotal = 0;
+  coinArr.forEach(function(c) {
+    if (c === 'nickel') swapTotal += 10;
+    else if (c === 'dime') swapTotal += 5;
+    else swapTotal += COINS[c].value;
+  });
+  if (chosen === formatCents(swapTotal)) {
+    showFB(MISCONCEPTIONS.coinValueConfusion.msg('nickel/dime', 'mixed up', 'different'), 'try-again');
+    return;
+  }
+  showFB(MISCONCEPTIONS.randomGuess.msg('money'), 'incorrect');
+}
+
+function renderPractice(ws, sp) {
+  if (S.pChoices.length === 0) generatePractice();
+
+  var html = '';
+
+  if (S.pType === 'time') {
+    html += '<div class="prompt-label">What time is shown?</div>';
+    html += '<div class="prompt-sublabel">Read the clock and pick the correct time</div>';
+    html += '<div class="clock-wrap">';
+    html += buildClockSVG(S.pHour, S.pMinute, { compact: true });
+    html += '</div>';
+  } else {
+    html += '<div class="prompt-label">How much money?</div>';
+    html += '<div class="prompt-sublabel">Count the coins and pick the total</div>';
+    html += buildDisplayCoins(S.pCoinSet);
+    html += '<div style="text-align:center;font-size:12px;color:var(--muted);margin:4px 0;">' + coinDescription(S.pCoinSet) + '</div>';
+  }
+
+  // Choices
+  html += '<div class="answer-grid" style="margin:16px auto;">';
+  S.pChoices.forEach(function(c) {
+    html += '<button class="answer-btn" onclick="practiceAnswer(\'' + c.replace("'", "\\'") + '\')">' + c + '</button>';
+  });
+  html += '</div>';
+
+  // New question
+  html += '<div class="controls" style="margin-top:12px;">';
+  html += '<button class="ctrl-btn" onclick="generatePractice();render();">↻ New Question</button>';
+  html += '</div>';
+
+  ws.innerHTML = html;
+
+  // Side panel
+  var diffDesc = {
+    emergent: 'Tell time to the hour and identify coin values.',
+    proficient: 'Tell time to the nearest 5 minutes and count mixed coins.',
+    advanced: 'Solve time and money problems with multiple steps.'
+  };
+  sp.innerHTML = '<div class="panel-section">' +
+    '<div class="panel-title">Instructions</div>' +
+    '<div class="panel-text">' + diffDesc[S.diff] + '</div>' +
+    '</div>' +
+    '<div class="panel-section">' +
+    '<div class="panel-title">Tips</div>' +
+    '<div class="pattern-card"><span class="pattern-label">Reading Time</span>' +
+    'Find the <strong style="color:var(--purple);">short hand</strong> for the hour. Then count by 5s from 12 using the <strong style="color:var(--cyan);">long hand</strong>.' +
+    '</div>' +
+    '<div class="pattern-card"><span class="pattern-label">Counting Money</span>' +
+    'Start with the <strong>biggest coins</strong> first. Count quarters by 25s, dimes by 10s, nickels by 5s, then add pennies.' +
+    '</div>' +
+    '</div>' +
+    '<div class="panel-section">' +
+    '<div class="panel-title">Common Mistakes</div>' +
+    '<div class="pattern-card"><span class="pattern-label">Clock</span>' +
+    'The minute hand on 3 means <strong>15 minutes</strong>, not 3 minutes! Each number = 5 min.' +
+    '</div>' +
+    '<div class="pattern-card"><span class="pattern-label">Coins</span>' +
+    'A dime is <strong>smaller</strong> than a nickel but worth <strong>more</strong>. Size does not equal value!' +
+    '</div>' +
+    '</div>';
+}
+
+// ════════════════════════════════════════
+// PLAY MODE — 10 Rounds, MC, Scored
+// ════════════════════════════════════════
+function generatePlayRound() {
+  S.round++;
+  // Alternate time and money, with advanced adding multi-step
+  if (S.diff === 'advanced' && S.round % 3 === 0) {
+    S.playType = 'combo';
+  } else {
+    S.playType = S.round % 2 === 0 ? 'money' : 'time';
+  }
+
+  if (S.playType === 'time' || S.playType === 'combo') {
+    var t = randomTime();
+    S.playHour = t.hour;
+    S.playMinute = t.minute;
+  }
+  if (S.playType === 'money' || S.playType === 'combo') {
+    S.playCoinSet = randomCoinSet();
+  }
+
+  if (S.playType === 'time') {
+    S.playAnswer = formatTime(S.playHour, S.playMinute);
+    S.playChoices = generateTimeDistractors(S.playHour, S.playMinute, S.playAnswer);
+  } else if (S.playType === 'money') {
+    var total = coinTotal(S.playCoinSet);
+    S.playAnswer = formatCents(total);
+    S.playChoices = generateMoneyDistractors(S.playCoinSet, total);
+  } else {
+    // Combo: "You have [coins]. You earn [more coins] at [time]. How much total?"
+    var extraCoins = randomCoinSet();
+    S.playExtraCoins = extraCoins;
+    var comboTotal = coinTotal(S.playCoinSet) + coinTotal(extraCoins);
+    S.playAnswer = formatCents(comboTotal);
+    S.playChoices = generateMoneyDistractors(S.playCoinSet.concat(extraCoins), comboTotal);
+  }
+}
+
+function playAnswer(val) {
+  var btn = document.querySelector('[data-play-val="' + val.replace(/'/g, "\\'") + '"]');
+
+  if (val === S.playAnswer) {
+    if (btn) btn.classList.add('correct-flash');
+    var pts = 10 + S.streak * 2;
+    S.score += pts;
+    S.streak++;
+    if (S.streak > S.best) S.best = S.streak;
+    showFB('Correct! +' + pts, 'correct');
+  } else {
+    if (btn) btn.classList.add('incorrect-flash');
+    S.streak = 0;
+
+    // Misconception feedback
+    if (S.playType === 'time') {
+      giveTimeFeedback(val, S.playHour, S.playMinute, S.playAnswer);
+    } else {
+      var arr = S.playType === 'combo' ? S.playCoinSet.concat(S.playExtraCoins || []) : S.playCoinSet;
+      giveMoneyFeedback(val, arr, coinTotal(arr), S.playAnswer);
+    }
+  }
+
+  setTimeout(function() {
+    if (S.round >= S.total) {
+      showFB('Game Over! Score: ' + S.score, 'correct');
+      setTimeout(function() { S.round = 0; S.score = 0; S.streak = 0; render(); }, 2500);
+      return;
+    }
+    generatePlayRound();
+    render();
+  }, 1200);
+}
+
+function renderPlay(ws, sp) {
+  if (S.round === 0) {
+    S.score = 0;
+    S.streak = 0;
+    generatePlayRound();
+  }
+
+  var html = '';
+
+  // Round indicator
+  html += '<div class="round-indicator">Round ' + S.round + ' of ' + S.total + '</div>';
+
+  if (S.playType === 'time') {
+    html += '<div class="prompt-label">What time is shown?</div>';
+    html += '<div class="clock-wrap">';
+    html += buildClockSVG(S.playHour, S.playMinute, { compact: true });
+    html += '</div>';
+  } else if (S.playType === 'money') {
+    html += '<div class="prompt-label">How much money?</div>';
+    html += buildDisplayCoins(S.playCoinSet);
+    html += '<div style="text-align:center;font-size:12px;color:var(--muted);margin:4px 0;">' + coinDescription(S.playCoinSet) + '</div>';
+  } else {
+    // Combo round
+    html += '<div class="prompt-label">Total Money Problem</div>';
+    html += '<div class="prompt-sublabel">At ' + formatTime(S.playHour, S.playMinute) + ', you have these coins:</div>';
+    html += buildDisplayCoins(S.playCoinSet);
+    html += '<div class="prompt-sublabel" style="margin-top:8px;">Then you earn these coins:</div>';
+    html += buildDisplayCoins(S.playExtraCoins || []);
+    html += '<div class="prompt-sublabel" style="margin-top:4px;font-weight:700;color:var(--text);">How much money do you have now?</div>';
+  }
+
+  // MC choices
+  html += '<div class="answer-grid" style="margin:16px auto;">';
+  S.playChoices.forEach(function(c) {
+    html += '<button class="answer-btn" data-play-val="' + c + '" onclick="playAnswer(\'' + c.replace("'", "\\'") + '\')">' + c + '</button>';
+  });
+  html += '</div>';
+
+  ws.innerHTML = html;
+
+  // Side panel — score
+  sp.innerHTML = '<div class="score-display">' +
+    '<div class="score-value">' + S.score + '</div>' +
+    '<div class="score-label">Score</div>' +
+    '</div>' +
+    '<div class="score-display" style="background:transparent;padding:8px;">' +
+    '<div style="font-size:18px;font-weight:700;color:var(--yellow);">🔥 ' + S.streak + '</div>' +
+    '<div class="score-label">Streak</div>' +
+    '<div class="streak-bar"><div class="streak-fill" style="width:' + Math.min(S.streak * 20, 100) + '%;"></div></div>' +
+    '</div>' +
+    '<div class="panel-section">' +
+    '<div class="panel-title">How to Play</div>' +
+    '<div class="panel-text">' +
+    'Answer time and money questions correctly!<br><br>' +
+    '<strong>10 points</strong> per correct answer + <strong>streak bonus</strong> (+2 per streak).<br><br>' +
+    '10 rounds total. Build a streak for the highest score!' +
+    '</div></div>' +
+    '<div class="panel-section">' +
+    '<div class="panel-title">Best Streak</div>' +
+    '<div class="panel-text" style="font-size:24px;font-weight:800;color:var(--purple);">🏆 ' + S.best + '</div>' +
+    '</div>' +
+    '<div class="panel-section">' +
+    '<div class="panel-title">Difficulty</div>' +
+    '<div class="panel-text">' +
+    (S.diff === 'emergent' ? '<strong>Emergent:</strong> Time to the hour + basic coin values' :
+     S.diff === 'proficient' ? '<strong>Proficient:</strong> Time to 5 min + mixed coin counting' :
+     '<strong>Advanced:</strong> Multi-step time & money problems') +
+    '</div></div>';
+}
+
+// ════════════════════════════════════════
+// RENDER DISPATCH
+// ════════════════════════════════════════
+function render() {
+  var ws = document.getElementById('workspace');
+  var sp = document.getElementById('sidePanel');
+
+  if (S.mode === 'explore') renderExplore(ws, sp);
+  else if (S.mode === 'practice') renderPractice(ws, sp);
+  else renderPlay(ws, sp);
+}
+
+// ════════════════════════════════════════
+// INIT
+// ════════════════════════════════════════
+document.querySelectorAll('.vinculum-mode-tab').forEach(function(tab) {
+  tab.addEventListener('click', function() {
+    setMode(this.dataset.mode);
+  });
+});
+
+document.querySelectorAll('.vinculum-diff-btn').forEach(function(btn) {
+  btn.addEventListener('click', function() {
+    setDiff(this.dataset.diff);
+  });
+});
+
+render();
+</script>
+<script src="../../vinculum-core.js"></script>
+<script src="../../vinculum-data.js"></script>
+<script src="../../vinculum-adaptive-hook.js"></script>
+<script src="../../vinculum-3reads.js"></script>
+<script src="../../vinculum-stories.js"></script>
+<script src="../../vinculum-feedback.js"></script>
+<script src="../../vinculum-guide.js"></script>
+<script src="../../vinculum-identity.js"></script>
+<script src="../../vinculum-indigenous.js"></script>
+<script src="../../vinculum-dashboard.js"></script>
+<script src="../../vinculum-hyperfocus.js"></script>
+<script src="../../vinculum-layout.js"></script>
+</body>
+</html>

@@ -1,0 +1,324 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Coordinate Proofs — VINCULUM Hub</title>
+    <link rel="stylesheet" href="../../vinculum-core.css">
+    <style>
+        :root { --bg: #f8f9fa; --bg2: #f0f1f3; --card: #ffffff; --border: #d9d9d9; --text: #1a1a1a; --text2: #666666; --cyan: #00b8e6; --green: #00a854; --pink: #ff1493; --orange: #ff7a45; --grad: linear-gradient(135deg, #0066cc, #00b8e6); }
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { background: var(--bg); color: var(--text); font-family: 'Inter', sans-serif; }
+        .header { background: var(--card); padding: 1.5rem; border-bottom: 2px solid var(--border); margin-bottom: 2rem; }
+        .header-top { display: flex; align-items: center; justify-content: space-between; }
+        .back-btn { background: none; border: none; color: var(--cyan); font-size: 1.5rem; cursor: pointer; }
+        .header-title { flex: 1; text-align: center; font-size: 1.8rem; font-weight: 700; background: var(--grad); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+        .header-title span { color: var(--cyan); }
+        .badge { background: var(--cyan); color: white; padding: 0.4rem 0.8rem; border-radius: 20px; font-size: 0.75rem; }
+        .std-tags { display: flex; gap: 0.5rem; flex-wrap: wrap; font-size: 0.75rem; margin-top: 0.8rem; }
+        .std-tag { background: var(--bg2); padding: 0.3rem 0.6rem; border-radius: 4px; color: var(--text2); border: 1px solid var(--border); }
+        .container { display: flex; gap: 1rem; padding: 0 1.5rem 1.5rem; max-width: 1400px; margin: 0 auto; }
+        .workspace { flex: 1; }
+        .side-panel { width: 280px; display: flex; flex-direction: column; gap: 1rem; }
+        .tabs { display: flex; gap: 0.5rem; background: var(--card); padding: 1rem; border-radius: 8px; border: 2px solid var(--border); margin-bottom: 1rem; }
+        .tab-btn { flex: 1; padding: 0.75rem 1rem; border: none; background: var(--bg2); color: var(--text2); border-radius: 6px; cursor: pointer; font-weight: 600; }
+        .tab-btn.active-explore { background: var(--cyan); color: white; }
+        .tab-btn.active-practice { background: var(--green); color: white; }
+        .tab-btn.active-play { background: var(--orange); color: white; }
+        .tab-content { display: none; }
+        .tab-content.show { display: block; }
+        .explore-content, .practice-content, .play-content { background: var(--card); border: 2px solid var(--border); border-radius: 8px; padding: 1.5rem; min-height: 500px; }
+        svg { border: 2px solid var(--border); border-radius: 8px; background: #fafafa; width: 100%; }
+        .control-group { background: var(--bg2); padding: 1rem; border-radius: 8px; margin-bottom: 1rem; }
+        .coord-input { display: grid; grid-template-columns: 1fr 1fr; gap: 0.5rem; margin-bottom: 0.8rem; }
+        input[type="number"] { padding: 0.5rem; border: 2px solid var(--border); border-radius: 6px; }
+        .problem-card { background: var(--bg2); padding: 1.5rem; border-radius: 8px; border: 2px solid var(--border); margin-bottom: 1rem; }
+        .problem-text { font-weight: 600; margin-bottom: 1rem; color: var(--text); }
+        .answer-input { display: flex; gap: 0.5rem; margin-bottom: 1rem; }
+        .check-btn { padding: 0.75rem 1.5rem; background: var(--green); color: white; border: none; border-radius: 6px; cursor: pointer; font-weight: 600; }
+        .panel-card { background: var(--card); border: 2px solid var(--border); border-radius: 8px; padding: 1rem; }
+        .panel-title { font-weight: 700; margin-bottom: 0.8rem; color: var(--cyan); font-size: 0.95rem; }
+        .difficulty-selector { display: flex; flex-direction: column; gap: 0.5rem; }
+        .diff-btn { padding: 0.75rem; border: 2px solid var(--border); background: var(--card); border-radius: 6px; cursor: pointer; font-weight: 600; }
+        .diff-btn.selected { background: var(--cyan); border-color: var(--cyan); color: white; }
+        .stats-display { display: flex; flex-direction: column; gap: 0.8rem; font-size: 0.9rem; }
+        .stat-row { display: flex; justify-content: space-between; }
+        .stat-label { color: var(--text2); }
+        .stat-value { font-weight: 700; color: var(--cyan); font-family: 'JetBrains Mono', monospace; }
+        .feedback-popup { position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%) scale(0.8); background: var(--card); padding: 2rem; border-radius: 12px; border: 3px solid var(--cyan); z-index: 1000; opacity: 0; pointer-events: none; animation: popupAppear 0.3s ease-out forwards; text-align: center; }
+        @keyframes popupAppear { to { opacity: 1; transform: translate(-50%, -50%) scale(1); } }
+        .popup-icon { font-size: 2rem; margin-bottom: 0.5rem; }
+        .popup-text { font-weight: 600; }
+        .multiple-choice { display: flex; flex-direction: column; gap: 0.5rem; margin-top: 1rem; }
+        .choice-btn { padding: 0.75rem 1rem; border: 2px solid var(--border); background: var(--card); border-radius: 6px; cursor: pointer; text-align: left; }
+        .choice-btn.correct { background: var(--green); border-color: var(--green); color: white; }
+        .choice-btn.incorrect { background: var(--pink); border-color: var(--pink); color: white; }
+        .info-display { background: var(--bg2); padding: 1rem; border-radius: 8px; margin-top: 1rem; font-size: 0.9rem; }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <div class="header-top">
+            <button class="back-btn" onclick="window.location.href='../../VINCULUM-Hub.html'">←</button>
+            <h1 class="header-title"><span>VINCULUM</span> Coordinate Proofs</h1>
+            <div class="badge">GEOM</div>
+        </div>
+        <div class="std-tags">
+            <span class="std-tag">G-GPE.4</span>
+            <span class="std-tag">G-GPE.5</span>
+            <span class="std-tag">G-GPE.7</span>
+        </div>
+    </div>
+
+    <div class="container">
+        <div class="workspace">
+            <div class="tabs">
+                <button class="tab-btn active-explore" onclick="switchTab('explore')">Explore</button>
+                <button class="tab-btn" onclick="switchTab('practice')">Practice</button>
+                <button class="tab-btn" onclick="switchTab('play')">Play</button>
+            </div>
+
+            <div id="explore" class="tab-content show">
+                <div class="explore-content">
+                    <div style="margin-bottom: 1rem;">
+                        <h3 style="margin-bottom: 0.5rem;">Enter Vertices</h3>
+                        <div class="control-group">
+                            <div class="coord-input">
+                                <div><label style="display: block; font-size: 0.85rem; font-weight: 600; margin-bottom: 0.3rem;">A (x,y)</label><input type="number" id="ax" placeholder="x" value="0"> <input type="number" id="ay" placeholder="y" value="0"></div>
+                                <div><label style="display: block; font-size: 0.85rem; font-weight: 600; margin-bottom: 0.3rem;">B (x,y)</label><input type="number" id="bx" placeholder="x" value="3"> <input type="number" id="by" placeholder="y" value="0"></div>
+                                <div><label style="display: block; font-size: 0.85rem; font-weight: 600; margin-bottom: 0.3rem;">C (x,y)</label><input type="number" id="cx" placeholder="x" value="3"> <input type="number" id="cy" placeholder="y" value="4"></div>
+                                <div><label style="display: block; font-size: 0.85rem; font-weight: 600; margin-bottom: 0.3rem;">D (x,y)</label><input type="number" id="dx" placeholder="x" value="0"> <input type="number" id="dy" placeholder="y" value="4"></div>
+                            </div>
+                            <button class="check-btn" onclick="updatePlot()" style="width: 100%; margin-top: 0.5rem;">Update Plot</button>
+                        </div>
+                    </div>
+                    <svg id="plotCanvas" height="350"></svg>
+                    <div class="info-display">
+                        <div id="distInfo" style="margin-bottom: 0.5rem;"></div>
+                        <div id="slopeInfo" style="margin-bottom: 0.5rem;"></div>
+                        <div id="midInfo"></div>
+                    </div>
+                </div>
+            </div>
+
+            <div id="practice" class="tab-content">
+                <div class="practice-content">
+                    <div class="problem-card">
+                        <div class="problem-text" id="problemText"></div>
+                        <div class="answer-input">
+                            <input type="text" id="answerInput" placeholder="Your answer">
+                            <button class="check-btn" onclick="checkAnswer()">Check</button>
+                        </div>
+                        <div class="multiple-choice" id="mcChoices"></div>
+                    </div>
+                    <button class="check-btn" style="width: 100%; margin-top: 1rem;" onclick="nextProblem()">Next Problem</button>
+                </div>
+            </div>
+
+            <div id="play" class="tab-content">
+                <div class="play-content">
+                    <div style="text-align: center; padding: 2rem;">
+                        <h2 style="margin-bottom: 1rem;">Speed Calculation</h2>
+                        <svg id="playCanvas" height="280"></svg>
+                        <div style="margin-top: 1rem;">
+                            <input type="number" id="playAnswer" placeholder="Distance or slope" style="padding: 0.75rem; border: 2px solid var(--border); border-radius: 6px; width: 60%;">
+                            <button class="check-btn" onclick="checkPlayAnswer()" style="margin-left: 0.5rem;">Submit</button>
+                        </div>
+                        <div id="playFeedback" style="margin-top: 1rem;"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="side-panel">
+            <div class="panel-card">
+                <div class="panel-title">Difficulty</div>
+                <div class="difficulty-selector">
+                    <button class="diff-btn selected" onclick="setDifficulty('easy')">Easy</button>
+                    <button class="diff-btn" onclick="setDifficulty('medium')">Medium</button>
+                    <button class="diff-btn" onclick="setDifficulty('hard')">Hard</button>
+                </div>
+            </div>
+            <div class="panel-card">
+                <div class="panel-title">Score</div>
+                <div class="stats-display">
+                    <div class="stat-row"><span class="stat-label">Correct:</span><span class="stat-value" id="scoreCorrect">0</span></div>
+                    <div class="stat-row"><span class="stat-label">Streak:</span><span class="stat-value" id="scoreStreak">0</span></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="feedback-popup" id="feedbackPopup"></div>
+
+    <script>
+        let difficulty = 'easy', score = { correct: 0, streak: 0 }, currentProblem = null;
+
+        function switchTab(tab) {
+            document.querySelectorAll('.tab-content').forEach(e => e.classList.remove('show'));
+            document.querySelectorAll('.tab-btn').forEach(e => e.classList.remove('active-explore','active-practice','active-play'));
+            document.getElementById(tab).classList.add('show');
+            event.target.classList.add(`active-${tab}`);
+            if (tab === 'practice') generateProblem();
+            if (tab === 'play') generatePlayProblem();
+        }
+
+        function updatePlot() {
+            const pts = { A: [parseFloat(document.getElementById('ax').value), parseFloat(document.getElementById('ay').value)],
+                B: [parseFloat(document.getElementById('bx').value), parseFloat(document.getElementById('by').value)],
+                C: [parseFloat(document.getElementById('cx').value), parseFloat(document.getElementById('cy').value)],
+                D: [parseFloat(document.getElementById('dx').value), parseFloat(document.getElementById('dy').value)] };
+
+            const svg = document.getElementById('plotCanvas');
+            svg.setAttribute('viewBox', '-50 -50 600 500');
+            svg.innerHTML = '';
+
+            const scale = 50;
+            const cx = 250, cy = 250;
+
+            const grid = document.createElementNS('http://www.w3.org/2000/svg', 'g');
+            grid.setAttribute('stroke', 'rgba(0,0,0,0.1)'); grid.setAttribute('stroke-width', '0.5');
+            for (let i = -5; i <= 5; i++) {
+                const l1 = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+                l1.setAttribute('x1', cx + i * scale); l1.setAttribute('y1', cy - 250); l1.setAttribute('x2', cx + i * scale); l1.setAttribute('y2', cy + 250);
+                grid.appendChild(l1);
+                const l2 = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+                l2.setAttribute('x1', cx - 250); l2.setAttribute('y1', cy - i * scale); l2.setAttribute('x2', cx + 250); l2.setAttribute('y2', cy - i * scale);
+                grid.appendChild(l2);
+            }
+            svg.appendChild(grid);
+
+            const axes = document.createElementNS('http://www.w3.org/2000/svg', 'g');
+            axes.setAttribute('stroke', 'var(--text)'); axes.setAttribute('stroke-width', '1');
+            const axisX = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+            axisX.setAttribute('x1', cx - 250); axisX.setAttribute('y1', cy); axisX.setAttribute('x2', cx + 250); axisX.setAttribute('y2', cy);
+            axes.appendChild(axisX);
+            const axisY = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+            axisY.setAttribute('x1', cx); axisY.setAttribute('y1', cy - 250); axisY.setAttribute('x2', cx); axisY.setAttribute('y2', cy + 250);
+            axes.appendChild(axisY);
+            svg.appendChild(axes);
+
+            const poly = document.createElementNS('http://www.w3.org/2000/svg', 'polygon');
+            const points = Object.values(pts).map(p => `${cx + p[0] * scale},${cy - p[1] * scale}`).join(' ');
+            poly.setAttribute('points', points); poly.setAttribute('fill', 'rgba(0,184,230,0.2)'); poly.setAttribute('stroke', 'var(--cyan)');
+            poly.setAttribute('stroke-width', '2');
+            svg.appendChild(poly);
+
+            Object.entries(pts).forEach(([label, [x, y]]) => {
+                const c = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+                c.setAttribute('cx', cx + x * scale); c.setAttribute('cy', cy - y * scale);
+                c.setAttribute('r', '4'); c.setAttribute('fill', 'var(--pink)');
+                svg.appendChild(c);
+                const t = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+                t.setAttribute('x', cx + x * scale + 10); t.setAttribute('y', cy - y * scale - 10);
+                t.setAttribute('font-size', '12'); t.setAttribute('font-weight', '600'); t.setAttribute('fill', 'var(--text)');
+                t.textContent = `${label}(${x},${y})`;
+                svg.appendChild(t);
+            });
+
+            const dist = (p1, p2) => Math.sqrt((p2[0]-p1[0])**2 + (p2[1]-p1[1])**2);
+            const slope = (p1, p2) => p2[0] === p1[0] ? 'undefined' : ((p2[1]-p1[1])/(p2[0]-p1[0])).toFixed(2);
+            document.getElementById('distInfo').innerHTML = `Distance AB: ${dist(pts.A, pts.B).toFixed(2)} | Distance BC: ${dist(pts.B, pts.C).toFixed(2)}`;
+            document.getElementById('slopeInfo').innerHTML = `Slope AB: ${slope(pts.A, pts.B)} | Slope BC: ${slope(pts.B, pts.C)}`;
+            document.getElementById('midInfo').innerHTML = `Midpoint AB: (${((pts.A[0]+pts.B[0])/2).toFixed(1)}, ${((pts.A[1]+pts.B[1])/2).toFixed(1)})`;
+        }
+
+        function generateProblem() {
+            let ans, q, choices;
+            if (difficulty === 'easy') {
+                q = `Points: A(0,0), B(3,0), C(3,4), D(0,4). Find distance AB.`;
+                ans = '3';
+                choices = ['1', '3', '4', '5'];
+            } else if (difficulty === 'medium') {
+                q = `Points: A(0,0), B(4,3). Find slope AB.`;
+                ans = '0.75';
+                choices = ['0.75', '1.33', '0.5', '1'];
+            } else {
+                q = `Prove ABCD is a parallelogram. A(0,0), B(4,0), C(5,3), D(1,3). Slopes equal?`;
+                ans = 'yes';
+                choices = ['Yes, slopes match', 'No, slopes differ', 'Cannot determine', 'Need more info'];
+            }
+            currentProblem = { answer: ans, question: q, choices };
+            document.getElementById('problemText').textContent = q;
+            document.getElementById('mcChoices').innerHTML = choices.map(c => `<button class="choice-btn" onclick="selectChoice('${c}')">${c}</button>`).join('');
+            document.getElementById('answerInput').value = '';
+        }
+
+        function checkAnswer() {
+            const ua = document.getElementById('answerInput').value.toLowerCase().trim();
+            const correct = ua === currentProblem.answer.toLowerCase();
+            showFeedback(correct ? '✓ Correct!' : '✗ Incorrect');
+            if (correct) { score.correct++; score.streak++; } else score.streak = 0;
+            updateStats();
+        }
+
+        function selectChoice(c) {
+            const correct = c === currentProblem.choices[0];
+            showFeedback(correct ? '✓ Correct!' : '✗ Incorrect');
+            if (correct) { score.correct++; score.streak++; } else score.streak = 0;
+            updateStats();
+        }
+
+        function nextProblem() { generateProblem(); }
+
+        function generatePlayProblem() {
+            const pts = { A: [Math.floor(Math.random()*5), Math.floor(Math.random()*5)], B: [Math.floor(Math.random()*5)+2, Math.floor(Math.random()*5)+2] };
+            const svg = document.getElementById('playCanvas');
+            svg.setAttribute('viewBox', '-50 -50 500 400');
+            svg.innerHTML = '';
+            const scale = 50, cx = 200, cy = 150;
+            const l = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+            l.setAttribute('x1', cx + pts.A[0]*scale); l.setAttribute('y1', cy - pts.A[1]*scale);
+            l.setAttribute('x2', cx + pts.B[0]*scale); l.setAttribute('y2', cy - pts.B[1]*scale);
+            l.setAttribute('stroke', 'var(--cyan)'); l.setAttribute('stroke-width', '2');
+            svg.appendChild(l);
+            const dist = Math.sqrt((pts.B[0]-pts.A[0])**2 + (pts.B[1]-pts.A[1])**2).toFixed(2);
+            currentProblem = { answer: parseFloat(dist), type: 'distance' };
+            document.getElementById('playAnswer').value = '';
+        }
+
+        function checkPlayAnswer() {
+            const ua = parseFloat(document.getElementById('playAnswer').value);
+            if (isNaN(ua)) return;
+            const correct = Math.abs(ua - currentProblem.answer) < 0.1;
+            showFeedback(correct ? '✓ Correct!' : '✗ Incorrect');
+            if (correct) { score.correct++; score.streak++; } else score.streak = 0;
+            updateStats();
+            setTimeout(generatePlayProblem, 1500);
+        }
+
+        function setDifficulty(d) {
+            difficulty = d;
+            document.querySelectorAll('.diff-btn').forEach(b => b.classList.remove('selected'));
+            event.target.classList.add('selected');
+        }
+
+        function showFeedback(msg) {
+            const p = document.getElementById('feedbackPopup');
+            const col = msg.includes('✓') ? 'var(--green)' : 'var(--pink)';
+            p.innerHTML = `<div class="popup-icon" style="color:${col}">${msg.charAt(0)}</div><div class="popup-text">${msg}</div>`;
+            p.style.opacity = '1'; p.style.pointerEvents = 'auto';
+            setTimeout(() => { p.style.opacity = '0'; p.style.pointerEvents = 'none'; }, 1500);
+        }
+
+        function updateStats() {
+            document.getElementById('scoreCorrect').textContent = score.correct;
+            document.getElementById('scoreStreak').textContent = score.streak;
+        }
+
+        updatePlot();
+    </script>
+
+    <script src="../../vinculum-input.js"></script>
+    <script src="../../vinculum-core.js"></script>
+    <script src="../../vinculum-data.js"></script>
+    <script src="../../vinculum-adaptive-hook.js"></script>
+    <script src="../../vinculum-3reads.js"></script>
+    <script src="../../vinculum-stories.js"></script>
+    <script src="../../vinculum-feedback.js"></script>
+    <script src="../../vinculum-guide.js"></script>
+    <script src="../../vinculum-identity.js"></script>
+    <script src="../../vinculum-indigenous.js"></script>
+    <script src="../../vinculum-dashboard.js"></script>
+</body>
+</html>

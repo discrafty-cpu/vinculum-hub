@@ -1,0 +1,587 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>VINCULUM — Teen Numbers</title>
+<link rel="stylesheet" href="../../vinculum-core.css">
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;600&display=swap');
+/* Theme system loaded from vinculum-core.css */
+.vinculum-rtm-btn .rtm-icon{font-size:14px;}
+
+/* ═══ FOCUS VISIBLE (Keyboard Navigation) ═══ */
+*:focus-visible {
+  outline:2px solid var(--cyan);outline-offset:2px;border-radius:4px;
+}
+.sr-only {
+  position:absolute;width:1px;height:1px;padding:0;margin:-1px;
+  overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0;
+}
+*{margin:0;padding:0;box-sizing:border-box;}
+body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);height:100vh;display:flex;flex-direction:column;overflow:hidden;user-select:none;}
+
+.main{flex:1;display:flex;overflow:hidden;}
+.workspace{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:24px;gap:18px;overflow-y:auto;}
+.side-panel{width:280px;background:var(--bg2);border-left:1px solid var(--border);padding:20px;overflow-y:auto;flex-shrink:0;}
+.panel-section{margin-bottom:20px;}
+.panel-title{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:1.5px;color:var(--muted);margin-bottom:8px;}
+.panel-text{font-size:13px;color:var(--text2);line-height:1.6;}
+
+/* ── Ten Frame ── */
+.ten-frame-area{display:flex;gap:24px;align-items:center;justify-content:center;flex-wrap:wrap;}
+.ten-frame{display:grid;grid-template-columns:repeat(5,1fr);gap:4px;background:var(--card);border:2px solid var(--border);border-radius:12px;padding:8px;}
+.ten-frame.full{border-color:var(--cyan);}
+.tf-cell{width:44px;height:44px;border-radius:8px;border:1.5px solid var(--border);display:flex;align-items:center;justify-content:center;transition:all 0.2s;}
+.tf-cell.filled-cyan{background:rgba(0,212,255,0.2);border-color:rgba(0,212,255,0.4);}
+.tf-cell.filled-pink{background:rgba(255,59,139,0.2);border-color:rgba(255,59,139,0.4);}
+.tf-dot{width:24px;height:24px;border-radius:50%;}
+.tf-dot.cyan{background:var(--cyan);box-shadow:0 0 8px rgba(0,212,255,0.4);}
+.tf-dot.pink{background:var(--pink);box-shadow:0 0 8px rgba(255,59,139,0.4);}
+
+.frame-label{font-size:11px;font-weight:700;color:var(--muted);text-align:center;margin-top:4px;text-transform:uppercase;letter-spacing:1px;}
+
+/* ── Place value columns ── */
+.pv-display{display:flex;gap:20px;align-items:flex-end;}
+.pv-col{display:flex;flex-direction:column;align-items:center;gap:6px;}
+.pv-header{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:1px;color:var(--muted);}
+.pv-value{font-size:48px;font-weight:900;font-family:'JetBrains Mono',monospace;padding:8px 20px;border-radius:14px;min-width:70px;text-align:center;}
+.pv-tens{background:rgba(0,212,255,0.1);color:var(--cyan);border:2px solid rgba(0,212,255,0.3);}
+.pv-ones{background:rgba(255,59,139,0.1);color:var(--pink);border:2px solid rgba(255,59,139,0.3);}
+.pv-eq{font-size:36px;font-weight:900;color:var(--muted);font-family:'JetBrains Mono',monospace;}
+.pv-total{font-size:48px;font-weight:900;font-family:'JetBrains Mono',monospace;background:rgba(0,230,118,0.1);color:var(--green);padding:8px 20px;border-radius:14px;border:2px solid rgba(0,230,118,0.3);}
+
+/* ── Number picker ── */
+.num-picker{display:flex;gap:8px;justify-content:center;flex-wrap:wrap;}
+.pick-btn{width:56px;height:56px;border-radius:14px;border:2px solid var(--border);background:var(--card);color:var(--text);font-size:22px;font-weight:800;font-family:'JetBrains Mono',monospace;cursor:pointer;transition:all 0.15s;display:flex;align-items:center;justify-content:center;}
+.pick-btn:hover{border-color:var(--cyan);transform:scale(1.08);}
+.pick-btn.active{border-color:var(--green);background:rgba(0,230,118,0.1);color:var(--green);}
+
+.instruction-box{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:14px 20px;text-align:center;font-size:15px;color:var(--text2);font-weight:500;max-width:600px;transition:all 0.3s;}
+.instruction-box.highlight-cyan{border-color:var(--cyan);color:var(--cyan);}
+.instruction-box.highlight-green{border-color:var(--green);color:var(--green);}
+
+.controls{display:flex;gap:8px;flex-wrap:wrap;justify-content:center;}
+.ctrl-btn{padding:10px 20px;border-radius:10px;border:1px solid var(--border);background:var(--card);color:var(--text2);font-size:13px;font-weight:600;font-family:inherit;cursor:pointer;transition:all 0.2s;display:flex;align-items:center;gap:6px;}
+.ctrl-btn:hover{background:var(--card2);color:var(--text);}
+.ctrl-btn.primary{background:var(--grad);color:var(--bg);border-color:transparent;}
+
+.input-row{display:flex;gap:12px;align-items:center;}
+.num-input{width:70px;padding:10px;border-radius:10px;border:2px solid var(--border);background:var(--card);color:var(--text);font-size:24px;font-weight:700;font-family:'JetBrains Mono',monospace;text-align:center;outline:none;transition:border-color 0.2s;}
+.num-input:focus{border-color:var(--cyan);}
+
+.answer-grid{display:flex;gap:10px;flex-wrap:wrap;justify-content:center;}
+.answer-btn{width:64px;height:64px;border-radius:14px;border:2px solid var(--border);background:var(--card);color:var(--text);font-size:24px;font-weight:700;font-family:'JetBrains Mono',monospace;cursor:pointer;transition:all 0.15s;display:flex;align-items:center;justify-content:center;}
+.answer-btn:hover{border-color:var(--cyan);transform:scale(1.08);}
+.answer-btn.correct-flash{border-color:var(--green);background:rgba(0,230,118,0.15);color:var(--green);}
+.answer-btn.incorrect-flash{border-color:var(--pink);background:rgba(255,59,139,0.15);color:var(--pink);}
+
+.score-display{text-align:center;padding:16px;background:var(--card);border-radius:12px;margin-bottom:12px;}
+.score-value{font-size:36px;font-weight:900;font-family:'JetBrains Mono',monospace;background:var(--grad);-webkit-background-clip:text;-webkit-text-fill-color:transparent;}
+.score-label{font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:1px;}
+.streak-bar{height:6px;background:var(--card);border-radius:3px;overflow:hidden;margin-top:8px;}
+.streak-fill{height:100%;background:var(--grad);border-radius:3px;transition:width 0.3s;}
+
+.feedback{position:fixed;top:50%;left:50%;transform:translate(-50%,-50%) scale(0);padding:24px 48px;border-radius:20px;font-size:28px;font-weight:800;z-index:200;pointer-events:none;transition:transform 0.3s cubic-bezier(0.175,0.885,0.32,1.275),opacity 0.3s;opacity:0;}
+.feedback.show{transform:translate(-50%,-50%) scale(1);opacity:1;}
+.feedback.correct{background:rgba(0,230,118,0.15);color:var(--green);border:2px solid var(--green);}
+.feedback.incorrect{background:rgba(255,59,139,0.15);color:var(--pink);border:2px solid var(--pink);}
+.feedback.try-again{background:rgba(255,193,7,0.15);color:var(--yellow);border:2px solid var(--yellow);}
+
+::-webkit-scrollbar{width:6px;}::-webkit-scrollbar-track{background:transparent;}::-webkit-scrollbar-thumb{background:var(--border);border-radius:3px;}
+</style>
+</head>
+<body>
+
+<div class="vinculum-header">
+  <div class="vinculum-header-left">
+    <a class="vinculum-back-btn" href="../../VINCULUM-Hub.html" style="text-decoration:none;">◀ Hub</a>
+    <div class="vinculum-header-title"><span class="brand">Teen Numbers</span></div>
+    <span class="vinculum-header-badge">K.NBT</span>
+  </div>
+  <div class="vinculum-header-right">
+    <div class="vinculum-std-tags">
+      <span class="vinculum-std-tag">K.NBT.1</span>
+    </div>
+  </div>
+</div>
+
+<div class="vinculum-mode-tabs">
+  <button class="vinculum-mode-tab active-explore" data-mode="explore" id="tabExplore" onclick="setMode('explore')"><svg width="18" height="18" viewBox="0 0 48 48" fill="none"><path d="M4 24C4 24 12 12 24 12C36 12 44 24 44 24C44 24 36 36 24 36C12 36 4 24 4 24Z" stroke="currentColor" stroke-width="3" fill="none"/><circle cx="24" cy="24" r="7" stroke="currentColor" stroke-width="3" fill="none"/><circle cx="24" cy="24" r="3" fill="currentColor"/><line x1="24" y1="4" x2="24" y2="9" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" opacity="0.5"/><line x1="10" y1="8" x2="13" y2="12" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" opacity="0.5"/><line x1="38" y1="8" x2="35" y2="12" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" opacity="0.5"/></svg> Explore</button>
+  <button class="vinculum-mode-tab" id="tabPractice" data-mode="practice" onclick="setMode('practice')"><svg width="18" height="18" viewBox="0 0 48 48" fill="none"><circle cx="24" cy="24" r="20" stroke="currentColor" stroke-width="3" fill="none" opacity="0.3"/><circle cx="24" cy="24" r="20" stroke="currentColor" stroke-width="3" fill="none" stroke-dasharray="126" stroke-dashoffset="32" stroke-linecap="round"/><polyline points="16,24 22,32 34,16" stroke="currentColor" stroke-width="4" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg> Practice</button>
+  <button class="vinculum-mode-tab" id="tabPlay" data-mode="play" onclick="setMode('play')"><svg width="18" height="18" viewBox="0 0 48 48" fill="none"><polygon points="28,4 12,28 22,28 18,44 36,18 26,18" fill="none" stroke="currentColor" stroke-width="3" stroke-linejoin="round"/><polygon points="27,8 15,27 23,27 20,40 34,19 26,19" fill="currentColor" opacity="0.15"/></svg> Play</button>
+  <div style="margin-left:auto;display:flex;gap:4px;align-items:center;">
+    <span style="font-size:11px;color:var(--muted);margin-right:4px;">Level:</span>
+    <button class="vinculum-mode-tab" id="diffEmergent">Emergent</button>
+    <button class="vinculum-mode-tab active-explore" data-mode="explore" id="diffProficient">Proficient</button>
+    <button class="vinculum-mode-tab" id="diffAdvanced">Advanced</button>
+  </div>
+</div>
+
+<div class="main">
+  <div class="workspace" role="main" id="workspace"></div>
+  <div class="side-panel" id="sidePanel"></div>
+</div>
+<div class="feedback" id="feedback"></div>
+
+  <script src="../../vinculum-input.js"></script>
+<script>
+/* ════════════════════════════════════════════════════════════
+   VINCULUM — Teen Numbers — K.NBT.1
+   Compose/decompose 11–19 as ten ones and some more ones
+   ════════════════════════════════════════════════════════════ */
+
+const MISCONCEPTIONS_TEEN = {
+  noTenBase: { id:'noTenBase', desc:'Does not recognize teen numbers as 10 + some ones' },
+  onesDigitOnly: { id:'onesDigitOnly', desc:'Answers with just the ones digit (e.g., 3 instead of 13)' },
+  reversedDigits: { id:'reversedDigits', desc:'Reverses digit order (e.g., 31 instead of 13)' },
+  offByOne: { id:'offByOne', desc:'Answer off by one (e.g., 14 instead of 13)' },
+  tensConfusion: { id:'tensConfusion', desc:'Confuses how many tens are in a teen number' }
+};
+
+let S = {
+  mode:'explore', num: 14, difficulty:'proficient',
+  // Practice
+  pNum: 0, pMissing: 'ones', // 'ones' | 'tens' | 'total'
+  pPhase: 'visual', // 'visual' | 'answer'
+  // Play
+  score:0, streak:0, best:0, round:0, total:10,
+  playNum:0, playMissing:'ones', playChoices:[]
+};
+
+/* ── Read-Aloud + Story Banner ── */
+function toggleReadAloud() {
+  if (window.VinculumStories && VinculumStories.isReading()) {
+    VinculumStories.stopReading();
+    document.getElementById('readAloudBtn').textContent = '🔊 Read to Me';
+  } else {
+    const storyEl = document.getElementById('storyBanner');
+    const fb = document.getElementById('feedback');
+    const text = storyEl ? storyEl.textContent : (fb ? fb.textContent : 'Welcome to this math tool!');
+    if (window.VinculumStories) {
+      VinculumStories.readAloud(text, { rate: 0.85, onComplete: () => {
+        document.getElementById('readAloudBtn').textContent = '🔊 Read to Me';
+      }});
+      document.getElementById('readAloudBtn').textContent = '⏹ Stop';
+    }
+  }
+}
+
+function rand(a,b){return Math.floor(Math.random()*(b-a+1))+a;}
+
+function setMode(m){
+  S.mode=m;
+  document.querySelectorAll('.vinculum-mode-tab').forEach(t=>t.className='mode-tab');
+  document.getElementById('tab'+m.charAt(0).toUpperCase()+m.slice(1)).className='mode-tab active-'+m;
+  S.round=0; S.score=0; S.streak=0;
+  if(m==='practice') newPractice();
+  render();
+}
+
+function setDiff(d){
+  S.difficulty=d;
+  document.querySelectorAll('[id^="diff"]').forEach(b=>b.className='mode-tab');
+  document.getElementById('diff'+d.charAt(0).toUpperCase()+d.slice(1)).className='mode-tab active-explore';
+  if(S.mode==='practice') newPractice();
+  else if(S.mode==='play') { S.round=0; S.score=0; S.streak=0; }
+  render();
+}
+
+function getRange(){
+  if(S.difficulty==='emergent') return [11,15];
+  if(S.difficulty==='advanced') return [11,19];
+  return [11,19];
+}
+
+function render(){
+  const ws=document.getElementById('workspace'), sp=document.getElementById('sidePanel');
+  if(S.mode==='explore') renderExplore(ws,sp);
+  else if(S.mode==='practice') renderPractice(ws,sp);
+  else renderPlay(ws,sp);
+}
+
+/* ── Ten Frame HTML builder ── */
+function buildTenFrames(n){
+  const tens = Math.floor(n / 10);
+  const ones = n % 10;
+  let h = '<div class="ten-frame-area">';
+
+  // Full ten frame
+  if(tens >= 1){
+    h += '<div>';
+    h += `<div class="ten-frame full">`;
+    for(let i = 0; i < 10; i++){
+      h += `<div class="tf-cell filled-cyan"><div class="tf-dot cyan"></div></div>`;
+    }
+    h += '</div>';
+    h += `<div class="frame-label" style="color:var(--cyan);">10</div>`;
+    h += '</div>';
+  }
+
+  // Ones frame (partial)
+  if(ones > 0 || tens === 0){
+    h += '<div>';
+    h += `<div class="ten-frame">`;
+    for(let i = 0; i < 10; i++){
+      if(i < ones){
+        h += `<div class="tf-cell filled-pink"><div class="tf-dot pink"></div></div>`;
+      } else {
+        h += `<div class="tf-cell"></div>`;
+      }
+    }
+    h += '</div>';
+    h += `<div class="frame-label" style="color:var(--pink);">${ones}</div>`;
+    h += '</div>';
+  }
+
+  h += '</div>';
+  return h;
+}
+
+/* ── Place value display ── */
+function buildPV(n, showTens, showOnes, showTotal){
+  const tens = Math.floor(n / 10);
+  const ones = n % 10;
+  let h = '<div class="pv-display">';
+  h += '<div class="pv-col">';
+  h += '<div class="pv-header">Tens</div>';
+  h += `<div class="pv-value pv-tens">${showTens ? tens : '?'}</div>`;
+  h += '</div>';
+  h += '<div class="pv-col">';
+  h += '<div class="pv-header">Ones</div>';
+  h += `<div class="pv-value pv-ones">${showOnes ? ones : '?'}</div>`;
+  h += '</div>';
+  h += `<div class="pv-eq">=</div>`;
+  h += `<div class="pv-total">${showTotal ? n : '?'}</div>`;
+  h += '</div>';
+  return h;
+}
+
+
+/* ══════════════════════════════════════════
+   EXPLORE
+   ══════════════════════════════════════════ */
+
+function renderExplore(ws, sp){
+  const n = S.num;
+  const tens = Math.floor(n / 10);
+  const ones = n % 10;
+  let h = '';
+
+  /* Inject story banner */
+  if (window.VinculumStories) {
+    const toolName = window.location.pathname.split('/').pop().replace('.html','');
+    const storyData = VinculumStories.getStory(toolName, {a: S.a || S.num || 5, b: S.b || 3, total: S.total || S.num || 7, n: S.num || 8, ones: (S.num || 13) % 10});
+    if (storyData && storyData.story) {
+      if (window.Vinculum3Reads) {
+
+        h += Vinculum3Reads.getBannerHTML(storyData);
+
+      } else {
+
+        const bannerHTML = '<div id="storyBanner" style="background:var(--card2,#1a1f2e);border:1px solid var(--border);border-radius:12px;padding:16px 20px;margin-bottom:16px;font-size:15px;line-height:1.6;color:var(--text);position:relative;"><span style="font-size:12px;color:var(--cyan);font-weight:700;text-transform:uppercase;letter-spacing:1px;">📖 Story</span><br>' + storyData.story + '<br><em style="color:var(--yellow);font-weight:600;">' + storyData.question + '</em><button onclick="toggleReadAloud()" style="position:absolute;top:12px;right:12px;background:none;border:1px solid var(--border);border-radius:8px;padding:4px 10px;color:var(--cyan);cursor:pointer;font-size:14px;" title="Read story aloud">🔊</button></div>';
+      h += bannerHTML;
+
+      }
+    }
+  }
+
+  h += `<div class="instruction-box">Pick a teen number to see how it's made of <strong style="color:var(--cyan);">ten</strong> and <strong style="color:var(--pink);">some ones</strong></div>`;
+
+  // Number picker (range varies by difficulty)
+  const [min,max] = getRange();
+  h += '<div class="num-picker">';
+  for(let i = min; i <= max; i++){
+    h += `<button class="pick-btn ${i===n?'active':''}" onclick="S.num=${i};render();">${i}</button>`;
+  }
+  h += '</div>';
+
+  // Ten frames
+  h += buildTenFrames(n);
+
+  // Place value display
+  h += buildPV(n, true, true, true);
+
+  // Equation
+  h += `<div style="font-size:28px;font-weight:900;font-family:'JetBrains Mono',monospace;text-align:center;">`;
+  h += `<span style="color:var(--green);">${n}</span> = <span style="color:var(--cyan);">10</span> + <span style="color:var(--pink);">${ones}</span>`;
+  h += '</div>';
+
+  ws.innerHTML = h;
+
+  sp.innerHTML = `
+    <div class="panel-section"><div class="panel-title">How to Use</div>
+    <div class="panel-text">Click any number from 11 to 19.<br><br>
+    Watch how it fills one <strong style="color:var(--cyan);">complete ten frame</strong> plus some <strong style="color:var(--pink);">extra ones</strong>.<br><br>
+    Every teen number = 10 + something!</div></div>
+    <div class="panel-section"><div class="panel-title">Key Idea</div>
+    <div class="panel-text">The numbers 11–19 are made of <strong>one group of ten</strong> and some extra ones.<br><br>
+    This is called <strong>place value</strong> — the "1" in "14" means 1 ten, and the "4" means 4 ones.<br><br>
+    <strong style="color:var(--green);">14</strong> = <strong style="color:var(--cyan);">10</strong> + <strong style="color:var(--pink);">4</strong></div></div>
+    <div class="panel-section"><div class="panel-title">Standards</div>
+    <div class="panel-text"><strong>K.NBT.1</strong> — Compose and decompose numbers from 11 to 19 into ten ones and some further ones</div></div>`;
+}
+
+
+/* ══════════════════════════════════════════
+   PRACTICE — find the missing piece
+   ══════════════════════════════════════════ */
+
+function newPractice(){
+  const [min,max] = getRange();
+  S.pNum = rand(min, max);
+  S.pPhase = 'visual';
+  const r = rand(1, 3);
+  S.pMissing = r === 1 ? 'ones' : r === 2 ? 'tens' : 'total';
+}
+
+function renderPractice(ws, sp){
+  if(!S.pNum) newPractice();
+  const n = S.pNum;
+  const ones = n % 10;
+  let h = '';
+
+  // Instruction
+  if(S.pPhase === 'visual'){
+    if(S.pMissing === 'ones') h += `<div class="instruction-box highlight-cyan">10 + ? = ${n} — How many extra ones?</div>`;
+    else if(S.pMissing === 'tens') h += `<div class="instruction-box highlight-cyan">? + ${ones} = ${n} — What's the tens part?</div>`;
+    else h += `<div class="instruction-box highlight-cyan">10 + ${ones} = ? — What's the total?</div>`;
+  } else {
+    h += `<div class="instruction-box highlight-green">Type the missing number!</div>`;
+  }
+
+  // Ten frames (always visible as scaffold)
+  h += buildTenFrames(n);
+
+  // Place value with missing
+  const showT = S.pMissing !== 'tens';
+  const showO = S.pMissing !== 'ones';
+  const showTot = S.pMissing !== 'total';
+  h += buildPV(n, showT, showO, showTot);
+
+  // Answer input
+  h += '<div id="vi-container" style="margin-top:16px;"></div>';
+  h += `<div style="margin-top:12px;">`;
+  h += `<button class="ctrl-btn" onclick="newPractice();render();" style="opacity:0.6;font-size:11px;">Skip →</button>`;
+  h += '</div>';
+
+  ws.innerHTML = h;
+
+  // Create Smart Context input for practice answer
+  setTimeout(() => {
+    const vc = document.getElementById('vi-container');
+    if (vc && window.VinculumInput) {
+      vc.innerHTML = '';
+      let correctAnswer;
+      if (S.pMissing === 'ones') correctAnswer = S.pNum % 10;
+      else if (S.pMissing === 'tens') correctAnswer = 10;
+      else correctAnswer = S.pNum;
+
+      VinculumInput.create(vc, {
+        type: 'auto',
+        answer: correctAnswer,
+        min: 0,
+        max: 19,
+        onSubmit: function(val) {
+          checkPracticeWithValue(val);
+        }
+      });
+    }
+  }, 50);
+
+  sp.innerHTML = `
+    <div class="panel-section"><div class="panel-title">Scaffold</div>
+    <div class="panel-text" style="background:var(--card);padding:12px;border-radius:8px;">
+    Look at the ten frames!<br><br>
+    The <strong style="color:var(--cyan);">full frame</strong> always has 10.<br><br>
+    Count the <strong style="color:var(--pink);">pink dots</strong> in the second frame for the ones.</div></div>
+    <div class="panel-section"><div class="panel-title">Remember</div>
+    <div class="panel-text">Every teen number = <strong>10 + ones</strong><br><br>
+    11 = 10 + 1<br>12 = 10 + 2<br>13 = 10 + 3<br>...<br>19 = 10 + 9</div></div>`;
+}
+
+function checkPracticeWithValue(val){
+  let correct;
+  if(S.pMissing === 'ones') correct = S.pNum % 10;
+  else if(S.pMissing === 'tens') correct = 10;
+  else correct = S.pNum;
+
+  if(isNaN(val)){ showFB('Type a number!','try-again'); return; }
+  if(val === correct){
+    showFB(`✓ ${S.pNum} = 10 + ${S.pNum%10}`, 'correct');
+    setTimeout(()=>{ newPractice(); render(); }, 1500);
+  } else {
+    // Diagnostic feedback based on misconception
+    let feedback = 'Remember: teen numbers = 10 + extra ones. How many extra ones do you see?';
+
+    if(val === S.pNum % 10 && S.pMissing !== 'ones'){
+      // Student answered with just the ones digit when looking for tens or total
+      feedback = `That's just the ones! Teen numbers always start with a 10. 10 + ${S.pNum % 10} = ${S.pNum}.`;
+    } else if(val === parseInt(String(S.pNum).split('').reverse().join('')) && S.pNum !== 11){
+      // Student reversed the digits (e.g., 31 instead of 13)
+      feedback = `Watch the order! In teen numbers, the 1 (for ten) comes FIRST. It's ${S.pNum}, not ${val}.`;
+    } else if(Math.abs(val - correct) === 1){
+      // Off by one
+      const direction = val < correct ? 'one more' : 'one less';
+      feedback = `So close! You said ${val} but it's ${correct}. Count ${direction} from where you are.`;
+    }
+
+    showFB(feedback, 'incorrect');
+  }
+}
+
+
+/* ══════════════════════════════════════════
+   PLAY — speed round
+   ══════════════════════════════════════════ */
+
+function startGame(){ S.round=1; S.score=0; S.streak=0; newPlayRound(); }
+
+function newPlayRound(){
+  const [min,max] = getRange();
+  S.playNum = rand(min, max);
+  const r = rand(1, 3);
+  S.playMissing = r===1?'ones':r===2?'tens':'total';
+
+  let answer;
+  if(S.playMissing === 'ones') answer = S.playNum % 10;
+  else if(S.playMissing === 'tens') answer = 10;
+  else answer = S.playNum;
+
+  const choices = new Set([answer]);
+  while(choices.size < 5){
+    let c = answer + rand(-3, 3);
+    if(c >= 0 && c <= 19) choices.add(c);
+    else choices.add(rand(1, 19));
+  }
+  S.playChoices = Array.from(choices).sort((a,b)=>a-b);
+}
+
+function renderPlay(ws, sp){
+  if(S.round === 0) startGame();
+  const n = S.playNum;
+  const ones = n % 10;
+  let h = '';
+
+  h += `<div style="font-size:13px;color:var(--muted);">Round ${S.round} of ${S.total}</div>`;
+
+  // Question
+  let questionText = '';
+  if(S.difficulty === 'advanced' && rand(1, 2) === 1){
+    // Advanced: varied question formats
+    const qType = rand(1, 3);
+    if(qType === 1 && S.playMissing === 'ones'){
+      questionText = `What is <strong>?</strong> if 10 + <strong>?</strong> = ${n}?`;
+    } else if(qType === 2 && S.playMissing === 'ones'){
+      questionText = `${n} = 10 + <strong>?</strong>`;
+    } else if(S.playMissing === 'ones'){
+      questionText = `10 + <strong>?</strong> = ${n}`;
+    } else if(S.playMissing === 'tens'){
+      questionText = `<strong>?</strong> + ${ones} = ${n}`;
+    } else {
+      questionText = `10 + ${ones} = <strong>?</strong>`;
+    }
+  } else {
+    // Standard format
+    if(S.playMissing === 'ones') questionText = `10 + <strong>?</strong> = ${n}`;
+    else if(S.playMissing === 'tens') questionText = `<strong>?</strong> + ${ones} = ${n}`;
+    else questionText = `10 + ${ones} = <strong>?</strong>`;
+  }
+  h += `<div class="instruction-box">${questionText}</div>`;
+
+  // Ten frames
+  h += buildTenFrames(n);
+
+  // Answer buttons
+  h += '<div class="answer-grid">';
+  S.playChoices.forEach(c => {
+    h += `<button class="answer-btn" id="pans${c}" onclick="playPick(${c})">${c}</button>`;
+  });
+  h += '</div>';
+
+  ws.innerHTML = h;
+
+  sp.innerHTML = `
+    <div class="score-display"><div class="score-value">${S.score}</div><div class="score-label">Score</div></div>
+    <div class="score-display" style="background:transparent;padding:8px;">
+      <div style="font-size:18px;font-weight:700;color:var(--yellow);"><svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor" style="vertical-align:-2px;"><path d="M12 23c-4.97 0-8-3.58-8-7.5 0-3.07 2.17-5.84 4.5-7.5-.28 2.5 1.5 4.5 1.5 4.5s2-2.5 2-5.5c0-1.5-.5-3-1-4 3 1.5 5 4 5 7 0 .5-.08 1-.08 1s1.08-1.18 1.58-2.5C19.78 11.72 20 14.5 20 15.5c0 3.92-3.03 7.5-8 7.5z"/></svg> ${S.streak}</div>
+      <div class="score-label">Streak</div>
+      <div class="streak-bar"><div class="streak-fill" style="width:${Math.min(S.streak*20,100)}%;"></div></div>
+    </div>
+    <div class="panel-section"><div class="panel-title">Best Streak</div>
+    <div class="panel-text" style="font-size:24px;font-weight:800;color:var(--purple);"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="vertical-align:-2px;"><path d="M6 4h12v2a6 6 0 01-12 0V4z" fill="currentColor" opacity="0.2"/><path d="M6 4h12v2a6 6 0 01-12 0V4z"/><path d="M6 6H3v2a3 3 0 003 3"/><path d="M18 6h3v2a3 3 0 01-3 3"/><line x1="12" y1="14" x2="12" y2="18"/><line x1="8" y1="18" x2="16" y2="18" stroke-linecap="round"/></svg> ${S.best}</div></div>`;
+}
+
+function playPick(n){
+  let answer;
+  if(S.playMissing==='ones') answer = S.playNum % 10;
+  else if(S.playMissing==='tens') answer = 10;
+  else answer = S.playNum;
+
+  const btn = document.getElementById('pans'+n);
+  if(n === answer){
+    btn.classList.add('correct-flash');
+    S.score += 10 + S.streak*2;
+    S.streak++;
+    if(S.streak > S.best) S.best = S.streak;
+    showFB(`✓ ${S.playNum} = 10 + ${S.playNum%10}`, 'correct');
+  } else {
+    btn.classList.add('incorrect-flash');
+    S.streak = 0;
+    // Diagnostic feedback based on misconception
+    let feedback = `${answer} was correct`;
+
+    if(n === S.playNum % 10 && S.playMissing !== 'ones'){
+      // Student answered with just the ones digit when looking for tens or total
+      feedback = `That's just the ones! Teen numbers = 10 + extra ones. ${answer} is right.`;
+    } else if(n === parseInt(String(S.playNum).split('').reverse().join('')) && S.playNum !== 11){
+      // Student reversed the digits
+      feedback = `Watch the order! The 1 (ten) comes FIRST. ${answer} is correct.`;
+    } else if(Math.abs(n - answer) === 1){
+      // Off by one
+      feedback = `So close! You said ${n} but the answer is ${answer}. Count one more or less.`;
+    }
+
+    showFB(feedback, 'incorrect');
+  }
+  setTimeout(()=>{
+    if(S.round >= S.total){
+      showFB(`Game Over! Score: ${S.score}`, 'correct');
+      setTimeout(()=>{ S.round=0; render(); }, 2000);
+      return;
+    }
+    S.round++;
+    newPlayRound();
+    render();
+  }, 1200);
+}
+    // Initialize tab event listeners
+    document.querySelectorAll('.vinculum-mode-tab').forEach(function(tab) {
+      tab.addEventListener('click', function() {
+        switchMode(this.dataset.mode);
+      });
+    });
+
+    // Initialize difficulty button event listeners
+    document.querySelectorAll('.vinculum-diff-btn').forEach(function(btn) {
+      btn.addEventListener('click', function() {
+        setDiff(this.dataset.diff);
+      });
+    });
+
+
+render();
+</script>
+<script src="../../vinculum-core.js"></script>
+<script src="../../vinculum-data.js"></script>
+    <script src="../../vinculum-adaptive-hook.js"></script>
+<script src="../../vinculum-3reads.js"></script>
+<script src="../../vinculum-stories.js"></script>
+<script src="../../vinculum-feedback.js"></script>
+  <script src="../../vinculum-guide.js"></script>
+<script src="../../vinculum-identity.js"></script>
+<script src="../../vinculum-indigenous.js"></script>
+<script src="../../vinculum-dashboard.js"></script>
+<!-- Foundation loaded from vinculum-core.js -->
+</body>
+</html>

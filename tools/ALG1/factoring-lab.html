@@ -1,0 +1,594 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Factoring Lab — VINCULUM ALG1</title>
+  <link rel="stylesheet" href="../../vinculum-core.css">
+  <link rel="stylesheet" href="../../shared/vinculum-tiles.css">
+  <script src="../../shared/vinculum-math.js"></script>
+  <script src="../../shared/vinculum-tiles.js"></script>
+  <style>
+    body { font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: var(--bg); color: var(--text); margin: 0; overflow-x: hidden; }
+    .container { max-width: 960px; margin: 0 auto; padding: 1.25rem; display: flex; flex-direction: column; gap: 1rem; min-height: calc(100vh - 60px); }
+
+    .trinomial-display {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 1rem;
+      padding: 1.5rem 2rem;
+      text-align: center;
+      font-family: 'JetBrains Mono', 'Fira Code', monospace;
+    }
+    .trinomial-text {
+      font-size: 2rem;
+      font-weight: 700;
+      color: var(--cyan);
+      letter-spacing: 2px;
+    }
+    .trinomial-label {
+      font-size: 0.75rem;
+      color: var(--muted);
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      margin-bottom: 0.5rem;
+      font-family: 'Inter', sans-serif;
+    }
+
+    .area-model {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 1rem;
+      padding: 1.5rem;
+      text-align: center;
+    }
+    .area-grid {
+      max-width: 400px;
+      margin: 0 auto;
+      display: inline-block;
+      border: 2px solid var(--cyan);
+      border-radius: 0.5rem;
+      overflow: hidden;
+    }
+    .area-row {
+      display: flex;
+      border-bottom: 1px solid var(--border);
+    }
+    .area-row:last-child { border-bottom: none; }
+    .area-cell {
+      flex: 1;
+      aspect-ratio: 1;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border-right: 1px solid var(--border);
+      font-size: 0.875rem;
+      font-weight: 600;
+      color: var(--text);
+      background: var(--bg);
+      min-width: 60px;
+    }
+    .area-cell:last-child { border-right: none; }
+    .area-cell.x2-tile { background: linear-gradient(135deg, #42a5f5, #1e88e5); color: white; font-size: 1.2rem; }
+    .area-cell.x-tile { background: linear-gradient(135deg, #ffee58, #fdd835); color: #333; font-size: 1rem; }
+    .area-cell.unit-tile { background: linear-gradient(135deg, #ef5350, #c62828); color: white; font-size: 0.875rem; }
+    .area-cell.label-cell { background: var(--card); border: 1px solid var(--border); font-size: 0.75rem; padding: 0.25rem; }
+
+    .factor-display {
+      background: var(--bg2);
+      border: 2px dashed var(--green);
+      border-radius: 0.75rem;
+      padding: 1rem;
+      text-align: center;
+      margin-top: 1rem;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 1.25rem;
+      font-weight: 600;
+      color: var(--green);
+    }
+
+    .controls-row {
+      display: flex;
+      gap: 0.75rem;
+      justify-content: center;
+      flex-wrap: wrap;
+      margin-top: 1rem;
+    }
+    .control-input {
+      background: var(--bg);
+      border: 2px solid var(--border);
+      color: var(--text);
+      padding: 0.625rem 1rem;
+      border-radius: 0.5rem;
+      font-size: 0.875rem;
+      font-weight: 600;
+      width: 80px;
+      text-align: center;
+      transition: border-color 0.2s;
+    }
+    .control-input:focus { outline: none; border-color: var(--cyan); }
+
+    .action-btn {
+      background: var(--card);
+      border: 1px solid var(--border);
+      color: var(--text);
+      padding: 0.625rem 1.25rem;
+      border-radius: 0.5rem;
+      cursor: pointer;
+      font-size: 0.875rem;
+      font-weight: 600;
+      transition: all 0.2s;
+      font-family: inherit;
+    }
+    .action-btn:hover { border-color: var(--cyan); color: var(--cyan); transform: translateY(-1px); }
+    .action-btn.primary { background: var(--cyan); color: var(--bg); border-color: var(--cyan); }
+    .action-btn.primary:hover { background: var(--green); border-color: var(--green); }
+    .action-btn:disabled { opacity: 0.4; cursor: not-allowed; transform: none; }
+
+    .practice-card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 0.75rem;
+      padding: 1.25rem;
+    }
+    .practice-question {
+      font-size: 0.95rem;
+      color: var(--text2);
+      margin-bottom: 1rem;
+    }
+    .factor-choice {
+      background: var(--bg);
+      border: 2px solid var(--border);
+      padding: 0.75rem;
+      border-radius: 0.5rem;
+      margin-bottom: 0.5rem;
+      cursor: pointer;
+      transition: all 0.2s;
+      font-family: 'JetBrains Mono', monospace;
+      font-weight: 600;
+    }
+    .factor-choice:hover { border-color: var(--cyan); background: color-mix(in srgb, var(--cyan) 5%, var(--bg)); }
+    .factor-choice.selected { border-color: var(--green); background: color-mix(in srgb, var(--green) 10%, var(--bg)); }
+
+    .mode-content { display: none; flex-direction: column; gap: 1rem; }
+    .mode-content.active { display: flex; }
+
+    .play-stats {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 0.75rem;
+    }
+    .stat-card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 0.75rem;
+      padding: 1rem;
+      text-align: center;
+    }
+    .stat-value {
+      font-size: 1.75rem;
+      font-weight: 700;
+      background: var(--grad);
+      background-clip: text;
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+    .stat-label { font-size: 0.7rem; color: var(--muted); text-transform: uppercase; letter-spacing: 1px; margin-top: 0.25rem; }
+
+    .factor-input-row {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      justify-content: center;
+      margin-top: 0.5rem;
+    }
+    .factor-input-row label {
+      font-size: 0.875rem;
+      color: var(--text2);
+      font-weight: 600;
+    }
+    .factor-input {
+      background: var(--bg);
+      border: 2px solid var(--border);
+      color: var(--text);
+      padding: 0.625rem 1rem;
+      border-radius: 0.5rem;
+      font-size: 1rem;
+      font-family: 'JetBrains Mono', monospace;
+      font-weight: 600;
+      width: 150px;
+      text-align: center;
+      transition: border-color 0.2s;
+    }
+    .factor-input:focus { outline: none; border-color: var(--cyan); }
+
+    .concept-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 1rem;
+    }
+    .concept-card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 0.75rem;
+      padding: 1.25rem;
+    }
+    .concept-card h4 { color: var(--cyan); margin-bottom: 0.5rem; font-size: 0.875rem; text-transform: uppercase; letter-spacing: 0.5px; }
+    .concept-card p { font-size: 0.8125rem; color: var(--text2); line-height: 1.6; }
+
+    @media (max-width: 768px) {
+      .concept-grid { grid-template-columns: 1fr; }
+      .play-stats { grid-template-columns: 1fr; }
+      .trinomial-text { font-size: 1.5rem; }
+    }
+  </style>
+</head>
+<body>
+  <header class="vinculum-header">
+    <div class="vinculum-header-left">
+      <a href="../../VINCULUM-Hub.html" class="vinculum-back-btn">
+        <svg viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="2"><path d="M8 1L3 6l5 5"/></svg>
+        Hub
+      </a>
+      <div class="vinculum-header-title"><span class="brand">Factoring Lab</span></div>
+      <span class="vinculum-header-badge">ALG1</span>
+    </div>
+    <div class="vinculum-header-right">
+      <div class="vinculum-std-tags">
+        <span class="vinculum-std-tag">A-SSE.3a</span>
+        <span class="vinculum-std-tag">A-REI.4b</span>
+      </div>
+    </div>
+  </header>
+
+  <div class="container">
+    <div class="vinculum-mode-tabs">
+      <button class="vinculum-mode-tab active-explore" data-mode="explore"><svg width="18" height="18" viewBox="0 0 48 48" fill="none"><path d="M4 24C4 24 12 12 24 12C36 12 44 24 44 24C44 24 36 36 24 36C12 36 4 24 4 24Z" stroke="currentColor" stroke-width="3" fill="none"/><circle cx="24" cy="24" r="7" stroke="currentColor" stroke-width="3" fill="none"/><circle cx="24" cy="24" r="3" fill="currentColor"/><line x1="24" y1="4" x2="24" y2="9" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" opacity="0.5"/><line x1="10" y1="8" x2="13" y2="12" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" opacity="0.5"/><line x1="38" y1="8" x2="35" y2="12" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" opacity="0.5"/></svg> Explore</button>
+      <button class="vinculum-mode-tab" data-mode="practice"><svg width="18" height="18" viewBox="0 0 48 48" fill="none"><circle cx="24" cy="24" r="20" stroke="currentColor" stroke-width="3" fill="none" opacity="0.3"/><circle cx="24" cy="24" r="20" stroke="currentColor" stroke-width="3" fill="none" stroke-dasharray="126" stroke-dashoffset="32" stroke-linecap="round"/><polyline points="16,24 22,32 34,16" stroke="currentColor" stroke-width="4" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg> Practice</button>
+      <button class="vinculum-mode-tab" data-mode="play"><svg width="18" height="18" viewBox="0 0 48 48" fill="none"><polygon points="28,4 12,28 22,28 18,44 36,18 26,18" fill="none" stroke="currentColor" stroke-width="3" stroke-linejoin="round"/><polygon points="27,8 15,27 23,27 20,40 34,19 26,19" fill="currentColor" opacity="0.15"/></svg> Play</button>
+      <div class="vinculum-diff-selector">
+        <span class="vinculum-diff-label">Level</span>
+        <button class="vinculum-diff-btn active" data-diff="easy">Easy (a=1)</button>
+        <button class="vinculum-diff-btn" data-diff="medium">Medium (neg)</button>
+        <button class="vinculum-diff-btn" data-diff="hard">Hard (a>1)</button>
+      </div>
+    </div>
+
+    <!-- ═══ EXPLORE MODE ═══ -->
+    <div class="mode-content active" id="mode-explore">
+      <div class="trinomial-display">
+        <div class="trinomial-label">Factor this trinomial:</div>
+        <div class="trinomial-text" id="explore-trinomial">x² + 5x + 6</div>
+      </div>
+
+      <div class="area-model">
+        <div style="margin-bottom: 1rem; color: var(--text2); font-size: 0.875rem;">Area Model — Arrange tiles into a rectangle</div>
+        <div id="explore-area-grid" class="area-grid"></div>
+        <div class="factor-display" id="explore-factor-result"></div>
+      </div>
+
+      <div class="controls-row">
+        <label style="color: var(--text2); font-size: 0.875rem; align-self: center;">Adjust coefficients:</label>
+        <label>a</label>
+        <input type="number" class="control-input" id="explore-a" value="1" min="1" max="10">
+        <label>b</label>
+        <input type="number" class="control-input" id="explore-b" value="5" min="-20" max="20">
+        <label>c</label>
+        <input type="number" class="control-input" id="explore-c" value="6" min="-20" max="20">
+        <button class="action-btn primary" onclick="exploreUpdateTrinomial()">Update</button>
+        <button class="action-btn" onclick="exploreRandomTrinomial()">Random</button>
+      </div>
+
+      <div class="concept-grid">
+        <div class="concept-card">
+          <h4>Area Model</h4>
+          <p>The rectangle's dimensions are the factors. The four sections show x², x, and unit tiles that add up to your trinomial.</p>
+        </div>
+        <div class="concept-card">
+          <h4>Factored Form</h4>
+          <p>If a trinomial factors, it becomes (x + m)(x + n) where m + n = b and m × n = c.</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- ═══ PRACTICE MODE ═══ -->
+    <div class="mode-content" id="mode-practice">
+      <div class="trinomial-display">
+        <div class="trinomial-label">Factor this trinomial:</div>
+        <div class="trinomial-text" id="practice-trinomial">x² + 5x + 6</div>
+      </div>
+
+      <div class="area-model">
+        <div style="margin-bottom: 1rem; color: var(--text2); font-size: 0.875rem;">Area Model Hint</div>
+        <div id="practice-area-grid" class="area-grid"></div>
+      </div>
+
+      <div class="practice-card">
+        <div class="practice-question" id="practice-question">Pick the correct factored form:</div>
+        <div id="practice-choices"></div>
+      </div>
+
+      <div class="action-row" style="justify-content: center; gap: 0.75rem;">
+        <button class="action-btn" onclick="practiceNewProblem()">Next Problem →</button>
+      </div>
+    </div>
+
+    <!-- ═══ PLAY MODE ═══ -->
+    <div class="mode-content" id="mode-play">
+      <div class="play-stats">
+        <div class="stat-card">
+          <div class="stat-value" id="play-score">0</div>
+          <div class="stat-label">Score</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-value" id="play-streak">0</div>
+          <div class="stat-label">Streak</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-value" id="play-timer">0:00</div>
+          <div class="stat-label">Time</div>
+        </div>
+      </div>
+
+      <div class="trinomial-display">
+        <div class="trinomial-label">Factor:</div>
+        <div class="trinomial-text" id="play-trinomial">x² + 5x + 6</div>
+      </div>
+
+      <div class="factor-input-row">
+        <label>Binomial 1:</label>
+        <input type="text" class="factor-input" id="play-factor1" placeholder="(x+?)" autocomplete="off">
+      </div>
+
+      <div class="factor-input-row">
+        <label>Binomial 2:</label>
+        <input type="text" class="factor-input" id="play-factor2" placeholder="(x+?)" autocomplete="off">
+        <button class="action-btn primary" onclick="playSubmit()">Submit</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="feedback" class="feedback"></div>
+
+  <script src="../../vinculum-input.js"></script>
+  <script src="../../vinculum-feedback.js"></script>
+  <script src="../../vinculum-guide.js"></script>
+  <script src="../../vinculum-core.js"></script>
+  <script src="../../vinculum-adaptive-hook.js"></script>
+  <script src="../../vinculum-data.js"></script>
+  <script src="../../vinculum-3reads.js"></script>
+  <script src="../../vinculum-stories.js"></script>
+  <script src="../../vinculum-identity.js"></script>
+  <script src="../../vinculum-indigenous.js"></script>
+  <script src="../../vinculum-dashboard.js"></script>
+  <script>
+    let difficulty = 'easy';
+    let mode = 'explore';
+    let currentTrinomial = null;
+    let playState = { score: 0, streak: 0, timer: 0, interval: null };
+
+    const M = {
+      r: function(latex) {
+        return (typeof VinculumMath !== 'undefined')
+          ? VinculumMath.renderLatex(latex)
+          : '<i>' + latex + '</i>';
+      }
+    };
+
+    function genTrinomial(diff) {
+      let a, b, c, m, n;
+
+      if (diff === 'easy') {
+        a = 1;
+        do {
+          m = Math.floor(Math.random() * 10) - 5;
+          n = Math.floor(Math.random() * 10) - 5;
+        } while (m === 0 || n === 0 || m === n);
+        b = m + n;
+        c = m * n;
+      } else if (diff === 'medium') {
+        a = 1;
+        do {
+          m = Math.floor(Math.random() * 8) - 4;
+          n = Math.floor(Math.random() * 8) - 4;
+        } while (m === 0 || n === 0 || m === n);
+        b = m + n;
+        c = m * n;
+      } else {
+        a = Math.floor(Math.random() * 4) + 2;
+        m = Math.floor(Math.random() * 6) + 1;
+        n = Math.floor(Math.random() * 6) + 1;
+        b = a * m + n;
+        c = m * n;
+      }
+
+      return { a, b, c, m, n, display: `${a === 1 ? '' : a}x² + ${b >= 0 ? '+' : ''}${b}x + ${c}` };
+    }
+
+    function renderAreaGrid(trinomial, gridId) {
+      const { a, b, c, m, n } = trinomial;
+      const grid = document.getElementById(gridId);
+      if (!grid) return;
+
+      let html = '';
+      const cols = a === 1 ? 2 : 3;
+      const rows = a === 1 ? 2 : 3;
+
+      if (a === 1) {
+        html += '<div class="area-row">';
+        html += '<div class="area-cell x2-tile">x²</div>';
+        for (let i = 0; i < Math.abs(n); i++) {
+          html += `<div class="area-cell x-tile">${n < 0 ? '−x' : 'x'}</div>`;
+        }
+        html += '</div>';
+        html += '<div class="area-row">';
+        for (let i = 0; i < Math.abs(m); i++) {
+          html += `<div class="area-cell x-tile">${m < 0 ? '−x' : 'x'}</div>`;
+        }
+        for (let i = 0; i < Math.abs(c); i++) {
+          html += `<div class="area-cell unit-tile">1</div>`;
+        }
+        html += '</div>';
+      } else {
+        html += '<div class="area-row">';
+        for (let i = 0; i < a; i++) html += '<div class="area-cell x2-tile">x²</div>';
+        for (let i = 0; i < Math.abs(n); i++) html += `<div class="area-cell x-tile">${n < 0 ? '−x' : 'x'}</div>`;
+        html += '</div>';
+        html += '<div class="area-row">';
+        for (let i = 0; i < Math.abs(m); i++) html += `<div class="area-cell x-tile">${m < 0 ? '−x' : 'x'}</div>`;
+        for (let i = 0; i < Math.abs(c); i++) html += `<div class="area-cell unit-tile">1</div>`;
+        html += '</div>';
+      }
+
+      grid.innerHTML = html;
+    }
+
+    function getFactorString(trinomial) {
+      const { a, m, n } = trinomial;
+      const m1 = a === 1 ? `(x${m >= 0 ? '+' : ''}${m})` : `(${a}x${n >= 0 ? '+' : ''}${n})`;
+      const m2 = a === 1 ? `(x${n >= 0 ? '+' : ''}${n})` : `(x${m >= 0 ? '+' : ''}${m})`;
+      return `${m1} × ${m2}`;
+    }
+
+    function exploreUpdateTrinomial() {
+      const a = parseInt(document.getElementById('explore-a').value) || 1;
+      const b = parseInt(document.getElementById('explore-b').value) || 0;
+      const c = parseInt(document.getElementById('explore-c').value) || 0;
+
+      currentTrinomial = { a, b, c, m: 1, n: c };
+      const display = `${a === 1 ? '' : a}x² + ${b >= 0 ? '' : ''}${b}x + ${c}`;
+      document.getElementById('explore-trinomial').textContent = display;
+
+      renderAreaGrid(currentTrinomial, 'explore-area-grid');
+      document.getElementById('explore-factor-result').textContent = getFactorString(currentTrinomial);
+    }
+
+    function exploreRandomTrinomial() {
+      currentTrinomial = genTrinomial(difficulty);
+      document.getElementById('explore-trinomial').textContent = currentTrinomial.display;
+      document.getElementById('explore-a').value = currentTrinomial.a;
+      document.getElementById('explore-b').value = currentTrinomial.b;
+      document.getElementById('explore-c').value = currentTrinomial.c;
+
+      renderAreaGrid(currentTrinomial, 'explore-area-grid');
+      document.getElementById('explore-factor-result').textContent = getFactorString(currentTrinomial);
+    }
+
+    function practiceNewProblem() {
+      currentTrinomial = genTrinomial(difficulty);
+      document.getElementById('practice-trinomial').textContent = currentTrinomial.display;
+      renderAreaGrid(currentTrinomial, 'practice-area-grid');
+
+      const choices = [
+        getFactorString(currentTrinomial),
+        `(x${currentTrinomial.m >= 0 ? '+' : ''}${currentTrinomial.m}) × (x${(currentTrinomial.m + 1) >= 0 ? '+' : ''}${currentTrinomial.m + 1})`,
+        `(x${(currentTrinomial.m - 1) >= 0 ? '+' : ''}${currentTrinomial.m - 1}) × (x${(currentTrinomial.n + 1) >= 0 ? '+' : ''}${currentTrinomial.n + 1})`
+      ];
+
+      const html = choices.map((c, i) =>
+        `<div class="factor-choice" onclick="selectChoice(${i}, '${getFactorString(currentTrinomial)}')">${c}</div>`
+      ).join('');
+      document.getElementById('practice-choices').innerHTML = html;
+    }
+
+    function selectChoice(idx, correct) {
+      const choices = document.querySelectorAll('.factor-choice');
+      const selected = choices[idx].textContent;
+
+      if (selected === correct) {
+        showFB('Correct factorization!', 'correct');
+      } else {
+        showFB('Not quite. Check the area model for hints.', 'incorrect');
+      }
+    }
+
+    function playStart() {
+      playState.score = 0;
+      playState.streak = 0;
+      playState.timer = 0;
+      clearInterval(playState.interval);
+      playState.interval = setInterval(() => {
+        playState.timer++;
+        const m = Math.floor(playState.timer / 60);
+        const s = playState.timer % 60;
+        document.getElementById('play-timer').textContent = `${m}:${s.toString().padStart(2, '0')}`;
+      }, 1000);
+      playNext();
+    }
+
+    function playNext() {
+      currentTrinomial = genTrinomial(difficulty);
+      document.getElementById('play-trinomial').textContent = currentTrinomial.display;
+      document.getElementById('play-factor1').value = '';
+      document.getElementById('play-factor2').value = '';
+      document.getElementById('play-factor1').focus();
+      updatePlayStats();
+    }
+
+    function playSubmit() {
+      const f1 = document.getElementById('play-factor1').value.trim();
+      const f2 = document.getElementById('play-factor2').value.trim();
+
+      if (!f1 || !f2) {
+        showFB('Enter both factors', 'info');
+        return;
+      }
+
+      const correct = getFactorString(currentTrinomial);
+      const userAnswer = `${f1} × ${f2}`;
+
+      if (userAnswer === correct || (f2 + ' × ' + f1) === correct) {
+        playState.score += 10;
+        playState.streak++;
+        showFB('Correct!', 'correct');
+        updatePlayStats();
+        setTimeout(playNext, 1200);
+      } else {
+        playState.streak = 0;
+        showFB(`Correct: ${correct}`, 'incorrect');
+        updatePlayStats();
+      }
+    }
+
+    function updatePlayStats() {
+      document.getElementById('play-score').textContent = playState.score;
+      document.getElementById('play-streak').textContent = playState.streak;
+    }
+
+    function switchMode(m) {
+      mode = m;
+      document.querySelectorAll('.vinculum-mode-tab').forEach(t => t.classList.remove('active-explore', 'active-practice', 'active-play'));
+      document.querySelector(`[data-mode="${m}"]`).classList.add(`active-${m}`);
+      document.querySelectorAll('.mode-content').forEach(c => c.classList.remove('active'));
+      document.getElementById(`mode-${m}`).classList.add('active');
+
+      if (m === 'explore') exploreRandomTrinomial();
+      if (m === 'practice') practiceNewProblem();
+      if (m === 'play') playStart();
+    }
+
+    function setDifficulty(diff) {
+      difficulty = diff;
+      document.querySelectorAll('.vinculum-diff-btn').forEach(b => b.classList.remove('active'));
+      document.querySelector(`[data-diff="${diff}"]`).classList.add('active');
+      switchMode(mode);
+    }
+
+    document.querySelectorAll('.vinculum-mode-tab').forEach(tab => {
+      tab.addEventListener('click', () => switchMode(tab.dataset.mode));
+    });
+    document.querySelectorAll('.vinculum-diff-btn').forEach(btn => {
+      btn.addEventListener('click', () => setDifficulty(btn.dataset.diff));
+    });
+
+    document.getElementById('play-factor2').addEventListener('keydown', e => {
+      if (e.key === 'Enter') playSubmit();
+    });
+
+    function init() {
+      exploreRandomTrinomial();
+    }
+    window.addEventListener('DOMContentLoaded', init);
+  </script>
+</body>
+</html>

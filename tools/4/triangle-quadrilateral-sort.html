@@ -1,0 +1,469 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Shape Classifier - Grade 4</title>
+    <link rel="stylesheet" href="../../vinculum-core.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body {
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+            user-select: none;
+            background: var(--bg);
+            color: var(--text);
+            font-family: 'Inter', sans-serif;
+        }
+
+        .content {
+            flex: 1; overflow-y: auto; padding: 1.5rem;
+            display: none; flex-direction: column; gap: 1.5rem;
+        }
+        .content.active { display: flex; }
+
+        .shape-gallery {
+            display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 1rem; flex: 1;
+        }
+
+        .shape-card {
+            background: var(--card); border: 2px solid var(--border); border-radius: 12px;
+            padding: 1rem; display: flex; flex-direction: column; align-items: center;
+            gap: 0.75rem; cursor: grab; transition: all 0.3s;
+        }
+
+        .shape-card:hover { transform: translateY(-4px); box-shadow: 0 8px 16px rgba(0,0,0,0.1); }
+        .shape-card:focus-visible { outline: 2px solid var(--cyan); }
+
+        canvas.shape-canvas {
+            width: 100%; height: 120px; background: var(--bg2); border-radius: 8px;
+            display: block;
+        }
+
+        .shape-name {
+            font-weight: 600; color: var(--cyan); text-align: center; font-size: 0.9rem;
+        }
+
+        .classification-bins {
+            display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 1rem;
+        }
+
+        .classification-bin {
+            background: var(--card); border: 2px dashed var(--border); border-radius: 12px;
+            padding: 1.5rem; min-height: 200px;
+            display: flex; flex-direction: column; gap: 1rem;
+        }
+
+        .bin-title {
+            font-weight: 600; color: var(--cyan); font-size: 1rem;
+        }
+
+        .bin-description {
+            font-size: 0.85rem; color: var(--text2); font-style: italic;
+        }
+
+        .practice-card {
+            background: var(--card); border: 1px solid var(--border); border-radius: 12px;
+            padding: 1.5rem; display: flex; flex-direction: column; gap: 1rem;
+        }
+
+        canvas.practice-canvas {
+            width: 100%; height: 250px; background: var(--bg2); border-radius: 8px;
+        }
+
+        .property-toggle {
+            display: grid; grid-template-columns: repeat(2, 1fr); gap: 0.5rem;
+        }
+
+        .toggle-btn {
+            padding: 0.6rem; background: var(--bg2); border: 2px solid var(--border);
+            border-radius: 6px; cursor: pointer; font-weight: 500; color: var(--text);
+            font-family: 'Inter', sans-serif; transition: all 0.2s; font-size: 0.85rem;
+        }
+
+        .toggle-btn:hover { border-color: var(--cyan); }
+        .toggle-btn.active { background: var(--cyan); color: white; border-color: var(--cyan); }
+
+        .submit-btn {
+            padding: 0.75rem 1.5rem; background: var(--cyan); color: white;
+            border: none; border-radius: 8px; font-weight: 600; cursor: pointer;
+            font-family: 'Inter', sans-serif; transition: all 0.2s;
+        }
+
+        .submit-btn:hover { opacity: 0.9; }
+
+        .feedback {
+            position: fixed; bottom: -100px; left: 50%; transform: translateX(-50%);
+            padding: 1rem 2rem; border-radius: 8px; font-weight: 600;
+            transition: bottom 0.3s; z-index: 1000;
+            font-family: 'Inter', sans-serif;
+        }
+
+        .feedback.show { bottom: 2rem; }
+        .feedback.correct { background: var(--green); color: white; }
+        .feedback.incorrect { background: var(--red); color: white; }
+
+        .indigenous-context {
+            background: linear-gradient(135deg, #FFE5CC, #E5F5FF);
+            padding: 1.5rem; border-radius: 8px; border-left: 4px solid var(--cyan);
+            color: #333; font-size: 0.95rem; line-height: 1.6;
+        }
+
+        .indigenous-label {
+            font-weight: 600; color: var(--cyan); display: inline-block;
+            margin-bottom: 0.75rem;
+        }
+
+        .stats {
+            display: flex; gap: 1rem; justify-content: center; padding: 1rem;
+            background: var(--bg2); border-radius: 8px;
+        }
+
+        .stat-item {
+            text-align: center;
+        }
+
+        .stat-value {
+            font-size: 1.5rem; font-weight: 700; color: var(--cyan);
+            font-family: 'JetBrains Mono', monospace;
+        }
+
+        .stat-label {
+            font-size: 0.8rem; color: var(--text2); font-weight: 500;
+        }
+
+        .sr-only {
+            position: absolute; width: 1px; height: 1px; padding: 0;
+            margin: -1px; overflow: hidden; clip: rect(0,0,0,0);
+            white-space: nowrap; border-width: 0;
+        }
+    </style>
+</head>
+<body>
+    <div class="vinculum-header">
+        <div class="vinculum-header-left">
+            <a href="../../VINCULUM-Hub.html" class="vinculum-back-btn" aria-label="Back to Hub">
+                <svg viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="2"><path d="M8 1L3 6l5 5"/></svg>
+                Hub
+            </a>
+            <div class="vinculum-header-title"><span class="brand">Shape Sorter</span></div>
+            <span class="vinculum-header-badge">GRADE 4</span>
+        </div>
+        <div class="vinculum-header-right">
+            <div class="vinculum-std-tags">
+                <span class="vinculum-std-tag">4.G.2</span>
+                <span class="vinculum-std-tag mn">MN 4.3.3.2</span>
+            </div>
+        </div>
+    </div>
+
+    <div class="vinculum-mode-tabs">
+        <button class="vinculum-mode-tab active-explore" data-mode="explore"><svg width="18" height="18" viewBox="0 0 48 48" fill="none"><path d="M4 24C4 24 12 12 24 12C36 12 44 24 44 24C44 24 36 36 24 36C12 36 4 24 4 24Z" stroke="currentColor" stroke-width="3" fill="none"/><circle cx="24" cy="24" r="7" stroke="currentColor" stroke-width="3" fill="none"/><circle cx="24" cy="24" r="3" fill="currentColor"/><line x1="24" y1="4" x2="24" y2="9" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" opacity="0.5"/><line x1="10" y1="8" x2="13" y2="12" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" opacity="0.5"/><line x1="38" y1="8" x2="35" y2="12" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" opacity="0.5"/></svg> Explore</button>
+        <button class="vinculum-mode-tab" data-mode="practice"><svg width="18" height="18" viewBox="0 0 48 48" fill="none"><circle cx="24" cy="24" r="20" stroke="currentColor" stroke-width="3" fill="none" opacity="0.3"/><circle cx="24" cy="24" r="20" stroke="currentColor" stroke-width="3" fill="none" stroke-dasharray="126" stroke-dashoffset="32" stroke-linecap="round"/><polyline points="16,24 22,32 34,16" stroke="currentColor" stroke-width="4" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg> Practice</button>
+        <button class="vinculum-mode-tab" data-mode="play"><svg width="18" height="18" viewBox="0 0 48 48" fill="none"><polygon points="28,4 12,28 22,28 18,44 36,18 26,18" fill="none" stroke="currentColor" stroke-width="3" stroke-linejoin="round"/><polygon points="27,8 15,27 23,27 20,40 34,19 26,19" fill="currentColor" opacity="0.15"/></svg> Play</button>
+        <div class="vinculum-diff-selector">
+            <span class="vinculum-diff-label">Level</span>
+            <button class="vinculum-diff-btn active" data-diff="emergent">Emergent</button>
+            <button class="vinculum-diff-btn" data-diff="developing">Developing</button>
+            <button class="vinculum-diff-btn" data-diff="proficient">Proficient</button>
+        </div>
+    </div>
+
+    <div id="explore" class="content active">
+        <h2 style="color: var(--text); font-size: 1.3rem; margin-bottom: 0.5rem;">Shape Gallery</h2>
+        <p style="color: var(--text2); font-size: 0.9rem; margin-bottom: 1rem;">Click on shapes to see their classifications</p>
+
+        <div class="shape-gallery" id="shapeGallery">
+            <!-- Shapes will be generated here -->
+        </div>
+
+        <div style="background: var(--card); border: 1px solid var(--border); border-radius: 12px; padding: 1.5rem;">
+            <h3 style="color: var(--text); margin-bottom: 1rem;">Triangle Types</h3>
+            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 1rem;">
+                <div style="padding: 1rem; background: var(--bg2); border-radius: 8px;">
+                    <div style="font-weight: 600; color: var(--cyan);">By Angles</div>
+                    <div style="font-size: 0.85rem; color: var(--text2); margin-top: 0.5rem;">Acute, Right, Obtuse</div>
+                </div>
+                <div style="padding: 1rem; background: var(--bg2); border-radius: 8px;">
+                    <div style="font-weight: 600; color: var(--cyan);">By Sides</div>
+                    <div style="font-size: 0.85rem; color: var(--text2); margin-top: 0.5rem;">Equilateral, Isosceles, Scalene</div>
+                </div>
+            </div>
+        </div>
+
+        <div style="background: var(--card); border: 1px solid var(--border); border-radius: 12px; padding: 1.5rem; margin-top: 1.5rem;">
+            <h3 style="color: var(--text); margin-bottom: 1rem;">Quadrilateral Hierarchy</h3>
+            <div style="font-size: 0.9rem; color: var(--text2); line-height: 1.8;">
+                <div>Quadrilateral (4 sides)</div>
+                <div style="margin-left: 1.5rem;">→ Parallelogram (opposite sides parallel)</div>
+                <div style="margin-left: 3rem;">→ Rectangle (4 right angles)</div>
+                <div style="margin-left: 3rem;">→ Square (4 right angles + 4 equal sides)</div>
+                <div style="margin-left: 3rem;">→ Rhombus (4 equal sides)</div>
+            </div>
+        </div>
+
+        <div class="indigenous-context">
+            <div class="indigenous-label">INDIGENOUS: Multiple nations</div>
+            <p><strong>Traditional Architecture:</strong> The triangular face of a tipi, the rectangular base of a longhouse, and rhombus patterns in beadwork each demonstrate sophisticated understanding of geometric shapes. Indigenous architecture showcases knowledge of shape properties for structural integrity and aesthetic design.</p>
+        </div>
+    </div>
+
+    <div id="practice" class="content">
+        <div class="practice-card">
+            <h3 style="color: var(--text); font-size: 1.1rem;">Classify the Shape</h3>
+            <canvas class="practice-canvas" id="practiceCanvas"></canvas>
+
+            <div>
+                <div style="font-size: 0.9rem; font-weight: 600; color: var(--text); margin-bottom: 0.75rem;">Select all that apply:</div>
+                <div class="property-toggle" id="practiceOptions">
+                    <!-- Options will be generated -->
+                </div>
+            </div>
+
+            <button class="submit-btn" onclick="checkPracticeAnswer()">Check Answer</button>
+        </div>
+
+        <div class="stats">
+            <div class="stat-item">
+                <div class="stat-value" id="practiceScoreDisplay">0</div>
+                <div class="stat-label">Correct</div>
+            </div>
+            <div class="stat-item">
+                <div class="stat-value" id="practiceTotalDisplay">0</div>
+                <div class="stat-label">Total</div>
+            </div>
+        </div>
+    </div>
+
+    <div id="play" class="content">
+        <div style="display: flex; flex-direction: column; gap: 1.5rem; flex: 1;">
+            <div class="practice-card">
+                <h3 style="color: var(--text); font-size: 1.1rem;">I'm thinking of a shape...</h3>
+                <p style="color: var(--text2); font-size: 0.95rem; line-height: 1.5; margin-bottom: 1rem;" id="playClue">I have 4 sides and 4 right angles. Two of my opposite sides are 5 cm, and two are 3 cm. What shape am I?</p>
+
+                <div class="property-toggle" style="grid-template-columns: 1fr;">
+                    <button class="toggle-btn" onclick="checkPlayGuess('triangle')">Triangle</button>
+                    <button class="toggle-btn" onclick="checkPlayGuess('rectangle')">Rectangle</button>
+                    <button class="toggle-btn" onclick="checkPlayGuess('square')">Square</button>
+                    <button class="toggle-btn" onclick="checkPlayGuess('rhombus')">Rhombus</button>
+                    <button class="toggle-btn" onclick="checkPlayGuess('trapezoid')">Trapezoid</button>
+                    <button class="toggle-btn" onclick="checkPlayGuess('parallelogram')">Parallelogram</button>
+                </div>
+            </div>
+
+            <div class="indigenous-context">
+                <div class="indigenous-label">INDIGENOUS: Multiple nations</div>
+                <p><strong>Beadwork Symmetry:</strong> Beadwork designs in many Indigenous cultures use quadrilateral shapes with mathematical precision. Understanding shape properties helps us appreciate the technical skill required to create intricate patterns with geometric accuracy.</p>
+            </div>
+
+            <div class="stats">
+                <div class="stat-item">
+                    <div class="stat-value" id="playScoreDisplay">0</div>
+                    <div class="stat-label">Solved</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div id="feedback" class="feedback"></div>
+    <span class="sr-only" role="status" aria-live="polite" id="ariaStatus"></span>
+
+    <script src="../../vinculum-feedback.js"></script><script src="../../vinculum-guide.js"></script>
+<script src="../../vinculum-input.js"></script>
+<script src="../../vinculum-identity.js"></script>
+<script src="../../vinculum-indigenous.js"></script>
+<script src="../../vinculum-dashboard.js"></script>
+    <script>
+        /* INDIGENOUS: nation=Multiple_nations, context=traditional_architecture */
+        const S = { mode: 'explore', practiceScore: 0, practiceTotal: 0, playScore: 0 };
+
+        const triangles = [
+            { name: 'Acute Triangle', angles: 'acute', sides: 'scalene', color: '#1E88E5' },
+            { name: 'Right Triangle', angles: 'right', sides: 'scalene', color: '#43A047' },
+            { name: 'Obtuse Triangle', angles: 'obtuse', sides: 'scalene', color: '#FB8C00' },
+            { name: 'Equilateral', angles: 'acute', sides: 'equilateral', color: '#8E24AA' },
+            { name: 'Isosceles', angles: 'acute', sides: 'isosceles', color: '#1565C0' }
+        ];
+
+        const quadrilaterals = [
+            { name: 'Square', types: ['quadrilateral', 'parallelogram', 'rectangle', 'rhombus', 'square'] },
+            { name: 'Rectangle', types: ['quadrilateral', 'parallelogram', 'rectangle'] },
+            { name: 'Rhombus', types: ['quadrilateral', 'parallelogram', 'rhombus'] },
+            { name: 'Parallelogram', types: ['quadrilateral', 'parallelogram'] },
+            { name: 'Trapezoid', types: ['quadrilateral', 'trapezoid'] }
+        ];
+
+        function initShapeGallery() {
+            const gallery = document.getElementById('shapeGallery');
+            gallery.innerHTML = '';
+
+            triangles.forEach((tri, i) => {
+                const card = document.createElement('div');
+                card.className = 'shape-card';
+                card.innerHTML = `
+                    <canvas class="shape-canvas" id="shapeCanvas${i}"></canvas>
+                    <div class="shape-name">${tri.name}</div>
+                `;
+                gallery.appendChild(card);
+
+                setTimeout(() => drawTriangle(document.getElementById('shapeCanvas' + i), tri), 0);
+            });
+
+            quadrilaterals.forEach((quad, i) => {
+                const card = document.createElement('div');
+                card.className = 'shape-card';
+                card.innerHTML = `
+                    <canvas class="shape-canvas" id="quadCanvas${i}"></canvas>
+                    <div class="shape-name">${quad.name}</div>
+                `;
+                gallery.appendChild(card);
+
+                setTimeout(() => drawQuadrilateral(document.getElementById('quadCanvas' + i), quad), 0);
+            });
+        }
+
+        function drawTriangle(canvas, tri) {
+            if (!canvas) return;
+            const ctx = canvas.getContext('2d');
+            const w = canvas.offsetWidth;
+            const h = canvas.offsetHeight;
+
+            canvas.width = w;
+            canvas.height = h;
+
+            ctx.fillStyle = tri.color;
+            ctx.strokeStyle = '#333';
+            ctx.lineWidth = 2;
+
+            ctx.beginPath();
+            ctx.moveTo(w / 2, h / 4);
+            ctx.lineTo(w / 4, 3 * h / 4);
+            ctx.lineTo(3 * w / 4, 3 * h / 4);
+            ctx.closePath();
+            ctx.fill();
+            ctx.stroke();
+        }
+
+        function drawQuadrilateral(canvas, quad) {
+            if (!canvas) return;
+            const ctx = canvas.getContext('2d');
+            const w = canvas.offsetWidth;
+            const h = canvas.offsetHeight;
+
+            canvas.width = w;
+            canvas.height = h;
+
+            ctx.fillStyle = '#17A2B8';
+            ctx.strokeStyle = '#333';
+            ctx.lineWidth = 2;
+
+            ctx.beginPath();
+            ctx.moveTo(w / 4, h / 3);
+            ctx.lineTo(3 * w / 4, h / 3);
+            ctx.lineTo(3 * w / 4, 2 * h / 3);
+            ctx.lineTo(w / 4, 2 * h / 3);
+            ctx.closePath();
+            ctx.fill();
+            ctx.stroke();
+        }
+
+        function generatePracticeProblem() {
+            const problem = quadrilaterals[Math.floor(Math.random() * quadrilaterals.length)];
+            S.currentProblem = problem;
+
+            const canvas = document.getElementById('practiceCanvas');
+            canvas.width = canvas.offsetWidth;
+            canvas.height = canvas.offsetHeight;
+            drawQuadrilateral(canvas, problem);
+
+            const optionsContainer = document.getElementById('practiceOptions');
+            optionsContainer.innerHTML = '';
+            ['quadrilateral', 'parallelogram', 'rectangle', 'rhombus', 'square', 'trapezoid'].forEach(opt => {
+                const btn = document.createElement('button');
+                btn.className = 'toggle-btn';
+                btn.textContent = opt.charAt(0).toUpperCase() + opt.slice(1);
+                btn.onclick = () => toggleOption(btn);
+                optionsContainer.appendChild(btn);
+            });
+
+            S.selectedOptions = [];
+        }
+
+        function toggleOption(btn) {
+            btn.classList.toggle('active');
+            const optName = btn.textContent.toLowerCase();
+            if (btn.classList.contains('active')) {
+                if (!S.selectedOptions.includes(optName)) S.selectedOptions.push(optName);
+            } else {
+                S.selectedOptions = S.selectedOptions.filter(o => o !== optName);
+            }
+        }
+
+        function checkPracticeAnswer() {
+            const correct = S.selectedOptions.sort().join(',') === S.currentProblem.types.sort().join(',');
+            S.practiceTotal++;
+            if (correct) {
+                S.practiceScore++;
+                showFB('Correct! ' + S.currentProblem.name + ' is: ' + S.currentProblem.types.join(', '), 'correct');
+            } else {
+                showFB('Try again! ' + S.currentProblem.name + ' is: ' + S.currentProblem.types.join(', '), 'incorrect');
+            }
+
+            document.getElementById('practiceScoreDisplay').textContent = S.practiceScore;
+            document.getElementById('practiceTotalDisplay').textContent = S.practiceTotal;
+
+            setTimeout(generatePracticeProblem, 1200);
+        }
+
+        function generatePlayProblem() {
+            const clues = [
+                { clue: 'I have 4 sides and 4 right angles. Two of my opposite sides are 5 cm, and two are 3 cm.', answer: 'rectangle' },
+                { clue: 'I have 4 equal sides and 4 right angles. All my sides are 4 cm.', answer: 'square' },
+                { clue: 'I have 3 sides. One of my angles is 90 degrees.', answer: 'triangle' },
+                { clue: 'I have 4 equal sides but no right angles.', answer: 'rhombus' }
+            ];
+            S.currentPlayProblem = clues[Math.floor(Math.random() * clues.length)];
+            document.getElementById('playClue').textContent = S.currentPlayProblem.clue;
+        }
+
+        function checkPlayGuess(shape) {
+            if (shape === S.currentPlayProblem.answer) {
+                S.playScore++;
+                showFB('Correct! That\'s the answer!', 'correct');
+            } else {
+                showFB('Try again!', 'incorrect');
+            }
+
+            document.getElementById('playScoreDisplay').textContent = S.playScore;
+            setTimeout(generatePlayProblem, 1200);
+        }
+
+        document.querySelectorAll('.vinculum-mode-tab').forEach(function(tab) {
+            tab.addEventListener('click', function() {
+                var mode = this.dataset.mode;
+                S.mode = mode;
+                document.querySelectorAll('.vinculum-mode-tab').forEach(function(t) { t.className = 'vinculum-mode-tab'; });
+                this.classList.add(mode === 'explore' ? 'active-explore' : mode === 'practice' ? 'active-practice' : 'active-play');
+                document.querySelectorAll('.content').forEach(function(c) { c.classList.remove('active'); });
+                document.getElementById(mode).classList.add('active');
+
+                if (mode === 'explore') initShapeGallery();
+                if (mode === 'practice') setTimeout(generatePracticeProblem, 100);
+                if (mode === 'play') generatePlayProblem();
+            });
+        });
+
+
+        window.addEventListener('load', () => {
+            initShapeGallery();
+            generatePracticeProblem();
+            generatePlayProblem();
+        });
+    </script>
+</body>
+</html>

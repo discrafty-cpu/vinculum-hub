@@ -1,0 +1,1415 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>VINCULUM — Odd & Even Explorer</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="../../vinculum-core.css">
+<style>
+    /* Theme system loaded from vinculum-core.css */
+.vinculum-rtm-btn .rtm-icon{font-size:14px;}
+
+/* ═══ FOCUS VISIBLE (Keyboard Navigation) ═══ */
+*:focus-visible {
+  outline:2px solid var(--cyan);outline-offset:2px;border-radius:4px;
+}
+.sr-only {
+  position:absolute;width:1px;height:1px;padding:0;margin:-1px;
+  overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0;
+}
+
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: 'Inter', sans-serif;
+      background-color: var(--bg);
+      color: var(--text);
+      height: 100vh;
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+    }
+
+    /* Header */
+    .vinculum-back-btn {
+  display:inline-block;padding:6px 12px;border-radius:8px;
+  border:1px solid var(--border);background:transparent;
+  color:var(--text2);font-size:13px;font-family:inherit;
+  cursor:pointer;transition:all 0.2s;text-decoration:none;
+}
+.vinculum-back-btn:hover { background:var(--card); color:var(--cyan); }
+.vinculum-header {
+      background: var(--bg2);
+      border-bottom: 1px solid var(--border);
+      padding: 16px 24px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .vinculum-header-left {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+    }
+
+    .title {
+      font-size: 20px;
+      font-weight: 700;
+      background: var(--grad);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+
+    .badges {
+      display: flex;
+      gap: 8px;
+    }
+
+    .badge {
+      background: var(--card);
+      border: 1px solid var(--border);
+      color: var(--cyan);
+      padding: 4px 10px;
+      border-radius: 6px;
+      font-size: 11px;
+      font-weight: 600;
+      font-family: 'JetBrains Mono', monospace;
+    }
+
+    .badge.tag {
+      color: var(--text2);
+    }
+
+    /* Tabs & Controls */
+    .controls {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 12px 24px;
+      border-bottom: 1px solid var(--border);
+      background: var(--bg);
+    }
+
+    .tabs {
+      display: flex;
+      gap: 8px;
+    }
+
+    .tab {
+      padding: 8px 16px;
+      border: none;
+      background: transparent;
+      color: var(--text2);
+      cursor: pointer;
+      border-bottom: 2px solid transparent;
+      font-size: 14px;
+      font-weight: 500;
+      transition: all 0.3s ease;
+    }
+
+    .tab.active {
+      color: var(--cyan);
+      border-bottom-color: var(--cyan);
+    }
+
+    .tab:hover {
+      color: var(--text);
+    }
+
+    .difficulty {
+      display: flex;
+      gap: 8px;
+    }
+
+    .vinculum-diff-btn {
+      padding: 6px 12px;
+      border: 1px solid var(--border);
+      background: var(--card);
+      color: var(--text2);
+      border-radius: 4px;
+      font-size: 12px;
+      font-weight: 500;
+      cursor: pointer;
+      transition: all 0.2s ease;
+    }
+
+    .diff-btn.active {
+      background: var(--cyan);
+      color: var(--bg);
+      border-color: var(--cyan);
+    }
+
+    .diff-btn:hover:not(.active) {
+      border-color: var(--cyan);
+      color: var(--cyan);
+    }
+
+    /* Main Content */
+    .main {
+      display: flex;
+      flex: 1;
+      overflow: hidden;
+    }
+
+    .workspace {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      padding: 24px;
+      overflow-y: auto;
+    }
+
+    .panel {
+      width: 280px;
+      background: var(--card);
+      border-left: 1px solid var(--border);
+      padding: 20px;
+      overflow-y: auto;
+    }
+
+    /* Explore Mode */
+    .explore-section {
+      margin-bottom: 24px;
+    }
+
+    .explore-title {
+      font-size: 14px;
+      font-weight: 600;
+      color: var(--text2);
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      margin-bottom: 12px;
+    }
+
+    .number-picker {
+      display: grid;
+      grid-template-columns: repeat(5, 1fr);
+      gap: 8px;
+      margin-bottom: 24px;
+    }
+
+    .num-btn {
+      aspect-ratio: 1;
+      border: 2px solid var(--border);
+      background: var(--card);
+      color: var(--text);
+      border-radius: 8px;
+      font-size: 16px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .num-btn:hover {
+      border-color: var(--cyan);
+    }
+
+    .num-btn.selected {
+      background: var(--cyan);
+      color: var(--bg);
+      border-color: var(--cyan);
+    }
+
+    /* Dot Display */
+    .dot-workspace {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 24px;
+      height: 300px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin-bottom: 16px;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .dots-container {
+      display: flex;
+      gap: 32px;
+      align-items: flex-start;
+      position: relative;
+      height: 100%;
+      width: 100%;
+    }
+
+    .dot-column {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      align-items: center;
+    }
+
+    .dot {
+      width: 32px;
+      height: 32px;
+      border-radius: 50%;
+      background: var(--purple);
+      box-shadow: 0 4px 12px rgba(179, 136, 255, 0.4);
+      animation: dotPop 0.5s ease-out;
+    }
+
+    @keyframes dotPop {
+      0% {
+        transform: scale(0);
+        opacity: 0;
+      }
+      70% {
+        transform: scale(1.1);
+      }
+      100% {
+        transform: scale(1);
+        opacity: 1;
+      }
+    }
+
+    .dot.move-left {
+      animation: moveLeft 0.8s ease-out forwards;
+    }
+
+    .dot.move-right {
+      animation: moveRight 0.8s ease-out forwards;
+    }
+
+    @keyframes moveLeft {
+      from {
+        transform: translateX(0);
+      }
+      to {
+        transform: translateX(-80px);
+      }
+    }
+
+    @keyframes moveRight {
+      from {
+        transform: translateX(0);
+      }
+      to {
+        transform: translateX(80px);
+      }
+    }
+
+    .result-label {
+      position: absolute;
+      top: 16px;
+      right: 16px;
+      padding: 8px 16px;
+      border-radius: 20px;
+      font-weight: 600;
+      font-size: 14px;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      animation: slideIn 0.4s ease-out;
+    }
+
+    .result-label.even {
+      background: rgba(0, 230, 118, 0.2);
+      color: var(--green);
+      border: 1px solid var(--green);
+    }
+
+    .result-label.odd {
+      background: rgba(255, 59, 139, 0.2);
+      color: var(--pink);
+      border: 1px solid var(--pink);
+    }
+
+    @keyframes slideIn {
+      from {
+        transform: translateX(20px);
+        opacity: 0;
+      }
+      to {
+        transform: translateX(0);
+        opacity: 1;
+      }
+    }
+
+    .celebration {
+      position: absolute;
+      font-size: 32px;
+      animation: celebrate 1s ease-out forwards;
+    }
+
+    @keyframes celebrate {
+      0% {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+      }
+      100% {
+        opacity: 0;
+        transform: translateY(-60px) scale(1.5);
+      }
+    }
+
+    /* Equation */
+    .equation-box {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 16px;
+      text-align: center;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 18px;
+      font-weight: 600;
+      color: var(--cyan);
+      margin-bottom: 16px;
+      min-height: 50px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .pattern-toggle {
+      display: flex;
+      gap: 8px;
+      margin-top: 12px;
+    }
+
+    .toggle-btn {
+      flex: 1;
+      padding: 8px;
+      border: 1px solid var(--border);
+      background: var(--card);
+      color: var(--text2);
+      border-radius: 6px;
+      font-size: 12px;
+      font-weight: 500;
+      cursor: pointer;
+      transition: all 0.2s ease;
+    }
+
+    .toggle-btn.active {
+      background: var(--cyan);
+      color: var(--bg);
+      border-color: var(--cyan);
+    }
+
+    .pattern-strip {
+      display: grid;
+      grid-template-columns: repeat(10, 1fr);
+      gap: 6px;
+      margin-top: 12px;
+    }
+
+    .pattern-number {
+      aspect-ratio: 1;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border-radius: 6px;
+      font-size: 12px;
+      font-weight: 600;
+      background: var(--card2);
+      color: var(--text);
+      border: 1px solid var(--border);
+    }
+
+    .pattern-number.even {
+      background: rgba(0, 212, 255, 0.2);
+      color: var(--cyan);
+      border-color: var(--cyan);
+    }
+
+    .pattern-number.odd {
+      background: rgba(255, 59, 139, 0.2);
+      color: var(--pink);
+      border-color: var(--pink);
+    }
+
+    /* Practice Mode */
+    .practice-question {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 24px;
+      margin-bottom: 24px;
+    }
+
+    .practice-title {
+      font-size: 16px;
+      font-weight: 600;
+      margin-bottom: 16px;
+      color: var(--cyan);
+    }
+
+    .question-content {
+      margin-bottom: 20px;
+    }
+
+    .number-display {
+      font-size: 48px;
+      font-weight: 700;
+      text-align: center;
+      color: var(--cyan);
+      margin-bottom: 16px;
+    }
+
+    .dots-small {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 12px;
+      justify-content: center;
+      margin-bottom: 16px;
+    }
+
+    .dot-small {
+      width: 20px;
+      height: 20px;
+      border-radius: 50%;
+      background: var(--purple);
+    }
+
+    .choices {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+      margin-top: 16px;
+    }
+
+    .choice-btn {
+      padding: 12px;
+      border: 2px solid var(--border);
+      background: var(--card2);
+      color: var(--text);
+      border-radius: 8px;
+      font-size: 14px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.2s ease;
+    }
+
+    .choice-btn:hover {
+      border-color: var(--cyan);
+    }
+
+    .choice-btn.selected {
+      background: var(--cyan);
+      color: var(--bg);
+      border-color: var(--cyan);
+    }
+
+    .choice-btn.correct {
+      background: var(--green);
+      color: var(--bg);
+      border-color: var(--green);
+    }
+
+    .choice-btn.incorrect {
+      background: var(--pink);
+      color: var(--text);
+      border-color: var(--pink);
+    }
+
+    .feedback {
+      margin-top: 12px;
+      padding: 12px;
+      border-radius: 6px;
+      font-size: 14px;
+      font-weight: 500;
+      text-align: center;
+    }
+
+    .feedback.correct {
+      background: rgba(0, 230, 118, 0.2);
+      color: var(--green);
+      border: 1px solid var(--green);
+    }
+
+    .feedback.incorrect {
+      background: rgba(255, 59, 139, 0.2);
+      color: var(--pink);
+      border: 1px solid var(--pink);
+    }
+
+    .next-btn {
+      margin-top: 16px;
+      padding: 10px 16px;
+      background: var(--cyan);
+      color: var(--bg);
+      border: none;
+      border-radius: 6px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      width: 100%;
+    }
+
+    .next-btn:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 4px 12px rgba(0, 212, 255, 0.3);
+    }
+
+    .next-btn:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
+
+    /* Play Mode */
+    .play-container {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      height: 100%;
+      gap: 32px;
+    }
+
+    .timer {
+      width: 120px;
+      height: 120px;
+      border-radius: 50%;
+      background: conic-gradient(var(--cyan) 0%, var(--cyan) var(--timer-percent, 0%), var(--card) var(--timer-percent, 0%), var(--card) 100%);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 48px;
+      font-weight: 700;
+      color: var(--cyan);
+      border: 2px solid var(--border);
+      position: relative;
+    }
+
+    .play-number {
+      font-size: 64px;
+      font-weight: 700;
+      color: var(--cyan);
+    }
+
+    .play-choices {
+      display: flex;
+      gap: 20px;
+    }
+
+    .play-choice {
+      padding: 16px 32px;
+      border: 2px solid var(--border);
+      background: var(--card);
+      color: var(--text);
+      border-radius: 8px;
+      font-size: 18px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      min-width: 120px;
+    }
+
+    .play-choice:hover:not(:disabled) {
+      border-color: var(--cyan);
+    }
+
+    .play-choice.selected {
+      background: var(--cyan);
+      color: var(--bg);
+      border-color: var(--cyan);
+    }
+
+    .play-choice:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
+
+    .stats {
+      display: flex;
+      gap: 32px;
+      font-size: 18px;
+      font-weight: 600;
+    }
+
+    .stat {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .stat-label {
+      color: var(--text2);
+      font-size: 12px;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+    }
+
+    .stat-value {
+      color: var(--cyan);
+      font-size: 28px;
+    }
+
+    .play-screen-over {
+      text-align: center;
+      display: flex;
+      flex-direction: column;
+      gap: 24px;
+    }
+
+    .final-score {
+      font-size: 36px;
+      font-weight: 700;
+      color: var(--cyan);
+    }
+
+    .final-stats {
+      display: flex;
+      gap: 24px;
+      justify-content: center;
+    }
+
+    .restart-btn {
+      padding: 12px 24px;
+      background: var(--cyan);
+      color: var(--bg);
+      border: none;
+      border-radius: 6px;
+      font-weight: 600;
+      font-size: 14px;
+      cursor: pointer;
+      transition: all 0.2s ease;
+    }
+
+    .restart-btn:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 4px 12px rgba(0, 212, 255, 0.3);
+    }
+
+    /* Panel */
+    .panel-section {
+      margin-bottom: 24px;
+    }
+
+    .panel-title {
+      font-size: 12px;
+      font-weight: 600;
+      color: var(--cyan);
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      margin-bottom: 12px;
+    }
+
+    .vocab-item {
+      margin-bottom: 12px;
+    }
+
+    .vocab-term {
+      font-weight: 600;
+      color: var(--text);
+      margin-bottom: 4px;
+      font-size: 13px;
+    }
+
+    .vocab-def {
+      font-size: 12px;
+      color: var(--text2);
+      line-height: 1.4;
+    }
+
+    .rule-box {
+      background: var(--card2);
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      padding: 12px;
+      font-size: 12px;
+      color: var(--text2);
+      line-height: 1.5;
+    }
+
+    .example-item {
+      padding: 8px;
+      background: var(--card2);
+      border-left: 2px solid var(--cyan);
+      border-radius: 4px;
+      margin-bottom: 8px;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 12px;
+    }
+
+    /* Scrollbar */
+    ::-webkit-scrollbar {
+      width: 8px;
+    }
+
+    ::-webkit-scrollbar-track {
+      background: transparent;
+    }
+
+    ::-webkit-scrollbar-thumb {
+      background: var(--border);
+      border-radius: 4px;
+    }
+
+    ::-webkit-scrollbar-thumb:hover {
+      background: var(--muted);
+    }
+
+    /* Responsive */
+    @media (max-width: 1024px) {
+      .main {
+        flex-direction: column;
+      }
+
+      .panel {
+        width: 100%;
+        border-left: none;
+        border-top: 1px solid var(--border);
+        max-height: 200px;
+      }
+
+      .workspace {
+        flex: 1;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="vinculum-header">
+    <div class="vinculum-header-left">
+      
+      <a class="vinculum-back-btn" href="../../VINCULUM-Hub.html" style="text-decoration:none;">◀ Hub</a>
+      <div class="title">VINCULUM — Odd & Even Explorer</div>
+      <div class="badges">
+        <div class="badge">2.OA</div>
+        <div class="badge tag">2.OA.C.3</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="controls">
+    <div class="tabs">
+      <button class="tab active" data-mode="explore">Explore</button>
+      <button class="tab" data-mode="practice">Practice</button>
+      <button class="tab" data-mode="play">Play</button>
+    </div>
+    <div class="difficulty" id="difficultyContainer" style="display: none;">
+      <button class="vinculum-diff-btn active" data-difficulty="emergent">Emergent</button>
+      <button class="vinculum-diff-btn" data-difficulty="proficient">Proficient</button>
+      <button class="vinculum-diff-btn" data-difficulty="advanced">Advanced</button>
+    </div>
+  </div>
+
+  <div class="main">
+    <div class="workspace" role="main" id="workspace"></div>
+    <div class="panel" id="panel"></div>
+  </div>
+
+<div class="feedback" id="feedback"></div>
+  <script>
+    const S = {
+      mode: 'explore',
+      difficulty: 'emergent',
+      selectedNumber: null,
+      showPattern: false,
+      practiceQuestion: null,
+      practiceAnswered: false,
+      playStarted: false,
+      playNumber: null,
+      playTimeLeft: 4,
+      playScore: 0,
+      playStreak: 0,
+      playTotal: 0,
+      playHistory: [],
+      dotsAnimating: false,
+      showDotsInPractice: false,
+    };
+
+    // Utility Functions
+    function isEven(n) {
+      return n % 2 === 0;
+    }
+
+    function getRandomNumber(min, max, difficulty) {
+      if (difficulty === 'emergent') {
+        return Math.floor(Math.random() * 10) + 1;
+      } else if (difficulty === 'proficient') {
+        return Math.floor(Math.random() * 20) + 1;
+      } else {
+        return Math.floor(Math.random() * 100) + 1;
+      }
+    }
+
+    function generatePracticeQuestion(difficulty) {
+      const types = ['classify', 'equation'];
+      const type = types[Math.floor(Math.random() * types.length)];
+
+      let num;
+      if (type === 'equation') {
+        num = getRandomNumber(1, 20, difficulty);
+        while (!isEven(num)) num = getRandomNumber(1, 20, difficulty);
+      } else {
+        num = getRandomNumber(1, 20, difficulty);
+      }
+
+      return {
+        type,
+        number: num,
+        answered: false,
+        correct: false,
+      };
+    }
+
+    function createDotsArray(n) {
+      return Array.from({ length: n }, (_, i) => i);
+    }
+
+    function addCelebration(x, y, emoji) {
+      const el = document.createElement('div');
+      el.className = 'celebration';
+      el.textContent = emoji;
+      el.style.left = x + 'px';
+      el.style.top = y + 'px';
+      document.querySelector('.dot-workspace')?.appendChild(el);
+      setTimeout(() => el.remove(), 1000);
+    }
+
+    function renderExplore() {
+      const html = `
+        <div class="explore-section">
+          <div class="explore-title">Pair Parade</div>
+          <div class="number-picker">
+            ${Array.from({ length: 20 }, (_, i) => i + 1).map(num => `
+              <button class="num-btn ${S.selectedNumber === num ? 'selected' : ''}"
+                      onclick="selectNumber(${num})">
+                ${num}
+              </button>
+            `).join('')}
+          </div>
+        </div>
+
+        ${S.selectedNumber ? `
+          <div class="dot-workspace" id="dotWorkspace">
+            <div class="dots-container" id="dotsContainer">
+              <div class="dot-column" id="leftColumn"></div>
+              <div class="dot-column" id="rightColumn"></div>
+            </div>
+            <div class="result-label ${isEven(S.selectedNumber) ? 'even' : 'odd'}"
+                 id="resultLabel">
+              ${isEven(S.selectedNumber) ? '✓ Even' : '○ Odd'}
+            </div>
+          </div>
+
+          ${isEven(S.selectedNumber) ? `
+            <div class="equation-box">
+              ${S.selectedNumber} = ${S.selectedNumber / 2} + ${S.selectedNumber / 2}
+            </div>
+          ` : ''}
+
+          <div class="pattern-toggle">
+            <button class="toggle-btn ${!S.showPattern ? 'active' : ''}"
+                    onclick="togglePattern(false)">
+              Dots
+            </button>
+            <button class="toggle-btn ${S.showPattern ? 'active' : ''}"
+                    onclick="togglePattern(true)">
+              Pattern
+            </button>
+          </div>
+
+          ${S.showPattern ? `
+            <div class="pattern-strip">
+              ${Array.from({ length: 20 }, (_, i) => i + 1).map(num => `
+                <div class="pattern-number ${isEven(num) ? 'even' : 'odd'}">
+                  ${num}
+                </div>
+              `).join('')}
+            </div>
+          ` : ''}
+        ` : '<div style="text-align: center; color: var(--text2); padding: 32px;">Select a number to start</div>'}
+      `;
+
+      document.querySelector('#workspace').innerHTML = html;
+
+      if (S.selectedNumber) {
+        setTimeout(animateDots, 100);
+      }
+    }
+
+    function renderPractice() {
+      if (!S.practiceQuestion) {
+        S.practiceQuestion = generatePracticeQuestion(S.difficulty);
+      }
+
+      const q = S.practiceQuestion;
+      let html = '';
+
+      if (q.type === 'classify') {
+        html = `
+          <div class="practice-question">
+            <div class="practice-title">Is it Odd or Even?</div>
+            <div class="question-content">
+              <div class="number-display">${q.number}</div>
+              ${(S.difficulty === 'emergent' || S.showDotsInPractice) ? `
+                <div class="dots-small">
+                  ${Array.from({ length: q.number }, (_, i) => `
+                    <div class="dot-small"></div>
+                  `).join('')}
+                </div>
+              ` : ''}
+              ${S.difficulty === 'proficient' && !S.showDotsInPractice ? `
+                <button class="next-btn" onclick="showPracticeDots()" style="background: var(--muted); margin-top: 0;">
+                  Show Dots
+                </button>
+              ` : ''}
+            </div>
+            <div class="choices">
+              <button class="choice-btn ${q.answered && S.selectedAnswer === 'odd' ? (q.number % 2 === 1 ? 'correct' : 'incorrect') : ''}"
+                      onclick="answerPractice('odd')"
+                      ${q.answered ? 'disabled' : ''}>
+                Odd
+              </button>
+              <button class="choice-btn ${q.answered && S.selectedAnswer === 'even' ? (q.number % 2 === 0 ? 'correct' : 'incorrect') : ''}"
+                      onclick="answerPractice('even')"
+                      ${q.answered ? 'disabled' : ''}>
+                Even
+              </button>
+            </div>
+            ${q.answered ? `
+              <div class="feedback ${(S.selectedAnswer === 'odd' && q.number % 2 === 1) || (S.selectedAnswer === 'even' && q.number % 2 === 0) ? 'correct' : 'incorrect'}">
+                ${(S.selectedAnswer === 'odd' && q.number % 2 === 1) || (S.selectedAnswer === 'even' && q.number % 2 === 0) ? '✓ Correct!' : '✗ Try again!'}
+              </div>
+              <button class="next-btn" onclick="nextPractice()">Next Question</button>
+            ` : ''}
+          </div>
+        `;
+      } else if (q.type === 'equation') {
+        const half = q.number / 2;
+        const choices = [
+          { label: `${q.number} = ${half} + ${half}`, correct: true },
+          { label: `${q.number} = ${half} + ${half + 1}`, correct: false },
+          { label: `${q.number} = ${half - 1} + ${half}`, correct: false },
+          { label: `${q.number} = ${half} + ${half + 2}`, correct: false },
+        ].sort(() => Math.random() - 0.5);
+
+        html = `
+          <div class="practice-question">
+            <div class="practice-title">Write the Doubles Equation</div>
+            <div class="question-content">
+              <div class="number-display">${q.number}</div>
+              <p style="text-align: center; color: var(--text2); margin-bottom: 16px;">
+                Which equation is correct?
+              </p>
+            </div>
+            <div class="choices" style="grid-template-columns: 1fr;">
+              ${choices.map((choice, idx) => `
+                <button class="choice-btn ${q.answered && S.selectedAnswer === idx ? (choice.correct ? 'correct' : 'incorrect') : ''}"
+                        onclick="answerEquation(${idx}, ${choice.correct})"
+                        ${q.answered ? 'disabled' : ''}>
+                  ${choice.label}
+                </button>
+              `).join('')}
+            </div>
+            ${q.answered ? `
+              <div class="feedback ${S.isCorrectAnswer ? 'correct' : 'incorrect'}">
+                ${S.isCorrectAnswer ? '✓ Perfect!' : '✗ Not quite!'}
+              </div>
+              <button class="next-btn" onclick="nextPractice()">Next Question</button>
+            ` : ''}
+          </div>
+        `;
+      }
+
+      document.querySelector('#workspace').innerHTML = html;
+    }
+
+    function renderPlay() {
+      if (!S.playStarted) {
+        // Start screen
+        const html = `
+          <div class="play-container">
+            <div style="text-align: center;">
+              <div style="font-size: 32px; font-weight: 700; color: var(--cyan); margin-bottom: 12px;">
+                Rapid Fire
+              </div>
+              <div style="color: var(--text2); margin-bottom: 24px;">
+                Classify numbers as fast as you can!
+              </div>
+            </div>
+            <button class="next-btn" onclick="startPlay()" style="width: auto; padding: 12px 32px;">
+              Start Game
+            </button>
+          </div>
+        `;
+        document.querySelector('#workspace').innerHTML = html;
+      } else if (S.playTotal < 10) {
+        // Game screen
+        if (!S.playNumber) {
+          S.playNumber = getRandomNumber(1, 20, 'proficient');
+          S.playTimeLeft = 4;
+          S.selectedPlayAnswer = null;
+          updatePlayTimer();
+        }
+
+        const html = `
+          <div class="play-container">
+            <div class="timer" id="timer" style="--timer-percent: ${(4 - S.playTimeLeft) * 25}%;">
+              ${S.playTimeLeft}
+            </div>
+            <div class="play-number">${S.playNumber}</div>
+            <div class="play-choices">
+              <button class="play-choice ${S.selectedPlayAnswer === 'odd' ? 'selected' : ''}"
+                      onclick="playAnswer('odd')"
+                      ${S.selectedPlayAnswer ? 'disabled' : ''}>
+                Odd
+              </button>
+              <button class="play-choice ${S.selectedPlayAnswer === 'even' ? 'selected' : ''}"
+                      onclick="playAnswer('even')"
+                      ${S.selectedPlayAnswer ? 'disabled' : ''}>
+                Even
+              </button>
+            </div>
+            <div class="stats">
+              <div class="stat">
+                <div class="stat-label">Score</div>
+                <div class="stat-value">${S.playScore}</div>
+              </div>
+              <div class="stat">
+                <div class="stat-label">Streak</div>
+                <div class="stat-value">${S.playStreak}</div>
+              </div>
+            </div>
+          </div>
+        `;
+        document.querySelector('#workspace').innerHTML = html;
+      } else {
+        // Game over screen
+        const html = `
+          <div class="play-container">
+            <div class="play-screen-over">
+              <div>
+                <div style="font-size: 24px; color: var(--text2); margin-bottom: 8px;">
+                  Game Over!
+                </div>
+                <div class="final-score">${S.playScore} Points</div>
+              </div>
+              <div class="final-stats">
+                <div class="stat">
+                  <div class="stat-label">Correct</div>
+                  <div class="stat-value">${S.playHistory.filter(h => h.correct).length}/10</div>
+                </div>
+                <div class="stat">
+                  <div class="stat-label">Best Streak</div>
+                  <div class="stat-value">${Math.max(...S.playHistory.map(h => h.streak), 0)}</div>
+                </div>
+              </div>
+              <button class="restart-btn" onclick="resetPlay()">Play Again</button>
+            </div>
+          </div>
+        `;
+        document.querySelector('#workspace').innerHTML = html;
+      }
+    }
+
+    function renderPanel() {
+      let html = '';
+
+      if (S.mode === 'explore') {
+        html = `
+          <div class="panel-section">
+            <div class="panel-title">Vocabulary</div>
+            <div class="vocab-item">
+              <div class="vocab-term">Odd</div>
+              <div class="vocab-def">A number that cannot be split into two equal groups. Has one left over.</div>
+            </div>
+            <div class="vocab-item">
+              <div class="vocab-term">Even</div>
+              <div class="vocab-def">A number that can be split into two equal groups perfectly.</div>
+            </div>
+            <div class="vocab-item">
+              <div class="vocab-term">Pair</div>
+              <div class="vocab-def">Two things grouped together.</div>
+            </div>
+            <div class="vocab-item">
+              <div class="vocab-term">Doubles</div>
+              <div class="vocab-def">An equation where the same number is added twice.</div>
+            </div>
+          </div>
+
+          <div class="panel-section">
+            <div class="panel-title">Pattern Rule</div>
+            <div class="rule-box">
+              Numbers alternate between even and odd. Watch the pattern: 1 (odd), 2 (even), 3 (odd), 4 (even)...
+            </div>
+          </div>
+        `;
+      } else if (S.mode === 'practice') {
+        html = `
+          <div class="panel-section">
+            <div class="panel-title">Tip</div>
+            <div class="rule-box">
+              Look for pairs! Even numbers make perfect pairs. Odd numbers always have one left over.
+            </div>
+          </div>
+
+          <div class="panel-section">
+            <div class="panel-title">Examples</div>
+            <div class="example-item">6 is even (3 + 3)</div>
+            <div class="example-item">7 is odd (3 + 3 + 1)</div>
+            <div class="example-item">10 is even (5 + 5)</div>
+            <div class="example-item">15 is odd (7 + 7 + 1)</div>
+          </div>
+        `;
+      } else if (S.mode === 'play') {
+        html = `
+          <div class="panel-section">
+            <div class="panel-title">How to Play</div>
+            <div class="rule-box">
+              You have 4 seconds per question. Click Odd or Even as fast as you can. Answer all 10 questions to finish!
+            </div>
+          </div>
+
+          <div class="panel-section">
+            <div class="panel-title">Scoring</div>
+            <div class="example-item">Correct: +10 pts</div>
+            <div class="example-item">Streak x2: Double points</div>
+          </div>
+        `;
+      }
+
+      document.querySelector('#panel').innerHTML = html;
+    }
+
+    function render() {
+      if (S.mode === 'explore') renderExplore();
+      else if (S.mode === 'practice') renderPractice();
+      else if (S.mode === 'play') renderPlay();
+
+      renderPanel();
+      updateUI();
+    }
+
+    function updateUI() {
+      document.querySelectorAll('.tab').forEach(tab => {
+        tab.classList.toggle('active', tab.dataset.mode === S.mode);
+      });
+
+      const diffContainer = document.querySelector('#difficultyContainer');
+      if (S.mode === 'practice') {
+        diffContainer.style.display = 'flex';
+        document.querySelectorAll('.diff-btn').forEach(btn => {
+          btn.classList.toggle('active', btn.dataset.difficulty === S.difficulty);
+        });
+      } else {
+        diffContainer.style.display = 'none';
+      }
+    }
+
+    // Mode Switching
+    document.querySelectorAll('.tab').forEach(tab => {
+      tab.addEventListener('click', (e) => {
+        S.mode = e.target.dataset.mode;
+        S.selectedNumber = null;
+        S.showPattern = false;
+        S.practiceQuestion = null;
+        S.practiceAnswered = false;
+        S.playStarted = false;
+        S.playNumber = null;
+        S.playScore = 0;
+        S.playStreak = 0;
+        S.playTotal = 0;
+        S.playHistory = [];
+        S.showDotsInPractice = false;
+        render();
+      });
+    });
+
+    // Difficulty Switching
+    document.querySelectorAll('.diff-btn').forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        S.difficulty = e.target.dataset.difficulty;
+        S.practiceQuestion = null;
+        S.practiceAnswered = false;
+        S.showDotsInPractice = false;
+        render();
+      });
+    });
+
+    // Explore Mode Functions
+    function selectNumber(n) {
+      S.selectedNumber = n;
+      S.dotsAnimating = true;
+      render();
+    }
+
+    function togglePattern(show) {
+      S.showPattern = show;
+      render();
+    }
+
+    function animateDots() {
+      const n = S.selectedNumber;
+      const left = Math.floor(n / 2);
+      const right = Math.ceil(n / 2);
+
+      const leftCol = document.querySelector('#leftColumn');
+      const rightCol = document.querySelector('#rightColumn');
+
+      if (!leftCol || !rightCol) return;
+
+      leftCol.innerHTML = '';
+      rightCol.innerHTML = '';
+
+      // Create dots
+      for (let i = 0; i < left; i++) {
+        const dot = document.createElement('div');
+        dot.className = 'dot move-left';
+        leftCol.appendChild(dot);
+      }
+
+      for (let i = 0; i < right; i++) {
+        const dot = document.createElement('div');
+        dot.className = 'dot move-right';
+        rightCol.appendChild(dot);
+      }
+
+      // Celebration
+      if (isEven(n)) {
+        setTimeout(() => {
+          const workspace = document.querySelector('.dot-workspace');
+          if (workspace) {
+            addCelebration(workspace.offsetWidth / 2, 50, '<svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor" style="vertical-align:-2px;"><polygon points="12,1 14,9 22,9 16,14 18,22 12,17 6,22 8,14 2,9 10,9" opacity="0.8"/></svg>');
+            addCelebration(workspace.offsetWidth / 2 - 40, 80, '✨');
+            addCelebration(workspace.offsetWidth / 2 + 40, 80, '<svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor" style="vertical-align:-2px;"><polygon points="12,2 15,9 22,9.5 17,14.5 18.5,22 12,18 5.5,22 7,14.5 2,9.5 9,9"/></svg>');
+          }
+        }, 600);
+      }
+
+      S.dotsAnimating = false;
+    }
+
+    // Practice Mode Functions
+    function showPracticeDots() {
+      S.showDotsInPractice = true;
+      render();
+    }
+
+    function answerPractice(answer) {
+      S.selectedAnswer = answer;
+      S.practiceQuestion.answered = true;
+      S.practiceQuestion.correct = (answer === 'odd' && S.practiceQuestion.number % 2 === 1) ||
+                                    (answer === 'even' && S.practiceQuestion.number % 2 === 0);
+      if (S.practiceQuestion.correct) {
+        showFB('✓ Correct!','correct');
+      } else {
+        showFB('Try again!','incorrect');
+      }
+      render();
+    }
+
+    function answerEquation(idx, correct) {
+      S.selectedAnswer = idx;
+      S.isCorrectAnswer = correct;
+      S.practiceQuestion.answered = true;
+      S.practiceQuestion.correct = correct;
+      if (correct) {
+        showFB('✓ Correct!','correct');
+      } else {
+        showFB('Try again!','incorrect');
+      }
+      render();
+    }
+
+    function nextPractice() {
+      S.practiceQuestion = null;
+      S.practiceAnswered = false;
+      S.showDotsInPractice = false;
+      render();
+    }
+
+    // Play Mode Functions
+    function startPlay() {
+      S.playStarted = true;
+      S.playTotal = 0;
+      S.playScore = 0;
+      S.playStreak = 0;
+      S.playHistory = [];
+      S.playNumber = null;
+      S.playTimeLeft = 4;
+      render();
+    }
+
+    function playAnswer(answer) {
+      S.selectedPlayAnswer = answer;
+      const correct = (answer === 'odd' && S.playNumber % 2 === 1) ||
+                      (answer === 'even' && S.playNumber % 2 === 0);
+
+      if (correct) {
+        showFB('✓ Correct!','correct');
+        S.playScore += 10 * (S.playStreak + 1);
+        S.playStreak++;
+      } else {
+        showFB('Try again!','incorrect');
+        S.playStreak = 0;
+      }
+
+      S.playHistory.push({
+        number: S.playNumber,
+        correct,
+        streak: S.playStreak,
+      });
+
+      S.playTotal++;
+
+      setTimeout(() => {
+        S.playNumber = null;
+        S.selectedPlayAnswer = null;
+        S.playTimeLeft = 4;
+        render();
+      }, 800);
+    }
+
+    function updatePlayTimer() {
+      if (S.playStarted && S.playNumber) {
+        const interval = setInterval(() => {
+          S.playTimeLeft--;
+          const timer = document.querySelector('#timer');
+          if (timer) {
+            timer.style.setProperty('--timer-percent', `${(4 - S.playTimeLeft) * 25}%`);
+            timer.textContent = Math.max(0, S.playTimeLeft);
+          }
+
+          if (S.playTimeLeft <= 0) {
+            clearInterval(interval);
+            playAnswer('skip');
+          }
+        }, 1000);
+      }
+    }
+
+    function resetPlay() {
+      S.playStarted = false;
+      S.playNumber = null;
+      S.playScore = 0;
+      S.playStreak = 0;
+      S.playTotal = 0;
+      S.playHistory = [];
+      S.playTimeLeft = 4;
+      render();
+    }
+
+    // Initial Render
+    render();
+  </script>
+<script src="../../vinculum-input.js"></script>
+<script src="../../vinculum-core.js"></script>
+<script src="../../vinculum-data.js"></script>
+<script src="../../vinculum-adaptive-hook.js"></script>
+<script src="../../vinculum-3reads.js"></script>
+<script src="../../vinculum-stories.js"></script>
+<script src="../../vinculum-feedback.js"></script>
+  <script src="../../vinculum-guide.js"></script>
+<script src="../../vinculum-identity.js"></script>
+<script src="../../vinculum-indigenous.js"></script>
+<script src="../../vinculum-dashboard.js"></script>
+<!-- Foundation loaded from vinculum-core.js -->
+</body>
+</html>

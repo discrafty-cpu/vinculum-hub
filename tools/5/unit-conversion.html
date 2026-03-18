@@ -1,0 +1,748 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>VINCULUM — Unit Conversion</title>
+  <link rel="stylesheet" href="../../vinculum-core.css">
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap');
+
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      font-family: 'Inter', sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      height: 100vh;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+      user-select: none;
+    }
+
+    .vinculum-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 12px 24px;
+      background: var(--bg2);
+      border-bottom: 1px solid var(--border);
+      flex-shrink: 0;
+    }
+    .vinculum-header-left {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+    }
+    .vinculum-back-btn {
+      padding: 6px 12px;
+      border-radius: 8px;
+      border: 1px solid var(--border);
+      background: transparent;
+      color: var(--text2);
+      font-size: 13px;
+      font-family: inherit;
+      cursor: pointer;
+      transition: all 0.2s;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .vinculum-back-btn:hover { background: var(--card); color: var(--cyan); }
+    .vinculum-title-group {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+    .vinculum-title {
+      font-size: 20px;
+      font-weight: 800;
+      background: var(--grad);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+    .vinculum-badges {
+      display: flex;
+      gap: 8px;
+    }
+    .badge {
+      font-size: 10px;
+      font-weight: 700;
+      padding: 4px 10px;
+      border-radius: 6px;
+      background: rgba(0,212,255,0.1);
+      color: var(--cyan);
+      border: 1px solid rgba(0,212,255,0.2);
+    }
+    .tag {
+      font-size: 10px;
+      font-weight: 600;
+      padding: 4px 8px;
+      border-radius: 5px;
+      background: rgba(0,212,255,0.08);
+      color: var(--cyan);
+      font-family: 'JetBrains Mono', monospace;
+    }
+    .vinculum-header-right {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+.vinculum-mode-tabs {
+      display: flex;
+      gap: 4px;
+      padding: 8px 24px;
+      background: var(--bg2);
+      border-bottom: 1px solid var(--border);
+      flex-shrink: 0;
+      align-items: center;
+    }
+    .vinculum-mode-tab {
+      padding: 8px 20px;
+      border-radius: 8px;
+      border: 1px solid transparent;
+      background: transparent;
+      color: var(--muted);
+      font-size: 13px;
+      font-weight: 600;
+      font-family: inherit;
+      cursor: pointer;
+      transition: all 0.2s;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .vinculum-mode-tab:hover { color: var(--text2); background: var(--card); }
+    .vinculum-mode-tab.active-explore { background: rgba(0,212,255,0.1); color: var(--cyan); border-color: rgba(0,212,255,0.3); }
+    .vinculum-mode-tab.active-practice { background: rgba(0,230,118,0.1); color: var(--green); border-color: rgba(0,230,118,0.3); }
+    .vinculum-mode-tab.active-play { background: rgba(255,59,139,0.1); color: var(--pink); border-color: rgba(255,59,139,0.3); }
+
+    .vinculum-diff-selector {
+      margin-left: auto;
+      display: flex;
+      gap: 4px;
+      align-items: center;
+    }
+    .vinculum-diff-label {
+      font-size: 11px;
+      color: var(--muted);
+      margin-right: 8px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+    }
+    .vinculum-diff-btn {
+      padding: 5px 12px;
+      border-radius: 6px;
+      border: 1px solid var(--border);
+      background: transparent;
+      color: var(--muted);
+      font-size: 11px;
+      font-weight: 600;
+      font-family: inherit;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+    .vinculum-diff-btn:hover { color: var(--text2); }
+    .vinculum-diff-btn.active { background: rgba(0,212,255,0.1); color: var(--cyan); border-color: rgba(0,212,255,0.3); }
+
+    .main {
+      flex: 1;
+      overflow-y: auto;
+      padding: 24px;
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 20px;
+    }
+    .main::-webkit-scrollbar {
+      width: 8px;
+    }
+    .main::-webkit-scrollbar-track {
+      background: var(--bg);
+    }
+    .main::-webkit-scrollbar-thumb {
+      background: var(--border);
+      border-radius: 4px;
+    }
+    .main::-webkit-scrollbar-thumb:hover {
+      background: var(--muted);
+    }
+
+    .mode { display: none; }
+    .mode.active { display: block; }
+
+    /* EXPLORE MODE */
+    .explore-section {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 20px;
+    }
+    .explore-title {
+      font-size: 14px;
+      font-weight: 700;
+      color: var(--cyan);
+      margin-bottom: 16px;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+    .conversion-chart {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 12px;
+      margin-bottom: 16px;
+    }
+    .chart-cell {
+      background: var(--card2);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 16px;
+      text-align: center;
+      cursor: pointer;
+      transition: all 0.3s;
+    }
+    .chart-cell:hover {
+      background: var(--bg2);
+      border-color: var(--cyan);
+      transform: translateY(-2px);
+    }
+    .chart-cell-value {
+      font-size: 24px;
+      font-weight: 800;
+      color: var(--cyan);
+      margin-bottom: 8px;
+    }
+    .chart-cell-unit {
+      font-size: 12px;
+      color: var(--muted);
+    }
+
+    .double-number-line {
+      background: var(--bg2);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 24px;
+      margin: 16px 0;
+    }
+    .dnl-row {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      margin: 16px 0;
+    }
+    .dnl-label {
+      min-width: 60px;
+      font-size: 12px;
+      font-weight: 600;
+      color: var(--text2);
+    }
+    .dnl-line {
+      flex: 1;
+      height: 2px;
+      background: var(--border);
+      position: relative;
+    }
+    .dnl-tick {
+      position: absolute;
+      width: 2px;
+      height: 8px;
+      background: var(--muted);
+      top: -3px;
+    }
+    .dnl-label-small {
+      font-size: 10px;
+      color: var(--muted);
+      position: absolute;
+      top: 12px;
+      transform: translateX(-50%);
+      left: 0;
+    }
+
+    /* PRACTICE MODE */
+    .practice-container {
+      max-width: 600px;
+    }
+    .problem-card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 24px;
+      margin-bottom: 20px;
+    }
+    .problem-statement {
+      font-size: 16px;
+      font-weight: 600;
+      color: var(--text);
+      margin-bottom: 20px;
+    }
+    .input-group {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 16px;
+      margin-bottom: 16px;
+    }
+    .input-field {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+    .input-label {
+      font-size: 12px;
+      font-weight: 600;
+      color: var(--text2);
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+    input[type="number"], input[type="text"], select {
+      padding: 10px 12px;
+      border-radius: 8px;
+      border: 1px solid var(--border);
+      background: var(--bg);
+      color: var(--text);
+      font-size: 14px;
+      font-family: inherit;
+      transition: all 0.2s;
+    }
+    input[type="number"]:focus, input[type="text"]:focus, select:focus {
+      outline: none;
+      border-color: var(--cyan);
+      background: var(--card2);
+    }
+    .submit-btn {
+      padding: 12px 24px;
+      border-radius: 8px;
+      border: 1px solid var(--green);
+      background: rgba(0,230,118,0.1);
+      color: var(--green);
+      font-size: 14px;
+      font-weight: 600;
+      font-family: inherit;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+    .submit-btn:hover {
+      background: rgba(0,230,118,0.2);
+      transform: translateY(-2px);
+    }
+    .submit-btn:active { transform: translateY(0); }
+
+    /* PLAY MODE */
+    .game-container {
+      max-width: 600px;
+      margin: 0 auto;
+    }
+    .game-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 20px;
+    }
+    .score-display {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 12px 20px;
+      font-size: 14px;
+      font-weight: 600;
+    }
+    .timer-display {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 12px 20px;
+      font-size: 14px;
+      font-weight: 600;
+      color: var(--pink);
+    }
+    .game-card {
+      background: var(--card);
+      border: 2px solid var(--border);
+      border-radius: 12px;
+      padding: 32px;
+      text-align: center;
+      margin-bottom: 20px;
+    }
+    .game-question {
+      font-size: 18px;
+      font-weight: 600;
+      color: var(--text);
+      margin-bottom: 20px;
+    }
+    .game-input {
+      padding: 12px 16px;
+      border-radius: 8px;
+      border: 2px solid var(--border);
+      background: var(--bg);
+      color: var(--text);
+      font-size: 16px;
+      font-weight: 600;
+      font-family: inherit;
+      text-align: center;
+      margin-bottom: 16px;
+      width: 100%;
+    }
+    .game-input:focus {
+      outline: none;
+      border-color: var(--cyan);
+    }
+    .game-btn {
+      padding: 14px 32px;
+      border-radius: 8px;
+      border: none;
+      background: var(--grad);
+      color: #fff;
+      font-size: 16px;
+      font-weight: 700;
+      font-family: inherit;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+    .game-btn:hover { transform: translateY(-2px); }
+    .game-btn:active { transform: translateY(0); }
+
+    #feedback {
+      position: fixed;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%) scale(0.8);
+      padding: 24px 48px;
+      border-radius: 20px;
+      font-size: 28px;
+      font-weight: 800;
+      pointer-events: none;
+      opacity: 0;
+      z-index: 9999;
+      transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275), opacity 0.3s;
+      text-align: center;
+      font-family: inherit;
+      backdrop-filter: blur(12px);
+    }
+    #feedback.show {
+      opacity: 1;
+      transform: translate(-50%, -50%) scale(1);
+    }
+    #feedback.correct {
+      background: rgba(0,230,118,0.2);
+      border: 2px solid var(--green);
+      color: var(--green);
+    }
+    #feedback.incorrect {
+      background: rgba(255,59,139,0.2);
+      border: 2px solid var(--pink);
+      color: var(--pink);
+    }
+  </style>
+</head>
+<body>
+
+<div class="vinculum-header">
+  <div class="vinculum-header-left">
+    <a href="../../VINCULUM-Hub.html" class="vinculum-back-btn" aria-label="Back to Hub">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>
+    </a>
+    <div class="vinculum-title-group">
+      <h1 class="vinculum-title">Unit Conversion</h1>
+      <div class="vinculum-badges">
+        <span class="badge">5.MD.1</span>
+        <span class="tag">5.3.1.1</span>
+      </div>
+    </div>
+  </div>
+  <div class="vinculum-header-right"></div>
+</div>
+
+<div class="vinculum-mode-tabs">
+  <button class="vinculum-mode-tab active-explore" onclick="switchMode('explore')"><svg width="18" height="18" viewBox="0 0 48 48" fill="none"><path d="M4 24C4 24 12 12 24 12C36 12 44 24 44 24C44 24 36 36 24 36C12 36 4 24 4 24Z" stroke="currentColor" stroke-width="3" fill="none"/><circle cx="24" cy="24" r="7" stroke="currentColor" stroke-width="3" fill="none"/><circle cx="24" cy="24" r="3" fill="currentColor"/><line x1="24" y1="4" x2="24" y2="9" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" opacity="0.5"/><line x1="10" y1="8" x2="13" y2="12" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" opacity="0.5"/><line x1="38" y1="8" x2="35" y2="12" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" opacity="0.5"/></svg> Explore</button>
+  <button class="vinculum-mode-tab" onclick="switchMode('practice')"><svg width="18" height="18" viewBox="0 0 48 48" fill="none"><circle cx="24" cy="24" r="20" stroke="currentColor" stroke-width="3" fill="none" opacity="0.3"/><circle cx="24" cy="24" r="20" stroke="currentColor" stroke-width="3" fill="none" stroke-dasharray="126" stroke-dashoffset="32" stroke-linecap="round"/><polyline points="16,24 22,32 34,16" stroke="currentColor" stroke-width="4" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg> Practice</button>
+  <button class="vinculum-mode-tab" onclick="switchMode('play')"><svg width="18" height="18" viewBox="0 0 48 48" fill="none"><polygon points="28,4 12,28 22,28 18,44 36,18 26,18" fill="none" stroke="currentColor" stroke-width="3" stroke-linejoin="round"/><polygon points="27,8 15,27 23,27 20,40 34,19 26,19" fill="currentColor" opacity="0.15"/></svg> Play</button>
+  <div class="vinculum-diff-selector">
+    <span class="vinculum-diff-label">Level</span>
+    <button class="vinculum-diff-btn active" data-diff="easy" onclick="setDifficulty('easy')">Easy</button>
+    <button class="vinculum-diff-btn" data-diff="medium" onclick="setDifficulty('medium')">Medium</button>
+    <button class="vinculum-diff-btn" data-diff="hard" onclick="setDifficulty('hard')">Hard</button>
+  </div>
+</div>
+
+<div class="main">
+  <!-- EXPLORE MODE -->
+  <div class="mode active" id="explore-mode">
+    <div class="explore-section">
+      <div class="explore-title">🔀 Length Conversions</div>
+      <div class="conversion-chart" id="length-chart"></div>
+    </div>
+
+    <div class="explore-section">
+      <div class="explore-title">⚖️ Weight/Mass Conversions</div>
+      <div class="conversion-chart" id="weight-chart"></div>
+    </div>
+
+    <div class="explore-section">
+      <div class="explore-title">💧 Volume/Capacity Conversions</div>
+      <div class="conversion-chart" id="volume-chart"></div>
+    </div>
+
+    <div class="double-number-line">
+      <div class="explore-title">📏 Double Number Line</div>
+      <div id="dnl-container"></div>
+    </div>
+  </div>
+
+  <!-- PRACTICE MODE -->
+  <div class="mode" id="practice-mode">
+    <div class="practice-container">
+      <div class="problem-card">
+        <div class="problem-statement" id="practice-statement">Convert 5 km to meters</div>
+        <div class="input-group">
+          <div class="input-field">
+            <label class="input-label">Value</label>
+            <input type="number" id="practice-value" placeholder="Enter number" step="0.01">
+          </div>
+          <div class="input-field">
+            <label class="input-label">Unit</label>
+            <select id="practice-unit">
+              <option>meters</option>
+              <option>kilometers</option>
+              <option>centimeters</option>
+            </select>
+          </div>
+        </div>
+        <button class="submit-btn" onclick="checkPracticeProblem()">Check Answer</button>
+      </div>
+
+      <div id="hint-box" style="display:none; background: var(--card2); border: 1px solid var(--border); border-radius: 8px; padding: 16px; margin-bottom: 20px;">
+        <div style="font-size: 12px; font-weight: 600; color: var(--text2); margin-bottom: 8px;">💡 HINT</div>
+        <div id="hint-text" style="font-size: 14px; color: var(--text);"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- PLAY MODE -->
+  <div class="mode" id="play-mode">
+    <div class="game-container">
+      <div class="game-header">
+        <div class="score-display">Score: <span id="game-score">0</span>/10</div>
+        <div class="timer-display">Time: <span id="game-timer">60</span>s</div>
+      </div>
+      <div class="game-card">
+        <div class="game-question" id="game-question">Convert 5 km to meters</div>
+        <input type="number" class="game-input" id="game-input" placeholder="Your answer" step="0.01" onkeydown="if(event.key==='Enter') submitGameAnswer()">
+        <button class="game-btn" onclick="submitGameAnswer()">Submit</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div id="feedback"></div>
+
+<script src="../../vinculum-feedback.js"></script><script src="../../vinculum-guide.js"></script>
+<script src="../../vinculum-input.js"></script>
+<script src="../../vinculum-identity.js"></script>
+<script src="../../vinculum-indigenous.js"></script>
+<script src="../../vinculum-dashboard.js"></script>
+<script>
+  let difficulty = 'easy';
+  let currentMode = 'explore';
+  let gameScore = 0;
+  let gameTimer = 60;
+  let gameActive = false;
+  let currentGameProblem = null;
+
+  const conversions = {
+    length: { '1': 'km', '1000': 'm', '100000': 'cm' },
+    weight: { '1': 'kg', '1000': 'g', '0.001': 'ton' },
+    volume: { '1': 'L', '1000': 'mL', '0.001': 'kL' }
+  };
+
+  const problems = {
+    easy: [
+      { value: 5, from: 'km', to: 'm', answer: 5000, hint: '1 km = 1000 m' },
+      { value: 3, from: 'kg', to: 'g', answer: 3000, hint: '1 kg = 1000 g' },
+      { value: 2, from: 'L', to: 'mL', answer: 2000, hint: '1 L = 1000 mL' },
+      { value: 8, from: 'm', to: 'cm', answer: 800, hint: '1 m = 100 cm' },
+      { value: 4, from: 'km', to: 'm', answer: 4000, hint: '1 km = 1000 m' }
+    ],
+    medium: [
+      { value: 2.5, from: 'km', to: 'm', answer: 2500, hint: 'Multiply by 1000' },
+      { value: 500, from: 'g', to: 'kg', answer: 0.5, hint: 'Divide by 1000' },
+      { value: 1500, from: 'mL', to: 'L', answer: 1.5, hint: '1 L = 1000 mL' },
+      { value: 250, from: 'cm', to: 'm', answer: 2.5, hint: '1 m = 100 cm' },
+      { value: 0.75, from: 'kg', to: 'g', answer: 750, hint: 'Multiply by 1000' }
+    ],
+    hard: [
+      { value: 0.345, from: 'km', to: 'cm', answer: 34500, hint: '1 km = 100000 cm' },
+      { value: 2.75, from: 'kg', to: 'g', answer: 2750, hint: 'Two-step conversion' },
+      { value: 5000, from: 'mL', to: 'kL', answer: 0.005, hint: '1 kL = 1000 L = 1000000 mL' },
+      { value: 1.8, from: 'm', to: 'mm', answer: 1800, hint: '1 m = 1000 mm' },
+      { value: 0.5, from: 'ton', to: 'kg', answer: 500, hint: '1 ton = 1000 kg' }
+    ]
+  };
+
+  function switchMode(mode) {
+    currentMode = mode;
+    document.querySelectorAll('.mode').forEach(el => el.classList.remove('active'));
+    document.getElementById(mode + '-mode').classList.add('active');
+    document.querySelectorAll('.vinculum-mode-tab').forEach(btn => btn.classList.remove('active-explore', 'active-practice', 'active-play'));
+    event.target.classList.add('active-' + mode);
+
+    if (mode === 'explore') {
+      initExplore();
+    } else if (mode === 'practice') {
+      generatePracticeProblem();
+    } else if (mode === 'play') {
+      startGame();
+    }
+  }
+
+  function setDifficulty(diff) {
+    difficulty = diff;
+    document.querySelectorAll('.vinculum-diff-btn').forEach(btn => btn.classList.remove('active'));
+    event.target.classList.add('active');
+
+    if (currentMode === 'practice') {
+      generatePracticeProblem();
+    } else if (currentMode === 'play') {
+      resetGame();
+    }
+  }
+
+  function initExplore() {
+    // Length conversions
+    const lengthChart = document.getElementById('length-chart');
+    lengthChart.innerHTML = `
+      <div class="chart-cell"><div class="chart-cell-value">1</div><div class="chart-cell-unit">km</div></div>
+      <div class="chart-cell"><div class="chart-cell-value">1,000</div><div class="chart-cell-unit">m</div></div>
+      <div class="chart-cell"><div class="chart-cell-value">100,000</div><div class="chart-cell-unit">cm</div></div>
+    `;
+
+    // Weight conversions
+    const weightChart = document.getElementById('weight-chart');
+    weightChart.innerHTML = `
+      <div class="chart-cell"><div class="chart-cell-value">1</div><div class="chart-cell-unit">kg</div></div>
+      <div class="chart-cell"><div class="chart-cell-value">1,000</div><div class="chart-cell-unit">g</div></div>
+      <div class="chart-cell"><div class="chart-cell-value">0.001</div><div class="chart-cell-unit">ton</div></div>
+    `;
+
+    // Volume conversions
+    const volumeChart = document.getElementById('volume-chart');
+    volumeChart.innerHTML = `
+      <div class="chart-cell"><div class="chart-cell-value">1</div><div class="chart-cell-unit">L</div></div>
+      <div class="chart-cell"><div class="chart-cell-value">1,000</div><div class="chart-cell-unit">mL</div></div>
+      <div class="chart-cell"><div class="chart-cell-value">0.001</div><div class="chart-cell-unit">kL</div></div>
+    `;
+
+    // Double number line
+    const dnlContainer = document.getElementById('dnl-container');
+    dnlContainer.innerHTML = `
+      <div class="dnl-row">
+        <div class="dnl-label">km:</div>
+        <div class="dnl-line" style="position: relative;">
+          <div class="dnl-tick" style="left: 0%;"><div class="dnl-label-small">0</div></div>
+          <div class="dnl-tick" style="left: 25%;"><div class="dnl-label-small">1</div></div>
+          <div class="dnl-tick" style="left: 50%;"><div class="dnl-label-small">2</div></div>
+          <div class="dnl-tick" style="left: 75%;"><div class="dnl-label-small">3</div></div>
+          <div class="dnl-tick" style="left: 100%;"><div class="dnl-label-small">4</div></div>
+        </div>
+      </div>
+      <div class="dnl-row">
+        <div class="dnl-label">m:</div>
+        <div class="dnl-line" style="position: relative;">
+          <div class="dnl-tick" style="left: 0%;"><div class="dnl-label-small">0</div></div>
+          <div class="dnl-tick" style="left: 25%;"><div class="dnl-label-small">1,000</div></div>
+          <div class="dnl-tick" style="left: 50%;"><div class="dnl-label-small">2,000</div></div>
+          <div class="dnl-tick" style="left: 75%;"><div class="dnl-label-small">3,000</div></div>
+          <div class="dnl-tick" style="left: 100%;"><div class="dnl-label-small">4,000</div></div>
+        </div>
+      </div>
+    `;
+  }
+
+  function generatePracticeProblem() {
+    const problemList = problems[difficulty];
+    const problem = problemList[Math.floor(Math.random() * problemList.length)];
+    document.getElementById('practice-statement').textContent = `Convert ${problem.value} ${problem.from} to ${problem.to}`;
+    document.getElementById('practice-value').value = '';
+    document.getElementById('practice-unit').value = problem.to;
+    document.getElementById('hint-box').style.display = 'none';
+    document.getElementById('practice-value').dataset.problem = JSON.stringify(problem);
+  }
+
+  function checkPracticeProblem() {
+    const problem = JSON.parse(document.getElementById('practice-value').dataset.problem);
+    const userAnswer = parseFloat(document.getElementById('practice-value').value);
+    const correct = Math.abs(userAnswer - problem.answer) < 0.01;
+
+    if (correct) {
+      VinculumFB.show('🎉 Correct!', 'correct', 2000);
+      setTimeout(() => generatePracticeProblem(), 2000);
+    } else {
+      VinculumFB.show('Try again!', 'incorrect', 1500);
+      document.getElementById('hint-text').textContent = problem.hint;
+      document.getElementById('hint-box').style.display = 'block';
+    }
+  }
+
+  function startGame() {
+    gameScore = 0;
+    gameTimer = 60;
+    gameActive = true;
+    document.getElementById('game-score').textContent = '0';
+    document.getElementById('game-timer').textContent = '60';
+    document.getElementById('game-input').value = '';
+    generateGameProblem();
+
+    const timerInterval = setInterval(() => {
+      gameTimer--;
+      document.getElementById('game-timer').textContent = gameTimer;
+      if (gameTimer <= 0) {
+        clearInterval(timerInterval);
+        gameActive = false;
+        VinculumFB.show(`Game Over! Score: ${gameScore}/10`, 'correct', 3000);
+        setTimeout(() => resetGame(), 3000);
+      }
+    }, 1000);
+  }
+
+  function generateGameProblem() {
+    const problemList = problems[difficulty];
+    currentGameProblem = problemList[Math.floor(Math.random() * problemList.length)];
+    document.getElementById('game-question').textContent = `Convert ${currentGameProblem.value} ${currentGameProblem.from} to ${currentGameProblem.to}`;
+    document.getElementById('game-input').value = '';
+    document.getElementById('game-input').focus();
+  }
+
+  function submitGameAnswer() {
+    if (!gameActive || !currentGameProblem) return;
+    const userAnswer = parseFloat(document.getElementById('game-input').value);
+    const correct = Math.abs(userAnswer - currentGameProblem.answer) < 0.01;
+
+    if (correct) {
+      gameScore++;
+      document.getElementById('game-score').textContent = gameScore;
+      VinculumFB.show('✓ Correct!', 'correct', 800);
+      if (gameScore >= 10) {
+        gameActive = false;
+        VinculumFB.show('🏆 Perfect Score!', 'correct', 2000);
+      } else {
+        setTimeout(() => generateGameProblem(), 800);
+      }
+    } else {
+      VinculumFB.show('✗ Incorrect', 'incorrect', 800);
+      document.getElementById('game-input').value = '';
+    }
+  }
+
+  function resetGame() {
+    gameScore = 0;
+    gameTimer = 60;
+    gameActive = false;
+    document.getElementById('game-score').textContent = '0';
+    document.getElementById('game-timer').textContent = '60';
+    document.getElementById('game-input').value = '';
+  }
+
+  // Initialize on load
+  initExplore();
+</script>
+
+</body>
+</html>

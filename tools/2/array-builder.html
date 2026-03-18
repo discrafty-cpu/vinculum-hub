@@ -1,0 +1,1342 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>VINCULUM — Array Builder</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@500;600&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="../../vinculum-core.css">
+<style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        /* Theme system loaded from vinculum-core.css */
+.vinculum-rtm-btn .rtm-icon{font-size:14px;}
+
+/* ═══ FOCUS VISIBLE (Keyboard Navigation) ═══ */
+*:focus-visible {
+  outline:2px solid var(--cyan);outline-offset:2px;border-radius:4px;
+}
+.sr-only {
+  position:absolute;width:1px;height:1px;padding:0;margin:-1px;
+  overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0;
+}
+
+        body {
+            background: var(--bg);
+            color: var(--text);
+            font-family: 'Inter', sans-serif;
+            overflow: hidden;
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+
+        /* Header */
+        .vinculum-back-btn {
+  display:inline-block;padding:6px 12px;border-radius:8px;
+  border:1px solid var(--border);background:transparent;
+  color:var(--text2);font-size:13px;font-family:inherit;
+  cursor:pointer;transition:all 0.2s;text-decoration:none;
+}
+.vinculum-back-btn:hover { background:var(--card); color:var(--cyan); }
+.vinculum-header {
+            background: linear-gradient(90deg, var(--bg2) 0%, var(--card) 100%);
+            border-bottom: 1px solid var(--border);
+            padding: 1rem 1.5rem;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            z-index: 100;
+        }
+
+        .vinculum-header-left {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+        }
+
+        .vinculum-header-title {
+            font-size: 1.25rem;
+            font-weight: 700;
+            letter-spacing: 0.5px;
+        }
+
+        .badge {
+            background: var(--card2);
+            border: 1px solid var(--border);
+            color: var(--cyan);
+            padding: 0.25rem 0.75rem;
+            border-radius: 1rem;
+            font-size: 0.75rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .tags {
+            display: flex;
+            gap: 0.5rem;
+        }
+
+        .tag {
+            background: transparent;
+            border: 1px solid var(--muted);
+            color: var(--text2);
+            padding: 0.25rem 0.5rem;
+            border-radius: 0.25rem;
+            font-size: 0.7rem;
+            font-weight: 500;
+        }
+
+        /* Tabs & Controls */
+        .controls {
+            display: flex;
+            align-items: center;
+            gap: 2rem;
+            padding: 1rem 1.5rem;
+            border-bottom: 1px solid var(--border);
+            background: var(--bg2);
+        }
+
+        .tabs {
+            display: flex;
+            gap: 0.5rem;
+        }
+
+        .tab {
+            background: transparent;
+            border: 1px solid var(--border);
+            color: var(--text2);
+            padding: 0.5rem 1rem;
+            border-radius: 0.5rem;
+            cursor: pointer;
+            font-size: 0.875rem;
+            font-weight: 500;
+            transition: all 0.3s ease;
+        }
+
+        .tab.active {
+            background: var(--grad);
+            color: var(--bg);
+            border-color: transparent;
+            font-weight: 600;
+        }
+
+        .tab:hover:not(.active) {
+            border-color: var(--cyan);
+            color: var(--cyan);
+        }
+
+        .difficulty {
+            display: flex;
+            gap: 0.5rem;
+            margin-left: auto;
+            align-items: center;
+        }
+
+        .difficulty-label {
+            font-size: 0.875rem;
+            color: var(--text2);
+            font-weight: 500;
+        }
+
+        .pill {
+            background: var(--card);
+            border: 1px solid var(--border);
+            color: var(--text2);
+            padding: 0.4rem 0.8rem;
+            border-radius: 1rem;
+            cursor: pointer;
+            font-size: 0.8rem;
+            font-weight: 500;
+            transition: all 0.3s ease;
+        }
+
+        .pill.active {
+            background: var(--cyan);
+            color: var(--bg);
+            border-color: var(--cyan);
+        }
+
+        /* Main Container */
+        .main-container {
+            display: flex;
+            flex: 1;
+            overflow: hidden;
+            gap: 1px;
+            background: var(--border);
+        }
+
+        .workspace {
+            flex: 1;
+            background: var(--bg);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 2rem;
+            overflow-y: auto;
+        }
+
+        .workspace::-webkit-scrollbar {
+            width: 6px;
+        }
+
+        .workspace::-webkit-scrollbar-track {
+            background: var(--bg);
+        }
+
+        .workspace::-webkit-scrollbar-thumb {
+            background: var(--border);
+            border-radius: 3px;
+        }
+
+        .panel {
+            width: 280px;
+            background: var(--card);
+            border-left: 1px solid var(--border);
+            padding: 1.5rem;
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+            gap: 1.5rem;
+        }
+
+        .panel::-webkit-scrollbar {
+            width: 6px;
+        }
+
+        .panel::-webkit-scrollbar-track {
+            background: var(--card);
+        }
+
+        .panel::-webkit-scrollbar-thumb {
+            background: var(--border);
+            border-radius: 3px;
+        }
+
+        /* Explore Mode */
+        .explore-content {
+            display: flex;
+            flex-direction: column;
+            gap: 2rem;
+            width: 100%;
+            max-width: 600px;
+        }
+
+        .controls-group {
+            background: var(--card);
+            border: 1px solid var(--border);
+            padding: 1.5rem;
+            border-radius: 0.75rem;
+            display: flex;
+            flex-direction: column;
+            gap: 1rem;
+        }
+
+        .control-item {
+            display: flex;
+            flex-direction: column;
+            gap: 0.5rem;
+        }
+
+        .control-label {
+            font-size: 0.875rem;
+            font-weight: 600;
+            color: var(--text);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .control-value {
+            color: var(--cyan);
+            font-weight: 700;
+            font-family: 'JetBrains Mono', monospace;
+        }
+
+        .slider {
+            width: 100%;
+            height: 6px;
+            border-radius: 3px;
+            background: var(--border);
+            outline: none;
+            -webkit-appearance: none;
+            appearance: none;
+        }
+
+        .slider::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 18px;
+            height: 18px;
+            border-radius: 50%;
+            background: var(--cyan);
+            cursor: pointer;
+            box-shadow: 0 0 12px rgba(0, 212, 255, 0.4);
+            transition: all 0.2s ease;
+        }
+
+        .slider::-webkit-slider-thumb:hover {
+            box-shadow: 0 0 20px rgba(0, 212, 255, 0.6);
+        }
+
+        .slider::-moz-range-thumb {
+            width: 18px;
+            height: 18px;
+            border-radius: 50%;
+            background: var(--cyan);
+            cursor: pointer;
+            border: none;
+            box-shadow: 0 0 12px rgba(0, 212, 255, 0.4);
+            transition: all 0.2s ease;
+        }
+
+        .slider::-moz-range-thumb:hover {
+            box-shadow: 0 0 20px rgba(0, 212, 255, 0.6);
+        }
+
+        /* Array Display */
+        .array-container {
+            background: var(--card);
+            border: 1px solid var(--border);
+            padding: 2rem;
+            border-radius: 0.75rem;
+            display: flex;
+            gap: 2rem;
+            align-items: center;
+            justify-content: center;
+            flex-wrap: wrap;
+            width: 100%;
+        }
+
+        .array-visual {
+            display: flex;
+            flex-direction: column;
+            gap: 0.3rem;
+            position: relative;
+        }
+
+        .row-label {
+            position: absolute;
+            left: -2.5rem;
+            top: 50%;
+            transform: translateY(-50%);
+            font-size: 0.75rem;
+            color: var(--muted);
+            font-weight: 500;
+        }
+
+        .array-row {
+            display: flex;
+            gap: 0.3rem;
+            opacity: 0;
+            animation: slideIn 0.3s ease forwards;
+        }
+
+        @keyframes slideIn {
+            from {
+                opacity: 0;
+                transform: translateX(-20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateX(0);
+            }
+        }
+
+        .dot {
+            width: 28px;
+            height: 28px;
+            border-radius: 50%;
+            background: var(--cyan);
+            box-shadow: 0 0 12px rgba(0, 212, 255, 0.4);
+            border: 2px solid var(--cyan);
+        }
+
+        .row-0 .dot { background: rgba(0, 212, 255, 0.8); box-shadow: inset 0 0 8px rgba(0, 212, 255, 0.3), 0 0 12px rgba(0, 212, 255, 0.4); }
+        .row-1 .dot { background: rgba(255, 59, 139, 0.8); box-shadow: inset 0 0 8px rgba(255, 59, 139, 0.3), 0 0 12px rgba(255, 59, 139, 0.4); }
+        .row-2 .dot { background: rgba(255, 193, 7, 0.8); box-shadow: inset 0 0 8px rgba(255, 193, 7, 0.3), 0 0 12px rgba(255, 193, 7, 0.4); }
+        .row-3 .dot { background: rgba(0, 230, 118, 0.8); box-shadow: inset 0 0 8px rgba(0, 230, 118, 0.3), 0 0 12px rgba(0, 230, 118, 0.4); }
+        .row-4 .dot { background: rgba(179, 136, 255, 0.8); box-shadow: inset 0 0 8px rgba(179, 136, 255, 0.3), 0 0 12px rgba(179, 136, 255, 0.4); }
+
+        .col-labels {
+            display: flex;
+            gap: 0.3rem;
+            margin-left: 0;
+            margin-top: 0.5rem;
+            padding-left: 0;
+        }
+
+        .col-label {
+            width: 28px;
+            text-align: center;
+            font-size: 0.75rem;
+            color: var(--muted);
+            font-weight: 500;
+        }
+
+        .equation-display {
+            background: var(--card2);
+            border: 1px solid var(--border);
+            padding: 1.5rem;
+            border-radius: 0.75rem;
+            text-align: center;
+            min-width: 300px;
+        }
+
+        .equation-line {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 1.125rem;
+            font-weight: 600;
+            color: var(--text);
+            margin: 0.75rem 0;
+            letter-spacing: 0.5px;
+        }
+
+        .equation-label {
+            font-size: 0.75rem;
+            color: var(--text2);
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin-top: 0.5rem;
+        }
+
+        /* Buttons */
+        .button-group {
+            display: flex;
+            gap: 0.75rem;
+            flex-wrap: wrap;
+            justify-content: center;
+            width: 100%;
+        }
+
+        .btn {
+            background: var(--card2);
+            border: 1px solid var(--border);
+            color: var(--text);
+            padding: 0.75rem 1.25rem;
+            border-radius: 0.5rem;
+            cursor: pointer;
+            font-size: 0.875rem;
+            font-weight: 600;
+            transition: all 0.3s ease;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .btn:hover {
+            border-color: var(--cyan);
+            color: var(--cyan);
+            box-shadow: 0 0 12px rgba(0, 212, 255, 0.2);
+        }
+
+        .btn.primary {
+            background: var(--grad);
+            color: var(--bg);
+            border-color: transparent;
+            font-weight: 700;
+        }
+
+        .btn.primary:hover {
+            box-shadow: 0 0 20px rgba(0, 212, 255, 0.4);
+        }
+
+        .btn.success {
+            background: rgba(0, 230, 118, 0.2);
+            border-color: var(--green);
+            color: var(--green);
+        }
+
+        .btn.success:hover {
+            box-shadow: 0 0 12px rgba(0, 230, 118, 0.3);
+        }
+
+        .btn.warning {
+            background: rgba(255, 145, 0, 0.2);
+            border-color: var(--orange);
+            color: var(--orange);
+        }
+
+        .btn.warning:hover {
+            box-shadow: 0 0 12px rgba(255, 145, 0, 0.3);
+        }
+
+        .theme-buttons {
+            display: flex;
+            gap: 0.5rem;
+            flex-wrap: wrap;
+        }
+
+        .theme-btn {
+            flex: 1;
+            min-width: 120px;
+            background: var(--card2);
+            border: 1px solid var(--border);
+            color: var(--text2);
+            padding: 0.6rem 0.75rem;
+            border-radius: 0.5rem;
+            cursor: pointer;
+            font-size: 0.8rem;
+            font-weight: 500;
+            transition: all 0.3s ease;
+        }
+
+        .theme-btn:hover {
+            border-color: var(--cyan);
+            color: var(--cyan);
+        }
+
+        /* Practice Mode */
+        .practice-content {
+            display: flex;
+            flex-direction: column;
+            gap: 1.5rem;
+            width: 100%;
+            max-width: 600px;
+        }
+
+        .challenge-card {
+            background: var(--card);
+            border: 1px solid var(--border);
+            padding: 2rem;
+            border-radius: 0.75rem;
+            text-align: center;
+        }
+
+        .challenge-title {
+            font-size: 1rem;
+            font-weight: 600;
+            color: var(--text);
+            margin-bottom: 1.5rem;
+        }
+
+        .challenge-prompt {
+            font-size: 1.25rem;
+            font-weight: 700;
+            color: var(--cyan);
+            margin-bottom: 1.5rem;
+            font-family: 'JetBrains Mono', monospace;
+            letter-spacing: 0.5px;
+        }
+
+        .choices {
+            display: flex;
+            flex-direction: column;
+            gap: 0.75rem;
+        }
+
+        .choice {
+            background: var(--card2);
+            border: 2px solid var(--border);
+            color: var(--text);
+            padding: 1rem;
+            border-radius: 0.5rem;
+            cursor: pointer;
+            font-size: 1rem;
+            font-weight: 500;
+            transition: all 0.3s ease;
+            text-align: left;
+        }
+
+        .choice:hover {
+            border-color: var(--cyan);
+            background: rgba(0, 212, 255, 0.1);
+        }
+
+        .choice.selected {
+            border-color: var(--cyan);
+            background: rgba(0, 212, 255, 0.2);
+        }
+
+        .choice.correct {
+            border-color: var(--green);
+            background: rgba(0, 230, 118, 0.2);
+            color: var(--green);
+        }
+
+        .choice.incorrect {
+            border-color: var(--pink);
+            background: rgba(255, 59, 139, 0.2);
+            color: var(--pink);
+            animation: shake 0.4s ease;
+        }
+
+        @keyframes shake {
+            0%, 100% { transform: translateX(0); }
+            25% { transform: translateX(-8px); }
+            75% { transform: translateX(8px); }
+        }
+
+        @keyframes pulse {
+            0%, 100% { box-shadow: 0 0 12px rgba(0, 230, 118, 0.4); }
+            50% { box-shadow: 0 0 24px rgba(0, 230, 118, 0.8); }
+        }
+
+        .dot.pulse {
+            animation: pulse 0.6s ease;
+        }
+
+        /* Play Mode */
+        .play-content {
+            display: flex;
+            flex-direction: column;
+            gap: 1.5rem;
+            width: 100%;
+            max-width: 600px;
+        }
+
+        .play-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background: var(--card);
+            border: 1px solid var(--border);
+            padding: 1rem 1.5rem;
+            border-radius: 0.75rem;
+            margin-bottom: 1rem;
+        }
+
+        .score-display {
+            display: flex;
+            gap: 2rem;
+            font-size: 0.875rem;
+            font-weight: 600;
+            color: var(--text2);
+        }
+
+        .score-item {
+            display: flex;
+            flex-direction: column;
+            gap: 0.25rem;
+        }
+
+        .score-value {
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: var(--cyan);
+            font-family: 'JetBrains Mono', monospace;
+        }
+
+        .timer-display {
+            font-size: 2rem;
+            font-weight: 700;
+            font-family: 'JetBrains Mono', monospace;
+            text-align: center;
+            min-width: 80px;
+        }
+
+        .timer-display.warning {
+            color: var(--orange);
+        }
+
+        .timer-display.critical {
+            color: var(--pink);
+        }
+
+        /* Panel */
+        .panel-section {
+            display: flex;
+            flex-direction: column;
+            gap: 0.75rem;
+        }
+
+        .panel-title {
+            font-size: 0.875rem;
+            font-weight: 700;
+            color: var(--cyan);
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .vocab-item {
+            font-size: 0.8rem;
+            color: var(--text2);
+            line-height: 1.5;
+        }
+
+        .vocab-term {
+            color: var(--text);
+            font-weight: 600;
+        }
+
+        .progress-bar {
+            width: 100%;
+            height: 6px;
+            background: var(--border);
+            border-radius: 3px;
+            overflow: hidden;
+            margin-top: 0.5rem;
+        }
+
+        .progress-fill {
+            height: 100%;
+            background: var(--grad);
+            border-radius: 3px;
+            transition: width 0.3s ease;
+        }
+
+        .stat-row {
+            display: flex;
+            justify-content: space-between;
+            font-size: 0.85rem;
+            color: var(--text2);
+            padding: 0.5rem 0;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .stat-row:last-child {
+            border-bottom: none;
+        }
+
+        .stat-label {
+            color: var(--text);
+            font-weight: 500;
+        }
+
+        .stat-value {
+            color: var(--cyan);
+            font-weight: 600;
+            font-family: 'JetBrains Mono', monospace;
+        }
+
+        /* Empty States */
+        .empty-state {
+            text-align: center;
+            color: var(--text2);
+            padding: 2rem;
+        }
+
+        .empty-icon {
+            font-size: 3rem;
+            margin-bottom: 1rem;
+        }
+
+        /* Animations */
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+            }
+            to {
+                opacity: 1;
+            }
+        }
+
+        .fade-in {
+            animation: fadeIn 0.3s ease;
+        }
+
+        @keyframes scaleIn {
+            from {
+                opacity: 0;
+                transform: scale(0.95);
+            }
+            to {
+                opacity: 1;
+                transform: scale(1);
+            }
+        }
+
+        .scale-in {
+            animation: scaleIn 0.3s ease;
+        }
+    </style>
+</head>
+<body>
+    <div id="app"></div>
+
+<div class="feedback" id="feedback"></div>
+    <script>
+        // State Management
+        const S = {
+            mode: 'explore', // explore, practice, play
+            rows: 3,
+            cols: 4,
+            difficulty: 'emergent', // emergent, proficient, advanced
+
+            // Practice state
+            practiceType: null, // 'build', 'equation', 'total'
+            practiceChallenge: null,
+            practiceSelected: null,
+            practiceFeedback: null,
+
+            // Play state
+            playScore: 0,
+            playStreak: 0,
+            playTimeLeft: 8,
+            playQuestion: null,
+            playSelected: null,
+            playFeedback: null,
+            playQuestionCount: 0,
+
+            // Rotation
+            rotated: false,
+        };
+
+        // Utility
+        const range = (n) => Array.from({ length: n }, (_, i) => i);
+        const rand = (arr) => arr[Math.floor(Math.random() * arr.length)];
+        const shuffle = (arr) => [...arr].sort(() => Math.random() - 0.5);
+
+        // Generate practice challenges
+        function generatePracticeChallenge(type, difficulty) {
+            const maxSize = 5;
+            const rows = Math.floor(Math.random() * maxSize) + 1;
+            const cols = Math.floor(Math.random() * maxSize) + 1;
+
+            if (type === 'build') {
+                return {
+                    type: 'build',
+                    rows,
+                    cols,
+                    target: `Build an array with ${rows} rows and ${cols} columns`,
+                };
+            } else if (type === 'equation') {
+                const choices = [
+                    `${rows} + ${cols}`,
+                    `${cols} + ${rows}`,
+                    `${rows} × ${cols}`,
+                    Array(rows).fill(cols).join(' + '),
+                ];
+                return {
+                    type: 'equation',
+                    rows,
+                    cols,
+                    correct: Array(rows).fill(cols).join(' + '),
+                    choices: shuffle(choices),
+                    prompt: `${rows} rows of ${cols}. Which equation matches?`,
+                };
+            } else if (type === 'total') {
+                const total = rows * cols;
+                const choices = [
+                    total,
+                    total + Math.floor(Math.random() * 5) + 1,
+                    total - Math.floor(Math.random() * 5) - 1,
+                    Math.floor(Math.random() * 20) + 1,
+                ].filter((v, i, a) => a.indexOf(v) === i);
+                return {
+                    type: 'total',
+                    rows,
+                    cols,
+                    correct: total,
+                    choices: shuffle(choices),
+                    prompt: `How many dots in total?`,
+                };
+            }
+        }
+
+        // Generate play question
+        function generatePlayQuestion() {
+            const questionType = rand(['array-total', 'array-equation', 'word-problem']);
+            const rows = Math.floor(Math.random() * 5) + 1;
+            const cols = Math.floor(Math.random() * 5) + 1;
+            const total = rows * cols;
+
+            if (questionType === 'array-total') {
+                const choices = [
+                    total,
+                    total + Math.floor(Math.random() * 5) + 1,
+                    total - Math.floor(Math.random() * 5) - 1,
+                    Math.floor(Math.random() * 20) + 1,
+                ].filter((v, i, a) => a.indexOf(v) === i).slice(0, 4);
+
+                return {
+                    type: 'array-total',
+                    rows,
+                    cols,
+                    correct: total,
+                    choices: shuffle(choices),
+                    prompt: `${rows} rows of ${cols} = ?`,
+                };
+            } else if (questionType === 'array-equation') {
+                const equationStr = Array(rows).fill(cols).join(' + ');
+                const choices = [
+                    equationStr,
+                    Array(cols).fill(rows).join(' + '),
+                    `${rows} × ${cols}`,
+                    `${cols} × ${rows}`,
+                ];
+                return {
+                    type: 'array-equation',
+                    rows,
+                    cols,
+                    correct: equationStr,
+                    choices: shuffle(choices),
+                    prompt: `Write the repeated addition:`,
+                };
+            } else {
+                const scenarios = [
+                    `There are ${rows} egg cartons. Each has ${cols} eggs. How many total?`,
+                    `${rows} boxes of ${cols} crayons each. How many crayons?`,
+                    `A window has ${rows} rows and ${cols} columns of panes. How many panes?`,
+                ];
+                const prompt = rand(scenarios);
+                const choices = [
+                    total,
+                    total + Math.floor(Math.random() * 5) + 1,
+                    total - Math.floor(Math.random() * 5) - 1,
+                    Math.floor(Math.random() * 20) + 1,
+                ].filter((v, i, a) => a.indexOf(v) === i).slice(0, 4);
+
+                return {
+                    type: 'word-problem',
+                    rows,
+                    cols,
+                    correct: total,
+                    choices: shuffle(choices),
+                    prompt,
+                };
+            }
+        }
+
+        // Render array
+        function renderArray(rows, cols) {
+            const r = rows || S.rows;
+            const c = cols || S.cols;
+
+            return `
+                <div class="array-visual">
+                    ${range(r).map((i) => `
+                        <div class="array-row row-${i % 5}" style="animation-delay: ${i * 0.3}s">
+                            ${range(c).map(() => '<div class="dot"></div>').join('')}
+                        </div>
+                    `).join('')}
+                    <div class="col-labels">
+                        ${range(c).map((i) => `<div class="col-label">${i + 1}</div>`).join('')}
+                    </div>
+                </div>
+            `;
+        }
+
+        // Build equations
+        function buildEquation(rows, cols) {
+            const r = rows || S.rows;
+            const c = cols || S.cols;
+            const repeated = Array(r).fill(c).join(' + ');
+            const product = r * c;
+            return {
+                repeated: repeated,
+                product: product,
+                multiply: `${r} × ${c}`,
+            };
+        }
+
+        // Render functions
+        function renderExplore() {
+            const eq = buildEquation();
+            return `
+                <div class="explore-content">
+                    <div class="controls-group">
+                        <div class="control-item">
+                            <div class="control-label">
+                                Rows
+                                <span class="control-value">${S.rows}</span>
+                            </div>
+                            <input type="range" class="slider" min="1" max="5" value="${S.rows}"
+                                onchange="S.rows = parseInt(this.value); render()">
+                        </div>
+                        <div class="control-item">
+                            <div class="control-label">
+                                Columns
+                                <span class="control-value">${S.cols}</span>
+                            </div>
+                            <input type="range" class="slider" min="1" max="5" value="${S.cols}"
+                                onchange="S.cols = parseInt(this.value); render()">
+                        </div>
+                    </div>
+
+                    <div class="array-container">
+                        ${renderArray()}
+                    </div>
+
+                    <div class="equation-display">
+                        <div style="color: var(--text2); font-size: 0.875rem; margin-bottom: 0.75rem; text-transform: uppercase;">Repeated Addition</div>
+                        <div class="equation-line">${eq.repeated} = ${eq.product}</div>
+                        <div style="color: var(--text2); font-size: 0.875rem; margin-top: 1rem; margin-bottom: 0.75rem; text-transform: uppercase;">Multiplication</div>
+                        <div class="equation-line">${eq.multiply} = ${eq.product}</div>
+                    </div>
+
+                    <div class="button-group">
+                        <button class="btn primary" onclick="S.rotated = !S.rotated; render()">
+                            ${S.rotated ? 'Unrotate' : 'Rotate'} Array
+                        </button>
+                    </div>
+
+                    <div class="controls-group">
+                        <div style="font-size: 0.875rem; font-weight: 600; color: var(--text); margin-bottom: 0.75rem;">Real-World Arrays</div>
+                        <div class="theme-buttons">
+                            <button class="theme-btn" onclick="S.rows = 2; S.cols = 6; S.rotated = false; render()">🥚 Egg Carton 2×6</button>
+                            <button class="theme-btn" onclick="S.rows = 3; S.cols = 4; S.rotated = false; render()">🧁 Muffin Tin 3×4</button>
+                            <button class="theme-btn" onclick="S.rows = 2; S.cols = 3; S.rotated = false; render()">🪟 Window 2×3</button>
+                        </div>
+                    </div>
+                </div>
+            `;
+        }
+
+        function renderPractice() {
+            if (!S.practiceChallenge) {
+                const type = ['build', 'equation', 'total'][Math.floor(Math.random() * 3)];
+                S.practiceChallenge = generatePracticeChallenge(type, S.difficulty);
+                S.practiceSelected = null;
+                S.practiceFeedback = null;
+            }
+
+            const ch = S.practiceChallenge;
+
+            if (ch.type === 'build') {
+                return `
+                    <div class="practice-content">
+                        <div class="challenge-card">
+                            <div class="challenge-title">Build the Array</div>
+                            <div class="challenge-prompt">${ch.target}</div>
+                            <div style="margin: 1.5rem 0; background: var(--bg); padding: 1.5rem; border-radius: 0.5rem;">
+                                ${renderArray(S.rows, S.cols)}
+                            </div>
+                            <div class="controls-group">
+                                <div class="control-item">
+                                    <div class="control-label">
+                                        Rows: <span class="control-value">${S.rows}</span>
+                                    </div>
+                                    <input type="range" class="slider" min="1" max="5" value="${S.rows}"
+                                        onchange="S.rows = parseInt(this.value); render()">
+                                </div>
+                                <div class="control-item">
+                                    <div class="control-label">
+                                        Columns: <span class="control-value">${S.cols}</span>
+                                    </div>
+                                    <input type="range" class="slider" min="1" max="5" value="${S.cols}"
+                                        onchange="S.cols = parseInt(this.value); render()">
+                                </div>
+                            </div>
+                            <div class="button-group" style="margin-top: 1.5rem;">
+                                ${S.rows === ch.rows && S.cols === ch.cols
+                                    ? '<button class="btn success" onclick="checkBuild()">✓ Correct!</button>'
+                                    : '<button class="btn" onclick="checkBuild()">Check</button>'
+                                }
+                                <button class="btn" onclick="S.practiceChallenge = null; render()">Next</button>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            }
+
+            if (ch.type === 'equation' || ch.type === 'total') {
+                return `
+                    <div class="practice-content">
+                        <div class="challenge-card">
+                            <div class="challenge-title">${ch.type === 'equation' ? 'Write the Equation' : 'Find the Total'}</div>
+                            ${ch.type === 'total' ? `
+                                <div style="margin: 1.5rem 0; background: var(--bg); padding: 1.5rem; border-radius: 0.5rem;">
+                                    ${renderArray(ch.rows, ch.cols)}
+                                </div>
+                            ` : ''}
+                            <div class="challenge-prompt">${ch.prompt}</div>
+                            <div class="choices">
+                                ${ch.choices.map((choice, idx) => `
+                                    <div class="choice ${S.practiceSelected === idx ? 'selected' : ''} ${S.practiceFeedback === 'correct' && choice === ch.correct ? 'correct' : ''} ${S.practiceFeedback === 'incorrect' && S.practiceSelected === idx && choice !== ch.correct ? 'incorrect' : ''}"
+                                        onclick="${S.practiceFeedback ? '' : `S.practiceSelected = ${idx}; checkPractice(); render();`}">
+                                        ${choice}
+                                    </div>
+                                `).join('')}
+                            </div>
+                            ${S.practiceFeedback === 'correct'
+                                ? `<div style="color: var(--green); margin-top: 1rem; font-weight: 600;">✓ Correct!</div>
+                                   <button class="btn" onclick="S.practiceChallenge = null; render()" style="margin-top: 1rem;">Next Challenge</button>`
+                                : S.practiceFeedback === 'incorrect'
+                                ? `<div style="color: var(--pink); margin-top: 1rem; font-weight: 600;">✗ Try Again</div>
+                                   <button class="btn" onclick="S.practiceSelected = null; S.practiceFeedback = null; render()" style="margin-top: 1rem;">Reset</button>`
+                                : ''
+                            }
+                        </div>
+                    </div>
+                `;
+            }
+        }
+
+        function renderPlay() {
+            if (!S.playQuestion) {
+                S.playQuestion = generatePlayQuestion();
+                S.playSelected = null;
+                S.playFeedback = null;
+                S.playTimeLeft = 8;
+            }
+
+            const q = S.playQuestion;
+
+            return `
+                <div class="play-content">
+                    <div class="play-header">
+                        <div class="score-display">
+                            <div class="score-item">
+                                <div>Score</div>
+                                <div class="score-value">${S.playScore}</div>
+                            </div>
+                            <div class="score-item">
+                                <div>Streak</div>
+                                <div class="score-value">${S.playStreak}</div>
+                            </div>
+                        </div>
+                        <div class="timer-display ${S.playTimeLeft <= 3 ? 'critical' : S.playTimeLeft <= 5 ? 'warning' : ''}">
+                            ${S.playTimeLeft}s
+                        </div>
+                    </div>
+
+                    <div class="challenge-card">
+                        <div class="challenge-title">${q.type === 'word-problem' ? 'Word Problem' : 'Question'} ${S.playQuestionCount + 1}/8</div>
+                        <div class="challenge-prompt">${q.prompt}</div>
+                        <div class="choices">
+                            ${q.choices.map((choice, idx) => `
+                                <div class="choice ${S.playSelected === idx ? 'selected' : ''} ${S.playFeedback === 'correct' && choice === q.correct ? 'correct' : ''} ${S.playFeedback === 'incorrect' && S.playSelected === idx && choice !== q.correct ? 'incorrect' : ''}"
+                                    onclick="${S.playFeedback ? '' : `S.playSelected = ${idx}; checkPlay(); render();`}">
+                                    ${choice}
+                                </div>
+                            `).join('')}
+                        </div>
+                    </div>
+                </div>
+            `;
+        }
+
+        function renderPanel() {
+            if (S.mode === 'explore') {
+                return `
+                    <div class="panel-section">
+                        <div class="panel-title">Vocabulary</div>
+                        <div class="vocab-item">
+                            <div><span class="vocab-term">Row:</span> Objects arranged horizontally</div>
+                        </div>
+                        <div class="vocab-item">
+                            <div><span class="vocab-term">Column:</span> Objects arranged vertically</div>
+                        </div>
+                        <div class="vocab-item">
+                            <div><span class="vocab-term">Array:</span> Objects arranged in rows and columns</div>
+                        </div>
+                        <div class="vocab-item">
+                            <div><span class="vocab-term">Equal Groups:</span> Same number in each group</div>
+                        </div>
+                        <div class="vocab-item">
+                            <div><span class="vocab-term">Repeated Addition:</span> Adding the same number multiple times</div>
+                        </div>
+                    </div>
+                    <div class="panel-section">
+                        <div class="panel-title">Standard</div>
+                        <div class="vocab-item">
+                            2.OA.C.4: Equal Groups & Arrays
+                        </div>
+                    </div>
+                `;
+            } else if (S.mode === 'practice') {
+                const totalAttempted = 5; // Placeholder
+                const correct = 3;
+                return `
+                    <div class="panel-section">
+                        <div class="panel-title">Progress</div>
+                        <div class="stat-row">
+                            <span class="stat-label">Attempted</span>
+                            <span class="stat-value">${totalAttempted}</span>
+                        </div>
+                        <div class="stat-row">
+                            <span class="stat-label">Correct</span>
+                            <span class="stat-value" style="color: var(--green);">${correct}</span>
+                        </div>
+                        <div class="stat-row">
+                            <span class="stat-label">Accuracy</span>
+                            <span class="stat-value">${Math.round((correct / totalAttempted) * 100)}%</span>
+                        </div>
+                    </div>
+                    <div class="panel-section">
+                        <div class="panel-title">Difficulty</div>
+                        <div style="display: flex; gap: 0.5rem; flex-wrap: wrap;">
+                            <button class="pill ${S.difficulty === 'emergent' ? 'active' : ''}" onclick="S.difficulty = 'emergent'; S.practiceChallenge = null; render()">Emergent</button>
+                            <button class="pill ${S.difficulty === 'proficient' ? 'active' : ''}" onclick="S.difficulty = 'proficient'; S.practiceChallenge = null; render()">Proficient</button>
+                            <button class="pill ${S.difficulty === 'advanced' ? 'active' : ''}" onclick="S.difficulty = 'advanced'; S.practiceChallenge = null; render()">Advanced</button>
+                        </div>
+                    </div>
+                `;
+            } else if (S.mode === 'play') {
+                return `
+                    <div class="panel-section">
+                        <div class="panel-title">Session Info</div>
+                        <div class="stat-row">
+                            <span class="stat-label">Questions</span>
+                            <span class="stat-value">${S.playQuestionCount}/8</span>
+                        </div>
+                        <div class="progress-bar">
+                            <div class="progress-fill" style="width: ${(S.playQuestionCount / 8) * 100}%"></div>
+                        </div>
+                        <div style="margin-top: 1rem; color: var(--text2); font-size: 0.8rem;">
+                            Keep your streak going!
+                        </div>
+                    </div>
+                `;
+            }
+        }
+
+        // Check functions
+        function checkBuild() {
+            if (S.rows === S.practiceChallenge.rows && S.cols === S.practiceChallenge.cols) {
+                S.practiceFeedback = 'correct';
+            } else {
+                S.practiceFeedback = 'incorrect';
+            }
+            render();
+        }
+
+        function checkPractice() {
+            const choice = S.practiceChallenge.choices[S.practiceSelected];
+            if (choice === S.practiceChallenge.correct) {
+                S.practiceFeedback = 'correct';
+                showFB('✓ Correct!','correct');
+            } else {
+                S.practiceFeedback = 'incorrect';
+                showFB('Try again!','incorrect');
+            }
+            render();
+        }
+
+        function checkPlay() {
+            const choice = S.playQuestion.choices[S.playSelected];
+            if (choice === S.playQuestion.correct) {
+                S.playFeedback = 'correct';
+                showFB('✓ Correct!','correct');
+                S.playScore += 10;
+                S.playStreak++;
+                setTimeout(() => {
+                    S.playQuestionCount++;
+                    if (S.playQuestionCount >= 8) {
+                        alert(`Game Over! Final Score: ${S.playScore}`);
+                        S.playQuestionCount = 0;
+                        S.playScore = 0;
+                        S.playStreak = 0;
+                        S.playQuestion = null;
+                        S.playSelected = null;
+                        S.playFeedback = null;
+                        render();
+                    } else {
+                        S.playQuestion = null;
+                        S.playSelected = null;
+                        S.playFeedback = null;
+                        render();
+                    }
+                }, 1000);
+            } else {
+                S.playFeedback = 'incorrect';
+                showFB('Try again!','incorrect');
+                S.playStreak = 0;
+                setTimeout(() => {
+                    S.playQuestionCount++;
+                    if (S.playQuestionCount >= 8) {
+                        alert(`Game Over! Final Score: ${S.playScore}`);
+                        S.playQuestionCount = 0;
+                        S.playScore = 0;
+                        S.playStreak = 0;
+                        S.playQuestion = null;
+                        S.playSelected = null;
+                        S.playFeedback = null;
+                        render();
+                    } else {
+                        S.playQuestion = null;
+                        S.playSelected = null;
+                        S.playFeedback = null;
+                        render();
+                    }
+                }, 1000);
+            }
+            render();
+        }
+
+        // Render function
+        function render() {
+            const app = document.getElementById('app');
+            const workspaceContent = S.mode === 'explore'
+                ? renderExplore()
+                : S.mode === 'practice'
+                ? renderPractice()
+                : renderPlay();
+
+            app.innerHTML = `
+                <div class="vinculum-header">
+                    <div class="vinculum-header-left">
+                        
+      <a class="vinculum-back-btn" href="../../VINCULUM-Hub.html" style="text-decoration:none;">◀ Hub</a>
+      <div class="vinculum-header-title"><span>VINCULUM</span> Array Builder</div>
+                        <div class="badge">2.OA</div>
+                    </div>
+                    <div class="tags">
+                        <div class="tag">2.OA.C.4</div>
+                    </div>
+                </div>
+
+                <div class="controls">
+                    <div class="tabs">
+                        <button class="tab ${S.mode === 'explore' ? 'active' : ''}" onclick="S.mode = 'explore'; render()">Explore</button>
+                        <button class="tab ${S.mode === 'practice' ? 'active' : ''}" onclick="S.mode = 'practice'; S.practiceChallenge = null; render()">Practice</button>
+                        <button class="tab ${S.mode === 'play' ? 'active' : ''}" onclick="S.mode = 'play'; S.playQuestion = null; render()">Play</button>
+                    </div>
+                    ${S.mode !== 'play' ? `
+                        <div class="difficulty">
+                            <span class="difficulty-label">Difficulty:</span>
+                            <button class="pill ${S.difficulty === 'emergent' ? 'active' : ''}" onclick="S.difficulty = 'emergent'; render()">Emergent</button>
+                            <button class="pill ${S.difficulty === 'proficient' ? 'active' : ''}" onclick="S.difficulty = 'proficient'; render()">Proficient</button>
+                            <button class="pill ${S.difficulty === 'advanced' ? 'active' : ''}" onclick="S.difficulty = 'advanced'; render()">Advanced</button>
+                        </div>
+                    ` : ''}
+                </div>
+
+                <div class="main-container">
+                    <div class="workspace" role="main">
+                        ${workspaceContent}
+                    </div>
+                    <div class="panel">
+                        ${renderPanel()}
+                    </div>
+                </div>
+            `;
+        }
+
+        // Timer for play mode
+        setInterval(() => {
+            if (S.mode === 'play' && S.playQuestion && S.playTimeLeft > 0) {
+                S.playTimeLeft--;
+                if (S.playTimeLeft === 0) {
+                    S.playQuestionCount++;
+                    if (S.playQuestionCount >= 8) {
+                        alert(`Time's up! Final Score: ${S.playScore}`);
+                        S.playQuestionCount = 0;
+                        S.playScore = 0;
+                        S.playStreak = 0;
+                        S.playQuestion = null;
+                        S.playSelected = null;
+                        S.playFeedback = null;
+                    } else {
+                        S.playQuestion = null;
+                        S.playSelected = null;
+                        S.playFeedback = null;
+                    }
+                }
+                render();
+            }
+        }, 1000);
+
+        // Initial render
+        render();
+    </script>
+<script src="../../vinculum-input.js"></script>
+<script src="../../vinculum-core.js"></script>
+<script src="../../vinculum-data.js"></script>
+<script src="../../vinculum-adaptive-hook.js"></script>
+<script src="../../vinculum-3reads.js"></script>
+<script src="../../vinculum-stories.js"></script>
+<script src="../../vinculum-feedback.js"></script>
+  <script src="../../vinculum-guide.js"></script>
+<script src="../../vinculum-identity.js"></script>
+<script src="../../vinculum-indigenous.js"></script>
+<script src="../../vinculum-dashboard.js"></script>
+<!-- Foundation loaded from vinculum-core.js -->
+</body>
+</html>

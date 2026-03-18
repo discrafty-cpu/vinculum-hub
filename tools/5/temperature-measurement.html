@@ -1,0 +1,765 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Temperature Measurement</title>
+    <link rel="stylesheet" href="../../vinculum-core.css">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #2196f3 0%, #1976d2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1000px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 15px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            padding: 30px;
+        }
+
+        .vinculum-header {
+            text-align: center;
+            margin-bottom: 30px;
+            padding-bottom: 20px;
+            border-bottom: 3px solid #2196f3;
+        }
+
+        .vinculum-header h1 {
+            color: #333;
+            font-size: 2.5em;
+            margin-bottom: 10px;
+        }
+
+        .vinculum-header p {
+            color: #666;
+            font-size: 1.1em;
+        }
+
+        .mode-selector {
+            display: flex;
+            justify-content: center;
+            gap: 10px;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+        }
+
+        .vinculum-mode-tab {
+            padding: 10px 20px;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 1em;
+            font-weight: bold;
+            transition: all 0.3s;
+            background: #e0e0e0;
+            color: #333;
+        }
+
+        .vinculum-mode-tab.active {
+            background: #2196f3;
+            color: white;
+            transform: scale(1.05);
+        }
+
+        .difficulty-selector {
+            display: flex;
+            justify-content: center;
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+
+        .vinculum-diff-btn {
+            padding: 8px 16px;
+            border: 2px solid #ccc;
+            border-radius: 6px;
+            background: white;
+            cursor: pointer;
+            font-weight: bold;
+            transition: all 0.3s;
+        }
+
+        .vinculum-diff-btn.active {
+            background: #2196f3;
+            color: white;
+            border-color: #2196f3;
+        }
+
+        .mode-content {
+            display: none;
+        }
+
+        .mode-content.active {
+            display: block;
+        }
+
+        /* Explore Mode */
+        .explore-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 30px;
+            margin-bottom: 20px;
+        }
+
+        .thermometer-container {
+            text-align: center;
+        }
+
+        .thermometer {
+            width: 80px;
+            height: 300px;
+            background: #e0e0e0;
+            border-radius: 40px;
+            margin: 20px auto;
+            position: relative;
+            border: 3px solid #333;
+            overflow: hidden;
+        }
+
+        .thermometer-fill {
+            position: absolute;
+            bottom: 0;
+            width: 100%;
+            background: linear-gradient(180deg, #2196f3, #ff6f00);
+            border-radius: 37px;
+            transition: height 0.3s;
+        }
+
+        .thermometer-scale {
+            position: absolute;
+            left: 90px;
+            top: 0;
+            height: 300px;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            font-weight: bold;
+            font-size: 0.9em;
+            color: #333;
+        }
+
+        .scale-mark {
+            display: flex;
+            align-items: center;
+        }
+
+        .scale-mark::before {
+            content: '';
+            display: block;
+            width: 20px;
+            height: 1px;
+            background: #333;
+            margin-right: 5px;
+        }
+
+        .controls {
+            margin-top: 20px;
+        }
+
+        .slider-container {
+            margin: 20px 0;
+        }
+
+        .slider-label {
+            font-weight: bold;
+            color: #333;
+            margin-bottom: 8px;
+            display: block;
+        }
+
+        input[type="range"] {
+            width: 100%;
+            height: 8px;
+            border-radius: 5px;
+            background: #ddd;
+            outline: none;
+            -webkit-appearance: none;
+        }
+
+        input[type="range"]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 25px;
+            height: 25px;
+            border-radius: 50%;
+            background: #2196f3;
+            cursor: pointer;
+        }
+
+        input[type="range"]::-moz-range-thumb {
+            width: 25px;
+            height: 25px;
+            border-radius: 50%;
+            background: #2196f3;
+            cursor: pointer;
+            border: none;
+        }
+
+        .reading-display {
+            text-align: center;
+            background: #f0f7ff;
+            padding: 20px;
+            border-radius: 10px;
+            border: 2px solid #2196f3;
+        }
+
+        .reading-display h3 {
+            color: #2196f3;
+            margin-bottom: 10px;
+        }
+
+        .temp-value {
+            font-size: 1.8em;
+            font-weight: bold;
+            color: #333;
+            margin-bottom: 10px;
+        }
+
+        .conversion-note {
+            color: #666;
+            font-size: 0.95em;
+        }
+
+        /* Practice Mode */
+        .thermometer-reading {
+            background: #f0f7ff;
+            padding: 20px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+            border-left: 5px solid #2196f3;
+        }
+
+        .thermometer-reading h4 {
+            color: #2196f3;
+            margin-bottom: 15px;
+        }
+
+        .thermo-display-area {
+            display: flex;
+            justify-content: center;
+            margin: 20px 0;
+            gap: 30px;
+        }
+
+        .mini-thermo {
+            text-align: center;
+        }
+
+        .mini-thermo-visual {
+            width: 60px;
+            height: 200px;
+            background: #e0e0e0;
+            border-radius: 30px;
+            margin: 10px auto;
+            position: relative;
+            border: 2px solid #333;
+            overflow: hidden;
+        }
+
+        .mini-thermo-fill {
+            position: absolute;
+            bottom: 0;
+            width: 100%;
+            background: linear-gradient(180deg, #2196f3, #ff6f00);
+            border-radius: 27px;
+            transition: height 0.3s;
+        }
+
+        .answer-group {
+            display: flex;
+            gap: 10px;
+            margin: 15px 0;
+        }
+
+        .answer-group input {
+            flex: 1;
+            padding: 10px;
+            border: 2px solid #ccc;
+            border-radius: 6px;
+        }
+
+        .answer-group button {
+            padding: 10px 20px;
+            background: #2196f3;
+            color: white;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-weight: bold;
+        }
+
+        .answer-group button:hover {
+            background: #1976d2;
+        }
+
+        .feedback-box {
+            padding: 15px;
+            border-radius: 6px;
+            margin-top: 10px;
+            display: none;
+            border-left: 4px solid;
+        }
+
+        .feedback-box.show {
+            display: block;
+        }
+
+        .feedback-box.correct {
+            background: #d4edda;
+            color: #155724;
+            border-color: #4caf50;
+        }
+
+        .feedback-box.incorrect {
+            background: #f8d7da;
+            color: #721c24;
+            border-color: #f44336;
+        }
+
+        /* Play Mode */
+        .challenge-card {
+            background: #f0f7ff;
+            padding: 20px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+            border-left: 5px solid #2196f3;
+        }
+
+        .scenario-text {
+            font-size: 1.1em;
+            color: #555;
+            margin-bottom: 15px;
+            line-height: 1.6;
+        }
+
+        .answer-options {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+            gap: 10px;
+            margin: 15px 0;
+        }
+
+        .answer-option {
+            padding: 12px;
+            background: white;
+            border: 2px solid #ddd;
+            border-radius: 6px;
+            cursor: pointer;
+            font-weight: bold;
+            text-align: center;
+            transition: all 0.3s;
+        }
+
+        .answer-option:hover {
+            border-color: #2196f3;
+            background: #f0f7ff;
+        }
+
+        .answer-option.correct {
+            background: #4caf50;
+            color: white;
+            border-color: #4caf50;
+        }
+
+        .answer-option.incorrect {
+            background: #f44336;
+            color: white;
+            border-color: #f44336;
+        }
+
+        .score {
+            background: #2196f3;
+            color: white;
+            padding: 20px;
+            border-radius: 10px;
+            text-align: center;
+            font-size: 1.5em;
+            font-weight: bold;
+            margin-top: 20px;
+        }
+
+        #feedback {
+            margin-top: 15px;
+            padding: 15px;
+            border-radius: 6px;
+            font-weight: bold;
+            display: none;
+        }
+
+        #feedback.show {
+            display: block;
+        }
+
+        #feedback.success {
+            background: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+
+        #feedback.error {
+            background: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+
+        @media (max-width: 768px) {
+            .explore-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .thermo-display-area {
+                flex-direction: column;
+                gap: 20px;
+            }
+
+            .vinculum-header h1 {
+                font-size: 1.8em;
+            }
+
+            .container {
+                padding: 15px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="vinculum-header">
+            <h1>🌡️ Temperature Measurement</h1>
+            <p>Learn to read and convert temperatures</p>
+        </div>
+
+        <div class="mode-selector">
+            <button class="vinculum-mode-tab active" data-mode="explore"><svg width="18" height="18" viewBox="0 0 48 48" fill="none"><path d="M4 24C4 24 12 12 24 12C36 12 44 24 44 24C44 24 36 36 24 36C12 36 4 24 4 24Z" stroke="currentColor" stroke-width="3" fill="none"/><circle cx="24" cy="24" r="7" stroke="currentColor" stroke-width="3" fill="none"/><circle cx="24" cy="24" r="3" fill="currentColor"/><line x1="24" y1="4" x2="24" y2="9" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" opacity="0.5"/><line x1="10" y1="8" x2="13" y2="12" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" opacity="0.5"/><line x1="38" y1="8" x2="35" y2="12" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" opacity="0.5"/></svg> Explore</button>
+            <button class="vinculum-mode-tab" data-mode="practice"><svg width="18" height="18" viewBox="0 0 48 48" fill="none"><circle cx="24" cy="24" r="20" stroke="currentColor" stroke-width="3" fill="none" opacity="0.3"/><circle cx="24" cy="24" r="20" stroke="currentColor" stroke-width="3" fill="none" stroke-dasharray="126" stroke-dashoffset="32" stroke-linecap="round"/><polyline points="16,24 22,32 34,16" stroke="currentColor" stroke-width="4" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg> Practice</button>
+            <button class="vinculum-mode-tab" data-mode="play"><svg width="18" height="18" viewBox="0 0 48 48" fill="none"><polygon points="28,4 12,28 22,28 18,44 36,18 26,18" fill="none" stroke="currentColor" stroke-width="3" stroke-linejoin="round"/><polygon points="27,8 15,27 23,27 20,40 34,19 26,19" fill="currentColor" opacity="0.15"/></svg> Play</button>
+        </div>
+
+        <div class="difficulty-selector">
+            <button class="diff-btn active" data-difficulty="easy">Easy</button>
+            <button class="diff-btn" data-difficulty="medium">Medium</button>
+            <button class="diff-btn" data-difficulty="hard">Hard</button>
+        </div>
+
+        <!-- EXPLORE MODE -->
+        <div class="mode-content active" id="explore">
+            <h3>Explore: Interactive Thermometer</h3>
+            <div class="explore-grid">
+                <div class="thermometer-container">
+                    <h4>Adjust Temperature</h4>
+                    <div class="thermometer">
+                        <div class="thermometer-fill" id="thermo-fill"></div>
+                    </div>
+                    <div class="thermometer-scale">
+                        <div class="scale-mark">100°C</div>
+                        <div class="scale-mark">75°C</div>
+                        <div class="scale-mark">50°C</div>
+                        <div class="scale-mark">25°C</div>
+                        <div class="scale-mark">0°C</div>
+                    </div>
+                </div>
+
+                <div>
+                    <div class="controls">
+                        <div class="slider-container">
+                            <label class="slider-label" for="temp-slider">Celsius Temperature</label>
+                            <input type="range" id="temp-slider" min="-40" max="50" value="20" step="1">
+                        </div>
+                    </div>
+
+                    <div class="reading-display">
+                        <h3>📊 Temperature Reading</h3>
+                        <div class="temp-value">
+                            <span id="temp-celsius">20</span>°C
+                        </div>
+                        <div class="conversion-note">
+                            = <span id="temp-fahrenheit">68</span>°F
+                        </div>
+                        <div style="margin-top: 10px; font-size: 0.85em; color: #666;">
+                            Formula: °F = (°C × 9/5) + 32
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div id="feedback" class="feedback"></div>
+        </div>
+
+        <!-- PRACTICE MODE -->
+        <div class="mode-content" id="practice">
+            <h3>Practice: Read Thermometers</h3>
+            <div id="practice-container"></div>
+            <div id="feedback" class="feedback"></div>
+        </div>
+
+        <!-- PLAY MODE -->
+        <div class="mode-content" id="play">
+            <h3>Temperature Challenge: Estimate Weather Temperatures</h3>
+            <div class="challenge-card">
+                <div class="scenario-text" id="scenario-text"></div>
+                <div class="answer-options" id="answer-options"></div>
+                <button class="vinculum-mode-tab" onclick="nextChallenge()">Next Challenge</button>
+                <div id="feedback" class="feedback"></div>
+                <div class="score" id="score" style="display: none;"></div>
+            </div>
+        </div>
+    </div>
+
+    <script src="../../vinculum-feedback.js"></script><script src="../../vinculum-guide.js"></script><script src="../../vinculum-indigenous.js"></script><script src="../../indigenous-context-panel.js"></script>
+    <script src="../../vinculum-input.js"></script>
+
+    <script>
+        let currentDifficulty = 'easy';
+        let currentMode = 'explore';
+        let gameScore = 0;
+        let gameQuestions = 0;
+
+        function init() {
+            setupModeButtons();
+            setupDifficultyButtons();
+            loadExplore();
+        }
+
+        function setupModeButtons() {
+            document.querySelectorAll('.vinculum-mode-tab[data-mode]').forEach(btn => {
+                btn.addEventListener('click', (e) => {
+                    document.querySelectorAll('.vinculum-mode-tab[data-mode]').forEach(b => b.classList.remove('active'));
+                    e.target.classList.add('active');
+                    currentMode = e.target.dataset.mode;
+                    document.querySelectorAll('.mode-content').forEach(m => m.classList.remove('active'));
+                    document.getElementById(currentMode).classList.add('active');
+
+                    if (currentMode === 'practice') loadPractice();
+                    if (currentMode === 'play') loadPlay();
+                });
+            });
+        }
+
+        function setupDifficultyButtons() {
+            document.querySelectorAll('.vinculum-diff-btn').forEach(btn => {
+                btn.addEventListener('click', (e) => {
+                    document.querySelectorAll('.vinculum-diff-btn').forEach(b => b.classList.remove('active'));
+                    e.target.classList.add('active');
+                    currentDifficulty = e.target.dataset.difficulty;
+
+                    if (currentMode === 'practice') loadPractice();
+                    if (currentMode === 'play') loadPlay();
+                });
+            });
+        }
+
+        function loadExplore() {
+            const slider = document.getElementById('temp-slider');
+            slider.addEventListener('input', updateThermometer);
+            updateThermometer();
+        }
+
+        function updateThermometer() {
+            const celsius = parseInt(document.getElementById('temp-slider').value);
+            const fahrenheit = (celsius * 9/5) + 32;
+
+            document.getElementById('temp-celsius').textContent = celsius;
+            document.getElementById('temp-fahrenheit').textContent = fahrenheit.toFixed(0);
+
+            const percentage = ((celsius + 40) / 90) * 100;
+            document.getElementById('thermo-fill').style.height = Math.max(0, Math.min(100, percentage)) + '%';
+        }
+
+        function loadPractice() {
+            const problems = {
+                easy: [
+                    {
+                        celsius: 0,
+                        fahrenheit: 32,
+                        question: 'What is 0°C in Fahrenheit?'
+                    },
+                    {
+                        celsius: 10,
+                        fahrenheit: 50,
+                        question: 'What is 10°C in Fahrenheit?'
+                    },
+                    {
+                        celsius: 20,
+                        fahrenheit: 68,
+                        question: 'What is 20°C in Fahrenheit?'
+                    },
+                    {
+                        celsius: 30,
+                        fahrenheit: 86,
+                        question: 'What is 30°C in Fahrenheit?'
+                    }
+                ],
+                medium: [
+                    {
+                        celsius: 5,
+                        fahrenheit: 41,
+                        question: 'Convert 5°C to Fahrenheit'
+                    },
+                    {
+                        celsius: 15,
+                        fahrenheit: 59,
+                        question: 'Convert 15°C to Fahrenheit'
+                    },
+                    {
+                        celsius: 25,
+                        fahrenheit: 77,
+                        question: 'Convert 25°C to Fahrenheit'
+                    },
+                    {
+                        celsius: -10,
+                        fahrenheit: 14,
+                        question: 'Convert -10°C to Fahrenheit'
+                    }
+                ],
+                hard: [
+                    {
+                        celsius: -5,
+                        fahrenheit: 23,
+                        question: 'What is -5°C in Fahrenheit?'
+                    },
+                    {
+                        celsius: 37,
+                        fahrenheit: 98.6,
+                        question: 'Body temperature is 37°C. In Fahrenheit?'
+                    },
+                    {
+                        celsius: 100,
+                        fahrenheit: 212,
+                        question: 'Boiling point: 100°C in Fahrenheit?'
+                    }
+                ]
+            };
+
+            const problemList = problems[currentDifficulty];
+            const problem = problemList[Math.floor(Math.random() * problemList.length)];
+
+            const container = document.getElementById('practice-container');
+            container.innerHTML = `
+                <div class="thermometer-reading">
+                    <h4>${problem.question}</h4>
+                    <div class="thermo-display-area">
+                        <div class="mini-thermo">
+                            <div>Temperature</div>
+                            <div class="mini-thermo-visual">
+                                <div class="mini-thermo-fill" style="height: ${Math.max(0, Math.min(100, ((problem.celsius + 40) / 90) * 100))}%"></div>
+                            </div>
+                            <div><strong>${problem.celsius}°C</strong></div>
+                        </div>
+                    </div>
+                    <div class="answer-group">
+                        <input type="number" id="answer-input" placeholder="Enter °F" step="0.1">
+                        <button onclick="checkPracticeAnswer(${problem.fahrenheit})">Check</button>
+                    </div>
+                    <div class="feedback-box" id="practice-feedback"></div>
+                </div>
+            `;
+
+            document.getElementById('answer-input').focus();
+        }
+
+        function checkPracticeAnswer(correct) {
+            const input = document.getElementById('answer-input');
+            const answer = parseFloat(input.value);
+            const feedback = document.getElementById('practice-feedback');
+
+            if (isNaN(answer)) {
+                feedback.classList.add('show', 'incorrect');
+                feedback.innerHTML = '❌ Please enter a number!';
+                return;
+            }
+
+            const isCorrect = Math.abs(answer - correct) < 1;
+            feedback.classList.add('show', isCorrect ? 'correct' : 'incorrect');
+            feedback.innerHTML = isCorrect ?
+                `✅ Correct! ${correct}°F` :
+                `❌ Not quite. Correct answer: ${correct}°F`;
+        }
+
+        function loadPlay() {
+            gameScore = 0;
+            gameQuestions = 0;
+            nextChallenge();
+        }
+
+        function nextChallenge() {
+            const scenarios = {
+                easy: [
+                    { desc: 'Freezing water', temp: 0, options: [0, 15, 32, 50] },
+                    { desc: 'Comfortable room', temp: 20, options: [32, 50, 68, 85] },
+                    { desc: 'Hot summer day', temp: 35, options: [77, 86, 95, 104] },
+                    { desc: 'Boiling water', temp: 100, options: [150, 180, 212, 250] }
+                ],
+                medium: [
+                    { desc: 'Snow/Ice outside', temp: -5, options: [-5, 14, 23, 32] },
+                    { desc: 'Cool autumn day', temp: 10, options: [32, 40, 50, 60] },
+                    { desc: 'Normal body temp', temp: 37, options: [86, 98.6, 104, 112] },
+                    { desc: 'Oven temperature', temp: 200, options: [300, 350, 392, 450] }
+                ],
+                hard: [
+                    { desc: 'Arctic winter', temp: -40, options: [-40, 0, 32, 50] },
+                    { desc: 'Sauna heat', temp: 80, options: [150, 176, 212, 250] },
+                    { desc: 'Fever temperature', temp: 39, options: [98.6, 102, 104, 108] },
+                    { desc: 'Desert heat', temp: 45, options: [95, 104, 113, 122] }
+                ]
+            };
+
+            const scList = scenarios[currentDifficulty];
+            const scenario = scList[Math.floor(Math.random() * scList.length)];
+
+            const celsius = scenario.temp;
+            const fahrenheit = (celsius * 9/5) + 32;
+            const options = scenario.options.slice();
+
+            document.getElementById('scenario-text').innerHTML = `<strong>What is ${scenario.desc}?</strong><br>In Celsius: ${celsius}°C<br>In Fahrenheit: ?`;
+
+            const optionsDiv = document.getElementById('answer-options');
+            optionsDiv.innerHTML = '';
+
+            options.forEach(opt => {
+                const btn = document.createElement('button');
+                btn.className = 'answer-option';
+                btn.textContent = opt + '°F';
+                btn.onclick = () => checkChallenge(opt, fahrenheit, btn);
+                optionsDiv.appendChild(btn);
+            });
+
+            document.getElementById('feedback').innerHTML = '';
+            document.getElementById('score').style.display = 'none';
+        }
+
+        function checkChallenge(selected, correct, btn) {
+            const isCorrect = Math.abs(selected - correct) < 1;
+
+            if (isCorrect) {
+                gameScore++;
+                btn.classList.add('correct');
+                document.getElementById('feedback').classList.add('show', 'success');
+                document.getElementById('feedback').innerHTML = `✅ Correct! ${correct.toFixed(0)}°F`;
+            } else {
+                btn.classList.add('incorrect');
+                document.getElementById('feedback').classList.add('show', 'error');
+                document.getElementById('feedback').innerHTML = `❌ Not quite. Correct: ${correct.toFixed(0)}°F`;
+            }
+
+            gameQuestions++;
+
+            if (gameQuestions >= 5) {
+                document.getElementById('score').style.display = 'block';
+                document.getElementById('score').innerHTML = `🏆 Game Over! Score: ${gameScore}/5`;
+                document.querySelectorAll('.answer-option').forEach(b => b.disabled = true);
+            }
+        }
+
+        init();
+    </script>
+</body>
+</html>

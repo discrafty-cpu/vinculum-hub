@@ -1,0 +1,716 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Budget Basics</title>
+    <link rel="stylesheet" href="../../vinculum-core.css">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #4caf50 0%, #45a049 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1100px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 15px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            padding: 30px;
+        }
+
+        .vinculum-header {
+            text-align: center;
+            margin-bottom: 30px;
+            padding-bottom: 20px;
+            border-bottom: 3px solid #4caf50;
+        }
+
+        .vinculum-header h1 {
+            color: #333;
+            font-size: 2.5em;
+            margin-bottom: 10px;
+        }
+
+        .vinculum-header p {
+            color: #666;
+            font-size: 1.1em;
+        }
+
+        .mode-selector {
+            display: flex;
+            justify-content: center;
+            gap: 10px;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+        }
+
+        .vinculum-mode-tab {
+            padding: 10px 20px;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 1em;
+            font-weight: bold;
+            transition: all 0.3s;
+            background: #e0e0e0;
+            color: #333;
+        }
+
+        .vinculum-mode-tab.active {
+            background: #4caf50;
+            color: white;
+            transform: scale(1.05);
+        }
+
+        .difficulty-selector {
+            display: flex;
+            justify-content: center;
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+
+        .vinculum-diff-btn {
+            padding: 8px 16px;
+            border: 2px solid #ccc;
+            border-radius: 6px;
+            background: white;
+            cursor: pointer;
+            font-weight: bold;
+            transition: all 0.3s;
+        }
+
+        .vinculum-diff-btn.active {
+            background: #4caf50;
+            color: white;
+            border-color: #4caf50;
+        }
+
+        .mode-content {
+            display: none;
+        }
+
+        .mode-content.active {
+            display: block;
+        }
+
+        /* Explore Mode */
+        .budget-form {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+            margin-bottom: 20px;
+        }
+
+        .form-group {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .form-group label {
+            font-weight: bold;
+            color: #333;
+            margin-bottom: 8px;
+            font-size: 1.05em;
+        }
+
+        .form-group input {
+            padding: 10px;
+            border: 2px solid #ccc;
+            border-radius: 6px;
+            font-size: 1em;
+        }
+
+        .form-group input:focus {
+            outline: none;
+            border-color: #4caf50;
+            box-shadow: 0 0 5px rgba(76, 175, 80, 0.3);
+        }
+
+        .budget-summary {
+            background: linear-gradient(135deg, #4caf50, #45a049);
+            color: white;
+            padding: 20px;
+            border-radius: 10px;
+            margin: 20px 0;
+        }
+
+        .summary-row {
+            display: flex;
+            justify-content: space-between;
+            margin: 8px 0;
+            font-size: 1.1em;
+        }
+
+        .summary-row.balance {
+            font-size: 1.4em;
+            font-weight: bold;
+            border-top: 2px solid rgba(255, 255, 255, 0.3);
+            padding-top: 10px;
+            margin-top: 15px;
+        }
+
+        .balance-positive {
+            color: #90ee90;
+        }
+
+        .balance-negative {
+            color: #ffcccc;
+        }
+
+        /* Practice Mode */
+        .problem {
+            background: #f0f8f0;
+            padding: 20px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+            border-left: 5px solid #4caf50;
+        }
+
+        .problem h4 {
+            color: #4caf50;
+            margin-bottom: 15px;
+            font-size: 1.1em;
+        }
+
+        .problem p {
+            color: #555;
+            margin-bottom: 10px;
+            line-height: 1.6;
+        }
+
+        .answer-input-group {
+            display: flex;
+            gap: 10px;
+            margin: 15px 0;
+        }
+
+        .answer-input-group input {
+            flex: 1;
+            padding: 10px;
+            border: 2px solid #ccc;
+            border-radius: 6px;
+            font-size: 1em;
+        }
+
+        .answer-input-group button {
+            padding: 10px 20px;
+            background: #4caf50;
+            color: white;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-weight: bold;
+            transition: all 0.3s;
+        }
+
+        .answer-input-group button:hover {
+            background: #45a049;
+        }
+
+        .feedback-box {
+            padding: 15px;
+            border-radius: 6px;
+            margin-top: 10px;
+            display: none;
+            border-left: 4px solid;
+        }
+
+        .feedback-box.show {
+            display: block;
+        }
+
+        .feedback-box.correct {
+            background: #d4edda;
+            color: #155724;
+            border-color: #4caf50;
+        }
+
+        .feedback-box.incorrect {
+            background: #f8d7da;
+            color: #721c24;
+            border-color: #f44336;
+        }
+
+        /* Play Mode */
+        .game-scenario {
+            background: #f0f8f0;
+            padding: 20px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+            border: 2px solid #4caf50;
+        }
+
+        .budget-card {
+            background: white;
+            padding: 15px;
+            border-radius: 8px;
+            margin: 10px 0;
+            border-left: 4px solid #4caf50;
+        }
+
+        .budget-card h4 {
+            color: #4caf50;
+            margin-bottom: 8px;
+        }
+
+        .budget-card .amount {
+            font-size: 1.3em;
+            font-weight: bold;
+            color: #333;
+        }
+
+        .challenge {
+            background: #fff3cd;
+            padding: 15px;
+            border-radius: 8px;
+            margin: 15px 0;
+            border-left: 4px solid #ffc107;
+            font-weight: bold;
+        }
+
+        .cuts-options {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 10px;
+            margin: 15px 0;
+        }
+
+        .cut-btn {
+            padding: 12px;
+            background: #f0f0f0;
+            border: 2px solid #ccc;
+            border-radius: 6px;
+            cursor: pointer;
+            font-weight: bold;
+            transition: all 0.3s;
+        }
+
+        .cut-btn:hover {
+            border-color: #4caf50;
+            background: #f0f8f0;
+        }
+
+        .cut-btn.selected {
+            background: #4caf50;
+            color: white;
+            border-color: #4caf50;
+        }
+
+        .score {
+            background: #4caf50;
+            color: white;
+            padding: 20px;
+            border-radius: 10px;
+            text-align: center;
+            font-size: 1.5em;
+            font-weight: bold;
+            margin-top: 20px;
+        }
+
+        #feedback {
+            margin-top: 15px;
+            padding: 15px;
+            border-radius: 6px;
+            font-weight: bold;
+            display: none;
+        }
+
+        #feedback.show {
+            display: block;
+        }
+
+        #feedback.success {
+            background: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+
+        #feedback.error {
+            background: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+
+        @media (max-width: 768px) {
+            .budget-form {
+                grid-template-columns: 1fr;
+            }
+
+            .vinculum-header h1 {
+                font-size: 1.8em;
+            }
+
+            .container {
+                padding: 15px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="vinculum-header">
+            <h1>💵 Budget Basics</h1>
+            <p>Learn to create and manage budgets</p>
+        </div>
+
+        <div class="mode-selector">
+            <button class="vinculum-mode-tab active" data-mode="explore"><svg width="18" height="18" viewBox="0 0 48 48" fill="none"><path d="M4 24C4 24 12 12 24 12C36 12 44 24 44 24C44 24 36 36 24 36C12 36 4 24 4 24Z" stroke="currentColor" stroke-width="3" fill="none"/><circle cx="24" cy="24" r="7" stroke="currentColor" stroke-width="3" fill="none"/><circle cx="24" cy="24" r="3" fill="currentColor"/><line x1="24" y1="4" x2="24" y2="9" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" opacity="0.5"/><line x1="10" y1="8" x2="13" y2="12" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" opacity="0.5"/><line x1="38" y1="8" x2="35" y2="12" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" opacity="0.5"/></svg> Explore</button>
+            <button class="vinculum-mode-tab" data-mode="practice"><svg width="18" height="18" viewBox="0 0 48 48" fill="none"><circle cx="24" cy="24" r="20" stroke="currentColor" stroke-width="3" fill="none" opacity="0.3"/><circle cx="24" cy="24" r="20" stroke="currentColor" stroke-width="3" fill="none" stroke-dasharray="126" stroke-dashoffset="32" stroke-linecap="round"/><polyline points="16,24 22,32 34,16" stroke="currentColor" stroke-width="4" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg> Practice</button>
+            <button class="vinculum-mode-tab" data-mode="play"><svg width="18" height="18" viewBox="0 0 48 48" fill="none"><polygon points="28,4 12,28 22,28 18,44 36,18 26,18" fill="none" stroke="currentColor" stroke-width="3" stroke-linejoin="round"/><polygon points="27,8 15,27 23,27 20,40 34,19 26,19" fill="currentColor" opacity="0.15"/></svg> Play</button>
+        </div>
+
+        <div class="difficulty-selector">
+            <button class="diff-btn active" data-difficulty="easy">Easy</button>
+            <button class="diff-btn" data-difficulty="medium">Medium</button>
+            <button class="diff-btn" data-difficulty="hard">Hard</button>
+        </div>
+
+        <!-- EXPLORE MODE -->
+        <div class="mode-content active" id="explore">
+            <h3>Explore: Create Your Budget</h3>
+            <div class="budget-form" id="budget-form"></div>
+            <button class="vinculum-mode-tab" onclick="calculateBudget()">Calculate Budget</button>
+            <div class="budget-summary" id="summary" style="display: none;">
+                <div class="summary-row">
+                    <span>Income:</span>
+                    <span id="sum-income">$0</span>
+                </div>
+                <div class="summary-row">
+                    <span>Total Expenses:</span>
+                    <span id="sum-expenses">$0</span>
+                </div>
+                <div class="summary-row balance">
+                    <span>Balance:</span>
+                    <span id="sum-balance" class="balance-positive">$0</span>
+                </div>
+            </div>
+            <div id="feedback" class="feedback"></div>
+        </div>
+
+        <!-- PRACTICE MODE -->
+        <div class="mode-content" id="practice">
+            <h3>Practice: Solve Budget Problems</h3>
+            <div id="practice-container"></div>
+            <div id="feedback" class="feedback"></div>
+        </div>
+
+        <!-- PLAY MODE -->
+        <div class="mode-content" id="play">
+            <h3>Budget Challenge: Make Smart Cuts</h3>
+            <div class="game-scenario">
+                <h4 id="scenario-title">Monthly Budget Challenge</h4>
+                <p id="scenario-desc"></p>
+                <div id="budget-display"></div>
+                <div class="challenge" id="challenge-text"></div>
+                <div class="cuts-options" id="cuts-buttons"></div>
+                <button class="vinculum-mode-tab" onclick="submitCut()">Submit Choice</button>
+                <div id="feedback" class="feedback"></div>
+                <div class="score" id="score" style="display: none;"></div>
+            </div>
+        </div>
+    </div>
+
+    <script src="../../vinculum-feedback.js"></script><script src="../../vinculum-guide.js"></script><script src="../../vinculum-indigenous.js"></script><script src="../../indigenous-context-panel.js"></script>
+    <script src="../../vinculum-input.js"></script>
+
+    <script>
+        let currentDifficulty = 'easy';
+        let currentMode = 'explore';
+        let gameScore = 0;
+        let selectedCut = null;
+
+        const budgetCategories = {
+            easy: [
+                { name: 'Allowance', type: 'income', value: 20 },
+                { name: 'Snacks', type: 'expense', value: 5 },
+                { name: 'Games', type: 'expense', value: 8 },
+                { name: 'School Supplies', type: 'expense', value: 7 }
+            ],
+            medium: [
+                { name: 'Salary', type: 'income', value: 3000 },
+                { name: 'Rent', type: 'expense', value: 1200 },
+                { name: 'Food', type: 'expense', value: 400 },
+                { name: 'Transportation', type: 'expense', value: 300 },
+                { name: 'Entertainment', type: 'expense', value: 200 }
+            ],
+            hard: [
+                { name: 'Gross Income', type: 'income', value: 5000 },
+                { name: 'Taxes', type: 'expense', value: 1000 },
+                { name: 'Mortgage', type: 'expense', value: 1800 },
+                { name: 'Utilities', type: 'expense', value: 250 },
+                { name: 'Groceries', type: 'expense', value: 600 },
+                { name: 'Car Payment', type: 'expense', value: 400 },
+                { name: 'Insurance', type: 'expense', value: 300 },
+                { name: 'Entertainment', type: 'expense', value: 250 }
+            ]
+        };
+
+        function init() {
+            setupModeButtons();
+            setupDifficultyButtons();
+            loadExplore();
+        }
+
+        function setupModeButtons() {
+            document.querySelectorAll('.vinculum-mode-tab[data-mode]').forEach(btn => {
+                btn.addEventListener('click', (e) => {
+                    document.querySelectorAll('.vinculum-mode-tab[data-mode]').forEach(b => b.classList.remove('active'));
+                    e.target.classList.add('active');
+                    currentMode = e.target.dataset.mode;
+                    document.querySelectorAll('.mode-content').forEach(m => m.classList.remove('active'));
+                    document.getElementById(currentMode).classList.add('active');
+
+                    if (currentMode === 'practice') loadPractice();
+                    if (currentMode === 'play') loadPlay();
+                });
+            });
+        }
+
+        function setupDifficultyButtons() {
+            document.querySelectorAll('.vinculum-diff-btn').forEach(btn => {
+                btn.addEventListener('click', (e) => {
+                    document.querySelectorAll('.vinculum-diff-btn').forEach(b => b.classList.remove('active'));
+                    e.target.classList.add('active');
+                    currentDifficulty = e.target.dataset.difficulty;
+
+                    if (currentMode === 'explore') loadExplore();
+                    if (currentMode === 'practice') loadPractice();
+                    if (currentMode === 'play') loadPlay();
+                });
+            });
+        }
+
+        function loadExplore() {
+            const categories = budgetCategories[currentDifficulty];
+            const form = document.getElementById('budget-form');
+            form.innerHTML = '';
+
+            categories.forEach((cat, idx) => {
+                const group = document.createElement('div');
+                group.className = 'form-group';
+                group.innerHTML = `
+                    <label for="cat${idx}">${cat.name} ${cat.type === 'income' ? '(Income)' : '(Expense)'}</label>
+                    <input type="number" id="cat${idx}" value="${cat.value}" min="0" step="1">
+                `;
+                form.appendChild(group);
+            });
+
+            document.getElementById('summary').style.display = 'none';
+            document.getElementById('feedback').innerHTML = '';
+        }
+
+        function calculateBudget() {
+            const categories = budgetCategories[currentDifficulty];
+            let income = 0;
+            let expenses = 0;
+
+            categories.forEach((cat, idx) => {
+                const value = parseFloat(document.getElementById(`cat${idx}`).value) || 0;
+                if (cat.type === 'income') income += value;
+                else expenses += value;
+            });
+
+            const balance = income - expenses;
+
+            document.getElementById('sum-income').textContent = '$' + income.toFixed(2);
+            document.getElementById('sum-expenses').textContent = '$' + expenses.toFixed(2);
+
+            const balanceSpan = document.getElementById('sum-balance');
+            balanceSpan.textContent = '$' + balance.toFixed(2);
+            balanceSpan.className = balance >= 0 ? 'balance-positive' : 'balance-negative';
+
+            document.getElementById('summary').style.display = 'block';
+
+            const feedback = document.getElementById('feedback');
+            feedback.className = 'feedback success';
+            if (balance > 0) {
+                feedback.innerHTML = '✅ Great! Your budget is balanced with $' + balance.toFixed(2) + ' left over.';
+            } else if (balance === 0) {
+                feedback.innerHTML = '💯 Perfect! Your budget is exactly balanced!';
+            } else {
+                feedback.innerHTML = '⚠️ Your budget is over by $' + Math.abs(balance).toFixed(2) + '. Try cutting expenses!';
+                feedback.className = 'feedback error';
+            }
+        }
+
+        function loadPractice() {
+            const problems = {
+                easy: [
+                    {
+                        question: 'You get $20 allowance. You spend $5 on snacks and $8 on games. How much is left?',
+                        answer: 7,
+                        explanation: '$20 - $5 - $8 = $7 remaining'
+                    },
+                    {
+                        question: 'Your budget has $100 income and $85 in expenses. What is your balance?',
+                        answer: 15,
+                        explanation: '$100 - $85 = $15 balance (positive!)'
+                    }
+                ],
+                medium: [
+                    {
+                        question: 'Monthly income: $3000. Expenses: Rent $1200, Food $400, Gas $200, Entertainment $300. How much left?',
+                        answer: 900,
+                        explanation: '$3000 - ($1200 + $400 + $200 + $300) = $900'
+                    },
+                    {
+                        question: 'If you make $2500 but spend $2800, how much over budget are you?',
+                        answer: 300,
+                        explanation: '$2800 - $2500 = $300 over (this is bad!)'
+                    }
+                ],
+                hard: [
+                    {
+                        question: 'Gross income: $5000. After taxes ($1000), rent ($1500), bills ($600), and food ($800), how much remains?',
+                        answer: 1100,
+                        explanation: '$5000 - $1000 - $1500 - $600 - $800 = $1100'
+                    },
+                    {
+                        question: 'Your budget is $200 over. You can cut: Entertainment ($150), Dining ($100), or subscriptions ($80). Cut the most, what remains over?',
+                        answer: 50,
+                        explanation: 'Cut entertainment ($150): $200 - $150 = $50 still over'
+                    }
+                ]
+            };
+
+            const problemList = problems[currentDifficulty];
+            const problem = problemList[Math.floor(Math.random() * problemList.length)];
+
+            const container = document.getElementById('practice-container');
+            container.innerHTML = `
+                <div class="problem">
+                    <h4>Problem:</h4>
+                    <p>${problem.question}</p>
+                    <div class="answer-input-group">
+                        <input type="number" id="answer-input" placeholder="Enter your answer" step="0.01">
+                        <button onclick="checkPracticeAnswer(${problem.answer})">Check</button>
+                    </div>
+                    <div class="feedback-box" id="practice-feedback"></div>
+                </div>
+            `;
+
+            document.getElementById('answer-input').focus();
+        }
+
+        function checkPracticeAnswer(correct) {
+            const input = document.getElementById('answer-input');
+            const answer = parseFloat(input.value);
+            const feedback = document.getElementById('practice-feedback');
+
+            if (isNaN(answer)) {
+                feedback.classList.add('show', 'incorrect');
+                feedback.innerHTML = '❌ Please enter a number!';
+                return;
+            }
+
+            const isCorrect = Math.abs(answer - correct) < 0.01;
+            feedback.classList.add('show', isCorrect ? 'correct' : 'incorrect');
+            feedback.innerHTML = isCorrect ?
+                `✅ Correct! The answer is $${correct.toFixed(2)}` :
+                `❌ Not quite. The correct answer is $${correct.toFixed(2)}`;
+        }
+
+        function loadPlay() {
+            gameScore = 0;
+            selectedCut = null;
+
+            const scenarios = {
+                easy: {
+                    title: 'Budget Problem!',
+                    desc: 'Your monthly budget is $150 income but you\'re spending $180! You need to cut $30.',
+                    budget: { Allowance: 150, Snacks: 50, Games: 60, Clothes: 70 },
+                    needed: 30,
+                    cuts: [
+                        { name: 'Cut snacks to $40', save: 10, points: 1 },
+                        { name: 'Skip games', save: 60, points: 3 },
+                        { name: 'Reduce clothes spending', save: 30, points: 5 }
+                    ]
+                },
+                medium: {
+                    title: 'Monthly Budget Overrun',
+                    desc: 'Your $3000 income doesn\'t cover your $3400 expenses. Cut at least $400 to balance.',
+                    budget: { Salary: 3000, Rent: 1200, Food: 400, Gas: 250, Entertainment: 350, Shopping: 200 },
+                    needed: 400,
+                    cuts: [
+                        { name: 'Reduce entertainment', save: 150, points: 2 },
+                        { name: 'Cut shopping', save: 200, points: 3 },
+                        { name: 'Reduce food budget', save: 100, points: 2 },
+                        { name: 'Carpool (save gas)', save: 100, points: 3 },
+                        { name: 'Skip entertainment & shopping', save: 550, points: 5 }
+                    ]
+                },
+                hard: {
+                    title: 'Complex Budget Adjustment',
+                    desc: 'After taxes, your $5000 gross leaves $4000. You\'re spending $4200. Balance it!',
+                    budget: { NetIncome: 4000, Mortgage: 1500, Utilities: 250, Groceries: 600, Transportation: 400, Insurance: 300, Entertainment: 300, Dining: 250 },
+                    needed: 200,
+                    cuts: [
+                        { name: 'Reduce dining out', save: 150, points: 2 },
+                        { name: 'Cut entertainment', save: 200, points: 3 },
+                        { name: 'Optimize utilities', save: 50, points: 1 },
+                        { name: 'Reduce dining & entertainment', save: 350, points: 5 },
+                        { name: 'Refinance utilities & transportation', save: 200, points: 4 }
+                    ]
+                }
+            };
+
+            const scenario = scenarios[currentDifficulty];
+
+            document.getElementById('scenario-title').textContent = scenario.title;
+            document.getElementById('scenario-desc').textContent = scenario.desc;
+
+            let budgetHtml = '';
+            Object.entries(scenario.budget).forEach(([cat, amt]) => {
+                budgetHtml += `<div class="budget-card"><h4>${cat}</h4><div class="amount">$${amt}</div></div>`;
+            });
+            document.getElementById('budget-display').innerHTML = budgetHtml;
+
+            document.getElementById('challenge-text').innerHTML = `<strong>⚠️ Cut at least $${scenario.needed} from expenses</strong>`;
+
+            let cutsHtml = '';
+            scenario.cuts.forEach((cut, idx) => {
+                cutsHtml += `<button class="cut-btn" onclick="selectCut(${idx}, ${cut.save}, ${cut.points})">${cut.name}<br>Saves: $${cut.save}</button>`;
+            });
+            document.getElementById('cuts-buttons').innerHTML = cutsHtml;
+        }
+
+        function selectCut(idx, save, points) {
+            document.querySelectorAll('.cut-btn').forEach(b => b.classList.remove('selected'));
+            document.querySelectorAll('.cut-btn')[idx].classList.add('selected');
+            selectedCut = { save, points, idx };
+        }
+
+        function submitCut() {
+            if (!selectedCut) {
+                const feedback = document.getElementById('feedback');
+                feedback.classList.add('show', 'error');
+                feedback.innerHTML = '❌ Please select a cut first!';
+                return;
+            }
+
+            gameScore = selectedCut.points;
+            const feedback = document.getElementById('feedback');
+            feedback.classList.add('show', 'success');
+            feedback.innerHTML = `✅ Great choice! You saved $${selectedCut.save}! +${selectedCut.points} points`;
+
+            document.getElementById('score').style.display = 'block';
+            document.getElementById('score').innerHTML = `🏆 Challenge Complete! Score: ${gameScore}`;
+
+            document.getElementById('cuts-buttons').style.opacity = '0.5';
+            document.querySelector('button[onclick="submitCut()"]').disabled = true;
+        }
+
+        init();
+    </script>
+</body>
+</html>

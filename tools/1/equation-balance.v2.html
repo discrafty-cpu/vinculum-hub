@@ -1,0 +1,859 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>VINCULUM — Equation Balance</title>
+<link rel="stylesheet" href="../../vinculum-core.css">
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;600&display=swap');
+.vinculum-rtm-btn .rtm-icon{font-size:14px;}
+
+/* ═══ FOCUS VISIBLE ═══ */
+*:focus-visible {
+  outline:2px solid var(--cyan);outline-offset:2px;border-radius:4px;
+}
+.sr-only {
+  position:absolute;width:1px;height:1px;padding:0;margin:-1px;
+  overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0;
+}
+*{margin:0;padding:0;box-sizing:border-box;}
+body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);height:100vh;display:flex;flex-direction:column;overflow:hidden;user-select:none;}
+
+.main{flex:1;display:flex;overflow:hidden;}
+.workspace{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:24px;gap:16px;overflow-y:auto;}
+.side-panel{width:280px;background:var(--bg2);border-left:1px solid var(--border);padding:20px;overflow-y:auto;flex-shrink:0;}
+.panel-section{margin-bottom:20px;}
+.panel-title{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:1.5px;color:var(--muted);margin-bottom:8px;}
+.panel-text{font-size:13px;color:var(--text2);line-height:1.6;}
+
+/* ── Balance SVG ── */
+.balance-wrap{width:100%;max-width:500px;margin:0 auto;position:relative;}
+.balance-wrap svg{width:100%;height:auto;display:block;}
+
+/* ── Blocks on pans ── */
+.block{display:inline-block;width:30px;height:30px;border-radius:6px;font-size:14px;font-weight:800;font-family:'JetBrains Mono',monospace;text-align:center;line-height:30px;color:#fff;margin:2px;}
+
+/* ── Beam tilt ── */
+.beam{transition:transform 0.5s cubic-bezier(0.25,0.46,0.45,0.94);}
+
+/* ── Balanced glow ── */
+.balanced-glow{box-shadow:0 0 20px rgba(0,230,118,0.4);border-radius:12px;}
+
+/* ── Equation Display ── */
+.equation-display{font-size:42px;font-weight:900;font-family:'JetBrains Mono',monospace;text-align:center;margin:16px 0;letter-spacing:6px;display:flex;align-items:center;justify-content:center;gap:10px;flex-wrap:wrap;}
+.eq-part{padding:6px 14px;border-radius:12px;min-width:60px;display:flex;align-items:center;justify-content:center;}
+.eq-left{background:rgba(0,212,255,0.15);color:var(--cyan);}
+.eq-right{background:rgba(255,59,139,0.15);color:var(--pink);}
+.eq-op{color:var(--text2);}
+.eq-equals{color:var(--green);font-size:48px;}
+.eq-missing{color:var(--yellow);}
+
+@keyframes pulse-glow{0%{box-shadow:0 0 8px rgba(255,193,7,0.4);} 50%{box-shadow:0 0 16px rgba(255,193,7,0.8);} 100%{box-shadow:0 0 8px rgba(255,193,7,0.4);}}
+.missing-box{animation:pulse-glow 1.2s infinite;border-radius:12px;padding:6px 14px;}
+
+/* ── MC Grid ── */
+.mc-grid{display:flex;gap:10px;flex-wrap:wrap;justify-content:center;max-width:500px;}
+.mc-btn{width:56px;height:56px;border-radius:14px;border:2px solid var(--border);background:var(--card);color:var(--text);font-size:22px;font-weight:700;font-family:'JetBrains Mono',monospace;cursor:pointer;transition:all 0.15s;display:flex;align-items:center;justify-content:center;}
+.mc-btn:hover{border-color:var(--cyan);transform:scale(1.08);}
+.mc-btn.correct-flash{border-color:var(--green);background:rgba(0,230,118,0.2);color:var(--green);animation:correctFlash 0.4s ease-out;}
+.mc-btn.incorrect-flash{border-color:var(--pink);background:rgba(255,59,139,0.2);color:var(--pink);animation:shake 0.3s ease-in-out;}
+
+@keyframes correctFlash{0%{transform:scale(1.2);} 100%{transform:scale(1);}}
+@keyframes shake{0%,100%{transform:translateX(0);} 25%{transform:translateX(-4px);} 75%{transform:translateX(4px);}}
+
+/* ── Instruction / Controls ── */
+.instruction-box{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:14px 20px;text-align:center;font-size:15px;color:var(--text2);font-weight:500;max-width:600px;transition:all 0.3s;}
+.instruction-box.highlight-cyan{border-color:var(--cyan);color:var(--cyan);}
+.instruction-box.highlight-green{border-color:var(--green);color:var(--green);}
+.instruction-box.highlight-pink{border-color:var(--pink);color:var(--pink);}
+
+.controls{display:flex;gap:8px;flex-wrap:wrap;justify-content:center;}
+.ctrl-btn{padding:10px 20px;border-radius:10px;border:1px solid var(--border);background:var(--card);color:var(--text2);font-size:13px;font-weight:600;font-family:inherit;cursor:pointer;transition:all 0.2s;display:flex;align-items:center;gap:6px;}
+.ctrl-btn:hover{background:var(--card2);color:var(--text);}
+.ctrl-btn.primary{background:var(--grad);color:var(--bg);border-color:transparent;}
+
+/* ── Add/Remove block buttons ── */
+.block-controls{display:flex;gap:8px;justify-content:center;align-items:center;margin:8px 0;}
+.block-btn{width:44px;height:44px;border-radius:12px;border:2px solid var(--border);background:var(--card);color:var(--text);font-size:20px;font-weight:800;cursor:pointer;transition:all 0.15s;display:flex;align-items:center;justify-content:center;}
+.block-btn:hover{border-color:var(--cyan);transform:scale(1.08);}
+.block-btn:active{transform:scale(0.95);}
+
+/* ── Score Display ── */
+.score-display{text-align:center;padding:16px;background:var(--card);border-radius:12px;margin-bottom:12px;}
+.score-value{font-size:36px;font-weight:900;font-family:'JetBrains Mono',monospace;background:var(--grad);-webkit-background-clip:text;-webkit-text-fill-color:transparent;}
+.score-label{font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:1px;}
+.streak-bar{height:6px;background:var(--card);border-radius:3px;overflow:hidden;margin-top:8px;}
+.streak-fill{height:100%;background:var(--grad);border-radius:3px;transition:width 0.3s;}
+
+/* ── Feedback popup ── */
+.feedback{position:fixed;top:50%;left:50%;transform:translate(-50%,-50%) scale(0);padding:24px 48px;border-radius:20px;font-size:22px;font-weight:800;z-index:200;pointer-events:none;transition:transform 0.3s cubic-bezier(0.175,0.885,0.32,1.275),opacity 0.3s;opacity:0;max-width:90vw;text-align:center;line-height:1.4;}
+.feedback.show{transform:translate(-50%,-50%) scale(1);opacity:1;}
+.feedback.correct{background:rgba(0,230,118,0.15);color:var(--green);border:2px solid var(--green);}
+.feedback.incorrect{background:rgba(255,59,139,0.15);color:var(--pink);border:2px solid var(--pink);}
+.feedback.try-again{background:rgba(255,193,7,0.15);color:var(--yellow);border:2px solid var(--yellow);}
+
+/* ── Balanced celebration ── */
+@keyframes balancedPulse{0%{filter:drop-shadow(0 0 4px rgba(0,230,118,0.3));} 50%{filter:drop-shadow(0 0 12px rgba(0,230,118,0.6));} 100%{filter:drop-shadow(0 0 4px rgba(0,230,118,0.3));}}
+.balance-svg-balanced{animation:balancedPulse 1.5s infinite;}
+
+::-webkit-scrollbar{width:6px;}::-webkit-scrollbar-track{background:transparent;}::-webkit-scrollbar-thumb{background:var(--border);border-radius:3px;}
+</style>
+</head>
+<body>
+
+<div class="vinculum-header">
+  <div class="vinculum-header-left">
+    <a class="vinculum-back-btn" href="../../VINCULUM-Hub.html" style="text-decoration:none;">&#9664; Hub</a>
+    <div class="vinculum-header-title"><span>VINCULUM</span> Equation Balance</div>
+    <span class="vinculum-header-badge">1.OA</span>
+  </div>
+  <div class="vinculum-header-right">
+    <div class="vinculum-std-tags">
+      <span class="vinculum-std-tag">1.OA.7</span>
+      <span class="vinculum-std-tag">1.OA.8</span>
+      <span class="vinculum-std-tag mn">MN 1.2.2.3</span>
+    </div>
+    <button class="vinculum-back-btn" id="readAloudBtn" onclick="toggleReadAloud()" aria-label="Read Aloud" title="Read instructions aloud" style="margin-left:8px;white-space:nowrap;">&#128264; Read to Me</button>
+  </div>
+</div>
+
+<div class="vinculum-mode-tabs">
+  <button class="vinculum-mode-tab active-explore" data-mode="explore" id="tabExplore" onclick="setMode('explore')"><svg width="18" height="18" viewBox="0 0 48 48" fill="none"><path d="M4 24C4 24 12 12 24 12C36 12 44 24 44 24C44 24 36 36 24 36C12 36 4 24 4 24Z" stroke="currentColor" stroke-width="3" fill="none"/><circle cx="24" cy="24" r="7" stroke="currentColor" stroke-width="3" fill="none"/><circle cx="24" cy="24" r="3" fill="currentColor"/><line x1="24" y1="4" x2="24" y2="9" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" opacity="0.5"/><line x1="10" y1="8" x2="13" y2="12" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" opacity="0.5"/><line x1="38" y1="8" x2="35" y2="12" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" opacity="0.5"/></svg> Explore</button>
+  <button class="vinculum-mode-tab" id="tabPractice" data-mode="practice" onclick="setMode('practice')"><svg width="18" height="18" viewBox="0 0 48 48" fill="none"><circle cx="24" cy="24" r="20" stroke="currentColor" stroke-width="3" fill="none" opacity="0.3"/><circle cx="24" cy="24" r="20" stroke="currentColor" stroke-width="3" fill="none" stroke-dasharray="126" stroke-dashoffset="32" stroke-linecap="round"/><polyline points="16,24 22,32 34,16" stroke="currentColor" stroke-width="4" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg> Practice</button>
+  <button class="vinculum-mode-tab" id="tabPlay" data-mode="play" onclick="setMode('play')"><svg width="18" height="18" viewBox="0 0 48 48" fill="none"><polygon points="28,4 12,28 22,28 18,44 36,18 26,18" fill="none" stroke="currentColor" stroke-width="3" stroke-linejoin="round"/><polygon points="27,8 15,27 23,27 20,40 34,19 26,19" fill="currentColor" opacity="0.15"/></svg> Play</button>
+  <div class="vinculum-diff-selector">
+    <span class="vinculum-diff-label">Level</span>
+    <button class="vinculum-diff-btn active" data-diff="emergent" id="diffE" onclick="setDiff('emergent')">Balance</button>
+    <button class="vinculum-diff-btn" data-diff="proficient" id="diffP" onclick="setDiff('proficient')">Solve</button>
+    <button class="vinculum-diff-btn" data-diff="advanced" id="diffA" onclick="setDiff('advanced')">Create</button>
+  </div>
+</div>
+
+<div class="main">
+  <div class="workspace" role="main" id="workspace"></div>
+  <div class="side-panel" id="sidePanel"></div>
+</div>
+<div class="feedback" id="feedback"></div>
+
+<script src="../../vinculum-input.js"></script>
+<script>
+/* ═══════════════════════════════════════════
+   STATE
+   ═══════════════════════════════════════════ */
+let S = {
+  mode: 'explore',
+  diff: 'emergent',
+  maxN: 10,
+  leftSide: [3, 2],
+  rightSide: [5],
+  // Practice
+  pLeft: [],
+  pRight: [],
+  pMissing: 'right',
+  pAnswer: 0,
+  pChoices: [],
+  // Play
+  playLeft: [],
+  playRight: [],
+  playMissing: 'right',
+  playAnswer: 0,
+  playChoices: [],
+  // Scoring
+  score: 0,
+  streak: 0,
+  best: 0,
+  round: 0,
+  total: 10
+};
+
+/* ═══════════════════════════════════════════
+   MISCONCEPTIONS
+   ═══════════════════════════════════════════ */
+const MISCONCEPTIONS = {
+  equalsAnswer: { id: 'equals-answer', msg: function() { return 'The = sign doesn\'t mean "the answer is next." It means BOTH SIDES must be EQUAL!'; } },
+  noBalance: { id: 'no-balance', msg: function(left, right) { return 'Left side = ' + left + ', Right side = ' + right + '. They must be the SAME to balance!'; } },
+  offByOne: { id: 'off-by-one', msg: function(ans, got) { return 'Close! You need ' + ans + ' to make both sides equal, not ' + got + '.'; } },
+  randomGuess: { id: 'random', msg: function() { return 'Add up each side. What number makes them the same?'; } }
+};
+
+/* ═══════════════════════════════════════════
+   UTILITIES
+   ═══════════════════════════════════════════ */
+function rand(a, b) {
+  return Math.floor(Math.random() * (b - a + 1)) + a;
+}
+
+function sumArr(arr) {
+  var t = 0;
+  for (var i = 0; i < arr.length; i++) t += arr[i];
+  return t;
+}
+
+/* ── Read-Aloud ── */
+function toggleReadAloud() {
+  if (window.VinculumStories && VinculumStories.isReading()) {
+    VinculumStories.stopReading();
+    document.getElementById('readAloudBtn').innerHTML = '&#128264; Read to Me';
+  } else {
+    var fb = document.getElementById('feedback');
+    var storyEl = document.getElementById('storyBanner');
+    var text = storyEl ? storyEl.textContent : (fb ? fb.textContent : 'Welcome to Equation Balance!');
+    if (window.VinculumStories) {
+      VinculumStories.readAloud(text, { rate: 0.85, onComplete: function() {
+        document.getElementById('readAloudBtn').innerHTML = '&#128264; Read to Me';
+      }});
+      document.getElementById('readAloudBtn').textContent = '\u23F9 Stop';
+    }
+  }
+}
+
+/* ═══════════════════════════════════════════
+   MODE / DIFF SWITCHING
+   ═══════════════════════════════════════════ */
+function setMode(m) {
+  S.mode = m;
+  document.querySelectorAll('.vinculum-mode-tab').forEach(function(t) { t.classList.remove('active-explore', 'active-practice', 'active-play'); });
+  document.getElementById('tab' + m.charAt(0).toUpperCase() + m.slice(1)).classList.add('active-' + m);
+  S.round = 0;
+  S.score = 0;
+  S.streak = 0;
+  if (m === 'explore') { S.leftSide = [3, 2]; S.rightSide = [5]; }
+  if (m === 'practice') newPractice();
+  render();
+}
+
+function setDiff(d) {
+  S.diff = d;
+  document.querySelectorAll('.vinculum-diff-btn').forEach(function(b) { b.classList.remove('active'); });
+  document.getElementById('diff' + d.charAt(0).toUpperCase()).classList.add('active');
+  if (S.mode === 'practice') newPractice();
+  if (S.mode === 'play') S.round = 0;
+  if (S.mode === 'explore') { S.leftSide = [3, 2]; S.rightSide = [5]; }
+  render();
+}
+
+function render() {
+  var ws = document.getElementById('workspace');
+  var sp = document.getElementById('sidePanel');
+  if (S.mode === 'explore') renderExplore(ws, sp);
+  else if (S.mode === 'practice') renderPractice(ws, sp);
+  else renderPlay(ws, sp);
+}
+
+/* ═══════════════════════════════════════════
+   BALANCE SVG BUILDER
+   ═══════════════════════════════════════════ */
+function buildBalanceSVG(leftArr, rightArr, opts) {
+  opts = opts || {};
+  var leftSum = sumArr(leftArr);
+  var rightSum = sumArr(rightArr);
+  var diff = leftSum - rightSum;
+  var maxTilt = 12;
+  var tiltDeg = 0;
+  if (diff > 0) tiltDeg = Math.min(diff * 3, maxTilt);
+  else if (diff < 0) tiltDeg = Math.max(diff * 3, -maxTilt);
+  var isBalanced = (diff === 0);
+
+  var W = 400, H = 200;
+  var cx = W / 2, fulcrumY = 160;
+  var beamY = 100;
+  var beamLen = 160;
+
+  var svg = '<div class="balance-wrap"><svg viewBox="0 0 ' + W + ' ' + H + '" class="' + (isBalanced ? 'balance-svg-balanced' : '') + '">';
+
+  // Fulcrum triangle
+  svg += '<polygon points="' + cx + ',' + (fulcrumY - 60) + ' ' + (cx - 30) + ',' + fulcrumY + ' ' + (cx + 30) + ',' + fulcrumY + '" fill="rgba(42,54,84,0.6)" stroke="#3a4b6e" stroke-width="2" stroke-linejoin="round"/>';
+
+  // Beam group with rotation
+  svg += '<g class="beam" transform="rotate(' + tiltDeg + ',' + cx + ',' + beamY + ')">';
+
+  // Beam bar
+  svg += '<rect x="' + (cx - beamLen) + '" y="' + (beamY - 4) + '" width="' + (beamLen * 2) + '" height="8" rx="4" fill="' + (isBalanced ? '#00e676' : '#5a6b8f') + '" stroke="' + (isBalanced ? '#00e676' : '#3a4b6e') + '" stroke-width="1.5"/>';
+
+  // Left pan
+  var lpx = cx - beamLen + 10;
+  var lpy = beamY + 4;
+  svg += '<rect x="' + (lpx - 5) + '" y="' + lpy + '" width="70" height="6" rx="3" fill="#1a2744" stroke="#3a4b6e" stroke-width="1"/>';
+
+  // Left blocks
+  var blockSize = 26;
+  var blockGap = 2;
+  var cols = 3;
+  for (var i = 0; i < leftArr.length; i++) {
+    var col = i % cols;
+    var row = Math.floor(i / cols);
+    var bx = lpx + col * (blockSize + blockGap);
+    var by = lpy - (row + 1) * (blockSize + blockGap);
+    svg += '<rect x="' + bx + '" y="' + by + '" width="' + blockSize + '" height="' + blockSize + '" rx="5" fill="rgba(0,212,255,0.25)" stroke="#00d4ff" stroke-width="1.5"/>';
+    svg += '<text x="' + (bx + blockSize / 2) + '" y="' + (by + blockSize / 2 + 5) + '" text-anchor="middle" fill="#00d4ff" font-size="14" font-weight="800" font-family="JetBrains Mono, monospace">' + leftArr[i] + '</text>';
+  }
+
+  // Right pan
+  var rpx = cx + beamLen - 75;
+  var rpy = beamY + 4;
+  svg += '<rect x="' + (rpx - 5) + '" y="' + rpy + '" width="70" height="6" rx="3" fill="#1a2744" stroke="#3a4b6e" stroke-width="1"/>';
+
+  // Right blocks
+  for (var j = 0; j < rightArr.length; j++) {
+    var col2 = j % cols;
+    var row2 = Math.floor(j / cols);
+    var bx2 = rpx + col2 * (blockSize + blockGap);
+    var by2 = rpy - (row2 + 1) * (blockSize + blockGap);
+    svg += '<rect x="' + bx2 + '" y="' + by2 + '" width="' + blockSize + '" height="' + blockSize + '" rx="5" fill="rgba(255,59,139,0.25)" stroke="#ff3b8b" stroke-width="1.5"/>';
+    svg += '<text x="' + (bx2 + blockSize / 2) + '" y="' + (by2 + blockSize / 2 + 5) + '" text-anchor="middle" fill="#ff3b8b" font-size="14" font-weight="800" font-family="JetBrains Mono, monospace">' + rightArr[j] + '</text>';
+  }
+
+  // Missing placeholder on right or left
+  if (opts.missingOnRight) {
+    var mx = rpx + rightArr.length % cols * (blockSize + blockGap);
+    var my = rpy - (Math.floor(rightArr.length / cols) + 1) * (blockSize + blockGap);
+    svg += '<rect x="' + mx + '" y="' + my + '" width="' + blockSize + '" height="' + blockSize + '" rx="5" fill="rgba(255,193,7,0.15)" stroke="#ffc107" stroke-width="2" stroke-dasharray="4,3"/>';
+    svg += '<text x="' + (mx + blockSize / 2) + '" y="' + (my + blockSize / 2 + 5) + '" text-anchor="middle" fill="#ffc107" font-size="16" font-weight="900" font-family="JetBrains Mono, monospace">?</text>';
+  }
+  if (opts.missingOnLeft) {
+    var mlx = lpx + leftArr.length % cols * (blockSize + blockGap);
+    var mly = lpy - (Math.floor(leftArr.length / cols) + 1) * (blockSize + blockGap);
+    svg += '<rect x="' + mlx + '" y="' + mly + '" width="' + blockSize + '" height="' + blockSize + '" rx="5" fill="rgba(255,193,7,0.15)" stroke="#ffc107" stroke-width="2" stroke-dasharray="4,3"/>';
+    svg += '<text x="' + (mlx + blockSize / 2) + '" y="' + (mly + blockSize / 2 + 5) + '" text-anchor="middle" fill="#ffc107" font-size="16" font-weight="900" font-family="JetBrains Mono, monospace">?</text>';
+  }
+
+  // Sum labels
+  svg += '<text x="' + (lpx + 30) + '" y="' + (beamY + 24) + '" text-anchor="middle" fill="#00d4ff" font-size="16" font-weight="900" font-family="JetBrains Mono, monospace">' + leftSum + '</text>';
+  svg += '<text x="' + (rpx + 30) + '" y="' + (beamY + 24) + '" text-anchor="middle" fill="#ff3b8b" font-size="16" font-weight="900" font-family="JetBrains Mono, monospace">' + rightSum + '</text>';
+
+  svg += '</g>'; // end beam group
+
+  // Status text
+  if (isBalanced) {
+    svg += '<text x="' + cx + '" y="' + (fulcrumY + 18) + '" text-anchor="middle" fill="#00e676" font-size="14" font-weight="800" font-family="Inter, sans-serif">BALANCED!</text>';
+  } else {
+    var heavier = leftSum > rightSum ? 'Left is heavier' : 'Right is heavier';
+    svg += '<text x="' + cx + '" y="' + (fulcrumY + 18) + '" text-anchor="middle" fill="#5a6b8f" font-size="12" font-weight="600" font-family="Inter, sans-serif">' + heavier + '</text>';
+  }
+
+  svg += '</svg></div>';
+  return svg;
+}
+
+/* ═══════════════════════════════════════════
+   BUILD EQUATION STRING
+   ═══════════════════════════════════════════ */
+function buildEquationHTML(leftArr, rightArr, opts) {
+  opts = opts || {};
+  var h = '<div class="equation-display">';
+
+  // Left side
+  for (var i = 0; i < leftArr.length; i++) {
+    if (i > 0) h += '<div class="eq-op">+</div>';
+    if (opts.missingIdx === 'left-' + i) {
+      h += '<div class="eq-part eq-left missing-box">?</div>';
+    } else {
+      h += '<div class="eq-part eq-left">' + leftArr[i] + '</div>';
+    }
+  }
+  if (opts.missingOnLeft && leftArr.length > 0) {
+    h += '<div class="eq-op">+</div>';
+    h += '<div class="eq-part eq-left missing-box">?</div>';
+  }
+
+  h += '<div class="eq-equals">=</div>';
+
+  // Right side
+  for (var j = 0; j < rightArr.length; j++) {
+    if (j > 0) h += '<div class="eq-op">+</div>';
+    if (opts.missingIdx === 'right-' + j) {
+      h += '<div class="eq-part eq-right missing-box">?</div>';
+    } else {
+      h += '<div class="eq-part eq-right">' + rightArr[j] + '</div>';
+    }
+  }
+  if (opts.missingOnRight && rightArr.length > 0) {
+    h += '<div class="eq-op">+</div>';
+    h += '<div class="eq-part eq-right missing-box">?</div>';
+  }
+
+  h += '</div>';
+  return h;
+}
+
+/* ═══════════════════════════════════════════
+   EXPLORE MODE
+   ═══════════════════════════════════════════ */
+function renderExplore(ws, sp) {
+  var leftSum = sumArr(S.leftSide);
+  var rightSum = sumArr(S.rightSide);
+  var isBalanced = (leftSum === rightSum);
+  var h = '';
+
+  // Story banner
+  if (window.VinculumStories) {
+    var toolName = window.location.pathname.split('/').pop().replace('.html', '');
+    var storyData = VinculumStories.getStory(toolName, { a: leftSum, b: rightSum, total: leftSum + rightSum, n: leftSum });
+    if (storyData && storyData.story) {
+      if (window.Vinculum3Reads) {
+        h += Vinculum3Reads.getBannerHTML(storyData);
+      } else {
+        h += '<div id="storyBanner" style="background:var(--card2,#1a1f2e);border:1px solid var(--border);border-radius:12px;padding:16px 20px;margin-bottom:16px;font-size:15px;line-height:1.6;color:var(--text);position:relative;"><span style="font-size:12px;color:var(--cyan);font-weight:700;text-transform:uppercase;letter-spacing:1px;">&#128214; Story</span><br>' + storyData.story + '<br><em style="color:var(--yellow);font-weight:600;">' + storyData.question + '</em></div>';
+      }
+    }
+  }
+
+  h += '<div class="instruction-box' + (isBalanced ? ' highlight-green' : ' highlight-cyan') + '">';
+  h += isBalanced ? 'The seesaw is BALANCED! Both sides equal ' + leftSum + '.' : 'Add or remove blocks to make both sides equal!';
+  h += '</div>';
+
+  // Balance SVG
+  h += buildBalanceSVG(S.leftSide, S.rightSide);
+
+  // Equation
+  h += buildEquationHTML(S.leftSide, S.rightSide);
+
+  // Left side controls
+  h += '<div style="display:flex;gap:32px;justify-content:center;align-items:flex-start;flex-wrap:wrap;">';
+
+  // Left pan controls
+  h += '<div style="text-align:center;">';
+  h += '<div style="font-size:11px;color:var(--cyan);font-weight:700;text-transform:uppercase;letter-spacing:1px;margin-bottom:6px;">Left Side</div>';
+  h += '<div class="block-controls">';
+  h += '<button class="block-btn" onclick="modifyExplore(\'left\',-1)" aria-label="Remove from left">&minus;</button>';
+  h += '<span style="font-size:24px;font-weight:900;font-family:JetBrains Mono,monospace;color:var(--cyan);min-width:40px;display:inline-block;text-align:center;">' + leftSum + '</span>';
+  h += '<button class="block-btn" onclick="modifyExplore(\'left\',1)" aria-label="Add to left">+</button>';
+  h += '</div></div>';
+
+  // Right pan controls
+  h += '<div style="text-align:center;">';
+  h += '<div style="font-size:11px;color:var(--pink);font-weight:700;text-transform:uppercase;letter-spacing:1px;margin-bottom:6px;">Right Side</div>';
+  h += '<div class="block-controls">';
+  h += '<button class="block-btn" onclick="modifyExplore(\'right\',-1)" aria-label="Remove from right">&minus;</button>';
+  h += '<span style="font-size:24px;font-weight:900;font-family:JetBrains Mono,monospace;color:var(--pink);min-width:40px;display:inline-block;text-align:center;">' + rightSum + '</span>';
+  h += '<button class="block-btn" onclick="modifyExplore(\'right\',1)" aria-label="Add to right">+</button>';
+  h += '</div></div>';
+
+  h += '</div>';
+
+  // Reset
+  h += '<div class="controls">';
+  h += '<button class="ctrl-btn" onclick="S.leftSide=[3,2];S.rightSide=[5];render();">\u21BA Reset</button>';
+  h += '<button class="ctrl-btn primary" onclick="S.leftSide=[];S.rightSide=[];render();">Clear All</button>';
+  h += '</div>';
+
+  ws.innerHTML = h;
+
+  // Side panel
+  var spH = '<div class="panel-section"><div class="panel-title">What Does = Mean?</div>';
+  spH += '<div class="panel-text" style="background:var(--card);padding:12px;border-radius:8px;">';
+  spH += 'The <strong style="color:var(--green);">equals sign (=)</strong> means <strong>BOTH SIDES ARE THE SAME</strong>.<br><br>';
+  spH += 'It does NOT mean "the answer goes here!"<br><br>';
+  spH += 'When the seesaw is <strong style="color:var(--green);">level</strong>, the equation is <strong style="color:var(--green);">true</strong>.';
+  spH += '</div></div>';
+
+  spH += '<div class="panel-section"><div class="panel-title">How to Use</div>';
+  spH += '<div class="panel-text">';
+  spH += '<strong style="color:var(--cyan);">1. Tap +</strong> to add a block<br>';
+  spH += '<strong style="color:var(--cyan);">2. Tap &minus;</strong> to remove a block<br>';
+  spH += '<strong style="color:var(--cyan);">3. Watch</strong> the seesaw tilt!<br>';
+  spH += '<strong style="color:var(--green);">4. Balance</strong> both sides to make them equal';
+  spH += '</div></div>';
+
+  sp.innerHTML = spH;
+}
+
+function modifyExplore(side, delta) {
+  if (side === 'left') {
+    if (delta === 1 && sumArr(S.leftSide) < S.maxN) {
+      S.leftSide.push(1);
+    } else if (delta === -1 && S.leftSide.length > 0) {
+      S.leftSide.pop();
+    }
+  } else {
+    if (delta === 1 && sumArr(S.rightSide) < S.maxN) {
+      S.rightSide.push(1);
+    } else if (delta === -1 && S.rightSide.length > 0) {
+      S.rightSide.pop();
+    }
+  }
+  render();
+}
+
+/* ═══════════════════════════════════════════
+   PRACTICE MODE
+   ═══════════════════════════════════════════ */
+function newPractice() {
+  if (S.diff === 'emergent') {
+    // Emergent: show left side filled, student adds blocks to right to balance
+    var lCount = rand(2, 4);
+    S.pLeft = [];
+    var remaining = rand(2, 8);
+    for (var i = 0; i < lCount && remaining > 0; i++) {
+      var v = (i === lCount - 1) ? remaining : rand(1, Math.min(remaining - (lCount - i - 1), 5));
+      if (v < 1) v = 1;
+      S.pLeft.push(v);
+      remaining -= v;
+    }
+    if (remaining > 0) S.pLeft.push(remaining);
+    S.pAnswer = sumArr(S.pLeft);
+    S.pRight = [];
+    S.pMissing = 'right';
+    // Choices: single value that equals the left sum
+    var ans = S.pAnswer;
+    var ch = new Set([ans]);
+    while (ch.size < 5) {
+      var c = ans + rand(-3, 3);
+      if (c >= 1 && c <= 10) ch.add(c);
+      else ch.add(rand(1, 10));
+    }
+    S.pChoices = Array.from(ch).sort(function(a, b) { return a - b; });
+
+  } else if (S.diff === 'proficient') {
+    // Proficient: "a + ? = b" — solve for one unknown
+    var total = rand(3, 10);
+    var known = rand(1, total - 1);
+    var missing = total - known;
+    S.pLeft = [known];
+    S.pRight = [total];
+    S.pAnswer = missing;
+    S.pMissing = 'left-add'; // adding unknown to left
+    var ch2 = new Set([missing]);
+    while (ch2.size < 5) {
+      var c2 = missing + rand(-3, 3);
+      if (c2 >= 0 && c2 <= 10) ch2.add(c2);
+      else ch2.add(rand(0, 10));
+    }
+    S.pChoices = Array.from(ch2).sort(function(a, b) { return a - b; });
+
+  } else {
+    // Advanced: "? + a = b + c" — missing value on either side
+    var rVal1 = rand(1, 5);
+    var rVal2 = rand(1, 5);
+    var rSum = rVal1 + rVal2;
+    var lKnown = rand(1, rSum - 1);
+    var lMissing = rSum - lKnown;
+    S.pLeft = [lKnown];
+    S.pRight = [rVal1, rVal2];
+    S.pAnswer = lMissing;
+    S.pMissing = 'left-add';
+    var ch3 = new Set([lMissing]);
+    while (ch3.size < 5) {
+      var c3 = lMissing + rand(-3, 3);
+      if (c3 >= 0 && c3 <= 10) ch3.add(c3);
+      else ch3.add(rand(0, 10));
+    }
+    S.pChoices = Array.from(ch3).sort(function(a, b) { return a - b; });
+  }
+}
+
+function renderPractice(ws, sp) {
+  if (S.pChoices.length === 0) newPractice();
+  var h = '';
+
+  // Instruction
+  if (S.diff === 'emergent') {
+    h += '<div class="instruction-box highlight-green">What number balances both sides?</div>';
+  } else if (S.diff === 'proficient') {
+    h += '<div class="instruction-box highlight-green">Find the missing number to balance the equation!</div>';
+  } else {
+    h += '<div class="instruction-box highlight-green">Find the missing value so both sides are equal!</div>';
+  }
+
+  // Balance SVG
+  if (S.diff === 'emergent') {
+    // Show left filled, right with missing placeholder
+    h += buildBalanceSVG(S.pLeft, S.pRight.length > 0 ? S.pRight : [0], { missingOnRight: S.pRight.length === 0 });
+
+    // Equation
+    var leftStr = S.pLeft.join(' + ');
+    h += '<div class="equation-display">';
+    for (var i = 0; i < S.pLeft.length; i++) {
+      if (i > 0) h += '<div class="eq-op">+</div>';
+      h += '<div class="eq-part eq-left">' + S.pLeft[i] + '</div>';
+    }
+    h += '<div class="eq-equals">=</div>';
+    h += '<div class="eq-part eq-right missing-box">?</div>';
+    h += '</div>';
+
+  } else if (S.diff === 'proficient') {
+    // "known + ? = total"
+    h += buildBalanceSVG(S.pLeft, S.pRight, { missingOnLeft: true });
+    h += '<div class="equation-display">';
+    h += '<div class="eq-part eq-left">' + S.pLeft[0] + '</div>';
+    h += '<div class="eq-op">+</div>';
+    h += '<div class="eq-part eq-left missing-box">?</div>';
+    h += '<div class="eq-equals">=</div>';
+    h += '<div class="eq-part eq-right">' + S.pRight[0] + '</div>';
+    h += '</div>';
+
+  } else {
+    // "? + known = val1 + val2"
+    h += buildBalanceSVG(S.pLeft, S.pRight, { missingOnLeft: true });
+    h += '<div class="equation-display">';
+    h += '<div class="eq-part eq-left missing-box">?</div>';
+    h += '<div class="eq-op">+</div>';
+    h += '<div class="eq-part eq-left">' + S.pLeft[0] + '</div>';
+    h += '<div class="eq-equals">=</div>';
+    for (var r = 0; r < S.pRight.length; r++) {
+      if (r > 0) h += '<div class="eq-op">+</div>';
+      h += '<div class="eq-part eq-right">' + S.pRight[r] + '</div>';
+    }
+    h += '</div>';
+  }
+
+  // MC choices
+  h += '<div class="mc-grid">';
+  for (var k = 0; k < S.pChoices.length; k++) {
+    h += '<button class="mc-btn" id="pc' + S.pChoices[k] + '" onclick="checkPractice(' + S.pChoices[k] + ')">' + S.pChoices[k] + '</button>';
+  }
+  h += '</div>';
+
+  // Skip
+  h += '<div class="controls" style="margin-top:10px;">';
+  h += '<button class="ctrl-btn" onclick="newPractice();render();">Skip \u2192</button>';
+  h += '</div>';
+
+  ws.innerHTML = h;
+
+  // Side panel
+  var spH = '<div class="panel-section"><div class="panel-title">Steps</div>';
+  spH += '<div class="panel-text" style="background:var(--card);padding:12px;border-radius:8px;">';
+  spH += '<div style="margin-bottom:8px;"><strong style="color:var(--cyan);">\u2460 Add</strong><br><span style="font-size:12px;">Add up the numbers on each side</span></div>';
+  spH += '<div style="margin-bottom:8px;"><strong style="color:var(--green);">\u2461 Think</strong><br><span style="font-size:12px;">What makes both sides equal?</span></div>';
+  spH += '<div><strong style="color:var(--pink);">\u2462 Tap</strong><br><span style="font-size:12px;">Choose the answer!</span></div>';
+  spH += '</div></div>';
+
+  spH += '<div class="panel-section"><div class="panel-title">Remember</div>';
+  spH += '<div class="panel-text">The <strong style="color:var(--green);">=</strong> sign means both sides must have the <strong>same value</strong>!</div></div>';
+
+  sp.innerHTML = spH;
+}
+
+function checkPractice(clicked) {
+  var correct = S.pAnswer;
+  var btn = document.getElementById('pc' + clicked);
+  if (!btn) return;
+
+  if (clicked === correct) {
+    btn.classList.add('correct-flash');
+    showFB('\u2713 Both sides equal ' + correct + '!', 'correct');
+    setTimeout(function() {
+      newPractice();
+      render();
+    }, 1500);
+  } else {
+    btn.classList.add('incorrect-flash');
+    var feedbackMsg = '';
+    if (Math.abs(clicked - correct) === 1) {
+      feedbackMsg = MISCONCEPTIONS.offByOne.msg(correct, clicked);
+    } else if (S.diff === 'emergent' && clicked === sumArr(S.pLeft) + 1) {
+      feedbackMsg = MISCONCEPTIONS.equalsAnswer.msg();
+    } else if (Math.abs(clicked - correct) > 3) {
+      feedbackMsg = MISCONCEPTIONS.randomGuess.msg();
+    } else {
+      var leftTotal = sumArr(S.pLeft) + (S.pMissing === 'left-add' ? 0 : 0);
+      var rightTotal = sumArr(S.pRight);
+      feedbackMsg = MISCONCEPTIONS.noBalance.msg(
+        S.pMissing === 'left-add' ? sumArr(S.pLeft) + clicked : sumArr(S.pLeft),
+        S.diff === 'emergent' ? clicked : rightTotal
+      );
+    }
+    showFB(feedbackMsg, 'try-again');
+    setTimeout(function() { btn.classList.remove('incorrect-flash'); }, 400);
+  }
+}
+
+/* ═══════════════════════════════════════════
+   PLAY MODE
+   ═══════════════════════════════════════════ */
+function startGame() {
+  S.round = 1;
+  S.score = 0;
+  S.streak = 0;
+  newPlayRound();
+}
+
+function newPlayRound() {
+  if (S.diff === 'emergent') {
+    var lCount = rand(1, 3);
+    S.playLeft = [];
+    var rem = rand(2, 8);
+    for (var i = 0; i < lCount && rem > 0; i++) {
+      var v = (i === lCount - 1) ? rem : rand(1, Math.min(rem, 5));
+      if (v < 1) v = 1;
+      S.playLeft.push(v);
+      rem -= v;
+    }
+    if (rem > 0) S.playLeft.push(rem);
+    S.playAnswer = sumArr(S.playLeft);
+    S.playRight = [];
+    S.playMissing = 'right';
+
+  } else if (S.diff === 'proficient') {
+    var total = rand(3, 10);
+    var known = rand(1, total - 1);
+    S.playLeft = [known];
+    S.playRight = [total];
+    S.playAnswer = total - known;
+    S.playMissing = 'left-add';
+
+  } else {
+    var rV1 = rand(1, 5);
+    var rV2 = rand(1, 5);
+    var rS = rV1 + rV2;
+    var lK = rand(1, Math.max(1, rS - 1));
+    S.playLeft = [lK];
+    S.playRight = [rV1, rV2];
+    S.playAnswer = rS - lK;
+    S.playMissing = 'left-add';
+  }
+
+  var ans = S.playAnswer;
+  var ch = new Set([ans]);
+  while (ch.size < 5) {
+    var c = ans + rand(-3, 3);
+    if (c >= 0 && c <= 10) ch.add(c);
+    else ch.add(rand(0, 10));
+  }
+  S.playChoices = Array.from(ch).sort(function(a, b) { return a - b; });
+}
+
+function renderPlay(ws, sp) {
+  if (S.round === 0) startGame();
+  var h = '';
+
+  // Game over check
+  if (S.round > S.total) {
+    h += '<div style="text-align:center;">';
+    h += '<div style="font-size:18px;color:var(--muted);margin-bottom:16px;">Game Over!</div>';
+    h += '<div style="font-size:64px;font-weight:900;font-family:JetBrains Mono,monospace;background:var(--grad);-webkit-background-clip:text;-webkit-text-fill-color:transparent;margin-bottom:8px;">' + S.score + '</div>';
+    h += '<div style="font-size:14px;color:var(--muted);margin-bottom:24px;">Points Earned</div>';
+    h += '<div class="controls"><button class="ctrl-btn primary" onclick="S.round=0;render();">Play Again</button></div>';
+    h += '</div>';
+    ws.innerHTML = h;
+    sp.innerHTML = '<div class="score-display"><div class="score-value">' + S.score + '</div><div class="score-label">Final Score</div></div><div class="panel-section"><div class="panel-title">Best Streak</div><div class="panel-text" style="font-size:24px;font-weight:800;color:var(--purple);">' + S.best + '</div></div>';
+    return;
+  }
+
+  h += '<div style="font-size:13px;color:var(--muted);margin-bottom:8px;">Round ' + S.round + ' of ' + S.total + '</div>';
+
+  // Balance SVG
+  if (S.playMissing === 'right') {
+    h += buildBalanceSVG(S.playLeft, S.playRight.length > 0 ? S.playRight : [0], { missingOnRight: true });
+    h += '<div class="equation-display">';
+    for (var i = 0; i < S.playLeft.length; i++) {
+      if (i > 0) h += '<div class="eq-op">+</div>';
+      h += '<div class="eq-part eq-left">' + S.playLeft[i] + '</div>';
+    }
+    h += '<div class="eq-equals">=</div>';
+    h += '<div class="eq-part eq-right missing-box">?</div>';
+    h += '</div>';
+  } else {
+    h += buildBalanceSVG(S.playLeft, S.playRight, { missingOnLeft: true });
+    h += '<div class="equation-display">';
+    if (S.diff === 'proficient') {
+      h += '<div class="eq-part eq-left">' + S.playLeft[0] + '</div>';
+      h += '<div class="eq-op">+</div>';
+      h += '<div class="eq-part eq-left missing-box">?</div>';
+      h += '<div class="eq-equals">=</div>';
+      h += '<div class="eq-part eq-right">' + S.playRight[0] + '</div>';
+    } else {
+      h += '<div class="eq-part eq-left missing-box">?</div>';
+      h += '<div class="eq-op">+</div>';
+      h += '<div class="eq-part eq-left">' + S.playLeft[0] + '</div>';
+      h += '<div class="eq-equals">=</div>';
+      for (var r = 0; r < S.playRight.length; r++) {
+        if (r > 0) h += '<div class="eq-op">+</div>';
+        h += '<div class="eq-part eq-right">' + S.playRight[r] + '</div>';
+      }
+    }
+    h += '</div>';
+  }
+
+  // MC buttons
+  h += '<div class="mc-grid">';
+  for (var k = 0; k < S.playChoices.length; k++) {
+    h += '<button class="mc-btn" id="gpc' + S.playChoices[k] + '" onclick="playPick(' + S.playChoices[k] + ')">' + S.playChoices[k] + '</button>';
+  }
+  h += '</div>';
+
+  ws.innerHTML = h;
+
+  // Side panel with score
+  sp.innerHTML = '<div class="score-display"><div class="score-value">' + S.score + '</div><div class="score-label">Score</div></div>' +
+    '<div class="score-display" style="background:transparent;padding:8px;">' +
+    '<div style="font-size:18px;font-weight:700;color:var(--yellow);"><svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor" style="vertical-align:-2px;"><path d="M12 23c-4.97 0-8-3.58-8-7.5 0-3.07 2.17-5.84 4.5-7.5-.28 2.5 1.5 4.5 1.5 4.5s2-2.5 2-5.5c0-1.5-.5-3-1-4 3 1.5 5 4 5 7 0 .5-.08 1-.08 1s1.08-1.18 1.58-2.5C19.78 11.72 20 14.5 20 15.5c0 3.92-3.03 7.5-8 7.5z"/></svg> ' + S.streak + '</div>' +
+    '<div class="score-label">Streak</div>' +
+    '<div class="streak-bar"><div class="streak-fill" style="width:' + Math.min(S.streak * 20, 100) + '%;"></div></div></div>' +
+    '<div class="panel-section"><div class="panel-title">Best Streak</div>' +
+    '<div class="panel-text" style="font-size:24px;font-weight:800;color:var(--purple);">' + S.best + '</div></div>';
+}
+
+function playPick(n) {
+  var correct = S.playAnswer;
+  var btn = document.getElementById('gpc' + n);
+  if (!btn) return;
+
+  if (n === correct) {
+    btn.classList.add('correct-flash');
+    S.score += 10 + S.streak * 2;
+    S.streak++;
+    if (S.streak > S.best) S.best = S.streak;
+    showFB('\u2713 Balanced! Both sides = ' + correct, 'correct');
+  } else {
+    btn.classList.add('incorrect-flash');
+    S.streak = 0;
+    var feedbackMsg = '';
+    if (Math.abs(n - correct) === 1) {
+      feedbackMsg = MISCONCEPTIONS.offByOne.msg(correct, n);
+    } else if (Math.abs(n - correct) > 3) {
+      feedbackMsg = MISCONCEPTIONS.randomGuess.msg();
+    } else {
+      feedbackMsg = MISCONCEPTIONS.noBalance.msg(
+        S.playMissing === 'left-add' ? sumArr(S.playLeft) + n : sumArr(S.playLeft),
+        S.playMissing === 'right' ? n : sumArr(S.playRight)
+      );
+    }
+    showFB(feedbackMsg, 'incorrect');
+  }
+
+  setTimeout(function() {
+    S.round++;
+    if (S.round <= S.total) {
+      newPlayRound();
+    }
+    render();
+  }, 1200);
+}
+
+/* ═══════════════════════════════════════════
+   INIT
+   ═══════════════════════════════════════════ */
+
+// Tab listeners
+document.querySelectorAll('.vinculum-mode-tab').forEach(function(tab) {
+  tab.addEventListener('click', function() {
+    setMode(this.dataset.mode);
+  });
+});
+
+// Diff button listeners
+document.querySelectorAll('.vinculum-diff-btn').forEach(function(btn) {
+  btn.addEventListener('click', function() {
+    setDiff(this.dataset.diff);
+  });
+});
+
+render();
+</script>
+<script src="../../vinculum-core.js"></script>
+<script src="../../vinculum-data.js"></script>
+<script src="../../vinculum-adaptive-hook.js"></script>
+<script src="../../vinculum-3reads.js"></script>
+<script src="../../vinculum-stories.js"></script>
+<script src="../../vinculum-feedback.js"></script>
+<script src="../../vinculum-guide.js"></script>
+<script src="../../vinculum-identity.js"></script>
+<script src="../../vinculum-indigenous.js"></script>
+<script src="../../vinculum-dashboard.js"></script>
+<script src="../../vinculum-hyperfocus.js"></script>
+<script src="../../vinculum-layout.js"></script>
+</body>
+</html>

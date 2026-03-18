@@ -1,0 +1,947 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>VINCULUM Feedback Dashboard</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        :root {
+            --bg: #0D1117;
+            --card: #161B22;
+            --border: #30363D;
+            --text: #E6EDF3;
+            --text-secondary: #8B949E;
+            --cyan: #58A6FF;
+            --pink: #F78166;
+            --green: #3FB950;
+            --purple: #BC8CFF;
+            --yellow: #D29922;
+            --red: #F85149;
+            --orange: #FB8500;
+        }
+
+        html, body {
+            background-color: var(--bg);
+            color: var(--text);
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Noto Sans", Helvetica, Arial, sans-serif;
+            font-size: 14px;
+            line-height: 1.5;
+        }
+
+        /* Header */
+        header {
+            background-color: var(--card);
+            border-bottom: 1px solid var(--border);
+            padding: 2rem;
+            margin-bottom: 2rem;
+        }
+
+        .header-container {
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+
+        .header-top {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1.5rem;
+        }
+
+        .header-title {
+            flex: 1;
+        }
+
+        h1 {
+            font-size: 2rem;
+            font-weight: 600;
+            margin-bottom: 0.25rem;
+        }
+
+        .subtitle {
+            color: var(--text-secondary);
+            font-size: 0.95rem;
+        }
+
+        .back-link {
+            color: var(--cyan);
+            text-decoration: none;
+            font-size: 0.95rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 0.5rem 1rem;
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            transition: all 0.2s;
+        }
+
+        .back-link:hover {
+            background-color: rgba(88, 166, 255, 0.1);
+            border-color: var(--cyan);
+        }
+
+        /* Stats Bar */
+        .stats-bar {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 1rem;
+            margin-top: 1.5rem;
+        }
+
+        .stat {
+            background-color: rgba(88, 166, 255, 0.1);
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            padding: 1rem;
+            text-align: center;
+        }
+
+        .stat-value {
+            font-size: 1.5rem;
+            font-weight: 600;
+            color: var(--cyan);
+        }
+
+        .stat-label {
+            color: var(--text-secondary);
+            font-size: 0.85rem;
+            margin-top: 0.25rem;
+        }
+
+        /* Main Container */
+        .main-container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 0 2rem 2rem;
+        }
+
+        /* Controls */
+        .controls {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 1rem;
+            margin-bottom: 2rem;
+        }
+
+        .control-group {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .control-group label {
+            color: var(--text-secondary);
+            font-size: 0.9rem;
+            font-weight: 500;
+        }
+
+        select, input[type="search"] {
+            background-color: var(--card);
+            border: 1px solid var(--border);
+            color: var(--text);
+            padding: 0.5rem 0.75rem;
+            border-radius: 6px;
+            font-size: 0.9rem;
+            cursor: pointer;
+            transition: border-color 0.2s;
+        }
+
+        select:hover, input[type="search"]:hover {
+            border-color: var(--cyan);
+        }
+
+        select:focus, input[type="search"]:focus {
+            outline: none;
+            border-color: var(--cyan);
+            box-shadow: 0 0 0 3px rgba(88, 166, 255, 0.1);
+        }
+
+        .type-filter-group {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.5rem;
+        }
+
+        .type-filter-btn {
+            background-color: var(--card);
+            border: 1px solid var(--border);
+            color: var(--text);
+            padding: 0.5rem 1rem;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 0.9rem;
+            transition: all 0.2s;
+        }
+
+        .type-filter-btn:hover {
+            border-color: var(--cyan);
+        }
+
+        .type-filter-btn.active {
+            background-color: var(--cyan);
+            border-color: var(--cyan);
+            color: var(--bg);
+            font-weight: 600;
+        }
+
+        /* Feedback Cards Grid */
+        .feedback-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
+            gap: 1.5rem;
+        }
+
+        .feedback-card {
+            background-color: var(--card);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: 1.5rem;
+            transition: all 0.2s;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .feedback-card:hover {
+            border-color: var(--cyan);
+            box-shadow: 0 4px 12px rgba(88, 166, 255, 0.15);
+        }
+
+        /* Card Header */
+        .card-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            margin-bottom: 1rem;
+            gap: 1rem;
+        }
+
+        .card-badges {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.5rem;
+            flex: 1;
+        }
+
+        .badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.35rem;
+            padding: 0.35rem 0.75rem;
+            border-radius: 4px;
+            font-size: 0.8rem;
+            font-weight: 500;
+        }
+
+        .badge-type {
+            color: white;
+        }
+
+        .badge-type.bug {
+            background-color: var(--red);
+        }
+
+        .badge-type.idea {
+            background-color: var(--cyan);
+        }
+
+        .badge-type.ux {
+            background-color: var(--orange);
+        }
+
+        .badge-type.content {
+            background-color: var(--green);
+        }
+
+        .badge-status {
+            border: 1px solid currentColor;
+            color: var(--text-secondary);
+            background-color: transparent;
+        }
+
+        .badge-status.new {
+            color: var(--cyan);
+            border-color: var(--cyan);
+        }
+
+        .badge-status.exported {
+            color: var(--text-secondary);
+            border-color: var(--border);
+        }
+
+        .badge-priority {
+            color: var(--yellow);
+            border: 1px solid var(--yellow);
+            background-color: transparent;
+        }
+
+        /* Card Content */
+        .card-title {
+            font-size: 1rem;
+            font-weight: 600;
+            margin-bottom: 0.25rem;
+        }
+
+        .card-tool {
+            color: var(--text-secondary);
+            font-size: 0.85rem;
+            margin-bottom: 1rem;
+        }
+
+        .card-tool span {
+            display: inline-block;
+            padding: 0 0.25rem;
+        }
+
+        .card-description {
+            color: var(--text);
+            margin-bottom: 1rem;
+            line-height: 1.6;
+            flex: 1;
+        }
+
+        /* Screenshot Thumbnail */
+        .screenshot-section {
+            margin-bottom: 1rem;
+        }
+
+        .screenshot-thumb {
+            width: 100%;
+            height: 150px;
+            background-color: rgba(0, 0, 0, 0.3);
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            cursor: pointer;
+            overflow: hidden;
+            transition: all 0.2s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .screenshot-thumb:hover {
+            border-color: var(--cyan);
+            box-shadow: 0 0 8px rgba(88, 166, 255, 0.2);
+        }
+
+        .screenshot-thumb img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        .screenshot-text {
+            color: var(--text-secondary);
+            font-size: 0.9rem;
+        }
+
+        /* Metadata */
+        .card-metadata {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 1rem;
+            margin-bottom: 1rem;
+            padding-bottom: 1rem;
+            border-bottom: 1px solid var(--border);
+            font-size: 0.85rem;
+        }
+
+        .metadata-item {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .metadata-label {
+            color: var(--text-secondary);
+            font-weight: 500;
+        }
+
+        .metadata-value {
+            color: var(--text);
+            margin-top: 0.25rem;
+            word-break: break-word;
+        }
+
+        /* Card Actions */
+        .card-actions {
+            display: flex;
+            flex-direction: column;
+            gap: 0.5rem;
+        }
+
+        .action-btn {
+            padding: 0.6rem 1rem;
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            background-color: rgba(88, 166, 255, 0.1);
+            color: var(--cyan);
+            cursor: pointer;
+            font-size: 0.85rem;
+            font-weight: 500;
+            transition: all 0.2s;
+            text-align: left;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .action-btn:hover {
+            background-color: rgba(88, 166, 255, 0.2);
+            border-color: var(--cyan);
+        }
+
+        .action-btn.secondary {
+            color: var(--text-secondary);
+            background-color: transparent;
+            border-color: var(--border);
+        }
+
+        .action-btn.secondary:hover {
+            background-color: rgba(88, 166, 255, 0.05);
+            border-color: var(--cyan);
+            color: var(--cyan);
+        }
+
+        .action-btn.danger {
+            color: var(--red);
+            background-color: rgba(248, 81, 73, 0.1);
+            border-color: transparent;
+        }
+
+        .action-btn.danger:hover {
+            background-color: rgba(248, 81, 73, 0.2);
+            border-color: var(--red);
+        }
+
+        /* Empty State */
+        .empty-state {
+            text-align: center;
+            padding: 3rem 2rem;
+            color: var(--text-secondary);
+        }
+
+        .empty-state-icon {
+            font-size: 3rem;
+            margin-bottom: 1rem;
+        }
+
+        .empty-state-text {
+            font-size: 1.1rem;
+            margin-bottom: 0.5rem;
+        }
+
+        .empty-state-subtext {
+            font-size: 0.95rem;
+        }
+
+        /* Modal / Lightbox */
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: rgba(0, 0, 0, 0.8);
+            z-index: 1000;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .modal.active {
+            display: flex;
+        }
+
+        .modal-content {
+            position: relative;
+            background-color: var(--card);
+            border-radius: 8px;
+            max-width: 90vw;
+            max-height: 90vh;
+            overflow: auto;
+            border: 1px solid var(--border);
+        }
+
+        .modal-image {
+            width: 100%;
+            height: auto;
+            display: block;
+        }
+
+        .modal-close {
+            position: absolute;
+            top: 1rem;
+            right: 1rem;
+            background-color: var(--card);
+            border: 1px solid var(--border);
+            color: var(--text);
+            width: 2rem;
+            height: 2rem;
+            border-radius: 50%;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.5rem;
+            transition: all 0.2s;
+        }
+
+        .modal-close:hover {
+            background-color: var(--red);
+            border-color: var(--red);
+            color: white;
+        }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            .header-top {
+                flex-direction: column;
+                gap: 1rem;
+            }
+
+            .controls {
+                flex-direction: column;
+            }
+
+            .control-group {
+                width: 100%;
+            }
+
+            select {
+                width: 100%;
+            }
+
+            .feedback-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .card-metadata {
+                grid-template-columns: 1fr;
+            }
+
+            .stats-bar {
+                grid-template-columns: repeat(2, 1fr);
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Header -->
+    <header>
+        <div class="header-container">
+            <div class="header-top">
+                <div class="header-title">
+                    <h1>VINCULUM Feedback Dashboard</h1>
+                    <p class="subtitle">Review feedback, bugs, and feature requests from all tools</p>
+                </div>
+                <a href="index.html" class="back-link">← Back to Hub</a>
+            </div>
+
+            <!-- Stats Bar -->
+            <div class="stats-bar">
+                <div class="stat">
+                    <div class="stat-value" id="stat-total">0</div>
+                    <div class="stat-label">Total Entries</div>
+                </div>
+                <div class="stat">
+                    <div class="stat-value" id="stat-new">0</div>
+                    <div class="stat-label">New</div>
+                </div>
+                <div class="stat">
+                    <div class="stat-value" id="stat-exported">0</div>
+                    <div class="stat-label">Exported</div>
+                </div>
+                <div class="stat">
+                    <div class="stat-value">
+                        <span id="stat-bugs">0</span> 🐛
+                    </div>
+                    <div class="stat-label">Bugs</div>
+                </div>
+                <div class="stat">
+                    <div class="stat-value">
+                        <span id="stat-ideas">0</span> 💡
+                    </div>
+                    <div class="stat-label">Ideas</div>
+                </div>
+                <div class="stat">
+                    <div class="stat-value">
+                        <span id="stat-ux">0</span> 🎯
+                    </div>
+                    <div class="stat-label">UX Issues</div>
+                </div>
+                <div class="stat">
+                    <div class="stat-value">
+                        <span id="stat-content">0</span> ✏️
+                    </div>
+                    <div class="stat-label">Content</div>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Content -->
+    <div class="main-container">
+        <!-- Controls -->
+        <div class="controls">
+            <div class="control-group">
+                <label>Filter by Type:</label>
+                <div class="type-filter-group">
+                    <button class="type-filter-btn active" data-type="all">All</button>
+                    <button class="type-filter-btn" data-type="bug">🐛 Bug</button>
+                    <button class="type-filter-btn" data-type="idea">💡 Idea</button>
+                    <button class="type-filter-btn" data-type="ux">🎯 UX</button>
+                    <button class="type-filter-btn" data-type="content">✏️ Content</button>
+                </div>
+            </div>
+
+            <div class="control-group">
+                <label for="tool-filter">Tool:</label>
+                <select id="tool-filter">
+                    <option value="">All Tools</option>
+                </select>
+            </div>
+
+            <div class="control-group">
+                <label for="status-filter">Status:</label>
+                <select id="status-filter">
+                    <option value="">All</option>
+                    <option value="new">New</option>
+                    <option value="exported">Exported</option>
+                </select>
+            </div>
+
+            <div class="control-group">
+                <label for="sort-filter">Sort:</label>
+                <select id="sort-filter">
+                    <option value="newest">Newest first</option>
+                    <option value="oldest">Oldest first</option>
+                    <option value="priority">Priority</option>
+                </select>
+            </div>
+        </div>
+
+        <!-- Feedback Grid -->
+        <div id="feedback-container" class="feedback-grid"></div>
+
+        <!-- Empty State -->
+        <div id="empty-state" class="empty-state" style="display: none;">
+            <div class="empty-state-icon">💬</div>
+            <div class="empty-state-text">No feedback yet!</div>
+            <div class="empty-state-subtext">Open any tool and click the 💬 button to get started.</div>
+        </div>
+    </div>
+
+    <!-- Image Lightbox Modal -->
+    <div id="image-modal" class="modal">
+        <div class="modal-content">
+            <button class="modal-close">&times;</button>
+            <img id="modal-image" class="modal-image" alt="Screenshot">
+        </div>
+    </div>
+
+    <script>
+        // State
+        let allFeedback = [];
+        let filteredFeedback = [];
+        let activeTypeFilter = 'all';
+
+        // Load feedback from localStorage
+        function loadFeedback() {
+            const stored = localStorage.getItem('vinculum-feedback');
+            if (stored) {
+                try {
+                    allFeedback = JSON.parse(stored);
+                    if (!Array.isArray(allFeedback)) {
+                        allFeedback = [];
+                    }
+                } catch (e) {
+                    console.error('Failed to parse feedback:', e);
+                    allFeedback = [];
+                }
+            }
+            applyFilters();
+            updateStats();
+            populateToolFilter();
+        }
+
+        // Update statistics
+        function updateStats() {
+            const total = allFeedback.length;
+            const newCount = allFeedback.filter(f => f.status !== 'exported').length;
+            const exportedCount = allFeedback.filter(f => f.status === 'exported').length;
+            const bugCount = allFeedback.filter(f => f.type === 'bug').length;
+            const ideaCount = allFeedback.filter(f => f.type === 'idea').length;
+            const uxCount = allFeedback.filter(f => f.type === 'ux').length;
+            const contentCount = allFeedback.filter(f => f.type === 'content').length;
+
+            document.getElementById('stat-total').textContent = total;
+            document.getElementById('stat-new').textContent = newCount;
+            document.getElementById('stat-exported').textContent = exportedCount;
+            document.getElementById('stat-bugs').textContent = bugCount;
+            document.getElementById('stat-ideas').textContent = ideaCount;
+            document.getElementById('stat-ux').textContent = uxCount;
+            document.getElementById('stat-content').textContent = contentCount;
+        }
+
+        // Populate tool filter dropdown
+        function populateToolFilter() {
+            const toolSelect = document.getElementById('tool-filter');
+            const tools = [...new Set(allFeedback.map(f => f.tool))].filter(Boolean).sort();
+            const currentValue = toolSelect.value;
+
+            tools.forEach(tool => {
+                if (!toolSelect.querySelector(`option[value="${tool}"]`)) {
+                    const option = document.createElement('option');
+                    option.value = tool;
+                    option.textContent = tool;
+                    toolSelect.appendChild(option);
+                }
+            });
+
+            toolSelect.value = currentValue;
+        }
+
+        // Apply all filters
+        function applyFilters() {
+            const typeFilter = activeTypeFilter;
+            const toolFilter = document.getElementById('tool-filter').value;
+            const statusFilter = document.getElementById('status-filter').value;
+            const sortFilter = document.getElementById('sort-filter').value;
+
+            filteredFeedback = allFeedback.filter(feedback => {
+                const typeMatch = typeFilter === 'all' || feedback.type === typeFilter;
+                const toolMatch = !toolFilter || feedback.tool === toolFilter;
+                const statusMatch = !statusFilter || (statusFilter === 'new' && feedback.status !== 'exported') || (statusFilter === 'exported' && feedback.status === 'exported');
+                return typeMatch && toolMatch && statusMatch;
+            });
+
+            // Sort
+            if (sortFilter === 'newest') {
+                filteredFeedback.sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
+            } else if (sortFilter === 'oldest') {
+                filteredFeedback.sort((a, b) => new Date(a.timestamp) - new Date(b.timestamp));
+            } else if (sortFilter === 'priority') {
+                const priorityOrder = { high: 0, medium: 1, low: 2 };
+                filteredFeedback.sort((a, b) => {
+                    const aPriority = priorityOrder[a.priority] || 2;
+                    const bPriority = priorityOrder[b.priority] || 2;
+                    return aPriority - bPriority;
+                });
+            }
+
+            renderFeedback();
+        }
+
+        // Render feedback cards
+        function renderFeedback() {
+            const container = document.getElementById('feedback-container');
+            const emptyState = document.getElementById('empty-state');
+
+            if (filteredFeedback.length === 0) {
+                container.innerHTML = '';
+                emptyState.style.display = 'block';
+                return;
+            }
+
+            emptyState.style.display = 'none';
+            container.innerHTML = filteredFeedback.map((feedback, index) => {
+                const timestamp = new Date(feedback.timestamp);
+                const formattedDate = timestamp.toLocaleString();
+
+                let screenshotHtml = '';
+                if (feedback.screenshot) {
+                    screenshotHtml = `
+                        <div class="screenshot-section">
+                            <div class="screenshot-thumb" onclick="openModal('${escapeHtml(feedback.screenshot)}')">
+                                <img src="${feedback.screenshot}" alt="Feedback screenshot" />
+                            </div>
+                        </div>
+                    `;
+                }
+
+                const typeEmoji = {
+                    bug: '🐛',
+                    idea: '💡',
+                    ux: '🎯',
+                    content: '✏️'
+                }[feedback.type] || '📝';
+
+                const priorityBadge = feedback.priority && feedback.priority !== 'none' ? `<div class="badge badge-priority">${feedback.priority.toUpperCase()}</div>` : '';
+                const statusBadge = `<div class="badge badge-status ${feedback.status || 'new'}">${feedback.status === 'exported' ? 'Exported' : 'New'}</div>`;
+
+                const githubUrl = generateGitHubIssueUrl(feedback);
+
+                return `
+                    <div class="feedback-card">
+                        <div class="card-header">
+                            <div class="card-badges">
+                                <div class="badge badge-type ${feedback.type}">${typeEmoji} ${feedback.type.toUpperCase()}</div>
+                                ${priorityBadge}
+                                ${statusBadge}
+                            </div>
+                        </div>
+
+                        <div class="card-title">${escapeHtml(feedback.description)}</div>
+                        <div class="card-tool">
+                            <span><strong>${escapeHtml(feedback.tool || 'Unknown')}</strong></span>
+                            ${feedback.mode ? `<span>• ${escapeHtml(feedback.mode)}</span>` : ''}
+                            ${feedback.difficulty ? `<span>• Difficulty: ${escapeHtml(feedback.difficulty)}</span>` : ''}
+                        </div>
+
+                        ${screenshotHtml}
+
+                        <div class="card-metadata">
+                            <div class="metadata-item">
+                                <span class="metadata-label">Timestamp</span>
+                                <span class="metadata-value">${formattedDate}</span>
+                            </div>
+                            ${feedback.browser ? `
+                                <div class="metadata-item">
+                                    <span class="metadata-label">Browser</span>
+                                    <span class="metadata-value">${escapeHtml(feedback.browser)}</span>
+                                </div>
+                            ` : ''}
+                            ${feedback.screenSize ? `
+                                <div class="metadata-item">
+                                    <span class="metadata-label">Screen Size</span>
+                                    <span class="metadata-value">${feedback.screenSize}</span>
+                                </div>
+                            ` : ''}
+                            ${feedback.score !== undefined ? `
+                                <div class="metadata-item">
+                                    <span class="metadata-label">Score</span>
+                                    <span class="metadata-value">${feedback.score}/10</span>
+                                </div>
+                            ` : ''}
+                            ${feedback.streak !== undefined ? `
+                                <div class="metadata-item">
+                                    <span class="metadata-label">Streak</span>
+                                    <span class="metadata-value">${feedback.streak}</span>
+                                </div>
+                            ` : ''}
+                        </div>
+
+                        <div class="card-actions">
+                            <a href="${githubUrl}" target="_blank" rel="noopener noreferrer" class="action-btn">📤 Export to GitHub Issue</a>
+                            ${feedback.status !== 'exported' ? `
+                                <button class="action-btn secondary" onclick="markExported(${index})">✓ Mark Exported</button>
+                            ` : ''}
+                            <button class="action-btn danger" onclick="deleteFeedback(${index})">🗑 Delete</button>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        // Generate GitHub issue URL
+        function generateGitHubIssueUrl(feedback) {
+            const title = encodeURIComponent(`[${feedback.type.toUpperCase()}] ${feedback.description.substring(0, 60)}`);
+            const body = encodeURIComponent(
+                `**Type:** ${feedback.type}\n` +
+                `**Tool:** ${feedback.tool}\n` +
+                `${feedback.mode ? `**Mode:** ${feedback.mode}\n` : ''}` +
+                `**Priority:** ${feedback.priority || 'medium'}\n\n` +
+                `## Description\n${feedback.description}\n\n` +
+                `## Environment\n` +
+                `- Browser: ${feedback.browser || 'Unknown'}\n` +
+                `- Screen Size: ${feedback.screenSize || 'Unknown'}\n` +
+                `- Timestamp: ${feedback.timestamp}\n`
+            );
+            return `https://github.com/discrafty-cpu/vinculum-hub/issues/new?title=${title}&body=${body}`;
+        }
+
+        // Mark feedback as exported
+        function markExported(index) {
+            if (filteredFeedback[index]) {
+                const originalIndex = allFeedback.indexOf(filteredFeedback[index]);
+                if (originalIndex !== -1) {
+                    allFeedback[originalIndex].status = 'exported';
+                    saveFeedback();
+                    applyFilters();
+                    updateStats();
+                }
+            }
+        }
+
+        // Delete feedback
+        function deleteFeedback(index) {
+            if (confirm('Are you sure you want to delete this feedback entry?')) {
+                if (filteredFeedback[index]) {
+                    const originalIndex = allFeedback.indexOf(filteredFeedback[index]);
+                    if (originalIndex !== -1) {
+                        allFeedback.splice(originalIndex, 1);
+                        saveFeedback();
+                        applyFilters();
+                        updateStats();
+                    }
+                }
+            }
+        }
+
+        // Save feedback to localStorage
+        function saveFeedback() {
+            localStorage.setItem('vinculum-feedback', JSON.stringify(allFeedback));
+        }
+
+        // Escape HTML
+        function escapeHtml(text) {
+            if (!text) return '';
+            const map = {
+                '&': '&amp;',
+                '<': '&lt;',
+                '>': '&gt;',
+                '"': '&quot;',
+                "'": '&#039;'
+            };
+            return text.replace(/[&<>"']/g, m => map[m]);
+        }
+
+        // Modal functions
+        function openModal(imageSrc) {
+            const modal = document.getElementById('image-modal');
+            const modalImage = document.getElementById('modal-image');
+            modalImage.src = imageSrc;
+            modal.classList.add('active');
+        }
+
+        function closeModal() {
+            const modal = document.getElementById('image-modal');
+            modal.classList.remove('active');
+        }
+
+        // Event listeners
+        document.getElementById('image-modal').addEventListener('click', (e) => {
+            if (e.target.id === 'image-modal') closeModal();
+        });
+
+        document.querySelector('.modal-close').addEventListener('click', closeModal);
+
+        document.querySelectorAll('.type-filter-btn').forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                document.querySelectorAll('.type-filter-btn').forEach(b => b.classList.remove('active'));
+                e.target.classList.add('active');
+                activeTypeFilter = e.target.dataset.type;
+                applyFilters();
+            });
+        });
+
+        document.getElementById('tool-filter').addEventListener('change', applyFilters);
+        document.getElementById('status-filter').addEventListener('change', applyFilters);
+        document.getElementById('sort-filter').addEventListener('change', applyFilters);
+
+        // Keyboard shortcut to close modal
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape') closeModal();
+        });
+
+        // Initial load
+        loadFeedback();
+    </script>
+</body>
+</html>

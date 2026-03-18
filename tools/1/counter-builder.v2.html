@@ -1,0 +1,1170 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>VINCULUM — Counter Builder</title>
+<link rel="stylesheet" href="../../vinculum-core.css">
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;600&display=swap');
+
+/* Theme system loaded from vinculum-core.css */
+.vinculum-rtm-btn .rtm-icon{font-size:14px;}
+
+/* ═══ FOCUS VISIBLE (Keyboard Navigation) ═══ */
+*:focus-visible {
+  outline:2px solid var(--cyan);outline-offset:2px;border-radius:4px;
+}
+.sr-only {
+  position:absolute;width:1px;height:1px;padding:0;margin:-1px;
+  overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0;
+}
+
+* { margin:0; padding:0; box-sizing:border-box; }
+body {
+  font-family: 'Inter', sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  height: 100vh;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  user-select: none;
+}
+
+/* ── HEADER ── */
+/* ── MODE TABS ── */
+/* Difficulty selector */
+.vinculum-diff-btn:hover { color: var(--text2); }
+/* ── MAIN AREA ── */
+.main {
+  flex: 1;
+  display: flex;
+  overflow: hidden;
+}
+
+/* ── WORKSPACE ── */
+.workspace {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+  position: relative;
+  overflow-y: auto;
+}
+
+/* ── COUNTER GROUPS ── */
+.counter-groups {
+  display: flex;
+  flex-direction: row;
+  gap: 20px;
+  justify-content: center;
+  align-items: flex-start;
+  margin-bottom: 16px;
+}
+.counter-group {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  background: var(--card);
+  border-radius: 14px;
+  padding: 16px;
+  min-width: 140px;
+  border: 2px solid var(--border);
+  transition: border-color 0.2s;
+}
+.counter-group:hover {
+  border-color: var(--text2);
+}
+.counter-group-label {
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--muted);
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  margin-bottom: 8px;
+}
+.counters {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  justify-content: center;
+  min-height: 40px;
+  align-items: center;
+}
+.counter {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  transition: transform 0.2s, box-shadow 0.2s;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.counter:hover { transform: scale(1.15); }
+.counter:active { transform: scale(0.9); }
+.counter.blue { background: var(--cyan); box-shadow: 0 2px 8px rgba(0,212,255,0.3); }
+.counter.red { background: var(--pink); box-shadow: 0 2px 8px rgba(255,59,139,0.3); }
+.counter.pop-in { animation: pop 0.3s ease-out forwards; }
+.counter.crossed {
+  opacity: 0.25;
+  transform: scale(0.7);
+  box-shadow: none;
+}
+
+.group-count {
+  font-size: 20px;
+  font-weight: 800;
+  font-family: 'JetBrains Mono', monospace;
+  margin-top: 8px;
+}
+.group-count.blue-text { color: var(--cyan); }
+.group-count.red-text { color: var(--pink); }
+
+.group-controls {
+  display: flex;
+  gap: 6px;
+  margin-top: 8px;
+}
+.group-btn {
+  width: 32px;
+  height: 32px;
+  border-radius: 8px;
+  border: 1px solid var(--border);
+  background: var(--card);
+  color: var(--text2);
+  font-size: 16px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.15s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: inherit;
+}
+.group-btn:hover { background: var(--card-hover); color: var(--text); }
+
+/* ── OPERATION TOGGLE ── */
+.op-toggle {
+  display: flex;
+  gap: 4px;
+  background: var(--card);
+  border-radius: 10px;
+  padding: 4px;
+  border: 1px solid var(--border);
+  margin-bottom: 12px;
+}
+.op-btn {
+  padding: 8px 20px;
+  border-radius: 8px;
+  border: none;
+  background: transparent;
+  color: var(--muted);
+  font-size: 18px;
+  font-weight: 800;
+  font-family: 'JetBrains Mono', monospace;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+.op-btn.active {
+  background: var(--grad);
+  color: var(--bg);
+}
+.op-btn:hover:not(.active) { color: var(--text2); }
+
+/* ── EQUATION DISPLAY ── */
+.equation-display {
+  text-align: center;
+  padding: 12px 24px;
+  background: var(--card);
+  border-radius: 12px;
+  border: 1px solid var(--border);
+  margin-bottom: 12px;
+  font-size: 28px;
+  font-weight: 800;
+  font-family: 'JetBrains Mono', monospace;
+  color: var(--text);
+  letter-spacing: 2px;
+  min-width: 200px;
+}
+.eq-blue { color: var(--cyan); }
+.eq-red { color: var(--pink); }
+.eq-op { color: var(--yellow); }
+.eq-eq { color: var(--muted); }
+.eq-ans { color: var(--green); }
+.eq-missing { color: var(--yellow); text-decoration: underline; text-decoration-style: dotted; }
+
+/* ── TEN FRAME ── */
+.ten-frame {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  grid-template-rows: repeat(2, 1fr);
+  gap: 4px;
+  width: 100%;
+  max-width: 400px;
+  margin: 12px auto;
+}
+.ten-frame-cell {
+  background: var(--card);
+  border: 2px solid var(--border);
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  aspect-ratio: 1;
+  transition: all 0.2s;
+}
+.ten-frame-cell.filled-blue {
+  background: rgba(0,212,255,0.12);
+  border-color: var(--cyan);
+}
+.ten-frame-cell.filled-red {
+  background: rgba(255,59,139,0.12);
+  border-color: var(--pink);
+}
+.tf-dot {
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+}
+.tf-dot.blue { background: var(--cyan); }
+.tf-dot.red { background: var(--pink); }
+
+/* ── INSTRUCTION BOX ── */
+.instruction-box {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 14px 20px;
+  text-align: center;
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--text2);
+  line-height: 1.5;
+  margin-bottom: 12px;
+  max-width: 500px;
+}
+.instruction-box .highlight { color: var(--cyan); font-weight: 700; }
+.instruction-box .highlight-red { color: var(--pink); font-weight: 700; }
+.instruction-box .highlight-green { color: var(--green); font-weight: 700; }
+
+/* ── MC GRID ── */
+.mc-grid {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 8px;
+  margin-top: 12px;
+  max-width: 400px;
+}
+.mc-btn {
+  padding: 14px;
+  border-radius: 12px;
+  border: 2px solid var(--border);
+  background: var(--card);
+  color: var(--text);
+  font-size: 20px;
+  font-weight: 700;
+  font-family: 'JetBrains Mono', monospace;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+.mc-btn:hover {
+  border-color: var(--cyan);
+  background: rgba(0,212,255,0.05);
+  transform: scale(1.05);
+}
+.mc-btn.correct-flash {
+  border-color: var(--green);
+  background: rgba(0,230,118,0.15);
+  color: var(--green);
+}
+.mc-btn.incorrect-flash {
+  border-color: var(--pink);
+  background: rgba(255,59,139,0.15);
+  color: var(--pink);
+}
+
+/* ── CONTROLS ── */
+.controls {
+  display: flex;
+  gap: 8px;
+  margin-top: 12px;
+  flex-wrap: wrap;
+  justify-content: center;
+}
+.ctrl-btn {
+  padding: 10px 20px;
+  border-radius: 10px;
+  border: 1px solid var(--border);
+  background: var(--card);
+  color: var(--text2);
+  font-size: 13px;
+  font-weight: 600;
+  font-family: inherit;
+  cursor: pointer;
+  transition: all 0.2s;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.ctrl-btn:hover { background: var(--card-hover); color: var(--text); }
+.ctrl-btn.primary {
+  background: var(--grad);
+  color: var(--bg);
+  border-color: transparent;
+}
+.ctrl-btn.primary:hover { opacity: 0.9; }
+.ctrl-btn.danger { color: var(--pink); }
+.ctrl-btn.danger:hover { background: rgba(255,59,139,0.1); }
+
+/* ── SCORE DISPLAY ── */
+.score-display {
+  text-align: center;
+  padding: 16px;
+  background: var(--card);
+  border-radius: 12px;
+  margin-bottom: 12px;
+}
+.score-value {
+  font-size: 36px;
+  font-weight: 900;
+  font-family: 'JetBrains Mono', monospace;
+  background: var(--grad);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+.score-label {
+  font-size: 11px;
+  color: var(--muted);
+  text-transform: uppercase;
+  letter-spacing: 1px;
+}
+.streak-bar {
+  height: 6px;
+  background: var(--card);
+  border-radius: 3px;
+  overflow: hidden;
+  margin-top: 8px;
+}
+.streak-fill {
+  height: 100%;
+  background: var(--grad);
+  border-radius: 3px;
+  transition: width 0.3s;
+}
+
+/* ── SIDE PANEL ── */
+.side-panel {
+  width: 280px;
+  background: var(--bg2);
+  border-left: 1px solid var(--border);
+  padding: 20px;
+  overflow-y: auto;
+  flex-shrink: 0;
+}
+.panel-section {
+  margin-bottom: 20px;
+}
+.panel-title {
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 1.5px;
+  color: var(--muted);
+  margin-bottom: 8px;
+}
+.panel-text {
+  font-size: 13px;
+  color: var(--text2);
+  line-height: 1.6;
+}
+
+/* ── FEEDBACK ── */
+.feedback {
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%) scale(0);
+  padding: 24px 48px;
+  border-radius: 20px;
+  font-size: 22px;
+  font-weight: 800;
+  z-index: 200;
+  pointer-events: none;
+  transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275), opacity 0.3s;
+  opacity: 0;
+  max-width: 90vw;
+  text-align: center;
+  line-height: 1.4;
+}
+.feedback.show {
+  transform: translate(-50%, -50%) scale(1);
+  opacity: 1;
+}
+.feedback.correct {
+  background: rgba(0,230,118,0.15);
+  color: var(--green);
+  border: 2px solid var(--green);
+}
+.feedback.incorrect {
+  background: rgba(255,59,139,0.15);
+  color: var(--pink);
+  border: 2px solid var(--pink);
+}
+.feedback.try-again {
+  background: rgba(255,193,7,0.15);
+  color: var(--yellow);
+  border: 2px solid var(--yellow);
+}
+
+/* ── ANIMATIONS ── */
+@keyframes pop {
+  0% { transform: scale(0); }
+  70% { transform: scale(1.2); }
+  100% { transform: scale(1); }
+}
+@keyframes shake {
+  0%, 100% { transform: translateX(0); }
+  25% { transform: translateX(-8px); }
+  75% { transform: translateX(8px); }
+}
+.pop-in { animation: pop 0.3s ease-out forwards; }
+.shake { animation: shake 0.3s ease-in-out; }
+
+/* scrollbar */
+::-webkit-scrollbar { width: 6px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+</style>
+</head>
+<body>
+
+<!-- ═══ HEADER ═══ -->
+<div class="vinculum-header">
+  <div class="vinculum-header-left">
+    <a class="vinculum-back-btn" href="../../VINCULUM-Hub.html" style="text-decoration:none;">◀ Hub</a>
+    <div class="vinculum-header-title"><span>VINCULUM</span> Counter Builder</div>
+    <span class="vinculum-header-badge">1.OA</span>
+  </div>
+  <div class="vinculum-header-right">
+    <div class="vinculum-std-tags">
+      <span class="vinculum-std-tag">1.OA.1</span>
+      <span class="vinculum-std-tag">1.OA.2</span>
+      <span class="vinculum-std-tag">1.OA.5</span>
+      <span class="vinculum-std-tag mn">MN 1.2.2.1</span>
+    </div>
+    <button class="vinculum-back-btn" id="readAloudBtn" onclick="toggleReadAloud()" aria-label="Read Aloud" title="Read instructions aloud" style="margin-left:8px;white-space:nowrap;">🔊 Read to Me</button>
+  </div>
+</div>
+
+<!-- ═══ MODE TABS ═══ -->
+<div class="vinculum-mode-tabs">
+  <button class="vinculum-mode-tab active-explore" id="tabExplore" data-mode="explore">
+    <svg width="18" height="18" viewBox="0 0 48 48" fill="none"><path d="M4 24C4 24 12 12 24 12C36 12 44 24 44 24C44 24 36 36 24 36C12 36 4 24 4 24Z" stroke="currentColor" stroke-width="3" fill="none"/><circle cx="24" cy="24" r="7" stroke="currentColor" stroke-width="3" fill="none"/><circle cx="24" cy="24" r="3" fill="currentColor"/><line x1="24" y1="4" x2="24" y2="9" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" opacity="0.5"/><line x1="10" y1="8" x2="13" y2="12" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" opacity="0.5"/><line x1="38" y1="8" x2="35" y2="12" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" opacity="0.5"/></svg> Explore
+  </button>
+  <button class="vinculum-mode-tab" id="tabPractice" data-mode="practice">
+    <svg width="18" height="18" viewBox="0 0 48 48" fill="none"><circle cx="24" cy="24" r="20" stroke="currentColor" stroke-width="3" fill="none" opacity="0.3"/><circle cx="24" cy="24" r="20" stroke="currentColor" stroke-width="3" fill="none" stroke-dasharray="126" stroke-dashoffset="32" stroke-linecap="round"/><polyline points="16,24 22,32 34,16" stroke="currentColor" stroke-width="4" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg> Practice
+  </button>
+  <button class="vinculum-mode-tab" id="tabPlay" data-mode="play">
+    <svg width="18" height="18" viewBox="0 0 48 48" fill="none"><polygon points="28,4 12,28 22,28 18,44 36,18 26,18" fill="none" stroke="currentColor" stroke-width="3" stroke-linejoin="round"/><polygon points="27,8 15,27 23,27 20,40 34,19 26,19" fill="currentColor" opacity="0.15"/></svg> Play
+  </button>
+  <div class="vinculum-diff-selector">
+    <span class="vinculum-diff-label">Level</span>
+    <button class="vinculum-diff-btn active" id="diffE" data-diff="emergent">Within 10</button>
+    <button class="vinculum-diff-btn" id="diffP" data-diff="proficient">Within 20</button>
+    <button class="vinculum-diff-btn" id="diffA" data-diff="advanced">Missing Addend</button>
+  </div>
+</div>
+
+<!-- ═══ MAIN ═══ -->
+<div class="main">
+  <div class="workspace" role="main" id="workspace"></div>
+  <div class="side-panel" id="sidePanel"></div>
+</div>
+
+<!-- ═══ FEEDBACK POPUP ═══ -->
+<div class="feedback" id="feedback"></div>
+
+<script src="../../vinculum-input.js"></script>
+<script>
+// ════════════════════════════════════════
+// STATE
+// ════════════════════════════════════════
+let S = {
+  mode: 'explore', diff: 'emergent', maxN: 10,
+  // Explore
+  groupA: [], groupB: [], operation: 'add',
+  // Practice
+  pA: 0, pB: 0, pOp: 'add', pAnswer: 0, pType: 'result', pChoices: [],
+  pBuiltA: [], pBuiltB: [], pPhase: 'building', // building | answering
+  // Score / streak
+  score: 0, streak: 0, best: 0, round: 0, total: 10,
+  // Play
+  playA: 0, playB: 0, playOp: 'add', playAnswer: 0, playChoices: []
+};
+
+// ════════════════════════════════════════
+// MISCONCEPTIONS DATABASE
+// ════════════════════════════════════════
+const MISCONCEPTIONS = {
+  countAll: {
+    id: 'count-all',
+    msg: function(a, b) { return 'Try COUNTING ON from ' + a + '! Say "' + a + '..." then count ' + b + ' more.'; }
+  },
+  disorganized: {
+    id: 'disorganized',
+    msg: function() { return 'Put your counters in the ten-frame! It helps you count faster.'; }
+  },
+  offByOne: {
+    id: 'off-by-one',
+    msg: function(ans, got) { return 'Almost! You got ' + got + ' but the answer is ' + ans + '. Count once more!'; }
+  },
+  randomGuess: {
+    id: 'random',
+    msg: function() { return 'Use the counters! Add them to the ten-frame and count.'; }
+  }
+};
+
+// ════════════════════════════════════════
+// READ-ALOUD
+// ════════════════════════════════════════
+function toggleReadAloud() {
+  if (window.VinculumStories && VinculumStories.isReading()) {
+    VinculumStories.stopReading();
+    document.getElementById('readAloudBtn').textContent = '🔊 Read to Me';
+  } else {
+    var fb = document.getElementById('feedback');
+    var storyEl = document.getElementById('storyBanner');
+    var text = storyEl ? storyEl.textContent : (fb ? fb.textContent : 'Welcome to Counter Builder!');
+    if (window.VinculumStories) {
+      VinculumStories.readAloud(text, { rate: 0.85, onComplete: function() {
+        document.getElementById('readAloudBtn').textContent = '🔊 Read to Me';
+      }});
+      document.getElementById('readAloudBtn').textContent = '⏹ Stop';
+    }
+  }
+}
+
+// ════════════════════════════════════════
+// HELPERS
+// ════════════════════════════════════════
+function randInt(min, max) {
+  return Math.floor(Math.random() * (max - min + 1)) + min;
+}
+
+function getMaxN() {
+  return { emergent: 10, proficient: 20, advanced: 20 }[S.diff];
+}
+
+function showFeedback(text, type) {
+  var fb = document.getElementById('feedback');
+  fb.textContent = text;
+  fb.className = 'feedback ' + type + ' show';
+  setTimeout(function() { fb.classList.remove('show'); }, 2000);
+}
+
+function generateChoices(correct, max) {
+  var choices = new Set([correct]);
+  // Add nearby distractors first
+  if (correct - 1 >= 0) choices.add(correct - 1);
+  if (correct + 1 <= max) choices.add(correct + 1);
+  if (correct - 2 >= 0) choices.add(correct - 2);
+  if (correct + 2 <= max) choices.add(correct + 2);
+  while (choices.size < 5) {
+    choices.add(randInt(0, max));
+  }
+  return Array.from(choices).sort(function(a, b) { return a - b; });
+}
+
+function buildTenFrameHTML(blueCount, redCount, showAll) {
+  var total = showAll ? blueCount + redCount : blueCount;
+  var frameSize = S.maxN > 10 ? 20 : 10;
+  var cols = frameSize === 20 ? 10 : 5;
+  var rows = 2;
+  var html = '<div class="ten-frame" style="grid-template-columns:repeat(' + cols + ',1fr);max-width:' + (cols * 48) + 'px;">';
+  for (var i = 0; i < frameSize; i++) {
+    var cls = '';
+    var dot = '';
+    if (i < blueCount) {
+      cls = 'filled-blue';
+      dot = '<div class="tf-dot blue"></div>';
+    } else if (showAll && i < blueCount + redCount) {
+      cls = 'filled-red';
+      dot = '<div class="tf-dot red"></div>';
+    }
+    html += '<div class="ten-frame-cell ' + cls + '">' + dot + '</div>';
+  }
+  html += '</div>';
+  return html;
+}
+
+function equationHTML(a, op, b, answer, showAnswer, missingAddend) {
+  if (missingAddend) {
+    return '<div class="equation-display">' +
+      '<span class="eq-blue">' + a + '</span>' +
+      ' <span class="eq-op">+</span> ' +
+      '<span class="eq-missing">?</span>' +
+      ' <span class="eq-eq">=</span> ' +
+      (showAnswer ? '<span class="eq-ans">' + answer + '</span>' : '<span class="eq-ans">' + answer + '</span>') +
+      '</div>';
+  }
+  var opSymbol = op === 'add' ? '+' : '−';
+  return '<div class="equation-display">' +
+    '<span class="eq-blue">' + a + '</span>' +
+    ' <span class="eq-op">' + opSymbol + '</span> ' +
+    '<span class="eq-red">' + b + '</span>' +
+    ' <span class="eq-eq">=</span> ' +
+    (showAnswer ? '<span class="eq-ans">' + answer + '</span>' : '<span class="eq-ans">?</span>') +
+    '</div>';
+}
+
+// ════════════════════════════════════════
+// MODE SWITCHING
+// ════════════════════════════════════════
+function setMode(mode) {
+  S.mode = mode;
+  S.groupA = [];
+  S.groupB = [];
+  S.round = 0;
+  S.score = 0;
+  S.streak = 0;
+
+  document.querySelectorAll('.vinculum-mode-tab').forEach(function(t) {
+    t.classList.remove('active-explore', 'active-practice', 'active-play');
+  });
+  var tabEl = document.getElementById('tab' + mode.charAt(0).toUpperCase() + mode.slice(1));
+  if (tabEl) tabEl.classList.add('active-' + mode);
+
+  render();
+}
+
+function setDiff(diff) {
+  S.diff = diff;
+  S.maxN = getMaxN();
+  document.querySelectorAll('.vinculum-diff-btn').forEach(function(b) { b.classList.remove('active'); });
+  document.getElementById('diff' + diff.charAt(0).toUpperCase()).classList.add('active');
+  setMode(S.mode);
+}
+
+// ════════════════════════════════════════
+// RENDER
+// ════════════════════════════════════════
+function render() {
+  var ws = document.getElementById('workspace');
+  var sp = document.getElementById('sidePanel');
+
+  if (S.mode === 'explore') renderExplore(ws, sp);
+  else if (S.mode === 'practice') renderPractice(ws, sp);
+  else renderPlay(ws, sp);
+}
+
+// ─── EXPLORE MODE ───
+function renderExplore(ws, sp) {
+  var aLen = S.groupA.length;
+  var bLen = S.groupB.length;
+  var opSymbol = S.operation === 'add' ? '+' : '−';
+  var result = S.operation === 'add' ? aLen + bLen : Math.max(0, aLen - bLen);
+
+  var html = '';
+
+  // Story banner
+  if (window.VinculumStories) {
+    var toolName = window.location.pathname.split('/').pop().replace('.html','');
+    var storyData = VinculumStories.getStory(toolName, {a: aLen || 3, b: bLen || 2, total: result || 5, n: aLen || 4});
+    if (storyData && storyData.story) {
+      if (window.Vinculum3Reads) {
+        html += Vinculum3Reads.getBannerHTML(storyData);
+      } else {
+        html += '<div id="storyBanner" style="background:var(--card2,#1a1f2e);border:1px solid var(--border);border-radius:12px;padding:16px 20px;margin-bottom:16px;font-size:15px;line-height:1.6;color:var(--text);position:relative;"><span style="font-size:12px;color:var(--cyan);font-weight:700;text-transform:uppercase;letter-spacing:1px;">📖 Story</span><br>' + storyData.story + '<br><em style="color:var(--yellow);font-weight:600;">' + storyData.question + '</em><button onclick="toggleReadAloud()" style="position:absolute;top:12px;right:12px;background:none;border:1px solid var(--border);border-radius:8px;padding:4px 10px;color:var(--cyan);cursor:pointer;font-size:14px;" title="Read story aloud">🔊</button></div>';
+      }
+    }
+  }
+
+  // Equation display
+  html += equationHTML(aLen, S.operation, bLen, result, true, false);
+
+  // Operation toggle
+  html += '<div class="op-toggle">';
+  html += '<button class="op-btn ' + (S.operation === 'add' ? 'active' : '') + '" onclick="setOperation(\'add\')">+</button>';
+  html += '<button class="op-btn ' + (S.operation === 'sub' ? 'active' : '') + '" onclick="setOperation(\'sub\')">−</button>';
+  html += '</div>';
+
+  // Counter groups
+  html += '<div class="counter-groups">';
+
+  // Group A (blue)
+  html += '<div class="counter-group">';
+  html += '<div class="counter-group-label">Group A</div>';
+  html += '<div class="counters">';
+  for (var i = 0; i < aLen; i++) {
+    html += '<div class="counter blue pop-in" onclick="removeFromGroup(\'A\',' + i + ')" title="Tap to remove"></div>';
+  }
+  if (aLen === 0) html += '<span style="color:var(--muted);font-size:12px;">empty</span>';
+  html += '</div>';
+  html += '<div class="group-count blue-text">' + aLen + '</div>';
+  html += '<div class="group-controls">';
+  html += '<button class="group-btn" onclick="addToGroup(\'A\')">+</button>';
+  html += '<button class="group-btn" onclick="removeFromGroup(\'A\',' + (aLen - 1) + ')">−</button>';
+  html += '</div>';
+  html += '</div>';
+
+  // Group B (red)
+  html += '<div class="counter-group">';
+  html += '<div class="counter-group-label">Group B</div>';
+  html += '<div class="counters">';
+  for (var j = 0; j < bLen; j++) {
+    var crossed = S.operation === 'sub' ? '' : '';
+    html += '<div class="counter red pop-in" onclick="removeFromGroup(\'B\',' + j + ')" title="Tap to remove"></div>';
+  }
+  if (bLen === 0) html += '<span style="color:var(--muted);font-size:12px;">empty</span>';
+  html += '</div>';
+  html += '<div class="group-count red-text">' + bLen + '</div>';
+  html += '<div class="group-controls">';
+  html += '<button class="group-btn" onclick="addToGroup(\'B\')">+</button>';
+  html += '<button class="group-btn" onclick="removeFromGroup(\'B\',' + (bLen - 1) + ')">−</button>';
+  html += '</div>';
+  html += '</div>';
+
+  html += '</div>'; // end counter-groups
+
+  // Ten-frame shows combined
+  html += buildTenFrameHTML(aLen, bLen, S.operation === 'add');
+
+  // Action buttons
+  html += '<div class="controls">';
+  if (S.operation === 'add') {
+    html += '<button class="ctrl-btn primary" onclick="combineGroups()">Combine!</button>';
+  } else {
+    html += '<button class="ctrl-btn primary" onclick="takeAway()">Take Away!</button>';
+  }
+  html += '<button class="ctrl-btn danger" onclick="clearGroups()">✕ Clear All</button>';
+  html += '</div>';
+
+  ws.innerHTML = html;
+
+  // Side panel
+  sp.innerHTML =
+    '<div class="panel-section">' +
+      '<div class="panel-title">Count-On Strategy</div>' +
+      '<div class="panel-text">' +
+        'Instead of counting ALL objects from 1, start from the bigger group!<br><br>' +
+        '<strong>Example:</strong> 5 + 3<br>' +
+        'Say: "5... 6, 7, 8!"<br><br>' +
+        'This is faster than counting 1, 2, 3, 4, 5, 6, 7, 8.' +
+      '</div>' +
+    '</div>' +
+    '<div class="panel-section">' +
+      '<div class="panel-title">How to Use</div>' +
+      '<div class="panel-text">' +
+        '1. Add 🔵 blue counters to Group A<br><br>' +
+        '2. Add 🔴 red counters to Group B<br><br>' +
+        '3. Choose + or − operation<br><br>' +
+        '4. Click <strong>Combine</strong> or <strong>Take Away</strong><br><br>' +
+        '5. Watch the ten-frame fill up!' +
+      '</div>' +
+    '</div>' +
+    '<div class="panel-section">' +
+      '<div class="panel-title">Key Concept</div>' +
+      '<div class="panel-text">' +
+        'Organizing counters in a <strong>ten-frame</strong> makes counting easier. ' +
+        'When you see a full row of 5, you can count on from 5 instead of starting over!' +
+      '</div>' +
+    '</div>';
+}
+
+function setOperation(op) {
+  S.operation = op;
+  render();
+}
+
+function addToGroup(group) {
+  var arr = group === 'A' ? S.groupA : S.groupB;
+  var totalCounters = S.groupA.length + S.groupB.length;
+  if (totalCounters >= S.maxN) {
+    showFeedback('Max ' + S.maxN + ' counters!', 'try-again');
+    return;
+  }
+  arr.push(1);
+  render();
+}
+
+function removeFromGroup(group, idx) {
+  var arr = group === 'A' ? S.groupA : S.groupB;
+  if (idx >= 0 && idx < arr.length) {
+    arr.splice(idx, 1);
+    render();
+  }
+}
+
+function combineGroups() {
+  var aLen = S.groupA.length;
+  var bLen = S.groupB.length;
+  if (aLen === 0 && bLen === 0) {
+    showFeedback('Add some counters first!', 'try-again');
+    return;
+  }
+  var total = aLen + bLen;
+
+  // Misconception check: if counters aren't in ten-frame, nudge
+  if (total > 5 && S.groupA.length > 0 && S.groupB.length > 0) {
+    showFeedback(aLen + ' + ' + bLen + ' = ' + total + '!', 'correct');
+  } else {
+    showFeedback(aLen + ' + ' + bLen + ' = ' + total, 'correct');
+  }
+}
+
+function takeAway() {
+  var aLen = S.groupA.length;
+  var bLen = S.groupB.length;
+  if (aLen === 0) {
+    showFeedback('Add blue counters to Group A first!', 'try-again');
+    return;
+  }
+  var result = Math.max(0, aLen - bLen);
+  showFeedback(aLen + ' − ' + bLen + ' = ' + result + '!', 'correct');
+
+  // Visually remove B from A
+  var remaining = Math.max(0, aLen - bLen);
+  S.groupA = S.groupA.slice(0, remaining);
+  S.groupB = [];
+  setTimeout(function() { render(); }, 1200);
+}
+
+function clearGroups() {
+  S.groupA = [];
+  S.groupB = [];
+  render();
+}
+
+// ─── PRACTICE MODE ───
+function renderPractice(ws, sp) {
+  if (S.round === 0) newPracticeProblem();
+
+  var html = '';
+
+  // Instruction
+  if (S.diff === 'emergent') {
+    // Within 10: show counters, how many total?
+    html += '<div class="instruction-box">Show <span class="highlight">' + S.pA + '</span> <span class="eq-op">' + (S.pOp === 'add' ? '+' : '−') + '</span> <span class="highlight-red">' + S.pB + '</span> with counters. How many total?</div>';
+  } else if (S.diff === 'proficient') {
+    // Within 20: count on from pA
+    html += '<div class="instruction-box">Count on from <span class="highlight">' + S.pA + '</span>! Add <span class="highlight-red">' + S.pB + '</span> more.</div>';
+  } else {
+    // Missing addend
+    html += '<div class="instruction-box"><span class="highlight">' + S.pA + '</span> + <span class="eq-missing">?</span> = <span class="highlight-green">' + S.pAnswer + '</span><br>Build with counters, then choose the missing number.</div>';
+  }
+
+  // Equation
+  if (S.diff === 'advanced') {
+    html += equationHTML(S.pA, S.pOp, '?', S.pAnswer, true, true);
+  } else {
+    html += equationHTML(S.pA, S.pOp, S.pB, S.pAnswer, false, false);
+  }
+
+  // Ten-frame visualization
+  html += buildTenFrameHTML(S.pA, S.diff === 'advanced' ? 0 : S.pB, S.pOp === 'add');
+
+  // MC choices
+  html += '<div class="mc-grid">';
+  for (var i = 0; i < S.pChoices.length; i++) {
+    html += '<button class="mc-btn" id="mc' + S.pChoices[i] + '" onclick="practiceAnswer(' + S.pChoices[i] + ')">' + S.pChoices[i] + '</button>';
+  }
+  html += '</div>';
+
+  // Skip
+  html += '<div class="controls">';
+  html += '<button class="ctrl-btn" onclick="skipPractice()">Skip →</button>';
+  html += '</div>';
+
+  ws.innerHTML = html;
+
+  // Side panel
+  var correctAnswer = S.diff === 'advanced' ? S.pB : S.pAnswer;
+  sp.innerHTML =
+    '<div class="panel-section">' +
+      '<div class="panel-title">Instructions</div>' +
+      '<div class="panel-text">' +
+        (S.diff === 'emergent' ?
+          'Look at the ten-frame. Count the blue dots, then count on with the red dots.<br><br>The <strong>last number</strong> you say is your answer!' :
+         S.diff === 'proficient' ?
+          'Start from the larger number (<strong style="color:var(--cyan);">' + S.pA + '</strong>) and count on <strong style="color:var(--pink);">' + S.pB + '</strong> more.<br><br>Don\'t start from 1 — that takes too long!' :
+          'Think: what number plus <strong style="color:var(--cyan);">' + S.pA + '</strong> equals <strong style="color:var(--green);">' + S.pAnswer + '</strong>?<br><br>Start at ' + S.pA + ' and count up to ' + S.pAnswer + '. How many did you count?') +
+      '</div>' +
+    '</div>' +
+    '<div class="panel-section">' +
+      '<div class="panel-title">Score</div>' +
+      '<div class="score-display">' +
+        '<div class="score-value">' + S.score + '</div>' +
+        '<div class="score-label">Points</div>' +
+      '</div>' +
+    '</div>' +
+    '<div class="panel-section">' +
+      '<div class="panel-title">Round</div>' +
+      '<div class="panel-text" style="font-size:18px;font-weight:700;color:var(--text);">' + S.round + '</div>' +
+    '</div>';
+}
+
+function newPracticeProblem() {
+  S.round++;
+  if (S.diff === 'emergent') {
+    // Add/subtract within 10
+    S.pOp = Math.random() < 0.6 ? 'add' : 'sub';
+    if (S.pOp === 'add') {
+      S.pA = randInt(1, 7);
+      S.pB = randInt(1, 10 - S.pA);
+      S.pAnswer = S.pA + S.pB;
+    } else {
+      S.pA = randInt(2, 10);
+      S.pB = randInt(1, S.pA);
+      S.pAnswer = S.pA - S.pB;
+    }
+    S.pChoices = generateChoices(S.pAnswer, 10);
+  } else if (S.diff === 'proficient') {
+    // Add within 20 with count-on
+    S.pOp = 'add';
+    S.pA = randInt(5, 14);
+    S.pB = randInt(1, 20 - S.pA);
+    S.pAnswer = S.pA + S.pB;
+    S.pChoices = generateChoices(S.pAnswer, 20);
+  } else {
+    // Missing addend: a + ? = c
+    S.pOp = 'add';
+    S.pAnswer = randInt(6, 20); // total
+    S.pA = randInt(1, S.pAnswer - 1);
+    S.pB = S.pAnswer - S.pA; // the missing addend
+    S.pChoices = generateChoices(S.pB, 20);
+  }
+}
+
+function practiceAnswer(chosen) {
+  var correct = S.diff === 'advanced' ? S.pB : S.pAnswer;
+  var btn = document.getElementById('mc' + chosen);
+
+  if (chosen === correct) {
+    if (btn) btn.classList.add('correct-flash');
+    S.score += 10 + S.streak * 2;
+    S.streak++;
+    if (S.streak > S.best) S.best = S.streak;
+    showFeedback('Correct! ' + (S.diff === 'advanced' ? S.pA + ' + ' + S.pB + ' = ' + S.pAnswer : ''), 'correct');
+    setTimeout(function() {
+      newPracticeProblem();
+      render();
+    }, 1200);
+  } else {
+    if (btn) btn.classList.add('incorrect-flash');
+    S.streak = 0;
+    // Misconception-targeted feedback
+    var diff = Math.abs(chosen - correct);
+    var feedbackMsg;
+    if (diff === 1) {
+      feedbackMsg = MISCONCEPTIONS.offByOne.msg(correct, chosen);
+    } else if (diff > 5) {
+      feedbackMsg = MISCONCEPTIONS.randomGuess.msg();
+    } else if (S.diff !== 'emergent' && chosen === S.pA + S.pB && S.diff === 'advanced') {
+      feedbackMsg = 'That\'s the total! You need the missing part.';
+    } else {
+      feedbackMsg = MISCONCEPTIONS.countAll.msg(S.pA, S.pB);
+    }
+    showFeedback(feedbackMsg, 'incorrect');
+  }
+}
+
+function skipPractice() {
+  newPracticeProblem();
+  render();
+}
+
+// ─── PLAY MODE ───
+function renderPlay(ws, sp) {
+  if (S.round === 0) newPlayRound();
+
+  // Game over check
+  if (S.round > S.total) {
+    ws.innerHTML =
+      '<div style="text-align:center;">' +
+        '<div style="font-size:48px;font-weight:900;background:var(--grad);-webkit-background-clip:text;-webkit-text-fill-color:transparent;margin-bottom:12px;">Game Over!</div>' +
+        '<div style="font-size:24px;color:var(--text2);margin-bottom:8px;">Score: <strong style="color:var(--green);">' + S.score + '</strong></div>' +
+        '<div style="font-size:18px;color:var(--muted);margin-bottom:24px;">Best Streak: ' + S.best + '</div>' +
+        '<button class="ctrl-btn primary" onclick="startNewGame()" style="font-size:16px;padding:14px 32px;">Play Again</button>' +
+      '</div>';
+    sp.innerHTML = '';
+    return;
+  }
+
+  var html = '';
+
+  // Round indicator
+  html += '<div style="text-align:center;margin-bottom:8px;">';
+  html += '<div style="font-size:14px;color:var(--muted);">Round ' + S.round + ' of ' + S.total + '</div>';
+  html += '</div>';
+
+  // Show equation
+  var isMissing = S.diff === 'advanced' && Math.random() < 0.4;
+  html += equationHTML(S.playA, S.playOp, S.playB, S.playAnswer, false, false);
+
+  // Ten-frame
+  html += buildTenFrameHTML(S.playA, S.playB, S.playOp === 'add');
+
+  // MC choices
+  html += '<div class="mc-grid">';
+  for (var i = 0; i < S.playChoices.length; i++) {
+    html += '<button class="mc-btn" id="play' + S.playChoices[i] + '" onclick="playAnswer(' + S.playChoices[i] + ')">' + S.playChoices[i] + '</button>';
+  }
+  html += '</div>';
+
+  ws.innerHTML = html;
+
+  // Side panel: score
+  sp.innerHTML =
+    '<div class="score-display">' +
+      '<div class="score-value">' + S.score + '</div>' +
+      '<div class="score-label">Score</div>' +
+    '</div>' +
+    '<div class="score-display" style="background:transparent;padding:8px;">' +
+      '<div style="font-size:18px;font-weight:700;color:var(--yellow);">🔥 ' + S.streak + '</div>' +
+      '<div class="score-label">Streak</div>' +
+      '<div class="streak-bar"><div class="streak-fill" style="width:' + Math.min(S.streak * 20, 100) + '%;"></div></div>' +
+    '</div>' +
+    '<div class="panel-section">' +
+      '<div class="panel-title">How to Play</div>' +
+      '<div class="panel-text">' +
+        'Solve the equation using the counters and ten-frame.<br><br>' +
+        '<strong>Quick answers</strong> earn bonus points!<br><br>' +
+        'Build a streak for more!' +
+      '</div>' +
+    '</div>' +
+    '<div class="panel-section">' +
+      '<div class="panel-title">Best Streak</div>' +
+      '<div class="panel-text" style="font-size:24px;font-weight:800;color:var(--purple);">🏆 ' + S.best + '</div>' +
+    '</div>';
+}
+
+function startNewGame() {
+  S.score = 0;
+  S.streak = 0;
+  S.round = 0;
+  newPlayRound();
+  render();
+}
+
+function newPlayRound() {
+  S.round++;
+  if (S.diff === 'emergent') {
+    S.playOp = Math.random() < 0.6 ? 'add' : 'sub';
+    if (S.playOp === 'add') {
+      S.playA = randInt(1, 7);
+      S.playB = randInt(1, 10 - S.playA);
+      S.playAnswer = S.playA + S.playB;
+    } else {
+      S.playA = randInt(2, 10);
+      S.playB = randInt(1, S.playA);
+      S.playAnswer = S.playA - S.playB;
+    }
+    S.playChoices = generateChoices(S.playAnswer, 10);
+  } else if (S.diff === 'proficient') {
+    S.playOp = Math.random() < 0.7 ? 'add' : 'sub';
+    if (S.playOp === 'add') {
+      S.playA = randInt(5, 14);
+      S.playB = randInt(1, 20 - S.playA);
+      S.playAnswer = S.playA + S.playB;
+    } else {
+      S.playA = randInt(6, 20);
+      S.playB = randInt(1, S.playA);
+      S.playAnswer = S.playA - S.playB;
+    }
+    S.playChoices = generateChoices(S.playAnswer, 20);
+  } else {
+    // Mixed: some missing addend, some regular
+    var useMissing = Math.random() < 0.4;
+    if (useMissing) {
+      S.playOp = 'add';
+      S.playAnswer = randInt(6, 20);
+      S.playA = randInt(1, S.playAnswer - 1);
+      S.playB = S.playAnswer - S.playA;
+      // For missing addend in play, the "answer" the student picks is the missing part
+      S.playChoices = generateChoices(S.playB, 20);
+      S.playAnswer = S.playB; // override so playAnswer() checks against B
+    } else {
+      S.playOp = Math.random() < 0.5 ? 'add' : 'sub';
+      if (S.playOp === 'add') {
+        S.playA = randInt(3, 14);
+        S.playB = randInt(1, 20 - S.playA);
+        S.playAnswer = S.playA + S.playB;
+      } else {
+        S.playA = randInt(5, 20);
+        S.playB = randInt(1, S.playA);
+        S.playAnswer = S.playA - S.playB;
+      }
+      S.playChoices = generateChoices(S.playAnswer, 20);
+    }
+  }
+}
+
+function playAnswer(chosen) {
+  var btn = document.getElementById('play' + chosen);
+  if (chosen === S.playAnswer) {
+    if (btn) btn.classList.add('correct-flash');
+    S.score += 10 + S.streak * 2;
+    S.streak++;
+    if (S.streak > S.best) S.best = S.streak;
+    showFeedback('Correct!', 'correct');
+  } else {
+    if (btn) btn.classList.add('incorrect-flash');
+    S.streak = 0;
+    var diff = Math.abs(chosen - S.playAnswer);
+    var feedbackMsg;
+    if (diff === 1) {
+      feedbackMsg = MISCONCEPTIONS.offByOne.msg(S.playAnswer, chosen);
+    } else if (diff > 5) {
+      feedbackMsg = MISCONCEPTIONS.randomGuess.msg();
+    } else {
+      feedbackMsg = MISCONCEPTIONS.disorganized.msg();
+    }
+    showFeedback(feedbackMsg, 'incorrect');
+  }
+
+  setTimeout(function() {
+    if (S.round >= S.total) {
+      S.round = S.total + 1;
+      render();
+      return;
+    }
+    newPlayRound();
+    render();
+  }, 1200);
+}
+
+// ════════════════════════════════════════
+// INIT
+// ════════════════════════════════════════
+document.querySelectorAll('.vinculum-mode-tab').forEach(function(tab) {
+  tab.addEventListener('click', function() {
+    setMode(this.dataset.mode);
+  });
+});
+
+document.querySelectorAll('.vinculum-diff-btn').forEach(function(btn) {
+  btn.addEventListener('click', function() {
+    setDiff(this.dataset.diff);
+  });
+});
+
+render();
+</script>
+<script src="../../vinculum-core.js"></script>
+<script src="../../vinculum-data.js"></script>
+<script src="../../vinculum-adaptive-hook.js"></script>
+<script src="../../vinculum-3reads.js"></script>
+<script src="../../vinculum-stories.js"></script>
+<script src="../../vinculum-feedback.js"></script>
+<script src="../../vinculum-guide.js"></script>
+<script src="../../vinculum-identity.js"></script>
+<script src="../../vinculum-indigenous.js"></script>
+<script src="../../vinculum-dashboard.js"></script>
+<script src="../../vinculum-hyperfocus.js"></script>
+<script src="../../vinculum-layout.js"></script>
+</body>
+</html>

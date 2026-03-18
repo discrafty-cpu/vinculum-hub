@@ -1,0 +1,1152 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>VINCULUM — Multi-Digit Addition & Subtraction</title>
+<link rel="stylesheet" href="../../vinculum-core.css">
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;600&display=swap');
+
+/* Theme system loaded from vinculum-core.css */
+.vinculum-rtm-btn .rtm-icon{font-size:14px;}
+
+/* ═══ FOCUS VISIBLE (Keyboard Navigation) ═══ */
+*:focus-visible {
+  outline:2px solid var(--cyan);outline-offset:2px;border-radius:4px;
+}
+.sr-only {
+  position:absolute;width:1px;height:1px;padding:0;margin:-1px;
+  overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0;
+}
+
+* { margin:0; padding:0; box-sizing:border-box; }
+body {
+  font-family: 'Inter', sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  height: 100vh;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  user-select: none;
+}
+
+/* ── HEADER ── */
+.vinculum-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 24px;
+  background: var(--bg2);
+  border-bottom: 1px solid var(--border);
+  flex-shrink: 0;
+}
+.vinculum-header-left {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+.vinculum-back-btn {
+  padding: 6px 12px;
+  border-radius: 8px;
+  border: 1px solid var(--border);
+  background: transparent;
+  color: var(--text2);
+  font-size: 13px;
+  font-family: inherit;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+.vinculum-back-btn:hover { background: var(--card); color: var(--cyan); }
+.vinculum-header-title {
+  font-size: 18px;
+  font-weight: 800;
+}
+.vinculum-header-title span {
+  background: var(--grad);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+.vinculum-header-badge {
+  font-size: 10px;
+  font-weight: 700;
+  padding: 3px 10px;
+  border-radius: 6px;
+  background: rgba(0,212,255,0.1);
+  color: var(--cyan);
+  border: 1px solid rgba(0,212,255,0.2);
+  letter-spacing: 1px;
+}
+.vinculum-std-tags {
+  display: flex;
+  gap: 6px;
+}
+.vinculum-std-tag {
+  font-size: 10px;
+  font-family: 'JetBrains Mono', monospace;
+  font-weight: 600;
+  padding: 3px 8px;
+  border-radius: 5px;
+  background: rgba(0,212,255,0.08);
+  color: var(--cyan);
+}
+.vinculum-std-tag.mn { background: rgba(255,145,0,0.08); color: var(--orange); }
+
+/* ── MODE TABS ── */
+.vinculum-mode-tabs {
+  display: flex;
+  gap: 4px;
+  padding: 8px 24px;
+  background: var(--bg2);
+  border-bottom: 1px solid var(--border);
+  flex-shrink: 0;
+}
+.vinculum-mode-tab {
+  padding: 8px 20px;
+  border-radius: 8px;
+  border: 1px solid transparent;
+  background: transparent;
+  color: var(--muted);
+  font-size: 13px;
+  font-weight: 600;
+  font-family: inherit;
+  cursor: pointer;
+  transition: all 0.2s;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.vinculum-mode-tab:hover { color: var(--text2); background: var(--card); }
+.vinculum-mode-tab.active-explore { background: rgba(0,212,255,0.1); color: var(--cyan); border-color: rgba(0,212,255,0.3); }
+.vinculum-mode-tab.active-practice { background: rgba(0,230,118,0.1); color: var(--green); border-color: rgba(0,230,118,0.3); }
+.vinculum-mode-tab.active-play { background: rgba(255,59,139,0.1); color: var(--pink); border-color: rgba(255,59,139,0.3); }
+
+/* Difficulty selector */
+.vinculum-diff-selector {
+  margin-left: auto;
+  display: flex;
+  gap: 4px;
+  align-items: center;
+}
+.vinculum-diff-label {
+  font-size: 11px;
+  color: var(--muted);
+  margin-right: 8px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+}
+.vinculum-diff-btn {
+  padding: 5px 12px;
+  border-radius: 6px;
+  border: 1px solid var(--border);
+  background: transparent;
+  color: var(--muted);
+  font-size: 11px;
+  font-weight: 600;
+  font-family: inherit;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+.vinculum-diff-btn:hover { color: var(--text2); }
+.vinculum-diff-btn.active { background: rgba(0,212,255,0.1); color: var(--cyan); border-color: rgba(0,212,255,0.3); }
+
+/* ── MAIN AREA ── */
+.main {
+  flex: 1;
+  display: flex;
+  overflow: hidden;
+}
+
+/* ── WORKSPACE ── */
+.workspace {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+  position: relative;
+  overflow-y: auto;
+}
+
+/* ── PROBLEM CONTAINER ── */
+.problem-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 24px;
+  width: 100%;
+  max-width: 600px;
+}
+
+/* Place value blocks */
+.place-value-blocks {
+  display: flex;
+  gap: 24px;
+  padding: 20px;
+  background: var(--card);
+  border-radius: 16px;
+  border: 2px solid var(--border);
+  flex-wrap: wrap;
+  justify-content: center;
+  align-items: flex-end;
+  min-height: 200px;
+  position: relative;
+}
+
+.place-value-group {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+}
+
+.pv-label {
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  color: var(--muted);
+  letter-spacing: 0.5px;
+}
+
+.pv-blocks {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  justify-content: center;
+  min-width: 80px;
+  min-height: 80px;
+  align-content: flex-start;
+}
+
+.block {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 700;
+  font-size: 11px;
+  cursor: move;
+  transition: all 0.2s;
+  border-radius: 4px;
+}
+
+.block-hundred {
+  width: 60px;
+  height: 60px;
+  background: var(--blue, #3B82F6);
+  color: white;
+  animation: pop 0.4s ease-out;
+}
+
+.block-ten {
+  width: 12px;
+  height: 60px;
+  background: var(--green, #10B981);
+  color: white;
+  animation: pop 0.4s ease-out;
+}
+
+.block-one {
+  width: 12px;
+  height: 12px;
+  background: var(--yellow, #FBBF24);
+  color: var(--bg);
+  animation: pop 0.4s ease-out;
+}
+
+.block:hover {
+  transform: scale(1.08);
+  filter: brightness(1.1);
+}
+
+/* Algorithm display */
+.algorithm-display {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  padding: 20px;
+  background: var(--card);
+  border-radius: 12px;
+  border: 1px solid var(--border);
+  width: 100%;
+  font-family: 'JetBrains Mono', monospace;
+}
+
+.algorithm-row {
+  display: flex;
+  align-items: flex-end;
+  gap: 12px;
+  justify-content: center;
+}
+
+.place-column {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  border-right: 2px solid var(--border);
+  padding-right: 8px;
+  min-width: 50px;
+}
+
+.place-column:last-child {
+  border-right: none;
+}
+
+.column-label {
+  font-size: 10px;
+  color: var(--muted);
+  text-transform: uppercase;
+  font-weight: 600;
+  margin-bottom: 4px;
+  letter-spacing: 0.5px;
+}
+
+.digit-input {
+  width: 50px;
+  padding: 8px;
+  border: 2px solid var(--border);
+  border-radius: 6px;
+  background: var(--bg);
+  color: var(--text);
+  font-size: 20px;
+  font-weight: 700;
+  font-family: 'JetBrains Mono', monospace;
+  text-align: center;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.digit-input:focus {
+  outline: none;
+  border-color: var(--cyan);
+}
+
+.digit-input.active {
+  background: rgba(0,212,255,0.1);
+  border-color: var(--cyan);
+}
+
+.operator-row {
+  text-align: center;
+  font-size: 20px;
+  font-weight: 700;
+  color: var(--cyan);
+  min-width: 30px;
+}
+
+.divider-row {
+  border-top: 2px solid var(--text);
+  width: 100%;
+}
+
+/* Number pad */
+.number-pad {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 8px;
+  padding: 16px;
+  background: var(--card);
+  border-radius: 12px;
+  width: 100%;
+  max-width: 200px;
+}
+
+.pad-btn {
+  padding: 12px;
+  border-radius: 8px;
+  border: 1px solid var(--border);
+  background: transparent;
+  color: var(--text2);
+  font-size: 16px;
+  font-weight: 700;
+  font-family: inherit;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.pad-btn:hover {
+  background: rgba(0,212,255,0.1);
+  color: var(--cyan);
+}
+
+.pad-btn:active {
+  transform: scale(0.95);
+}
+
+/* Practice question */
+.practice-question {
+  text-align: center;
+  padding: 20px;
+  background: var(--card);
+  border-radius: 12px;
+  border: 1px solid var(--border);
+  width: 100%;
+  max-width: 500px;
+}
+
+.question-text {
+  font-size: 16px;
+  color: var(--text2);
+  margin-bottom: 12px;
+  font-weight: 600;
+}
+
+.question-highlight {
+  font-size: 28px;
+  font-weight: 800;
+  font-family: 'JetBrains Mono', monospace;
+  color: var(--green);
+  margin: 12px 0;
+}
+
+/* Input fields */
+.input-group {
+  display: flex;
+  gap: 8px;
+  justify-content: center;
+  align-items: center;
+  margin-top: 12px;
+  flex-wrap: wrap;
+}
+
+.number-input {
+  padding: 10px 16px;
+  border-radius: 8px;
+  border: 2px solid var(--border);
+  background: var(--card);
+  color: var(--text);
+  font-size: 16px;
+  font-family: 'JetBrains Mono', monospace;
+  text-align: center;
+  width: 70px;
+  transition: all 0.2s;
+}
+
+.number-input:focus {
+  border-color: var(--cyan);
+  outline: none;
+}
+
+/* Game info */
+.game-info {
+  display: flex;
+  gap: 20px;
+  justify-content: center;
+  align-items: center;
+  font-size: 14px;
+  color: var(--text2);
+  margin-bottom: 12px;
+}
+
+.info-item {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.info-label {
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+}
+
+.play-btn {
+  padding: 12px 24px;
+  border-radius: 10px;
+  border: 1px solid var(--border);
+  background: var(--card);
+  color: var(--text2);
+  font-size: 14px;
+  font-weight: 600;
+  font-family: inherit;
+  cursor: pointer;
+  transition: all 0.2s;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.play-btn:hover { background: rgba(0,212,255,0.1); color: var(--cyan); }
+
+.play-btn.primary {
+  background: var(--grad);
+  color: var(--bg);
+  border-color: transparent;
+  font-weight: 700;
+}
+
+.play-btn.primary:hover { opacity: 0.9; }
+
+/* ── FEEDBACK ── */
+.feedback {
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%) scale(0);
+  padding: 24px 48px;
+  border-radius: 20px;
+  font-size: 28px;
+  font-weight: 800;
+  z-index: 200;
+  pointer-events: none;
+  transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275), opacity 0.3s;
+  opacity: 0;
+}
+.feedback.show {
+  transform: translate(-50%, -50%) scale(1);
+  opacity: 1;
+}
+.feedback.correct {
+  background: rgba(0,230,118,0.15);
+  color: var(--green);
+  border: 2px solid var(--green);
+}
+.feedback.incorrect {
+  background: rgba(255,59,139,0.15);
+  color: var(--pink);
+  border: 2px solid var(--pink);
+}
+.feedback.try-again {
+  background: rgba(255,193,7,0.15);
+  color: var(--yellow);
+  border: 2px solid var(--yellow);
+}
+
+/* ── SIDE PANEL (Instructions / Score) ── */
+.side-panel {
+  width: 280px;
+  background: var(--bg2);
+  border-left: 1px solid var(--border);
+  padding: 20px;
+  overflow-y: auto;
+  flex-shrink: 0;
+}
+.panel-section {
+  margin-bottom: 20px;
+}
+.panel-title {
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 1.5px;
+  color: var(--muted);
+  margin-bottom: 8px;
+}
+.panel-text {
+  font-size: 13px;
+  color: var(--text2);
+  line-height: 1.6;
+}
+.score-display {
+  text-align: center;
+  padding: 16px;
+  background: var(--card);
+  border-radius: 12px;
+  margin-bottom: 12px;
+}
+.score-value {
+  font-size: 36px;
+  font-weight: 900;
+  font-family: 'JetBrains Mono', monospace;
+  background: var(--grad);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+.score-label {
+  font-size: 11px;
+  color: var(--muted);
+  text-transform: uppercase;
+  letter-spacing: 1px;
+}
+.streak-bar {
+  height: 6px;
+  background: var(--card);
+  border-radius: 3px;
+  overflow: hidden;
+  margin-top: 8px;
+}
+.streak-fill {
+  height: 100%;
+  background: var(--grad);
+  border-radius: 3px;
+  transition: width 0.3s;
+}
+
+/* ── ANIMATIONS ── */
+@keyframes pop {
+  0% { transform: scale(0); opacity: 0; }
+  70% { transform: scale(1.2); }
+  100% { transform: scale(1); opacity: 1; }
+}
+
+@keyframes shake {
+  0%, 100% { transform: translateX(0); }
+  25% { transform: translateX(-8px); }
+  75% { transform: translateX(8px); }
+}
+
+@keyframes regroup {
+  0% { transform: translateY(0) scale(1); }
+  50% { transform: translateY(-20px) scale(1.1); }
+  100% { transform: translateY(0) scale(1); }
+}
+
+.pop-in { animation: pop 0.3s ease-out forwards; }
+.shake { animation: shake 0.3s ease-in-out; }
+.regroup { animation: regroup 0.5s ease-in-out; }
+
+/* scrollbar */
+::-webkit-scrollbar { width: 6px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+
+/* Responsive */
+@media (max-width: 768px) {
+  .place-value-blocks {
+    min-height: 150px;
+    gap: 12px;
+    padding: 12px;
+  }
+  .side-panel {
+    width: 220px;
+  }
+}
+</style>
+</head>
+<body>
+
+<!-- ═══ HEADER ═══ -->
+<div class="vinculum-header">
+  <div class="vinculum-header-left">
+    <a class="vinculum-back-btn" href="../../VINCULUM-Hub.html" style="text-decoration:none;">◀ Hub</a>
+    <div class="vinculum-header-title"><span>VINCULUM</span> Multi-Digit Add & Sub</div>
+    <span class="vinculum-header-badge">3 · NBT</span>
+    <button class="vinculum-back-btn" id="readAloudBtn" onclick="toggleReadAloud()" aria-label="Read Aloud" title="Read instructions aloud">🔊 Read to Me</button>
+  </div>
+  <div class="vinculum-std-tags">
+    <span class="vinculum-std-tag">3.NBT.2</span>
+    <span class="std-tag mn">MN 3.1.1.2</span>
+  </div>
+</div>
+
+<!-- ═══ MODE TABS ═══ -->
+<div class="vinculum-mode-tabs">
+  <button class="vinculum-mode-tab active-explore" id="tabExplore" onclick="setMode('explore')">
+    <svg width="18" height="18" viewBox="0 0 48 48" fill="none"><path d="M4 24C4 24 12 12 24 12C36 12 44 24 44 24C44 24 36 36 24 36C12 36 4 24 4 24Z" stroke="currentColor" stroke-width="3" fill="none"/><circle cx="24" cy="24" r="7" stroke="currentColor" stroke-width="3" fill="none"/><circle cx="24" cy="24" r="3" fill="currentColor"/></svg> Explore
+  </button>
+  <button class="vinculum-mode-tab" id="tabPractice" onclick="setMode('practice')">
+    <svg width="18" height="18" viewBox="0 0 48 48" fill="none"><circle cx="24" cy="24" r="20" stroke="currentColor" stroke-width="3" fill="none" opacity="0.3"/><circle cx="24" cy="24" r="20" stroke="currentColor" stroke-width="3" fill="none" stroke-dasharray="126" stroke-dashoffset="32" stroke-linecap="round"/></svg> Practice
+  </button>
+  <button class="vinculum-mode-tab" id="tabPlay" onclick="setMode('play')">
+    <svg width="18" height="18" viewBox="0 0 48 48" fill="none"><polygon points="28,4 12,28 22,28 18,44 36,18 26,18" fill="none" stroke="currentColor" stroke-width="3" stroke-linejoin="round"/></svg> Play
+  </button>
+  <div class="vinculum-diff-selector">
+    <span class="vinculum-diff-label">Level</span>
+    <button class="vinculum-diff-btn active" id="diffE" onclick="setDiff('emergent')" data-diff="emergent">1–100</button>
+    <button class="vinculum-diff-btn" id="diffD" onclick="setDiff('developing')" data-diff="developing">1–1000</button>
+    <button class="vinculum-diff-btn" id="diffS" onclick="setDiff('secure')" data-diff="secure">Multi</button>
+  </div>
+</div>
+
+<!-- ═══ MAIN ═══ -->
+<div class="main">
+  <div class="workspace" role="main" id="workspace"></div>
+  <div class="side-panel" id="sidePanel"></div>
+</div>
+
+<!-- ═══ FEEDBACK POPUP ═══ -->
+<div class="feedback" id="feedback"></div>
+
+<script src="../../vinculum-input.js"></script>
+<script>
+
+// ════════════════════════════════════════
+// STATE
+// ════════════════════════════════════════
+const S = {
+  mode: 'explore',      // explore | practice | play
+  diff: 'emergent',     // emergent (within 100) | developing (within 1000) | secure (multi-step)
+
+  // Explore
+  num1: 234,
+  num2: 156,
+  isAddition: true,
+
+  // Practice
+  questionType: null,
+  targetNum1: 0,
+  targetNum2: 0,
+  targetOperation: 'add',
+  userAnswer: null,
+  score: 0,
+  total: 0,
+
+  // Play
+  playScore: 0,
+  playStreak: 0,
+  playRound: 0,
+  gameEnded: false
+};
+
+// ════════════════════════════════════════
+// READ-ALOUD
+// ════════════════════════════════════════
+function toggleReadAloud() {
+  if (window.VinculumStories && VinculumStories.isReading()) {
+    VinculumStories.stopReading();
+    document.getElementById('readAloudBtn').textContent = '🔊 Read to Me';
+  } else {
+    const text = document.getElementById('sidePanel')?.textContent || 'Use place value to add and subtract.';
+    if (window.VinculumStories) {
+      VinculumStories.readAloud(text, { rate: 0.85, onComplete: () => {
+        document.getElementById('readAloudBtn').textContent = '🔊 Read to Me';
+      }});
+      document.getElementById('readAloudBtn').textContent = '⏹ Stop';
+    }
+  }
+}
+
+// ════════════════════════════════════════
+// HELPERS
+// ════════════════════════════════════════
+function getMaxValue() {
+  return { emergent: 100, developing: 1000, secure: 1000 }[S.diff];
+}
+
+function randInt(min, max) {
+  return Math.floor(Math.random() * (max - min + 1)) + min;
+}
+
+function renderBlocks(num, color) {
+  const hundreds = Math.floor(num / 100);
+  const tens = Math.floor((num % 100) / 10);
+  const ones = num % 10;
+
+  let html = '';
+  for (let i = 0; i < hundreds; i++) {
+    html += '<div class="block block-hundred" style="background:var(--blue);">100</div>';
+  }
+  for (let i = 0; i < tens; i++) {
+    html += '<div class="block block-ten" style="background:var(--green);"></div>';
+  }
+  for (let i = 0; i < ones; i++) {
+    html += '<div class="block block-one" style="background:var(--yellow);"></div>';
+  }
+  return html;
+}
+
+function getDigit(num, place) {
+  // place: 0=ones, 1=tens, 2=hundreds
+  return Math.floor(num / Math.pow(10, place)) % 10;
+}
+
+// ════════════════════════════════════════
+// MODE SWITCHING
+// ════════════════════════════════════════
+function setMode(mode) {
+  S.mode = mode;
+
+  if (mode === 'practice' && S.total === 0) {
+    S.score = 0;
+    S.total = 0;
+    newPracticeQuestion();
+  }
+
+  if (mode === 'play' && S.playRound === 0) {
+    S.playScore = 0;
+    S.playStreak = 0;
+    S.playRound = 1;
+    S.gameEnded = false;
+    newPlayProblem();
+  }
+
+  document.querySelectorAll('.vinculum-mode-tab').forEach(t => t.className = 'vinculum-mode-tab');
+  const tabEl = document.getElementById('tab' + mode.charAt(0).toUpperCase() + mode.slice(1));
+  tabEl.className = 'vinculum-mode-tab active-' + mode;
+
+  render();
+}
+
+function setDiff(diff) {
+  S.diff = diff;
+  S.score = 0;
+  S.total = 0;
+  S.playScore = 0;
+  S.playStreak = 0;
+  S.playRound = 0;
+
+  document.querySelectorAll('.vinculum-diff-btn').forEach(b => b.classList.remove('active'));
+  document.getElementById('diff' + diff.charAt(0).toUpperCase()).classList.add('active');
+
+  setMode(S.mode);
+}
+
+// ════════════════════════════════════════
+// RENDER MAIN
+// ════════════════════════════════════════
+function render() {
+  const ws = document.getElementById('workspace');
+  const sp = document.getElementById('sidePanel');
+
+  if (S.mode === 'explore') renderExplore(ws, sp);
+  else if (S.mode === 'practice') renderPractice(ws, sp);
+  else renderPlay(ws, sp);
+}
+
+// ─── EXPLORE MODE ───
+function renderExplore(ws, sp) {
+  const sum = S.isAddition ? S.num1 + S.num2 : Math.abs(S.num1 - S.num2);
+
+  let html = '<div class="problem-container">';
+
+  // Place value blocks
+  html += '<div class="place-value-blocks">';
+  html += '<div class="place-value-group">';
+  html += '<div class="pv-label">First Number</div>';
+  html += `<div class="pv-blocks">${renderBlocks(S.num1)}</div>`;
+  html += `<div style="font-size:14px;font-weight:700;margin-top:8px;font-family:'JetBrains Mono';">${S.num1}</div>`;
+  html += '</div>';
+
+  html += '<div style="font-size:28px;font-weight:800;color:var(--cyan);">' + (S.isAddition ? '+' : '−') + '</div>';
+
+  html += '<div class="place-value-group">';
+  html += '<div class="pv-label">Second Number</div>';
+  html += `<div class="pv-blocks">${renderBlocks(S.num2)}</div>`;
+  html += `<div style="font-size:14px;font-weight:700;margin-top:8px;font-family:'JetBrains Mono';">${S.num2}</div>`;
+  html += '</div>';
+
+  html += '<div style="font-size:28px;font-weight:800;color:var(--cyan);">=</div>';
+
+  html += '<div class="place-value-group">';
+  html += '<div class="pv-label">Result</div>';
+  html += `<div class="pv-blocks">${renderBlocks(sum)}</div>`;
+  html += `<div style="font-size:14px;font-weight:700;margin-top:8px;font-family:'JetBrains Mono';">${sum}</div>`;
+  html += '</div>';
+
+  html += '</div>';
+
+  // Controls
+  html += '<div style="display:flex;gap:16px;margin-top:20px;">';
+  html += '<button class="play-btn" onclick="changeExplore(-1)">◀ Previous</button>';
+  html += '<button class="play-btn primary" onclick="toggleAddSub()">Switch: ' + (S.isAddition ? 'Addition' : 'Subtraction') + '</button>';
+  html += '<button class="play-btn" onclick="changeExplore(1)">Next ▶</button>';
+  html += '</div>';
+
+  html += '</div>';
+  ws.innerHTML = html;
+
+  // Side panel
+  sp.innerHTML = `
+    <div class="panel-section">
+      <div class="panel-title">Place Value Blocks</div>
+      <div class="panel-text">
+        <strong>Blue = 100</strong><br>
+        <strong>Green = 10</strong><br>
+        <strong>Yellow = 1</strong><br><br>
+        When we have 10 ones, they make 1 ten. When we have 10 tens, they make 1 hundred!
+      </div>
+    </div>
+    <div class="panel-section">
+      <div class="panel-title">How It Works</div>
+      <div class="panel-text">
+        Watch the blocks combine or separate. The <strong>colored blocks</strong> show each part of the number. When ones "regroup," 10 ones become 1 ten!
+      </div>
+    </div>
+    <div class="panel-section">
+      <div class="panel-title">Key Concept</div>
+      <div class="panel-text">
+        <strong>Addition</strong>: Combine place values.<br>
+        <strong>Subtraction</strong>: Take away and decompose as needed.
+      </div>
+    </div>
+  `;
+}
+
+function changeExplore(dir) {
+  const max = getMaxValue();
+  S.num1 = Math.max(10, Math.min(max, S.num1 + dir * 50));
+  S.num2 = Math.max(10, Math.min(max, S.num2 + dir * 30));
+  render();
+}
+
+function toggleAddSub() {
+  S.isAddition = !S.isAddition;
+  render();
+}
+
+// ─── PRACTICE MODE ───
+function renderPractice(ws, sp) {
+  let html = '<div class="problem-container">';
+
+  html += `<div style="text-align:center;margin-bottom:12px;">
+    <div style="font-size:14px;color:var(--muted);">⭐ ${S.score}/${S.total}</div>
+  </div>`;
+
+  // Show problem in algorithm format
+  const isAdd = S.targetOperation === 'add';
+  const result = isAdd ? S.targetNum1 + S.targetNum2 : S.targetNum1 - S.targetNum2;
+
+  html += '<div class="algorithm-display">';
+  html += '<div class="algorithm-row">';
+  html += '<div class="place-column"><div class="column-label">H</div><div class="digit-input" onclick="focusDigit(2)">' + getDigit(S.targetNum1, 2) + '</div></div>';
+  html += '<div class="place-column"><div class="column-label">T</div><div class="digit-input" onclick="focusDigit(1)">' + getDigit(S.targetNum1, 1) + '</div></div>';
+  html += '<div class="place-column"><div class="column-label">O</div><div class="digit-input" onclick="focusDigit(0)">' + getDigit(S.targetNum1, 0) + '</div></div>';
+  html += '</div>';
+
+  html += '<div class="algorithm-row">';
+  html += '<div class="operator-row">' + (isAdd ? '+' : '−') + '</div>';
+  html += '<div class="place-column"><div class="digit-input" onclick="focusDigit(2)">' + getDigit(S.targetNum2, 2) + '</div></div>';
+  html += '<div class="place-column"><div class="digit-input" onclick="focusDigit(1)">' + getDigit(S.targetNum2, 1) + '</div></div>';
+  html += '<div class="place-column"><div class="digit-input" onclick="focusDigit(0)">' + getDigit(S.targetNum2, 0) + '</div></div>';
+  html += '</div>';
+
+  html += '<div class="divider-row"></div>';
+
+  html += '<div class="algorithm-row">';
+  html += '<div class="place-column"><div class="column-label">H</div><input type="number" class="digit-input" id="ansH" min="0" max="9" placeholder="?" style="width:50px;" /></div>';
+  html += '<div class="place-column"><div class="column-label">T</div><input type="number" class="digit-input" id="ansT" min="0" max="9" placeholder="?" style="width:50px;" /></div>';
+  html += '<div class="place-column"><div class="column-label">O</div><input type="number" class="digit-input" id="ansO" min="0" max="9" placeholder="?" style="width:50px;" /></div>';
+  html += '</div>';
+  html += '</div>';
+
+  html += '<button class="play-btn primary" onclick="submitPracticeAnswer(' + result + ')">✓ Check Answer</button>';
+
+  html += '</div>';
+  ws.innerHTML = html;
+
+  setTimeout(() => document.getElementById('ansO')?.focus(), 100);
+
+  // Side panel
+  sp.innerHTML = `
+    <div class="score-display">
+      <div class="score-value">${S.score}/${S.total}</div>
+      <div class="score-label">Score</div>
+    </div>
+    <div class="panel-section">
+      <div class="panel-title">How to Solve</div>
+      <div class="panel-text">
+        1. Start with <strong>ones column</strong> (O)<br>
+        2. Move to <strong>tens column</strong> (T)<br>
+        3. Finish with <strong>hundreds</strong> (H)<br><br>
+        Remember: if ones total 10+, regroup!
+      </div>
+    </div>
+    <div class="panel-section">
+      <div class="panel-title">Regrouping</div>
+      <div class="panel-text">
+        When ones exceed 9 during <strong>addition</strong>, we regroup: 10 ones = 1 ten.<br><br>
+        During <strong>subtraction</strong>, if we don't have enough ones, we borrow from tens.
+      </div>
+    </div>
+  `;
+}
+
+function newPracticeQuestion() {
+  S.total = (S.total || 0) + 1;
+
+  const max = getMaxValue();
+  const isAdd = Math.random() > 0.4;
+
+  S.targetNum1 = randInt(Math.floor(max * 0.3), max);
+  S.targetNum2 = randInt(Math.floor(max * 0.2), max);
+
+  if (!isAdd && S.targetNum2 > S.targetNum1) {
+    [S.targetNum1, S.targetNum2] = [S.targetNum2, S.targetNum1];
+  }
+
+  S.targetOperation = isAdd ? 'add' : 'subtract';
+  render();
+}
+
+function focusDigit(place) {
+  // Hint for student
+}
+
+function submitPracticeAnswer(correct) {
+  const h = parseInt(document.getElementById('ansH')?.value || 0);
+  const t = parseInt(document.getElementById('ansT')?.value || 0);
+  const o = parseInt(document.getElementById('ansO')?.value || 0);
+
+  const userAnswer = h * 100 + t * 10 + o;
+
+  if (userAnswer === correct) {
+    showFB('✓ Correct!', 'correct');
+    S.score++;
+    setTimeout(() => {
+      newPracticeQuestion();
+      render();
+    }, 800);
+  } else {
+    showFB('✗ Try again', 'incorrect');
+  }
+}
+
+// ─── PLAY MODE ───
+function renderPlay(ws, sp) {
+  let html = '<div class="problem-container">';
+
+  const isAdd = S.targetOperation === 'add';
+  const result = isAdd ? S.targetNum1 + S.targetNum2 : S.targetNum1 - S.targetNum2;
+
+  if (S.gameEnded) {
+    html += `<div style="text-align:center;padding:40px;font-size:32px;font-weight:800;">
+      Stack Attack Complete!<br>
+      <div style="font-size:48px;margin:20px 0;background:var(--grad);-webkit-background-clip:text;-webkit-text-fill-color:transparent;">
+        ${S.playScore}
+      </div>
+      <button class="play-btn primary" onclick="playAgain()" style="margin-top:20px;">▶ Play Again</button>
+    </div>`;
+  } else {
+    html += `<div class="game-info">
+      <div class="info-item">
+        <span class="info-label">Round</span>
+        <span>${S.playRound} / 12</span>
+      </div>
+      <div class="info-item">
+        <span class="info-label">⭐ Score</span>
+        <span>${S.playScore}</span>
+      </div>
+      <div class="info-item">
+        <span class="info-label">🔥 Streak</span>
+        <span>${S.playStreak}</span>
+      </div>
+    </div>`;
+
+    html += '<div class="algorithm-display" style="background:var(--bg);border-color:var(--border);">';
+    html += '<div class="algorithm-row">';
+    html += '<div class="place-column"><div class="column-label">H</div><div style="font-size:20px;font-weight:700;">' + getDigit(S.targetNum1, 2) + '</div></div>';
+    html += '<div class="place-column"><div class="column-label">T</div><div style="font-size:20px;font-weight:700;">' + getDigit(S.targetNum1, 1) + '</div></div>';
+    html += '<div class="place-column"><div class="column-label">O</div><div style="font-size:20px;font-weight:700;">' + getDigit(S.targetNum1, 0) + '</div></div>';
+    html += '</div>';
+
+    html += '<div class="algorithm-row">';
+    html += '<div class="operator-row">' + (isAdd ? '+' : '−') + '</div>';
+    html += '<div class="place-column"><div style="font-size:20px;font-weight:700;">' + getDigit(S.targetNum2, 2) + '</div></div>';
+    html += '<div class="place-column"><div style="font-size:20px;font-weight:700;">' + getDigit(S.targetNum2, 1) + '</div></div>';
+    html += '<div class="place-column"><div style="font-size:20px;font-weight:700;">' + getDigit(S.targetNum2, 0) + '</div></div>';
+    html += '</div>';
+
+    html += '<div class="divider-row"></div>';
+
+    html += '<div class="algorithm-row">';
+    html += '<div class="place-column"><input type="number" class="digit-input" id="playH" min="0" max="9" placeholder="?" style="width:50px;" /></div>';
+    html += '<div class="place-column"><input type="number" class="digit-input" id="playT" min="0" max="9" placeholder="?" style="width:50px;" /></div>';
+    html += '<div class="place-column"><input type="number" class="digit-input" id="playO" min="0" max="9" placeholder="?" style="width:50px;" /></div>';
+    html += '</div>';
+    html += '</div>';
+
+    html += '<button class="play-btn primary" onclick="submitPlayAnswer(' + result + ')">✓ Submit</button>';
+  }
+
+  html += '</div>';
+  ws.innerHTML = html;
+
+  if (!S.gameEnded) {
+    setTimeout(() => document.getElementById('playO')?.focus(), 100);
+  }
+
+  // Side panel
+  sp.innerHTML = `
+    <div class="score-display">
+      <div class="score-value">${S.playScore}</div>
+      <div class="score-label">Score</div>
+    </div>
+    <div class="score-display" style="background:transparent; padding:8px;">
+      <div style="font-size:18px; font-weight:700; color:var(--yellow);">🔥 ${S.playStreak}</div>
+      <div class="score-label">Streak</div>
+      <div class="streak-bar"><div class="streak-fill" style="width:${Math.min(S.playStreak * 8.3, 100)}%;"></div></div>
+    </div>
+    <div class="panel-section">
+      <div class="panel-title">Stack Attack Rules</div>
+      <div class="panel-text">
+        Solve 12 problems as fast as you can!<br><br>
+        Each correct answer adds to your streak. Wrong answers reset it.
+      </div>
+    </div>
+    <div class="panel-section">
+      <div class="panel-title">Scoring</div>
+      <div class="panel-text">
+        Base: <strong>10 points</strong><br>
+        Streak ×: <strong>+2/streak</strong><br>
+        Max per round: <strong>30 pts</strong>
+      </div>
+    </div>
+  `;
+}
+
+function newPlayProblem() {
+  const max = getMaxValue();
+  const isAdd = Math.random() > 0.3;
+
+  S.targetNum1 = randInt(Math.floor(max * 0.3), max);
+  S.targetNum2 = randInt(Math.floor(max * 0.2), max);
+
+  if (!isAdd && S.targetNum2 > S.targetNum1) {
+    [S.targetNum1, S.targetNum2] = [S.targetNum2, S.targetNum1];
+  }
+
+  S.targetOperation = isAdd ? 'add' : 'subtract';
+}
+
+function submitPlayAnswer(correct) {
+  const h = parseInt(document.getElementById('playH')?.value || 0);
+  const t = parseInt(document.getElementById('playT')?.value || 0);
+  const o = parseInt(document.getElementById('playO')?.value || 0);
+
+  const userAnswer = h * 100 + t * 10 + o;
+
+  if (userAnswer === correct) {
+    showFB('✓ Yes!', 'correct');
+    S.playScore += 10 + (S.playStreak * 2);
+    S.playStreak++;
+    S.playRound++;
+
+    if (S.playRound > 12) {
+      setTimeout(() => {
+        S.gameEnded = true;
+        render();
+      }, 600);
+    } else {
+      setTimeout(() => {
+        newPlayProblem();
+        render();
+      }, 600);
+    }
+  } else {
+    showFB('✗ Try again', 'incorrect');
+    S.playStreak = 0;
+  }
+}
+
+function playAgain() {
+  S.playScore = 0;
+  S.playStreak = 0;
+  S.playRound = 1;
+  S.gameEnded = false;
+  newPlayProblem();
+  render();
+}
+
+// ════════════════════════════════════════
+// INIT
+// ════════════════════════════════════════
+newPracticeQuestion();
+render();
+</script>
+<script src="../../vinculum-core.js"></script>
+<script src="../../vinculum-data.js"></script>
+<script src="../../vinculum-adaptive-hook.js"></script>
+<script src="../../vinculum-3reads.js"></script>
+<script src="../../vinculum-stories.js"></script>
+<script src="../../vinculum-feedback.js"></script>
+  <script src="../../vinculum-guide.js"></script>
+<script src="../../vinculum-identity.js"></script>
+<script src="../../vinculum-indigenous.js"></script>
+<script src="../../vinculum-dashboard.js"></script>
+<!-- Foundation loaded from vinculum-core.js -->
+</body>
+</html>

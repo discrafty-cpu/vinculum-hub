@@ -1,0 +1,629 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Concrete Math Lab - VINCULUM Hub</title>
+    <link rel="stylesheet" href="../../vinculum-core.css">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #a8edea 0%, #fed6e3 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+        .container {
+            max-width: 1100px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 15px;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.2);
+            padding: 30px;
+        }
+        .vinculum-header {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+        .vinculum-header h1 {
+            font-size: 2.5em;
+            margin-bottom: 10px;
+            color: #ff6b9d;
+        }
+        .vinculum-header p {
+            font-size: 1.1em;
+            color: #666;
+        }
+        .controls {
+            display: flex;
+            gap: 20px;
+            margin-bottom: 30px;
+            flex-wrap: wrap;
+            align-items: center;
+            justify-content: center;
+        }
+        .mode-buttons {
+            display: flex;
+            gap: 10px;
+        }
+        button {
+            padding: 10px 20px;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 1em;
+            font-weight: bold;
+            transition: all 0.3s;
+        }
+        .vinculum-mode-tab {
+            background: #e0e0e0;
+            color: #333;
+        }
+        .vinculum-mode-tab.active {
+            background: #ff6b9d;
+            color: white;
+            transform: scale(1.05);
+        }
+        .difficulty-selector {
+            display: flex;
+            gap: 5px;
+            align-items: center;
+        }
+        .difficulty-selector label {
+            font-weight: bold;
+            color: #333;
+            margin-right: 10px;
+        }
+        .vinculum-diff-btn {
+            padding: 8px 15px;
+            background: #f0f0f0;
+            color: #333;
+            border: 2px solid transparent;
+        }
+        .vinculum-diff-btn.active {
+            background: #a8edea;
+            color: #333;
+            border-color: #ff6b9d;
+        }
+        .content-area {
+            min-height: 500px;
+        }
+        .manipulative-selector {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+        }
+        .manip-btn {
+            padding: 12px 20px;
+            background: #f0f0f0;
+            color: #333;
+            border: 2px solid #ddd;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.3s;
+            font-weight: bold;
+        }
+        .manip-btn.active {
+            background: #ff6b9d;
+            color: white;
+            border-color: #ff6b9d;
+            transform: scale(1.05);
+        }
+        .workspace {
+            background: #f9f9f9;
+            border: 2px solid #ddd;
+            border-radius: 10px;
+            padding: 20px;
+            margin-bottom: 20px;
+            min-height: 300px;
+        }
+        .workspace h3 {
+            color: #ff6b9d;
+            margin-bottom: 15px;
+        }
+        .tile-container {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            align-items: flex-end;
+            justify-content: center;
+            min-height: 200px;
+        }
+        .algebra-tile {
+            cursor: grab;
+            user-select: none;
+            transition: all 0.2s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            border-radius: 4px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+        }
+        .algebra-tile:hover {
+            transform: scale(1.1);
+            box-shadow: 0 4px 10px rgba(0,0,0,0.3);
+        }
+        .algebra-tile.grabbing {
+            opacity: 0.7;
+            cursor: grabbing;
+        }
+        .x-tile {
+            width: 80px;
+            height: 40px;
+            background: #ff6b9d;
+            color: white;
+        }
+        .unit-tile {
+            width: 40px;
+            height: 40px;
+            background: #ffeb3b;
+            color: #333;
+            border: 2px solid #fbc02d;
+        }
+        .negative-x {
+            width: 80px;
+            height: 40px;
+            background: #64b5f6;
+            color: white;
+        }
+        .negative-unit {
+            width: 40px;
+            height: 40px;
+            background: #e0f2f1;
+            color: #00796b;
+            border: 2px solid #26a69a;
+        }
+        .equation-display {
+            background: white;
+            padding: 20px;
+            border: 2px solid #ff6b9d;
+            border-radius: 8px;
+            font-size: 1.2em;
+            text-align: center;
+            font-weight: bold;
+            color: #333;
+            margin-bottom: 20px;
+        }
+        .problem-prompt {
+            background: #fef5f0;
+            border-left: 4px solid #ff6b9d;
+            padding: 15px;
+            margin-bottom: 20px;
+            border-radius: 6px;
+            color: #333;
+        }
+        .problem-prompt strong {
+            color: #ff6b9d;
+        }
+        .feedback {
+            margin-top: 20px;
+            padding: 15px;
+            border-radius: 8px;
+            font-weight: bold;
+            text-align: center;
+            display: none;
+        }
+        .feedback.success {
+            background: #e8f5e9;
+            color: #2e7d32;
+            display: block;
+            border: 2px solid #4caf50;
+        }
+        .feedback.error {
+            background: #ffebee;
+            color: #c62828;
+            display: block;
+            border: 2px solid #f44336;
+        }
+        .action-buttons {
+            display: flex;
+            gap: 15px;
+            justify-content: center;
+            margin-top: 20px;
+        }
+        button.primary {
+            background: #ff6b9d;
+            color: white;
+            padding: 12px 30px;
+        }
+        button.primary:hover {
+            background: #ec407a;
+            transform: scale(1.05);
+        }
+        button.secondary {
+            background: #f0f0f0;
+            color: #333;
+            padding: 12px 30px;
+        }
+        button.secondary:hover {
+            background: #e0e0e0;
+        }
+        .fraction-bar {
+            display: flex;
+            gap: 2px;
+            background: white;
+            padding: 10px;
+            border-radius: 6px;
+            border: 2px solid #ddd;
+        }
+        .fraction-part {
+            flex: 1;
+            height: 40px;
+            background: #ff6b9d;
+            border-radius: 3px;
+            cursor: grab;
+            transition: all 0.2s;
+        }
+        .fraction-part:hover {
+            transform: scaleY(1.1);
+        }
+        .timer-display {
+            text-align: center;
+            font-size: 1.5em;
+            color: #ff6b9d;
+            font-weight: bold;
+            margin-bottom: 20px;
+        }
+        .score-display {
+            text-align: center;
+            padding: 15px;
+            background: #f5f5f5;
+            border-radius: 8px;
+            margin-bottom: 20px;
+        }
+        .score-display h3 {
+            color: #ff6b9d;
+            margin-bottom: 10px;
+        }
+        @media (max-width: 600px) {
+            .controls {
+                flex-direction: column;
+            }
+            .tile-container {
+                gap: 5px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="vinculum-header">
+            <h1>🧮 Concrete Math Lab</h1>
+            <p>Use virtual manipulatives to understand math concepts!</p>
+        </div>
+
+        <div class="controls">
+            <div class="mode-buttons">
+                <button class="vinculum-mode-tab active" data-mode="explore"><svg width="18" height="18" viewBox="0 0 48 48" fill="none"><path d="M4 24C4 24 12 12 24 12C36 12 44 24 44 24C44 24 36 36 24 36C12 36 4 24 4 24Z" stroke="currentColor" stroke-width="3" fill="none"/><circle cx="24" cy="24" r="7" stroke="currentColor" stroke-width="3" fill="none"/><circle cx="24" cy="24" r="3" fill="currentColor"/><line x1="24" y1="4" x2="24" y2="9" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" opacity="0.5"/><line x1="10" y1="8" x2="13" y2="12" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" opacity="0.5"/><line x1="38" y1="8" x2="35" y2="12" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" opacity="0.5"/></svg> Explore</button>
+                <button class="vinculum-mode-tab" data-mode="practice"><svg width="18" height="18" viewBox="0 0 48 48" fill="none"><circle cx="24" cy="24" r="20" stroke="currentColor" stroke-width="3" fill="none" opacity="0.3"/><circle cx="24" cy="24" r="20" stroke="currentColor" stroke-width="3" fill="none" stroke-dasharray="126" stroke-dashoffset="32" stroke-linecap="round"/><polyline points="16,24 22,32 34,16" stroke="currentColor" stroke-width="4" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg> Practice</button>
+                <button class="vinculum-mode-tab" data-mode="play"><svg width="18" height="18" viewBox="0 0 48 48" fill="none"><polygon points="28,4 12,28 22,28 18,44 36,18 26,18" fill="none" stroke="currentColor" stroke-width="3" stroke-linejoin="round"/><polygon points="27,8 15,27 23,27 20,40 34,19 26,19" fill="currentColor" opacity="0.15"/></svg> Play</button>
+            </div>
+            <div class="difficulty-selector">
+                <label>Difficulty:</label>
+                <button class="vinculum-diff-btn active" data-difficulty="easy">Easy</button>
+                <button class="vinculum-diff-btn" data-difficulty="medium">Medium</button>
+                <button class="vinculum-diff-btn" data-difficulty="hard">Hard</button>
+            </div>
+        </div>
+
+        <div id="feedback" class="feedback"></div>
+
+        <div class="content-area">
+            <div id="explore-mode">
+                <div class="manipulative-selector" id="explore-selector"></div>
+                <div class="workspace">
+                    <h3 id="explore-title">Algebra Tiles</h3>
+                    <p style="color: #666; margin-bottom: 15px;">Click and drag tiles to explore! Each represents a different value.</p>
+                    <div class="tile-container" id="explore-tiles"></div>
+                </div>
+                <div class="action-buttons">
+                    <button class="secondary" onclick="resetExplore()">Clear Workspace</button>
+                </div>
+            </div>
+
+            <div id="practice-mode" style="display: none;">
+                <div class="problem-prompt" id="practice-prompt"></div>
+                <div class="equation-display" id="practice-equation"></div>
+                <div class="workspace">
+                    <h3>Use Tiles to Model the Equation:</h3>
+                    <div class="tile-container" id="practice-tiles"></div>
+                </div>
+                <div class="action-buttons">
+                    <button class="primary" onclick="checkPracticeSolution()">Check Solution</button>
+                    <button class="secondary" onclick="loadPracticeMode()">New Problem</button>
+                </div>
+            </div>
+
+            <div id="play-mode" style="display: none;">
+                <div class="score-display">
+                    <h3>⏱️ Manipulative Master</h3>
+                    <div class="timer-display">Time: <span id="timer">0</span>s</div>
+                    <p>Model equations against the clock! Score: <span id="play-score">0</span></p>
+                </div>
+                <div class="problem-prompt" id="play-prompt"></div>
+                <div class="equation-display" id="play-equation"></div>
+                <div class="workspace">
+                    <h3>Model This Equation:</h3>
+                    <div class="tile-container" id="play-tiles"></div>
+                </div>
+                <div class="action-buttons">
+                    <button class="primary" onclick="checkPlaySolution()">Submit</button>
+                    <button class="secondary" onclick="resetPlay()">Reset</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="../../vinculum-feedback.js"></script><script src="../../vinculum-guide.js"></script><script src="../../vinculum-indigenous.js"></script><script src="../../indigenous-context-panel.js"></script>
+    <script src="../../vinculum-input.js"></script>
+
+    <script>
+        const problems = {
+            easy: [
+                { equation: "x + 3 = 5", xtiles: 1, unitTiles: 3, solution: { x: 1, units: 3 } },
+                { equation: "2x + 1 = 5", xtiles: 2, unitTiles: 1, solution: { x: 2, units: 1 } },
+                { equation: "x + 2 = 4", xtiles: 1, unitTiles: 2, solution: { x: 1, units: 2 } }
+            ],
+            medium: [
+                { equation: "2x + 3 = 7", xtiles: 2, unitTiles: 3, solution: { x: 2, units: 3 } },
+                { equation: "3x + 2 = 8", xtiles: 3, unitTiles: 2, solution: { x: 3, units: 2 } },
+                { equation: "x + 4 = 6", xtiles: 1, unitTiles: 4, solution: { x: 1, units: 4 } }
+            ],
+            hard: [
+                { equation: "2x + 3 = x + 5", xtiles: 2, unitTiles: 3, negXTiles: 1, negUnitTiles: 0, solution: { x: 2, units: 3, negX: 1 } },
+                { equation: "3x + 2 = x + 6", xtiles: 3, unitTiles: 2, negXTiles: 1, negUnitTiles: 0, solution: { x: 3, units: 2, negX: 1 } }
+            ]
+        };
+
+        let currentMode = 'explore';
+        let currentDifficulty = 'easy';
+        let currentProblem = null;
+        let draggedElement = null;
+        let playTimer = 0;
+        let playTimerInterval = null;
+        let playScore = 0;
+
+        function getRandomProblem(difficulty) {
+            const list = problems[difficulty];
+            return JSON.parse(JSON.stringify(list[Math.floor(Math.random() * list.length)]));
+        }
+
+        function createTile(type, size = 'x') {
+            const tile = document.createElement('div');
+            tile.className = `algebra-tile ${type}`;
+            if (size === 'x') {
+                tile.style.width = '80px';
+                tile.style.height = '40px';
+            } else {
+                tile.style.width = '40px';
+                tile.style.height = '40px';
+            }
+
+            if (type === 'x-tile') {
+                tile.textContent = 'x';
+                tile.style.background = '#ff6b9d';
+                tile.style.color = 'white';
+            } else if (type === 'unit-tile') {
+                tile.textContent = '1';
+                tile.style.background = '#ffeb3b';
+                tile.style.color = '#333';
+                tile.style.border = '2px solid #fbc02d';
+            } else if (type === 'negative-x') {
+                tile.textContent = '-x';
+                tile.style.background = '#64b5f6';
+                tile.style.color = 'white';
+            } else if (type === 'negative-unit') {
+                tile.textContent = '-1';
+                tile.style.background = '#e0f2f1';
+                tile.style.color = '#00796b';
+                tile.style.border = '2px solid #26a69a';
+            }
+
+            tile.addEventListener('mousedown', (e) => dragStart(e, tile));
+            return tile;
+        }
+
+        function dragStart(e, tile) {
+            draggedElement = tile;
+            tile.classList.add('grabbing');
+            e.preventDefault();
+        }
+
+        function loadExploreMode() {
+            const selector = document.getElementById('explore-selector');
+            selector.innerHTML = `
+                <button class="manip-btn active" onclick="switchManipulative('algebra')">🧩 Algebra Tiles</button>
+                <button class="manip-btn" onclick="switchManipulative('fraction')">🍰 Fraction Bars</button>
+            `;
+
+            const tilesContainer = document.getElementById('explore-tiles');
+            tilesContainer.innerHTML = '';
+
+            // Create some sample tiles
+            for (let i = 0; i < 3; i++) {
+                tilesContainer.appendChild(createTile('x-tile'));
+            }
+            for (let i = 0; i < 5; i++) {
+                tilesContainer.appendChild(createTile('unit-tile'));
+            }
+        }
+
+        function switchManipulative(type) {
+            const buttons = document.querySelectorAll('#explore-selector .manip-btn');
+            buttons.forEach(btn => btn.classList.remove('active'));
+            event.target.classList.add('active');
+
+            const title = document.getElementById('explore-title');
+            const container = document.getElementById('explore-tiles');
+            container.innerHTML = '';
+
+            if (type === 'algebra') {
+                title.textContent = 'Algebra Tiles';
+                for (let i = 0; i < 3; i++) {
+                    container.appendChild(createTile('x-tile'));
+                }
+                for (let i = 0; i < 8; i++) {
+                    container.appendChild(createTile('unit-tile'));
+                }
+            } else {
+                title.textContent = 'Fraction Bars';
+                for (let i = 0; i < 3; i++) {
+                    const bar = document.createElement('div');
+                    bar.className = 'fraction-bar';
+                    for (let j = 0; j < 4; j++) {
+                        const part = document.createElement('div');
+                        part.className = 'fraction-part';
+                        part.style.background = '#' + Math.floor(Math.random()*16777215).toString(16);
+                        bar.appendChild(part);
+                    }
+                    container.appendChild(bar);
+                }
+            }
+        }
+
+        function resetExplore() {
+            document.getElementById('explore-tiles').innerHTML = '';
+            loadExploreMode();
+        }
+
+        function loadPracticeMode() {
+            currentProblem = getRandomProblem(currentDifficulty);
+            document.getElementById('practice-prompt').innerHTML = `
+                <strong>Model this equation using algebra tiles:</strong><br>
+                Left side: ${currentProblem.xtiles} x-tile(s) + ${currentProblem.unitTiles} unit tile(s)
+            `;
+            document.getElementById('practice-equation').textContent = currentProblem.equation;
+
+            const container = document.getElementById('practice-tiles');
+            container.innerHTML = '';
+            for (let i = 0; i < currentProblem.xtiles; i++) {
+                container.appendChild(createTile('x-tile'));
+            }
+            for (let i = 0; i < currentProblem.unitTiles; i++) {
+                container.appendChild(createTile('unit-tile'));
+            }
+            if (currentProblem.negXTiles) {
+                for (let i = 0; i < currentProblem.negXTiles; i++) {
+                    container.appendChild(createTile('negative-x'));
+                }
+            }
+        }
+
+        function checkPracticeSolution() {
+            const xTiles = document.querySelectorAll('#practice-tiles .x-tile').length;
+            const unitTiles = document.querySelectorAll('#practice-tiles .unit-tile').length;
+
+            const isCorrect = xTiles === currentProblem.solution.x && unitTiles === currentProblem.solution.units;
+            const feedback = document.getElementById('feedback');
+
+            if (isCorrect) {
+                feedback.className = 'feedback success';
+                feedback.textContent = '✅ Perfect! Your model matches the equation!';
+            } else {
+                feedback.className = 'feedback error';
+                feedback.textContent = `❌ Check your model. You need ${currentProblem.solution.x} x-tile(s) and ${currentProblem.solution.units} unit tile(s).`;
+            }
+        }
+
+        function loadPlayMode() {
+            playTimer = 0;
+            playScore = 0;
+            document.getElementById('play-score').textContent = playScore;
+
+            if (playTimerInterval) clearInterval(playTimerInterval);
+            playTimerInterval = setInterval(() => {
+                playTimer++;
+                document.getElementById('timer').textContent = playTimer;
+            }, 1000);
+
+            currentProblem = getRandomProblem(currentDifficulty);
+            document.getElementById('play-prompt').innerHTML = `
+                <strong>⚡ Model this equation quickly!</strong>
+            `;
+            document.getElementById('play-equation').textContent = currentProblem.equation;
+
+            const container = document.getElementById('play-tiles');
+            container.innerHTML = '';
+            for (let i = 0; i < currentProblem.xtiles; i++) {
+                container.appendChild(createTile('x-tile'));
+            }
+            for (let i = 0; i < currentProblem.unitTiles; i++) {
+                container.appendChild(createTile('unit-tile'));
+            }
+            document.getElementById('feedback').style.display = 'none';
+        }
+
+        function checkPlaySolution() {
+            clearInterval(playTimerInterval);
+            const xTiles = document.querySelectorAll('#play-tiles .x-tile').length;
+            const unitTiles = document.querySelectorAll('#play-tiles .unit-tile').length;
+
+            const isCorrect = xTiles === currentProblem.solution.x && unitTiles === currentProblem.solution.units;
+            const feedback = document.getElementById('feedback');
+            const timeBonus = Math.max(0, 100 - playTimer);
+
+            if (isCorrect) {
+                playScore += (50 + timeBonus);
+                feedback.className = 'feedback success';
+                feedback.textContent = `✅ Correct! +${50 + timeBonus} points!`;
+            } else {
+                feedback.className = 'feedback error';
+                feedback.textContent = '❌ Incorrect. Try the next one!';
+            }
+            document.getElementById('play-score').textContent = playScore;
+        }
+
+        function resetPlay() {
+            clearInterval(playTimerInterval);
+            loadPlayMode();
+        }
+
+        document.querySelectorAll('.vinculum-mode-tab').forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                document.querySelectorAll('.vinculum-mode-tab').forEach(b => b.classList.remove('active'));
+                e.target.classList.add('active');
+                currentMode = e.target.dataset.mode;
+
+                document.getElementById('explore-mode').style.display = 'none';
+                document.getElementById('practice-mode').style.display = 'none';
+                document.getElementById('play-mode').style.display = 'none';
+
+                if (currentMode === 'explore') {
+                    document.getElementById('explore-mode').style.display = 'block';
+                    loadExploreMode();
+                } else if (currentMode === 'practice') {
+                    document.getElementById('practice-mode').style.display = 'block';
+                    loadPracticeMode();
+                } else if (currentMode === 'play') {
+                    document.getElementById('play-mode').style.display = 'block';
+                    loadPlayMode();
+                }
+            });
+        });
+
+        document.querySelectorAll('.vinculum-diff-btn').forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                document.querySelectorAll('.vinculum-diff-btn').forEach(b => b.classList.remove('active'));
+                e.target.classList.add('active');
+                currentDifficulty = e.target.dataset.difficulty;
+
+                if (currentMode === 'explore') {
+                    loadExploreMode();
+                } else if (currentMode === 'practice') {
+                    loadPracticeMode();
+                } else if (currentMode === 'play') {
+                    loadPlayMode();
+                }
+            });
+        });
+
+        loadExploreMode();
+    </script>
+</body>
+</html>

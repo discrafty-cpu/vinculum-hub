@@ -1,0 +1,1324 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>VINCULUM — Division Fair Share</title>
+<link rel="stylesheet" href="../../vinculum-core.css">
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;600&display=swap');
+
+/* Theme system loaded from vinculum-core.css */
+.vinculum-rtm-btn .rtm-icon{font-size:14px;}
+
+/* ═══ FOCUS VISIBLE (Keyboard Navigation) ═══ */
+*:focus-visible {
+  outline:2px solid var(--cyan);outline-offset:2px;border-radius:4px;
+}
+.sr-only {
+  position:absolute;width:1px;height:1px;padding:0;margin:-1px;
+  overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0;
+}
+
+* { margin:0; padding:0; box-sizing:border-box; }
+body {
+  font-family: 'Inter', sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  height: 100vh;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  user-select: none;
+}
+
+/* ── HEADER ── */
+.vinculum-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 24px;
+  background: var(--bg2);
+  border-bottom: 1px solid var(--border);
+  flex-shrink: 0;
+}
+.vinculum-header-left {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+.vinculum-back-btn {
+  padding: 6px 12px;
+  border-radius: 8px;
+  border: 1px solid var(--border);
+  background: transparent;
+  color: var(--text2);
+  font-size: 13px;
+  font-family: inherit;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+.vinculum-back-btn:hover { background: var(--card); color: var(--cyan); }
+.vinculum-header-title {
+  font-size: 18px;
+  font-weight: 800;
+}
+.vinculum-header-title span {
+  background: var(--grad);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+.vinculum-header-badge {
+  font-size: 10px;
+  font-weight: 700;
+  padding: 3px 10px;
+  border-radius: 6px;
+  background: rgba(0,212,255,0.1);
+  color: var(--cyan);
+  border: 1px solid rgba(0,212,255,0.2);
+  letter-spacing: 1px;
+}
+.vinculum-std-tags {
+  display: flex;
+  gap: 6px;
+}
+.vinculum-std-tag {
+  font-size: 10px;
+  font-family: 'JetBrains Mono', monospace;
+  font-weight: 600;
+  padding: 3px 8px;
+  border-radius: 5px;
+  background: rgba(0,212,255,0.08);
+  color: var(--cyan);
+}
+.vinculum-std-tag.mn { background: rgba(255,145,0,0.08); color: var(--orange); }
+
+/* ── MODE TABS ── */
+.vinculum-mode-tabs {
+  display: flex;
+  gap: 4px;
+  padding: 8px 24px;
+  background: var(--bg2);
+  border-bottom: 1px solid var(--border);
+  flex-shrink: 0;
+}
+.vinculum-mode-tab {
+  padding: 8px 20px;
+  border-radius: 8px;
+  border: 1px solid transparent;
+  background: transparent;
+  color: var(--muted);
+  font-size: 13px;
+  font-weight: 600;
+  font-family: inherit;
+  cursor: pointer;
+  transition: all 0.2s;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.vinculum-mode-tab:hover { color: var(--text2); background: var(--card); }
+.vinculum-mode-tab.active-explore { background: rgba(0,212,255,0.1); color: var(--cyan); border-color: rgba(0,212,255,0.3); }
+.vinculum-mode-tab.active-practice { background: rgba(0,230,118,0.1); color: var(--green); border-color: rgba(0,230,118,0.3); }
+.vinculum-mode-tab.active-play { background: rgba(255,59,139,0.1); color: var(--pink); border-color: rgba(255,59,139,0.3); }
+
+/* Difficulty selector */
+.vinculum-diff-selector {
+  margin-left: auto;
+  display: flex;
+  gap: 4px;
+  align-items: center;
+}
+.vinculum-diff-label {
+  font-size: 11px;
+  color: var(--muted);
+  margin-right: 8px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+}
+.vinculum-diff-btn {
+  padding: 5px 12px;
+  border-radius: 6px;
+  border: 1px solid var(--border);
+  background: transparent;
+  color: var(--muted);
+  font-size: 11px;
+  font-weight: 600;
+  font-family: inherit;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+.vinculum-diff-btn:hover { color: var(--text2); }
+.vinculum-diff-btn.active { background: rgba(0,212,255,0.1); color: var(--cyan); border-color: rgba(0,212,255,0.3); }
+
+/* ── MAIN AREA ── */
+.main {
+  flex: 1;
+  display: flex;
+  overflow: hidden;
+}
+
+/* ── WORKSPACE ── */
+.workspace {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+  position: relative;
+  overflow-y: auto;
+}
+
+/* ── DIVISION CONTAINER ── */
+.division-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 20px;
+  width: 100%;
+  max-width: 900px;
+}
+
+/* Objects pile */
+.objects-pile {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+  background: var(--card);
+  border-radius: 16px;
+  border: 2px solid var(--border);
+  min-width: 300px;
+  min-height: 80px;
+  position: relative;
+}
+
+.object {
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  cursor: grab;
+  transition: all 0.2s;
+  user-select: none;
+  -webkit-tap-highlight-color: transparent;
+  flex-shrink: 0;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+}
+
+.object:active { cursor: grabbing; }
+.object:hover { transform: scale(1.15); }
+
+.object.color-0 { background: var(--cyan); }
+.object.color-1 { background: var(--green); }
+.object.color-2 { background: var(--pink); }
+.object.color-3 { background: var(--yellow); }
+.object.color-4 { background: var(--purple); }
+
+.pile-label {
+  position: absolute;
+  top: 4px;
+  left: 8px;
+  font-size: 10px;
+  font-weight: 700;
+  color: var(--muted);
+  text-transform: uppercase;
+  letter-spacing: 1px;
+}
+
+/* Distribution area */
+.distribution-area {
+  display: flex;
+  gap: 20px;
+  align-items: flex-start;
+  justify-content: center;
+  flex-wrap: wrap;
+  width: 100%;
+  padding: 20px;
+  background: rgba(0,212,255,0.02);
+  border-radius: 12px;
+  border: 1px dashed var(--border);
+  min-height: 120px;
+}
+
+.plate {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  align-items: center;
+  justify-content: center;
+  width: 120px;
+  min-height: 100px;
+  padding: 12px;
+  background: var(--card);
+  border: 2px solid var(--border);
+  border-radius: 12px;
+  transition: all 0.2s;
+  position: relative;
+  flex-shrink: 0;
+  cursor: pointer;
+}
+
+.plate:hover { border-color: var(--cyan); }
+.plate.highlight-uneven { border-color: var(--pink); background: rgba(255,59,139,0.08); }
+.plate.highlight-even { border-color: var(--green); background: rgba(0,230,118,0.08); }
+
+.plate-label {
+  position: absolute;
+  top: 4px;
+  left: 8px;
+  font-size: 9px;
+  font-weight: 700;
+  color: var(--muted);
+  text-transform: uppercase;
+  letter-spacing: 1px;
+}
+
+/* Equation display */
+.equation-display {
+  text-align: center;
+  padding: 16px;
+  background: var(--card);
+  border-radius: 12px;
+  border: 1px solid var(--border);
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 18px;
+  font-weight: 700;
+  color: var(--text2);
+  min-width: 200px;
+}
+
+.equation-display.visible {
+  background: rgba(0,230,118,0.1);
+  border-color: var(--green);
+  color: var(--green);
+}
+
+/* Controls */
+.explore-controls {
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+  justify-content: center;
+  align-items: center;
+}
+
+.control-group {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: var(--card);
+  padding: 8px 12px;
+  border-radius: 8px;
+  border: 1px solid var(--border);
+}
+
+.control-label {
+  font-size: 12px;
+  color: var(--muted);
+  font-weight: 600;
+}
+
+.control-btn {
+  padding: 4px 10px;
+  border-radius: 6px;
+  border: 1px solid var(--border);
+  background: transparent;
+  color: var(--text2);
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.control-btn:hover { background: rgba(0,212,255,0.1); color: var(--cyan); }
+
+.control-value {
+  font-size: 13px;
+  font-weight: 700;
+  font-family: 'JetBrains Mono', monospace;
+  min-width: 20px;
+  text-align: center;
+}
+
+.play-btn {
+  padding: 12px 24px;
+  border-radius: 10px;
+  border: 1px solid var(--border);
+  background: var(--card);
+  color: var(--text2);
+  font-size: 14px;
+  font-weight: 600;
+  font-family: inherit;
+  cursor: pointer;
+  transition: all 0.2s;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.play-btn:hover { background: rgba(0,212,255,0.1); color: var(--cyan); }
+
+.play-btn.primary {
+  background: var(--grad);
+  color: var(--bg);
+  border-color: transparent;
+  font-weight: 700;
+}
+
+.play-btn.primary:hover { opacity: 0.9; }
+
+/* Practice question */
+.practice-question {
+  text-align: center;
+  padding: 20px;
+  background: var(--card);
+  border-radius: 12px;
+  border: 1px solid var(--border);
+  width: 100%;
+  max-width: 500px;
+}
+
+.question-text {
+  font-size: 16px;
+  color: var(--text2);
+  margin-bottom: 12px;
+  font-weight: 600;
+}
+
+.question-highlight {
+  font-size: 24px;
+  font-weight: 800;
+  font-family: 'JetBrains Mono', monospace;
+  color: var(--green);
+  margin: 8px 0;
+}
+
+/* Answer grid */
+.answer-grid {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 8px;
+  margin-top: 16px;
+  max-width: 400px;
+  width: 100%;
+}
+
+.answer-btn {
+  padding: 12px;
+  border-radius: 10px;
+  border: 2px solid var(--border);
+  background: var(--card);
+  color: var(--text);
+  font-size: 18px;
+  font-weight: 700;
+  font-family: 'JetBrains Mono', monospace;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+
+.answer-btn:hover {
+  border-color: var(--cyan);
+  background: rgba(0,212,255,0.05);
+  transform: scale(1.05);
+}
+
+.answer-btn.correct-flash {
+  border-color: var(--green);
+  background: rgba(0,230,118,0.15);
+  color: var(--green);
+}
+
+.answer-btn.incorrect-flash {
+  border-color: var(--pink);
+  background: rgba(255,59,139,0.15);
+  color: var(--pink);
+}
+
+/* Number input */
+.number-input {
+  padding: 10px 16px;
+  border-radius: 8px;
+  border: 2px solid var(--border);
+  background: var(--card);
+  color: var(--text);
+  font-size: 16px;
+  font-family: 'JetBrains Mono', monospace;
+  text-align: center;
+  width: 100px;
+  transition: all 0.2s;
+}
+
+.number-input:focus {
+  border-color: var(--cyan);
+  outline: none;
+}
+
+/* Game info */
+.game-info {
+  display: flex;
+  gap: 24px;
+  justify-content: center;
+  align-items: center;
+  font-size: 14px;
+  color: var(--text2);
+  margin-bottom: 12px;
+}
+
+.info-item {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.info-label {
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+}
+
+/* ── FEEDBACK ── */
+.feedback {
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%) scale(0);
+  padding: 24px 48px;
+  border-radius: 20px;
+  font-size: 28px;
+  font-weight: 800;
+  z-index: 200;
+  pointer-events: none;
+  transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275), opacity 0.3s;
+  opacity: 0;
+}
+.feedback.show {
+  transform: translate(-50%, -50%) scale(1);
+  opacity: 1;
+}
+.feedback.correct {
+  background: rgba(0,230,118,0.15);
+  color: var(--green);
+  border: 2px solid var(--green);
+}
+.feedback.incorrect {
+  background: rgba(255,59,139,0.15);
+  color: var(--pink);
+  border: 2px solid var(--pink);
+}
+.feedback.try-again {
+  background: rgba(255,193,7,0.15);
+  color: var(--yellow);
+  border: 2px solid var(--yellow);
+}
+
+/* ── SIDE PANEL (Instructions / Score) ── */
+.side-panel {
+  width: 280px;
+  background: var(--bg2);
+  border-left: 1px solid var(--border);
+  padding: 20px;
+  overflow-y: auto;
+  flex-shrink: 0;
+}
+.panel-section {
+  margin-bottom: 20px;
+}
+.panel-title {
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 1.5px;
+  color: var(--muted);
+  margin-bottom: 8px;
+}
+.panel-text {
+  font-size: 13px;
+  color: var(--text2);
+  line-height: 1.6;
+}
+.score-display {
+  text-align: center;
+  padding: 16px;
+  background: var(--card);
+  border-radius: 12px;
+  margin-bottom: 12px;
+}
+.score-value {
+  font-size: 36px;
+  font-weight: 900;
+  font-family: 'JetBrains Mono', monospace;
+  background: var(--grad);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+.score-label {
+  font-size: 11px;
+  color: var(--muted);
+  text-transform: uppercase;
+  letter-spacing: 1px;
+}
+.streak-bar {
+  height: 6px;
+  background: var(--card);
+  border-radius: 3px;
+  overflow: hidden;
+  margin-top: 8px;
+}
+.streak-fill {
+  height: 100%;
+  background: var(--grad);
+  border-radius: 3px;
+  transition: width 0.3s;
+}
+
+/* ── ANIMATIONS ── */
+@keyframes pop {
+  0% { transform: scale(0); opacity: 0; }
+  70% { transform: scale(1.2); }
+  100% { transform: scale(1); opacity: 1; }
+}
+
+@keyframes shake {
+  0%, 100% { transform: translateX(0); }
+  25% { transform: translateX(-8px); }
+  75% { transform: translateX(8px); }
+}
+
+@keyframes slideIn {
+  0% { transform: translateY(20px); opacity: 0; }
+  100% { transform: translateY(0); opacity: 1; }
+}
+
+.pop-in { animation: pop 0.3s ease-out forwards; }
+.shake { animation: shake 0.3s ease-in-out; }
+.slide-in { animation: slideIn 0.3s ease-out forwards; }
+
+/* scrollbar */
+::-webkit-scrollbar { width: 6px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+
+/* Responsive */
+@media (max-width: 768px) {
+  .distribution-area {
+    gap: 12px;
+  }
+  .plate {
+    width: 100px;
+    min-height: 80px;
+  }
+  .side-panel {
+    width: 220px;
+  }
+  .object {
+    width: 18px;
+    height: 18px;
+  }
+}
+</style>
+</head>
+<body>
+
+<!-- ═══ HEADER ═══ -->
+<div class="vinculum-header">
+  <div class="vinculum-header-left">
+    <a class="vinculum-back-btn" href="../../VINCULUM-Hub.html" style="text-decoration:none;">◀ Hub</a>
+    <div class="vinculum-header-title"><span>VINCULUM</span> Division Fair Share</div>
+    <span class="vinculum-header-badge">3 · OA</span>
+    <button class="vinculum-back-btn" id="readAloudBtn" onclick="toggleReadAloud()" aria-label="Read Aloud" title="Read instructions aloud">🔊 Read to Me</button>
+  </div>
+  <div class="vinculum-std-tags">
+    <span class="vinculum-std-tag">3.OA.2</span>
+    <span class="vinculum-std-tag">3.OA.3</span>
+  </div>
+</div>
+
+<!-- ═══ MODE TABS ═══ -->
+<div class="vinculum-mode-tabs">
+  <button class="vinculum-mode-tab active-explore" id="tabExplore" onclick="setMode('explore')">
+    <svg width="18" height="18" viewBox="0 0 48 48" fill="none"><path d="M4 24C4 24 12 12 24 12C36 12 44 24 44 24C44 24 36 36 24 36C12 36 4 24 4 24Z" stroke="currentColor" stroke-width="3" fill="none"/><circle cx="24" cy="24" r="7" stroke="currentColor" stroke-width="3" fill="none"/><circle cx="24" cy="24" r="3" fill="currentColor"/><line x1="24" y1="4" x2="24" y2="9" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" opacity="0.5"/><line x1="10" y1="8" x2="13" y2="12" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" opacity="0.5"/><line x1="38" y1="8" x2="35" y2="12" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" opacity="0.5"/></svg> Explore
+  </button>
+  <button class="vinculum-mode-tab" id="tabPractice" onclick="setMode('practice')">
+    <svg width="18" height="18" viewBox="0 0 48 48" fill="none"><circle cx="24" cy="24" r="20" stroke="currentColor" stroke-width="3" fill="none" opacity="0.3"/><circle cx="24" cy="24" r="20" stroke="currentColor" stroke-width="3" fill="none" stroke-dasharray="126" stroke-dashoffset="32" stroke-linecap="round"/><polyline points="16,24 22,32 34,16" stroke="currentColor" stroke-width="4" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg> Practice
+  </button>
+  <button class="vinculum-mode-tab" id="tabPlay" onclick="setMode('play')">
+    <svg width="18" height="18" viewBox="0 0 48 48" fill="none"><polygon points="28,4 12,28 22,28 18,44 36,18 26,18" fill="none" stroke="currentColor" stroke-width="3" stroke-linejoin="round"/><polygon points="27,8 15,27 23,27 20,40 34,19 26,19" fill="currentColor" opacity="0.15"/></svg> Play
+  </button>
+  <div class="vinculum-diff-selector">
+    <span class="vinculum-diff-label">Level</span>
+    <button class="vinculum-diff-btn active" id="diffE" data-diff="emergent" onclick="setDiff('emergent')">1</button>
+    <button class="vinculum-diff-btn" id="diffD" data-diff="developing" onclick="setDiff('developing')">2</button>
+    <button class="vinculum-diff-btn" id="diffS" data-diff="secure" onclick="setDiff('secure')">3</button>
+  </div>
+</div>
+
+<!-- ═══ MAIN ═══ -->
+<div class="main">
+  <div class="workspace" role="main" id="workspace"></div>
+  <div class="side-panel" id="sidePanel"></div>
+</div>
+
+<!-- ═══ FEEDBACK POPUP ═══ -->
+<div class="feedback" id="feedback"></div>
+
+<script src="../../vinculum-input.js"></script>
+<script>
+
+// ════════════════════════════════════════
+// STATE
+// ════════════════════════════════════════
+const S = {
+  mode: 'explore',
+  diff: 'emergent',
+  score: 0,
+  total: 0,
+  streak: 0,
+
+  // Explore mode
+  totalObjects: 12,
+  totalPlates: 3,
+  distributedObjects: {},  // map of objIdx -> plateIdx
+
+  // Practice mode
+  questionType: null,
+  targetDividend: 0,
+  targetDivisor: 0,
+  targetQuotient: 0,
+  userAnswer: null,
+
+  // Play mode
+  playScore: 0,
+  playStreak: 0,
+  playRound: 0,
+  playBest: 0,
+  gameEnded: false,
+  playDividend: 0,
+  playDivisor: 0
+};
+
+// ════════════════════════════════════════
+// HELPERS
+// ════════════════════════════════════════
+function getMaxDividend() {
+  return { emergent: 25, developing: 50, secure: 100 }[S.diff];
+}
+
+function getMaxDivisor() {
+  return { emergent: 5, developing: 10, secure: 12 }[S.diff];
+}
+
+function randInt(min, max) {
+  return Math.floor(Math.random() * (max - min + 1)) + min;
+}
+
+function speak(text) {
+  if (!window.speechSynthesis) return;
+  const u = new SpeechSynthesisUtterance(text);
+  u.rate = 0.9;
+  speechSynthesis.speak(u);
+}
+
+function toggleReadAloud() {
+  if (window.VinculumStories && VinculumStories.isReading()) {
+    VinculumStories.stopReading();
+    document.getElementById('readAloudBtn').textContent = '🔊 Read to Me';
+  } else {
+    const text = document.getElementById('sidePanel')?.textContent || 'Division Fair Share helps us understand sharing equally.';
+    if (window.VinculumStories) {
+      VinculumStories.readAloud(text, { rate: 0.85, onComplete: () => {
+        document.getElementById('readAloudBtn').textContent = '🔊 Read to Me';
+      }});
+      document.getElementById('readAloudBtn').textContent = '⏹ Stop';
+    }
+  }
+}
+
+// ════════════════════════════════════════
+// MODE SWITCHING
+// ════════════════════════════════════════
+function setMode(mode) {
+  S.mode = mode;
+  S.distributedObjects = {};
+
+  if (mode === 'practice' && S.total === 0) {
+    S.score = 0;
+    S.total = 0;
+    newPracticeQuestion();
+  }
+
+  if (mode === 'play' && S.playRound === 0) {
+    S.playScore = 0;
+    S.playStreak = 0;
+    S.playRound = 1;
+    S.playBest = 0;
+    S.gameEnded = false;
+  }
+
+  document.querySelectorAll('.vinculum-mode-tab').forEach(t => t.className = 'vinculum-mode-tab');
+  const tabEl = document.getElementById('tab' + mode.charAt(0).toUpperCase() + mode.slice(1));
+  if (tabEl) tabEl.className = 'vinculum-mode-tab active-' + mode;
+
+  render();
+}
+
+function setDiff(diff) {
+  S.diff = diff;
+  S.score = 0;
+  S.total = 0;
+  S.playScore = 0;
+  S.playStreak = 0;
+  S.playRound = 0;
+  S.playBest = 0;
+  S.distributedObjects = {};
+
+  document.querySelectorAll('.vinculum-diff-btn').forEach(b => b.classList.remove('active'));
+  document.getElementById('diff' + diff.charAt(0).toUpperCase()).classList.add('active');
+
+  setMode(S.mode);
+}
+
+// ════════════════════════════════════════
+// RENDER MAIN
+// ════════════════════════════════════════
+function render() {
+  const ws = document.getElementById('workspace');
+  const sp = document.getElementById('sidePanel');
+
+  if (S.mode === 'explore') renderExplore(ws, sp);
+  else if (S.mode === 'practice') renderPractice(ws, sp);
+  else renderPlay(ws, sp);
+}
+
+// ─── EXPLORE MODE ───
+function renderExplore(ws, sp) {
+  let html = '<div class="division-container">';
+
+  // Objects pile
+  html += '<div class="objects-pile" id="objectsPile">';
+  html += '<span class="pile-label">Objects</span>';
+
+  const colors = ['color-0', 'color-1', 'color-2', 'color-3', 'color-4'];
+  for (let i = 0; i < S.totalObjects; i++) {
+    const colorClass = colors[i % colors.length];
+    const isDistributed = i in S.distributedObjects;
+    if (!isDistributed) {
+      html += `<div class="object ${colorClass}" draggable="true" onclick="selectObject(${i})" ondragstart="dragStart(event, ${i})" ondragend="dragEnd(event)"></div>`;
+    }
+  }
+  html += '</div>';
+
+  // Distribution area
+  html += '<div class="distribution-area" ondragover="dragOver(event)" ondrop="dragDrop(event)">';
+
+  for (let p = 0; p < S.totalPlates; p++) {
+    const distributedCount = Object.keys(S.distributedObjects).length;
+    const isEven = S.totalObjects % S.totalPlates === 0 && distributedCount > 0;
+    const isUneven = !isEven && distributedCount > 0;
+
+    html += `<div class="plate ${isEven ? 'highlight-even' : (isUneven ? 'highlight-uneven' : '')}" ondrop="dropOnPlate(event, ${p})" ondragover="dragOver(event)">`;
+    html += `<span class="plate-label">Plate ${p + 1}</span>`;
+
+    // Show objects assigned to this plate
+    const colors = ['color-0', 'color-1', 'color-2', 'color-3', 'color-4'];
+    for (let i = 0; i < S.totalObjects; i++) {
+      if (S.distributedObjects[i] === p) {
+        const colorClass = colors[i % colors.length];
+        html += `<div class="object ${colorClass}" style="opacity:0.8;"></div>`;
+      }
+    }
+
+    html += '</div>';
+  }
+
+  html += '</div>';
+
+  // Equation
+  if (S.totalObjects > 0 && S.totalPlates > 0) {
+    const quotient = Math.floor(S.totalObjects / S.totalPlates);
+    const isEven = S.totalObjects % S.totalPlates === 0;
+    const eqClass = isEven ? 'visible' : '';
+
+    html += `<div class="equation-display ${eqClass}">
+      ${S.totalObjects} ÷ ${S.totalPlates} = ${quotient}
+    </div>`;
+
+    if (isEven) {
+      html += `<div style="font-size:13px;color:var(--muted);margin-top:8px;">
+        Check: ${S.totalPlates} × ${quotient} = ${S.totalObjects}
+      </div>`;
+    }
+  }
+
+  // Controls
+  html += '<div class="explore-controls">';
+  html += '<div class="control-group">';
+  html += '<span class="control-label">Objects:</span>';
+  html += `<button class="control-btn" onclick="changeObjects(-1)">−</button>`;
+  html += `<span class="control-value">${S.totalObjects}</span>`;
+  html += `<button class="control-btn" onclick="changeObjects(1)">+</button>`;
+  html += '</div>';
+
+  html += '<div class="control-group">';
+  html += '<span class="control-label">Plates:</span>';
+  html += `<button class="control-btn" onclick="changePlates(-1)">−</button>`;
+  html += `<span class="control-value">${S.totalPlates}</span>`;
+  html += `<button class="control-btn" onclick="changePlates(1)">+</button>`;
+  html += '</div>';
+
+  html += `<button class="play-btn primary" onclick="autoDistribute()">Auto Share</button>`;
+  html += `<button class="play-btn" onclick="clearDistribution()">Clear</button>`;
+  html += '</div>';
+
+  html += '</div>';
+  ws.innerHTML = html;
+
+  // Side panel
+  sp.innerHTML = `
+    <div class="panel-section">
+      <div class="panel-title">How It Works</div>
+      <div class="panel-text">
+        <strong>Drag objects onto plates</strong> to share equally.<br><br>
+        Try to give each plate the <strong>same number</strong> of objects.
+      </div>
+    </div>
+    <div class="panel-section">
+      <div class="panel-title">Key Concept</div>
+      <div class="panel-text">
+        Division means <strong>sharing equally</strong>. When we divide, we split objects into <strong>equal groups</strong>.
+      </div>
+    </div>
+    <div class="panel-section">
+      <div class="panel-title">Standards</div>
+      <div class="panel-text">
+        <strong>3.OA.2</strong> — Division as equal sharing<br><br>
+        <strong>3.OA.3</strong> — Division as measurement
+      </div>
+    </div>
+  `;
+}
+
+function changeObjects(delta) {
+  S.totalObjects = Math.max(1, Math.min(30, S.totalObjects + delta));
+  S.distributedObjects = {};
+  render();
+}
+
+function changePlates(delta) {
+  S.totalPlates = Math.max(2, Math.min(6, S.totalPlates + delta));
+  S.distributedObjects = {};
+  render();
+}
+
+function dragStart(event, objIdx) {
+  event.dataTransfer.effectAllowed = 'move';
+  event.dataTransfer.setData('objIdx', objIdx);
+}
+
+function dragEnd(event) {}
+
+function dragOver(event) {
+  event.preventDefault();
+  event.dataTransfer.dropEffect = 'move';
+}
+
+function dragDrop(event) {
+  event.preventDefault();
+}
+
+function dropOnPlate(event, plateIdx) {
+  event.preventDefault();
+  const objIdx = parseInt(event.dataTransfer.getData('objIdx'));
+  if (!(objIdx in S.distributedObjects)) {
+    S.distributedObjects[objIdx] = plateIdx;
+  }
+  render();
+}
+
+function selectObject(idx) {
+  if (!(idx in S.distributedObjects)) {
+    // Round-robin: assign to next plate in order
+    const plateCounts = {};
+    for (let p = 0; p < S.totalPlates; p++) plateCounts[p] = 0;
+    for (const key in S.distributedObjects) {
+      plateCounts[S.distributedObjects[key]]++;
+    }
+    let minPlate = 0, minCount = Infinity;
+    for (let p = 0; p < S.totalPlates; p++) {
+      if (plateCounts[p] < minCount) { minCount = plateCounts[p]; minPlate = p; }
+    }
+    S.distributedObjects[idx] = minPlate;
+  }
+  render();
+}
+
+function autoDistribute() {
+  S.distributedObjects = {};
+  for (let i = 0; i < S.totalObjects; i++) {
+    S.distributedObjects[i] = i % S.totalPlates;
+  }
+  render();
+}
+
+function clearDistribution() {
+  S.distributedObjects = {};
+  render();
+}
+
+// ─── PRACTICE MODE ───
+function renderPractice(ws, sp) {
+  let html = '<div class="division-container">';
+
+  html += `<div style="text-align:center;margin-bottom:12px;">
+    <div style="font-size:14px;color:var(--muted);">⭐ ${S.score}/${S.total}</div>
+  </div>`;
+
+  // Visual representation
+  if (S.targetDividend > 0 && S.targetDivisor > 0) {
+    const quotient = Math.floor(S.targetDividend / S.targetDivisor);
+
+    html += '<div class="objects-pile" style="margin-bottom:0;">';
+    const colors = ['color-0', 'color-1', 'color-2', 'color-3', 'color-4'];
+    for (let i = 0; i < S.targetDividend; i++) {
+      const colorClass = colors[i % colors.length];
+      html += `<div class="object ${colorClass}"></div>`;
+    }
+    html += '</div>';
+
+    html += '<div style="font-size:12px;color:var(--muted);margin:8px 0;">↓ Distribute equally ↓</div>';
+
+    html += '<div class="distribution-area">';
+    for (let p = 0; p < S.targetDivisor; p++) {
+      html += `<div class="plate highlight-even" style="opacity:0.7;">`;
+      for (let i = 0; i < quotient; i++) {
+        const colorClass = colors[i % colors.length];
+        html += `<div class="object ${colorClass}" style="opacity:0.6;"></div>`;
+      }
+      html += '</div>';
+    }
+    html += '</div>';
+  }
+
+  // Question
+  html += '<div class="practice-question">';
+
+  if (S.questionType === 'share') {
+    html += `<div class="question-text">Share ${S.targetDividend} equally among ${S.targetDivisor} groups.<br>How many in each group?</div>
+             <div class="answer-grid" id="answerGrid"></div>`;
+  } else if (S.questionType === 'groups') {
+    html += `<div class="question-text">You have ${S.targetDividend} objects.<br>Put ${S.targetQuotient} in each group.<br>How many groups?</div>
+             <div class="answer-grid" id="answerGrid"></div>`;
+  } else if (S.questionType === 'equation') {
+    html += `<div class="question-text">Write the division:</div>
+             <div style="margin-top:16px;display:flex;gap:8px;justify-content:center;align-items:center;">
+               <input type="number" id="divDividend" class="number-input" placeholder="dividend" min="1" max="100" value="${S.targetDividend || ''}" />
+               <span style="font-size:20px;font-weight:700;">÷</span>
+               <input type="number" id="divDivisor" class="number-input" placeholder="divisor" min="1" max="12" value="${S.targetDivisor || ''}" />
+               <span style="font-size:20px;font-weight:700;">=</span>
+               <input type="number" id="divQuotient" class="number-input" placeholder="quotient" min="1" max="50" value="${S.targetQuotient || ''}" />
+               <button class="play-btn primary" style="padding:10px 16px;" onclick="submitEquation()">✓</button>
+             </div>`;
+  } else if (S.questionType === 'multiply') {
+    html += `<div class="question-text">${S.targetDivisor} × __ = ${S.targetDividend}</div>
+             <div class="question-text" style="font-size:13px;color:var(--muted);margin-top:8px;">Connect multiplication to division</div>
+             <div class="answer-grid" id="answerGrid"></div>`;
+  }
+
+  html += '</div>';
+  html += '</div>';
+
+  ws.innerHTML = html;
+
+  // Fill answer grid
+  if (S.questionType !== 'equation') {
+    const answerGrid = document.getElementById('answerGrid');
+    if (answerGrid) {
+      const answers = [];
+      if (S.questionType === 'share') {
+        const correct = Math.floor(S.targetDividend / S.targetDivisor);
+        answers.push(correct);
+        for (let i = 0; i < 4; i++) {
+          let wrong = randInt(1, 10);
+          while (wrong === correct || answers.includes(wrong)) {
+            wrong = randInt(1, 10);
+          }
+          answers.push(wrong);
+        }
+      } else if (S.questionType === 'groups') {
+        const correct = Math.floor(S.targetDividend / S.targetQuotient);
+        answers.push(correct);
+        for (let i = 0; i < 4; i++) {
+          let wrong = randInt(1, 10);
+          while (wrong === correct || answers.includes(wrong)) {
+            wrong = randInt(1, 10);
+          }
+          answers.push(wrong);
+        }
+      } else if (S.questionType === 'multiply') {
+        const correct = S.targetQuotient;
+        answers.push(correct);
+        for (let i = 0; i < 4; i++) {
+          let wrong = randInt(1, 10);
+          while (wrong === correct || answers.includes(wrong)) {
+            wrong = randInt(1, 10);
+          }
+          answers.push(wrong);
+        }
+      }
+
+      answers.sort(() => Math.random() - 0.5);
+
+      answers.forEach(ans => {
+        const btn = document.createElement('button');
+        btn.className = 'answer-btn';
+        btn.textContent = ans;
+        btn.onclick = () => submitPracticeAnswer(ans);
+        answerGrid.appendChild(btn);
+      });
+    }
+  }
+
+  // Side panel
+  sp.innerHTML = `
+    <div class="score-display">
+      <div class="score-value">${S.score}/${S.total}</div>
+      <div class="score-label">Score</div>
+    </div>
+    <div class="panel-section">
+      <div class="panel-title">Instructions</div>
+      <div class="panel-text">
+        Look at the <strong>visual</strong> then answer the question.
+      </div>
+    </div>
+    <div class="panel-section">
+      <div class="panel-title">Key Skill</div>
+      <div class="panel-text">
+        Understanding that <strong>division = fair sharing</strong> and connecting it to multiplication.
+      </div>
+    </div>
+  `;
+}
+
+function newPracticeQuestion() {
+  S.total = (S.total || 0) + 1;
+  const maxDiv = getMaxDividend();
+  const maxDis = getMaxDivisor();
+
+  const types = ['share', 'groups', 'equation'];
+  if (S.diff !== 'emergent') types.push('multiply');
+
+  S.questionType = types[Math.floor(Math.random() * types.length)];
+
+  if (S.diff === 'emergent') {
+    S.questionType = 'share';
+  }
+
+  // Generate a division problem with no remainder for emergent/developing
+  let dividend, divisor, quotient;
+  do {
+    divisor = randInt(2, Math.min(maxDis, 6));
+    quotient = randInt(2, Math.min(12, Math.floor(maxDiv / divisor)));
+    dividend = divisor * quotient;
+  } while (dividend > maxDiv);
+
+  S.targetDividend = dividend;
+  S.targetDivisor = divisor;
+  S.targetQuotient = quotient;
+  S.userAnswer = null;
+}
+
+function submitPracticeAnswer(ans) {
+  let correct = false;
+
+  if (S.questionType === 'share') {
+    correct = ans === S.targetQuotient;
+  } else if (S.questionType === 'groups') {
+    correct = ans === Math.floor(S.targetDividend / S.targetQuotient);
+  } else if (S.questionType === 'multiply') {
+    correct = ans === S.targetQuotient;
+  }
+
+  if (correct) {
+    showFB('✓ Yes!', 'correct');
+    S.score++;
+    setTimeout(() => {
+      newPracticeQuestion();
+      render();
+    }, 800);
+  } else {
+    showFB('✗ Try again', 'incorrect');
+  }
+}
+
+function submitEquation() {
+  const div = parseInt(document.getElementById('divDividend')?.value || 0);
+  const dis = parseInt(document.getElementById('divDivisor')?.value || 0);
+  const quo = parseInt(document.getElementById('divQuotient')?.value || 0);
+
+  if (div === S.targetDividend && dis === S.targetDivisor && quo === S.targetQuotient) {
+    showFB('✓ Correct!', 'correct');
+    S.score++;
+    setTimeout(() => {
+      newPracticeQuestion();
+      render();
+    }, 800);
+  } else {
+    showFB('✗ Check again', 'incorrect');
+  }
+}
+
+// ─── PLAY MODE ───
+function renderPlay(ws, sp) {
+  let html = '<div class="division-container">';
+
+  if (S.gameEnded) {
+    html += `<div style="text-align:center;padding:40px;font-size:32px;font-weight:800;">
+      Game Over!<br>
+      <div style="font-size:48px;margin:20px 0;background:var(--grad);-webkit-background-clip:text;-webkit-text-fill-color:transparent;">
+        ${S.playScore}
+      </div>
+      <button class="play-btn primary" onclick="playAgain()" style="margin-top:20px;">▶ Play Again</button>
+    </div>`;
+  } else {
+    html += `<div class="game-info">
+      <div class="info-item">
+        <span class="info-label">Round</span>
+        <span>${S.playRound} / 10</span>
+      </div>
+      <div class="info-item">
+        <span class="info-label">⭐ Score</span>
+        <span>${S.playScore}</span>
+      </div>
+    </div>`;
+
+    if (S.playDividend > 0 && S.playDivisor > 0) {
+      const quotient = Math.floor(S.playDividend / S.playDivisor);
+
+      html += '<div class="objects-pile">';
+      const colors = ['color-0', 'color-1', 'color-2', 'color-3', 'color-4'];
+      for (let i = 0; i < S.playDividend; i++) {
+        const colorClass = colors[i % colors.length];
+        html += `<div class="object ${colorClass}"></div>`;
+      }
+      html += '</div>';
+
+      html += `<div class="practice-question">
+        <div class="question-text">Share ${S.playDividend} items among ${S.playDivisor} groups.<br>How many per group?</div>
+        <div id="vi-play-container"></div>
+        <button class="play-btn primary" style="margin-top:12px;" onclick="submitPlayAnswer()">Submit</button>
+      </div>`;
+    }
+  }
+
+  html += '</div>';
+  ws.innerHTML = html;
+
+  if (!S.gameEnded) {
+    setTimeout(() => {
+      const correct = Math.floor(S.playDividend / S.playDivisor);
+      var vi = VinculumInput.create(document.getElementById('vi-play-container'), {
+        type: 'auto',
+        answer: correct,
+        onSubmit: function(value) { submitPlayAnswer(value); }
+      });
+    }, 50);
+  }
+
+  // Side panel
+  sp.innerHTML = `
+    <div class="score-display">
+      <div class="score-value">${S.playScore}</div>
+      <div class="score-label">Score</div>
+    </div>
+    <div class="score-display" style="background:transparent; padding:8px;">
+      <div style="font-size:18px; font-weight:700; color:var(--yellow);">🔥 ${S.playStreak}</div>
+      <div class="score-label">Streak</div>
+      <div class="streak-bar"><div class="streak-fill" style="width:${Math.min(S.playStreak * 10, 100)}%;"></div></div>
+    </div>
+    <div class="panel-section">
+      <div class="panel-title">Fair Share Challenge</div>
+      <div class="panel-text">
+        <strong>Divide</strong> the objects equally.<br><br>
+        Answer as many as you can!
+      </div>
+    </div>
+    <div class="panel-section">
+      <div class="panel-title">Best Streak</div>
+      <div class="panel-text" style="font-size:24px; font-weight:800; color:var(--purple);">🏆 ${S.playBest}</div>
+    </div>
+  `;
+}
+
+function newPlayRound() {
+  const maxDiv = getMaxDividend();
+  const maxDis = getMaxDivisor();
+
+  let dividend, divisor;
+  do {
+    divisor = randInt(2, maxDis);
+    dividend = randInt(divisor, maxDiv);
+  } while (dividend % divisor !== 0 && S.diff === 'emergent');
+
+  S.playDividend = dividend;
+  S.playDivisor = divisor;
+}
+
+function submitPlayAnswer(value) {
+  const correct = Math.floor(S.playDividend / S.playDivisor);
+  const ans = value !== undefined ? value : parseInt(document.getElementById('playAnswer')?.value || 0);
+
+  if (ans === correct) {
+    showFB('✓ Right!', 'correct');
+    S.playScore += 10 + (S.playStreak * 2);
+    S.playStreak++;
+    if (S.playStreak > S.playBest) S.playBest = S.playStreak;
+
+    S.playRound++;
+    if (S.playRound > 10) {
+      setTimeout(() => {
+        S.gameEnded = true;
+        render();
+      }, 800);
+    } else {
+      newPlayRound();
+      setTimeout(() => render(), 800);
+    }
+  } else {
+    showFB('✗ Try again', 'incorrect');
+    S.playStreak = 0;
+  }
+}
+
+function playAgain() {
+  S.playScore = 0;
+  S.playStreak = 0;
+  S.playRound = 1;
+  S.gameEnded = false;
+  newPlayRound();
+  render();
+}
+
+// ════════════════════════════════════════
+// INIT
+// ════════════════════════════════════════
+newPlayRound();
+render();
+</script>
+<script src="../../vinculum-core.js"></script>
+<script src="../../vinculum-data.js"></script>
+<script src="../../vinculum-adaptive-hook.js"></script>
+<script src="../../vinculum-3reads.js"></script>
+<script src="../../vinculum-stories.js"></script>
+<script src="../../vinculum-feedback.js"></script>
+  <script src="../../vinculum-guide.js"></script>
+<script src="../../vinculum-identity.js"></script>
+<script src="../../vinculum-indigenous.js"></script>
+<script src="../../vinculum-dashboard.js"></script>
+<!-- Foundation loaded from vinculum-core.js -->
+</body>
+</html>

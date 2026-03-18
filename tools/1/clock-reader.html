@@ -1,0 +1,1202 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>VINCULUM — Clock Reader</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="../../vinculum-core.css">
+<style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        /* Theme system loaded from vinculum-core.css */
+.vinculum-rtm-btn .rtm-icon{font-size:14px;}
+
+/* ═══ FOCUS VISIBLE (Keyboard Navigation) ═══ */
+*:focus-visible {
+  outline:2px solid var(--cyan);outline-offset:2px;border-radius:4px;
+}
+.sr-only {
+  position:absolute;width:1px;height:1px;padding:0;margin:-1px;
+  overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0;
+}
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            height: 100vh;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+        }
+
+        /* HEADER */
+        
+
+
+
+        
+
+        .badge {
+            background: var(--card2);
+            border: 1px solid var(--border);
+            padding: 4px 12px;
+            border-radius: 6px;
+            font-size: 11px;
+            font-weight: 600;
+            color: var(--cyan);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .tags {
+            display: flex;
+            gap: 8px;
+        }
+
+        .tag {
+            background: rgba(0, 212, 255, 0.1);
+            border: 1px solid var(--cyan);
+            padding: 4px 10px;
+            border-radius: 4px;
+            font-size: 11px;
+            color: var(--cyan);
+            font-weight: 500;
+        }
+
+        /* TABS & CONTROLS */
+        .controls {
+            padding: 16px 32px;
+            border-bottom: 1px solid var(--border);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-shrink: 0;
+        }
+
+        .tab-container {
+            display: flex;
+            gap: 8px;
+            background: var(--card);
+            padding: 6px;
+            border-radius: 12px;
+        }
+
+        .tab {
+            flex: 1;
+            padding: 10px 16px;
+            border: none;
+            background: transparent;
+            color: var(--text2);
+            cursor: pointer;
+            font-family: 'Inter', sans-serif;
+            font-size: 14px;
+            font-weight: 500;
+            border-radius: 8px;
+            transition: all 0.2s;
+        }
+
+        .tab.active {
+            background: var(--card2);
+            color: var(--text);
+            box-shadow: 0 4px 12px rgba(0, 212, 255, 0.2);
+        }
+
+        .difficulty-container {
+            display: flex;
+            gap: 8px;
+        }
+
+        
+
+        
+
+        /* MAIN CONTENT */
+        .main {
+            flex: 1;
+            display: flex;
+            gap: 0;
+            overflow: hidden;
+        }
+
+        .workspace {
+            flex: 1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 40px;
+            position: relative;
+        }
+
+        .side-panel {
+            width: 280px;
+            background: var(--card);
+            border-left: 1px solid var(--border);
+            padding: 24px;
+            overflow-y: auto;
+        }
+
+        /* CLOCK SVG */
+        .clock-container {
+            position: relative;
+            width: 300px;
+            height: 300px;
+        }
+
+        svg {
+            width: 100%;
+            height: 100%;
+            filter: drop-shadow(0 8px 24px rgba(0, 0, 0, 0.3));
+        }
+
+        .clock-face {
+            fill: var(--card2);
+            stroke: var(--border);
+            stroke-width: 2;
+        }
+
+        .hour-mark {
+            stroke: var(--muted);
+            stroke-width: 1;
+        }
+
+        .hour-number {
+            font-family: 'Inter', sans-serif;
+            font-size: 20px;
+            font-weight: 600;
+            fill: var(--cyan);
+            text-anchor: middle;
+            dominant-baseline: middle;
+        }
+
+        .hour-hand {
+            fill: none;
+            stroke: var(--cyan);
+            stroke-width: 6;
+            stroke-linecap: round;
+            cursor: grab;
+            transition: all 0.05s;
+        }
+
+        .hour-hand:active {
+            cursor: grabbing;
+            filter: drop-shadow(0 0 8px rgba(0, 212, 255, 0.6));
+        }
+
+        .minute-hand {
+            fill: none;
+            stroke: var(--pink);
+            stroke-width: 4;
+            stroke-linecap: round;
+            cursor: grab;
+            transition: all 0.05s;
+        }
+
+        .minute-hand:active {
+            cursor: grabbing;
+            filter: drop-shadow(0 0 8px rgba(255, 59, 139, 0.6));
+        }
+
+        .center-dot {
+            fill: url(#centerGrad);
+            filter: drop-shadow(0 2px 6px rgba(0, 0, 0, 0.4));
+        }
+
+        /* DIGITAL DISPLAY */
+        .digital-display {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 64px;
+            font-weight: 600;
+            text-align: center;
+            margin-top: 32px;
+            color: var(--cyan);
+            letter-spacing: 2px;
+        }
+
+        /* CALLOUT LABELS */
+        .callouts-container {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+        }
+
+        .callout {
+            position: absolute;
+            font-size: 12px;
+            font-weight: 600;
+            padding: 6px 12px;
+            border-radius: 4px;
+            white-space: nowrap;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .callout.hour {
+            background: rgba(0, 212, 255, 0.15);
+            border: 1px solid var(--cyan);
+            color: var(--cyan);
+            top: -50px;
+            left: 50%;
+            transform: translateX(-50%);
+        }
+
+        .callout.minute {
+            background: rgba(255, 59, 139, 0.15);
+            border: 1px solid var(--pink);
+            color: var(--pink);
+            bottom: -50px;
+            left: 50%;
+            transform: translateX(-50%);
+        }
+
+        /* PRESET BUTTONS */
+        .preset-buttons {
+            display: grid;
+            grid-template-columns: repeat(6, 1fr);
+            gap: 8px;
+            margin-top: 32px;
+            width: 100%;
+            max-width: 400px;
+            margin-left: auto;
+            margin-right: auto;
+        }
+
+        .preset-btn {
+            padding: 8px 12px;
+            background: var(--card2);
+            border: 1px solid var(--border);
+            color: var(--text2);
+            cursor: pointer;
+            border-radius: 6px;
+            font-size: 12px;
+            font-weight: 500;
+            font-family: 'JetBrains Mono', monospace;
+            transition: all 0.2s;
+        }
+
+        .preset-btn:hover {
+            background: var(--card);
+            border-color: var(--cyan);
+            color: var(--cyan);
+            transform: translateY(-2px);
+        }
+
+        /* PRACTICE MODE */
+        .practice-container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 32px;
+        }
+
+        .question {
+            font-size: 18px;
+            font-weight: 600;
+            color: var(--text);
+            text-align: center;
+        }
+
+        .options {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 12px;
+            margin-top: 24px;
+        }
+
+        .option {
+            padding: 16px 24px;
+            background: var(--card2);
+            border: 2px solid var(--border);
+            color: var(--text);
+            cursor: pointer;
+            border-radius: 8px;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 20px;
+            font-weight: 600;
+            transition: all 0.2s;
+        }
+
+        .option:hover {
+            border-color: var(--cyan);
+            background: var(--card);
+        }
+
+        .option.selected {
+            border-color: var(--cyan);
+            background: rgba(0, 212, 255, 0.1);
+        }
+
+        .option.correct {
+            border-color: var(--green);
+            background: rgba(0, 230, 118, 0.2);
+            animation: glow 0.6s ease-out;
+        }
+
+        .option.wrong {
+            border-color: var(--pink);
+            background: rgba(255, 59, 139, 0.15);
+            animation: shake 0.4s ease-in-out;
+        }
+
+        .check-btn {
+            padding: 12px 32px;
+            background: var(--grad);
+            border: none;
+            color: var(--bg);
+            cursor: pointer;
+            border-radius: 8px;
+            font-weight: 600;
+            font-size: 16px;
+            margin-top: 20px;
+            transition: all 0.2s;
+        }
+
+        .check-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 24px rgba(0, 212, 255, 0.3);
+        }
+
+        .check-btn:active {
+            transform: translateY(0);
+        }
+
+        .check-btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        .feedback {
+            font-size: 18px;
+            font-weight: 600;
+            margin-top: 12px;
+            min-height: 24px;
+        }
+
+        .feedback.correct {
+            color: var(--green);
+        }
+
+        .feedback.wrong {
+            color: var(--pink);
+        }
+
+        /* PLAY MODE */
+        .play-container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 24px;
+        }
+
+        .score-display {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 48px;
+            font-weight: 600;
+            color: var(--yellow);
+        }
+
+        .streak-display {
+            font-size: 16px;
+            color: var(--green);
+            font-weight: 600;
+        }
+
+        .timer {
+            width: 120px;
+            height: 120px;
+            border-radius: 50%;
+            background: var(--card2);
+            border: 3px solid var(--border);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 48px;
+            font-weight: 600;
+            color: var(--cyan);
+            margin-top: 16px;
+        }
+
+        .timer.warning {
+            border-color: var(--yellow);
+            color: var(--yellow);
+        }
+
+        .timer.danger {
+            border-color: var(--pink);
+            color: var(--pink);
+            animation: pulse 0.5s infinite;
+        }
+
+        /* SIDE PANEL */
+        .panel-section {
+            margin-bottom: 28px;
+        }
+
+        .panel-title {
+            font-size: 14px;
+            font-weight: 700;
+            color: var(--cyan);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-bottom: 12px;
+        }
+
+        .vocab-list {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .vocab-item {
+            padding: 10px;
+            background: var(--card2);
+            border-radius: 6px;
+            border: 1px solid var(--border);
+            font-size: 13px;
+            color: var(--text2);
+        }
+
+        .vocab-label {
+            font-weight: 600;
+            color: var(--text);
+            display: block;
+            margin-bottom: 4px;
+        }
+
+        .hint {
+            background: rgba(0, 212, 255, 0.1);
+            border: 1px solid var(--cyan);
+            padding: 12px;
+            border-radius: 6px;
+            font-size: 13px;
+            color: var(--text2);
+            line-height: 1.5;
+            margin-top: 16px;
+        }
+
+        /* ANIMATIONS */
+        @keyframes glow {
+            0% {
+                box-shadow: 0 0 20px rgba(0, 230, 118, 0.6);
+            }
+            100% {
+                box-shadow: 0 0 0px rgba(0, 230, 118, 0);
+            }
+        }
+
+        @keyframes shake {
+            0%, 100% { transform: translateX(0); }
+            25% { transform: translateX(-8px); }
+            75% { transform: translateX(8px); }
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.6; }
+        }
+
+        .clock-correct {
+            animation: glow 0.6s ease-out;
+        }
+
+        .clock-wrong {
+            animation: shake 0.4s ease-in-out;
+        }
+
+        /* SCROLLBAR */
+        .side-panel::-webkit-scrollbar {
+            width: 6px;
+        }
+
+        .side-panel::-webkit-scrollbar-track {
+            background: transparent;
+        }
+
+        .side-panel::-webkit-scrollbar-thumb {
+            background: var(--border);
+            border-radius: 3px;
+        }
+
+        .side-panel::-webkit-scrollbar-thumb:hover {
+            background: var(--muted);
+        }
+    </style>
+</head>
+<body>
+    <!-- HEADER -->
+    <div class="vinculum-header">
+        <div class="vinculum-header-left">
+      <a class="vinculum-back-btn" href="../../VINCULUM-Hub.html" style="text-decoration:none;">◀ Hub</a>
+      <div class="vinculum-header-title"><span>VINCULUM</span> Clock Reader</div>
+      <span class="vinculum-header-badge">1.MD</span>
+    </div>
+    <div class="vinculum-header-title">
+            <span>VINCULUM — Clock Reader</span>
+            <div class="badge">1.MD</div>
+        </div>
+        <div class="tags">
+            <div class="tag">1.MD.B.3</div>
+        </div>
+    </div>
+
+    <!-- CONTROLS -->
+    <div class="controls">
+        <div class="tab-container">
+            <button class="tab active" data-mode="explore">Explore</button>
+            <button class="tab" data-mode="practice">Practice</button>
+            <button class="tab" data-mode="play">Play</button>
+        </div>
+        <div class="difficulty-container" id="difficultyContainer">
+            <button class="vinculum-diff-btn" data-difficulty="emergent">Emergent</button>
+            <button class="vinculum-diff-btn" data-difficulty="proficient">Proficient</button>
+            <button class="vinculum-diff-btn" data-difficulty="advanced">Advanced</button>
+        </div>
+    </div>
+
+    <!-- MAIN CONTENT -->
+    <div class="main">
+        <div class="workspace" role="main" id="workspace"></div>
+        <div class="side-panel" id="sidePanel"></div>
+    </div>
+
+<div class="feedback" id="feedback"></div>
+        <script src="../../vinculum-input.js"></script>
+    <script>
+        // STATE MANAGEMENT
+        const S = {
+            mode: 'explore',
+            difficulty: 'emergent',
+            hour: 3,
+            minute: 0,
+            draggingHand: null,
+            dragStartAngle: 0,
+
+            // Practice mode
+            practiceQuestion: null,
+            practiceClockTime: null,
+            selectedOption: null,
+            feedbackMsg: '',
+            practiceChecked: false,
+
+            // Play mode
+            playScore: 0,
+            playStreak: 0,
+            playTimer: 6,
+            playRunning: false,
+            playQuestion: null,
+            playClockTime: null,
+        };
+
+        // ANGLE UTILITIES
+        const angleFromTime = (h, m) => {
+            const hourAngle = ((h % 12) * 30 + m * 0.5) % 360;
+            const minuteAngle = (m * 6) % 360;
+            return { hour: hourAngle, minute: minuteAngle };
+        };
+
+        const timeFromAngle = (hourAngle, minuteAngle) => {
+            let h = Math.round((hourAngle % 360) / 30) % 12 || 12;
+            let m = Math.round((minuteAngle % 360) / 6) % 60;
+            if (m !== 0 && m !== 30) m = m < 30 ? 0 : 30;
+            return { h, m };
+        };
+
+        const getAngleFromPoint = (cx, cy, px, py) => {
+            let angle = Math.atan2(py - cy, px - cx) * (180 / Math.PI) - 90;
+            return (angle + 360) % 360;
+        };
+
+        // CLOCK RENDERING
+        const renderClock = () => {
+            const angles = angleFromTime(S.hour, S.minute);
+            const hourAngle = angles.hour;
+            const minuteAngle = angles.minute;
+
+            const hourX = 150 + 50 * Math.sin((hourAngle * Math.PI) / 180);
+            const hourY = 150 - 50 * Math.cos((hourAngle * Math.PI) / 180);
+            const minuteX = 150 + 85 * Math.sin((minuteAngle * Math.PI) / 180);
+            const minuteY = 150 - 85 * Math.cos((minuteAngle * Math.PI) / 180);
+
+            return `
+                <svg viewBox="0 0 300 300">
+                    <defs>
+                        <radialGradient id="centerGrad" cx="50%" cy="50%" r="50%">
+                            <stop offset="0%" style="stop-color:${getComputedStyle(document.documentElement).getPropertyValue('--cyan')};stop-opacity:0.8" />
+                            <stop offset="100%" style="stop-color:${getComputedStyle(document.documentElement).getPropertyValue('--purple')};stop-opacity:0.4" />
+                        </radialGradient>
+                    </defs>
+                    <circle class="clock-face" cx="150" cy="150" r="140" />
+
+                    <!-- Hour marks -->
+                    ${Array.from({ length: 12 }, (_, i) => {
+                        const angle = (i * 30 * Math.PI) / 180;
+                        const x1 = 150 + 130 * Math.sin(angle);
+                        const y1 = 150 - 130 * Math.cos(angle);
+                        const x2 = 150 + 120 * Math.sin(angle);
+                        const y2 = 150 - 120 * Math.cos(angle);
+                        return `<line class="hour-mark" x1="${x1}" y1="${y1}" x2="${x2}" y2="${y2}" />`;
+                    }).join('')}
+
+                    <!-- Hour numbers -->
+                    ${Array.from({ length: 12 }, (_, i) => {
+                        const num = i === 0 ? 12 : i;
+                        const angle = ((i * 30 - 90) * Math.PI) / 180;
+                        const x = 150 + 105 * Math.cos(angle);
+                        const y = 150 + 105 * Math.sin(angle);
+                        return `<text class="hour-number" x="${x}" y="${y}">${num}</text>`;
+                    }).join('')}
+
+                    <!-- Hour hand -->
+                    <line class="hour-hand" x1="150" y1="150" x2="${hourX}" y2="${hourY}"
+                          data-hand="hour" data-angle="${hourAngle}" />
+
+                    <!-- Minute hand -->
+                    <line class="minute-hand" x1="150" y1="150" x2="${minuteX}" y2="${minuteY}"
+                          data-hand="minute" data-angle="${minuteAngle}" />
+
+                    <!-- Center dot -->
+                    <circle class="center-dot" cx="150" cy="150" r="8" />
+                </svg>
+            `;
+        };
+
+        // DIGITAL TIME DISPLAY
+        const formatTime = (h, m) => {
+            h = h || 12;
+            return `${h}:${m === 0 ? '00' : '30'}`;
+        };
+
+        // EXPLORE MODE
+        const renderExplore = () => {
+            const timeStr = formatTime(S.hour, S.minute);
+            return `
+                <div class="practice-container" style="width: 100%;">
+                    <div class="callouts-container">
+                        <div class="callout hour">Short hand = HOUR →</div>
+                        <div class="callout minute">← Long hand = MINUTES</div>
+                    </div>
+                    <div class="clock-container">
+                        ${renderClock()}
+                    </div>
+                    <div class="digital-display">${timeStr}</div>
+                    <div class="preset-buttons">
+                        ${Array.from({ length: 12 }, (_, i) => {
+                            const h = i + 1;
+                            return `
+                                <button class="preset-btn" data-hour="${h}" data-minute="0">${h}:00</button>
+                            `;
+                        }).join('')}
+                    </div>
+                    <div class="preset-buttons" style="margin-top: 8px;">
+                        ${Array.from({ length: 12 }, (_, i) => {
+                            const h = i + 1;
+                            return `
+                                <button class="preset-btn" data-hour="${h}" data-minute="30">${h}:30</button>
+                            `;
+                        }).join('')}
+                    </div>
+                </div>
+            `;
+        };
+
+        // GENERATE PRACTICE QUESTIONS
+        const generatePracticeQuestion = () => {
+            const hours = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12];
+            const minutes = S.difficulty === 'emergent' ? [0] : [0, 30];
+
+            const h = hours[Math.floor(Math.random() * hours.length)];
+            const m = minutes[Math.floor(Math.random() * minutes.length)];
+
+            const questionType = Math.random() > 0.5 ? 'read' : 'set';
+
+            return {
+                type: questionType,
+                h, m,
+                options: generateOptions(h, m)
+            };
+        };
+
+        const generateOptions = (h, m) => {
+            const correct = { h, m };
+            const options = [correct];
+
+            while (options.length < 4) {
+                const randH = Math.floor(Math.random() * 12) + 1;
+                const randM = [0, 30][Math.floor(Math.random() * 2)];
+                if (!options.find(opt => opt.h === randH && opt.m === randM)) {
+                    options.push({ h: randH, m: randM });
+                }
+            }
+
+            return options.sort(() => Math.random() - 0.5);
+        };
+
+        const renderPractice = () => {
+            if (!S.practiceQuestion) {
+                S.practiceQuestion = generatePracticeQuestion();
+                S.practiceClockTime = { h: S.practiceQuestion.h, m: S.practiceQuestion.m };
+                S.selectedOption = null;
+                S.feedbackMsg = '';
+                S.practiceChecked = false;
+            }
+
+            const q = S.practiceQuestion;
+            const isReadMode = q.type === 'read';
+            const timeStr = formatTime(S.practiceClockTime.h, S.practiceClockTime.m);
+
+            return `
+                <div class="practice-container" style="width: 100%;">
+                    <div class="question">${isReadMode ? 'What time is it?' : 'Set the clock to ' + timeStr}</div>
+
+                    <div class="clock-container" style="margin: 20px auto;">
+                        <svg viewBox="0 0 300 300" style="width: 250px; height: 250px;">
+                            <defs>
+                                <radialGradient id="centerGrad2" cx="50%" cy="50%" r="50%">
+                                    <stop offset="0%" style="stop-color:#00d4ff;stop-opacity:0.8" />
+                                    <stop offset="100%" style="stop-color:#b388ff;stop-opacity:0.4" />
+                                </radialGradient>
+                            </defs>
+                            <circle class="clock-face" cx="150" cy="150" r="140" />
+                            ${Array.from({ length: 12 }, (_, i) => {
+                                const angle = (i * 30 * Math.PI) / 180;
+                                const x1 = 150 + 130 * Math.sin(angle);
+                                const y1 = 150 - 130 * Math.cos(angle);
+                                const x2 = 150 + 120 * Math.sin(angle);
+                                const y2 = 150 - 120 * Math.cos(angle);
+                                return `<line class="hour-mark" x1="${x1}" y1="${y1}" x2="${x2}" y2="${y2}" />`;
+                            }).join('')}
+                            ${Array.from({ length: 12 }, (_, i) => {
+                                const num = i === 0 ? 12 : i;
+                                const angle = ((i * 30 - 90) * Math.PI) / 180;
+                                const x = 150 + 105 * Math.cos(angle);
+                                const y = 150 + 105 * Math.sin(angle);
+                                return `<text class="hour-number" x="${x}" y="${y}">${num}</text>`;
+                            }).join('')}
+                            ${renderPracticeHands(S.practiceClockTime.h, S.practiceClockTime.m)}
+                            <circle class="center-dot" cx="150" cy="150" r="8" />
+                        </svg>
+                    </div>
+
+                    ${isReadMode ? `
+                        <div class="options">
+                            ${q.options.map((opt, idx) => {
+                                const optStr = formatTime(opt.h, opt.m);
+                                const isSelected = S.selectedOption === idx;
+                                const isCorrect = S.practiceChecked && opt.h === q.h && opt.m === q.m;
+                                const isWrong = S.practiceChecked && isSelected && !(opt.h === q.h && opt.m === q.m);
+
+                                let className = 'option';
+                                if (isSelected && !S.practiceChecked) className += ' selected';
+                                if (isCorrect) className += ' correct';
+                                if (isWrong) className += ' wrong';
+
+                                return `<button class="${className}" data-option="${idx}">${optStr}</button>`;
+                            }).join('')}
+                        </div>
+                    ` : `
+                        <p style="margin-top: 20px; font-size: 14px; color: var(--text2);">Drag the hands to set ${timeStr}</p>
+                    `}
+
+                    ${!S.practiceChecked ? `
+                        <button class="check-btn" ${isReadMode && S.selectedOption === null ? 'disabled' : ''}>Check</button>
+                    ` : `
+                        <button class="check-btn" style="background: var(--purple);">Next Question</button>
+                        <div class="feedback ${S.feedbackMsg.includes('Great') ? 'correct' : 'wrong'}">${S.feedbackMsg}</div>
+                    `}
+                </div>
+            `;
+        };
+
+        const renderPracticeHands = (h, m) => {
+            const angles = angleFromTime(h, m);
+            const hourAngle = angles.hour;
+            const minuteAngle = angles.minute;
+
+            const hourX = 150 + 50 * Math.sin((hourAngle * Math.PI) / 180);
+            const hourY = 150 - 50 * Math.cos((hourAngle * Math.PI) / 180);
+            const minuteX = 150 + 85 * Math.sin((minuteAngle * Math.PI) / 180);
+            const minuteY = 150 - 85 * Math.cos((minuteAngle * Math.PI) / 180);
+
+            return `
+                <line class="hour-hand" x1="150" y1="150" x2="${hourX}" y2="${hourY}" data-hand="hour" />
+                <line class="minute-hand" x1="150" y1="150" x2="${minuteX}" y2="${minuteY}" data-hand="minute" />
+            `;
+        };
+
+        // PLAY MODE
+        const generatePlayQuestion = () => {
+            const hours = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12];
+            const minutes = [0, 30];
+
+            const h = hours[Math.floor(Math.random() * hours.length)];
+            const m = minutes[Math.floor(Math.random() * minutes.length)];
+
+            return {
+                h, m,
+                options: generateOptions(h, m)
+            };
+        };
+
+        const renderPlay = () => {
+            if (!S.playQuestion) {
+                S.playQuestion = generatePlayQuestion();
+                S.playClockTime = { h: S.playQuestion.h, m: S.playQuestion.m };
+                S.selectedOption = null;
+                S.playTimer = 6;
+                S.playRunning = true;
+                startPlayTimer();
+            }
+
+            return `
+                <div class="play-container" style="width: 100%;">
+                    <div class="score-display">Score: ${S.playScore}</div>
+                    <div class="streak-display"><svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor" style="vertical-align:-2px;"><path d="M12 23c-4.97 0-8-3.58-8-7.5 0-3.07 2.17-5.84 4.5-7.5-.28 2.5 1.5 4.5 1.5 4.5s2-2.5 2-5.5c0-1.5-.5-3-1-4 3 1.5 5 4 5 7 0 .5-.08 1-.08 1s1.08-1.18 1.58-2.5C19.78 11.72 20 14.5 20 15.5c0 3.92-3.03 7.5-8 7.5z"/></svg> Streak: ${S.playStreak}</div>
+
+                    <div class="clock-container" style="margin: 20px auto;">
+                        <svg viewBox="0 0 300 300" style="width: 250px; height: 250px;">
+                            <defs>
+                                <radialGradient id="centerGradPlay" cx="50%" cy="50%" r="50%">
+                                    <stop offset="0%" style="stop-color:#00d4ff;stop-opacity:0.8" />
+                                    <stop offset="100%" style="stop-color:#b388ff;stop-opacity:0.4" />
+                                </radialGradient>
+                            </defs>
+                            <circle class="clock-face" cx="150" cy="150" r="140" />
+                            ${Array.from({ length: 12 }, (_, i) => {
+                                const angle = (i * 30 * Math.PI) / 180;
+                                const x1 = 150 + 130 * Math.sin(angle);
+                                const y1 = 150 - 130 * Math.cos(angle);
+                                const x2 = 150 + 120 * Math.sin(angle);
+                                const y2 = 150 - 120 * Math.cos(angle);
+                                return `<line class="hour-mark" x1="${x1}" y1="${y1}" x2="${x2}" y2="${y2}" />`;
+                            }).join('')}
+                            ${Array.from({ length: 12 }, (_, i) => {
+                                const num = i === 0 ? 12 : i;
+                                const angle = ((i * 30 - 90) * Math.PI) / 180;
+                                const x = 150 + 105 * Math.cos(angle);
+                                const y = 150 + 105 * Math.sin(angle);
+                                return `<text class="hour-number" x="${x}" y="${y}">${num}</text>`;
+                            }).join('')}
+                            ${renderPracticeHands(S.playClockTime.h, S.playClockTime.m)}
+                            <circle class="center-dot" cx="150" cy="150" r="8" />
+                        </svg>
+                    </div>
+
+                    <div class="timer ${S.playTimer <= 2 ? 'danger' : S.playTimer <= 3 ? 'warning' : ''}">${S.playTimer}</div>
+
+                    <div class="options" style="margin-top: 24px;">
+                        ${S.playQuestion.options.map((opt, idx) => {
+                            const optStr = formatTime(opt.h, opt.m);
+                            const isSelected = S.selectedOption === idx;
+
+                            let className = 'option';
+                            if (isSelected) className += ' selected';
+
+                            return `<button class="${className}" data-play-option="${idx}">${optStr}</button>`;
+                        }).join('')}
+                    </div>
+                </div>
+            `;
+        };
+
+        const startPlayTimer = () => {
+            const timerInterval = setInterval(() => {
+                S.playTimer--;
+                render();
+
+                if (S.playTimer <= 0) {
+                    clearInterval(timerInterval);
+                    S.playRunning = false;
+                    if (S.selectedOption === null) {
+                        S.playStreak = 0;
+                    } else {
+                        const selected = S.playQuestion.options[S.selectedOption];
+                        if (selected.h === S.playQuestion.h && selected.m === S.playQuestion.m) {
+                            S.playScore += 10;
+                            S.playStreak++;
+                        } else {
+                            S.playStreak = 0;
+                        }
+                    }
+                    S.playQuestion = null;
+                    S.selectedOption = null;
+                    setTimeout(() => render(), 500);
+                }
+            }, 1000);
+        };
+
+        // SIDE PANEL
+        const renderSidePanel = () => {
+            const content = {
+                explore: `
+                    <div class="panel-section">
+                        <div class="panel-title">Vocabulary</div>
+                        <div class="vocab-list">
+                            <div class="vocab-item">
+                                <span class="vocab-label">Hour hand</span>
+                                Short hand, moves slowly
+                            </div>
+                            <div class="vocab-item">
+                                <span class="vocab-label">Minute hand</span>
+                                Long hand, moves faster
+                            </div>
+                            <div class="vocab-item">
+                                <span class="vocab-label">O'clock</span>
+                                When minute hand points to 12
+                            </div>
+                            <div class="vocab-item">
+                                <span class="vocab-label">Half past</span>
+                                When minute hand points to 6
+                            </div>
+                            <div class="vocab-item">
+                                <span class="vocab-label">Clockwise</span>
+                                Direction hands move (→)
+                            </div>
+                        </div>
+                    </div>
+                    <div class="panel-section">
+                        <div class="hint">
+                            Try dragging the hands to see how the time changes! The short hand controls the hour and the long hand controls the minutes.
+                        </div>
+                    </div>
+                `,
+                practice: `
+                    <div class="panel-section">
+                        <div class="panel-title">Difficulty</div>
+                        <div style="font-size: 13px; color: var(--text2); line-height: 1.6;">
+                            <strong style="color: var(--text);">Emergent:</strong> Hours only<br>
+                            <strong style="color: var(--text);">Proficient:</strong> Hours & half-hours<br>
+                            <strong style="color: var(--text);">Advanced:</strong> Mixed with sequences
+                        </div>
+                    </div>
+                    <div class="panel-section">
+                        <div class="hint">
+                            ${S.difficulty === 'emergent' ? 'You are reading times to the hour (o\'clock).' : 'You are reading times to the hour and half-hour.'}
+                        </div>
+                    </div>
+                `,
+                play: `
+                    <div class="panel-section">
+                        <div class="panel-title">How it works</div>
+                        <div style="font-size: 13px; color: var(--text2); line-height: 1.6;">
+                            You have 6 seconds to read the clock and pick the right time. Each correct answer is 10 points!
+                        </div>
+                    </div>
+                    <div class="panel-section">
+                        <div class="panel-title">Your Progress</div>
+                        <div style="font-size: 13px; color: var(--text2);">
+                            <div style="margin-bottom: 8px;">
+                                <strong style="color: var(--yellow);">Score: ${S.playScore}</strong>
+                            </div>
+                            <div>
+                                <strong style="color: var(--green);">Streak: ${S.playStreak}</strong>
+                            </div>
+                        </div>
+                    </div>
+                `
+            };
+
+            return content[S.mode] || content.explore;
+        };
+
+        // MAIN RENDER
+        const render = () => {
+            const workspace = document.getElementById('workspace');
+            const sidePanel = document.getElementById('sidePanel');
+
+            const modeContent = {
+                explore: renderExplore,
+                practice: renderPractice,
+                play: renderPlay
+            };
+
+            workspace.innerHTML = modeContent[S.mode]();
+            sidePanel.innerHTML = renderSidePanel();
+
+            // ATTACH EVENT LISTENERS
+            attachListeners();
+        };
+
+        const attachListeners = () => {
+            // Mode tabs
+            document.querySelectorAll('.tab').forEach(tab => {
+                tab.addEventListener('click', (e) => {
+                    document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+                    e.target.classList.add('active');
+                    S.mode = e.target.dataset.mode;
+                    S.practiceQuestion = null;
+                    S.playQuestion = null;
+                    S.playScore = 0;
+                    S.playStreak = 0;
+                    render();
+                });
+            });
+
+            // Difficulty buttons
+            document.querySelectorAll('.vinculum-diff-btn').forEach(btn => {
+                btn.addEventListener('click', (e) => {
+                    document.querySelectorAll('.vinculum-diff-btn').forEach(b => b.classList.remove('active'));
+                    e.target.classList.add('active');
+                    S.difficulty = e.target.dataset.difficulty;
+                    if (S.mode === 'practice') {
+                        S.practiceQuestion = null;
+                    }
+                    render();
+                });
+            });
+
+            if (S.mode === 'explore') {
+                attachExploreListeners();
+            } else if (S.mode === 'practice') {
+                attachPracticeListeners();
+            } else if (S.mode === 'play') {
+                attachPlayListeners();
+            }
+        };
+
+        const attachExploreListeners = () => {
+            const clock = document.querySelector('svg');
+            const hourHand = clock?.querySelector('.hour-hand');
+            const minuteHand = clock?.querySelector('.minute-hand');
+
+            if (hourHand) {
+                hourHand.addEventListener('mousedown', (e) => {
+                    S.draggingHand = 'hour';
+                    const svg = clock;
+                    const rect = svg.getBoundingClientRect();
+                    const cx = rect.width / 2 + rect.left;
+                    const cy = rect.height / 2 + rect.top;
+                    S.dragStartAngle = getAngleFromPoint(cx, cy, e.clientX, e.clientY);
+                });
+            }
+
+            if (minuteHand) {
+                minuteHand.addEventListener('mousedown', (e) => {
+                    S.draggingHand = 'minute';
+                    const svg = clock;
+                    const rect = svg.getBoundingClientRect();
+                    const cx = rect.width / 2 + rect.left;
+                    const cy = rect.height / 2 + rect.top;
+                    S.dragStartAngle = getAngleFromPoint(cx, cy, e.clientX, e.clientY);
+                });
+            }
+
+            document.addEventListener('mousemove', (e) => {
+                if (!S.draggingHand || !clock) return;
+
+                const rect = clock.getBoundingClientRect();
+                const cx = rect.width / 2 + rect.left;
+                const cy = rect.height / 2 + rect.top;
+                const currentAngle = getAngleFromPoint(cx, cy, e.clientX, e.clientY);
+                const delta = (currentAngle - S.dragStartAngle + 360) % 360;
+
+                if (S.draggingHand === 'hour') {
+                    S.hour = Math.round(((S.hour * 30 + delta) % 360) / 30) % 12 || 12;
+                } else {
+                    const newMin = Math.round(((S.minute + delta) % 360) / 6) % 60;
+                    S.minute = newMin < 15 ? 0 : newMin > 45 ? 0 : 30;
+                }
+
+                S.dragStartAngle = currentAngle;
+                render();
+            });
+
+            document.addEventListener('mouseup', () => {
+                S.draggingHand = null;
+            });
+
+            // Preset buttons
+            document.querySelectorAll('.preset-btn').forEach(btn => {
+                btn.addEventListener('click', (e) => {
+                    S.hour = parseInt(e.target.dataset.hour);
+                    S.minute = parseInt(e.target.dataset.minute);
+                    render();
+                });
+            });
+        };
+
+        const attachPracticeListeners = () => {
+            const q = S.practiceQuestion;
+
+            if (q.type === 'read') {
+                document.querySelectorAll('[data-option]').forEach(opt => {
+                    opt.addEventListener('click', (e) => {
+                        if (!S.practiceChecked) {
+                            S.selectedOption = parseInt(e.target.dataset.option);
+                            render();
+                        }
+                    });
+                });
+            }
+
+            const checkBtn = document.querySelector('.check-btn');
+            if (checkBtn) {
+                checkBtn.addEventListener('click', () => {
+                    if (!S.practiceChecked) {
+                        const q = S.practiceQuestion;
+                        if (q.type === 'read') {
+                            const selected = q.options[S.selectedOption];
+                            const isCorrect = selected.h === q.h && selected.m === q.m;
+                            S.feedbackMsg = isCorrect ? '✓ Great job!' : '✗ Try again';
+                            if (isCorrect) {
+                                showFB('✓ Correct!','correct');
+                            } else {
+                                showFB('Try again!','incorrect');
+                            }
+                            S.practiceChecked = true;
+                        } else {
+                            const isCorrect = S.practiceClockTime.h === q.h && S.practiceClockTime.m === q.m;
+                            S.feedbackMsg = isCorrect ? '✓ Great job!' : '✗ Try again';
+                            if (isCorrect) {
+                                showFB('✓ Correct!','correct');
+                            } else {
+                                showFB('Try again!','incorrect');
+                            }
+                            S.practiceChecked = true;
+                        }
+                        render();
+                    } else {
+                        S.practiceQuestion = null;
+                        S.selectedOption = null;
+                        S.feedbackMsg = '';
+                        S.practiceChecked = false;
+                        render();
+                    }
+                });
+            }
+        };
+
+        const attachPlayListeners = () => {
+            document.querySelectorAll('[data-play-option]').forEach(opt => {
+                opt.addEventListener('click', (e) => {
+                    if (S.playRunning) {
+                        S.selectedOption = parseInt(e.target.dataset['playOption']);
+                        render();
+                    }
+                });
+            });
+        };
+
+        // INITIALIZE
+        render();
+    </script>
+<script src="../../vinculum-core.js"></script>
+<script src="../../vinculum-data.js"></script>
+<script src="../../vinculum-adaptive-hook.js"></script>
+<script src="../../vinculum-3reads.js"></script>
+<script src="../../vinculum-stories.js"></script>
+<script src="../../vinculum-feedback.js"></script>
+  <script src="../../vinculum-guide.js"></script>
+<script src="../../vinculum-identity.js"></script>
+<script src="../../vinculum-indigenous.js"></script>
+<script src="../../vinculum-dashboard.js"></script>
+<!-- Foundation loaded from vinculum-core.js -->
+</body>
+</html>

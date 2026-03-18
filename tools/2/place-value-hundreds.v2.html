@@ -1,0 +1,1021 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>VINCULUM — Place Value: Hundreds</title>
+<link rel="stylesheet" href="../../vinculum-core.css">
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;600&display=swap');
+/* Theme system loaded from vinculum-core.css */
+.vinculum-rtm-btn .rtm-icon{font-size:14px;}
+
+/* ═══ FOCUS VISIBLE (Keyboard Navigation) ═══ */
+*:focus-visible {
+  outline:2px solid var(--cyan);outline-offset:2px;border-radius:4px;
+}
+.sr-only {
+  position:absolute;width:1px;height:1px;padding:0;margin:-1px;
+  overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0;
+}
+*{margin:0;padding:0;box-sizing:border-box;}
+body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);height:100vh;display:flex;flex-direction:column;overflow:hidden;user-select:none;}
+
+.main{flex:1;display:flex;overflow:hidden;}
+.workspace{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:24px;gap:16px;overflow-y:auto;}
+.side-panel{width:280px;background:var(--bg2);border-left:1px solid var(--border);padding:20px;overflow-y:auto;flex-shrink:0;}
+.panel-section{margin-bottom:20px;}
+.panel-title{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:1.5px;color:var(--muted);margin-bottom:8px;}
+.panel-text{font-size:13px;color:var(--text2);line-height:1.6;}
+
+/* ── Place Value Chart ── */
+.pv-chart{display:flex;gap:2px;justify-content:center;margin:12px auto;max-width:560px;width:100%;}
+.pv-column{flex:1;display:flex;flex-direction:column;align-items:center;border:2px solid var(--border);border-radius:12px;padding:12px 8px;min-height:180px;background:var(--card);transition:border-color 0.3s;}
+.pv-column.hundreds-col{border-color:rgba(255,167,38,0.4);}
+.pv-column.tens-col{border-color:rgba(179,136,255,0.4);}
+.pv-column.ones-col{border-color:rgba(0,212,255,0.4);}
+.pv-col-label{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:1.5px;margin-bottom:10px;}
+.pv-col-label.hundreds-label{color:#ffa726;}
+.pv-col-label.tens-label{color:#b388ff;}
+.pv-col-label.ones-label{color:#00d4ff;}
+.pv-blocks{display:flex;flex-wrap:wrap;gap:6px;justify-content:center;align-items:flex-end;flex:1;}
+
+/* ── Hundreds Flat (SVG 10×10 grid) ── */
+.hundreds-flat{width:56px;height:56px;border-radius:6px;border:2px solid #ffa726;box-shadow:0 2px 8px rgba(255,167,38,0.3);transition:transform 0.2s, opacity 0.3s;overflow:hidden;background:rgba(255,167,38,0.08);}
+.hundreds-flat svg{display:block;}
+
+/* ── Tens Rod ── */
+.tens-rod{width:20px;height:70px;border-radius:6px;background:linear-gradient(180deg,#b388ff 0%,#7c4dff 100%);border:2px solid #b388ff;box-shadow:0 2px 8px rgba(179,136,255,0.3);transition:transform 0.2s, opacity 0.3s;position:relative;}
+.tens-rod::after{content:'10';position:absolute;top:50%;left:50%;transform:translate(-50%,-50%) rotate(-90deg);font-size:9px;font-weight:800;color:rgba(255,255,255,0.8);font-family:'JetBrains Mono',monospace;}
+
+/* ── Ones Cube ── */
+.ones-cube{width:22px;height:22px;border-radius:5px;background:linear-gradient(135deg,#00d4ff 0%,#0091ea 100%);border:2px solid #00d4ff;box-shadow:0 2px 6px rgba(0,212,255,0.3);transition:transform 0.2s, opacity 0.3s;display:flex;align-items:center;justify-content:center;font-size:8px;font-weight:800;color:rgba(255,255,255,0.7);font-family:'JetBrains Mono',monospace;}
+
+/* ── Animations ── */
+.hundreds-flat.appearing{animation:flatAppear 0.4s ease-out;}
+@keyframes flatAppear{0%{transform:scale(0);opacity:0;} 100%{transform:scale(1);opacity:1;}}
+.tens-rod.appearing{animation:rodAppear 0.4s ease-out;}
+@keyframes rodAppear{0%{transform:scaleY(0);opacity:0;} 100%{transform:scaleY(1);opacity:1;}}
+.ones-cube.bundling{animation:bundleShrink 0.5s ease-in forwards;}
+@keyframes bundleShrink{0%{transform:scale(1);opacity:1;} 100%{transform:scale(0);opacity:0;}}
+
+/* ── Numeral Display ── */
+.numeral-display{text-align:center;margin:8px 0;}
+.numeral-big{font-size:52px;font-weight:900;font-family:'JetBrains Mono',monospace;background:var(--grad);-webkit-background-clip:text;-webkit-text-fill-color:transparent;letter-spacing:4px;}
+.expanded-form{font-size:15px;font-weight:600;font-family:'JetBrains Mono',monospace;color:var(--text2);margin-top:4px;}
+.expanded-form .hundreds-part{color:#ffa726;}
+.expanded-form .tens-part{color:#b388ff;}
+.expanded-form .ones-part{color:#00d4ff;}
+
+/* ── Controls ── */
+.instruction-box{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:14px 20px;text-align:center;font-size:15px;color:var(--text2);font-weight:500;max-width:620px;transition:all 0.3s;}
+.instruction-box.highlight-cyan{border-color:var(--cyan);color:var(--cyan);}
+.instruction-box.highlight-pink{border-color:var(--pink);color:var(--pink);}
+.instruction-box.highlight-green{border-color:var(--green);color:var(--green);}
+
+.controls{display:flex;gap:8px;flex-wrap:wrap;justify-content:center;}
+.ctrl-btn{padding:10px 18px;border-radius:10px;border:1px solid var(--border);background:var(--card);color:var(--text2);font-size:13px;font-weight:600;font-family:inherit;cursor:pointer;transition:all 0.2s;display:flex;align-items:center;gap:6px;}
+.ctrl-btn:hover{background:var(--card2);color:var(--text);}
+.ctrl-btn.primary{background:var(--grad);color:var(--bg);border-color:transparent;}
+.ctrl-btn.add-hundred{border-color:rgba(255,167,38,0.4);color:#ffa726;}
+.ctrl-btn.add-hundred:hover{background:rgba(255,167,38,0.1);}
+.ctrl-btn.add-ten{border-color:rgba(179,136,255,0.4);color:#b388ff;}
+.ctrl-btn.add-ten:hover{background:rgba(179,136,255,0.1);}
+.ctrl-btn.add-one{border-color:rgba(0,212,255,0.4);color:#00d4ff;}
+.ctrl-btn.add-one:hover{background:rgba(0,212,255,0.1);}
+.ctrl-btn:disabled{opacity:0.3;cursor:not-allowed;pointer-events:none;}
+
+/* ── MC Grid ── */
+.mc-grid{display:flex;gap:10px;flex-wrap:wrap;justify-content:center;max-width:520px;}
+.mc-btn{min-width:120px;padding:12px 16px;border-radius:12px;border:2px solid var(--border);background:var(--card);color:var(--text);font-size:14px;font-weight:600;font-family:'JetBrains Mono',monospace;cursor:pointer;transition:all 0.15s;display:flex;align-items:center;justify-content:center;text-align:center;}
+.mc-btn:hover{border-color:var(--cyan);transform:scale(1.04);}
+.mc-btn.correct-flash{border-color:var(--green);background:rgba(0,230,118,0.2);color:var(--green);animation:correctFlash 0.4s ease-out;}
+.mc-btn.incorrect-flash{border-color:var(--pink);background:rgba(255,59,139,0.2);color:var(--pink);animation:shake 0.3s ease-in-out;}
+
+@keyframes correctFlash{0%{transform:scale(1.1);} 100%{transform:scale(1);}}
+@keyframes shake{0%,100%{transform:translateX(0);} 25%{transform:translateX(-4px);} 75%{transform:translateX(4px);}}
+
+.score-display{text-align:center;padding:16px;background:var(--card);border-radius:12px;margin-bottom:12px;}
+.score-value{font-size:36px;font-weight:900;font-family:'JetBrains Mono',monospace;background:var(--grad);-webkit-background-clip:text;-webkit-text-fill-color:transparent;}
+.score-label{font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:1px;}
+.streak-bar{height:6px;background:var(--card);border-radius:3px;overflow:hidden;margin-top:8px;}
+.streak-fill{height:100%;background:var(--grad);border-radius:3px;transition:width 0.3s;}
+
+.feedback{position:fixed;top:50%;left:50%;transform:translate(-50%,-50%) scale(0);padding:24px 48px;border-radius:20px;font-size:28px;font-weight:800;z-index:200;pointer-events:none;transition:transform 0.3s cubic-bezier(0.175,0.885,0.32,1.275),opacity 0.3s;opacity:0;max-width:90vw;text-align:center;}
+.feedback.show{transform:translate(-50%,-50%) scale(1);opacity:1;}
+.feedback.correct{background:rgba(0,230,118,0.15);color:var(--green);border:2px solid var(--green);}
+.feedback.incorrect{background:rgba(255,59,139,0.15);color:var(--pink);border:2px solid var(--pink);}
+.feedback.try-again{background:rgba(255,193,7,0.15);color:var(--yellow);border:2px solid var(--yellow);}
+
+::-webkit-scrollbar{width:6px;}::-webkit-scrollbar-track{background:transparent;}::-webkit-scrollbar-thumb{background:var(--border);border-radius:3px;}
+</style>
+</head>
+<body>
+
+<div class="vinculum-header">
+  <div class="vinculum-header-left">
+    <a class="vinculum-back-btn" href="../../VINCULUM-Hub.html" style="text-decoration:none;">&#9664; Hub</a>
+    <div class="vinculum-header-title"><span>VINCULUM</span> Place Value: Hundreds</div>
+    <span class="vinculum-header-badge">2.NBT</span>
+  </div>
+  <div class="vinculum-header-right">
+    <div class="vinculum-std-tags">
+      <span class="vinculum-std-tag">2.NBT.1</span>
+      <span class="vinculum-std-tag">2.NBT.3</span>
+      <span class="vinculum-std-tag">2.NBT.4</span>
+      <span class="vinculum-std-tag mn">MN 2.1.2.1</span>
+    </div>
+    <button class="vinculum-back-btn" id="readAloudBtn" onclick="toggleReadAloud()" aria-label="Read Aloud" title="Read instructions aloud" style="margin-left:8px;white-space:nowrap;">&#128264; Read to Me</button>
+  </div>
+</div>
+
+<div class="vinculum-mode-tabs">
+  <button class="vinculum-mode-tab active-explore" data-mode="explore" id="tabExplore" onclick="setMode('explore')"><svg width="18" height="18" viewBox="0 0 48 48" fill="none"><path d="M4 24C4 24 12 12 24 12C36 12 44 24 44 24C44 24 36 36 24 36C12 36 4 24 4 24Z" stroke="currentColor" stroke-width="3" fill="none"/><circle cx="24" cy="24" r="7" stroke="currentColor" stroke-width="3" fill="none"/><circle cx="24" cy="24" r="3" fill="currentColor"/><line x1="24" y1="4" x2="24" y2="9" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" opacity="0.5"/><line x1="10" y1="8" x2="13" y2="12" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" opacity="0.5"/><line x1="38" y1="8" x2="35" y2="12" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" opacity="0.5"/></svg> Explore</button>
+  <button class="vinculum-mode-tab" id="tabPractice" data-mode="practice" onclick="setMode('practice')"><svg width="18" height="18" viewBox="0 0 48 48" fill="none"><circle cx="24" cy="24" r="20" stroke="currentColor" stroke-width="3" fill="none" opacity="0.3"/><circle cx="24" cy="24" r="20" stroke="currentColor" stroke-width="3" fill="none" stroke-dasharray="126" stroke-dashoffset="32" stroke-linecap="round"/><polyline points="16,24 22,32 34,16" stroke="currentColor" stroke-width="4" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg> Practice</button>
+  <button class="vinculum-mode-tab" id="tabPlay" data-mode="play" onclick="setMode('play')"><svg width="18" height="18" viewBox="0 0 48 48" fill="none"><polygon points="28,4 12,28 22,28 18,44 36,18 26,18" fill="none" stroke="currentColor" stroke-width="3" stroke-linejoin="round"/><polygon points="27,8 15,27 23,27 20,40 34,19 26,19" fill="currentColor" opacity="0.15"/></svg> Play</button>
+  <div class="vinculum-diff-selector">
+    <span class="vinculum-diff-label">Level</span>
+    <button class="vinculum-diff-btn active" id="diffE" data-diff="emergent" onclick="setDiff('emergent')">To 200</button>
+    <button class="vinculum-diff-btn" id="diffP" data-diff="proficient" onclick="setDiff('proficient')">To 999</button>
+    <button class="vinculum-diff-btn" id="diffA" data-diff="advanced" onclick="setDiff('advanced')">Expanded</button>
+  </div>
+</div>
+
+<div class="main">
+  <div class="workspace" role="main" id="workspace"></div>
+  <div class="side-panel" id="sidePanel"></div>
+</div>
+<div class="feedback" id="feedback"></div>
+
+<script src="../../vinculum-input.js"></script>
+<script>
+let S = {
+  mode: 'explore', diff: 'emergent', maxN: 200,
+  hundreds: 1, tens: 3, ones: 5,
+  pNum: 0, pType: 'build', pAnswer: 0, pChoices: [],
+  pHundreds: 0, pTens: 0, pOnes: 0,
+  score: 0, streak: 0, best: 0, round: 0, total: 10,
+  playNum: 0, playType: 'identify', playAnswer: 0, playChoices: [],
+  buildTarget: 0, buildH: 0, buildT: 0, buildO: 0
+};
+
+const MISCONCEPTIONS = {
+  noTens: {
+    id: 'no-tens',
+    msg: (n) => {
+      const t = Math.floor((n % 100) / 10);
+      return t === 0
+        ? `${n} has 0 tens — the zero holds the tens place!`
+        : `Look carefully at the tens digit in ${n}.`;
+    }
+  },
+  rightToLeft: {
+    id: 'right-to-left',
+    msg: (a, b) => `Compare starting from the <strong>leftmost</strong> digit (hundreds), not the right! ${a} vs ${b}.`
+  },
+  digitVsValue: {
+    id: 'digit-vs-value',
+    msg: (n) => {
+      const h = Math.floor(n / 100);
+      return `The digit ${h} in the hundreds place means ${h * 100}, not just ${h}!`;
+    }
+  },
+  expandedMix: {
+    id: 'expanded-mix',
+    msg: () => 'Break the number into hundreds + tens + ones. Example: 347 = 300 + 40 + 7.'
+  },
+  skipCount: {
+    id: 'skip-count',
+    msg: () => 'When skip counting by 100, add 100 each time: 100, 200, 300, ...'
+  },
+  placeConfusion: {
+    id: 'place-confusion',
+    msg: (n) => `Each place is 10 times bigger! Hundreds = 100s, Tens = 10s, Ones = 1s.`
+  }
+};
+
+/* ── Read-Aloud ── */
+function toggleReadAloud() {
+  if (window.VinculumStories && VinculumStories.isReading()) {
+    VinculumStories.stopReading();
+    document.getElementById('readAloudBtn').textContent = '\u{1F50A} Read to Me';
+  } else {
+    const fb = document.getElementById('feedback');
+    const storyEl = document.getElementById('storyBanner');
+    const text = storyEl ? storyEl.textContent : (fb ? fb.textContent : 'Welcome to Place Value: Hundreds!');
+    if (window.VinculumStories) {
+      VinculumStories.readAloud(text, { rate: 0.85, onComplete: () => {
+        document.getElementById('readAloudBtn').textContent = '\u{1F50A} Read to Me';
+      }});
+      document.getElementById('readAloudBtn').textContent = '\u23F9 Stop';
+    }
+  }
+}
+
+function rand(a, b) {
+  return Math.floor(Math.random() * (b - a + 1)) + a;
+}
+
+function shuffle(arr) {
+  for (let i = arr.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [arr[i], arr[j]] = [arr[j], arr[i]];
+  }
+}
+
+function showFB(msg, type) {
+  const fb = document.getElementById('feedback');
+  fb.className = 'feedback ' + type;
+  fb.innerHTML = msg;
+  fb.classList.add('show');
+  setTimeout(() => { fb.classList.remove('show'); }, 2200);
+}
+
+/* ── Mode & Difficulty ── */
+function setMode(m) {
+  S.mode = m;
+  document.querySelectorAll('.vinculum-mode-tab').forEach(t => t.classList.remove('active-explore', 'active-practice', 'active-play'));
+  document.getElementById('tab' + m.charAt(0).toUpperCase() + m.slice(1)).classList.add('active-' + m);
+  S.round = 0;
+  S.score = 0;
+  S.streak = 0;
+  if (m === 'practice') newPractice();
+  render();
+}
+
+function setDiff(d) {
+  S.diff = d;
+  if (d === 'emergent') {
+    S.maxN = 200; S.hundreds = 1; S.tens = 3; S.ones = 5;
+  } else if (d === 'proficient') {
+    S.maxN = 999; S.hundreds = 4; S.tens = 2; S.ones = 6;
+  } else {
+    S.maxN = 999; S.hundreds = 3; S.tens = 0; S.ones = 7;
+  }
+  document.querySelectorAll('.vinculum-diff-btn').forEach(b => b.classList.remove('active'));
+  document.getElementById('diff' + d.charAt(0).toUpperCase()).classList.add('active');
+  if (S.mode === 'practice') newPractice();
+  if (S.mode === 'play') S.round = 0;
+  render();
+}
+
+function render() {
+  const ws = document.getElementById('workspace');
+  const sp = document.getElementById('sidePanel');
+  if (S.mode === 'explore') renderExplore(ws, sp);
+  else if (S.mode === 'practice') renderPractice(ws, sp);
+  else renderPlay(ws, sp);
+}
+
+/* ═══════════════════════════════════════════
+   SVG HUNDREDS FLAT — 10×10 grid of small squares
+   ═══════════════════════════════════════════ */
+
+function svgHundredFlat() {
+  let svg = '<svg width="52" height="52" viewBox="0 0 52 52" xmlns="http://www.w3.org/2000/svg">';
+  for (let r = 0; r < 10; r++) {
+    for (let c = 0; c < 10; c++) {
+      svg += `<rect x="${1 + c * 5}" y="${1 + r * 5}" width="4.5" height="4.5" rx="0.5" fill="#ffa726" opacity="0.85"/>`;
+    }
+  }
+  svg += '</svg>';
+  return svg;
+}
+
+/* ═══════════════════════════════════════════
+   BUILD PV CHART — hundreds flats + tens rods + ones cubes
+   ═══════════════════════════════════════════ */
+
+function buildPVChart(h, t, o) {
+  let html = '<div class="pv-chart">';
+
+  // Hundreds column
+  html += '<div class="pv-column hundreds-col">';
+  html += '<div class="pv-col-label hundreds-label">Hundreds</div>';
+  html += '<div class="pv-blocks">';
+  for (let i = 0; i < h; i++) {
+    html += '<div class="hundreds-flat">' + svgHundredFlat() + '</div>';
+  }
+  if (h === 0) html += '<span style="color:var(--muted);font-size:12px;font-style:italic;">none</span>';
+  html += '</div></div>';
+
+  // Tens column
+  html += '<div class="pv-column tens-col">';
+  html += '<div class="pv-col-label tens-label">Tens</div>';
+  html += '<div class="pv-blocks">';
+  for (let i = 0; i < t; i++) {
+    html += '<div class="tens-rod"></div>';
+  }
+  if (t === 0) html += '<span style="color:var(--muted);font-size:12px;font-style:italic;">none</span>';
+  html += '</div></div>';
+
+  // Ones column
+  html += '<div class="pv-column ones-col">';
+  html += '<div class="pv-col-label ones-label">Ones</div>';
+  html += '<div class="pv-blocks">';
+  for (let i = 0; i < o; i++) {
+    html += '<div class="ones-cube">1</div>';
+  }
+  if (o === 0) html += '<span style="color:var(--muted);font-size:12px;font-style:italic;">none</span>';
+  html += '</div></div>';
+
+  html += '</div>';
+  return html;
+}
+
+function buildNumeralDisplay(h, t, o) {
+  const num = h * 100 + t * 10 + o;
+  let html = '<div class="numeral-display">';
+  html += `<div class="numeral-big">${num}</div>`;
+  html += '<div class="expanded-form">';
+  const parts = [];
+  if (h > 0) parts.push(`<span class="hundreds-part">${h * 100}</span>`);
+  if (t > 0) parts.push(`<span class="tens-part">${t * 10}</span>`);
+  if (o > 0) parts.push(`<span class="ones-part">${o}</span>`);
+  if (parts.length === 0) parts.push('0');
+  html += parts.join(' + ') + ' = ' + num;
+  html += '</div></div>';
+  return html;
+}
+
+function numToHTO(n) {
+  return { h: Math.floor(n / 100), t: Math.floor((n % 100) / 10), o: n % 10 };
+}
+
+/* ═══════════════════════════════════════════
+   EXPLORE MODE — build numbers freely
+   ═══════════════════════════════════════════ */
+
+function renderExplore(ws, sp) {
+  let h = '';
+
+  // Story banner
+  if (window.VinculumStories) {
+    const toolName = window.location.pathname.split('/').pop().replace('.html','');
+    const num = S.hundreds * 100 + S.tens * 10 + S.ones;
+    const storyData = VinculumStories.getStory(toolName, {a: S.hundreds, b: S.tens, c: S.ones, total: num, n: num});
+    if (storyData && storyData.story) {
+      if (window.Vinculum3Reads) {
+        h += Vinculum3Reads.getBannerHTML(storyData);
+      } else {
+        h += '<div id="storyBanner" style="background:var(--card2,#1a1f2e);border:1px solid var(--border);border-radius:12px;padding:16px 20px;margin-bottom:16px;font-size:15px;line-height:1.6;color:var(--text);position:relative;"><span style="font-size:12px;color:var(--cyan);font-weight:700;text-transform:uppercase;letter-spacing:1px;">\u{1F4D6} Story</span><br>' + storyData.story + '<br><em style="color:var(--yellow);font-weight:600;">' + storyData.question + '</em><button onclick="toggleReadAloud()" style="position:absolute;top:12px;right:12px;background:none;border:1px solid var(--border);border-radius:8px;padding:4px 10px;color:var(--cyan);cursor:pointer;font-size:14px;" title="Read story aloud">\u{1F50A}</button></div>';
+      }
+    }
+  }
+
+  h += '<div class="instruction-box">Build numbers with hundreds flats, tens rods, and ones cubes!</div>';
+
+  // Numeral display
+  h += buildNumeralDisplay(S.hundreds, S.tens, S.ones);
+
+  // PV chart
+  h += buildPVChart(S.hundreds, S.tens, S.ones);
+
+  // Controls — add/remove for each place
+  const maxH = S.diff === 'emergent' ? 2 : 9;
+  const num = S.hundreds * 100 + S.tens * 10 + S.ones;
+
+  h += '<div class="controls">';
+  h += `<button class="ctrl-btn add-hundred" onclick="addHundred()" ${S.hundreds >= maxH ? 'disabled' : ''}>+ Hundred</button>`;
+  h += `<button class="ctrl-btn add-hundred" onclick="removeHundred()" ${S.hundreds <= 0 ? 'disabled' : ''}>\u2212 Hundred</button>`;
+  h += `<button class="ctrl-btn add-ten" onclick="addTen()" ${S.tens >= 9 ? 'disabled' : ''}>+ Ten</button>`;
+  h += `<button class="ctrl-btn add-ten" onclick="removeTen()" ${S.tens <= 0 ? 'disabled' : ''}>\u2212 Ten</button>`;
+  h += `<button class="ctrl-btn add-one" onclick="addOne()" ${S.ones >= 9 ? 'disabled' : ''}>+ One</button>`;
+  h += `<button class="ctrl-btn add-one" onclick="removeOne()" ${S.ones <= 0 ? 'disabled' : ''}>\u2212 One</button>`;
+  h += '</div>';
+
+  // Reset
+  h += '<div class="controls" style="margin-top:8px;">';
+  h += '<button class="ctrl-btn" onclick="S.hundreds=0;S.tens=0;S.ones=0;render();">\u21BA Reset</button>';
+  h += '</div>';
+
+  ws.innerHTML = h;
+
+  // Side panel
+  let sp_h = `<div class="panel-section"><div class="panel-title">What is Place Value?</div>
+    <div class="panel-text">
+      Each digit in a number has a <strong style="color:var(--purple);">place</strong> that tells its value.<br><br>
+      <strong style="color:#ffa726;">Hundreds place</strong>: each flat is worth <strong>100</strong>.<br>
+      <strong style="color:#b388ff;">Tens place</strong>: each rod is worth <strong>10</strong>.<br>
+      <strong style="color:#00d4ff;">Ones place</strong>: each cube is worth <strong>1</strong>.<br><br>
+      The number ${num} = <strong style="color:#ffa726;">${S.hundreds} hundred${S.hundreds !== 1 ? 's' : ''}</strong>, <strong style="color:#b388ff;">${S.tens} ten${S.tens !== 1 ? 's' : ''}</strong>, and <strong style="color:#00d4ff;">${S.ones} one${S.ones !== 1 ? 's' : ''}</strong>.
+    </div></div>`;
+
+  sp_h += `<div class="panel-section"><div class="panel-title">Key Idea</div>
+    <div class="panel-text">
+      <strong style="color:var(--green);">10 tens = 1 hundred!</strong><br><br>
+      Each place is <strong>10 times</strong> the place to its right. A hundreds flat is made of <strong>10 tens rods</strong> (100 little cubes).
+    </div></div>`;
+
+  sp_h += `<div class="panel-section"><div class="panel-title">How to Use</div>
+    <div class="panel-text">
+      <strong style="color:#ffa726;">1.</strong> Tap buttons to add or remove blocks<br>
+      <strong style="color:#b388ff;">2.</strong> Watch the expanded form update<br>
+      <strong style="color:#00d4ff;">3.</strong> Try building numbers like 503 or 270!
+    </div></div>`;
+
+  sp.innerHTML = sp_h;
+}
+
+function addHundred() {
+  const maxH = S.diff === 'emergent' ? 2 : 9;
+  if (S.hundreds < maxH) { S.hundreds++; render(); }
+}
+function removeHundred() {
+  if (S.hundreds > 0) { S.hundreds--; render(); }
+}
+function addTen() {
+  if (S.tens < 9) { S.tens++; render(); }
+}
+function removeTen() {
+  if (S.tens > 0) { S.tens--; render(); }
+}
+function addOne() {
+  if (S.ones < 9) { S.ones++; render(); }
+}
+function removeOne() {
+  if (S.ones > 0) { S.ones--; render(); }
+}
+
+/* ═══════════════════════════════════════════
+   PRACTICE MODE
+   ═══════════════════════════════════════════ */
+
+function genPracticeNum() {
+  if (S.diff === 'emergent') return rand(100, 200);
+  return rand(100, 999);
+}
+
+function newPractice() {
+  const types = S.diff === 'emergent'
+    ? ['build', 'identify']
+    : S.diff === 'proficient'
+    ? ['build', 'identify', 'compare']
+    : ['expanded', 'skipCount', 'compare'];
+  S.pType = types[rand(0, types.length - 1)];
+
+  if (S.pType === 'build') {
+    // "Build this number" — show target, student picks from MC
+    S.pNum = genPracticeNum();
+    const d = numToHTO(S.pNum);
+    S.pHundreds = d.h; S.pTens = d.t; S.pOnes = d.o;
+    // Build target, student taps matching blocks via MC
+    S.buildTarget = S.pNum;
+    S.buildH = 0; S.buildT = 0; S.buildO = 0;
+
+  } else if (S.pType === 'identify') {
+    // Show blocks, ask "What number?"
+    S.pNum = genPracticeNum();
+    const d = numToHTO(S.pNum);
+    S.pHundreds = d.h; S.pTens = d.t; S.pOnes = d.o;
+    S.pAnswer = S.pNum;
+    const choices = new Set([S.pNum]);
+    // Misconception: digits swapped (e.g., 347 -> 743)
+    const swapped = S.pOnes * 100 + S.pTens * 10 + S.pHundreds;
+    if (swapped !== S.pNum && swapped >= 100 && swapped <= 999) choices.add(swapped);
+    // Off by 100
+    if (S.pNum + 100 <= 999) choices.add(S.pNum + 100);
+    else if (S.pNum - 100 >= 100) choices.add(S.pNum - 100);
+    // Zero-tens confusion: e.g., 207 -> 270
+    if (S.pTens === 0 && S.pOnes > 0) {
+      choices.add(S.pHundreds * 100 + S.pOnes * 10);
+    }
+    // Off by 10
+    if (S.pNum + 10 <= 999) choices.add(S.pNum + 10);
+    while (choices.size < 4) {
+      choices.add(S.diff === 'emergent' ? rand(100, 200) : rand(100, 999));
+    }
+    S.pChoices = Array.from(choices).slice(0, 4);
+    shuffle(S.pChoices);
+
+  } else if (S.pType === 'compare') {
+    // Compare two numbers
+    let a, b;
+    do {
+      a = genPracticeNum();
+      b = genPracticeNum();
+    } while (a === b);
+    S.pA = a; S.pB = b;
+    S.pAnswer = a > b ? '>' : '<';
+    S.pChoices = ['<', '>', '='];
+
+  } else if (S.pType === 'expanded') {
+    // Expanded form: "Which is the expanded form of 503?"
+    S.pNum = genPracticeNum();
+    const d = numToHTO(S.pNum);
+    S.pHundreds = d.h; S.pTens = d.t; S.pOnes = d.o;
+    const correct = expandedStr(d.h, d.t, d.o);
+    S.pAnswer = correct;
+    const choices = new Set([correct]);
+    // Wrong expanded forms
+    // Swap hundreds and ones values
+    choices.add(expandedStr(d.o, d.t, d.h));
+    // Forget zero placeholder
+    if (d.t === 0) choices.add(`${d.h * 100} + ${d.o}`);
+    // Digit-only (not value)
+    choices.add(`${d.h} + ${d.t} + ${d.o}`);
+    // Off by amount
+    const alt = numToHTO(Math.min(999, S.pNum + rand(10, 50)));
+    choices.add(expandedStr(alt.h, alt.t, alt.o));
+    while (choices.size < 4) {
+      const r = numToHTO(rand(100, 999));
+      choices.add(expandedStr(r.h, r.t, r.o));
+    }
+    S.pChoices = Array.from(choices).slice(0, 4);
+    shuffle(S.pChoices);
+
+  } else if (S.pType === 'skipCount') {
+    // Skip counting by 100: "What comes next? 200, 300, 400, ___"
+    const start = rand(1, 5) * 100;
+    S.pSequence = [start, start + 100, start + 200];
+    S.pAnswer = start + 300;
+    const choices = new Set([S.pAnswer]);
+    choices.add(S.pAnswer + 10);
+    choices.add(S.pAnswer - 100);
+    choices.add(S.pAnswer + 100);
+    while (choices.size < 4) {
+      choices.add(rand(100, 999));
+    }
+    S.pChoices = Array.from(choices).slice(0, 4);
+    shuffle(S.pChoices);
+  }
+}
+
+function expandedStr(h, t, o) {
+  const parts = [];
+  if (h > 0) parts.push(h * 100);
+  if (t > 0) parts.push(t * 10);
+  if (o > 0) parts.push(o);
+  return parts.length > 0 ? parts.join(' + ') : '0';
+}
+
+function renderPractice(ws, sp) {
+  if (!S.pType) newPractice();
+  let h = '';
+
+  if (S.pType === 'build') {
+    // Interactive build mode
+    h += `<div class="instruction-box highlight-green">Build <strong>${S.buildTarget}</strong> using base-ten blocks!</div>`;
+    h += buildPVChart(S.buildH, S.buildT, S.buildO);
+    h += buildNumeralDisplay(S.buildH, S.buildT, S.buildO);
+
+    const builtNum = S.buildH * 100 + S.buildT * 10 + S.buildO;
+    const maxH = S.diff === 'emergent' ? 2 : 9;
+
+    h += '<div class="controls">';
+    h += `<button class="ctrl-btn add-hundred" onclick="buildAdd('h')" ${S.buildH >= maxH ? 'disabled' : ''}>+ Hundred</button>`;
+    h += `<button class="ctrl-btn add-hundred" onclick="buildRemove('h')" ${S.buildH <= 0 ? 'disabled' : ''}>\u2212 Hundred</button>`;
+    h += `<button class="ctrl-btn add-ten" onclick="buildAdd('t')" ${S.buildT >= 9 ? 'disabled' : ''}>+ Ten</button>`;
+    h += `<button class="ctrl-btn add-ten" onclick="buildRemove('t')" ${S.buildT <= 0 ? 'disabled' : ''}>\u2212 Ten</button>`;
+    h += `<button class="ctrl-btn add-one" onclick="buildAdd('o')" ${S.buildO >= 9 ? 'disabled' : ''}>+ One</button>`;
+    h += `<button class="ctrl-btn add-one" onclick="buildRemove('o')" ${S.buildO <= 0 ? 'disabled' : ''}>\u2212 One</button>`;
+    h += '</div>';
+
+    if (builtNum === S.buildTarget) {
+      h += '<div class="controls" style="margin-top:12px;">';
+      h += '<button class="ctrl-btn primary" onclick="checkBuild()" style="font-size:16px;padding:12px 32px;">\u2713 Check!</button>';
+      h += '</div>';
+    }
+
+    h += '<div class="controls" style="margin-top:8px;">';
+    h += '<button class="ctrl-btn" onclick="newPractice();render();">Skip \u2192</button>';
+    h += '</div>';
+
+  } else if (S.pType === 'identify') {
+    h += '<div class="instruction-box highlight-green">What number do these blocks show?</div>';
+    h += buildPVChart(S.pHundreds, S.pTens, S.pOnes);
+    h += renderMCGrid('checkPractice');
+    h += '<div class="controls" style="margin-top:8px;"><button class="ctrl-btn" onclick="newPractice();render();">Skip \u2192</button></div>';
+
+  } else if (S.pType === 'compare') {
+    h += '<div class="instruction-box highlight-green">Which symbol makes this true?</div>';
+    h += '<div style="display:flex;gap:16px;justify-content:center;align-items:center;flex-wrap:wrap;margin:12px 0;">';
+    h += '<div style="text-align:center;">';
+    h += `<div style="font-size:40px;font-weight:900;font-family:\'JetBrains Mono\',monospace;color:var(--text);">${S.pA}</div>`;
+    h += buildPVChart(numToHTO(S.pA).h, numToHTO(S.pA).t, numToHTO(S.pA).o);
+    h += '</div>';
+    h += '<div style="font-size:48px;font-weight:900;color:var(--muted);">?</div>';
+    h += '<div style="text-align:center;">';
+    h += `<div style="font-size:40px;font-weight:900;font-family:\'JetBrains Mono\',monospace;color:var(--text);">${S.pB}</div>`;
+    h += buildPVChart(numToHTO(S.pB).h, numToHTO(S.pB).t, numToHTO(S.pB).o);
+    h += '</div></div>';
+    h += '<div class="mc-grid">';
+    S.pChoices.forEach((c, i) => {
+      h += `<button class="mc-btn" id="mc${i}" onclick="checkPractice('${c}', ${i})" style="font-size:32px;min-width:80px;">${c}</button>`;
+    });
+    h += '</div>';
+    h += '<div class="controls" style="margin-top:8px;"><button class="ctrl-btn" onclick="newPractice();render();">Skip \u2192</button></div>';
+
+  } else if (S.pType === 'expanded') {
+    h += `<div class="instruction-box highlight-green">Which is the expanded form of <strong>${S.pNum}</strong>?</div>`;
+    h += buildPVChart(S.pHundreds, S.pTens, S.pOnes);
+    h += renderMCGrid('checkPractice');
+    h += '<div class="controls" style="margin-top:8px;"><button class="ctrl-btn" onclick="newPractice();render();">Skip \u2192</button></div>';
+
+  } else if (S.pType === 'skipCount') {
+    h += '<div class="instruction-box highlight-green">Skip count by 100. What comes next?</div>';
+    h += `<div style="display:flex;gap:12px;justify-content:center;align-items:center;margin:16px 0;">`;
+    S.pSequence.forEach(n => {
+      h += `<div style="font-size:28px;font-weight:800;font-family:'JetBrains Mono',monospace;color:var(--text);padding:8px 16px;background:var(--card);border-radius:10px;border:1px solid var(--border);">${n}</div>`;
+    });
+    h += `<div style="font-size:28px;font-weight:800;color:var(--yellow);">?</div>`;
+    h += '</div>';
+    h += renderMCGrid('checkPractice');
+    h += '<div class="controls" style="margin-top:8px;"><button class="ctrl-btn" onclick="newPractice();render();">Skip \u2192</button></div>';
+  }
+
+  ws.innerHTML = h;
+
+  // Side panel
+  let sp_h = `<div class="panel-section"><div class="panel-title">Steps</div>
+    <div class="panel-text" style="background:var(--card);padding:12px;border-radius:8px;">
+      <div style="margin-bottom:8px;">
+        <strong style="color:#ffa726;">\u2460 Hundreds</strong><br>
+        <span style="font-size:12px;">Count the flats (orange grids)</span>
+      </div>
+      <div style="margin-bottom:8px;">
+        <strong style="color:#b388ff;">\u2461 Tens</strong><br>
+        <span style="font-size:12px;">Count the rods (purple)</span>
+      </div>
+      <div>
+        <strong style="color:#00d4ff;">\u2462 Ones</strong><br>
+        <span style="font-size:12px;">Count the cubes (cyan)</span>
+      </div>
+    </div></div>`;
+
+  sp_h += `<div class="panel-section"><div class="panel-title">Remember</div>
+    <div class="panel-text">
+      The <strong style="color:#ffa726;">hundreds digit</strong> tells how many groups of 100.<br>
+      The <strong style="color:#b388ff;">tens digit</strong> tells how many groups of 10.<br>
+      The <strong style="color:#00d4ff;">ones digit</strong> tells how many extras.<br><br>
+      ${S.pType === 'compare' ? '<strong style="color:var(--green);">Compare from left to right! Start with hundreds.</strong>' : ''}
+      ${S.pType === 'expanded' ? '<strong style="color:var(--green);">Expanded form shows each digit\'s value!</strong>' : ''}
+    </div></div>`;
+
+  sp.innerHTML = sp_h;
+}
+
+function renderMCGrid(handler) {
+  let h = '<div class="mc-grid">';
+  S.pChoices.forEach((c, i) => {
+    const label = typeof c === 'number' ? c : c;
+    const arg = typeof c === 'number' ? c : `'${c.replace(/'/g, "\\'")}'`;
+    h += `<button class="mc-btn" id="mc${i}" onclick="${handler}(${arg}, ${i})">${label}</button>`;
+  });
+  h += '</div>';
+  return h;
+}
+
+function buildAdd(place) {
+  const maxH = S.diff === 'emergent' ? 2 : 9;
+  if (place === 'h' && S.buildH < maxH) S.buildH++;
+  else if (place === 't' && S.buildT < 9) S.buildT++;
+  else if (place === 'o' && S.buildO < 9) S.buildO++;
+  render();
+}
+
+function buildRemove(place) {
+  if (place === 'h' && S.buildH > 0) S.buildH--;
+  else if (place === 't' && S.buildT > 0) S.buildT--;
+  else if (place === 'o' && S.buildO > 0) S.buildO--;
+  render();
+}
+
+function checkBuild() {
+  const built = S.buildH * 100 + S.buildT * 10 + S.buildO;
+  if (built === S.buildTarget) {
+    showFB('Correct!', 'correct');
+    setTimeout(() => { newPractice(); render(); }, 1500);
+  } else {
+    showFB(MISCONCEPTIONS.placeConfusion.msg(S.buildTarget), 'try-again');
+  }
+}
+
+function checkPractice(clicked, idx) {
+  const btn = document.getElementById('mc' + idx);
+  const correct = S.pAnswer;
+  const isStr = typeof correct === 'string';
+  const isCorrect = isStr ? (String(clicked) === correct) : (Number(clicked) === correct);
+
+  if (isCorrect) {
+    btn.classList.add('correct-flash');
+    showFB('Correct!', 'correct');
+    setTimeout(() => { newPractice(); render(); }, 1500);
+  } else {
+    btn.classList.add('incorrect-flash');
+    let msg;
+
+    if (S.pType === 'identify') {
+      const got = Number(clicked);
+      const d = numToHTO(S.pNum);
+      const swapped = d.o * 100 + d.t * 10 + d.h;
+      if (got === swapped) {
+        msg = MISCONCEPTIONS.digitVsValue.msg(S.pNum);
+      } else if (d.t === 0 && got === d.h * 100 + d.o * 10) {
+        msg = MISCONCEPTIONS.noTens.msg(S.pNum);
+      } else {
+        msg = MISCONCEPTIONS.placeConfusion.msg(S.pNum);
+      }
+    } else if (S.pType === 'compare') {
+      msg = MISCONCEPTIONS.rightToLeft.msg(S.pA, S.pB);
+    } else if (S.pType === 'expanded') {
+      if (String(clicked) === `${numToHTO(S.pNum).h} + ${numToHTO(S.pNum).t} + ${numToHTO(S.pNum).o}`) {
+        msg = MISCONCEPTIONS.digitVsValue.msg(S.pNum);
+      } else {
+        msg = MISCONCEPTIONS.expandedMix.msg();
+      }
+    } else if (S.pType === 'skipCount') {
+      msg = MISCONCEPTIONS.skipCount.msg();
+    } else {
+      msg = MISCONCEPTIONS.placeConfusion.msg(S.pNum || 0);
+    }
+
+    showFB(msg, 'try-again');
+    setTimeout(() => { btn.classList.remove('incorrect-flash'); }, 400);
+  }
+}
+
+/* ═══════════════════════════════════════════
+   PLAY MODE — 10 rounds, MC answers, 10pts + streak×2
+   ═══════════════════════════════════════════ */
+
+function startGame() {
+  S.round = 1;
+  S.score = 0;
+  S.streak = 0;
+  newPlayRound();
+}
+
+function newPlayRound() {
+  const types = S.diff === 'emergent'
+    ? ['identifyDigit', 'whatNumber']
+    : S.diff === 'proficient'
+    ? ['identifyDigit', 'whatNumber', 'compare', 'expanded']
+    : ['expanded', 'compare', 'skipCount', 'identifyValue'];
+  S.playType = types[rand(0, types.length - 1)];
+
+  if (S.playType === 'identifyDigit') {
+    S.playNum = S.diff === 'emergent' ? rand(100, 200) : rand(100, 999);
+    const d = numToHTO(S.playNum);
+    const place = ['hundreds', 'tens', 'ones'][rand(0, 2)];
+    S.playPlace = place;
+    if (place === 'hundreds') { S.playAnswer = d.h; S.playQuestion = `How many <strong style="color:#ffa726;">hundreds</strong> in ${S.playNum}?`; }
+    else if (place === 'tens') { S.playAnswer = d.t; S.playQuestion = `How many <strong style="color:#b388ff;">tens</strong> in ${S.playNum}?`; }
+    else { S.playAnswer = d.o; S.playQuestion = `How many <strong style="color:#00d4ff;">ones</strong> in ${S.playNum}?`; }
+    genPlayChoices(S.playAnswer, 0, 9);
+
+  } else if (S.playType === 'whatNumber') {
+    S.playNum = S.diff === 'emergent' ? rand(100, 200) : rand(100, 999);
+    const d = numToHTO(S.playNum);
+    S.playQuestion = `What number is <strong style="color:#ffa726;">${d.h} hundred${d.h !== 1 ? 's' : ''}</strong>, <strong style="color:#b388ff;">${d.t} ten${d.t !== 1 ? 's' : ''}</strong>, <strong style="color:#00d4ff;">${d.o} one${d.o !== 1 ? 's' : ''}</strong>?`;
+    S.playAnswer = S.playNum;
+    const choices = new Set([S.playNum]);
+    // Digit swap
+    const swapped = d.o * 100 + d.t * 10 + d.h;
+    if (swapped !== S.playNum && swapped >= 100 && swapped <= 999) choices.add(swapped);
+    // Zero-tens confusion
+    if (d.t === 0 && d.o > 0) choices.add(d.h * 100 + d.o * 10);
+    // Off by 100
+    if (S.playNum + 100 <= 999) choices.add(S.playNum + 100);
+    else choices.add(S.playNum - 100);
+    // Off by 10
+    if (S.playNum + 10 <= 999) choices.add(S.playNum + 10);
+    while (choices.size < 4) {
+      choices.add(S.diff === 'emergent' ? rand(100, 200) : rand(100, 999));
+    }
+    S.playChoices = Array.from(choices).slice(0, 4);
+    shuffle(S.playChoices);
+    return;
+
+  } else if (S.playType === 'compare') {
+    let a, b;
+    do {
+      a = S.diff === 'emergent' ? rand(100, 200) : rand(100, 999);
+      b = S.diff === 'emergent' ? rand(100, 200) : rand(100, 999);
+    } while (a === b);
+    S.playA = a; S.playB = b; S.playNum = a;
+    S.playAnswer = a > b ? '>' : '<';
+    S.playQuestion = `Which symbol: <strong>${a}</strong> __ <strong>${b}</strong>?`;
+    S.playChoices = ['<', '>', '='];
+    return;
+
+  } else if (S.playType === 'expanded') {
+    S.playNum = rand(100, 999);
+    const d = numToHTO(S.playNum);
+    S.playQuestion = `What is the expanded form of <strong>${S.playNum}</strong>?`;
+    const correct = expandedStr(d.h, d.t, d.o);
+    S.playAnswer = correct;
+    const choices = new Set([correct]);
+    choices.add(expandedStr(d.o, d.t, d.h));
+    choices.add(`${d.h} + ${d.t} + ${d.o}`);
+    const alt = numToHTO(Math.min(999, S.playNum + rand(10, 50)));
+    choices.add(expandedStr(alt.h, alt.t, alt.o));
+    while (choices.size < 4) {
+      const r = numToHTO(rand(100, 999));
+      choices.add(expandedStr(r.h, r.t, r.o));
+    }
+    S.playChoices = Array.from(choices).slice(0, 4);
+    shuffle(S.playChoices);
+    return;
+
+  } else if (S.playType === 'identifyValue') {
+    S.playNum = rand(100, 999);
+    const d = numToHTO(S.playNum);
+    const place = ['hundreds', 'tens', 'ones'][rand(0, 2)];
+    S.playPlace = place;
+    let val;
+    if (place === 'hundreds') { val = d.h * 100; S.playQuestion = `What is the <strong style="color:#ffa726;">value</strong> of the hundreds digit in ${S.playNum}?`; }
+    else if (place === 'tens') { val = d.t * 10; S.playQuestion = `What is the <strong style="color:#b388ff;">value</strong> of the tens digit in ${S.playNum}?`; }
+    else { val = d.o; S.playQuestion = `What is the <strong style="color:#00d4ff;">value</strong> of the ones digit in ${S.playNum}?`; }
+    S.playAnswer = val;
+    const choices = new Set([val]);
+    // Digit vs value confusion
+    if (place === 'hundreds') { choices.add(d.h); choices.add(d.h * 10); }
+    else if (place === 'tens') { choices.add(d.t); choices.add(d.t * 100); }
+    else { choices.add(d.o * 10); choices.add(d.o * 100); }
+    while (choices.size < 4) {
+      choices.add(rand(0, 9) * [100, 10, 1][rand(0, 2)]);
+    }
+    S.playChoices = Array.from(choices).slice(0, 4);
+    shuffle(S.playChoices);
+    return;
+
+  } else if (S.playType === 'skipCount') {
+    const start = rand(1, 5) * 100;
+    S.pSequence = [start, start + 100, start + 200];
+    S.playNum = start;
+    S.playAnswer = start + 300;
+    S.playQuestion = `Skip count by 100: ${S.pSequence.join(', ')}, ___?`;
+    const choices = new Set([S.playAnswer]);
+    choices.add(S.playAnswer + 10);
+    choices.add(S.playAnswer - 100);
+    choices.add(S.playAnswer + 100);
+    while (choices.size < 4) {
+      choices.add(rand(100, 999));
+    }
+    S.playChoices = Array.from(choices).slice(0, 4);
+    shuffle(S.playChoices);
+    return;
+  }
+}
+
+function genPlayChoices(answer, lo, hi) {
+  const choices = new Set([answer]);
+  // Close distractors
+  if (answer + 1 <= hi) choices.add(answer + 1);
+  if (answer - 1 >= lo) choices.add(answer - 1);
+  if (answer + 2 <= hi) choices.add(answer + 2);
+  while (choices.size < 4) {
+    choices.add(rand(lo, hi));
+  }
+  S.playChoices = Array.from(choices).slice(0, 4);
+  shuffle(S.playChoices);
+}
+
+function renderPlay(ws, sp) {
+  if (S.round === 0) startGame();
+
+  let h = '';
+
+  if (S.round > S.total) {
+    // Game over
+    h += '<div style="text-align:center;padding:40px;">';
+    h += '<div style="font-size:20px;color:var(--muted);margin-bottom:12px;">Game Over!</div>';
+    h += `<div class="numeral-big" style="font-size:64px;">${S.score}</div>`;
+    h += '<div style="font-size:14px;color:var(--text2);margin:8px 0;">points</div>';
+    h += `<div style="font-size:14px;color:var(--purple);margin:8px 0;">Best Streak: ${S.best}</div>`;
+    h += '<button class="ctrl-btn primary" onclick="S.round=0;render();" style="margin-top:20px;font-size:16px;padding:12px 32px;">\u25B6 Play Again</button>';
+    h += '</div>';
+    ws.innerHTML = h;
+    sp.innerHTML = renderPlaySidePanel();
+    return;
+  }
+
+  h += `<div style="font-size:13px;color:var(--muted);margin-bottom:8px;">Round ${S.round} of ${S.total}</div>`;
+  h += `<div class="instruction-box highlight-green">${S.playQuestion}</div>`;
+
+  // Show PV chart for relevant question types
+  if (S.playType === 'identifyDigit' || S.playType === 'whatNumber' || S.playType === 'identifyValue') {
+    const d = numToHTO(S.playNum);
+    h += buildPVChart(d.h, d.t, d.o);
+  } else if (S.playType === 'compare') {
+    h += '<div style="display:flex;gap:16px;justify-content:center;align-items:center;flex-wrap:wrap;margin:8px 0;">';
+    const da = numToHTO(S.playA), db = numToHTO(S.playB);
+    h += '<div style="text-align:center;">';
+    h += `<div style="font-size:32px;font-weight:900;font-family:'JetBrains Mono',monospace;color:var(--text);">${S.playA}</div>`;
+    h += buildPVChart(da.h, da.t, da.o);
+    h += '</div>';
+    h += '<div style="font-size:40px;font-weight:900;color:var(--muted);">?</div>';
+    h += '<div style="text-align:center;">';
+    h += `<div style="font-size:32px;font-weight:900;font-family:'JetBrains Mono',monospace;color:var(--text);">${S.playB}</div>`;
+    h += buildPVChart(db.h, db.t, db.o);
+    h += '</div></div>';
+  } else if (S.playType === 'expanded') {
+    const d = numToHTO(S.playNum);
+    h += buildPVChart(d.h, d.t, d.o);
+  }
+
+  // MC choices
+  h += '<div class="mc-grid">';
+  S.playChoices.forEach((c, i) => {
+    const isCompare = S.playType === 'compare';
+    const isStr = typeof c === 'string';
+    const label = c;
+    const arg = isStr ? `'${String(c).replace(/'/g, "\\'")}'` : c;
+    const style = isCompare ? 'font-size:32px;min-width:80px;' : '';
+    h += `<button class="mc-btn" id="play${i}" onclick="playPick(${arg}, ${i})" style="${style}">${label}</button>`;
+  });
+  h += '</div>';
+
+  ws.innerHTML = h;
+  sp.innerHTML = renderPlaySidePanel();
+}
+
+function renderPlaySidePanel() {
+  return `
+    <div class="score-display"><div class="score-value">${S.score}</div><div class="score-label">Score</div></div>
+    <div class="score-display" style="background:transparent;padding:8px;">
+      <div style="font-size:18px;font-weight:700;color:var(--yellow);"><svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor" style="vertical-align:-2px;"><path d="M12 23c-4.97 0-8-3.58-8-7.5 0-3.07 2.17-5.84 4.5-7.5-.28 2.5 1.5 4.5 1.5 4.5s2-2.5 2-5.5c0-1.5-.5-3-1-4 3 1.5 5 4 5 7 0 .5-.08 1-.08 1s1.08-1.18 1.58-2.5C19.78 11.72 20 14.5 20 15.5c0 3.92-3.03 7.5-8 7.5z"/></svg> ${S.streak}</div>
+      <div class="score-label">Streak</div>
+      <div class="streak-bar"><div class="streak-fill" style="width:${Math.min(S.streak * 20, 100)}%;"></div></div>
+    </div>
+    <div class="panel-section"><div class="panel-title">Best Streak</div>
+    <div class="panel-text" style="font-size:24px;font-weight:800;color:var(--purple);"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="vertical-align:-2px;"><path d="M6 4h12v2a6 6 0 01-12 0V4z" fill="currentColor" opacity="0.2"/><path d="M6 4h12v2a6 6 0 01-12 0V4z"/><path d="M6 6H3v2a3 3 0 003 3"/><path d="M18 6h3v2a3 3 0 01-3 3"/><line x1="12" y1="14" x2="12" y2="18"/><line x1="8" y1="18" x2="16" y2="18" stroke-linecap="round"/></svg> ${S.best}</div></div>
+    <div class="panel-section"><div class="panel-title">Tip</div>
+    <div class="panel-text">Orange flats = 100s, purple rods = 10s, cyan cubes = 1s. Count each group, then combine!</div></div>
+    <div class="panel-section"><div class="panel-title">Scoring</div>
+    <div class="panel-text">Base: <strong>10 points</strong><br>Streak bonus: <strong>+2 \u00d7 streak</strong></div></div>`;
+}
+
+function playPick(clicked, idx) {
+  const btn = document.getElementById('play' + idx);
+  const isStr = typeof S.playAnswer === 'string';
+  const isCorrect = isStr ? (String(clicked) === S.playAnswer) : (Number(clicked) === S.playAnswer);
+
+  if (isCorrect) {
+    btn.classList.add('correct-flash');
+    S.score += 10 + S.streak * 2;
+    S.streak++;
+    if (S.streak > S.best) S.best = S.streak;
+    showFB('Correct!', 'correct');
+  } else {
+    btn.classList.add('incorrect-flash');
+    S.streak = 0;
+
+    let msg;
+    if (S.playType === 'identifyDigit') {
+      msg = MISCONCEPTIONS.placeConfusion.msg(S.playNum);
+    } else if (S.playType === 'whatNumber') {
+      const d = numToHTO(S.playNum);
+      const got = Number(clicked);
+      const swapped = d.o * 100 + d.t * 10 + d.h;
+      if (got === swapped) msg = MISCONCEPTIONS.digitVsValue.msg(S.playNum);
+      else if (d.t === 0 && got === d.h * 100 + d.o * 10) msg = MISCONCEPTIONS.noTens.msg(S.playNum);
+      else msg = MISCONCEPTIONS.placeConfusion.msg(S.playNum);
+    } else if (S.playType === 'compare') {
+      msg = MISCONCEPTIONS.rightToLeft.msg(S.playA, S.playB);
+    } else if (S.playType === 'expanded') {
+      if (String(clicked) === `${numToHTO(S.playNum).h} + ${numToHTO(S.playNum).t} + ${numToHTO(S.playNum).o}`) {
+        msg = MISCONCEPTIONS.digitVsValue.msg(S.playNum);
+      } else {
+        msg = MISCONCEPTIONS.expandedMix.msg();
+      }
+    } else if (S.playType === 'identifyValue') {
+      msg = MISCONCEPTIONS.digitVsValue.msg(S.playNum);
+    } else if (S.playType === 'skipCount') {
+      msg = MISCONCEPTIONS.skipCount.msg();
+    } else {
+      msg = MISCONCEPTIONS.placeConfusion.msg(S.playNum || 0);
+    }
+
+    showFB(msg, 'incorrect');
+  }
+
+  setTimeout(() => {
+    S.round++;
+    if (S.round > S.total) {
+      render();
+      return;
+    }
+    newPlayRound();
+    render();
+  }, 1400);
+}
+
+/* ── Init ── */
+render();
+</script>
+<script src="../../vinculum-core.js"></script>
+<script src="../../vinculum-data.js"></script>
+<script src="../../vinculum-adaptive-hook.js"></script>
+<script src="../../vinculum-3reads.js"></script>
+<script src="../../vinculum-stories.js"></script>
+<script src="../../vinculum-feedback.js"></script>
+<script src="../../vinculum-guide.js"></script>
+<script src="../../vinculum-identity.js"></script>
+<script src="../../vinculum-indigenous.js"></script>
+<script src="../../vinculum-dashboard.js"></script>
+<script src="../../vinculum-hyperfocus.js"></script>
+<script src="../../vinculum-layout.js"></script>
+</body>
+</html>

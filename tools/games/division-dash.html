@@ -1,0 +1,1260 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Division Dash | VINCULUM Hub</title>
+  <link rel="stylesheet" href="../../vinculum-core.css">
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      background-color: var(--bg-primary);
+      color: var(--text-primary);
+      overflow: hidden;
+    }
+
+    .vinculum-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 0.75rem 1.5rem;
+      background-color: var(--bg-secondary);
+      border-bottom: 2px solid var(--border-color);
+      height: 60px;
+    }
+
+    .header-title {
+      font-size: 1.5rem;
+      font-weight: 700;
+      color: var(--cyan);
+      letter-spacing: 0.05em;
+    }
+
+    .header-controls {
+      display: flex;
+      gap: 1rem;
+      align-items: center;
+    }
+
+    .theme-picker-btn {
+      padding: 0.5rem 1rem;
+      background-color: var(--button-bg);
+      border: 1px solid var(--border-color);
+      color: var(--text-primary);
+      border-radius: 4px;
+      cursor: pointer;
+      font-size: 0.9rem;
+      transition: background-color 0.3s ease;
+    }
+
+    .theme-picker-btn:hover {
+      background-color: var(--button-hover);
+    }
+
+    .theme-menu {
+      position: absolute;
+      top: 65px;
+      right: 20px;
+      background-color: var(--bg-secondary);
+      border: 1px solid var(--border-color);
+      border-radius: 4px;
+      z-index: 1000;
+      display: none;
+      min-width: 220px;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+    }
+
+    .theme-menu.active {
+      display: block;
+    }
+
+    .theme-option {
+      padding: 0.75rem 1rem;
+      cursor: pointer;
+      border-bottom: 1px solid var(--border-color);
+      transition: background-color 0.2s ease;
+    }
+
+    .theme-option:last-child {
+      border-bottom: none;
+    }
+
+    .theme-option:hover {
+      background-color: var(--button-hover);
+    }
+
+    .theme-option.active {
+      background-color: var(--cyan);
+      color: var(--bg-primary);
+      font-weight: 600;
+    }
+
+    .theme-color-dot {
+      display: inline-block;
+      width: 12px;
+      height: 12px;
+      border-radius: 50%;
+      margin-right: 0.5rem;
+      vertical-align: middle;
+    }
+
+    .container {
+      display: flex;
+      height: calc(100vh - 60px);
+      gap: 1rem;
+      padding: 1rem;
+      background-color: var(--bg-primary);
+    }
+
+    .canvas-section {
+      flex: 0 0 65%;
+      background-color: var(--bg-secondary);
+      border: 1px solid var(--border-color);
+      border-radius: 8px;
+      padding: 1rem;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      overflow: hidden;
+      position: relative;
+    }
+
+    svg {
+      max-width: 100%;
+      max-height: 100%;
+      filter: drop-shadow(0 2px 4px rgba(0,0,0,0.2));
+    }
+
+    .sidebar {
+      flex: 0 0 35%;
+      background-color: var(--bg-secondary);
+      border: 1px solid var(--border-color);
+      border-radius: 8px;
+      padding: 1.5rem;
+      display: flex;
+      flex-direction: column;
+      overflow-y: auto;
+    }
+
+    .mode-tabs {
+      display: flex;
+      gap: 0.5rem;
+      margin-bottom: 1.5rem;
+      border-bottom: 2px solid var(--border-color);
+    }
+
+    .tab-button {
+      flex: 1;
+      padding: 0.75rem;
+      background: none;
+      border: none;
+      border-bottom: 3px solid transparent;
+      color: var(--text-secondary);
+      cursor: pointer;
+      font-weight: 600;
+      font-size: 0.95rem;
+      transition: all 0.3s ease;
+    }
+
+    .tab-button.active {
+      color: var(--cyan);
+      border-bottom-color: var(--cyan);
+    }
+
+    .tab-button:hover {
+      color: var(--cyan);
+    }
+
+    .mode-content {
+      display: none;
+      flex: 1;
+      overflow-y: auto;
+    }
+
+    .mode-content.active {
+      display: flex;
+      flex-direction: column;
+    }
+
+    .problem-display {
+      font-size: 2.5rem;
+      font-weight: 700;
+      color: var(--cyan);
+      text-align: center;
+      margin-bottom: 1.5rem;
+      font-family: 'Courier New', monospace;
+      letter-spacing: 0.1em;
+    }
+
+    .slider-group {
+      margin-bottom: 1.5rem;
+    }
+
+    .slider-label {
+      font-size: 0.9rem;
+      color: var(--text-secondary);
+      margin-bottom: 0.5rem;
+      font-weight: 600;
+    }
+
+    .slider-value {
+      font-size: 1.2rem;
+      font-weight: 700;
+      color: var(--cyan);
+      margin-left: 0.5rem;
+    }
+
+    input[type="range"] {
+      width: 100%;
+      height: 6px;
+      border-radius: 3px;
+      background: var(--border-color);
+      outline: none;
+      -webkit-appearance: none;
+      appearance: none;
+    }
+
+    input[type="range"]::-webkit-slider-thumb {
+      -webkit-appearance: none;
+      appearance: none;
+      width: 16px;
+      height: 16px;
+      border-radius: 50%;
+      background: var(--cyan);
+      cursor: pointer;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.3);
+    }
+
+    input[type="range"]::-moz-range-thumb {
+      width: 16px;
+      height: 16px;
+      border-radius: 50%;
+      background: var(--cyan);
+      cursor: pointer;
+      border: none;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.3);
+    }
+
+    .input-section {
+      margin-bottom: 1.5rem;
+    }
+
+    .input-label {
+      font-size: 0.9rem;
+      color: var(--text-secondary);
+      margin-bottom: 0.5rem;
+      font-weight: 600;
+    }
+
+    .input-wrapper {
+      display: flex;
+      gap: 0.5rem;
+    }
+
+    input[type="number"],
+    input[type="text"] {
+      flex: 1;
+      padding: 0.75rem;
+      background-color: var(--bg-primary);
+      border: 1px solid var(--border-color);
+      border-radius: 4px;
+      color: var(--text-primary);
+      font-size: 1.1rem;
+      font-weight: 600;
+      text-align: center;
+      transition: border-color 0.3s ease;
+    }
+
+    input[type="number"]:focus,
+    input[type="text"]:focus {
+      outline: none;
+      border-color: var(--cyan);
+      box-shadow: 0 0 0 2px rgba(0, 255, 221, 0.1);
+    }
+
+    .submit-btn,
+    .capture-btn {
+      padding: 0.75rem 1.5rem;
+      background-color: var(--cyan);
+      border: none;
+      border-radius: 4px;
+      color: var(--bg-primary);
+      font-weight: 700;
+      cursor: pointer;
+      font-size: 1rem;
+      transition: all 0.3s ease;
+    }
+
+    .submit-btn:hover,
+    .capture-btn:hover {
+      background-color: var(--pink);
+      transform: translateY(-2px);
+      box-shadow: 0 4px 8px rgba(0, 255, 221, 0.3);
+    }
+
+    .submit-btn:active {
+      transform: translateY(0);
+    }
+
+    .readout-panel {
+      background-color: var(--bg-primary);
+      border: 1px solid var(--border-color);
+      border-radius: 6px;
+      padding: 1rem;
+      margin-bottom: 1.5rem;
+      font-size: 0.9rem;
+    }
+
+    .readout-item {
+      display: flex;
+      justify-content: space-between;
+      margin-bottom: 0.75rem;
+      font-weight: 600;
+    }
+
+    .readout-item:last-child {
+      margin-bottom: 0;
+    }
+
+    .readout-label {
+      color: var(--text-secondary);
+    }
+
+    .readout-value {
+      color: var(--cyan);
+      font-family: 'Courier New', monospace;
+    }
+
+    .difficulty-selector {
+      margin-bottom: 1.5rem;
+    }
+
+    .difficulty-label {
+      font-size: 0.9rem;
+      color: var(--text-secondary);
+      margin-bottom: 0.75rem;
+      font-weight: 600;
+    }
+
+    .difficulty-buttons {
+      display: grid;
+      grid-template-columns: 1fr 1fr 1fr;
+      gap: 0.5rem;
+    }
+
+    .difficulty-btn {
+      padding: 0.6rem 0.5rem;
+      background-color: var(--bg-primary);
+      border: 1px solid var(--border-color);
+      border-radius: 4px;
+      color: var(--text-secondary);
+      cursor: pointer;
+      font-weight: 600;
+      font-size: 0.85rem;
+      transition: all 0.3s ease;
+    }
+
+    .difficulty-btn.active {
+      background-color: var(--cyan);
+      color: var(--bg-primary);
+      border-color: var(--cyan);
+    }
+
+    .difficulty-btn:hover {
+      border-color: var(--cyan);
+    }
+
+    .timer-bar {
+      width: 100%;
+      height: 6px;
+      background-color: var(--border-color);
+      border-radius: 3px;
+      overflow: hidden;
+      margin-bottom: 1rem;
+    }
+
+    .timer-fill {
+      height: 100%;
+      background: linear-gradient(90deg, var(--cyan), var(--pink));
+      width: 100%;
+      transition: width 0.1s linear;
+    }
+
+    .timer-text {
+      text-align: center;
+      font-size: 1.2rem;
+      font-weight: 700;
+      color: var(--cyan);
+      margin-bottom: 1rem;
+      font-family: 'Courier New', monospace;
+    }
+
+    .capture-log {
+      margin-top: 1.5rem;
+    }
+
+    .capture-log-title {
+      font-size: 0.9rem;
+      color: var(--text-secondary);
+      margin-bottom: 0.75rem;
+      font-weight: 600;
+    }
+
+    .capture-log-list {
+      max-height: 300px;
+      overflow-y: auto;
+      border: 1px solid var(--border-color);
+      border-radius: 4px;
+      background-color: var(--bg-primary);
+    }
+
+    .capture-item {
+      padding: 0.75rem;
+      border-bottom: 1px solid var(--border-color);
+      font-size: 0.85rem;
+    }
+
+    .capture-item:last-child {
+      border-bottom: none;
+    }
+
+    .capture-timestamp {
+      color: var(--text-secondary);
+      font-size: 0.75rem;
+    }
+
+    .capture-problem {
+      font-weight: 600;
+      color: var(--cyan);
+      margin: 0.25rem 0;
+      font-family: 'Courier New', monospace;
+    }
+
+    .capture-result {
+      color: var(--pink);
+    }
+
+    .end-screen {
+      display: none;
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background-color: rgba(0, 0, 0, 0.8);
+      z-index: 2000;
+      align-items: center;
+      justify-content: center;
+      flex-direction: column;
+      gap: 1.5rem;
+    }
+
+    .end-screen.active {
+      display: flex;
+    }
+
+    .end-screen-content {
+      background-color: var(--bg-secondary);
+      border: 2px solid var(--cyan);
+      border-radius: 12px;
+      padding: 2rem;
+      text-align: center;
+      max-width: 500px;
+      box-shadow: 0 8px 32px rgba(0, 255, 221, 0.2);
+    }
+
+    .end-screen-title {
+      font-size: 2rem;
+      font-weight: 700;
+      color: var(--cyan);
+      margin-bottom: 1.5rem;
+    }
+
+    .end-screen-stat {
+      font-size: 1.5rem;
+      margin-bottom: 1rem;
+      font-weight: 600;
+    }
+
+    .end-screen-stat-label {
+      color: var(--text-secondary);
+      font-size: 0.9rem;
+    }
+
+    .end-screen-stat-value {
+      color: var(--pink);
+      font-size: 2rem;
+      font-family: 'Courier New', monospace;
+    }
+
+    .end-screen-btn {
+      padding: 0.75rem 2rem;
+      background-color: var(--cyan);
+      border: none;
+      border-radius: 4px;
+      color: var(--bg-primary);
+      font-weight: 700;
+      font-size: 1rem;
+      cursor: pointer;
+      margin-top: 1rem;
+      transition: all 0.3s ease;
+    }
+
+    .end-screen-btn:hover {
+      background-color: var(--pink);
+      transform: translateY(-2px);
+    }
+
+    .streak-indicator {
+      font-size: 1.1rem;
+      font-weight: 700;
+      color: var(--pink);
+      margin-bottom: 0.75rem;
+    }
+
+    @keyframes groupHighlight {
+      0% { opacity: 0.5; }
+      50% { opacity: 1; }
+      100% { opacity: 0.5; }
+    }
+
+    @keyframes celebration {
+      0% { fill: var(--cyan); }
+      50% { fill: var(--pink); }
+      100% { fill: var(--cyan); }
+    }
+
+    .group-highlight {
+      animation: groupHighlight 0.6s ease-in-out;
+    }
+
+    .celebrate {
+      animation: celebration 0.8s ease-in-out;
+    }
+  </style>
+</head>
+<body>
+  <div class="vinculum-header">
+    <div class="header-title">📊 Division Dash</div>
+    <div class="header-controls">
+      <button class="theme-picker-btn" id="themeBtn">Theme</button>
+      <div class="theme-menu" id="themeMenu"></div>
+    </div>
+  </div>
+
+  <div class="container">
+    <div class="canvas-section">
+      <svg id="canvas" width="600" height="500" viewBox="0 0 600 500"></svg>
+    </div>
+
+    <div class="sidebar">
+      <div class="mode-tabs">
+        <button class="tab-button active" data-mode="explore">Explore</button>
+        <button class="tab-button" data-mode="practice">Practice</button>
+        <button class="tab-button" data-mode="play">Play</button>
+      </div>
+
+      <!-- EXPLORE MODE -->
+      <div class="mode-content active" id="explore">
+        <div class="slider-group">
+          <div style="display: flex; justify-content: space-between; align-items: center;">
+            <label class="slider-label">Total Objects (Dividend)</label>
+            <span class="slider-value" id="dividendValue">12</span>
+          </div>
+          <input type="range" id="dividendSlider" min="2" max="50" value="12">
+        </div>
+
+        <div class="slider-group">
+          <div style="display: flex; justify-content: space-between; align-items: center;">
+            <label class="slider-label">Group Size (Divisor)</label>
+            <span class="slider-value" id="divisorValue">3</span>
+          </div>
+          <input type="range" id="divisorSlider" min="2" max="12" value="3">
+        </div>
+
+        <div class="readout-panel">
+          <div class="readout-item">
+            <span class="readout-label">Total:</span>
+            <span class="readout-value" id="readoutTotal">12</span>
+          </div>
+          <div class="readout-item">
+            <span class="readout-label">Group Size:</span>
+            <span class="readout-value" id="readoutDivisor">3</span>
+          </div>
+          <div class="readout-item">
+            <span class="readout-label">Groups:</span>
+            <span class="readout-value" id="readoutQuotient">4</span>
+          </div>
+          <div class="readout-item">
+            <span class="readout-label">Remainder:</span>
+            <span class="readout-value" id="readoutRemainder">0</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- PRACTICE MODE -->
+      <div class="mode-content" id="practice">
+        <div class="problem-display" id="problemDisplay">12 ÷ 3 = ?</div>
+
+        <div class="input-section">
+          <label class="input-label">Your Answer:</label>
+          <div class="input-wrapper">
+            <input type="number" id="answerInput" placeholder="Type here..." min="0">
+            <button class="submit-btn" id="submitBtn">Submit</button>
+          </div>
+        </div>
+
+        <div class="readout-panel">
+          <div class="readout-item">
+            <span class="readout-label">Score:</span>
+            <span class="readout-value" id="practiceScore">0</span>
+          </div>
+          <div class="readout-item">
+            <span class="readout-label">Streak:</span>
+            <span class="readout-value" id="practiceStreak">0</span>
+          </div>
+          <div class="readout-item">
+            <span class="readout-label">Problems Solved:</span>
+            <span class="readout-value" id="practiceProblems">0</span>
+          </div>
+          <div class="readout-item">
+            <span class="readout-label">Accuracy:</span>
+            <span class="readout-value" id="practiceAccuracy">0%</span>
+          </div>
+        </div>
+
+        <div class="difficulty-selector">
+          <div class="difficulty-label">Difficulty:</div>
+          <div class="difficulty-buttons">
+            <button class="difficulty-btn active" data-diff="emergent">Emergent</button>
+            <button class="difficulty-btn" data-diff="proficient">Proficient</button>
+            <button class="difficulty-btn" data-diff="advanced">Advanced</button>
+          </div>
+        </div>
+
+        <button class="capture-btn" id="captureBtn" style="width: 100%; margin-top: auto;">Capture Log</button>
+      </div>
+
+      <!-- PLAY MODE -->
+      <div class="mode-content" id="play">
+        <div class="timer-text" id="timerDisplay">60s</div>
+        <div class="timer-bar">
+          <div class="timer-fill" id="timerFill" style="width: 100%;"></div>
+        </div>
+
+        <div class="problem-display" id="playProblem">12 ÷ 3 = ?</div>
+
+        <div class="input-section">
+          <label class="input-label">Your Answer:</label>
+          <div class="input-wrapper">
+            <input type="number" id="playAnswerInput" placeholder="Type here..." min="0">
+            <button class="submit-btn" id="playSubmitBtn">Submit</button>
+          </div>
+        </div>
+
+        <div class="readout-panel">
+          <div class="readout-item">
+            <span class="readout-label">Score:</span>
+            <span class="readout-value" id="playScore">0</span>
+          </div>
+          <div class="readout-item">
+            <span class="readout-label">Streak:</span>
+            <span class="readout-value" id="playStreak">0</span>
+          </div>
+          <div class="readout-item">
+            <span class="readout-label">Multiplier:</span>
+            <span class="readout-value" id="playMultiplier">1x</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div id="feedback"></div>
+
+  <div class="end-screen" id="endScreen">
+    <div class="end-screen-content">
+      <div class="end-screen-title">Time's Up!</div>
+      <div class="end-screen-stat">
+        <div class="end-screen-stat-label">Final Score</div>
+        <div class="end-screen-stat-value" id="endScore">0</div>
+      </div>
+      <div class="end-screen-stat">
+        <div class="end-screen-stat-label">Problems Solved</div>
+        <div class="end-screen-stat-value" id="endProblems">0</div>
+      </div>
+      <button class="end-screen-btn" id="newGameBtn">Play Again</button>
+    </div>
+  </div>
+
+  <script src="../../vinculum-core.js"></script>
+  <script src="../../vinculum-input.js"></script>
+  <script src="../../vinculum-feedback.js"></script>
+  <script src="../../vinculum-guide.js"></script><script src="../../vinculum-indigenous.js"></script><script src="../../indigenous-context-panel.js"></script>
+
+  <script>
+    // Theme System
+    const themes = [
+      {id:'',label:'Default',color:'#0a0e1a'},
+      {id:'bright',label:'Bright',color:'#f0f2f5'},
+      {id:'redlaser',label:'Red Laser',color:'#ff2d55'},
+      {id:'storm',label:'Storm',color:'#00e5ff'},
+      {id:'frost',label:'Frost',color:'#dce8f4'},
+      {id:'emerald',label:'Emerald',color:'#00e676'},
+      {id:'sunset',label:'Sunset',color:'#ff6b35'},
+      {id:'spartan',label:'Spartan',color:'#8B1A32'},
+      {id:'neonforge',label:'Neon Forge',color:'#ff00ff'},
+      {id:'sunrise',label:'Sunrise',color:'#FF8C42'},
+      {id:'ocean',label:'Ocean',color:'#00B4D8'},
+      {id:'mathlab',label:'Math Lab',color:'#F5F5F7'},
+      {id:'nature',label:'Nature',color:'#6B8F71'},
+      {id:'highcontrast',label:'HC',color:'#FFD60A'},
+      {id:'laserpro',label:'Laser Pro',color:'#ff2030'}
+    ];
+
+    const themeBtn = document.getElementById('themeBtn');
+    const themeMenu = document.getElementById('themeMenu');
+
+    // Populate theme menu
+    themes.forEach(theme => {
+      const option = document.createElement('div');
+      option.className = 'theme-option';
+      if (theme.id === '') option.classList.add('active');
+      option.innerHTML = `<span class="theme-color-dot" style="background-color: ${theme.color}"></span>${theme.label}`;
+      option.addEventListener('click', () => setTheme(theme.id));
+      themeMenu.appendChild(option);
+    });
+
+    themeBtn.addEventListener('click', () => {
+      themeMenu.classList.toggle('active');
+    });
+
+    function setTheme(themeId) {
+      document.documentElement.setAttribute('data-theme', themeId);
+      localStorage.setItem('vinculum-theme', themeId);
+      document.querySelectorAll('.theme-option').forEach(opt => opt.classList.remove('active'));
+      document.querySelector(`[data-theme-id="${themeId}"]`)?.classList.add('active');
+      themeMenu.classList.remove('active');
+
+      const activeOption = Array.from(themeMenu.children).find(child => {
+        const label = child.textContent.trim();
+        return themes.find(t => t.id === themeId)?.label === label.split('HC')[0].trim() || themes.find(t => t.id === themeId)?.label === label;
+      });
+      if (activeOption) activeOption.classList.add('active');
+    }
+
+    // Load saved theme
+    const savedTheme = localStorage.getItem('vinculum-theme') || '';
+    setTheme(savedTheme);
+
+    // Game State
+    let gameState = {
+      mode: 'explore',
+      difficulty: 'emergent',
+      currentProblem: { dividend: 12, divisor: 3, quotient: 4, remainder: 0 },
+      score: 0,
+      streak: 0,
+      problemsSolved: 0,
+      correctAnswers: 0,
+      playScore: 0,
+      playStreak: 0,
+      playMultiplier: 1,
+      captureLog: [],
+      playTimer: 60,
+      playActive: false,
+      playTimerInterval: null
+    };
+
+    // SVG Canvas Functions
+    function drawExploreArray(dividend, divisor) {
+      const canvas = document.getElementById('canvas');
+      canvas.innerHTML = '';
+
+      const rows = Math.ceil(dividend / divisor);
+      const cols = Math.min(dividend, divisor);
+      const spacing = 40;
+      const radius = 15;
+      const startX = 100;
+      const startY = 100;
+
+      let objectIndex = 0;
+      const groups = [];
+      let currentGroup = [];
+
+      for (let r = 0; r < rows; r++) {
+        for (let c = 0; c < cols && objectIndex < dividend; c++) {
+          const x = startX + c * spacing;
+          const y = startY + r * spacing;
+
+          const circle = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+          circle.setAttribute('cx', x);
+          circle.setAttribute('cy', y);
+          circle.setAttribute('r', radius);
+          circle.setAttribute('fill', objectIndex % 2 === 0 ? 'var(--cyan)' : 'var(--pink)');
+          circle.setAttribute('opacity', '0.8');
+          canvas.appendChild(circle);
+
+          currentGroup.push({ x, y });
+          objectIndex++;
+
+          if (currentGroup.length === divisor) {
+            groups.push([...currentGroup]);
+            currentGroup = [];
+          }
+        }
+      }
+
+      if (currentGroup.length > 0) {
+        groups.push(currentGroup);
+      }
+
+      // Draw group boxes
+      groups.forEach((group, groupIdx) => {
+        if (group.length === 0) return;
+        const minX = Math.min(...group.map(p => p.x)) - 25;
+        const maxX = Math.max(...group.map(p => p.x)) + 25;
+        const minY = Math.min(...group.map(p => p.y)) - 25;
+        const maxY = Math.max(...group.map(p => p.y)) + 25;
+
+        const rect = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
+        rect.setAttribute('x', minX);
+        rect.setAttribute('y', minY);
+        rect.setAttribute('width', maxX - minX);
+        rect.setAttribute('height', maxY - minY);
+        rect.setAttribute('fill', 'none');
+        rect.setAttribute('stroke', groupIdx === groups.length - 1 && group.length < divisor ? '#ff6b6b' : 'var(--cyan)');
+        rect.setAttribute('stroke-width', '2');
+        rect.setAttribute('stroke-dasharray', groupIdx === groups.length - 1 && group.length < divisor ? '5,5' : '0');
+        rect.setAttribute('rx', '4');
+        canvas.insertBefore(rect, canvas.firstChild);
+
+        const label = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+        label.setAttribute('x', minX + 5);
+        label.setAttribute('y', minY - 5);
+        label.setAttribute('font-size', '12');
+        label.setAttribute('fill', groupIdx === groups.length - 1 && group.length < divisor ? '#ff6b6b' : 'var(--cyan)');
+        label.setAttribute('font-weight', '600');
+        label.textContent = groupIdx === groups.length - 1 && group.length < divisor ? `Remainder (${group.length})` : `Group ${groupIdx + 1}`;
+        canvas.appendChild(label);
+      });
+
+      updateExploreReadout(dividend, divisor);
+    }
+
+    function drawPracticeArray(dividend, divisor, isScaffolding = false) {
+      const canvas = document.getElementById('canvas');
+      canvas.innerHTML = '';
+
+      const rows = Math.ceil(dividend / divisor);
+      const cols = Math.min(dividend, divisor);
+      const spacing = 40;
+      const radius = 15;
+      const startX = 100;
+      const startY = 100;
+
+      let objectIndex = 0;
+      const groups = [];
+      let currentGroup = [];
+
+      for (let r = 0; r < rows; r++) {
+        for (let c = 0; c < cols && objectIndex < dividend; c++) {
+          const x = startX + c * spacing;
+          const y = startY + r * spacing;
+
+          const circle = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+          circle.setAttribute('cx', x);
+          circle.setAttribute('cy', y);
+          circle.setAttribute('r', radius);
+          circle.setAttribute('fill', objectIndex % 2 === 0 ? 'var(--cyan)' : 'var(--pink)');
+          circle.setAttribute('opacity', '0.8');
+          circle.setAttribute('class', `object-${Math.floor(objectIndex / divisor)}`);
+          canvas.appendChild(circle);
+
+          currentGroup.push({ x, y });
+          objectIndex++;
+
+          if (currentGroup.length === divisor) {
+            groups.push([...currentGroup]);
+            currentGroup = [];
+          }
+        }
+      }
+
+      if (currentGroup.length > 0) {
+        groups.push(currentGroup);
+      }
+
+      // Draw groups with scaffolding animation
+      groups.forEach((group, groupIdx) => {
+        if (group.length === 0) return;
+        const minX = Math.min(...group.map(p => p.x)) - 25;
+        const maxX = Math.max(...group.map(p => p.x)) + 25;
+        const minY = Math.min(...group.map(p => p.y)) - 25;
+        const maxY = Math.max(...group.map(p => p.y)) + 25;
+
+        const rect = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
+        rect.setAttribute('x', minX);
+        rect.setAttribute('y', minY);
+        rect.setAttribute('width', maxX - minX);
+        rect.setAttribute('height', maxY - minY);
+        rect.setAttribute('fill', 'none');
+        rect.setAttribute('stroke', group.length < divisor ? '#ff6b6b' : 'var(--cyan)');
+        rect.setAttribute('stroke-width', '2');
+        rect.setAttribute('stroke-dasharray', group.length < divisor ? '5,5' : '0');
+        rect.setAttribute('rx', '4');
+        rect.setAttribute('opacity', isScaffolding ? '0' : '1');
+
+        if (isScaffolding) {
+          rect.style.animation = `groupHighlight 0.6s ease-in-out ${groupIdx * 0.4}s forwards`;
+        }
+
+        canvas.insertBefore(rect, canvas.firstChild);
+
+        const label = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+        label.setAttribute('x', minX + 5);
+        label.setAttribute('y', minY - 5);
+        label.setAttribute('font-size', '12');
+        label.setAttribute('fill', group.length < divisor ? '#ff6b6b' : 'var(--cyan)');
+        label.setAttribute('font-weight', '600');
+        label.setAttribute('opacity', isScaffolding ? '0' : '1');
+
+        if (isScaffolding) {
+          label.style.animation = `groupHighlight 0.6s ease-in-out ${groupIdx * 0.4}s forwards`;
+        }
+
+        label.textContent = group.length < divisor ? `Remainder: ${group.length}` : `Group ${groupIdx + 1}`;
+        canvas.appendChild(label);
+      });
+
+      // Running total for scaffolding
+      if (isScaffolding) {
+        const totalText = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+        totalText.setAttribute('x', 300);
+        totalText.setAttribute('y', 450);
+        totalText.setAttribute('font-size', '14');
+        totalText.setAttribute('fill', 'var(--pink)');
+        totalText.setAttribute('font-weight', '700');
+        totalText.setAttribute('text-anchor', 'middle');
+
+        let runningTotal = 0;
+        let counts = [];
+        groups.forEach((group, idx) => {
+          if (group.length === divisor) {
+            runningTotal += divisor;
+            counts.push(runningTotal);
+          }
+        });
+
+        totalText.textContent = `${counts.join(', ')} — that's ${Math.floor(dividend / divisor)} groups!`;
+        canvas.appendChild(totalText);
+      }
+    }
+
+    function updateExploreReadout(dividend, divisor) {
+      const quotient = Math.floor(dividend / divisor);
+      const remainder = dividend % divisor;
+      document.getElementById('readoutTotal').textContent = dividend;
+      document.getElementById('readoutDivisor').textContent = divisor;
+      document.getElementById('readoutQuotient').textContent = quotient;
+      document.getElementById('readoutRemainder').textContent = remainder;
+    }
+
+    // Mode Switching
+    document.querySelectorAll('.tab-button').forEach(btn => {
+      btn.addEventListener('click', () => {
+        document.querySelectorAll('.tab-button').forEach(b => b.classList.remove('active'));
+        document.querySelectorAll('.mode-content').forEach(c => c.classList.remove('active'));
+        btn.classList.add('active');
+
+        gameState.mode = btn.dataset.mode;
+        document.getElementById(btn.dataset.mode).classList.add('active');
+
+        if (btn.dataset.mode === 'explore') {
+          const dividend = parseInt(document.getElementById('dividendSlider').value);
+          const divisor = parseInt(document.getElementById('divisorSlider').value);
+          drawExploreArray(dividend, divisor);
+        } else if (btn.dataset.mode === 'practice') {
+          generatePracticeProblem();
+        } else if (btn.dataset.mode === 'play') {
+          startPlayMode();
+        }
+      });
+    });
+
+    // Explore Mode
+    document.getElementById('dividendSlider').addEventListener('input', (e) => {
+      const dividend = parseInt(e.target.value);
+      const divisor = parseInt(document.getElementById('divisorSlider').value);
+      document.getElementById('dividendValue').textContent = dividend;
+      drawExploreArray(dividend, divisor);
+    });
+
+    document.getElementById('divisorSlider').addEventListener('input', (e) => {
+      const divisor = parseInt(e.target.value);
+      const dividend = parseInt(document.getElementById('dividendSlider').value);
+      document.getElementById('divisorValue').textContent = divisor;
+      drawExploreArray(dividend, divisor);
+    });
+
+    // Generate Practice Problem
+    function generatePracticeProblem() {
+      let dividend, divisor;
+
+      if (gameState.difficulty === 'emergent') {
+        divisor = Math.floor(Math.random() * 4) + 2; // 2-5
+        dividend = divisor * Math.floor(Math.random() * 4 + 2); // no remainder, up to 5*4=20
+      } else if (gameState.difficulty === 'proficient') {
+        divisor = Math.floor(Math.random() * 9) + 2; // 2-10
+        dividend = Math.floor(Math.random() * 100) + 1; // up to 100
+      } else { // advanced
+        divisor = Math.floor(Math.random() * 11) + 2; // 2-12
+        dividend = Math.floor(Math.random() * 144) + 1; // up to 144
+      }
+
+      gameState.currentProblem = { dividend, divisor };
+      document.getElementById('problemDisplay').textContent = `${dividend} ÷ ${divisor} = ?`;
+      document.getElementById('answerInput').value = '';
+      document.getElementById('answerInput').focus();
+      drawPracticeArray(dividend, divisor, false);
+    }
+
+    // Submit Practice Answer
+    document.getElementById('submitBtn').addEventListener('click', () => {
+      const answer = parseInt(document.getElementById('answerInput').value);
+      const expected = Math.floor(gameState.currentProblem.dividend / gameState.currentProblem.divisor);
+
+      if (answer === expected) {
+        gameState.score += 10;
+        gameState.streak++;
+        gameState.correctAnswers++;
+        gameState.problemsSolved++;
+
+        drawPracticeArray(gameState.currentProblem.dividend, gameState.currentProblem.divisor, false);
+        celebrateCorrect();
+
+        gameState.captureLog.push({
+          timestamp: new Date().toLocaleTimeString(),
+          problem: `${gameState.currentProblem.dividend} ÷ ${gameState.currentProblem.divisor}`,
+          result: 'Correct',
+          scaffolding: false
+        });
+
+        setTimeout(() => generatePracticeProblem(), 1500);
+      } else {
+        gameState.streak = 0;
+        gameState.problemsSolved++;
+
+        gameState.captureLog.push({
+          timestamp: new Date().toLocaleTimeString(),
+          problem: `${gameState.currentProblem.dividend} ÷ ${gameState.currentProblem.divisor}`,
+          result: `Attempted: ${answer}, Correct: ${expected}`,
+          scaffolding: true
+        });
+
+        drawPracticeArray(gameState.currentProblem.dividend, gameState.currentProblem.divisor, true);
+        setTimeout(() => {
+          showFeedback(`Incorrect. The answer is ${expected}. Study the groups above!`);
+        }, 500);
+      }
+
+      updatePracticeStats();
+    });
+
+    document.getElementById('answerInput').addEventListener('keypress', (e) => {
+      if (e.key === 'Enter') {
+        document.getElementById('submitBtn').click();
+      }
+    });
+
+    // Difficulty Selection
+    document.querySelectorAll('[data-diff]').forEach(btn => {
+      btn.addEventListener('click', () => {
+        document.querySelectorAll('[data-diff]').forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+        gameState.difficulty = btn.dataset.diff;
+      });
+    });
+
+    function updatePracticeStats() {
+      document.getElementById('practiceScore').textContent = gameState.score;
+      document.getElementById('practiceStreak').textContent = gameState.streak;
+      document.getElementById('practiceProblems').textContent = gameState.problemsSolved;
+
+      const accuracy = gameState.problemsSolved > 0
+        ? Math.round((gameState.correctAnswers / gameState.problemsSolved) * 100)
+        : 0;
+      document.getElementById('practiceAccuracy').textContent = accuracy + '%';
+    }
+
+    // Capture Log
+    document.getElementById('captureBtn').addEventListener('click', () => {
+      const sidebar = document.querySelector('.sidebar');
+      const logContainer = document.createElement('div');
+      logContainer.className = 'capture-log';
+      logContainer.innerHTML = `
+        <div class="capture-log-title">Capture Log</div>
+        <div class="capture-log-list">
+          ${gameState.captureLog.map(item => `
+            <div class="capture-item">
+              <div class="capture-timestamp">${item.timestamp}</div>
+              <div class="capture-problem">${item.problem}</div>
+              <div class="capture-result">${item.result}</div>
+              <div style="color: var(--text-secondary); font-size: 0.75rem; margin-top: 0.25rem;">Scaffolding: ${item.scaffolding ? 'Yes' : 'No'}</div>
+            </div>
+          `).join('')}
+        </div>
+      `;
+
+      const existing = document.querySelector('.capture-log');
+      if (existing) {
+        existing.replaceWith(logContainer);
+      } else {
+        sidebar.appendChild(logContainer);
+      }
+    });
+
+    // Play Mode
+    function startPlayMode() {
+      gameState.playScore = 0;
+      gameState.playStreak = 0;
+      gameState.playMultiplier = 1;
+      gameState.playTimer = 60;
+      gameState.playActive = true;
+
+      document.getElementById('playScore').textContent = '0';
+      document.getElementById('playStreak').textContent = '0';
+      document.getElementById('playMultiplier').textContent = '1x';
+
+      generatePlayProblem();
+      startPlayTimer();
+    }
+
+    function generatePlayProblem() {
+      let dividend, divisor;
+      const rand = Math.random();
+
+      if (rand < 0.4) {
+        divisor = Math.floor(Math.random() * 4) + 2;
+        dividend = divisor * Math.floor(Math.random() * 4 + 2);
+      } else if (rand < 0.7) {
+        divisor = Math.floor(Math.random() * 9) + 2;
+        dividend = Math.floor(Math.random() * 100) + 1;
+      } else {
+        divisor = Math.floor(Math.random() * 11) + 2;
+        dividend = Math.floor(Math.random() * 144) + 1;
+      }
+
+      gameState.currentProblem = { dividend, divisor };
+      document.getElementById('playProblem').textContent = `${dividend} ÷ ${divisor} = ?`;
+      document.getElementById('playAnswerInput').value = '';
+      document.getElementById('playAnswerInput').focus();
+      drawPracticeArray(dividend, divisor, false);
+    }
+
+    document.getElementById('playSubmitBtn').addEventListener('click', () => {
+      if (!gameState.playActive) return;
+
+      const answer = parseInt(document.getElementById('playAnswerInput').value);
+      const expected = Math.floor(gameState.currentProblem.dividend / gameState.currentProblem.divisor);
+
+      if (answer === expected) {
+        const points = 10 * gameState.playMultiplier;
+        gameState.playScore += points;
+        gameState.playStreak++;
+        gameState.playMultiplier = Math.min(3, Math.floor(gameState.playStreak / 5) + 1);
+        celebrateCorrect();
+      } else {
+        gameState.playStreak = 0;
+        gameState.playMultiplier = 1;
+      }
+
+      updatePlayStats();
+      generatePlayProblem();
+    });
+
+    document.getElementById('playAnswerInput').addEventListener('keypress', (e) => {
+      if (e.key === 'Enter') {
+        document.getElementById('playSubmitBtn').click();
+      }
+    });
+
+    function startPlayTimer() {
+      gameState.playTimerInterval = setInterval(() => {
+        gameState.playTimer--;
+        const percent = (gameState.playTimer / 60) * 100;
+        document.getElementById('timerDisplay').textContent = gameState.playTimer + 's';
+        document.getElementById('timerFill').style.width = percent + '%';
+
+        if (gameState.playTimer <= 0) {
+          clearInterval(gameState.playTimerInterval);
+          gameState.playActive = false;
+          endPlayMode();
+        }
+      }, 1000);
+    }
+
+    function updatePlayStats() {
+      document.getElementById('playScore').textContent = gameState.playScore;
+      document.getElementById('playStreak').textContent = gameState.playStreak;
+      document.getElementById('playMultiplier').textContent = gameState.playMultiplier + 'x';
+    }
+
+    function endPlayMode() {
+      document.getElementById('endScore').textContent = gameState.playScore;
+      document.getElementById('endProblems').textContent = gameState.problemsSolved;
+      document.getElementById('endScreen').classList.add('active');
+    }
+
+    document.getElementById('newGameBtn').addEventListener('click', () => {
+      document.getElementById('endScreen').classList.remove('active');
+      gameState.playScore = 0;
+      gameState.playStreak = 0;
+      gameState.playMultiplier = 1;
+      startPlayMode();
+    });
+
+    // Celebration Animation
+    function celebrateCorrect() {
+      const canvas = document.getElementById('canvas');
+      const circles = canvas.querySelectorAll('circle');
+      circles.forEach((circle, idx) => {
+        circle.style.animation = `celebration 0.8s ease-in-out ${idx * 0.05}s`;
+        setTimeout(() => {
+          circle.style.animation = '';
+        }, 800 + idx * 50);
+      });
+    }
+
+    // Feedback
+    function showFeedback(message) {
+      const feedbackEl = document.getElementById('feedback');
+      feedbackEl.textContent = message;
+      feedbackEl.style.position = 'fixed';
+      feedbackEl.style.bottom = '20px';
+      feedbackEl.style.left = '50%';
+      feedbackEl.style.transform = 'translateX(-50%)';
+      feedbackEl.style.background = 'var(--cyan)';
+      feedbackEl.style.color = 'var(--bg-primary)';
+      feedbackEl.style.padding = '1rem 2rem';
+      feedbackEl.style.borderRadius = '6px';
+      feedbackEl.style.fontWeight = '600';
+      feedbackEl.style.zIndex = '100';
+      feedbackEl.style.display = 'block';
+
+      setTimeout(() => {
+        feedbackEl.style.display = 'none';
+      }, 3000);
+    }
+
+    // Initialize
+    generatePracticeProblem();
+  </script>
+</body>
+</html>

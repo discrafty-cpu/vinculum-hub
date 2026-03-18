@@ -1,0 +1,851 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Correlation Explorer</title>
+    <link rel="stylesheet" href="../../vinculum-core.css">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #00bcd4 0%, #0097a7 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 15px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            padding: 30px;
+        }
+
+        .vinculum-header {
+            text-align: center;
+            margin-bottom: 30px;
+            padding-bottom: 20px;
+            border-bottom: 3px solid #00bcd4;
+        }
+
+        .vinculum-header h1 {
+            color: #333;
+            font-size: 2.5em;
+            margin-bottom: 10px;
+        }
+
+        .vinculum-header p {
+            color: #666;
+            font-size: 1.1em;
+        }
+
+        .mode-selector {
+            display: flex;
+            justify-content: center;
+            gap: 10px;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+        }
+
+        .vinculum-mode-tab {
+            padding: 10px 20px;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 1em;
+            font-weight: bold;
+            transition: all 0.3s;
+            background: #e0e0e0;
+            color: #333;
+        }
+
+        .vinculum-mode-tab.active {
+            background: #00bcd4;
+            color: white;
+            transform: scale(1.05);
+        }
+
+        .difficulty-selector {
+            display: flex;
+            justify-content: center;
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+
+        .vinculum-diff-btn {
+            padding: 8px 16px;
+            border: 2px solid #ccc;
+            border-radius: 6px;
+            background: white;
+            cursor: pointer;
+            font-weight: bold;
+            transition: all 0.3s;
+        }
+
+        .vinculum-diff-btn.active {
+            background: #00bcd4;
+            color: white;
+            border-color: #00bcd4;
+        }
+
+        .mode-content {
+            display: none;
+        }
+
+        .mode-content.active {
+            display: block;
+        }
+
+        /* Explore Mode */
+        .explore-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 30px;
+            margin-bottom: 20px;
+        }
+
+        .scatter-plot {
+            background: white;
+            border: 2px solid #00bcd4;
+            border-radius: 10px;
+            padding: 20px;
+            position: relative;
+            width: 100%;
+            height: 400px;
+        }
+
+        .plot-title {
+            text-align: center;
+            color: #00bcd4;
+            font-weight: bold;
+            margin-bottom: 10px;
+        }
+
+        .plot-canvas {
+            width: 100%;
+            height: 350px;
+            position: relative;
+            border-left: 3px solid #333;
+            border-bottom: 3px solid #333;
+        }
+
+        .axis-label {
+            position: absolute;
+            font-weight: bold;
+            color: #666;
+            font-size: 0.9em;
+        }
+
+        .axis-x-label {
+            bottom: -25px;
+            right: 10px;
+        }
+
+        .axis-y-label {
+            left: -50px;
+            top: 10px;
+        }
+
+        .plot-point {
+            position: absolute;
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            background: #00bcd4;
+            border: 2px solid #0097a7;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .plot-point:hover {
+            transform: scale(1.5);
+            box-shadow: 0 0 10px rgba(0, 188, 212, 0.6);
+        }
+
+        .trend-line {
+            position: absolute;
+            border-top: 3px solid #ff9800;
+        }
+
+        .controls {
+            background: #e0f7fa;
+            padding: 20px;
+            border-radius: 10px;
+            border: 2px solid #00bcd4;
+        }
+
+        .controls h3 {
+            color: #00bcd4;
+            margin-bottom: 15px;
+        }
+
+        .control-group {
+            margin-bottom: 15px;
+        }
+
+        .control-group label {
+            display: block;
+            font-weight: bold;
+            color: #333;
+            margin-bottom: 5px;
+        }
+
+        .control-group input {
+            width: 100%;
+            padding: 8px;
+            border: 2px solid #ccc;
+            border-radius: 6px;
+            font-size: 0.95em;
+        }
+
+        .control-group input:focus {
+            outline: none;
+            border-color: #00bcd4;
+            box-shadow: 0 0 5px rgba(0, 188, 212, 0.3);
+        }
+
+        .button-group {
+            display: flex;
+            gap: 10px;
+            margin-top: 15px;
+        }
+
+        .button-group button {
+            flex: 1;
+            padding: 10px;
+            background: #00bcd4;
+            color: white;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-weight: bold;
+        }
+
+        .button-group button:hover {
+            background: #0097a7;
+        }
+
+        .correlation-info {
+            background: white;
+            padding: 15px;
+            border-radius: 6px;
+            margin-top: 15px;
+            border-left: 4px solid #00bcd4;
+        }
+
+        .info-label {
+            font-weight: bold;
+            color: #666;
+            margin-bottom: 5px;
+        }
+
+        .info-value {
+            font-size: 1.2em;
+            font-weight: bold;
+            color: #00bcd4;
+        }
+
+        /* Practice Mode */
+        .problem {
+            background: #e0f7fa;
+            padding: 20px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+            border-left: 5px solid #00bcd4;
+        }
+
+        .problem h4 {
+            color: #00bcd4;
+            margin-bottom: 15px;
+        }
+
+        .plot-area {
+            width: 100%;
+            height: 300px;
+            background: white;
+            border: 2px solid #00bcd4;
+            border-radius: 10px;
+            padding: 10px;
+            position: relative;
+            margin: 15px 0;
+        }
+
+        .answer-options {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+            gap: 10px;
+            margin: 15px 0;
+        }
+
+        .answer-option {
+            padding: 12px;
+            background: white;
+            border: 2px solid #ddd;
+            border-radius: 6px;
+            cursor: pointer;
+            font-weight: bold;
+            text-align: center;
+            transition: all 0.3s;
+        }
+
+        .answer-option:hover {
+            border-color: #00bcd4;
+            background: #e0f7fa;
+        }
+
+        .answer-option.correct {
+            background: #4caf50;
+            color: white;
+            border-color: #4caf50;
+        }
+
+        .answer-option.incorrect {
+            background: #f44336;
+            color: white;
+            border-color: #f44336;
+        }
+
+        .feedback-box {
+            padding: 15px;
+            border-radius: 6px;
+            margin-top: 10px;
+            display: none;
+            border-left: 4px solid;
+        }
+
+        .feedback-box.show {
+            display: block;
+        }
+
+        .feedback-box.correct {
+            background: #d4edda;
+            color: #155724;
+            border-color: #4caf50;
+        }
+
+        .feedback-box.incorrect {
+            background: #f8d7da;
+            color: #721c24;
+            border-color: #f44336;
+        }
+
+        /* Play Mode */
+        .game-container {
+            background: #e0f7fa;
+            padding: 20px;
+            border-radius: 10px;
+            border: 2px solid #00bcd4;
+            margin-bottom: 20px;
+        }
+
+        .game-timer {
+            text-align: right;
+            font-weight: bold;
+            color: #00bcd4;
+            margin-bottom: 10px;
+            font-size: 1.2em;
+        }
+
+        .game-plot {
+            width: 100%;
+            height: 300px;
+            background: white;
+            border: 2px solid #00bcd4;
+            border-radius: 10px;
+            padding: 10px;
+            position: relative;
+            margin: 15px 0;
+        }
+
+        .quick-options {
+            display: flex;
+            gap: 10px;
+            justify-content: center;
+            margin: 20px 0;
+        }
+
+        .quick-option {
+            padding: 12px 24px;
+            border: 2px solid #ddd;
+            background: white;
+            border-radius: 6px;
+            cursor: pointer;
+            font-weight: bold;
+            transition: all 0.3s;
+        }
+
+        .quick-option:hover {
+            border-color: #00bcd4;
+            background: #e0f7fa;
+        }
+
+        .quick-option.correct {
+            background: #4caf50;
+            color: white;
+            border-color: #4caf50;
+        }
+
+        .quick-option.incorrect {
+            background: #f44336;
+            color: white;
+            border-color: #f44336;
+        }
+
+        .score {
+            background: #00bcd4;
+            color: white;
+            padding: 20px;
+            border-radius: 10px;
+            text-align: center;
+            font-size: 1.5em;
+            font-weight: bold;
+            margin-top: 20px;
+        }
+
+        #feedback {
+            margin-top: 15px;
+            padding: 15px;
+            border-radius: 6px;
+            font-weight: bold;
+            display: none;
+        }
+
+        #feedback.show {
+            display: block;
+        }
+
+        #feedback.success {
+            background: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+
+        #feedback.error {
+            background: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+
+        @media (max-width: 768px) {
+            .explore-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .vinculum-header h1 {
+                font-size: 1.8em;
+            }
+
+            .container {
+                padding: 15px;
+            }
+
+            .scatter-plot {
+                height: 300px;
+            }
+
+            .plot-canvas {
+                height: 250px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="vinculum-header">
+            <h1>📊 Correlation Explorer</h1>
+            <p>Discover relationships between variables with scatter plots</p>
+        </div>
+
+        <div class="mode-selector">
+            <button class="vinculum-mode-tab active" data-mode="explore"><svg width="18" height="18" viewBox="0 0 48 48" fill="none"><path d="M4 24C4 24 12 12 24 12C36 12 44 24 44 24C44 24 36 36 24 36C12 36 4 24 4 24Z" stroke="currentColor" stroke-width="3" fill="none"/><circle cx="24" cy="24" r="7" stroke="currentColor" stroke-width="3" fill="none"/><circle cx="24" cy="24" r="3" fill="currentColor"/><line x1="24" y1="4" x2="24" y2="9" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" opacity="0.5"/><line x1="10" y1="8" x2="13" y2="12" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" opacity="0.5"/><line x1="38" y1="8" x2="35" y2="12" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" opacity="0.5"/></svg> Explore</button>
+            <button class="vinculum-mode-tab" data-mode="practice"><svg width="18" height="18" viewBox="0 0 48 48" fill="none"><circle cx="24" cy="24" r="20" stroke="currentColor" stroke-width="3" fill="none" opacity="0.3"/><circle cx="24" cy="24" r="20" stroke="currentColor" stroke-width="3" fill="none" stroke-dasharray="126" stroke-dashoffset="32" stroke-linecap="round"/><polyline points="16,24 22,32 34,16" stroke="currentColor" stroke-width="4" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg> Practice</button>
+            <button class="vinculum-mode-tab" data-mode="play"><svg width="18" height="18" viewBox="0 0 48 48" fill="none"><polygon points="28,4 12,28 22,28 18,44 36,18 26,18" fill="none" stroke="currentColor" stroke-width="3" stroke-linejoin="round"/><polygon points="27,8 15,27 23,27 20,40 34,19 26,19" fill="currentColor" opacity="0.15"/></svg> Play</button>
+        </div>
+
+        <div class="difficulty-selector">
+            <button class="diff-btn active" data-difficulty="easy">Easy</button>
+            <button class="diff-btn" data-difficulty="medium">Medium</button>
+            <button class="diff-btn" data-difficulty="hard">Hard</button>
+        </div>
+
+        <!-- EXPLORE MODE -->
+        <div class="mode-content active" id="explore">
+            <h3>Explore: Interactive Scatter Plot</h3>
+            <div class="explore-grid">
+                <div class="scatter-plot">
+                    <div class="plot-title">Scatter Plot: X vs Y</div>
+                    <div class="plot-canvas" id="explore-canvas">
+                        <div class="axis-label axis-x-label">X Values →</div>
+                        <div class="axis-label axis-y-label">Y Values ↑</div>
+                    </div>
+                </div>
+
+                <div class="controls">
+                    <h3>Add Data Points</h3>
+                    <div class="control-group">
+                        <label for="x-value">X Value (0-10)</label>
+                        <input type="number" id="x-value" value="5" min="0" max="10" step="0.5">
+                    </div>
+                    <div class="control-group">
+                        <label for="y-value">Y Value (0-10)</label>
+                        <input type="number" id="y-value" value="5" min="0" max="10" step="0.5">
+                    </div>
+                    <div class="button-group">
+                        <button onclick="addPoint()">Add Point</button>
+                        <button onclick="clearPlot()">Clear</button>
+                    </div>
+
+                    <div class="correlation-info">
+                        <div class="info-label">Correlation Type:</div>
+                        <div class="info-value" id="correlation-type">None</div>
+                        <div class="info-label" style="margin-top: 10px;">R-value:</div>
+                        <div class="info-value" id="r-value">0.00</div>
+                    </div>
+                </div>
+            </div>
+            <div id="feedback" class="feedback"></div>
+        </div>
+
+        <!-- PRACTICE MODE -->
+        <div class="mode-content" id="practice">
+            <h3>Practice: Identify Correlations</h3>
+            <div id="practice-container"></div>
+            <div id="feedback" class="feedback"></div>
+        </div>
+
+        <!-- PLAY MODE -->
+        <div class="mode-content" id="play">
+            <h3>Correlation Quiz: Rapid Fire!</h3>
+            <div class="game-container">
+                <div class="game-timer">
+                    Score: <span id="game-score">0</span> | Questions: <span id="game-count">0</span>/5
+                </div>
+                <div class="game-plot" id="play-canvas"></div>
+                <div class="quick-options" id="quick-options"></div>
+                <div id="feedback" class="feedback"></div>
+                <div class="score" id="score" style="display: none;"></div>
+            </div>
+        </div>
+    </div>
+
+    <script src="../../vinculum-feedback.js"></script><script src="../../vinculum-guide.js"></script><script src="../../vinculum-indigenous.js"></script><script src="../../indigenous-context-panel.js"></script>
+    <script src="../../vinculum-input.js"></script>
+
+    <script>
+        let currentDifficulty = 'easy';
+        let currentMode = 'explore';
+        let dataPoints = [];
+        let gameScore = 0;
+        let gameQuestions = 0;
+
+        function init() {
+            setupModeButtons();
+            setupDifficultyButtons();
+            loadExplore();
+        }
+
+        function setupModeButtons() {
+            document.querySelectorAll('.vinculum-mode-tab[data-mode]').forEach(btn => {
+                btn.addEventListener('click', (e) => {
+                    document.querySelectorAll('.vinculum-mode-tab[data-mode]').forEach(b => b.classList.remove('active'));
+                    e.target.classList.add('active');
+                    currentMode = e.target.dataset.mode;
+                    document.querySelectorAll('.mode-content').forEach(m => m.classList.remove('active'));
+                    document.getElementById(currentMode).classList.add('active');
+
+                    if (currentMode === 'practice') loadPractice();
+                    if (currentMode === 'play') loadPlay();
+                });
+            });
+        }
+
+        function setupDifficultyButtons() {
+            document.querySelectorAll('.vinculum-diff-btn').forEach(btn => {
+                btn.addEventListener('click', (e) => {
+                    document.querySelectorAll('.vinculum-diff-btn').forEach(b => b.classList.remove('active'));
+                    e.target.classList.add('active');
+                    currentDifficulty = e.target.dataset.difficulty;
+
+                    if (currentMode === 'practice') loadPractice();
+                    if (currentMode === 'play') loadPlay();
+                });
+            });
+        }
+
+        function loadExplore() {
+            dataPoints = [];
+            drawPlot('explore-canvas');
+        }
+
+        function addPoint() {
+            const x = parseFloat(document.getElementById('x-value').value);
+            const y = parseFloat(document.getElementById('y-value').value);
+
+            if (isNaN(x) || isNaN(y)) return;
+
+            dataPoints.push({ x, y });
+            drawPlot('explore-canvas');
+            updateCorrelation();
+        }
+
+        function clearPlot() {
+            dataPoints = [];
+            drawPlot('explore-canvas');
+            document.getElementById('correlation-type').textContent = 'None';
+            document.getElementById('r-value').textContent = '0.00';
+        }
+
+        function drawPlot(containerId) {
+            const canvas = document.getElementById(containerId);
+            const points = canvas.querySelectorAll('.plot-point');
+            points.forEach(p => p.remove());
+
+            dataPoints.forEach(point => {
+                const dot = document.createElement('div');
+                dot.className = 'plot-point';
+                const x = (point.x / 10) * (canvas.offsetWidth - 40) + 20;
+                const y = canvas.offsetHeight - (point.y / 10) * (canvas.offsetHeight - 40) - 20;
+                dot.style.left = (x - 6) + 'px';
+                dot.style.top = (y - 6) + 'px';
+                canvas.appendChild(dot);
+            });
+        }
+
+        function updateCorrelation() {
+            if (dataPoints.length < 2) return;
+
+            const n = dataPoints.length;
+            let sumX = 0, sumY = 0, sumXY = 0, sumX2 = 0, sumY2 = 0;
+
+            dataPoints.forEach(p => {
+                sumX += p.x;
+                sumY += p.y;
+                sumXY += p.x * p.y;
+                sumX2 += p.x * p.x;
+                sumY2 += p.y * p.y;
+            });
+
+            const r = (n * sumXY - sumX * sumY) / Math.sqrt((n * sumX2 - sumX * sumX) * (n * sumY2 - sumY * sumY));
+
+            let corrType = 'No correlation';
+            if (r > 0.5) corrType = 'Positive correlation';
+            else if (r < -0.5) corrType = 'Negative correlation';
+
+            document.getElementById('correlation-type').textContent = corrType;
+            document.getElementById('r-value').textContent = r.toFixed(2);
+        }
+
+        function loadPractice() {
+            const scenarios = {
+                easy: [
+                    {
+                        title: 'Height vs Weight',
+                        desc: 'As height increases, weight tends to increase',
+                        points: [[2, 2], [4, 4], [6, 6], [8, 8]],
+                        answer: 'positive'
+                    },
+                    {
+                        title: 'Study Hours vs Sleep',
+                        desc: 'As study hours increase, sleep hours decrease',
+                        points: [[2, 8], [4, 6], [6, 4], [8, 2]],
+                        answer: 'negative'
+                    },
+                    {
+                        title: 'Shoe Size vs Ice Cream Sales',
+                        desc: 'No obvious relationship',
+                        points: [[1, 5], [3, 2], [5, 8], [7, 3]],
+                        answer: 'none'
+                    }
+                ],
+                medium: [
+                    {
+                        title: 'Study Time vs Test Scores',
+                        points: [[1, 40], [2, 55], [3, 65], [4, 75], [5, 85]],
+                        answer: 'positive'
+                    },
+                    {
+                        title: 'Exercise vs Body Fat',
+                        points: [[1, 35], [3, 28], [5, 20], [7, 12]],
+                        answer: 'negative'
+                    },
+                    {
+                        title: 'Random Data',
+                        points: [[2, 7], [4, 2], [6, 8], [8, 3], [10, 5]],
+                        answer: 'none'
+                    }
+                ],
+                hard: [
+                    {
+                        title: 'Temperature vs Ice Cream Sales',
+                        points: [[10, 100], [15, 200], [20, 350], [25, 450], [30, 600]],
+                        answer: 'positive'
+                    },
+                    {
+                        title: 'Price vs Demand',
+                        points: [[1, 100], [2, 80], [3, 60], [4, 40], [5, 20]],
+                        answer: 'negative'
+                    },
+                    {
+                        title: 'Cloud Cover vs Humidity',
+                        points: [[2, 40], [5, 50], [4, 55], [8, 70], [6, 60]],
+                        answer: 'positive'
+                    }
+                ]
+            };
+
+            const scenarioList = scenarios[currentDifficulty];
+            const scenario = scenarioList[Math.floor(Math.random() * scenarioList.length)];
+
+            const container = document.getElementById('practice-container');
+            container.innerHTML = `
+                <div class="problem">
+                    <h4>${scenario.title}</h4>
+                    <div class="plot-area" id="practice-plot"></div>
+                    <p><strong>What type of correlation?</strong></p>
+                    <div class="answer-options">
+                        <button class="answer-option" onclick="checkPractice(this, 'positive', '${scenario.answer}')">
+                            ↗️ Positive
+                        </button>
+                        <button class="answer-option" onclick="checkPractice(this, 'negative', '${scenario.answer}')">
+                            ↘️ Negative
+                        </button>
+                        <button class="answer-option" onclick="checkPractice(this, 'none', '${scenario.answer}')">
+                            ↔️ None
+                        </button>
+                    </div>
+                    <div class="feedback-box" id="practice-feedback"></div>
+                </div>
+            `;
+
+            drawPracticeScatter('practice-plot', scenario.points);
+        }
+
+        function drawPracticeScatter(containerId, points) {
+            const container = document.getElementById(containerId);
+            container.innerHTML = '';
+
+            const canvas = document.createElement('div');
+            canvas.style.position = 'relative';
+            canvas.style.width = '100%';
+            canvas.style.height = '100%';
+
+            points.forEach(([x, y]) => {
+                const dot = document.createElement('div');
+                dot.className = 'plot-point';
+                const posX = (x / 10) * (container.offsetWidth - 30) + 15;
+                const posY = container.offsetHeight - (y / 100) * (container.offsetHeight - 30) - 15;
+                dot.style.left = (posX - 6) + 'px';
+                dot.style.top = (posY - 6) + 'px';
+                canvas.appendChild(dot);
+            });
+
+            container.appendChild(canvas);
+        }
+
+        function checkPractice(btn, answer, correct) {
+            const isCorrect = answer === correct;
+            btn.classList.add(isCorrect ? 'correct' : 'incorrect');
+
+            const feedback = document.getElementById('practice-feedback');
+            feedback.classList.add('show', isCorrect ? 'correct' : 'incorrect');
+            feedback.innerHTML = isCorrect ?
+                `✅ Correct! This shows ${correct} correlation.` :
+                `❌ Not quite. This shows ${correct} correlation.`;
+
+            document.querySelectorAll('.answer-option').forEach(b => b.disabled = true);
+        }
+
+        function loadPlay() {
+            gameScore = 0;
+            gameQuestions = 0;
+            nextQuestion();
+        }
+
+        function nextQuestion() {
+            const scenarios = {
+                easy: [
+                    { points: [[1, 1], [2, 2], [3, 3], [4, 4]], answer: 'positive' },
+                    { points: [[1, 4], [2, 3], [3, 2], [4, 1]], answer: 'negative' },
+                    { points: [[1, 3], [2, 1], [3, 4], [4, 2]], answer: 'none' }
+                ],
+                medium: [
+                    { points: [[1, 20], [2, 35], [3, 50], [4, 65]], answer: 'positive' },
+                    { points: [[1, 80], [2, 60], [3, 40], [4, 20]], answer: 'negative' },
+                    { points: [[1, 50], [2, 30], [3, 60], [4, 40]], answer: 'none' }
+                ],
+                hard: [
+                    { points: [[1, 10], [2, 25], [3, 40], [4, 55], [5, 70]], answer: 'positive' },
+                    { points: [[1, 100], [2, 75], [3, 50], [4, 25], [5, 10]], answer: 'negative' },
+                    { points: [[1, 45], [2, 30], [3, 60], [4, 35], [5, 50]], answer: 'none' }
+                ]
+            };
+
+            const list = scenarios[currentDifficulty];
+            const scenario = list[Math.floor(Math.random() * list.length)];
+
+            const canvas = document.getElementById('play-canvas');
+            canvas.innerHTML = '';
+
+            const plotArea = document.createElement('div');
+            plotArea.style.position = 'relative';
+            plotArea.style.width = '100%';
+            plotArea.style.height = '100%';
+
+            scenario.points.forEach(([x, y]) => {
+                const dot = document.createElement('div');
+                dot.className = 'plot-point';
+                const posX = (x / 5) * (canvas.offsetWidth - 30) + 15;
+                const posY = canvas.offsetHeight - (y / 100) * (canvas.offsetHeight - 30) - 15;
+                dot.style.left = (posX - 6) + 'px';
+                dot.style.top = (posY - 6) + 'px';
+                plotArea.appendChild(dot);
+            });
+
+            canvas.appendChild(plotArea);
+
+            const options = document.getElementById('quick-options');
+            options.innerHTML = `
+                <button class="quick-option" onclick="checkGame(this, 'positive', '${scenario.answer}')">↗️ Positive</button>
+                <button class="quick-option" onclick="checkGame(this, 'negative', '${scenario.answer}')">↘️ Negative</button>
+                <button class="quick-option" onclick="checkGame(this, 'none', '${scenario.answer}')">↔️ None</button>
+            `;
+
+            document.getElementById('feedback').innerHTML = '';
+        }
+
+        function checkGame(btn, answer, correct) {
+            const isCorrect = answer === correct;
+
+            if (isCorrect) gameScore++;
+            gameQuestions++;
+
+            btn.classList.add(isCorrect ? 'correct' : 'incorrect');
+
+            const feedback = document.getElementById('feedback');
+            feedback.classList.add('show', isCorrect ? 'success' : 'error');
+            feedback.innerHTML = isCorrect ? '✅ Correct!' : `❌ It's ${correct}!`;
+
+            document.getElementById('game-score').textContent = gameScore;
+            document.getElementById('game-count').textContent = gameQuestions;
+
+            document.querySelectorAll('.quick-option').forEach(b => b.disabled = true);
+
+            if (gameQuestions >= 5) {
+                document.getElementById('score').style.display = 'block';
+                document.getElementById('score').innerHTML = `🏆 Game Over! Score: ${gameScore}/5`;
+            } else {
+                setTimeout(nextQuestion, 1500);
+            }
+        }
+
+        init();
+    </script>
+</body>
+</html>

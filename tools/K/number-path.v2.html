@@ -1,0 +1,1204 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>VINCULUM — Number Path Explorer</title>
+<link rel="stylesheet" href="../../vinculum-core.css">
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;600&display=swap');
+
+/* Theme system loaded from vinculum-core.css */
+.vinculum-rtm-btn .rtm-icon{font-size:14px;}
+
+/* ═══ FOCUS VISIBLE (Keyboard Navigation) ═══ */
+*:focus-visible {
+  outline:2px solid var(--cyan);outline-offset:2px;border-radius:4px;
+}
+.sr-only {
+  position:absolute;width:1px;height:1px;padding:0;margin:-1px;
+  overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0;
+}
+
+* { margin:0; padding:0; box-sizing:border-box; }
+body {
+  font-family: 'Inter', sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  height: 100vh;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  user-select: none;
+}
+
+/* ── HEADER ── */
+/* ── MODE TABS ── */
+/* Difficulty selector */
+.vinculum-diff-btn:hover { color: var(--text2); }
+/* ── MAIN AREA ── */
+.main {
+  flex: 1;
+  display: flex;
+  overflow: hidden;
+}
+
+/* ── WORKSPACE ── */
+.workspace {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+  position: relative;
+  overflow-y: auto;
+}
+
+/* ── NUMBER PATH ── */
+.number-path {
+  display: flex;
+  flex-direction: row;
+  gap: 4px;
+  overflow-x: auto;
+  padding: 12px;
+  justify-content: center;
+  align-items: flex-end;
+  position: relative;
+  width: 100%;
+  max-width: 100%;
+}
+.path-cell {
+  width: 44px;
+  height: 44px;
+  min-width: 44px;
+  border-radius: 10px;
+  border: 2px solid var(--border);
+  background: var(--card);
+  font-size: 18px;
+  font-weight: 700;
+  font-family: 'JetBrains Mono', monospace;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s;
+  position: relative;
+  -webkit-tap-highlight-color: transparent;
+}
+.path-cell:hover {
+  border-color: var(--cyan);
+  transform: scale(1.1);
+}
+.path-cell.active {
+  border-color: var(--cyan);
+  background: rgba(0,212,255,0.15);
+  color: var(--cyan);
+  box-shadow: 0 0 12px rgba(0,212,255,0.25);
+}
+.path-cell.target {
+  border-color: var(--yellow);
+  box-shadow: 0 0 12px rgba(255,193,7,0.3);
+}
+.path-cell.correct-flash {
+  border-color: var(--green);
+  background: rgba(0,230,118,0.15);
+  color: var(--green);
+}
+.path-cell.incorrect-flash {
+  border-color: var(--pink);
+  background: rgba(255,59,139,0.15);
+  color: var(--pink);
+}
+
+/* ── HOPPER ── */
+.hopper-container {
+  position: relative;
+  width: 100%;
+  max-width: 100%;
+  display: flex;
+  justify-content: center;
+}
+.hopper {
+  position: absolute;
+  font-size: 28px;
+  transition: left 0.3s ease-in-out;
+  top: -36px;
+  pointer-events: none;
+  z-index: 10;
+  filter: drop-shadow(0 2px 4px rgba(0,0,0,0.3));
+}
+
+/* ── NUMBER DISPLAY ── */
+.number-display {
+  text-align: center;
+  margin-top: 20px;
+}
+.number-display-value {
+  font-size: 48px;
+  font-weight: 900;
+  font-family: 'JetBrains Mono', monospace;
+  background: var(--grad);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  line-height: 1;
+  transition: transform 0.15s;
+}
+.number-display-value.bump {
+  transform: scale(1.15);
+}
+.number-display-label {
+  font-size: 13px;
+  color: var(--muted);
+  margin-top: 4px;
+}
+
+/* ── DOT GROUP ── */
+.dot-group {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  justify-content: center;
+  margin-top: 12px;
+  max-width: 220px;
+}
+.dot {
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  background: var(--cyan);
+  animation: pop 0.3s ease-out forwards;
+}
+
+/* ── INSTRUCTION BOX ── */
+.instruction-box {
+  text-align: center;
+  padding: 16px 24px;
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  margin-bottom: 16px;
+  max-width: 500px;
+  width: 100%;
+}
+.instruction-box .prompt-text {
+  font-size: 18px;
+  font-weight: 600;
+  color: var(--text);
+  line-height: 1.5;
+}
+.instruction-box .prompt-highlight {
+  color: var(--cyan);
+  font-weight: 800;
+  font-family: 'JetBrains Mono', monospace;
+}
+
+/* ── MC GRID ── */
+.mc-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 10px;
+  max-width: 420px;
+  width: 100%;
+  margin-top: 16px;
+}
+.mc-btn {
+  min-height: 52px;
+  border-radius: 12px;
+  border: 2px solid var(--border);
+  background: var(--card);
+  color: var(--text);
+  font-size: 20px;
+  font-weight: 700;
+  font-family: 'JetBrains Mono', monospace;
+  cursor: pointer;
+  transition: all 0.15s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  -webkit-tap-highlight-color: transparent;
+}
+.mc-btn:hover {
+  border-color: var(--cyan);
+  background: rgba(0,212,255,0.05);
+  transform: scale(1.05);
+}
+.mc-btn.correct-flash {
+  border-color: var(--green);
+  background: rgba(0,230,118,0.15);
+  color: var(--green);
+}
+.mc-btn.incorrect-flash {
+  border-color: var(--pink);
+  background: rgba(255,59,139,0.15);
+  color: var(--pink);
+}
+
+/* ── PLAY ANSWER GRID (5 choices) ── */
+.play-grid {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 8px;
+  max-width: 400px;
+  width: 100%;
+  margin-top: 16px;
+}
+.play-btn {
+  padding: 14px;
+  border-radius: 12px;
+  border: 2px solid var(--border);
+  background: var(--card);
+  color: var(--text);
+  font-size: 20px;
+  font-weight: 700;
+  font-family: 'JetBrains Mono', monospace;
+  cursor: pointer;
+  transition: all 0.15s;
+  -webkit-tap-highlight-color: transparent;
+}
+.play-btn:hover {
+  border-color: var(--cyan);
+  background: rgba(0,212,255,0.05);
+  transform: scale(1.05);
+}
+.play-btn.correct-flash {
+  border-color: var(--green);
+  background: rgba(0,230,118,0.15);
+  color: var(--green);
+}
+.play-btn.incorrect-flash {
+  border-color: var(--pink);
+  background: rgba(255,59,139,0.15);
+  color: var(--pink);
+}
+
+/* ── CONTROLS ── */
+.controls {
+  display: flex;
+  gap: 8px;
+  margin-top: 16px;
+  flex-wrap: wrap;
+  justify-content: center;
+}
+.ctrl-btn {
+  padding: 10px 20px;
+  border-radius: 10px;
+  border: 1px solid var(--border);
+  background: var(--card);
+  color: var(--text2);
+  font-size: 13px;
+  font-weight: 600;
+  font-family: inherit;
+  cursor: pointer;
+  transition: all 0.2s;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  -webkit-tap-highlight-color: transparent;
+}
+.ctrl-btn:hover { background: var(--card-hover); color: var(--text); }
+.ctrl-btn.primary {
+  background: var(--grad);
+  color: var(--bg);
+  border-color: transparent;
+}
+.ctrl-btn.primary:hover { opacity: 0.9; }
+.ctrl-btn.danger { color: var(--pink); }
+.ctrl-btn.danger:hover { background: rgba(255,59,139,0.1); }
+
+/* ── FEEDBACK ── */
+.feedback {
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%) scale(0);
+  padding: 24px 48px;
+  border-radius: 20px;
+  font-size: 28px;
+  font-weight: 800;
+  z-index: 200;
+  pointer-events: none;
+  transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275), opacity 0.3s;
+  opacity: 0;
+  max-width: 90vw;
+  text-align: center;
+}
+.feedback.show {
+  transform: translate(-50%, -50%) scale(1);
+  opacity: 1;
+}
+.feedback.correct {
+  background: rgba(0,230,118,0.15);
+  color: var(--green);
+  border: 2px solid var(--green);
+}
+.feedback.incorrect {
+  background: rgba(255,59,139,0.15);
+  color: var(--pink);
+  border: 2px solid var(--pink);
+}
+.feedback.try-again {
+  background: rgba(255,193,7,0.15);
+  color: var(--yellow);
+  border: 2px solid var(--yellow);
+  font-size: 18px;
+}
+
+/* ── SIDE PANEL ── */
+.side-panel {
+  width: 280px;
+  background: var(--bg2);
+  border-left: 1px solid var(--border);
+  padding: 20px;
+  overflow-y: auto;
+  flex-shrink: 0;
+}
+.panel-section {
+  margin-bottom: 20px;
+}
+.panel-title {
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 1.5px;
+  color: var(--muted);
+  margin-bottom: 8px;
+}
+.panel-text {
+  font-size: 13px;
+  color: var(--text2);
+  line-height: 1.6;
+}
+.score-display {
+  text-align: center;
+  padding: 16px;
+  background: var(--card);
+  border-radius: 12px;
+  margin-bottom: 12px;
+}
+.score-value {
+  font-size: 36px;
+  font-weight: 900;
+  font-family: 'JetBrains Mono', monospace;
+  background: var(--grad);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+.score-label {
+  font-size: 11px;
+  color: var(--muted);
+  text-transform: uppercase;
+  letter-spacing: 1px;
+}
+.streak-bar {
+  height: 6px;
+  background: var(--card);
+  border-radius: 3px;
+  overflow: hidden;
+  margin-top: 8px;
+}
+.streak-fill {
+  height: 100%;
+  background: var(--grad);
+  border-radius: 3px;
+  transition: width 0.3s;
+}
+
+/* ── ANIMATIONS ── */
+@keyframes pop {
+  0% { transform: scale(0); }
+  70% { transform: scale(1.2); }
+  100% { transform: scale(1); }
+}
+@keyframes shake {
+  0%, 100% { transform: translateX(0); }
+  25% { transform: translateX(-8px); }
+  75% { transform: translateX(8px); }
+}
+@keyframes bounce {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-6px); }
+}
+.pop-in { animation: pop 0.3s ease-out forwards; }
+.shake { animation: shake 0.3s ease-in-out; }
+.bounce { animation: bounce 0.4s ease-in-out; }
+
+/* scrollbar */
+::-webkit-scrollbar { width: 6px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+</style>
+</head>
+<body>
+
+<!-- ═══ HEADER ═══ -->
+<div class="vinculum-header">
+  <div class="vinculum-header-left">
+    <a class="vinculum-back-btn" href="../../VINCULUM-Hub.html" style="text-decoration:none;">◀ Hub</a>
+    <div class="vinculum-header-title"><span>VINCULUM</span> Number Path Explorer</div>
+    <span class="vinculum-header-badge">K.CC</span>
+  </div>
+    <div class="vinculum-header-right">
+      <div class="vinculum-std-tags">
+    <span class="vinculum-std-tag">K.CC.1</span>
+    <span class="vinculum-std-tag">K.CC.2</span>
+    <span class="vinculum-std-tag">K.CC.4c</span>
+    <span class="vinculum-std-tag mn">MN K.1.1.1</span>
+  </div>
+  <button class="vinculum-back-btn" id="readAloudBtn" onclick="toggleReadAloud()" aria-label="Read Aloud" title="Read instructions aloud" style="margin-left:8px;white-space:nowrap;">🔊 Read to Me</button>
+</div>
+
+<!-- ═══ MODE TABS ═══ -->
+</div>
+
+  <div class="vinculum-mode-tabs">
+  <button class="vinculum-mode-tab active-explore" id="tabExplore" data-mode="explore">
+    <svg width="18" height="18" viewBox="0 0 48 48" fill="none"><path d="M4 24C4 24 12 12 24 12C36 12 44 24 44 24C44 24 36 36 24 36C12 36 4 24 4 24Z" stroke="currentColor" stroke-width="3" fill="none"/><circle cx="24" cy="24" r="7" stroke="currentColor" stroke-width="3" fill="none"/><circle cx="24" cy="24" r="3" fill="currentColor"/><line x1="24" y1="4" x2="24" y2="9" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" opacity="0.5"/><line x1="10" y1="8" x2="13" y2="12" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" opacity="0.5"/><line x1="38" y1="8" x2="35" y2="12" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" opacity="0.5"/></svg> Explore
+  </button>
+  <button class="vinculum-mode-tab" id="tabPractice" data-mode="practice">
+    <svg width="18" height="18" viewBox="0 0 48 48" fill="none"><circle cx="24" cy="24" r="20" stroke="currentColor" stroke-width="3" fill="none" opacity="0.3"/><circle cx="24" cy="24" r="20" stroke="currentColor" stroke-width="3" fill="none" stroke-dasharray="126" stroke-dashoffset="32" stroke-linecap="round"/><polyline points="16,24 22,32 34,16" stroke="currentColor" stroke-width="4" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg> Practice
+  </button>
+  <button class="vinculum-mode-tab" id="tabPlay" data-mode="play">
+    <svg width="18" height="18" viewBox="0 0 48 48" fill="none"><polygon points="28,4 12,28 22,28 18,44 36,18 26,18" fill="none" stroke="currentColor" stroke-width="3" stroke-linejoin="round"/><polygon points="27,8 15,27 23,27 20,40 34,19 26,19" fill="currentColor" opacity="0.15"/></svg> Play
+  </button>
+  <div class="vinculum-diff-selector">
+    <span class="vinculum-diff-label">Level</span>
+    <button class="vinculum-diff-btn active" id="diffE" data-diff="emergent">1–10</button>
+    <button class="vinculum-diff-btn" id="diffP" data-diff="proficient">1–15</button>
+    <button class="vinculum-diff-btn" id="diffA" data-diff="advanced">1–20</button>
+  </div>
+</div>
+
+<!-- ═══ MAIN ═══ -->
+<div class="main">
+  <div class="workspace" role="main" id="workspace"></div>
+  <div class="side-panel" id="sidePanel"></div>
+</div>
+
+<!-- ═══ FEEDBACK POPUP ═══ -->
+<div class="feedback" id="feedback"></div>
+
+  <script src="../../vinculum-input.js"></script>
+<script>
+// ════════════════════════════════════════
+// STATE
+// ════════════════════════════════════════
+let S = {
+  mode: 'explore', diff: 'emergent', pathMax: 10,
+  // Explore
+  hopperPos: 1, highlightedCell: 0,
+  // Practice
+  pTarget: 0, pType: 'identify', // identify | before-after | hop
+  pAnswer: 0, pChoices: [],
+  pDir: 'after', pHopAmount: 0, pHopStart: 0,
+  // Play
+  score: 0, streak: 0, best: 0, round: 0, total: 10,
+  playTarget: 0, playType: 'identify', playAnswer: 0, playChoices: [],
+  playDir: 'after', playHopAmount: 0, playHopStart: 0
+};
+
+// ════════════════════════════════════════
+// READ-ALOUD + STORY BANNER
+// ════════════════════════════════════════
+function toggleReadAloud() {
+  if (window.VinculumStories && VinculumStories.isReading()) {
+    VinculumStories.stopReading();
+    document.getElementById('readAloudBtn').textContent = '🔊 Read to Me';
+  } else {
+    const fb = document.getElementById('feedback');
+    const storyEl = document.getElementById('storyBanner');
+    const text = storyEl ? storyEl.textContent : (fb ? fb.textContent : 'Welcome to Number Path Explorer!');
+    if (window.VinculumStories) {
+      VinculumStories.readAloud(text, { rate: 0.85, onComplete: () => {
+        document.getElementById('readAloudBtn').textContent = '🔊 Read to Me';
+      }});
+      document.getElementById('readAloudBtn').textContent = '⏹ Stop';
+    }
+  }
+}
+
+// ════════════════════════════════════════
+// MISCONCEPTIONS DATABASE
+// ════════════════════════════════════════
+const MISCONCEPTIONS = {
+  labelNotQuantity: {
+    id: 'label',
+    msg: (n) => `Each square on the path holds a number. ${n} means there are ${n} things — it's not just a name!`
+  },
+  countFromOne: {
+    id: 'count-from-1',
+    msg: (n) => `You don't have to start from 1 every time. Look at where ${n} is on the path!`
+  },
+  beforeAfter: {
+    id: 'before-after',
+    msg: (n, dir) => `The number ${dir === 'before' ? 'BEFORE' : 'AFTER'} ${n} is ${dir === 'before' ? n - 1 : n + 1}. Walk along the path!`
+  },
+  offByOne: {
+    id: 'off-by-one',
+    msg: (n, got) => `Almost! You said ${got} but it's ${n}. Count one more step!`
+  },
+  randomGuess: {
+    id: 'random',
+    msg: () => `Look at the number path — each square shows the next counting number.`
+  }
+};
+
+// ════════════════════════════════════════
+// HELPERS
+// ════════════════════════════════════════
+function rand(a, b) {
+  return Math.floor(Math.random() * (b - a + 1)) + a;
+}
+
+function showFeedback(text, type) {
+  const fb = document.getElementById('feedback');
+  fb.textContent = text;
+  fb.className = 'feedback ' + type + ' show';
+  setTimeout(() => { fb.classList.remove('show'); }, type === 'try-again' ? 2500 : 1200);
+}
+
+function getPathMax() {
+  return { emergent: 10, proficient: 15, advanced: 20 }[S.diff];
+}
+
+// ════════════════════════════════════════
+// BUILD HELPERS
+// ════════════════════════════════════════
+function buildNumberPath(max, activePos, targetPos) {
+  let html = '<div class="number-path" id="numberPath">';
+  for (let i = 1; i <= max; i++) {
+    let cls = 'path-cell';
+    if (i === activePos) cls += ' active';
+    if (i === targetPos && targetPos !== activePos) cls += ' target';
+    html += `<div class="${cls}" data-num="${i}" onclick="onCellClick(${i})">${i}</div>`;
+  }
+  html += '</div>';
+  return html;
+}
+
+function buildDotGroup(count) {
+  let html = '<div class="dot-group">';
+  const colors = ['#00d4ff', '#00e676', '#ffc107', '#ff3b8b', '#b388ff'];
+  for (let i = 0; i < count; i++) {
+    html += `<div class="dot" style="background:${colors[i % colors.length]};animation-delay:${i * 0.04}s;"></div>`;
+  }
+  html += '</div>';
+  return html;
+}
+
+function generateChoices(answer, max, count) {
+  const choices = new Set([answer]);
+  // Prioritize nearby numbers for better misconception detection
+  const nearby = [answer - 1, answer + 1, answer - 2, answer + 2];
+  nearby.forEach(n => {
+    if (n >= 1 && n <= max && choices.size < count) choices.add(n);
+  });
+  while (choices.size < count) {
+    choices.add(rand(1, max));
+  }
+  return Array.from(choices).sort((a, b) => a - b);
+}
+
+// ════════════════════════════════════════
+// MODE SWITCHING
+// ════════════════════════════════════════
+function setMode(mode) {
+  S.mode = mode;
+  // Reset mode-specific state
+  if (mode === 'explore') {
+    S.hopperPos = 1;
+    S.highlightedCell = 0;
+  } else if (mode === 'practice') {
+    S.pTarget = 0;
+  } else if (mode === 'play') {
+    S.score = 0;
+    S.streak = 0;
+    S.round = 0;
+  }
+
+  document.querySelectorAll('.vinculum-mode-tab').forEach(t => t.classList.remove('active-explore', 'active-practice', 'active-play'));
+  const tabEl = document.querySelector(`[data-mode="${mode}"]`);
+  if (tabEl) tabEl.classList.add('active-' + mode);
+
+  render();
+}
+
+function setDiff(diff) {
+  S.diff = diff;
+  S.pathMax = getPathMax();
+  document.querySelectorAll('.vinculum-diff-btn').forEach(b => b.classList.remove('active'));
+  document.getElementById('diff' + diff.charAt(0).toUpperCase()).classList.add('active');
+  // Reset to beginning of current mode
+  setMode(S.mode);
+}
+
+// ════════════════════════════════════════
+// RENDER
+// ════════════════════════════════════════
+function render() {
+  const ws = document.getElementById('workspace');
+  const sp = document.getElementById('sidePanel');
+
+  if (S.mode === 'explore') renderExplore(ws, sp);
+  else if (S.mode === 'practice') renderPractice(ws, sp);
+  else renderPlay(ws, sp);
+}
+
+// ─── EXPLORE MODE ───
+function renderExplore(ws, sp) {
+  let html = '';
+
+  // Story banner
+  if (window.VinculumStories) {
+    const toolName = window.location.pathname.split('/').pop().replace('.html', '');
+    const storyData = VinculumStories.getStory(toolName, { a: S.hopperPos, b: S.pathMax, total: S.pathMax, n: S.hopperPos, ones: S.hopperPos });
+    if (storyData && storyData.story) {
+      if (window.Vinculum3Reads) {
+        html += Vinculum3Reads.getBannerHTML(storyData);
+      } else {
+        html += '<div id="storyBanner" style="background:var(--card2,#1a1f2e);border:1px solid var(--border);border-radius:12px;padding:16px 20px;margin-bottom:16px;font-size:15px;line-height:1.6;color:var(--text);position:relative;width:100%;max-width:600px;"><span style="font-size:12px;color:var(--cyan);font-weight:700;text-transform:uppercase;letter-spacing:1px;">📖 Story</span><br>' + storyData.story + '<br><em style="color:var(--yellow);font-weight:600;">' + storyData.question + '</em><button onclick="toggleReadAloud()" style="position:absolute;top:12px;right:12px;background:none;border:1px solid var(--border);border-radius:8px;padding:4px 10px;color:var(--cyan);cursor:pointer;font-size:14px;" title="Read story aloud">🔊</button></div>';
+      }
+    }
+  }
+
+  // Number path with hopper
+  html += buildNumberPath(S.pathMax, S.hopperPos, 0);
+
+  // Hopper above the path (rendered via JS positioning after mount)
+  html += '<div style="text-align:center;margin-top:4px;font-size:28px;" id="hopperDisplay">🐸</div>';
+
+  // Number display
+  html += '<div class="number-display">';
+  html += `<div class="number-display-value" id="numDisplay">${S.hopperPos}</div>`;
+  html += `<div class="number-display-label">Frog is on square ${S.hopperPos}</div>`;
+  html += '</div>';
+
+  // Dot group
+  html += buildDotGroup(S.hopperPos);
+
+  // Controls
+  html += '<div class="controls">';
+  html += '<button class="ctrl-btn" onclick="hopBackward()">◀ Hop Back</button>';
+  html += '<button class="ctrl-btn primary" onclick="hopForward()">Hop Forward ▶</button>';
+  html += '<button class="ctrl-btn danger" onclick="hopTo(1)">↺ Reset</button>';
+  html += '</div>';
+
+  ws.innerHTML = html;
+
+  sp.innerHTML = `
+    <div class="panel-section">
+      <div class="panel-title">How to Use</div>
+      <div class="panel-text">
+        Tap any square on the number path to move the frog there.<br><br>
+        Use <strong>Hop Forward</strong> and <strong>Hop Back</strong> to move one step at a time.<br><br>
+        Watch the dots below — they show how many that number represents!
+      </div>
+    </div>
+    <div class="panel-section">
+      <div class="panel-title">Key Concept</div>
+      <div class="panel-text">
+        Numbers have <strong>order</strong> and <strong>position</strong>. Each number on the path is <strong>one more</strong> than the number before it.<br><br>
+        The number tells you <strong>how far along</strong> the path you are — it's not just a label!
+      </div>
+    </div>
+    <div class="panel-section">
+      <div class="panel-title">Standards</div>
+      <div class="panel-text">
+        <strong>K.CC.1</strong> — Count to 100 by ones and tens<br><br>
+        <strong>K.CC.2</strong> — Count forward from a given number<br><br>
+        <strong>K.CC.4c</strong> — Each successive number is one larger
+      </div>
+    </div>
+  `;
+}
+
+// ─── PRACTICE MODE ───
+function renderPractice(ws, sp) {
+  if (S.pTarget === 0) newPractice();
+
+  let html = '';
+
+  // Instruction box with question
+  html += '<div class="instruction-box">';
+  if (S.pType === 'identify') {
+    html += `<div class="prompt-text">Tap the number <span class="prompt-highlight">${S.pTarget}</span> on the path!</div>`;
+  } else if (S.pType === 'before-after') {
+    html += `<div class="prompt-text">What number comes <span class="prompt-highlight">${S.pDir.toUpperCase()}</span> <span class="prompt-highlight">${S.pTarget}</span>?</div>`;
+  } else if (S.pType === 'hop') {
+    if (S.pDir === 'backward') {
+      html += `<div class="prompt-text">Count backward from <span class="prompt-highlight">${S.pHopStart}</span>. What's the next number?</div>`;
+    } else {
+      html += `<div class="prompt-text">Hop <span class="prompt-highlight">${S.pHopAmount}</span> forward from <span class="prompt-highlight">${S.pHopStart}</span>. Where do you land?</div>`;
+    }
+  }
+  html += '</div>';
+
+  // Number path — highlight target for identify, show start for hop
+  if (S.pType === 'identify') {
+    html += buildNumberPath(S.pathMax, 0, 0); // No highlighting — student must tap
+  } else if (S.pType === 'before-after') {
+    html += buildNumberPath(S.pathMax, S.pTarget, 0); // Show reference number
+  } else {
+    html += buildNumberPath(S.pathMax, S.pHopStart, 0); // Show start position
+  }
+
+  // MC choices for before-after and hop
+  if (S.pType === 'before-after' || S.pType === 'hop') {
+    html += '<div class="mc-grid">';
+    S.pChoices.forEach(c => {
+      html += `<button class="mc-btn" id="mc${c}" onclick="checkPractice(${c})">${c}</button>`;
+    });
+    html += '</div>';
+  }
+
+  // Skip button
+  html += '<div class="controls">';
+  html += '<button class="ctrl-btn" onclick="newPractice()">Skip ▶</button>';
+  html += '</div>';
+
+  ws.innerHTML = html;
+
+  sp.innerHTML = `
+    <div class="panel-section">
+      <div class="panel-title">Instructions</div>
+      <div class="panel-text">
+        ${S.pType === 'identify' ?
+          'Find and <strong>tap</strong> the correct number on the path.' :
+          S.pType === 'before-after' ?
+          'Look at the highlighted number. Choose what comes <strong>' + S.pDir + '</strong> it.' :
+          'Start at the highlighted square and <strong>count</strong> to find the answer.'}
+      </div>
+    </div>
+    <div class="panel-section">
+      <div class="panel-title">Tip</div>
+      <div class="panel-text" style="background: var(--card); padding: 12px; border-radius: 8px;">
+        ${S.pType === 'identify' ?
+          'Numbers go in order on the path. <strong>1, 2, 3...</strong> each one is one more!' :
+          S.pType === 'before-after' ?
+          (S.pDir === 'before' ?
+            'The number BEFORE is <strong>one less</strong>. Walk backward on the path!' :
+            'The number AFTER is <strong>one more</strong>. Walk forward on the path!') :
+          'Start at the number and count your hops!'}
+      </div>
+    </div>
+    <div class="panel-section">
+      <div class="panel-title">Difficulty</div>
+      <div class="panel-text">
+        Path: <strong>1–${S.pathMax}</strong><br>
+        ${S.diff === 'emergent' ? 'Tap to identify numbers' :
+          S.diff === 'proficient' ? 'Before/after & hop counting' :
+          'Backward counting & comparisons'}
+      </div>
+    </div>
+  `;
+}
+
+function newPractice() {
+  if (S.diff === 'emergent') {
+    S.pType = 'identify';
+    S.pTarget = rand(1, S.pathMax);
+    S.pAnswer = S.pTarget;
+    S.pChoices = [];
+  } else if (S.diff === 'proficient') {
+    // Mix of identify and before/after
+    S.pType = Math.random() < 0.4 ? 'identify' : 'before-after';
+    if (S.pType === 'identify') {
+      S.pTarget = rand(1, S.pathMax);
+      S.pAnswer = S.pTarget;
+      S.pChoices = [];
+    } else {
+      S.pDir = Math.random() < 0.5 ? 'before' : 'after';
+      if (S.pDir === 'before') {
+        S.pTarget = rand(2, S.pathMax);
+        S.pAnswer = S.pTarget - 1;
+      } else {
+        S.pTarget = rand(1, S.pathMax - 1);
+        S.pAnswer = S.pTarget + 1;
+      }
+      S.pChoices = generateChoices(S.pAnswer, S.pathMax, 4);
+    }
+  } else {
+    // Advanced: mix of before-after and hop
+    const r = Math.random();
+    if (r < 0.35) {
+      S.pType = 'before-after';
+      S.pDir = Math.random() < 0.5 ? 'before' : 'after';
+      if (S.pDir === 'before') {
+        S.pTarget = rand(2, S.pathMax);
+        S.pAnswer = S.pTarget - 1;
+      } else {
+        S.pTarget = rand(1, S.pathMax - 1);
+        S.pAnswer = S.pTarget + 1;
+      }
+      S.pChoices = generateChoices(S.pAnswer, S.pathMax, 4);
+    } else {
+      S.pType = 'hop';
+      if (Math.random() < 0.5) {
+        // Backward counting
+        S.pDir = 'backward';
+        S.pHopStart = rand(2, S.pathMax);
+        S.pHopAmount = 1;
+        S.pAnswer = S.pHopStart - 1;
+        S.pTarget = S.pHopStart;
+      } else {
+        // Hop forward
+        S.pDir = 'forward';
+        S.pHopAmount = rand(2, 3);
+        S.pHopStart = rand(1, S.pathMax - S.pHopAmount);
+        S.pAnswer = S.pHopStart + S.pHopAmount;
+        S.pTarget = S.pHopStart;
+      }
+      S.pChoices = generateChoices(S.pAnswer, S.pathMax, 4);
+    }
+  }
+  render();
+}
+
+function onCellClick(n) {
+  if (S.mode === 'explore') {
+    hopTo(n);
+  } else if (S.mode === 'practice' && S.pType === 'identify') {
+    checkPractice(n);
+  }
+}
+
+function checkPractice(n) {
+  if (n === S.pAnswer) {
+    // Highlight correct cell
+    const cell = document.querySelector(`.path-cell[data-num="${n}"]`);
+    if (cell) cell.classList.add('correct-flash');
+    const btn = document.getElementById('mc' + n);
+    if (btn) btn.classList.add('correct-flash');
+
+    showFeedback('✓ Correct!', 'correct');
+    setTimeout(() => { newPractice(); }, 1500);
+  } else {
+    // Flash incorrect
+    const cell = document.querySelector(`.path-cell[data-num="${n}"]`);
+    if (cell) { cell.classList.add('incorrect-flash'); setTimeout(() => cell.classList.remove('incorrect-flash'), 600); }
+    const btn = document.getElementById('mc' + n);
+    if (btn) { btn.classList.add('incorrect-flash'); setTimeout(() => btn.classList.remove('incorrect-flash'), 600); }
+
+    // Misconception feedback
+    let msg;
+    const diff = Math.abs(n - S.pAnswer);
+    if (diff === 1) {
+      msg = MISCONCEPTIONS.offByOne.msg(S.pAnswer, n);
+    } else if (S.pType === 'before-after') {
+      msg = MISCONCEPTIONS.beforeAfter.msg(S.pTarget, S.pDir);
+    } else if (diff > 3) {
+      msg = MISCONCEPTIONS.randomGuess.msg();
+    } else {
+      msg = MISCONCEPTIONS.countFromOne.msg(S.pAnswer);
+    }
+    showFeedback(msg, 'try-again');
+  }
+}
+
+// ─── PLAY MODE ───
+function renderPlay(ws, sp) {
+  if (S.round === 0) newPlayRound();
+
+  // Check if game over
+  if (S.round > S.total) {
+    let html = '';
+    html += '<div class="instruction-box" style="max-width:400px;">';
+    html += '<div class="prompt-text" style="font-size:24px;">Game Over!</div>';
+    html += `<div style="font-size:48px;font-weight:900;font-family:\'JetBrains Mono\',monospace;background:var(--grad);-webkit-background-clip:text;-webkit-text-fill-color:transparent;margin:16px 0;">${S.score}</div>`;
+    html += `<div style="font-size:14px;color:var(--muted);">Best streak: ${S.best}</div>`;
+    html += '</div>';
+    html += '<div class="controls"><button class="ctrl-btn primary" onclick="S.round=0;S.score=0;S.streak=0;newPlayRound();">Play Again</button></div>';
+    ws.innerHTML = html;
+    renderPlayPanel(sp);
+    return;
+  }
+
+  let html = '';
+
+  // Round indicator
+  html += `<div style="text-align:center;margin-bottom:8px;font-size:14px;color:var(--muted);">Round ${S.round} of ${S.total}</div>`;
+
+  // Question
+  html += '<div class="instruction-box">';
+  if (S.playType === 'identify') {
+    html += `<div class="prompt-text">Tap the number <span class="prompt-highlight">${S.playTarget}</span> on the path!</div>`;
+  } else if (S.playType === 'before-after') {
+    html += `<div class="prompt-text">What comes <span class="prompt-highlight">${S.playDir.toUpperCase()}</span> <span class="prompt-highlight">${S.playTarget}</span>?</div>`;
+  } else if (S.playType === 'hop') {
+    if (S.playDir === 'backward') {
+      html += `<div class="prompt-text">Count backward from <span class="prompt-highlight">${S.playHopStart}</span>. What's next?</div>`;
+    } else {
+      html += `<div class="prompt-text">Hop <span class="prompt-highlight">${S.playHopAmount}</span> forward from <span class="prompt-highlight">${S.playHopStart}</span>!</div>`;
+    }
+  }
+  html += '</div>';
+
+  // Number path
+  if (S.playType === 'identify') {
+    html += buildNumberPath(S.pathMax, 0, 0);
+  } else if (S.playType === 'before-after') {
+    html += buildNumberPath(S.pathMax, S.playTarget, 0);
+  } else {
+    html += buildNumberPath(S.pathMax, S.playHopStart, 0);
+  }
+
+  // MC choices (5 for play)
+  if (S.playType !== 'identify') {
+    html += '<div class="play-grid">';
+    S.playChoices.forEach(c => {
+      html += `<button class="play-btn" id="play${c}" onclick="playPick(${c})">${c}</button>`;
+    });
+    html += '</div>';
+  }
+
+  ws.innerHTML = html;
+  renderPlayPanel(sp);
+}
+
+function renderPlayPanel(sp) {
+  sp.innerHTML = `
+    <div class="score-display">
+      <div class="score-value">${S.score}</div>
+      <div class="score-label">Score</div>
+    </div>
+    <div class="score-display" style="background:transparent; padding:8px;">
+      <div style="font-size:18px; font-weight:700; color:var(--yellow);">🔥 ${S.streak}</div>
+      <div class="score-label">Streak</div>
+      <div class="streak-bar"><div class="streak-fill" style="width:${Math.min(S.streak * 20, 100)}%;"></div></div>
+    </div>
+    <div class="panel-section">
+      <div class="panel-title">How to Play</div>
+      <div class="panel-text">
+        Answer ${S.total} number path questions.<br><br>
+        Build a <strong>streak</strong> for bonus points!<br><br>
+        <strong>+10</strong> per correct answer<br>
+        <strong>+${S.streak * 2 || 2}</strong> streak bonus
+      </div>
+    </div>
+    <div class="panel-section">
+      <div class="panel-title">Best Streak</div>
+      <div class="panel-text" style="font-size:24px; font-weight:800; color:var(--purple);">🏆 ${S.best}</div>
+    </div>
+  `;
+}
+
+function newPlayRound() {
+  S.round = S.round === 0 ? 1 : S.round;
+
+  // Mix of question types based on difficulty
+  if (S.diff === 'emergent') {
+    S.playType = 'identify';
+    S.playTarget = rand(1, S.pathMax);
+    S.playAnswer = S.playTarget;
+    S.playChoices = [];
+  } else if (S.diff === 'proficient') {
+    const r = Math.random();
+    if (r < 0.3) {
+      S.playType = 'identify';
+      S.playTarget = rand(1, S.pathMax);
+      S.playAnswer = S.playTarget;
+      S.playChoices = [];
+    } else {
+      S.playType = 'before-after';
+      S.playDir = Math.random() < 0.5 ? 'before' : 'after';
+      if (S.playDir === 'before') {
+        S.playTarget = rand(2, S.pathMax);
+        S.playAnswer = S.playTarget - 1;
+      } else {
+        S.playTarget = rand(1, S.pathMax - 1);
+        S.playAnswer = S.playTarget + 1;
+      }
+      S.playChoices = generateChoices(S.playAnswer, S.pathMax, 5);
+    }
+  } else {
+    // Advanced: mix all types
+    const r = Math.random();
+    if (r < 0.2) {
+      S.playType = 'identify';
+      S.playTarget = rand(1, S.pathMax);
+      S.playAnswer = S.playTarget;
+      S.playChoices = [];
+    } else if (r < 0.5) {
+      S.playType = 'before-after';
+      S.playDir = Math.random() < 0.5 ? 'before' : 'after';
+      if (S.playDir === 'before') {
+        S.playTarget = rand(2, S.pathMax);
+        S.playAnswer = S.playTarget - 1;
+      } else {
+        S.playTarget = rand(1, S.pathMax - 1);
+        S.playAnswer = S.playTarget + 1;
+      }
+      S.playChoices = generateChoices(S.playAnswer, S.pathMax, 5);
+    } else {
+      S.playType = 'hop';
+      if (Math.random() < 0.5) {
+        S.playDir = 'backward';
+        S.playHopStart = rand(2, S.pathMax);
+        S.playHopAmount = 1;
+        S.playAnswer = S.playHopStart - 1;
+        S.playTarget = S.playHopStart;
+      } else {
+        S.playDir = 'forward';
+        S.playHopAmount = rand(2, 3);
+        S.playHopStart = rand(1, S.pathMax - S.playHopAmount);
+        S.playAnswer = S.playHopStart + S.playHopAmount;
+        S.playTarget = S.playHopStart;
+      }
+      S.playChoices = generateChoices(S.playAnswer, S.pathMax, 5);
+    }
+  }
+
+  render();
+}
+
+function playPick(n) {
+  if (n === S.playAnswer) {
+    const btn = document.getElementById('play' + n);
+    if (btn) btn.classList.add('correct-flash');
+    const cell = document.querySelector(`.path-cell[data-num="${n}"]`);
+    if (cell) cell.classList.add('correct-flash');
+
+    S.score += 10 + (S.streak * 2);
+    S.streak++;
+    if (S.streak > S.best) S.best = S.streak;
+    showFeedback('✓ ' + S.playAnswer + '!', 'correct');
+  } else {
+    const btn = document.getElementById('play' + n);
+    if (btn) btn.classList.add('incorrect-flash');
+    S.streak = 0;
+
+    let msg;
+    const diff = Math.abs(n - S.playAnswer);
+    if (diff === 1) {
+      msg = MISCONCEPTIONS.offByOne.msg(S.playAnswer, n);
+    } else if (S.playType === 'before-after') {
+      msg = MISCONCEPTIONS.beforeAfter.msg(S.playTarget, S.playDir);
+    } else if (diff > 3) {
+      msg = MISCONCEPTIONS.randomGuess.msg();
+    } else {
+      msg = MISCONCEPTIONS.labelNotQuantity.msg(S.playAnswer);
+    }
+    showFeedback(msg, 'try-again');
+  }
+
+  setTimeout(() => {
+    S.round++;
+    if (S.round > S.total) {
+      render(); // Show game over
+    } else {
+      newPlayRound();
+    }
+  }, 1500);
+}
+
+// Handle identify-type taps on path cells during Play mode
+function handlePlayCellClick(n) {
+  if (n === S.playAnswer) {
+    const cell = document.querySelector(`.path-cell[data-num="${n}"]`);
+    if (cell) cell.classList.add('correct-flash');
+    S.score += 10 + (S.streak * 2);
+    S.streak++;
+    if (S.streak > S.best) S.best = S.streak;
+    showFeedback('✓ ' + S.playAnswer + '!', 'correct');
+  } else {
+    const cell = document.querySelector(`.path-cell[data-num="${n}"]`);
+    if (cell) { cell.classList.add('incorrect-flash'); setTimeout(() => cell.classList.remove('incorrect-flash'), 600); }
+    S.streak = 0;
+    const diff = Math.abs(n - S.playAnswer);
+    let msg;
+    if (diff === 1) {
+      msg = MISCONCEPTIONS.offByOne.msg(S.playAnswer, n);
+    } else if (diff > 3) {
+      msg = MISCONCEPTIONS.randomGuess.msg();
+    } else {
+      msg = MISCONCEPTIONS.countFromOne.msg(S.playAnswer);
+    }
+    showFeedback(msg, 'try-again');
+  }
+
+  setTimeout(() => {
+    S.round++;
+    if (S.round > S.total) {
+      render();
+    } else {
+      newPlayRound();
+    }
+  }, 1500);
+}
+
+// ════════════════════════════════════════
+// EXPLORE FUNCTIONS
+// ════════════════════════════════════════
+function hopTo(n) {
+  if (n < 1) n = 1;
+  if (n > S.pathMax) n = S.pathMax;
+  S.hopperPos = n;
+  render();
+  // Bump animation
+  setTimeout(() => {
+    const numEl = document.getElementById('numDisplay');
+    if (numEl) {
+      numEl.classList.add('bump');
+      setTimeout(() => numEl.classList.remove('bump'), 150);
+    }
+  }, 50);
+}
+
+function hopForward() {
+  if (S.hopperPos < S.pathMax) {
+    hopTo(S.hopperPos + 1);
+  } else {
+    showFeedback('End of the path!', 'try-again');
+  }
+}
+
+function hopBackward() {
+  if (S.hopperPos > 1) {
+    hopTo(S.hopperPos - 1);
+  } else {
+    showFeedback('Already at the start!', 'try-again');
+  }
+}
+
+// Unified cell click handler — routes based on mode
+function onCellClick(n) {
+  if (S.mode === 'explore') {
+    hopTo(n);
+  } else if (S.mode === 'practice' && S.pType === 'identify') {
+    checkPractice(n);
+  } else if (S.mode === 'play' && S.playType === 'identify') {
+    handlePlayCellClick(n);
+  }
+}
+
+// ════════════════════════════════════════
+// INIT
+// ════════════════════════════════════════
+document.querySelectorAll('.vinculum-mode-tab').forEach(function(tab) {
+  tab.addEventListener('click', function() {
+    setMode(this.dataset.mode);
+  });
+});
+
+document.querySelectorAll('.vinculum-diff-btn').forEach(function(btn) {
+  btn.addEventListener('click', function() {
+    setDiff(this.dataset.diff);
+  });
+});
+
+render();
+</script>
+<script src="../../vinculum-core.js"></script>
+<script src="../../vinculum-data.js"></script>
+    <script src="../../vinculum-adaptive-hook.js"></script>
+<script src="../../vinculum-3reads.js"></script>
+<script src="../../vinculum-stories.js"></script>
+<script src="../../vinculum-feedback.js"></script>
+  <script src="../../vinculum-guide.js"></script>
+<script src="../../vinculum-identity.js"></script>
+<script src="../../vinculum-indigenous.js"></script>
+<script src="../../vinculum-dashboard.js"></script>
+<script src="../../vinculum-hyperfocus.js"></script>
+<script src="../../vinculum-layout.js"></script>
+</body>
+</html>

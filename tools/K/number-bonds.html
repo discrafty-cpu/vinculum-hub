@@ -1,0 +1,744 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>VINCULUM — Number Bonds</title>
+<link rel="stylesheet" href="../../vinculum-core.css">
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;600&display=swap');
+/* Theme system loaded from vinculum-core.css */
+.vinculum-rtm-btn .rtm-icon{font-size:14px;}
+
+/* ═══ FOCUS VISIBLE (Keyboard Navigation) ═══ */
+*:focus-visible {
+  outline:2px solid var(--cyan);outline-offset:2px;border-radius:4px;
+}
+.sr-only {
+  position:absolute;width:1px;height:1px;padding:0;margin:-1px;
+  overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0;
+}
+*{margin:0;padding:0;box-sizing:border-box;}
+body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);height:100vh;display:flex;flex-direction:column;overflow:hidden;user-select:none;}
+
+.main{flex:1;display:flex;overflow:hidden;}
+.workspace{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:24px;gap:16px;overflow:hidden;}
+.side-panel{width:280px;background:var(--bg2);border-left:1px solid var(--border);padding:20px;overflow-y:auto;flex-shrink:0;}
+.panel-section{margin-bottom:20px;}
+.panel-title{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:1.5px;color:var(--muted);margin-bottom:8px;}
+.panel-text{font-size:13px;color:var(--text2);line-height:1.6;}
+
+/* ── Bond Diagram (SVG) ── */
+.bond-svg-wrap{width:100%;max-width:420px;}
+.bond-svg-wrap svg{width:100%;height:auto;display:block;}
+
+/* ── Counter Dots ── */
+.counter-row{display:flex;gap:6px;justify-content:center;align-items:center;flex-wrap:wrap;margin:4px 0;}
+.counter-dot{width:8px;height:8px;border-radius:50%;display:inline-block;}
+
+/* ── Equation Display ── */
+.equation-display{font-size:48px;font-weight:900;font-family:'JetBrains Mono',monospace;text-align:center;margin:20px 0;letter-spacing:8px;display:flex;align-items:center;justify-content:center;gap:12px;}
+.eq-part{padding:8px 16px;border-radius:12px;min-width:70px;display:flex;align-items:center;justify-content:center;}
+.eq-whole{background:rgba(179,136,255,0.15);color:var(--purple);}
+.eq-a{background:rgba(0,212,255,0.15);color:var(--cyan);}
+.eq-b{background:rgba(255,59,139,0.15);color:var(--pink);}
+.eq-op{color:var(--text2);}
+.eq-missing{color:var(--text);}
+
+@keyframes pulse-glow{0%{box-shadow:0 0 8px rgba(255,193,7,0.4);} 50%{box-shadow:0 0 16px rgba(255,193,7,0.8);} 100%{box-shadow:0 0 8px rgba(255,193,7,0.4);}}
+.missing-box{animation:pulse-glow 1.2s infinite;border-radius:12px;padding:8px 16px;}
+
+/* ── Controls ── */
+.instruction-box{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:14px 20px;text-align:center;font-size:15px;color:var(--text2);font-weight:500;max-width:600px;transition:all 0.3s;}
+.instruction-box.highlight-cyan{border-color:var(--cyan);color:var(--cyan);}
+.instruction-box.highlight-pink{border-color:var(--pink);color:var(--pink);}
+.instruction-box.highlight-green{border-color:var(--green);color:var(--green);}
+
+.controls{display:flex;gap:8px;flex-wrap:wrap;justify-content:center;}
+.ctrl-btn{padding:10px 20px;border-radius:10px;border:1px solid var(--border);background:var(--card);color:var(--text2);font-size:13px;font-weight:600;font-family:inherit;cursor:pointer;transition:all 0.2s;display:flex;align-items:center;gap:6px;}
+.ctrl-btn:hover{background:var(--card2);color:var(--text);}
+.ctrl-btn.primary{background:var(--grad);color:var(--bg);border-color:transparent;}
+
+/* ── Whole number selector ── */
+.whole-selector{display:flex;gap:8px;justify-content:center;flex-wrap:wrap;}
+.whole-btn{width:56px;height:56px;border-radius:14px;border:2px solid var(--border);background:var(--card);color:var(--text);font-size:24px;font-weight:800;font-family:'JetBrains Mono',monospace;cursor:pointer;transition:all 0.15s;display:flex;align-items:center;justify-content:center;}
+.whole-btn:hover{border-color:var(--cyan);transform:scale(1.08);}
+.whole-btn.active{border-color:var(--cyan);background:rgba(0,212,255,0.12);color:var(--cyan);}
+
+/* ── Decomposition List (Explore) ── */
+.decomp-list{display:flex;gap:6px;flex-wrap:wrap;justify-content:center;margin:6px 0;max-width:600px;}
+.decomp-item{padding:6px 12px;border-radius:8px;border:2px solid var(--border);background:var(--card);color:var(--text2);font-size:12px;font-family:'JetBrains Mono',monospace;cursor:pointer;transition:all 0.15s;text-align:center;white-space:nowrap;}
+.decomp-item:hover{border-color:var(--cyan);background:rgba(0,212,255,0.08);}
+.decomp-item.active{border-color:var(--cyan);background:rgba(0,212,255,0.15);color:var(--cyan);font-weight:700;}
+
+/* ── Answer Buttons (Practice & Play) ── */
+.answer-grid{display:flex;gap:10px;flex-wrap:wrap;justify-content:center;max-width:500px;}
+.answer-btn{width:52px;height:52px;border-radius:12px;border:2px solid var(--border);background:var(--card);color:var(--text);font-size:20px;font-weight:700;font-family:'JetBrains Mono',monospace;cursor:pointer;transition:all 0.15s;display:flex;align-items:center;justify-content:center;}
+.answer-btn:hover{border-color:var(--cyan);transform:scale(1.1);}
+.answer-btn.correct-flash{border-color:var(--green);background:rgba(0,230,118,0.2);color:var(--green);animation:correctFlash 0.4s ease-out;}
+.answer-btn.incorrect-flash{border-color:var(--pink);background:rgba(255,59,139,0.2);color:var(--pink);animation:shake 0.3s ease-in-out;}
+
+@keyframes correctFlash{0%{transform:scale(1.2);} 100%{transform:scale(1);}}
+@keyframes shake{0%,100%{transform:translateX(0);} 25%{transform:translateX(-4px);} 75%{transform:translateX(4px);}}
+
+.score-display{text-align:center;padding:16px;background:var(--card);border-radius:12px;margin-bottom:12px;}
+.score-value{font-size:36px;font-weight:900;font-family:'JetBrains Mono',monospace;background:var(--grad);-webkit-background-clip:text;-webkit-text-fill-color:transparent;}
+.score-label{font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:1px;}
+.streak-bar{height:6px;background:var(--card);border-radius:3px;overflow:hidden;margin-top:8px;}
+.streak-fill{height:100%;background:var(--grad);border-radius:3px;transition:width 0.3s;}
+
+.feedback{position:fixed;top:50%;left:50%;transform:translate(-50%,-50%) scale(0);padding:24px 48px;border-radius:20px;font-size:28px;font-weight:800;z-index:200;pointer-events:none;transition:transform 0.3s cubic-bezier(0.175,0.885,0.32,1.275),opacity 0.3s;opacity:0;}
+.feedback.show{transform:translate(-50%,-50%) scale(1);opacity:1;}
+.feedback.correct{background:rgba(0,230,118,0.15);color:var(--green);border:2px solid var(--green);}
+.feedback.incorrect{background:rgba(255,59,139,0.15);color:var(--pink);border:2px solid var(--pink);}
+.feedback.try-again{background:rgba(255,193,7,0.15);color:var(--yellow);border:2px solid var(--yellow);}
+
+::-webkit-scrollbar{width:6px;}::-webkit-scrollbar-track{background:transparent;}::-webkit-scrollbar-thumb{background:var(--border);border-radius:3px;}
+</style>
+</head>
+<body>
+
+<div class="vinculum-header">
+  <div class="vinculum-header-left">
+    <a class="vinculum-back-btn" href="../../VINCULUM-Hub.html" style="text-decoration:none;">◀ Hub</a>
+    <div class="vinculum-header-title"><span>VINCULUM</span> Number Bonds</div>
+    <span class="vinculum-header-badge">K.OA</span>
+    <button class="vinculum-back-btn" id="readAloudBtn" onclick="toggleReadAloud()" aria-label="Read Aloud" title="Read instructions aloud">🔊 Read to Me</button>
+  </div>
+    <div class="vinculum-header-right">
+      <div class="vinculum-std-tags">
+    <span class="vinculum-std-tag">K.OA.3</span>
+    <span class="vinculum-std-tag">K.OA.4</span>
+    <span class="vinculum-std-tag">K.OA.5</span>
+    <span class="vinculum-std-tag mn">MN K.1.2.1</span>
+  </div>
+</div>
+
+</div>
+
+  <div class="vinculum-mode-tabs">
+  <button class="vinculum-mode-tab active-explore" data-mode="explore" id="tabExplore" onclick="setMode('explore')"><svg width="18" height="18" viewBox="0 0 48 48" fill="none"><path d="M4 24C4 24 12 12 24 12C36 12 44 24 44 24C44 24 36 36 24 36C12 36 4 24 4 24Z" stroke="currentColor" stroke-width="3" fill="none"/><circle cx="24" cy="24" r="7" stroke="currentColor" stroke-width="3" fill="none"/><circle cx="24" cy="24" r="3" fill="currentColor"/><line x1="24" y1="4" x2="24" y2="9" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" opacity="0.5"/><line x1="10" y1="8" x2="13" y2="12" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" opacity="0.5"/><line x1="38" y1="8" x2="35" y2="12" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" opacity="0.5"/></svg> Explore</button>
+  <button class="vinculum-mode-tab" id="tabPractice" data-mode="practice" onclick="setMode('practice')"><svg width="18" height="18" viewBox="0 0 48 48" fill="none"><circle cx="24" cy="24" r="20" stroke="currentColor" stroke-width="3" fill="none" opacity="0.3"/><circle cx="24" cy="24" r="20" stroke="currentColor" stroke-width="3" fill="none" stroke-dasharray="126" stroke-dashoffset="32" stroke-linecap="round"/><polyline points="16,24 22,32 34,16" stroke="currentColor" stroke-width="4" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg> Practice</button>
+  <button class="vinculum-mode-tab" id="tabPlay" data-mode="play" onclick="setMode('play')"><svg width="18" height="18" viewBox="0 0 48 48" fill="none"><polygon points="28,4 12,28 22,28 18,44 36,18 26,18" fill="none" stroke="currentColor" stroke-width="3" stroke-linejoin="round"/><polygon points="27,8 15,27 23,27 20,40 34,19 26,19" fill="currentColor" opacity="0.15"/></svg> Play</button>
+  <div class="vinculum-diff-selector">
+    <span class="vinculum-diff-label">Level</span>
+    <button class="vinculum-diff-btn active" id="diffE">Within 5</button>
+    <button class="vinculum-diff-btn" id="diffP">Within 10</button>
+    <button class="vinculum-diff-btn" id="diffA">Make 10</button>
+  </div>
+</div>
+
+<div class="main">
+  <div class="workspace" role="main" id="workspace"></div>
+  <div class="side-panel" id="sidePanel"></div>
+</div>
+<div class="feedback" id="feedback"></div>
+
+  <script src="../../vinculum-input.js"></script>
+<script>
+let S = {
+  mode: 'explore',
+  diff: 'emergent',
+  maxN: 5,
+  whole: 5,
+  selectedDecomp: 0,
+  pWhole: 0,
+  pPartA: 0,
+  pPartB: 0,
+  pMissing: 'b',
+  score: 0,
+  streak: 0,
+  best: 0,
+  round: 0,
+  total: 10,
+  playWhole: 0,
+  playPartA: 0,
+  playPartB: 0,
+  playMissing: 'b',
+  playChoices: []
+};
+
+const MISCONCEPTIONS = {
+  partWholeConfusion: { id: 'part-whole', msg: (w, a, b) => `The whole is ${w}. You need the missing PART, not the whole!` },
+  offByOne: { id: 'off-by-one', msg: (w, a, b, ans, correct) => `Close! ${ans} is off by 1. Think: ${w} = ${a} + what?` },
+  reversedParts: { id: 'reversed-parts', msg: (w, a, b) => `You picked the OTHER part. The known part is ${a} — what's missing?` },
+  randomGuess: { id: 'random-guess', msg: () => `Look at the bond picture — the whole splits into two parts.` }
+};
+
+/* ── Read-Aloud + Story Banner ── */
+function toggleReadAloud() {
+  if (window.VinculumStories && VinculumStories.isReading()) {
+    VinculumStories.stopReading();
+    document.getElementById('readAloudBtn').textContent = '🔊 Read to Me';
+  } else {
+    const fb = document.getElementById('feedback');
+    const storyEl = document.getElementById('storyBanner');
+    const text = storyEl ? storyEl.textContent : (fb ? fb.textContent : 'Welcome to this math tool!');
+    if (window.VinculumStories) {
+      VinculumStories.readAloud(text, { rate: 0.85, onComplete: () => {
+        document.getElementById('readAloudBtn').textContent = '🔊 Read to Me';
+      }});
+      document.getElementById('readAloudBtn').textContent = '⏹ Stop';
+    }
+  }
+}
+
+function rand(a, b) {
+  return Math.floor(Math.random() * (b - a + 1)) + a;
+}
+
+
+function setMode(m) {
+  S.mode = m;
+  S.selectedDecomp = 0;
+  document.querySelectorAll('.vinculum-mode-tab').forEach(t => t.className = 'mode-tab');
+  document.getElementById('tab' + m.charAt(0).toUpperCase() + m.slice(1)).className = 'mode-tab active-' + m;
+  S.round = 0;
+  S.score = 0;
+  S.streak = 0;
+  if (m === 'practice') newPractice();
+  if (m === 'play') S.round = 0;
+  render();
+}
+
+function setDiff(d) {
+  S.diff = d;
+  S.maxN = d === 'emergent' ? 5 : 10;
+  document.querySelectorAll('.vinculum-diff-btn').forEach(b => b.classList.remove('active'));
+  document.getElementById('diff' + d.charAt(0).toUpperCase()).classList.add('active');
+  S.selectedDecomp = 0;
+  if (d === 'emergent') S.whole = 5;
+  else S.whole = 10;
+  if (S.mode === 'practice') newPractice();
+  if (S.mode === 'play') S.round = 0;
+  render();
+}
+
+function render() {
+  const ws = document.getElementById('workspace');
+  const sp = document.getElementById('sidePanel');
+  if (S.mode === 'explore') renderExplore(ws, sp);
+  else if (S.mode === 'practice') renderPractice(ws, sp);
+  else renderPlay(ws, sp);
+}
+
+/* ═══════════════════════════════════════════
+   BOND DIAGRAM SVG with Counter Dots
+   ═══════════════════════════════════════════ */
+
+function buildCounterDots(count, color) {
+  let svg = '';
+  const dotRadius = 3;
+  const spacing = 8;
+  const totalWidth = count * dotRadius * 2 + (count - 1) * spacing;
+  const startX = -totalWidth / 2;
+  for (let i = 0; i < count; i++) {
+    const x = startX + i * (dotRadius * 2 + spacing) + dotRadius;
+    svg += `<circle cx="${x}" cy="0" r="${dotRadius}" fill="${color}" opacity="0.8"/>`;
+  }
+  return svg;
+}
+
+function buildBondSVG(whole, partA, partB, showWhole, showA, showB) {
+  const W = 280;
+  const H = 220;
+  const topX = W / 2;
+  const topY = 40;
+  const leftX = 60;
+  const rightX = W - 60;
+  const botY = 160;
+  const midY = 100;
+
+  let svg = `<div class="bond-svg-wrap"><svg viewBox="0 0 ${W} ${H}" style="overflow:visible;">`;
+
+  // Branch lines
+  svg += `<path d="M${topX} ${topY + 22} Q${topX - 30} ${midY} ${leftX} ${botY - 22}" stroke="#2a3654" stroke-width="3" fill="none" stroke-linecap="round"/>`;
+  svg += `<path d="M${topX} ${topY + 22} Q${topX + 30} ${midY} ${rightX} ${botY - 22}" stroke="#2a3654" stroke-width="3" fill="none" stroke-linecap="round"/>`;
+
+  // Whole circle (top)
+  const wholeColor = showWhole ? '#b388ff' : '#2a3654';
+  const wholeFill = showWhole ? 'rgba(179,136,255,0.15)' : 'rgba(42,54,84,0.3)';
+  svg += `<circle cx="${topX}" cy="${topY}" r="22" fill="${wholeFill}" stroke="${wholeColor}" stroke-width="2.5"/>`;
+  svg += `<text x="${topX}" y="${topY + 7}" text-anchor="middle" fill="${showWhole ? '#b388ff' : '#5a6b8f'}" font-size="22" font-weight="900" font-family="JetBrains Mono, monospace">${showWhole ? whole : '?'}</text>`;
+
+  // Counter dots for whole
+  if (showWhole && whole > 0) {
+    svg += `<g transform="translate(${topX},${topY + 32})">`;
+    svg += buildCounterDots(whole, '#b388ff');
+    svg += '</g>';
+  }
+
+  // Part A circle (left)
+  const aColor = showA ? '#00d4ff' : '#2a3654';
+  const aFill = showA ? 'rgba(0,212,255,0.15)' : 'rgba(42,54,84,0.3)';
+  svg += `<circle cx="${leftX}" cy="${botY}" r="22" fill="${aFill}" stroke="${aColor}" stroke-width="2.5"/>`;
+  svg += `<text x="${leftX}" y="${botY + 7}" text-anchor="middle" fill="${showA ? '#00d4ff' : '#5a6b8f'}" font-size="22" font-weight="900" font-family="JetBrains Mono, monospace">${showA ? partA : '?'}</text>`;
+
+  // Counter dots for part A
+  if (showA && partA > 0) {
+    svg += `<g transform="translate(${leftX},${botY + 32})">`;
+    svg += buildCounterDots(partA, '#00d4ff');
+    svg += '</g>';
+  }
+
+  // Part B circle (right)
+  const bColor = showB ? '#ff3b8b' : '#2a3654';
+  const bFill = showB ? 'rgba(255,59,139,0.15)' : 'rgba(42,54,84,0.3)';
+  svg += `<circle cx="${rightX}" cy="${botY}" r="22" fill="${bFill}" stroke="${bColor}" stroke-width="2.5"/>`;
+  svg += `<text x="${rightX}" y="${botY + 7}" text-anchor="middle" fill="${showB ? '#ff3b8b' : '#5a6b8f'}" font-size="22" font-weight="900" font-family="JetBrains Mono, monospace">${showB ? partB : '?'}</text>`;
+
+  // Counter dots for part B
+  if (showB && partB > 0) {
+    svg += `<g transform="translate(${rightX},${botY + 32})">`;
+    svg += buildCounterDots(partB, '#ff3b8b');
+    svg += '</g>';
+  }
+
+  svg += '</svg></div>';
+  return svg;
+}
+
+/* ═══════════════════════════════════════════
+   EXPLORE MODE
+   ═══════════════════════════════════════════ */
+
+function renderExplore(ws, sp) {
+  const w = S.whole;
+  const max = S.maxN;
+  let h = '';
+
+  // Story banner for Explore mode
+  if (window.VinculumStories) {
+    const toolName = window.location.pathname.split('/').pop().replace('.html','');
+    const storyData = VinculumStories.getStory(toolName, {a: S.a || S.whole || 5, b: S.b || 3, total: S.total || S.whole || 7, n: S.num || 8, ones: (S.num || 13) % 10});
+    if (storyData && storyData.story) {
+      if (window.Vinculum3Reads) {
+
+        h += Vinculum3Reads.getBannerHTML(storyData);
+
+      } else {
+
+        const bannerHTML = '<div id="storyBanner" style="background:var(--card2,#1a1f2e);border:1px solid var(--border);border-radius:12px;padding:16px 20px;margin-bottom:16px;font-size:15px;line-height:1.6;color:var(--text);position:relative;"><span style="font-size:12px;color:var(--cyan);font-weight:700;text-transform:uppercase;letter-spacing:1px;">📖 Story</span><br>' + storyData.story + '<br><em style="color:var(--yellow);font-weight:600;">' + storyData.question + '</em><button onclick="toggleReadAloud()" style="position:absolute;top:12px;right:12px;background:none;border:1px solid var(--border);border-radius:8px;padding:4px 10px;color:var(--cyan);cursor:pointer;font-size:14px;" title="Read story aloud">🔊</button></div>';
+      h += bannerHTML;
+
+      }
+    }
+  }
+
+  // Instruction
+  h += `<div class="instruction-box">Pick a number, then explore all the ways to split it</div>`;
+
+  // Whole number selector (2 to maxN)
+  h += '<div class="whole-selector">';
+  for (let n = 2; n <= max; n++) {
+    h += `<button class="whole-btn ${n === w ? 'active' : ''}" onclick="S.whole=${n};S.selectedDecomp=0;render();">${n}</button>`;
+  }
+  h += '</div>';
+
+  // Get all decompositions
+  const decomps = [];
+  for (let i = 0; i <= w; i++) {
+    decomps.push({ a: i, b: w - i });
+  }
+
+  // Display selected decomposition
+  const selected = decomps[Math.min(S.selectedDecomp, decomps.length - 1)];
+  const a = selected.a;
+  const b = selected.b;
+
+  h += buildBondSVG(w, a, b, true, true, true);
+
+  // Equation display
+  h += '<div class="equation-display">';
+  h += `<div class="eq-part eq-whole">${w}</div>`;
+  h += `<div class="eq-op">=</div>`;
+  h += `<div class="eq-part eq-a">${a}</div>`;
+  h += `<div class="eq-op">+</div>`;
+  h += `<div class="eq-part eq-b">${b}</div>`;
+  h += '</div>';
+
+  // Decomposition list
+  h += '<div class="decomp-list">';
+  for (let idx = 0; idx < decomps.length; idx++) {
+    const d = decomps[idx];
+    const isActive = idx === S.selectedDecomp;
+    h += `<button class="decomp-item ${isActive ? 'active' : ''}" onclick="S.selectedDecomp=${idx};render();">${w} = ${d.a} + ${d.b}</button>`;
+  }
+  h += '</div>';
+
+  // Controls
+  h += '<div class="controls">';
+  h += `<button class="ctrl-btn primary" onclick="animateAllBonds()">Animate All</button>`;
+  h += `<button class="ctrl-btn" onclick="S.selectedDecomp=0;render();">↺ Reset</button>`;
+  h += '</div>';
+
+  ws.innerHTML = h;
+
+  // Side panel
+  let sp_html = `<div class="panel-section"><div class="panel-title">How to Use</div>
+    <div class="panel-text">
+      <strong style="color:var(--cyan);">1. Pick</strong> a whole number<br>
+      <strong style="color:var(--cyan);">2. Click</strong> a decomposition<br>
+      <strong style="color:var(--cyan);">3. Watch</strong> the bond diagram!
+    </div></div>`;
+
+  sp_html += `<div class="panel-section"><div class="panel-title">Key Idea</div>
+    <div class="panel-text">Numbers can split into different parts. All these ways have the same <strong style="color:var(--purple);">whole</strong>!</div></div>`;
+
+  sp.innerHTML = sp_html;
+}
+
+function animateAllBonds() {
+  const w = S.whole;
+  let i = 0;
+  const interval = setInterval(() => {
+    S.selectedDecomp = i;
+    render();
+    i++;
+    if (i > w) clearInterval(interval);
+  }, 600);
+}
+
+/* ═══════════════════════════════════════════
+   PRACTICE MODE
+   ═══════════════════════════════════════════ */
+
+function newPractice() {
+  const max = S.maxN;
+  if (S.diff === 'advanced') {
+    S.pWhole = 10;
+    S.pPartA = rand(1, 9);
+    S.pPartB = 10 - S.pPartA;
+    S.pMissing = 'b';
+  } else {
+    S.pWhole = rand(2, max);
+    S.pPartA = rand(1, S.pWhole - 1);
+    S.pPartB = S.pWhole - S.pPartA;
+    const r = rand(1, 3);
+    S.pMissing = r === 1 ? 'a' : r === 2 ? 'b' : 'whole';
+  }
+}
+
+function renderPractice(ws, sp) {
+  if (!S.pWhole) newPractice();
+
+  const showW = S.pMissing !== 'whole';
+  const showA = S.pMissing !== 'a';
+  const showB = S.pMissing !== 'b';
+
+  let h = '';
+
+  // Instruction
+  if (S.pMissing === 'b') {
+    h += `<div class="instruction-box highlight-green">Find the missing number!</div>`;
+  } else if (S.pMissing === 'a') {
+    h += `<div class="instruction-box highlight-green">Find the missing number!</div>`;
+  } else {
+    h += `<div class="instruction-box highlight-green">Find the whole!</div>`;
+  }
+
+  // Bond diagram with missing piece
+  h += buildBondSVG(
+    S.pWhole, S.pPartA, S.pPartB,
+    showW, showA, showB
+  );
+
+  // Equation display
+  h += '<div class="equation-display">';
+  if (!showW) {
+    h += `<div class="eq-part eq-whole missing-box">?</div>`;
+  } else {
+    h += `<div class="eq-part eq-whole">${S.pWhole}</div>`;
+  }
+  h += `<div class="eq-op">=</div>`;
+  if (!showA) {
+    h += `<div class="eq-part eq-a missing-box">?</div>`;
+  } else {
+    h += `<div class="eq-part eq-a">${S.pPartA}</div>`;
+  }
+  h += `<div class="eq-op">+</div>`;
+  if (!showB) {
+    h += `<div class="eq-part eq-b missing-box">?</div>`;
+  } else {
+    h += `<div class="eq-part eq-b">${S.pPartB}</div>`;
+  }
+  h += '</div>';
+
+  // Answer buttons (0 to maxN)
+  h += '<div class="answer-grid">';
+  for (let n = 0; n <= S.maxN; n++) {
+    h += `<button class="answer-btn" id="pans${n}" onclick="checkPractice(${n})">${n}</button>`;
+  }
+  h += '</div>';
+
+  // Skip button
+  h += '<div class="controls" style="margin-top:8px;">';
+  h += `<button class="ctrl-btn" onclick="newPractice();render();">Skip →</button>`;
+  h += '</div>';
+
+  ws.innerHTML = h;
+
+  // Side panel
+  let sp_html = `<div class="panel-section"><div class="panel-title">Steps</div>
+    <div class="panel-text" style="background:var(--card);padding:12px;border-radius:8px;">
+      <div style="margin-bottom:8px;">
+        <strong style="color:var(--cyan);">① Count</strong><br>
+        <span style="font-size:12px;">Use the counter dots to count</span>
+      </div>
+      <div style="margin-bottom:8px;">
+        <strong style="color:var(--green);">② Think</strong><br>
+        <span style="font-size:12px;">What number makes it true?</span>
+      </div>
+      <div>
+        <strong style="color:var(--pink);">③ Click</strong><br>
+        <span style="font-size:12px;">Tap the answer number</span>
+      </div>
+    </div>
+  </div></div>`;
+
+  if (S.diff === 'advanced') {
+    sp_html += `<div class="panel-section"><div class="panel-title">Make 10!</div>
+      <div class="panel-text">Learning to make 10 is super important for math!</div></div>`;
+  }
+
+  sp_html += `<div class="panel-section"><div class="panel-title">Tip</div>
+    <div class="panel-text">Count the colored dots. They help you figure out the missing number!</div></div>`;
+
+  sp.innerHTML = sp_html;
+}
+
+function checkPractice(clicked) {
+  let correct;
+  if (S.pMissing === 'a') correct = S.pPartA;
+  else if (S.pMissing === 'b') correct = S.pPartB;
+  else correct = S.pWhole;
+
+  const btn = document.getElementById('pans' + clicked);
+
+  if (clicked === correct) {
+    btn.classList.add('correct-flash');
+    showFB(`✓ ${S.pWhole} = ${S.pPartA} + ${S.pPartB}`, 'correct');
+    setTimeout(() => {
+      newPractice();
+      render();
+    }, 1500);
+  } else {
+    btn.classList.add('incorrect-flash');
+
+    // Diagnostic feedback logic
+    let feedbackMsg = 'Try again!';
+
+    // If missing a part but clicked the whole
+    if ((S.pMissing === 'a' || S.pMissing === 'b') && clicked === S.pWhole) {
+      feedbackMsg = MISCONCEPTIONS.partWholeConfusion.msg(S.pWhole, S.pPartA, S.pPartB);
+    }
+    // If missing part B but clicked part A (or vice versa)
+    else if (S.pMissing === 'b' && clicked === S.pPartA) {
+      feedbackMsg = MISCONCEPTIONS.reversedParts.msg(S.pWhole, S.pPartA, S.pPartB);
+    }
+    else if (S.pMissing === 'a' && clicked === S.pPartB) {
+      feedbackMsg = MISCONCEPTIONS.reversedParts.msg(S.pWhole, S.pPartA, S.pPartB);
+    }
+    // If off by exactly 1
+    else if (Math.abs(clicked - correct) === 1) {
+      feedbackMsg = MISCONCEPTIONS.offByOne.msg(S.pWhole, S.pPartA, S.pPartB, clicked, correct);
+    }
+    // Random guess
+    else {
+      feedbackMsg = MISCONCEPTIONS.randomGuess.msg();
+    }
+
+    showFB(feedbackMsg, 'try-again');
+    setTimeout(() => {
+      btn.classList.remove('incorrect-flash');
+    }, 400);
+  }
+}
+
+/* ═══════════════════════════════════════════
+   PLAY MODE — fast-paced game
+   ═══════════════════════════════════════════ */
+
+function startGame() {
+  S.round = 1;
+  S.score = 0;
+  S.streak = 0;
+  newPlayRound();
+}
+
+function newPlayRound() {
+  const max = S.maxN;
+  if (S.diff === 'advanced') {
+    S.playWhole = 10;
+    S.playPartA = rand(1, 9);
+    S.playPartB = 10 - S.playPartA;
+    S.playMissing = rand(1, 2) === 1 ? 'a' : 'b';
+  } else {
+    S.playWhole = rand(2, max);
+    S.playPartA = rand(1, S.playWhole - 1);
+    S.playPartB = S.playWhole - S.playPartA;
+    const r = rand(1, 3);
+    S.playMissing = r === 1 ? 'a' : r === 2 ? 'b' : 'whole';
+  }
+
+  let answer;
+  if (S.playMissing === 'a') answer = S.playPartA;
+  else if (S.playMissing === 'b') answer = S.playPartB;
+  else answer = S.playWhole;
+
+  const choices = new Set([answer]);
+  while (choices.size < 5) {
+    let c = answer + rand(-3, 3);
+    if (c >= 0 && c <= (S.diff === 'advanced' ? 10 : max)) {
+      choices.add(c);
+    } else {
+      choices.add(rand(0, max));
+    }
+  }
+  S.playChoices = Array.from(choices).sort((a, b) => a - b);
+}
+
+function renderPlay(ws, sp) {
+  if (S.round === 0) startGame();
+
+  const showW = S.playMissing !== 'whole';
+  const showA = S.playMissing !== 'a';
+  const showB = S.playMissing !== 'b';
+
+  let h = '';
+  h += `<div style="font-size:13px;color:var(--muted);margin-bottom:12px;">Round ${S.round} of ${S.total}</div>`;
+
+  // Bond diagram
+  h += buildBondSVG(
+    S.playWhole, S.playPartA, S.playPartB,
+    showW, showA, showB
+  );
+
+  // Equation display
+  h += '<div class="equation-display">';
+  if (!showW) {
+    h += `<div class="eq-part eq-whole missing-box">?</div>`;
+  } else {
+    h += `<div class="eq-part eq-whole">${S.playWhole}</div>`;
+  }
+  h += `<div class="eq-op">=</div>`;
+  if (!showA) {
+    h += `<div class="eq-part eq-a missing-box">?</div>`;
+  } else {
+    h += `<div class="eq-part eq-a">${S.playPartA}</div>`;
+  }
+  h += `<div class="eq-op">+</div>`;
+  if (!showB) {
+    h += `<div class="eq-part eq-b missing-box">?</div>`;
+  } else {
+    h += `<div class="eq-part eq-b">${S.playPartB}</div>`;
+  }
+  h += '</div>';
+
+  // Answer buttons
+  h += '<div class="answer-grid">';
+  S.playChoices.forEach(n => {
+    h += `<button class="answer-btn" id="pans${n}" onclick="playPick(${n})">${n}</button>`;
+  });
+  h += '</div>';
+
+  ws.innerHTML = h;
+
+  // Side panel with score
+  sp.innerHTML = `
+    <div class="score-display"><div class="score-value">${S.score}</div><div class="score-label">Score</div></div>
+    <div class="score-display" style="background:transparent;padding:8px;">
+      <div style="font-size:18px;font-weight:700;color:var(--yellow);"><svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor" style="vertical-align:-2px;"><path d="M12 23c-4.97 0-8-3.58-8-7.5 0-3.07 2.17-5.84 4.5-7.5-.28 2.5 1.5 4.5 1.5 4.5s2-2.5 2-5.5c0-1.5-.5-3-1-4 3 1.5 5 4 5 7 0 .5-.08 1-.08 1s1.08-1.18 1.58-2.5C19.78 11.72 20 14.5 20 15.5c0 3.92-3.03 7.5-8 7.5z"/></svg> ${S.streak}</div>
+      <div class="score-label">Streak</div>
+      <div class="streak-bar"><div class="streak-fill" style="width:${Math.min(S.streak * 20, 100)}%;"></div></div>
+    </div>
+    <div class="panel-section"><div class="panel-title">Best Streak</div>
+    <div class="panel-text" style="font-size:24px;font-weight:800;color:var(--purple);"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="vertical-align:-2px;"><path d="M6 4h12v2a6 6 0 01-12 0V4z" fill="currentColor" opacity="0.2"/><path d="M6 4h12v2a6 6 0 01-12 0V4z"/><path d="M6 6H3v2a3 3 0 003 3"/><path d="M18 6h3v2a3 3 0 01-3 3"/><line x1="12" y1="14" x2="12" y2="18"/><line x1="8" y1="18" x2="16" y2="18" stroke-linecap="round"/></svg> ${S.best}</div></div>`;
+}
+
+function playPick(n) {
+  let answer;
+  if (S.playMissing === 'a') answer = S.playPartA;
+  else if (S.playMissing === 'b') answer = S.playPartB;
+  else answer = S.playWhole;
+
+  const btn = document.getElementById('pans' + n);
+  if (n === answer) {
+    btn.classList.add('correct-flash');
+    S.score += 10 + S.streak * 2;
+    S.streak++;
+    if (S.streak > S.best) S.best = S.streak;
+    showFB(`✓ ${S.playWhole} = ${S.playPartA} + ${S.playPartB}`, 'correct');
+  } else {
+    btn.classList.add('incorrect-flash');
+    S.streak = 0;
+
+    // Diagnostic feedback logic
+    let feedbackMsg = `${answer} was correct`;
+
+    // If missing a part but clicked the whole
+    if ((S.playMissing === 'a' || S.playMissing === 'b') && n === S.playWhole) {
+      feedbackMsg = MISCONCEPTIONS.partWholeConfusion.msg(S.playWhole, S.playPartA, S.playPartB);
+    }
+    // If missing part B but clicked part A (or vice versa)
+    else if (S.playMissing === 'b' && n === S.playPartA) {
+      feedbackMsg = MISCONCEPTIONS.reversedParts.msg(S.playWhole, S.playPartA, S.playPartB);
+    }
+    else if (S.playMissing === 'a' && n === S.playPartB) {
+      feedbackMsg = MISCONCEPTIONS.reversedParts.msg(S.playWhole, S.playPartA, S.playPartB);
+    }
+    // If off by exactly 1
+    else if (Math.abs(n - answer) === 1) {
+      feedbackMsg = MISCONCEPTIONS.offByOne.msg(S.playWhole, S.playPartA, S.playPartB, n, answer);
+    }
+    // Random guess
+    else {
+      feedbackMsg = MISCONCEPTIONS.randomGuess.msg();
+    }
+
+    showFB(feedbackMsg, 'incorrect');
+  }
+  setTimeout(() => {
+    if (S.round >= S.total) {
+      showFB(`Game Over! Score: ${S.score}`, 'correct');
+      setTimeout(() => {
+        S.round = 0;
+        render();
+      }, 2000);
+      return;
+    }
+    S.round++;
+    newPlayRound();
+    render();
+  }, 1200);
+}
+    // Initialize tab event listeners
+    document.querySelectorAll('.vinculum-mode-tab').forEach(function(tab) {
+      tab.addEventListener('click', function() {
+        switchMode(this.dataset.mode);
+      });
+    });
+
+    // Initialize difficulty button event listeners
+    document.querySelectorAll('.vinculum-diff-btn').forEach(function(btn) {
+      btn.addEventListener('click', function() {
+        setDiff(this.dataset.diff);
+      });
+    });
+
+
+render();
+</script>
+<script src="../../vinculum-core.js"></script>
+<script src="../../vinculum-data.js"></script>
+    <script src="../../vinculum-adaptive-hook.js"></script>
+<script src="../../vinculum-3reads.js"></script>
+<script src="../../vinculum-stories.js"></script>
+<script src="../../vinculum-feedback.js"></script>
+  <script src="../../vinculum-guide.js"></script>
+<script src="../../vinculum-identity.js"></script>
+<script src="../../vinculum-indigenous.js"></script>
+<script src="../../vinculum-dashboard.js"></script>
+<!-- Foundation loaded from vinculum-core.js -->
+</body>
+</html>

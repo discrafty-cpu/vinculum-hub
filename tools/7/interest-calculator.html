@@ -1,0 +1,764 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Interest Calculator</title>
+    <link rel="stylesheet" href="../../vinculum-core.css">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #ff9800 0%, #f57c00 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1100px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 15px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            padding: 30px;
+        }
+
+        .vinculum-header {
+            text-align: center;
+            margin-bottom: 30px;
+            padding-bottom: 20px;
+            border-bottom: 3px solid #ff9800;
+        }
+
+        .vinculum-header h1 {
+            color: #333;
+            font-size: 2.5em;
+            margin-bottom: 10px;
+        }
+
+        .vinculum-header p {
+            color: #666;
+            font-size: 1.1em;
+        }
+
+        .mode-selector {
+            display: flex;
+            justify-content: center;
+            gap: 10px;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+        }
+
+        .vinculum-mode-tab {
+            padding: 10px 20px;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 1em;
+            font-weight: bold;
+            transition: all 0.3s;
+            background: #e0e0e0;
+            color: #333;
+        }
+
+        .vinculum-mode-tab.active {
+            background: #ff9800;
+            color: white;
+            transform: scale(1.05);
+        }
+
+        .difficulty-selector {
+            display: flex;
+            justify-content: center;
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+
+        .vinculum-diff-btn {
+            padding: 8px 16px;
+            border: 2px solid #ccc;
+            border-radius: 6px;
+            background: white;
+            cursor: pointer;
+            font-weight: bold;
+            transition: all 0.3s;
+        }
+
+        .vinculum-diff-btn.active {
+            background: #ff9800;
+            color: white;
+            border-color: #ff9800;
+        }
+
+        .mode-content {
+            display: none;
+        }
+
+        .mode-content.active {
+            display: block;
+        }
+
+        /* Explore Mode */
+        .explore-container {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 30px;
+        }
+
+        .input-section {
+            background: #fff8f0;
+            padding: 20px;
+            border-radius: 10px;
+            border: 2px solid #ff9800;
+        }
+
+        .input-section h3 {
+            color: #ff9800;
+            margin-bottom: 15px;
+        }
+
+        .form-group {
+            display: flex;
+            flex-direction: column;
+            margin-bottom: 15px;
+        }
+
+        .form-group label {
+            font-weight: bold;
+            color: #333;
+            margin-bottom: 5px;
+        }
+
+        .form-group input {
+            padding: 10px;
+            border: 2px solid #ccc;
+            border-radius: 6px;
+            font-size: 1em;
+        }
+
+        .form-group input:focus {
+            outline: none;
+            border-color: #ff9800;
+            box-shadow: 0 0 5px rgba(255, 152, 0, 0.3);
+        }
+
+        .form-group .note {
+            font-size: 0.85em;
+            color: #666;
+            margin-top: 3px;
+        }
+
+        .chart-section {
+            background: #f0f0f0;
+            padding: 20px;
+            border-radius: 10px;
+            border: 2px solid #ff9800;
+        }
+
+        .chart-section h3 {
+            color: #ff9800;
+            margin-bottom: 20px;
+        }
+
+        .bar-chart {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+
+        .bar-item {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .bar-label {
+            width: 80px;
+            font-weight: bold;
+            color: #333;
+            font-size: 0.9em;
+        }
+
+        .bar-container {
+            flex: 1;
+            height: 30px;
+            background: #eee;
+            border-radius: 6px;
+            overflow: hidden;
+            position: relative;
+        }
+
+        .bar-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #ff9800, #f57c00);
+            border-radius: 6px;
+            transition: width 0.3s;
+            display: flex;
+            align-items: center;
+            justify-content: flex-end;
+            padding-right: 10px;
+            color: white;
+            font-weight: bold;
+            font-size: 0.8em;
+        }
+
+        .calculate-btn {
+            width: 100%;
+            padding: 12px;
+            background: #ff9800;
+            color: white;
+            border: none;
+            border-radius: 6px;
+            font-weight: bold;
+            cursor: pointer;
+            margin-top: 10px;
+            transition: all 0.3s;
+        }
+
+        .calculate-btn:hover {
+            background: #f57c00;
+        }
+
+        /* Practice Mode */
+        .problem {
+            background: #fff8f0;
+            padding: 20px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+            border-left: 5px solid #ff9800;
+        }
+
+        .problem h4 {
+            color: #ff9800;
+            margin-bottom: 15px;
+        }
+
+        .problem p {
+            color: #555;
+            margin-bottom: 10px;
+            line-height: 1.6;
+        }
+
+        .answer-group {
+            display: flex;
+            gap: 10px;
+            margin: 15px 0;
+        }
+
+        .answer-group input {
+            flex: 1;
+            padding: 10px;
+            border: 2px solid #ccc;
+            border-radius: 6px;
+        }
+
+        .answer-group button {
+            padding: 10px 20px;
+            background: #ff9800;
+            color: white;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-weight: bold;
+        }
+
+        .answer-group button:hover {
+            background: #f57c00;
+        }
+
+        .feedback-box {
+            padding: 15px;
+            border-radius: 6px;
+            margin-top: 10px;
+            display: none;
+            border-left: 4px solid;
+        }
+
+        .feedback-box.show {
+            display: block;
+        }
+
+        .feedback-box.correct {
+            background: #d4edda;
+            color: #155724;
+            border-color: #4caf50;
+        }
+
+        .feedback-box.incorrect {
+            background: #f8d7da;
+            color: #721c24;
+            border-color: #f44336;
+        }
+
+        /* Play Mode */
+        .race-container {
+            background: #f0f0f0;
+            padding: 20px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+        }
+
+        .investment-option {
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            margin: 15px 0;
+            border: 2px solid #ddd;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .investment-option:hover {
+            border-color: #ff9800;
+            transform: translateX(5px);
+        }
+
+        .investment-option.selected {
+            background: #fff8f0;
+            border-color: #ff9800;
+        }
+
+        .investment-option h4 {
+            color: #ff9800;
+            margin-bottom: 10px;
+        }
+
+        .investment-details {
+            color: #555;
+            font-size: 0.95em;
+            margin-bottom: 10px;
+        }
+
+        .investment-amount {
+            font-size: 1.3em;
+            font-weight: bold;
+            color: #333;
+        }
+
+        .race-buttons {
+            display: flex;
+            gap: 10px;
+            justify-content: center;
+            margin: 20px 0;
+        }
+
+        .race-btn {
+            padding: 12px 24px;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-weight: bold;
+            transition: all 0.3s;
+            background: #ff9800;
+            color: white;
+        }
+
+        .race-btn:hover {
+            background: #f57c00;
+        }
+
+        .score {
+            background: #ff9800;
+            color: white;
+            padding: 20px;
+            border-radius: 10px;
+            text-align: center;
+            font-size: 1.5em;
+            font-weight: bold;
+            margin-top: 20px;
+        }
+
+        #feedback {
+            margin-top: 15px;
+            padding: 15px;
+            border-radius: 6px;
+            font-weight: bold;
+            display: none;
+        }
+
+        #feedback.show {
+            display: block;
+        }
+
+        #feedback.success {
+            background: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+
+        #feedback.error {
+            background: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+
+        @media (max-width: 768px) {
+            .explore-container {
+                grid-template-columns: 1fr;
+            }
+
+            .vinculum-header h1 {
+                font-size: 1.8em;
+            }
+
+            .container {
+                padding: 15px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="vinculum-header">
+            <h1>📈 Interest Calculator</h1>
+            <p>Watch your money grow with compound interest</p>
+        </div>
+
+        <div class="mode-selector">
+            <button class="vinculum-mode-tab active" data-mode="explore"><svg width="18" height="18" viewBox="0 0 48 48" fill="none"><path d="M4 24C4 24 12 12 24 12C36 12 44 24 44 24C44 24 36 36 24 36C12 36 4 24 4 24Z" stroke="currentColor" stroke-width="3" fill="none"/><circle cx="24" cy="24" r="7" stroke="currentColor" stroke-width="3" fill="none"/><circle cx="24" cy="24" r="3" fill="currentColor"/><line x1="24" y1="4" x2="24" y2="9" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" opacity="0.5"/><line x1="10" y1="8" x2="13" y2="12" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" opacity="0.5"/><line x1="38" y1="8" x2="35" y2="12" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" opacity="0.5"/></svg> Explore</button>
+            <button class="vinculum-mode-tab" data-mode="practice"><svg width="18" height="18" viewBox="0 0 48 48" fill="none"><circle cx="24" cy="24" r="20" stroke="currentColor" stroke-width="3" fill="none" opacity="0.3"/><circle cx="24" cy="24" r="20" stroke="currentColor" stroke-width="3" fill="none" stroke-dasharray="126" stroke-dashoffset="32" stroke-linecap="round"/><polyline points="16,24 22,32 34,16" stroke="currentColor" stroke-width="4" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg> Practice</button>
+            <button class="vinculum-mode-tab" data-mode="play"><svg width="18" height="18" viewBox="0 0 48 48" fill="none"><polygon points="28,4 12,28 22,28 18,44 36,18 26,18" fill="none" stroke="currentColor" stroke-width="3" stroke-linejoin="round"/><polygon points="27,8 15,27 23,27 20,40 34,19 26,19" fill="currentColor" opacity="0.15"/></svg> Play</button>
+        </div>
+
+        <div class="difficulty-selector">
+            <button class="diff-btn active" data-difficulty="easy">Easy</button>
+            <button class="diff-btn" data-difficulty="medium">Medium</button>
+            <button class="diff-btn" data-difficulty="hard">Hard</button>
+        </div>
+
+        <!-- EXPLORE MODE -->
+        <div class="mode-content active" id="explore">
+            <h3>Explore: Watch Your Money Grow</h3>
+            <div class="explore-container">
+                <div class="input-section">
+                    <h3>⚙️ Settings</h3>
+                    <div class="form-group">
+                        <label for="principal">Principal (Starting Amount)</label>
+                        <input type="number" id="principal" value="1000" min="0" step="100">
+                        <div class="note">How much money you start with</div>
+                    </div>
+                    <div class="form-group">
+                        <label for="rate">Interest Rate (%)</label>
+                        <input type="number" id="rate" value="5" min="0" max="20" step="0.1">
+                        <div class="note">Annual interest percentage</div>
+                    </div>
+                    <div class="form-group">
+                        <label for="years">Time Period (Years)</label>
+                        <input type="number" id="years" value="5" min="1" max="30" step="1">
+                        <div class="note">How long to invest</div>
+                    </div>
+                    <div class="form-group">
+                        <label for="compound">Compound (Times per Year)</label>
+                        <input type="number" id="compound" value="12" min="1" max="365" step="1">
+                        <div class="note">12 = monthly, 1 = annual</div>
+                    </div>
+                    <button class="calculate-btn" onclick="calculateInterest()">Calculate</button>
+                </div>
+
+                <div class="chart-section">
+                    <h3>📊 Growth Over Time</h3>
+                    <div class="bar-chart" id="chart"></div>
+                </div>
+            </div>
+            <div id="feedback" class="feedback"></div>
+        </div>
+
+        <!-- PRACTICE MODE -->
+        <div class="mode-content" id="practice">
+            <h3>Practice: Solve Interest Problems</h3>
+            <div id="practice-container"></div>
+            <div id="feedback" class="feedback"></div>
+        </div>
+
+        <!-- PLAY MODE -->
+        <div class="mode-content" id="play">
+            <h3>🏁 Investment Race</h3>
+            <p style="margin-bottom: 20px; color: #555;">Choose the best savings option for your $1000. After 10 years, which grows the most?</p>
+
+            <div class="race-container" id="investments"></div>
+
+            <div class="race-buttons">
+                <button class="race-btn" onclick="calculateRace()">Calculate Growth</button>
+                <button class="race-btn" onclick="newRace()" style="background: #999;">New Challenge</button>
+            </div>
+
+            <div id="feedback" class="feedback"></div>
+            <div class="score" id="score" style="display: none;"></div>
+        </div>
+    </div>
+
+    <script src="../../vinculum-feedback.js"></script><script src="../../vinculum-guide.js"></script><script src="../../vinculum-indigenous.js"></script><script src="../../indigenous-context-panel.js"></script>
+    <script src="../../vinculum-input.js"></script>
+
+    <script>
+        let currentDifficulty = 'easy';
+        let currentMode = 'explore';
+        let selectedInvestment = null;
+        let raceScore = 0;
+
+        function init() {
+            setupModeButtons();
+            setupDifficultyButtons();
+            loadExplore();
+        }
+
+        function setupModeButtons() {
+            document.querySelectorAll('.vinculum-mode-tab[data-mode]').forEach(btn => {
+                btn.addEventListener('click', (e) => {
+                    document.querySelectorAll('.vinculum-mode-tab[data-mode]').forEach(b => b.classList.remove('active'));
+                    e.target.classList.add('active');
+                    currentMode = e.target.dataset.mode;
+                    document.querySelectorAll('.mode-content').forEach(m => m.classList.remove('active'));
+                    document.getElementById(currentMode).classList.add('active');
+
+                    if (currentMode === 'practice') loadPractice();
+                    if (currentMode === 'play') newRace();
+                });
+            });
+        }
+
+        function setupDifficultyButtons() {
+            document.querySelectorAll('.vinculum-diff-btn').forEach(btn => {
+                btn.addEventListener('click', (e) => {
+                    document.querySelectorAll('.vinculum-diff-btn').forEach(b => b.classList.remove('active'));
+                    e.target.classList.add('active');
+                    currentDifficulty = e.target.dataset.difficulty;
+
+                    if (currentMode === 'practice') loadPractice();
+                    if (currentMode === 'play') newRace();
+                });
+            });
+        }
+
+        function loadExplore() {
+            document.getElementById('chart').innerHTML = '';
+            document.getElementById('feedback').innerHTML = '';
+        }
+
+        function calculateInterest() {
+            const principal = parseFloat(document.getElementById('principal').value);
+            const rate = parseFloat(document.getElementById('rate').value) / 100;
+            const years = parseInt(document.getElementById('years').value);
+            const compound = parseInt(document.getElementById('compound').value);
+
+            if (!principal || !rate || !years) {
+                const feedback = document.getElementById('feedback');
+                feedback.classList.add('show', 'error');
+                feedback.innerHTML = '❌ Please fill in all fields!';
+                return;
+            }
+
+            const chart = document.getElementById('chart');
+            chart.innerHTML = '';
+
+            const maxValue = principal * Math.pow(1 + rate / compound, compound * years);
+            const step = Math.max(1, Math.floor(years / 5));
+
+            for (let y = 0; y <= years; y += step) {
+                const amount = principal * Math.pow(1 + rate / compound, compound * y);
+                const percentage = (amount / maxValue) * 100;
+
+                const barItem = document.createElement('div');
+                barItem.className = 'bar-item';
+                barItem.innerHTML = `
+                    <div class="bar-label">Year ${y}</div>
+                    <div class="bar-container">
+                        <div class="bar-fill" style="width: ${percentage}%">$${amount.toFixed(2)}</div>
+                    </div>
+                `;
+                chart.appendChild(barItem);
+            }
+
+            const feedback = document.getElementById('feedback');
+            feedback.classList.add('show', 'success');
+            feedback.innerHTML = `✅ After ${years} years at ${(rate * 100).toFixed(1)}%, your $${principal.toFixed(2)} grows to $${maxValue.toFixed(2)}!`;
+        }
+
+        function loadPractice() {
+            const problems = {
+                easy: [
+                    {
+                        question: 'You deposit $100 at 5% interest for 1 year (simple). How much do you have?',
+                        answer: 105,
+                        explanation: '$100 + ($100 × 0.05) = $105'
+                    },
+                    {
+                        question: '$500 at 10% annual interest for 2 years (simple). Total?',
+                        answer: 600,
+                        explanation: '$500 + ($500 × 0.10 × 2) = $600'
+                    }
+                ],
+                medium: [
+                    {
+                        question: '$1000 at 6% compounded annually for 2 years. What is the total?',
+                        answer: 1123.60,
+                        explanation: '$1000 × (1.06)^2 = $1123.60'
+                    },
+                    {
+                        question: '$2000 at 4% compounded annually for 3 years. Final amount?',
+                        answer: 2249.73,
+                        explanation: '$2000 × (1.04)^3 = $2249.73'
+                    }
+                ],
+                hard: [
+                    {
+                        question: '$5000 at 5% compounded monthly for 2 years. Total? (Round to cents)',
+                        answer: 5524.46,
+                        explanation: '$5000 × (1 + 0.05/12)^(12×2) = $5524.46'
+                    },
+                    {
+                        question: '$10000 at 3.5% compounded quarterly for 3 years. Amount?',
+                        answer: 11109.89,
+                        explanation: '$10000 × (1 + 0.035/4)^(4×3) = $11109.89'
+                    }
+                ]
+            };
+
+            const problemList = problems[currentDifficulty];
+            const problem = problemList[Math.floor(Math.random() * problemList.length)];
+
+            const container = document.getElementById('practice-container');
+            container.innerHTML = `
+                <div class="problem">
+                    <h4>Calculate Interest:</h4>
+                    <p>${problem.question}</p>
+                    <div class="answer-group">
+                        <input type="number" id="answer-input" placeholder="Enter amount ($)" step="0.01">
+                        <button onclick="checkPracticeAnswer(${problem.answer}, '${problem.explanation}')">Check</button>
+                    </div>
+                    <div class="feedback-box" id="practice-feedback"></div>
+                </div>
+            `;
+
+            document.getElementById('answer-input').focus();
+        }
+
+        function checkPracticeAnswer(correct, explanation) {
+            const input = document.getElementById('answer-input');
+            const answer = parseFloat(input.value);
+            const feedback = document.getElementById('practice-feedback');
+
+            if (isNaN(answer)) {
+                feedback.classList.add('show', 'incorrect');
+                feedback.innerHTML = '❌ Please enter a number!';
+                return;
+            }
+
+            const isCorrect = Math.abs(answer - correct) < 0.5;
+            feedback.classList.add('show', isCorrect ? 'correct' : 'incorrect');
+            feedback.innerHTML = isCorrect ?
+                `✅ Correct! $${correct.toFixed(2)}<br>${explanation}` :
+                `❌ Not quite. Correct answer: $${correct.toFixed(2)}<br>${explanation}`;
+        }
+
+        function newRace() {
+            selectedInvestment = null;
+            raceScore = 0;
+
+            const investments = {
+                easy: [
+                    { name: 'Bank Savings', principal: 1000, rate: 2, years: 10 },
+                    { name: 'High-Yield Savings', principal: 1000, rate: 4, years: 10 },
+                    { name: 'Regular Savings', principal: 1000, rate: 1, years: 10 }
+                ],
+                medium: [
+                    { name: 'CD at 3%', principal: 1000, rate: 3, years: 10 },
+                    { name: 'Bond Fund at 4.5%', principal: 1000, rate: 4.5, years: 10 },
+                    { name: 'Savings Account at 1.5%', principal: 1000, rate: 1.5, years: 10 }
+                ],
+                hard: [
+                    { name: 'Stock Index Fund', principal: 1000, rate: 7, years: 10 },
+                    { name: 'Bond Portfolio', principal: 1000, rate: 4, years: 10 },
+                    { name: 'Money Market', principal: 1000, rate: 2.5, years: 10 }
+                ]
+            };
+
+            const options = investments[currentDifficulty];
+            const container = document.getElementById('investments');
+            container.innerHTML = '';
+
+            options.forEach((inv, idx) => {
+                const div = document.createElement('div');
+                div.className = 'investment-option';
+                div.onclick = () => selectInvestment(idx);
+                div.innerHTML = `
+                    <h4>${inv.name}</h4>
+                    <div class="investment-details">Rate: ${inv.rate}% per year | Duration: ${inv.years} years</div>
+                    <div class="investment-details">Starting: $${inv.principal}</div>
+                    <div class="investment-amount" id="amount-${idx}">Calculate to see growth!</div>
+                `;
+                container.appendChild(div);
+            });
+
+            document.getElementById('score').style.display = 'none';
+            document.getElementById('feedback').innerHTML = '';
+        }
+
+        function selectInvestment(idx) {
+            const options = document.querySelectorAll('.investment-option');
+            options.forEach(o => o.classList.remove('selected'));
+            options[idx].classList.add('selected');
+            selectedInvestment = idx;
+        }
+
+        function calculateRace() {
+            const investments = {
+                easy: [
+                    { name: 'Bank Savings', principal: 1000, rate: 2, years: 10 },
+                    { name: 'High-Yield Savings', principal: 1000, rate: 4, years: 10 },
+                    { name: 'Regular Savings', principal: 1000, rate: 1, years: 10 }
+                ],
+                medium: [
+                    { name: 'CD at 3%', principal: 1000, rate: 3, years: 10 },
+                    { name: 'Bond Fund at 4.5%', principal: 1000, rate: 4.5, years: 10 },
+                    { name: 'Savings Account at 1.5%', principal: 1000, rate: 1.5, years: 10 }
+                ],
+                hard: [
+                    { name: 'Stock Index Fund', principal: 1000, rate: 7, years: 10 },
+                    { name: 'Bond Portfolio', principal: 1000, rate: 4, years: 10 },
+                    { name: 'Money Market', principal: 1000, rate: 2.5, years: 10 }
+                ]
+            };
+
+            const options = investments[currentDifficulty];
+            let bestIdx = 0;
+            let bestAmount = 0;
+
+            options.forEach((inv, idx) => {
+                const amount = inv.principal * Math.pow(1 + inv.rate / 100, inv.years);
+                document.getElementById(`amount-${idx}`).textContent = `$${amount.toFixed(2)}`;
+
+                if (amount > bestAmount) {
+                    bestAmount = amount;
+                    bestIdx = idx;
+                }
+            });
+
+            const feedback = document.getElementById('feedback');
+            if (selectedInvestment === null) {
+                feedback.classList.add('show', 'error');
+                feedback.innerHTML = '❌ Please select an investment first!';
+            } else if (selectedInvestment === bestIdx) {
+                raceScore = 5;
+                feedback.classList.add('show', 'success');
+                feedback.innerHTML = `✅ Excellent choice! ${options[bestIdx].name} grows the most to $${bestAmount.toFixed(2)}!`;
+                document.getElementById('score').style.display = 'block';
+                document.getElementById('score').innerHTML = `🏆 Winner! Score: ${raceScore}`;
+            } else {
+                raceScore = 1;
+                feedback.classList.add('show', 'error');
+                feedback.innerHTML = `❌ Not the best choice. ${options[bestIdx].name} grows to $${bestAmount.toFixed(2)} (yours: $${(options[selectedInvestment].principal * Math.pow(1 + options[selectedInvestment].rate / 100, options[selectedInvestment].years)).toFixed(2)})`;
+                document.getElementById('score').style.display = 'block';
+                document.getElementById('score').innerHTML = `Score: ${raceScore}`;
+            }
+        }
+
+        init();
+    </script>
+</body>
+</html>

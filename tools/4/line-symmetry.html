@@ -1,0 +1,683 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Line Symmetry - Grade 4</title>
+    <link rel="stylesheet" href="../../vinculum-core.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body {
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+            user-select: none;
+            background: var(--bg);
+            color: var(--text);
+            font-family: 'Inter', sans-serif;
+        }
+
+        .content {
+            flex: 1; overflow-y: auto; padding: 1.5rem;
+            display: none; flex-direction: column; gap: 1.5rem;
+        }
+        .content.active { display: flex; }
+
+        .canvas-container {
+            background: var(--card); border: 1px solid var(--border); border-radius: 12px;
+            padding: 1.5rem; display: flex; flex-direction: column; gap: 1rem;
+        }
+
+        canvas {
+            width: 100%; height: 350px; border: 2px solid var(--border);
+            border-radius: 8px; background: var(--bg2); cursor: crosshair;
+            display: block;
+        }
+
+        .mirror-mode {
+            display: flex; gap: 0.5rem; flex-wrap: wrap;
+        }
+
+        .mode-btn {
+            padding: 0.6rem 1rem; background: var(--bg2); border: 2px solid var(--border);
+            border-radius: 6px; cursor: pointer; font-weight: 500; color: var(--text);
+            font-family: 'Inter', sans-serif; transition: all 0.2s; font-size: 0.9rem;
+        }
+
+        .mode-btn:hover { border-color: var(--cyan); }
+        .mode-btn.active { background: var(--cyan); color: white; border-color: var(--cyan); }
+        .mode-btn:focus-visible { outline: 2px solid var(--cyan); }
+
+        .practice-grid {
+            display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 1.5rem; flex: 1;
+        }
+
+        .practice-card {
+            background: var(--card); border: 1px solid var(--border); border-radius: 12px;
+            padding: 1.5rem; display: flex; flex-direction: column; gap: 1rem;
+        }
+
+        canvas.practice-canvas {
+            width: 100%; height: 250px; background: var(--bg2); border-radius: 8px;
+        }
+
+        .input-group {
+            display: flex; gap: 0.5rem; align-items: center;
+        }
+
+        input[type="number"] {
+            flex: 1; padding: 0.75rem; font-size: 1rem;
+            border: 2px solid var(--border); border-radius: 8px;
+            background: var(--bg2); color: var(--text);
+            font-family: 'JetBrains Mono', monospace;
+        }
+
+        input[type="number"]:focus {
+            outline: none; border-color: var(--cyan);
+        }
+
+        .submit-btn {
+            padding: 0.75rem 1.5rem; background: var(--cyan); color: white;
+            border: none; border-radius: 8px; font-weight: 600; cursor: pointer;
+            font-family: 'Inter', sans-serif; transition: all 0.2s;
+        }
+
+        .submit-btn:hover { opacity: 0.9; }
+        .submit-btn:focus-visible { outline: 2px solid var(--cyan); }
+
+        .feedback {
+            position: fixed; bottom: -100px; left: 50%; transform: translateX(-50%);
+            padding: 1rem 2rem; border-radius: 8px; font-weight: 600;
+            transition: bottom 0.3s; z-index: 1000;
+            font-family: 'Inter', sans-serif;
+        }
+
+        .feedback.show { bottom: 2rem; }
+        .feedback.correct { background: var(--green); color: white; }
+        .feedback.incorrect { background: var(--red); color: white; }
+
+        .indigenous-context {
+            background: linear-gradient(135deg, #D4A574, #E5D4C1);
+            padding: 1.5rem; border-radius: 8px; border-left: 4px solid #8B6F47;
+            color: #2C1810; font-size: 0.95rem; line-height: 1.8;
+        }
+
+        .indigenous-label {
+            font-weight: 700; color: #8B6F47; display: inline-block;
+            margin-bottom: 0.75rem; font-size: 1.05rem;
+        }
+
+        .indigenous-context strong {
+            color: #8B6F47;
+        }
+
+        .birch-context-feature {
+            background: #F5E6D3; padding: 1rem; border-radius: 6px;
+            margin-top: 1rem; border: 2px solid #8B6F47;
+        }
+
+        .birch-icon {
+            font-size: 2rem; margin-bottom: 0.5rem;
+        }
+
+        .stats {
+            display: flex; gap: 1rem; justify-content: center; padding: 1rem;
+            background: var(--bg2); border-radius: 8px;
+        }
+
+        .stat-item {
+            text-align: center;
+        }
+
+        .stat-value {
+            font-size: 1.5rem; font-weight: 700; color: var(--cyan);
+            font-family: 'JetBrains Mono', monospace;
+        }
+
+        .stat-label {
+            font-size: 0.8rem; color: var(--text2); font-weight: 500;
+        }
+
+        .symmetry-grid {
+            display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 1rem;
+        }
+
+        .symmetry-example {
+            background: var(--card); border: 1px solid var(--border); border-radius: 8px;
+            padding: 1rem; text-align: center;
+        }
+
+        canvas.symmetry-canvas {
+            width: 100%; height: 150px; background: var(--bg2); border-radius: 6px;
+        }
+
+        .symmetry-label {
+            font-weight: 600; color: var(--cyan); margin-top: 0.5rem; font-size: 0.9rem;
+        }
+
+        .sr-only {
+            position: absolute; width: 1px; height: 1px; padding: 0;
+            margin: -1px; overflow: hidden; clip: rect(0,0,0,0);
+            white-space: nowrap; border-width: 0;
+        }
+
+        @keyframes fold {
+            0% { transform: rotateY(0deg); }
+            50% { transform: rotateY(90deg); }
+            100% { transform: rotateY(0deg); }
+        }
+
+        .fold-animation {
+            animation: fold 2s infinite;
+            transform-style: preserve-3d;
+        }
+    </style>
+</head>
+<body>
+    <div class="vinculum-header">
+        <div class="vinculum-header-left">
+            <a href="../../VINCULUM-Hub.html" class="vinculum-back-btn" aria-label="Back to Hub">
+                <svg viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="2"><path d="M8 1L3 6l5 5"/></svg>
+                Hub
+            </a>
+            <div class="vinculum-header-title"><span class="brand">Line Symmetry Studio</span></div>
+            <span class="vinculum-header-badge">GRADE 4</span>
+        </div>
+        <div class="vinculum-header-right">
+            <div class="vinculum-std-tags">
+                <span class="vinculum-std-tag">4.G.3</span>
+                <span class="vinculum-std-tag mn">MN 4.3.3.3</span>
+            </div>
+        </div>
+    </div>
+
+    <div class="vinculum-mode-tabs">
+        <button class="vinculum-mode-tab active-explore" data-mode="explore"><svg width="18" height="18" viewBox="0 0 48 48" fill="none"><path d="M4 24C4 24 12 12 24 12C36 12 44 24 44 24C44 24 36 36 24 36C12 36 4 24 4 24Z" stroke="currentColor" stroke-width="3" fill="none"/><circle cx="24" cy="24" r="7" stroke="currentColor" stroke-width="3" fill="none"/><circle cx="24" cy="24" r="3" fill="currentColor"/><line x1="24" y1="4" x2="24" y2="9" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" opacity="0.5"/><line x1="10" y1="8" x2="13" y2="12" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" opacity="0.5"/><line x1="38" y1="8" x2="35" y2="12" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" opacity="0.5"/></svg> Explore</button>
+        <button class="vinculum-mode-tab" data-mode="practice"><svg width="18" height="18" viewBox="0 0 48 48" fill="none"><circle cx="24" cy="24" r="20" stroke="currentColor" stroke-width="3" fill="none" opacity="0.3"/><circle cx="24" cy="24" r="20" stroke="currentColor" stroke-width="3" fill="none" stroke-dasharray="126" stroke-dashoffset="32" stroke-linecap="round"/><polyline points="16,24 22,32 34,16" stroke="currentColor" stroke-width="4" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg> Practice</button>
+        <button class="vinculum-mode-tab" data-mode="play"><svg width="18" height="18" viewBox="0 0 48 48" fill="none"><polygon points="28,4 12,28 22,28 18,44 36,18 26,18" fill="none" stroke="currentColor" stroke-width="3" stroke-linejoin="round"/><polygon points="27,8 15,27 23,27 20,40 34,19 26,19" fill="currentColor" opacity="0.15"/></svg> Play</button>
+        <div class="vinculum-diff-selector">
+            <span class="vinculum-diff-label">Level</span>
+            <button class="vinculum-diff-btn active" data-diff="emergent">Emergent</button>
+            <button class="vinculum-diff-btn" data-diff="developing">Developing</button>
+            <button class="vinculum-diff-btn" data-diff="proficient">Proficient</button>
+        </div>
+    </div>
+
+    <div id="explore" class="content active">
+        <div class="canvas-container">
+            <h2 style="color: var(--text); font-size: 1.3rem;">Interactive Mirror</h2>
+
+            <div class="mirror-mode">
+                <button class="mode-btn active" onclick="setMirrorMode('vertical')">Vertical Mirror</button>
+                <button class="mode-btn" onclick="setMirrorMode('horizontal')">Horizontal Mirror</button>
+                <button class="mode-btn" onclick="setMirrorMode('diagonal')">Diagonal Mirror</button>
+                <button class="mode-btn" onclick="clearMirror()">Clear</button>
+            </div>
+
+            <canvas id="mirrorCanvas"></canvas>
+
+            <div style="background: var(--bg2); padding: 1rem; border-radius: 8px; border-left: 4px solid var(--green);">
+                <div style="font-size: 0.9rem; color: var(--text2); margin-bottom: 0.5rem;">Draw on one side to see it mirror</div>
+                <div style="font-size: 0.85rem; color: var(--text2);">The red line is the mirror line (line of symmetry)</div>
+            </div>
+
+            <div class="symmetry-grid" style="margin-top: 1rem;">
+                <div class="symmetry-example">
+                    <canvas class="symmetry-canvas" id="exampleSquare"></canvas>
+                    <div class="symmetry-label">Square: 4 lines</div>
+                </div>
+                <div class="symmetry-example">
+                    <canvas class="symmetry-canvas" id="exampleRectangle"></canvas>
+                    <div class="symmetry-label">Rectangle: 2 lines</div>
+                </div>
+                <div class="symmetry-example">
+                    <canvas class="symmetry-canvas" id="exampleTriangle"></canvas>
+                    <div class="symmetry-label">Equilateral: 3 lines</div>
+                </div>
+                <div class="symmetry-example">
+                    <canvas class="symmetry-canvas" id="exampleCircle"></canvas>
+                    <div class="symmetry-label">Circle: Infinite</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="indigenous-context">
+            <div style="display: flex; align-items: center; gap: 1rem;">
+                <div class="birch-icon">🍃</div>
+                <div>
+                    <div class="indigenous-label">INDIGENOUS: Anishinaabe - Birch Bark Biting Art</div>
+                    <p><strong>Mazinibaganjigan (Birch Bark Biting):</strong> This sacred Anishinaabe art form involves carefully folding birch bark and biting patterns into it. When unfolded, perfect symmetric designs emerge. The fold line is literally the line of symmetry. This ancient technique demonstrates sophisticated geometric understanding—the artist must envision the complete pattern before biting, understanding exactly how folding creates mirror images.</p>
+                </div>
+            </div>
+
+            <div class="birch-context-feature">
+                <strong style="color: #8B6F47;">Cultural Connection:</strong> Birch bark biting connects geometry to cultural practice. The symmetry isn't decorative—it's essential to the art form. Understanding line symmetry helps us appreciate how mathematical concepts appear naturally in Indigenous artistic traditions.
+            </div>
+        </div>
+    </div>
+
+    <div id="practice" class="content">
+        <div class="practice-grid">
+            <div class="practice-card">
+                <h3 style="color: var(--text); font-size: 1rem;">Is it Symmetric?</h3>
+                <canvas class="practice-canvas" id="practiceCanvas1"></canvas>
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.5rem;">
+                    <button class="submit-btn" onclick="checkSymmetry(true)">Yes</button>
+                    <button class="submit-btn" onclick="checkSymmetry(false)">No</button>
+                </div>
+            </div>
+
+            <div class="practice-card">
+                <h3 style="color: var(--text); font-size: 1rem;">Count Lines of Symmetry</h3>
+                <canvas class="practice-canvas" id="practiceCanvas2"></canvas>
+                <div id="vi-practice"></div>
+            </div>
+        </div>
+
+        <div class="stats">
+            <div class="stat-item">
+                <div class="stat-value" id="practiceScoreDisplay">0</div>
+                <div class="stat-label">Correct</div>
+            </div>
+            <div class="stat-item">
+                <div class="stat-value" id="practiceTotalDisplay">0</div>
+                <div class="stat-label">Total</div>
+            </div>
+        </div>
+    </div>
+
+    <div id="play" class="content">
+        <div style="display: flex; flex-direction: column; gap: 1.5rem; flex: 1;">
+            <div class="canvas-container">
+                <h2 style="color: var(--text); font-size: 1.3rem;">Design Your Symmetric Pattern</h2>
+                <div style="background: var(--bg2); padding: 1rem; border-radius: 8px;">
+                    <label style="font-size: 0.9rem; color: var(--text2); display: block; margin-bottom: 0.5rem;">Mirror line orientation:</label>
+                    <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 0.5rem;">
+                        <button class="mode-btn active" onclick="setPlayMode('vertical')">Vertical</button>
+                        <button class="mode-btn" onclick="setPlayMode('horizontal')">Horizontal</button>
+                        <button class="mode-btn" onclick="setPlayMode('diagonal')">Diagonal</button>
+                    </div>
+                </div>
+
+                <canvas id="playCanvas" style="height: 350px;"></canvas>
+
+                <div style="display: flex; gap: 0.5rem;">
+                    <button class="submit-btn" onclick="clearPlayCanvas()" style="flex: 1;">Clear</button>
+                    <button class="submit-btn" onclick="savePlayDesign()" style="flex: 1;">Save Design</button>
+                </div>
+            </div>
+
+            <div class="indigenous-context">
+                <div class="indigenous-label">INDIGENOUS: Multiple nations - Symmetry in Beadwork</div>
+                <p><strong>Geometric Precision in Traditional Arts:</strong> Beadwork designs in many Indigenous cultures use four-fold symmetry—two lines of symmetry creating four matching quadrants. The patterns demonstrate both artistic vision and mathematical understanding. Creating symmetric patterns requires planning, precision, and deep knowledge of geometric relationships.</p>
+            </div>
+        </div>
+
+        <div class="stats">
+            <div class="stat-item">
+                <div class="stat-value" id="playScoreDisplay">0</div>
+                <div class="stat-label">Designed</div>
+            </div>
+        </div>
+    </div>
+
+    <div id="feedback" class="feedback"></div>
+    <span class="sr-only" role="status" aria-live="polite" id="ariaStatus"></span>
+
+    <script src="../../vinculum-feedback.js"></script><script src="../../vinculum-guide.js"></script>
+<script src="../../vinculum-input.js"></script>
+<script src="../../vinculum-identity.js"></script>
+<script src="../../vinculum-indigenous.js"></script>
+<script src="../../vinculum-dashboard.js"></script>
+    <script>
+        /* INDIGENOUS: nation=Anishinaabe, context=birch_bark_biting */
+        const S = { mode: 'explore', mirrorMode: 'vertical', practiceScore: 0, practiceTotal: 0, playScore: 0, playMode: 'vertical' };
+        const canvases = {};
+        let isDrawing = false;
+
+        function initCanvases() {
+            canvases.mirror = document.getElementById('mirrorCanvas');
+            canvases.practice1 = document.getElementById('practiceCanvas1');
+            canvases.practice2 = document.getElementById('practiceCanvas2');
+            canvases.play = document.getElementById('playCanvas');
+
+            canvases.mirror.addEventListener('mousedown', startDrawMirror);
+            canvases.mirror.addEventListener('mousemove', drawMirror);
+            canvases.mirror.addEventListener('mouseup', stopDrawMirror);
+            canvases.mirror.addEventListener('mouseout', stopDrawMirror);
+
+            canvases.play.addEventListener('mousedown', startDrawPlay);
+            canvases.play.addEventListener('mousemove', drawPlay);
+            canvases.play.addEventListener('mouseup', stopDrawPlay);
+            canvases.play.addEventListener('mouseout', stopDrawPlay);
+
+            generatePracticeProblems();
+            drawSymmetryExamples();
+        }
+
+        function startDrawMirror(e) {
+            isDrawing = true;
+        }
+
+        function drawMirror(e) {
+            if (!isDrawing) return;
+
+            const rect = canvases.mirror.getBoundingClientRect();
+            const x = e.clientX - rect.left;
+            const y = e.clientY - rect.top;
+
+            const ctx = canvases.mirror.getContext('2d');
+            ctx.strokeStyle = 'var(--cyan)';
+            ctx.lineWidth = 3;
+            ctx.lineCap = 'round';
+
+            // Draw on one side
+            ctx.beginPath();
+            ctx.moveTo(x, y);
+            ctx.lineTo(x + 5, y + 5);
+            ctx.stroke();
+
+            // Mirror it
+            ctx.strokeStyle = 'var(--green)';
+            let mx = x, my = y;
+
+            if (S.mirrorMode === 'vertical') {
+                mx = canvases.mirror.width - x;
+            } else if (S.mirrorMode === 'horizontal') {
+                my = canvases.mirror.height - y;
+            } else if (S.mirrorMode === 'diagonal') {
+                const temp = mx;
+                mx = my;
+                my = temp;
+            }
+
+            ctx.beginPath();
+            ctx.moveTo(mx, my);
+            ctx.lineTo(mx + 5, my + 5);
+            ctx.stroke();
+
+            redrawMirrorLine();
+        }
+
+        function stopDrawMirror() {
+            isDrawing = false;
+        }
+
+        function setMirrorMode(mode) {
+            S.mirrorMode = mode;
+            document.querySelectorAll('.mode-btn').forEach(b => b.classList.remove('active'));
+            event.target.classList.add('active');
+            redrawMirrorLine();
+        }
+
+        function redrawMirrorLine() {
+            const ctx = canvases.mirror.getContext('2d');
+            ctx.strokeStyle = '#FF6B6B';
+            ctx.lineWidth = 2;
+            ctx.setLineDash([5, 5]);
+
+            if (S.mirrorMode === 'vertical') {
+                ctx.beginPath();
+                ctx.moveTo(canvases.mirror.width / 2, 0);
+                ctx.lineTo(canvases.mirror.width / 2, canvases.mirror.height);
+                ctx.stroke();
+            } else if (S.mirrorMode === 'horizontal') {
+                ctx.beginPath();
+                ctx.moveTo(0, canvases.mirror.height / 2);
+                ctx.lineTo(canvases.mirror.width, canvases.mirror.height / 2);
+                ctx.stroke();
+            } else {
+                ctx.beginPath();
+                ctx.moveTo(0, 0);
+                ctx.lineTo(canvases.mirror.width, canvases.mirror.height);
+                ctx.stroke();
+            }
+
+            ctx.setLineDash([]);
+        }
+
+        function clearMirror() {
+            const ctx = canvases.mirror.getContext('2d');
+            ctx.clearRect(0, 0, canvases.mirror.width, canvases.mirror.height);
+            redrawMirrorLine();
+        }
+
+        function drawSymmetryExamples() {
+            drawExampleShape('exampleSquare', 'square');
+            drawExampleShape('exampleRectangle', 'rectangle');
+            drawExampleShape('exampleTriangle', 'triangle');
+            drawExampleShape('exampleCircle', 'circle');
+        }
+
+        function drawExampleShape(canvasId, shape) {
+            const canvas = document.getElementById(canvasId);
+            if (!canvas) return;
+            const ctx = canvas.getContext('2d');
+            const w = canvas.width = canvas.offsetWidth;
+            const h = canvas.height = canvas.offsetHeight;
+
+            ctx.clearRect(0, 0, w, h);
+
+            if (shape === 'square') {
+                ctx.fillStyle = '#1E88E5';
+                ctx.fillRect(w / 4, h / 4, w / 2, h / 2);
+
+                ctx.strokeStyle = '#FF6B6B';
+                ctx.lineWidth = 2;
+                ctx.setLineDash([3, 3]);
+                ctx.beginPath();
+                ctx.moveTo(w / 2, 0);
+                ctx.lineTo(w / 2, h);
+                ctx.stroke();
+                ctx.beginPath();
+                ctx.moveTo(0, h / 2);
+                ctx.lineTo(w, h / 2);
+                ctx.stroke();
+            } else if (shape === 'rectangle') {
+                ctx.fillStyle = '#43A047';
+                ctx.fillRect(w / 4, h / 3, w / 2, h / 3);
+
+                ctx.strokeStyle = '#FF6B6B';
+                ctx.lineWidth = 2;
+                ctx.setLineDash([3, 3]);
+                ctx.beginPath();
+                ctx.moveTo(w / 2, 0);
+                ctx.lineTo(w / 2, h);
+                ctx.stroke();
+            } else if (shape === 'triangle') {
+                ctx.fillStyle = '#FB8C00';
+                ctx.beginPath();
+                ctx.moveTo(w / 2, h / 4);
+                ctx.lineTo(w / 4, 3 * h / 4);
+                ctx.lineTo(3 * w / 4, 3 * h / 4);
+                ctx.closePath();
+                ctx.fill();
+
+                ctx.strokeStyle = '#FF6B6B';
+                ctx.lineWidth = 2;
+                ctx.setLineDash([3, 3]);
+                ctx.beginPath();
+                ctx.moveTo(w / 2, h / 4);
+                ctx.lineTo(w / 2, 3 * h / 4);
+                ctx.stroke();
+            } else if (shape === 'circle') {
+                ctx.fillStyle = '#8E24AA';
+                ctx.beginPath();
+                ctx.arc(w / 2, h / 2, Math.min(w, h) / 3, 0, Math.PI * 2);
+                ctx.fill();
+
+                ctx.strokeStyle = '#FF6B6B';
+                ctx.lineWidth = 2;
+                ctx.setLineDash([3, 3]);
+                ctx.beginPath();
+                ctx.moveTo(w / 2, 0);
+                ctx.lineTo(w / 2, h);
+                ctx.stroke();
+            }
+
+            ctx.setLineDash([]);
+        }
+
+        function generatePracticeProblems() {
+            const shapes = [true, false];
+            S.practiceAnswers = [shapes[0], 2];
+
+            // Initialize VinculumInput for line count
+            var vi = VinculumInput.create(document.getElementById('vi-practice'), {
+                type: 'auto',
+                answer: 2,
+                onSubmit: function(value) { checkSymmetryCount(value); }
+            });
+
+
+            // Draw symmetric shape
+            const ctx1 = canvases.practice1.getContext('2d');
+            ctx1.fillStyle = '#1E88E5';
+            ctx1.beginPath();
+            ctx1.moveTo(130, 50);
+            ctx1.lineTo(130, 200);
+            ctx1.lineTo(80, 120);
+            ctx1.closePath();
+            ctx1.fill();
+            ctx1.beginPath();
+            ctx1.moveTo(130, 50);
+            ctx1.lineTo(130, 200);
+            ctx1.lineTo(180, 120);
+            ctx1.closePath();
+            ctx1.fill();
+
+            // Draw shape with lines
+            const ctx2 = canvases.practice2.getContext('2d');
+            ctx2.fillStyle = '#43A047';
+            ctx2.fillRect(40, 60, 180, 120);
+
+            ctx2.strokeStyle = '#FF6B6B';
+            ctx2.lineWidth = 2;
+            ctx2.setLineDash([3, 3]);
+            ctx2.beginPath();
+            ctx2.moveTo(130, 0);
+            ctx2.lineTo(130, 250);
+            ctx2.stroke();
+            ctx2.beginPath();
+            ctx2.moveTo(0, 120);
+            ctx2.lineTo(260, 120);
+            ctx2.stroke();
+        }
+
+        function checkSymmetry(answer) {
+            const correct = answer === S.practiceAnswers[0];
+            S.practiceTotal++;
+            if (correct) {
+                S.practiceScore++;
+                showFB('Correct!', 'correct');
+            } else {
+                showFB('Try again!', 'incorrect');
+            }
+            document.getElementById('practiceScoreDisplay').textContent = S.practiceScore;
+            document.getElementById('practiceTotalDisplay').textContent = S.practiceTotal;
+        }
+
+        function checkSymmetryCount(answer) {
+            const correct = answer === S.practiceAnswers[1];
+            S.practiceTotal++;
+            if (correct) {
+                S.practiceScore++;
+                showFB('Correct! This shape has ' + S.practiceAnswers[1] + ' lines of symmetry.', 'correct');
+            } else {
+                showFB('Try again! The answer is ' + S.practiceAnswers[1], 'incorrect');
+            }
+            document.getElementById('practiceScoreDisplay').textContent = S.practiceScore;
+            document.getElementById('practiceTotalDisplay').textContent = S.practiceTotal;
+        }
+
+        function startDrawPlay(e) {
+            isDrawing = true;
+        }
+
+        function drawPlay(e) {
+            if (!isDrawing) return;
+
+            const rect = canvases.play.getBoundingClientRect();
+            const x = e.clientX - rect.left;
+            const y = e.clientY - rect.top;
+
+            const ctx = canvases.play.getContext('2d');
+            ctx.strokeStyle = 'var(--cyan)';
+            ctx.lineWidth = 3;
+            ctx.lineCap = 'round';
+
+            ctx.beginPath();
+            ctx.moveTo(x, y);
+            ctx.lineTo(x + 2, y + 2);
+            ctx.stroke();
+        }
+
+        function stopDrawPlay() {
+            isDrawing = false;
+        }
+
+        function setPlayMode(mode) {
+            S.playMode = mode;
+            document.querySelectorAll('#play .mode-btn').forEach(b => b.classList.remove('active'));
+            event.target.classList.add('active');
+        }
+
+        function clearPlayCanvas() {
+            const ctx = canvases.play.getContext('2d');
+            ctx.clearRect(0, 0, canvases.play.width, canvases.play.height);
+        }
+
+        function savePlayDesign() {
+            S.playScore++;
+            showFB('Design saved! Great symmetric pattern!', 'correct');
+            document.getElementById('playScoreDisplay').textContent = S.playScore;
+        }
+
+        document.querySelectorAll('.vinculum-mode-tab').forEach(function(tab) {
+            tab.addEventListener('click', function() {
+                var mode = this.dataset.mode;
+                S.mode = mode;
+                document.querySelectorAll('.vinculum-mode-tab').forEach(function(t) { t.className = 'vinculum-mode-tab'; });
+                this.classList.add(mode === 'explore' ? 'active-explore' : mode === 'practice' ? 'active-practice' : 'active-play');
+                document.querySelectorAll('.content').forEach(function(c) { c.classList.remove('active'); });
+                document.getElementById(mode).classList.add('active');
+
+                setTimeout(() => {
+                    Object.keys(canvases).forEach(key => {
+                        const c = canvases[key];
+                        if (c && c.width === 0) {
+                            c.width = c.offsetWidth;
+                            c.height = c.offsetHeight;
+                        }
+                    });
+
+                    if (mode === 'explore') {
+                        clearMirror();
+                        drawSymmetryExamples();
+                    }
+                }, 50);
+            });
+        });
+
+
+        window.addEventListener('load', () => {
+            const keys = ['mirror', 'practice1', 'practice2', 'play'];
+            keys.forEach(key => {
+                const el = document.getElementById(key + 'Canvas');
+                if (el) {
+                    el.width = el.offsetWidth;
+                    el.height = el.offsetHeight;
+                    canvases[key] = el;
+                }
+            });
+
+            initCanvases();
+            clearMirror();
+        });
+    </script>
+</body>
+</html>

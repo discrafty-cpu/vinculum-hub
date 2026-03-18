@@ -1,0 +1,753 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>School Layout Designer</title>
+    <link rel="stylesheet" href="../../vinculum-core.css">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #9c27b0 0%, #7b1fa2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 15px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            padding: 30px;
+        }
+
+        .vinculum-header {
+            text-align: center;
+            margin-bottom: 30px;
+            padding-bottom: 20px;
+            border-bottom: 3px solid #9c27b0;
+        }
+
+        .vinculum-header h1 {
+            color: #333;
+            font-size: 2.5em;
+            margin-bottom: 10px;
+        }
+
+        .vinculum-header p {
+            color: #666;
+            font-size: 1.1em;
+        }
+
+        .mode-selector {
+            display: flex;
+            justify-content: center;
+            gap: 10px;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+        }
+
+        .vinculum-mode-tab {
+            padding: 10px 20px;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 1em;
+            font-weight: bold;
+            transition: all 0.3s;
+            background: #e0e0e0;
+            color: #333;
+        }
+
+        .vinculum-mode-tab.active {
+            background: #9c27b0;
+            color: white;
+            transform: scale(1.05);
+        }
+
+        .difficulty-selector {
+            display: flex;
+            justify-content: center;
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+
+        .vinculum-diff-btn {
+            padding: 8px 16px;
+            border: 2px solid #ccc;
+            border-radius: 6px;
+            background: white;
+            cursor: pointer;
+            font-weight: bold;
+            transition: all 0.3s;
+        }
+
+        .vinculum-diff-btn.active {
+            background: #9c27b0;
+            color: white;
+            border-color: #9c27b0;
+        }
+
+        .mode-content {
+            display: none;
+        }
+
+        .mode-content.active {
+            display: block;
+        }
+
+        /* Explore Mode */
+        .explore-layout {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 30px;
+            margin-bottom: 20px;
+        }
+
+        .grid-canvas {
+            background: #f5f5f5;
+            border: 2px solid #9c27b0;
+            border-radius: 10px;
+            padding: 10px;
+            min-height: 400px;
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            grid-template-rows: repeat(4, 1fr);
+            gap: 8px;
+        }
+
+        .grid-cell {
+            background: white;
+            border: 2px dashed #ccc;
+            border-radius: 6px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            color: #999;
+            transition: all 0.3s;
+            min-height: 80px;
+        }
+
+        .grid-cell:hover {
+            border-color: #9c27b0;
+            background: #f9f0ff;
+        }
+
+        .grid-cell.occupied {
+            background: linear-gradient(135deg, #9c27b0, #7b1fa2);
+            color: white;
+            border-color: #7b1fa2;
+            cursor: default;
+        }
+
+        .grid-cell.selected {
+            border-color: #9c27b0;
+            border-style: solid;
+            box-shadow: 0 0 10px rgba(156, 39, 176, 0.5);
+        }
+
+        .controls {
+            background: #f9f0ff;
+            padding: 20px;
+            border-radius: 10px;
+            border: 2px solid #9c27b0;
+        }
+
+        .controls h3 {
+            color: #9c27b0;
+            margin-bottom: 15px;
+        }
+
+        .control-group {
+            margin-bottom: 15px;
+        }
+
+        .control-group label {
+            display: block;
+            font-weight: bold;
+            color: #333;
+            margin-bottom: 5px;
+        }
+
+        .control-group input, .control-group select {
+            width: 100%;
+            padding: 8px;
+            border: 2px solid #ccc;
+            border-radius: 6px;
+            font-size: 0.95em;
+        }
+
+        .control-group input:focus, .control-group select:focus {
+            outline: none;
+            border-color: #9c27b0;
+            box-shadow: 0 0 5px rgba(156, 39, 176, 0.3);
+        }
+
+        .stats {
+            background: white;
+            padding: 15px;
+            border-radius: 6px;
+            margin-top: 15px;
+            border-left: 4px solid #9c27b0;
+        }
+
+        .stat-row {
+            display: flex;
+            justify-content: space-between;
+            padding: 8px 0;
+            border-bottom: 1px solid #eee;
+        }
+
+        .stat-row:last-child {
+            border-bottom: none;
+        }
+
+        .stat-label {
+            font-weight: bold;
+            color: #666;
+        }
+
+        .stat-value {
+            color: #9c27b0;
+            font-weight: bold;
+        }
+
+        .button-group {
+            display: flex;
+            gap: 10px;
+            margin-top: 15px;
+        }
+
+        .button-group button {
+            flex: 1;
+            padding: 10px;
+            background: #9c27b0;
+            color: white;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-weight: bold;
+            transition: all 0.3s;
+        }
+
+        .button-group button:hover {
+            background: #7b1fa2;
+        }
+
+        /* Practice Mode */
+        .problem {
+            background: #f9f0ff;
+            padding: 20px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+            border-left: 5px solid #9c27b0;
+        }
+
+        .problem h4 {
+            color: #9c27b0;
+            margin-bottom: 15px;
+        }
+
+        .problem p {
+            color: #555;
+            margin-bottom: 10px;
+            line-height: 1.6;
+        }
+
+        .grid-canvas-practice {
+            background: #f5f5f5;
+            border: 2px solid #9c27b0;
+            border-radius: 10px;
+            padding: 10px;
+            min-height: 300px;
+            margin: 15px 0;
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            grid-template-rows: repeat(4, 1fr);
+            gap: 8px;
+        }
+
+        .grid-cell-practice {
+            background: white;
+            border: 2px dashed #ccc;
+            border-radius: 6px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            color: #999;
+            transition: all 0.3s;
+            min-height: 60px;
+        }
+
+        .grid-cell-practice.occupied {
+            background: linear-gradient(135deg, #9c27b0, #7b1fa2);
+            color: white;
+            border-color: #7b1fa2;
+        }
+
+        .grid-cell-practice.placement-zone {
+            border: 2px dashed #ff9800;
+            background: #fff8f0;
+        }
+
+        .grid-cell-practice.selected {
+            border-color: #9c27b0;
+            border-style: solid;
+            box-shadow: 0 0 10px rgba(156, 39, 176, 0.5);
+        }
+
+        .answer-group {
+            display: flex;
+            gap: 10px;
+            margin: 15px 0;
+        }
+
+        .answer-group button {
+            flex: 1;
+            padding: 10px;
+            background: #9c27b0;
+            color: white;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-weight: bold;
+        }
+
+        .answer-group button:hover {
+            background: #7b1fa2;
+        }
+
+        .feedback-box {
+            padding: 15px;
+            border-radius: 6px;
+            margin-top: 10px;
+            display: none;
+            border-left: 4px solid;
+        }
+
+        .feedback-box.show {
+            display: block;
+        }
+
+        .feedback-box.correct {
+            background: #d4edda;
+            color: #155724;
+            border-color: #4caf50;
+        }
+
+        .feedback-box.incorrect {
+            background: #f8d7da;
+            color: #721c24;
+            border-color: #f44336;
+        }
+
+        /* Play Mode */
+        .game-scenario {
+            background: #f9f0ff;
+            padding: 20px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+            border: 2px solid #9c27b0;
+        }
+
+        .game-info {
+            background: #fff8f0;
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 15px;
+            border-left: 4px solid #ff9800;
+        }
+
+        .score {
+            background: #9c27b0;
+            color: white;
+            padding: 20px;
+            border-radius: 10px;
+            text-align: center;
+            font-size: 1.5em;
+            font-weight: bold;
+            margin-top: 20px;
+        }
+
+        #feedback {
+            margin-top: 15px;
+            padding: 15px;
+            border-radius: 6px;
+            font-weight: bold;
+            display: none;
+        }
+
+        #feedback.show {
+            display: block;
+        }
+
+        #feedback.success {
+            background: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+
+        #feedback.error {
+            background: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+
+        @media (max-width: 768px) {
+            .explore-layout {
+                grid-template-columns: 1fr;
+            }
+
+            .vinculum-header h1 {
+                font-size: 1.8em;
+            }
+
+            .container {
+                padding: 15px;
+            }
+
+            .grid-canvas {
+                grid-template-columns: repeat(3, 1fr);
+                grid-template-rows: repeat(3, 1fr);
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="vinculum-header">
+            <h1>🏢 School Layout Designer</h1>
+            <p>Design rooms using geometry - calculate area and perimeter</p>
+        </div>
+
+        <div class="mode-selector">
+            <button class="vinculum-mode-tab active" data-mode="explore"><svg width="18" height="18" viewBox="0 0 48 48" fill="none"><path d="M4 24C4 24 12 12 24 12C36 12 44 24 44 24C44 24 36 36 24 36C12 36 4 24 4 24Z" stroke="currentColor" stroke-width="3" fill="none"/><circle cx="24" cy="24" r="7" stroke="currentColor" stroke-width="3" fill="none"/><circle cx="24" cy="24" r="3" fill="currentColor"/><line x1="24" y1="4" x2="24" y2="9" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" opacity="0.5"/><line x1="10" y1="8" x2="13" y2="12" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" opacity="0.5"/><line x1="38" y1="8" x2="35" y2="12" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" opacity="0.5"/></svg> Explore</button>
+            <button class="vinculum-mode-tab" data-mode="practice"><svg width="18" height="18" viewBox="0 0 48 48" fill="none"><circle cx="24" cy="24" r="20" stroke="currentColor" stroke-width="3" fill="none" opacity="0.3"/><circle cx="24" cy="24" r="20" stroke="currentColor" stroke-width="3" fill="none" stroke-dasharray="126" stroke-dashoffset="32" stroke-linecap="round"/><polyline points="16,24 22,32 34,16" stroke="currentColor" stroke-width="4" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg> Practice</button>
+            <button class="vinculum-mode-tab" data-mode="play"><svg width="18" height="18" viewBox="0 0 48 48" fill="none"><polygon points="28,4 12,28 22,28 18,44 36,18 26,18" fill="none" stroke="currentColor" stroke-width="3" stroke-linejoin="round"/><polygon points="27,8 15,27 23,27 20,40 34,19 26,19" fill="currentColor" opacity="0.15"/></svg> Play</button>
+        </div>
+
+        <div class="difficulty-selector">
+            <button class="diff-btn active" data-difficulty="easy">Easy</button>
+            <button class="diff-btn" data-difficulty="medium">Medium</button>
+            <button class="diff-btn" data-difficulty="hard">Hard</button>
+        </div>
+
+        <!-- EXPLORE MODE -->
+        <div class="mode-content active" id="explore">
+            <h3>Explore: Design Your Floor Plan</h3>
+            <div class="explore-layout">
+                <div>
+                    <h4 style="margin-bottom: 10px;">Floor Plan Grid (4×4)</h4>
+                    <div class="grid-canvas" id="explore-grid"></div>
+                </div>
+
+                <div class="controls">
+                    <h3>Room Creator</h3>
+                    <div class="control-group">
+                        <label for="room-name">Room Name</label>
+                        <input type="text" id="room-name" placeholder="e.g., Classroom">
+                    </div>
+                    <div class="control-group">
+                        <label for="room-width">Width (cells)</label>
+                        <input type="number" id="room-width" value="2" min="1" max="4">
+                    </div>
+                    <div class="control-group">
+                        <label for="room-height">Height (cells)</label>
+                        <input type="number" id="room-height" value="2" min="1" max="4">
+                    </div>
+                    <div class="button-group">
+                        <button onclick="placeRoom()">Place Room</button>
+                        <button onclick="clearGrid()">Clear</button>
+                    </div>
+
+                    <div class="stats">
+                        <h4 style="color: #9c27b0; margin-bottom: 10px;">Floor Plan Stats</h4>
+                        <div class="stat-row">
+                            <span class="stat-label">Grid Size:</span>
+                            <span class="stat-value">4×4 cells</span>
+                        </div>
+                        <div class="stat-row">
+                            <span class="stat-label">Cell Size:</span>
+                            <span class="stat-value">10ft × 10ft</span>
+                        </div>
+                        <div class="stat-row">
+                            <span class="stat-label">Total Area:</span>
+                            <span class="stat-value">1,600 sq ft</span>
+                        </div>
+                        <div class="stat-row">
+                            <span class="stat-label">Used Area:</span>
+                            <span class="stat-value" id="used-area">0 sq ft</span>
+                        </div>
+                        <div class="stat-row">
+                            <span class="stat-label">Free Space:</span>
+                            <span class="stat-value" id="free-area">1,600 sq ft</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div id="feedback" class="feedback"></div>
+        </div>
+
+        <!-- PRACTICE MODE -->
+        <div class="mode-content" id="practice">
+            <h3>Practice: Build Rooms with Constraints</h3>
+            <div id="practice-container"></div>
+            <div id="feedback" class="feedback"></div>
+        </div>
+
+        <!-- PLAY MODE -->
+        <div class="mode-content" id="play">
+            <h3>Architect Challenge: Design the Perfect School Layout</h3>
+            <div class="game-scenario">
+                <div class="game-info" id="game-info"></div>
+                <div class="grid-canvas-practice" id="play-grid"></div>
+                <button class="vinculum-mode-tab" onclick="submitDesign()">Submit Design</button>
+                <div id="feedback" class="feedback"></div>
+                <div class="score" id="score" style="display: none;"></div>
+            </div>
+        </div>
+    </div>
+
+    <script src="../../vinculum-feedback.js"></script><script src="../../vinculum-guide.js"></script><script src="../../vinculum-indigenous.js"></script><script src="../../indigenous-context-panel.js"></script>
+    <script src="../../vinculum-input.js"></script>
+
+    <script>
+        let currentDifficulty = 'easy';
+        let currentMode = 'explore';
+        let gameScore = 0;
+        let rooms = [];
+
+        function init() {
+            setupModeButtons();
+            setupDifficultyButtons();
+            loadExplore();
+        }
+
+        function setupModeButtons() {
+            document.querySelectorAll('.vinculum-mode-tab[data-mode]').forEach(btn => {
+                btn.addEventListener('click', (e) => {
+                    document.querySelectorAll('.vinculum-mode-tab[data-mode]').forEach(b => b.classList.remove('active'));
+                    e.target.classList.add('active');
+                    currentMode = e.target.dataset.mode;
+                    document.querySelectorAll('.mode-content').forEach(m => m.classList.remove('active'));
+                    document.getElementById(currentMode).classList.add('active');
+
+                    if (currentMode === 'practice') loadPractice();
+                    if (currentMode === 'play') loadPlay();
+                });
+            });
+        }
+
+        function setupDifficultyButtons() {
+            document.querySelectorAll('.vinculum-diff-btn').forEach(btn => {
+                btn.addEventListener('click', (e) => {
+                    document.querySelectorAll('.vinculum-diff-btn').forEach(b => b.classList.remove('active'));
+                    e.target.classList.add('active');
+                    currentDifficulty = e.target.dataset.difficulty;
+
+                    if (currentMode === 'explore') loadExplore();
+                    if (currentMode === 'practice') loadPractice();
+                    if (currentMode === 'play') loadPlay();
+                });
+            });
+        }
+
+        function loadExplore() {
+            rooms = [];
+            drawGrid('explore-grid', 4, 4);
+            updateStats();
+        }
+
+        function drawGrid(containerId, cols, rows) {
+            const container = document.getElementById(containerId);
+            container.style.gridTemplateColumns = `repeat(${cols}, 1fr)`;
+            container.style.gridTemplateRows = `repeat(${rows}, 1fr)`;
+            container.innerHTML = '';
+
+            for (let i = 0; i < cols * rows; i++) {
+                const cell = document.createElement('div');
+                cell.className = 'grid-cell';
+                cell.dataset.index = i;
+                cell.textContent = '✓';
+                cell.style.opacity = '0';
+                cell.addEventListener('click', () => selectCell(i));
+                container.appendChild(cell);
+            }
+
+            rooms.forEach(room => {
+                room.cells.forEach(idx => {
+                    const cell = document.querySelector(`#${containerId} [data-index="${idx}"]`);
+                    cell.classList.add('occupied');
+                    cell.textContent = room.name.substring(0, 3);
+                    cell.style.opacity = '1';
+                });
+            });
+        }
+
+        function selectCell(index) {
+            const cells = document.querySelectorAll('#explore-grid .grid-cell');
+            cells.forEach((c, i) => {
+                if (i === index) c.classList.add('selected');
+                else c.classList.remove('selected');
+            });
+        }
+
+        function placeRoom() {
+            const name = document.getElementById('room-name').value || 'Room';
+            const width = parseInt(document.getElementById('room-width').value);
+            const height = parseInt(document.getElementById('room-height').value);
+
+            if (!name || !width || !height) return;
+
+            const cells = [];
+            for (let i = 0; i < width * height; i++) {
+                cells.push(rooms.length * 10 + i);
+            }
+
+            rooms.push({ name, width, height, cells });
+            drawGrid('explore-grid', 4, 4);
+            updateStats();
+
+            document.getElementById('feedback').classList.add('show', 'success');
+            document.getElementById('feedback').innerHTML = `✅ Added ${name} (${width}×${height} = ${width * height * 100} sq ft)`;
+        }
+
+        function clearGrid() {
+            rooms = [];
+            loadExplore();
+            document.getElementById('feedback').innerHTML = '';
+        }
+
+        function updateStats() {
+            let usedArea = 0;
+            rooms.forEach(room => {
+                usedArea += room.width * room.height * 100;
+            });
+            document.getElementById('used-area').textContent = usedArea + ' sq ft';
+            document.getElementById('free-area').textContent = (1600 - usedArea) + ' sq ft';
+        }
+
+        function loadPractice() {
+            const problems = {
+                easy: {
+                    name: 'Classroom',
+                    constraint: 'Must be 200 sq ft (20ft × 10ft)',
+                    width: 2,
+                    height: 2,
+                    area: 400,
+                    perimeter: 12
+                },
+                medium: {
+                    name: 'Library',
+                    constraint: 'Area should be 300 sq ft, perimeter ≤ 80ft',
+                    width: 3,
+                    height: 3,
+                    area: 900,
+                    perimeter: 18
+                },
+                hard: {
+                    name: 'Gymnasium',
+                    constraint: 'Area ≥ 400 sq ft, perimeter exactly 40 units',
+                    width: 4,
+                    height: 4,
+                    area: 1600,
+                    perimeter: 32
+                }
+            };
+
+            const problem = problems[currentDifficulty];
+
+            const container = document.getElementById('practice-container');
+            container.innerHTML = `
+                <div class="problem">
+                    <h4>${problem.name} Design</h4>
+                    <p><strong>Constraint:</strong> ${problem.constraint}</p>
+                    <p>Cell size = 10ft × 10ft</p>
+                    <p><strong>Calculate:</strong> What are the area and perimeter of a ${problem.width}×${problem.height} room?</p>
+                    <div class="answer-group">
+                        <input type="number" id="area-input" placeholder="Area (sq ft)">
+                        <input type="number" id="perimeter-input" placeholder="Perimeter (units)">
+                        <button onclick="checkPracticeAnswers(${problem.width * problem.height * 100}, ${(problem.width + problem.height) * 2})">Check</button>
+                    </div>
+                    <div class="feedback-box" id="practice-feedback"></div>
+                </div>
+            `;
+        }
+
+        function checkPracticeAnswers(correctArea, correctPerimeter) {
+            const area = parseFloat(document.getElementById('area-input').value);
+            const perimeter = parseFloat(document.getElementById('perimeter-input').value);
+            const feedback = document.getElementById('practice-feedback');
+
+            const areaCorrect = Math.abs(area - correctArea) < 1;
+            const perimeterCorrect = Math.abs(perimeter - correctPerimeter) < 0.5;
+
+            feedback.classList.add('show');
+
+            if (areaCorrect && perimeterCorrect) {
+                feedback.classList.add('correct');
+                feedback.innerHTML = `✅ Correct! Area: ${correctArea} sq ft, Perimeter: ${correctPerimeter} units`;
+            } else {
+                feedback.classList.add('incorrect');
+                let msg = '❌ ';
+                if (!areaCorrect) msg += `Area should be ${correctArea} sq ft. `;
+                if (!perimeterCorrect) msg += `Perimeter should be ${correctPerimeter} units.`;
+                feedback.innerHTML = msg;
+            }
+        }
+
+        function loadPlay() {
+            gameScore = 0;
+            rooms = [];
+
+            const challenges = {
+                easy: 'Design a classroom (2×2 cells) and library (1×3 cells)',
+                medium: 'Fit 3 rooms: classroom (2×2), office (2×1), and gym (3×3)',
+                hard: 'Maximize space: Add classroom (2×2), library (2×3), gym (2×2), and office (1×2) in a 4×4 grid'
+            };
+
+            document.getElementById('game-info').innerHTML = `<strong>Challenge:</strong> ${challenges[currentDifficulty]}`;
+
+            drawPlayGrid();
+        }
+
+        function drawPlayGrid() {
+            const container = document.getElementById('play-grid');
+            container.style.gridTemplateColumns = 'repeat(4, 1fr)';
+            container.style.gridTemplateRows = 'repeat(4, 1fr)';
+            container.innerHTML = '';
+
+            for (let i = 0; i < 16; i++) {
+                const cell = document.createElement('div');
+                cell.className = 'grid-cell-practice';
+                cell.dataset.index = i;
+                cell.textContent = '✓';
+                container.appendChild(cell);
+            }
+        }
+
+        function submitDesign() {
+            gameScore = Math.floor(Math.random() * 3) + 3;
+            document.getElementById('score').style.display = 'block';
+            document.getElementById('score').innerHTML = `🏆 Design submitted! Score: ${gameScore}/5`;
+
+            const feedback = document.getElementById('feedback');
+            feedback.classList.add('show', 'success');
+            feedback.innerHTML = '✅ Great layout design!';
+        }
+
+        init();
+    </script>
+</body>
+</html>

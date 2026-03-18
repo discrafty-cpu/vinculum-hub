@@ -1,0 +1,217 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Graphing Linear Equations — VINCULUM ALG1</title>
+  <link rel="stylesheet" href="../../vinculum-core.css">
+  <style>
+    body { font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: var(--bg); color: var(--text); margin: 0; }
+    .container { max-width: 1200px; margin: 0 auto; padding: 1.25rem; display: flex; flex-direction: column; gap: 1rem; }
+    header { display: flex; align-items: center; gap: 1rem; padding-bottom: 1rem; border-bottom: 1px solid var(--border); }
+    .header-back { width: 40px; height: 40px; border-radius: 0.5rem; background: var(--card); border: 1px solid var(--border); display: flex; align-items: center; justify-content: center; cursor: pointer; color: var(--text); text-decoration: none; transition: all 0.2s; font-weight: 700; }
+    .header-back:hover { border-color: var(--cyan); color: var(--cyan); }
+    .header-title { flex: 1; } .header-title h1 { margin: 0; font-size: 1.5rem; font-weight: 700; }
+    .header-title .gradient { background: var(--grad); background-clip: text; -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+    .header-badge { background: var(--cyan); color: var(--bg); padding: 0.25rem 0.75rem; border-radius: 9999px; font-size: 0.75rem; font-weight: 700; text-transform: uppercase; }
+    .mode-tabs { display: flex; gap: 0.5rem; border-bottom: 1px solid var(--border); padding-bottom: 0.5rem; }
+    .mode-tab { padding: 0.75rem 1.25rem; background: none; border: none; color: var(--text2); cursor: pointer; font-weight: 600; border-bottom: 2px solid transparent; transition: all 0.2s; }
+    .mode-tab.active { color: var(--cyan); border-bottom-color: var(--cyan); }
+    .mode-tab:hover { color: var(--text); }
+    .content { display: none; animation: fadeIn 0.3s ease; } .content.active { display: block; }
+    @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+    .main-grid { display: grid; grid-template-columns: 1fr 280px; gap: 1.5rem; }
+    .coordinate-plane-wrapper { background: var(--card); border: 1px solid var(--border); border-radius: 1rem; padding: 1.5rem; display: flex; justify-content: center; align-items: center; }
+    .coordinate-plane { max-width: 500px; width: 100%; aspect-ratio: 1; }
+    .control-panel { background: var(--card); border: 1px solid var(--border); border-radius: 1rem; padding: 1.25rem; display: flex; flex-direction: column; gap: 1.25rem; height: fit-content; position: sticky; top: 1.25rem; }
+    .control-group { display: flex; flex-direction: column; gap: 0.5rem; }
+    .control-label { font-size: 0.875rem; font-weight: 600; color: var(--text2); text-transform: uppercase; letter-spacing: 1px; }
+    .slider-input { width: 100%; height: 6px; border-radius: 3px; background: var(--border); outline: none; -webkit-appearance: none; }
+    .slider-input::-webkit-slider-thumb { -webkit-appearance: none; appearance: none; width: 18px; height: 18px; border-radius: 50%; background: var(--cyan); cursor: pointer; }
+    .value-display { text-align: center; font-family: 'JetBrains Mono', monospace; font-size: 1.125rem; font-weight: 700; color: var(--cyan); background: var(--bg); padding: 0.5rem 0.75rem; border-radius: 0.5rem; border: 1px solid var(--border); }
+    .equation-display { background: var(--bg); border: 2px solid var(--cyan); border-radius: 0.75rem; padding: 1rem; text-align: center; font-family: 'JetBrains Mono', monospace; font-size: 1.25rem; font-weight: 700; color: var(--cyan); }
+    .difficulty-selector { display: flex; flex-direction: column; gap: 0.5rem; }
+    .difficulty-options { display: flex; gap: 0.5rem; }
+    .difficulty-btn { flex: 1; padding: 0.5rem; background: var(--bg); border: 1px solid var(--border); color: var(--text2); border-radius: 0.5rem; cursor: pointer; font-weight: 600; font-size: 0.75rem; transition: all 0.2s; }
+    .difficulty-btn.active { background: var(--cyan); color: var(--bg); border-color: var(--cyan); }
+    .score-display { background: linear-gradient(135deg, var(--cyan) 0%, var(--green) 100%); color: var(--bg); padding: 0.75rem; border-radius: 0.75rem; text-align: center; font-weight: 700; }
+    .score-label { font-size: 0.7rem; opacity: 0.9; text-transform: uppercase; } .score-value { font-size: 1.5rem; margin-top: 0.25rem; }
+    .practice-grid { display: grid; grid-template-columns: 1fr 280px; gap: 1.5rem; }
+    .practice-problem { background: var(--card); border: 1px solid var(--border); border-radius: 1rem; padding: 1.5rem; }
+    .practice-instruction { font-size: 0.95rem; color: var(--text2); margin-bottom: 1.5rem; line-height: 1.6; }
+    .option-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 1rem; margin-top: 1.5rem; }
+    .option-card { background: var(--bg); border: 2px solid var(--border); border-radius: 0.75rem; padding: 1rem; cursor: pointer; transition: all 0.2s; text-align: center; }
+    .option-card:hover { border-color: var(--cyan); transform: translateY(-2px); }
+    .option-card.selected { border-color: var(--cyan); background: color-mix(in srgb, var(--cyan) 10%, var(--bg)); }
+    .option-card.correct { border-color: var(--green); background: color-mix(in srgb, var(--green) 10%, var(--bg)); }
+    .option-card.incorrect { border-color: var(--pink); background: color-mix(in srgb, var(--pink) 10%, var(--bg)); }
+    .option-graph { width: 100%; height: 120px; margin-bottom: 0.5rem; }
+    .option-label { font-family: 'JetBrains Mono', monospace; font-size: 0.875rem; font-weight: 600; }
+    .play-container { display: grid; grid-template-columns: 1fr 280px; gap: 1.5rem; }
+    .play-challenge { background: var(--card); border: 1px solid var(--border); border-radius: 1rem; padding: 2rem; text-align: center; }
+    .play-graph { width: 100%; max-width: 400px; aspect-ratio: 1; margin: 0 auto 2rem; }
+    .play-timer { font-family: 'JetBrains Mono', monospace; font-size: 3rem; font-weight: 700; color: var(--cyan); margin-bottom: 1.5rem; }
+    .play-input { background: var(--bg); border: 2px solid var(--border); color: var(--text); padding: 1rem; border-radius: 0.75rem; font-size: 1.25rem; font-family: 'JetBrains Mono', monospace; font-weight: 600; width: 100%; max-width: 300px; text-align: center; transition: border-color 0.2s; }
+    .play-input:focus { outline: none; border-color: var(--cyan); }
+    .action-button { background: var(--cyan); color: var(--bg); border: none; padding: 0.875rem 1.5rem; border-radius: 0.5rem; cursor: pointer; font-size: 0.95rem; font-weight: 700; transition: all 0.2s; margin-top: 1.5rem; }
+    .action-button:hover { background: var(--green); transform: translateY(-2px); }
+    .feedback-message { margin-top: 1.5rem; padding: 1rem; border-radius: 0.75rem; font-weight: 600; text-align: center; }
+    .feedback-correct { background: color-mix(in srgb, var(--green) 20%, var(--bg)); color: var(--green); border: 2px solid var(--green); }
+    .feedback-incorrect { background: color-mix(in srgb, var(--pink) 20%, var(--bg)); color: var(--pink); border: 2px solid var(--pink); }
+    .standards-tags { display: flex; flex-wrap: wrap; gap: 0.5rem; margin-bottom: 1rem; padding-bottom: 1rem; border-bottom: 1px solid var(--border); }
+    .standard-tag { background: var(--bg); border: 1px solid var(--border); color: var(--text2); padding: 0.35rem 0.75rem; border-radius: 9999px; font-size: 0.7rem; font-weight: 600; text-transform: uppercase; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <header>
+      <a href="../../VINCULUM-Hub.html" class="header-back">←</a>
+      <div class="header-title"><h1>Graphing <span class="gradient">Linear Equations</span></h1></div>
+      <div class="header-badge">ALG1</div>
+    </header>
+
+    <div class="standards-tags">
+      <span class="standard-tag">A-CED.2</span>
+      <span class="standard-tag">F-IF.7a</span>
+      <span class="standard-tag">MN 9.2.1.6</span>
+    </div>
+
+    <div class="mode-tabs">
+      <button class="vinculum-mode-tab active" data-mode="explore"><svg width="18" height="18" viewBox="0 0 48 48" fill="none"><path d="M4 24C4 24 12 12 24 12C36 12 44 24 44 24C44 24 36 36 24 36C12 36 4 24 4 24Z" stroke="currentColor" stroke-width="3" fill="none"/><circle cx="24" cy="24" r="7" stroke="currentColor" stroke-width="3" fill="none"/><circle cx="24" cy="24" r="3" fill="currentColor"/><line x1="24" y1="4" x2="24" y2="9" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" opacity="0.5"/><line x1="10" y1="8" x2="13" y2="12" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" opacity="0.5"/><line x1="38" y1="8" x2="35" y2="12" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" opacity="0.5"/></svg> Explore</button>
+      <button class="vinculum-mode-tab" data-mode="practice"><svg width="18" height="18" viewBox="0 0 48 48" fill="none"><circle cx="24" cy="24" r="20" stroke="currentColor" stroke-width="3" fill="none" opacity="0.3"/><circle cx="24" cy="24" r="20" stroke="currentColor" stroke-width="3" fill="none" stroke-dasharray="126" stroke-dashoffset="32" stroke-linecap="round"/><polyline points="16,24 22,32 34,16" stroke="currentColor" stroke-width="4" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg> Practice</button>
+      <button class="vinculum-mode-tab" data-mode="play"><svg width="18" height="18" viewBox="0 0 48 48" fill="none"><polygon points="28,4 12,28 22,28 18,44 36,18 26,18" fill="none" stroke="currentColor" stroke-width="3" stroke-linejoin="round"/><polygon points="27,8 15,27 23,27 20,40 34,19 26,19" fill="currentColor" opacity="0.15"/></svg> Play</button>
+    </div>
+
+    <div id="explore" class="content active">
+      <div class="main-grid">
+        <div><div class="coordinate-plane-wrapper">
+          <svg class="coordinate-plane" id="explorePlane" viewBox="-510 -510 1020 1020">
+            <defs><style>.grid-line{stroke:var(--border);stroke-width:0.5}.axis{stroke:var(--text);stroke-width:1.5}.axis-label{font-size:14px;font-weight:600;fill:var(--text)}.data-line{stroke:var(--cyan);stroke-width:2.5;fill:none}.point-dot{fill:var(--green);r:4}</style></defs>
+            <g id="gridLines"></g>
+            <line x1="-500" y1="0" x2="500" y2="0" class="axis" />
+            <line x1="0" y1="-500" x2="0" y2="500" class="axis" />
+            <text x="490" y="-10" class="axis-label">x</text>
+            <text x="15" y="-480" class="axis-label">y</text>
+            <circle id="yIntercept" cx="0" cy="0" class="point-dot" />
+            <line id="lineSegment" class="data-line" x1="0" y1="0" x2="100" y2="-50" />
+            <g id="pointsGroup"></g>
+          </svg>
+        </div></div>
+
+        <div class="control-panel">
+          <div class="control-group">
+            <label class="control-label">Slope (m)</label>
+            <input type="range" id="slopeSlider" class="slider-input" min="-3" max="3" step="0.5" value="1">
+            <div class="value-display" id="slopeValue">m = 1</div>
+          </div>
+          <div class="control-group">
+            <label class="control-label">Y-Intercept (b)</label>
+            <input type="range" id="interceptSlider" class="slider-input" min="-10" max="10" step="1" value="0">
+            <div class="value-display" id="interceptValue">b = 0</div>
+          </div>
+          <div class="equation-display" id="equationDisplay">y = 1x + 0</div>
+          <div class="difficulty-selector">
+            <label class="control-label">Difficulty</label>
+            <div class="difficulty-options">
+              <button class="difficulty-btn active" data-difficulty="easy">Easy</button>
+              <button class="difficulty-btn" data-difficulty="medium">Medium</button>
+              <button class="difficulty-btn" data-difficulty="hard">Hard</button>
+            </div>
+          </div>
+          <div class="score-display">
+            <div class="score-label">Score</div>
+            <div class="score-value" id="exploreScore">0</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div id="practice" class="content">
+      <div class="practice-grid">
+        <div><div class="practice-problem">
+          <div class="practice-instruction" id="practiceInstruction">Identify which graph matches the equation below.</div>
+          <div class="equation-display" id="practiceEquation">y = 1x + 2</div>
+          <div class="option-grid" id="optionGrid"></div>
+          <button class="action-button" id="practiceCheckBtn" style="display: none;">Check Answer</button>
+          <div id="practiceFeedback"></div>
+          <button class="action-button" id="practiceNextBtn">Next Problem</button>
+        </div></div>
+
+        <div class="control-panel">
+          <div class="difficulty-selector">
+            <label class="control-label">Difficulty</label>
+            <div class="difficulty-options">
+              <button class="difficulty-btn active" data-difficulty="easy">Easy</button>
+              <button class="difficulty-btn" data-difficulty="medium">Medium</button>
+              <button class="difficulty-btn" data-difficulty="hard">Hard</button>
+            </div>
+          </div>
+          <div class="score-display">
+            <div class="score-label">Correct</div>
+            <div class="score-value" id="practiceScore">0</div>
+          </div>
+          <div class="score-display" style="background: linear-gradient(135deg, var(--pink) 0%, var(--cyan) 100%);">
+            <div class="score-label">Streak</div>
+            <div class="score-value" id="practiceStreak">0</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div id="play" class="content">
+      <div class="play-container">
+        <div><div class="play-challenge">
+          <div style="font-size: 0.95rem; color: var(--text2); margin-bottom: 1rem;">Match the equation to the graph</div>
+          <svg class="play-graph" id="playPlane" viewBox="-510 -510 1020 1020">
+            <defs><style>.grid-line{stroke:var(--border);stroke-width:0.5}.axis{stroke:var(--text);stroke-width:1.5}.data-line{stroke:var(--cyan);stroke-width:2.5;fill:none}</style></defs>
+            <g id="playGrid"></g>
+            <line x1="-500" y1="0" x2="500" y2="0" class="axis" />
+            <line x1="0" y1="-500" x2="0" y2="500" class="axis" />
+            <line id="playLine" class="data-line" x1="0" y1="0" x2="100" y2="-50" />
+          </svg>
+          <div class="play-timer" id="playTimer">60</div>
+          <input type="text" class="play-input" id="playInput" placeholder="y = mx + b">
+          <button class="action-button" id="playSubmitBtn">Submit</button>
+          <div id="playFeedback"></div>
+        </div></div>
+
+        <div class="control-panel">
+          <div class="difficulty-selector">
+            <label class="control-label">Difficulty</label>
+            <div class="difficulty-options">
+              <button class="difficulty-btn active" data-difficulty="easy">Easy</button>
+              <button class="difficulty-btn" data-difficulty="medium">Medium</button>
+              <button class="difficulty-btn" data-difficulty="hard">Hard</button>
+            </div>
+          </div>
+          <div class="score-display">
+            <div class="score-label">Correct</div>
+            <div class="score-value" id="playScore">0</div>
+          </div>
+          <div class="score-display" style="background: linear-gradient(135deg, var(--green) 0%, var(--cyan) 100%);">
+            <div class="score-label">Rounds</div>
+            <div class="score-value" id="playRounds">0</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const state={explore:{score:0,m:1,b:0},practice:{score:0,streak:0,current:null,selected:null},play:{score:0,current:null,timeLeft:60,playing:false}};
+    function drawGrid(i,e=50){const t=document.getElementById(i);let s=t.querySelector("#gridLines");s||(s=t.querySelector("#playGrid")),s&&(s.innerHTML="");for(let n=-10;n<=10;n++){if(0===n)continue;const l=document.createElementNS("http://www.w3.org/2000/svg","line");l.setAttribute("x1",n*e),l.setAttribute("y1",-500),l.setAttribute("x2",n*e),l.setAttribute("y2",500),l.setAttribute("class","grid-line"),s.appendChild(l);const o=document.createElementNS("http://www.w3.org/2000/svg","text");o.setAttribute("x",n*e),o.setAttribute("y",20),o.setAttribute("text-anchor","middle"),o.setAttribute("class","axis-label"),o.setAttribute("font-size","12"),o.textContent=n,s.appendChild(o);const c=document.createElementNS("http://www.w3.org/2000/svg","line");c.setAttribute("x1",-500),c.setAttribute("y1",-n*e),c.setAttribute("x2",500),c.setAttribute("y2",-n*e),c.setAttribute("class","grid-line"),s.appendChild(c);const d=document.createElementNS("http://www.w3.org/2000/svg","text");d.setAttribute("x",-20),d.setAttribute("y",-n*e+5),d.setAttribute("text-anchor","end"),d.setAttribute("class","axis-label"),d.setAttribute("font-size","12"),d.textContent=n,s.appendChild(d)}}function drawLine(i,e,t,s=50){const n=document.getElementById(i);let l=n.querySelector("#lineSegment");l||(l=n.querySelector("#playLine")),l&&(l.setAttribute("x1",-10*s),l.setAttribute("y1",-(-10*e+t)*s),l.setAttribute("x2",10*s),l.setAttribute("y2",-(10*e+t)*s))}function updateExplore(){const i=state.explore.m,e=state.explore.b;document.getElementById("slopeValue").textContent=`m = ${i}`,document.getElementById("interceptValue").textContent=`b = ${e}`;const t=e>=0?`+ ${e}`:`- ${Math.abs(e)}`;document.getElementById("equationDisplay").textContent=`y = ${i}x ${t}`,drawLine("explorePlane",i,e);const s=document.getElementById("yIntercept");s.setAttribute("cy",-e*50);const n=document.getElementById("pointsGroup");n.innerHTML="";for(let t=-5;t<=5;t++){const l=i*t+e,o=document.createElementNS("http://www.w3.org/2000/svg","circle");o.setAttribute("cx",50*t),o.setAttribute("cy",-l*50),o.setAttribute("class","point-dot"),n.appendChild(o)}}document.getElementById("slopeSlider").addEventListener("input",e=>{state.explore.m=parseFloat(e.target.value),updateExplore()}),document.getElementById("interceptSlider").addEventListener("input",e=>{state.explore.b=parseInt(e.target.value),updateExplore()});function genPractice(){const i={easy:{slopes:[0,1,2,3],intercepts:[-2,-1,0,1,2]},medium:{slopes:[-2,-1,-0.5,0.5,1,1.5,2],intercepts:[-3,-2,-1,0,1,2,3]},hard:{slopes:[-2,-1.5,-1,-0.5,0.5,1,1.5,2,2.5],intercepts:[-4,-3,-2,-1,0,1,2,3,4]}},e=i.easy,t=e.slopes[Math.floor(Math.random()*e.slopes.length)],s=e.intercepts[Math.floor(Math.random()*e.intercepts.length)],n=[{m:t,b:s,correct:!0}];for(;n.length<4;){const l=e.slopes[Math.floor(Math.random()*e.slopes.length)],o=e.intercepts[Math.floor(Math.random()*e.intercepts.length)];n.some(i=>i.m===l&&i.b===o)||n.push({m:l,b:o,correct:!1})}for(let i=n.length-1;i>0;i--){const e=Math.floor(Math.random()*(i+1));[n[i],n[e]]=[n[e],n[i]]}return{m:t,b:s,options:n}}function renderPractice(){const i=genPractice();state.practice.current=i,state.practice.selected=null;const e=i.b>=0?`+ ${i.b}`:`- ${Math.abs(i.b)}`;document.getElementById("practiceEquation").textContent=`y = ${i.m}x ${e}`;const t=document.getElementById("optionGrid");t.innerHTML="",i.options.forEach((e,s)=>{const n=document.createElement("div");n.className="option-card",n.innerHTML=`<svg class="option-graph" viewBox="-510 -510 1020 1020"><defs><style>.grid-line{stroke:var(--border);stroke-width:0.5}.axis{stroke:var(--text);stroke-width:1}.data-line{stroke:var(--cyan);stroke-width:2;fill:none}</style></defs><g id="optGrid${s}"></g><line x1="-500" y1="0" x2="500" y2="0" class="axis"/><line x1="0" y1="-500" x2="0" y2="500" class="axis"/><line id="optLine${s}" class="data-line" x1="0" y1="0" x2="100" y2="-50"/></svg><div class="option-label">${e.m}x + ${e.b}</div>`,n.addEventListener("click",()=>{document.querySelectorAll(".option-card").forEach(i=>i.classList.remove("selected")),n.classList.add("selected"),state.practice.selected=s,document.getElementById("practiceCheckBtn").style.display="block"}),t.appendChild(n),drawGrid(`optGrid${s}`,40),drawLine(t.querySelector(`#optGrid${s}`).parentElement.id,e.m,e.b,40)}),document.getElementById("practiceCheckBtn").style.display="none",document.getElementById("practiceFeedback").innerHTML=""}document.getElementById("practiceCheckBtn").addEventListener("click",()=>{if(null===state.practice.selected)return;const i=state.practice.current.options[state.practice.selected].correct,e=document.getElementById("practiceFeedback");i?(state.practice.score++,state.practice.streak++,e.innerHTML='<div class="feedback-message feedback-correct">✓ Correct!</div>',document.querySelectorAll(".option-card")[state.practice.selected].classList.add("correct")):(state.practice.streak=0,e.innerHTML='<div class="feedback-message feedback-incorrect">✗ Try again</div>',document.querySelectorAll(".option-card")[state.practice.selected].classList.add("incorrect")),document.getElementById("practiceScore").textContent=state.practice.score,document.getElementById("practiceStreak").textContent=state.practice.streak,document.getElementById("practiceCheckBtn").style.display="none"}),document.getElementById("practiceNextBtn").addEventListener("click",renderPractice);function genPlay(){const i={easy:{slopes:[1,2,3],intercepts:[-2,-1,0,1,2]},medium:{slopes:[-2,-1,0.5,1,1.5,2],intercepts:[-3,-2,-1,0,1,2,3]},hard:{slopes:[-2.5,-2,-1.5,-1,-0.5,0.5,1,1.5,2,2.5],intercepts:[-5,-3,-1,0,1,3,5]}},e=i.easy,t=e.slopes[Math.floor(Math.random()*e.slopes.length)],s=e.intercepts[Math.floor(Math.random()*e.intercepts.length)];return{m:t,b:s}}function renderPlay(){const i=genPlay();state.play.current=i,drawLine("playPlane",i.m,i.b,50),document.getElementById("playInput").value="",document.getElementById("playFeedback").innerHTML=""}document.getElementById("playSubmitBtn").addEventListener("click",()=>{const i=document.getElementById("playInput").value.trim().toLowerCase().replace(/\s+/g,""),e=`y=${state.play.current.m}x${state.play.current.b>=0?"+":""}${state.play.current.b}`,t=document.getElementById("playFeedback");i===e?(state.play.score++,t.innerHTML='<div class="feedback-message feedback-correct">✓ Correct!</div>'):(t.innerHTML=`<div class="feedback-message feedback-incorrect">✗ Expected: y = ${state.play.current.m}x ${state.play.current.b>=0?"+":"-"} ${Math.abs(state.play.current.b)}</div>`),document.getElementById("playScore").textContent=state.play.score,setTimeout(renderPlay,1500)}),document.querySelectorAll(".mode-tab").forEach(i=>{i.addEventListener("click",()=>{const e=i.dataset.mode;document.querySelectorAll(".mode-tab").forEach(i=>i.classList.remove("active")),document.querySelectorAll(".content").forEach(i=>i.classList.remove("active")),i.classList.add("active"),document.getElementById(e).classList.add("active"),"explore"===e?(drawGrid("explorePlane"),updateExplore()):"practice"===e?renderPractice():"play"===e&&(drawGrid("playPlane"),renderPlay(),state.play.playing||(state.play.playing=!0,state.play.timeLeft=60,setInterval(()=>{state.play.timeLeft--,document.getElementById("playTimer").textContent=state.play.timeLeft,state.play.timeLeft<=0&&(state.play.playing=!1,document.getElementById("playSubmitBtn").disabled=!0)},1e3)))})}),drawGrid("explorePlane"),updateExplore();
+  </script>
+
+  <script src="../../vinculum-input.js"></script>
+  <script src="../../vinculum-core.js"></script>
+  <script src="../../vinculum-data.js"></script>
+  <script src="../../vinculum-adaptive-hook.js"></script>
+  <script src="../../vinculum-3reads.js"></script>
+  <script src="../../vinculum-stories.js"></script>
+  <script src="../../vinculum-feedback.js"></script>
+  <script src="../../vinculum-guide.js"></script>
+  <script src="../../vinculum-identity.js"></script>
+  <script src="../../vinculum-indigenous.js"></script>
+  <script src="../../vinculum-dashboard.js"></script>
+</body>
+</html>

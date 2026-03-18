@@ -1,0 +1,1262 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>VINCULUM — Classify & Count</title>
+<link rel="stylesheet" href="../../vinculum-core.css">
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;600&display=swap');
+
+/* Theme system loaded from vinculum-core.css */
+.vinculum-rtm-btn .rtm-icon{font-size:14px;}
+
+/* ═══ FOCUS VISIBLE ═══ */
+*:focus-visible {
+  outline:2px solid var(--cyan);outline-offset:2px;border-radius:4px;
+}
+.sr-only {
+  position:absolute;width:1px;height:1px;padding:0;margin:-1px;
+  overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0;
+}
+
+* { margin:0; padding:0; box-sizing:border-box; }
+body {
+  font-family: 'Inter', sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  height: 100vh;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  user-select: none;
+}
+
+/* ── HEADER ── */
+/* ── MODE TABS ── */
+/* Difficulty selector */
+.vinculum-diff-btn:hover { color: var(--text2); }
+
+/* ── MAIN AREA ── */
+.main {
+  flex: 1;
+  display: flex;
+  overflow: hidden;
+}
+
+/* ── WORKSPACE ── */
+.workspace {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 24px;
+  position: relative;
+  overflow-y: auto;
+}
+
+/* ── UNSORTED AREA ── */
+.unsorted-area {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  background: var(--card);
+  border-radius: 16px;
+  padding: 16px;
+  min-height: 80px;
+  width: 100%;
+  max-width: 700px;
+  align-items: center;
+  justify-content: center;
+  border: 2px dashed var(--border);
+  transition: border-color 0.2s;
+  margin-bottom: 16px;
+}
+.unsorted-area.empty {
+  justify-content: center;
+  color: var(--muted);
+  font-size: 13px;
+}
+
+/* ── SORT BINS ── */
+.sort-bins {
+  display: flex;
+  flex-direction: row;
+  gap: 16px;
+  justify-content: center;
+  width: 100%;
+  max-width: 700px;
+  margin-bottom: 16px;
+  flex-wrap: wrap;
+}
+.sort-bin {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  background: var(--bg2);
+  border-radius: 14px;
+  padding: 12px;
+  min-width: 100px;
+  min-height: 120px;
+  border: 2px dashed var(--border);
+  flex: 1;
+  transition: border-color 0.2s, background 0.2s;
+}
+.sort-bin.highlight {
+  border-color: var(--cyan);
+  background: rgba(0,212,255,0.04);
+}
+.sort-bin-label {
+  font-size: 12px;
+  font-weight: 700;
+  text-transform: uppercase;
+  color: var(--muted);
+  margin-bottom: 8px;
+  letter-spacing: 1px;
+}
+.sort-bin-count {
+  font-size: 11px;
+  color: var(--text2);
+  margin-top: 8px;
+  font-weight: 600;
+  font-family: 'JetBrains Mono', monospace;
+}
+.sort-bin-items {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  justify-content: center;
+  min-height: 40px;
+  align-items: center;
+}
+
+/* ── SORT ITEMS ── */
+.sort-item {
+  font-size: 32px;
+  cursor: pointer;
+  transition: transform 0.2s;
+  -webkit-tap-highlight-color: transparent;
+}
+.sort-item:hover {
+  transform: scale(1.2);
+}
+.sort-item:active {
+  transform: scale(0.95);
+}
+.sort-item.placed {
+  animation: pop 0.3s ease-out forwards;
+}
+
+/* ── BAR GRAPH ── */
+.bar-graph {
+  display: flex;
+  flex-direction: row;
+  gap: 12px;
+  align-items: flex-end;
+  height: 120px;
+  width: 100%;
+  max-width: 400px;
+  margin: 16px auto;
+  padding: 0 16px;
+}
+.bar-col {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  flex: 1;
+  height: 100%;
+  justify-content: flex-end;
+}
+.bar {
+  border-radius: 8px 8px 0 0;
+  min-width: 40px;
+  width: 100%;
+  transition: height 0.5s ease;
+}
+.bar-label {
+  font-size: 11px;
+  text-align: center;
+  color: var(--muted);
+  margin-top: 4px;
+  font-weight: 600;
+}
+.bar-value {
+  font-size: 13px;
+  font-weight: 800;
+  font-family: 'JetBrains Mono', monospace;
+  color: var(--text2);
+  margin-bottom: 2px;
+}
+
+/* ── INSTRUCTION BOX ── */
+.instruction-box {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 14px 20px;
+  font-size: 15px;
+  color: var(--text2);
+  text-align: center;
+  margin-bottom: 16px;
+  width: 100%;
+  max-width: 700px;
+  line-height: 1.5;
+}
+.instruction-box strong {
+  color: var(--cyan);
+}
+
+/* ── MC GRID ── */
+.mc-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+  gap: 10px;
+  margin-top: 16px;
+  width: 100%;
+  max-width: 500px;
+}
+.mc-btn {
+  padding: 16px 12px;
+  border-radius: 14px;
+  border: 2px solid var(--border);
+  background: var(--card);
+  color: var(--text);
+  font-size: 18px;
+  font-weight: 700;
+  font-family: 'JetBrains Mono', monospace;
+  cursor: pointer;
+  transition: all 0.15s;
+  text-align: center;
+}
+.mc-btn:hover {
+  border-color: var(--cyan);
+  background: rgba(0,212,255,0.05);
+  transform: scale(1.04);
+}
+.mc-btn.correct-flash {
+  border-color: var(--green);
+  background: rgba(0,230,118,0.15);
+  color: var(--green);
+}
+.mc-btn.incorrect-flash {
+  border-color: var(--pink);
+  background: rgba(255,59,139,0.15);
+  color: var(--pink);
+}
+.mc-btn.text-btn {
+  font-family: 'Inter', sans-serif;
+  font-size: 14px;
+}
+
+/* ── CONTROLS ── */
+.controls {
+  display: flex;
+  gap: 8px;
+  margin-top: 16px;
+  flex-wrap: wrap;
+  justify-content: center;
+}
+.ctrl-btn {
+  padding: 10px 20px;
+  border-radius: 10px;
+  border: 1px solid var(--border);
+  background: var(--card);
+  color: var(--text2);
+  font-size: 13px;
+  font-weight: 600;
+  font-family: inherit;
+  cursor: pointer;
+  transition: all 0.2s;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.ctrl-btn:hover { background: var(--card-hover); color: var(--text); }
+.ctrl-btn.primary {
+  background: var(--grad);
+  color: var(--bg);
+  border-color: transparent;
+}
+.ctrl-btn.primary:hover { opacity: 0.9; }
+.ctrl-btn.danger { color: var(--pink); }
+.ctrl-btn.danger:hover { background: rgba(255,59,139,0.1); }
+
+/* ── FEEDBACK ── */
+.feedback {
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%) scale(0);
+  padding: 24px 48px;
+  border-radius: 20px;
+  font-size: 28px;
+  font-weight: 800;
+  z-index: 200;
+  pointer-events: none;
+  transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275), opacity 0.3s;
+  opacity: 0;
+  max-width: 90vw;
+  text-align: center;
+}
+.feedback.show {
+  transform: translate(-50%, -50%) scale(1);
+  opacity: 1;
+}
+.feedback.correct {
+  background: rgba(0,230,118,0.15);
+  color: var(--green);
+  border: 2px solid var(--green);
+}
+.feedback.incorrect {
+  background: rgba(255,59,139,0.15);
+  color: var(--pink);
+  border: 2px solid var(--pink);
+}
+.feedback.try-again {
+  background: rgba(255,193,7,0.15);
+  color: var(--yellow);
+  border: 2px solid var(--yellow);
+}
+.feedback.misconception {
+  background: rgba(255,193,7,0.12);
+  color: var(--yellow);
+  border: 2px solid var(--yellow);
+  font-size: 16px;
+  font-weight: 600;
+  max-width: 440px;
+  line-height: 1.5;
+}
+
+/* ── SIDE PANEL ── */
+.side-panel {
+  width: 280px;
+  background: var(--bg2);
+  border-left: 1px solid var(--border);
+  padding: 20px;
+  overflow-y: auto;
+  flex-shrink: 0;
+}
+.panel-section {
+  margin-bottom: 20px;
+}
+.panel-title {
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 1.5px;
+  color: var(--muted);
+  margin-bottom: 8px;
+}
+.panel-text {
+  font-size: 13px;
+  color: var(--text2);
+  line-height: 1.6;
+}
+.score-display {
+  text-align: center;
+  padding: 16px;
+  background: var(--card);
+  border-radius: 12px;
+  margin-bottom: 12px;
+}
+.score-value {
+  font-size: 36px;
+  font-weight: 900;
+  font-family: 'JetBrains Mono', monospace;
+  background: var(--grad);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+.score-label {
+  font-size: 11px;
+  color: var(--muted);
+  text-transform: uppercase;
+  letter-spacing: 1px;
+}
+.streak-bar {
+  height: 6px;
+  background: var(--card);
+  border-radius: 3px;
+  overflow: hidden;
+  margin-top: 8px;
+}
+.streak-fill {
+  height: 100%;
+  background: var(--grad);
+  border-radius: 3px;
+  transition: width 0.3s;
+}
+
+/* ── ANIMATIONS ── */
+@keyframes pop {
+  0% { transform: scale(0); }
+  70% { transform: scale(1.2); }
+  100% { transform: scale(1); }
+}
+@keyframes shake {
+  0%, 100% { transform: translateX(0); }
+  25% { transform: translateX(-8px); }
+  75% { transform: translateX(8px); }
+}
+.pop-in { animation: pop 0.3s ease-out forwards; }
+.shake { animation: shake 0.3s ease-in-out; }
+
+/* scrollbar */
+::-webkit-scrollbar { width: 6px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+</style>
+</head>
+<body>
+
+<!-- ═══ HEADER ═══ -->
+<div class="vinculum-header">
+  <div class="vinculum-header-left">
+    <a class="vinculum-back-btn" href="../../VINCULUM-Hub.html" style="text-decoration:none;">◀ Hub</a>
+    <div class="vinculum-header-title"><span>VINCULUM</span> Classify & Count</div>
+    <span class="vinculum-header-badge">K.MD</span>
+  </div>
+  <div class="vinculum-header-right">
+    <div class="vinculum-std-tags">
+      <span class="vinculum-std-tag">K.MD.3</span>
+      <span class="vinculum-std-tag mn">MN K.3.2.2</span>
+    </div>
+    <button class="vinculum-back-btn" id="readAloudBtn" onclick="toggleReadAloud()" aria-label="Read Aloud" title="Read instructions aloud" style="margin-left:8px;white-space:nowrap;">🔊 Read to Me</button>
+  </div>
+</div>
+
+<!-- ═══ MODE TABS ═══ -->
+<div class="vinculum-mode-tabs">
+  <button class="vinculum-mode-tab active-explore" id="tabExplore" data-mode="explore">
+    <svg width="18" height="18" viewBox="0 0 48 48" fill="none"><path d="M4 24C4 24 12 12 24 12C36 12 44 24 44 24C44 24 36 36 24 36C12 36 4 24 4 24Z" stroke="currentColor" stroke-width="3" fill="none"/><circle cx="24" cy="24" r="7" stroke="currentColor" stroke-width="3" fill="none"/><circle cx="24" cy="24" r="3" fill="currentColor"/><line x1="24" y1="4" x2="24" y2="9" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" opacity="0.5"/><line x1="10" y1="8" x2="13" y2="12" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" opacity="0.5"/><line x1="38" y1="8" x2="35" y2="12" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" opacity="0.5"/></svg> Explore
+  </button>
+  <button class="vinculum-mode-tab" id="tabPractice" data-mode="practice">
+    <svg width="18" height="18" viewBox="0 0 48 48" fill="none"><circle cx="24" cy="24" r="20" stroke="currentColor" stroke-width="3" fill="none" opacity="0.3"/><circle cx="24" cy="24" r="20" stroke="currentColor" stroke-width="3" fill="none" stroke-dasharray="126" stroke-dashoffset="32" stroke-linecap="round"/><polyline points="16,24 22,32 34,16" stroke="currentColor" stroke-width="4" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg> Practice
+  </button>
+  <button class="vinculum-mode-tab" id="tabPlay" data-mode="play">
+    <svg width="18" height="18" viewBox="0 0 48 48" fill="none"><polygon points="28,4 12,28 22,28 18,44 36,18 26,18" fill="none" stroke="currentColor" stroke-width="3" stroke-linejoin="round"/><polygon points="27,8 15,27 23,27 20,40 34,19 26,19" fill="currentColor" opacity="0.15"/></svg> Play
+  </button>
+  <div class="vinculum-diff-selector">
+    <span class="vinculum-diff-label">Level</span>
+    <button class="vinculum-diff-btn active" id="diffE" data-diff="emergent">2 Groups</button>
+    <button class="vinculum-diff-btn" id="diffP" data-diff="proficient">3 Groups</button>
+    <button class="vinculum-diff-btn" id="diffA" data-diff="advanced">Sort & Order</button>
+  </div>
+</div>
+
+<!-- ═══ MAIN ═══ -->
+<div class="main">
+  <div class="workspace" role="main" id="workspace"></div>
+  <div class="side-panel" id="sidePanel"></div>
+</div>
+
+<!-- ═══ FEEDBACK POPUP ═══ -->
+<div class="feedback" id="feedback"></div>
+
+<script src="../../vinculum-input.js"></script>
+<script>
+// ════════════════════════════════════════
+// SORTING DATA
+// ════════════════════════════════════════
+const SORT_SETS = [
+  { attribute:'color', categories:['Red','Blue','Green','Yellow'],
+    items:[
+      {emoji:'🔴',cat:'Red'},{emoji:'🔵',cat:'Blue'},{emoji:'🟢',cat:'Green'},{emoji:'🟡',cat:'Yellow'},
+      {emoji:'❤️',cat:'Red'},{emoji:'💙',cat:'Blue'},{emoji:'💚',cat:'Green'},{emoji:'💛',cat:'Yellow'},
+      {emoji:'🍎',cat:'Red'},{emoji:'🫐',cat:'Blue'},{emoji:'🥒',cat:'Green'},{emoji:'🌻',cat:'Yellow'},
+    ]},
+  { attribute:'type', categories:['Fruit','Animal','Vehicle'],
+    items:[
+      {emoji:'🍎',cat:'Fruit'},{emoji:'🍌',cat:'Fruit'},{emoji:'🍊',cat:'Fruit'},{emoji:'🍇',cat:'Fruit'},
+      {emoji:'🐶',cat:'Animal'},{emoji:'🐱',cat:'Animal'},{emoji:'🐟',cat:'Animal'},{emoji:'🦋',cat:'Animal'},
+      {emoji:'🚗',cat:'Vehicle'},{emoji:'✈️',cat:'Vehicle'},{emoji:'🚲',cat:'Vehicle'},{emoji:'🚀',cat:'Vehicle'},
+    ]},
+  { attribute:'shape', categories:['Round','Square','Triangle'],
+    items:[
+      {emoji:'⚽',cat:'Round'},{emoji:'🏀',cat:'Round'},{emoji:'🔵',cat:'Round'},{emoji:'🍊',cat:'Round'},
+      {emoji:'📦',cat:'Square'},{emoji:'🎁',cat:'Square'},{emoji:'📱',cat:'Square'},{emoji:'🧊',cat:'Square'},
+      {emoji:'🔺',cat:'Triangle'},{emoji:'⛺',cat:'Triangle'},{emoji:'🍕',cat:'Triangle'},{emoji:'📐',cat:'Triangle'},
+    ]},
+];
+
+// ════════════════════════════════════════
+// STATE
+// ════════════════════════════════════════
+let S = {
+  mode: 'explore',
+  diff: 'emergent',
+  currentSet: 0,
+  unsorted: [],
+  bins: {},
+  numCategories: 2,
+  numItems: 6,
+  // Practice
+  pSet: null,
+  pUnsorted: [],
+  pBins: {},
+  pPhase: 'sorting',
+  pQuestion: '',
+  pAnswer: null,
+  pChoices: [],
+  pCatTarget: '',
+  // Play
+  score: 0,
+  streak: 0,
+  best: 0,
+  round: 0,
+  total: 10,
+  playQuestion: '',
+  playAnswer: 0,
+  playChoices: [],
+  playBins: {},
+  playSet: null,
+  playLocked: false
+};
+
+// ════════════════════════════════════════
+// READ-ALOUD
+// ════════════════════════════════════════
+function toggleReadAloud() {
+  if (window.VinculumStories && VinculumStories.isReading()) {
+    VinculumStories.stopReading();
+    document.getElementById('readAloudBtn').textContent = '🔊 Read to Me';
+  } else {
+    var fb = document.getElementById('feedback');
+    var storyEl = document.getElementById('storyBanner');
+    var text = storyEl ? storyEl.textContent : (fb ? fb.textContent : 'Welcome to Classify and Count!');
+    if (window.VinculumStories) {
+      VinculumStories.readAloud(text, { rate: 0.85, onComplete: function() {
+        document.getElementById('readAloudBtn').textContent = '🔊 Read to Me';
+      }});
+      document.getElementById('readAloudBtn').textContent = '⏹ Stop';
+    }
+  }
+}
+
+// ════════════════════════════════════════
+// MISCONCEPTIONS
+// ════════════════════════════════════════
+const MISCONCEPTIONS = {
+  personalPref: { id:'preference', msg: function(attr) { return 'Sort by ' + attr.toUpperCase() + ', not by what you like! Look at the ' + attr + ' of each object.'; } },
+  lostCount:    { id:'lost-count', msg: function(cat, count) { return 'Count the ' + cat + ' group carefully \u2014 there are ' + count + '. Point to each one as you count!'; } },
+  offByOne:     { id:'off-by-one', msg: function(ans, got) { return 'Almost! You said ' + got + ' but there are ' + ans + '. Count once more!'; } },
+  randomGuess:  { id:'random', msg: function() { return 'Look at what\u2019s the SAME about the objects in each group.'; } }
+};
+
+// ════════════════════════════════════════
+// HELPERS
+// ════════════════════════════════════════
+function randInt(min, max) {
+  return Math.floor(Math.random() * (max - min + 1)) + min;
+}
+
+function shuffle(arr) {
+  var a = arr.slice();
+  for (var i = a.length - 1; i > 0; i--) {
+    var j = randInt(0, i);
+    var t = a[i]; a[i] = a[j]; a[j] = t;
+  }
+  return a;
+}
+
+function showFeedback(text, type) {
+  var fb = document.getElementById('feedback');
+  fb.textContent = text;
+  fb.className = 'feedback ' + type + ' show';
+  setTimeout(function() { fb.classList.remove('show'); }, type === 'misconception' ? 2400 : 1200);
+}
+
+var BAR_COLORS = ['#00d4ff', '#ff3b8b', '#ffc107', '#00e676', '#b388ff', '#ff9100'];
+
+function getDiffParams() {
+  if (S.diff === 'emergent') return { numCats: 2, numItems: randInt(3, 6) };
+  if (S.diff === 'proficient') return { numCats: 3, numItems: randInt(6, 10) };
+  return { numCats: randInt(3, 4), numItems: randInt(8, 12) };
+}
+
+function pickSubset(setIdx, numCats, numItems) {
+  var set = SORT_SETS[setIdx];
+  var cats = shuffle(set.categories).slice(0, numCats);
+  var pool = set.items.filter(function(it) { return cats.indexOf(it.cat) >= 0; });
+  pool = shuffle(pool);
+  if (pool.length > numItems) pool = pool.slice(0, numItems);
+  return { attribute: set.attribute, categories: cats, items: pool };
+}
+
+function buildBins(cats) {
+  var b = {};
+  cats.forEach(function(c) { b[c] = []; });
+  return b;
+}
+
+function totalBinCount(bins) {
+  var n = 0;
+  Object.keys(bins).forEach(function(k) { n += bins[k].length; });
+  return n;
+}
+
+function maxBarHeight(bins) {
+  var m = 0;
+  Object.keys(bins).forEach(function(k) { if (bins[k].length > m) m = bins[k].length; });
+  return m || 1;
+}
+
+// ════════════════════════════════════════
+// MODE SWITCHING
+// ════════════════════════════════════════
+function setMode(mode) {
+  S.mode = mode;
+  document.querySelectorAll('.vinculum-mode-tab').forEach(function(t) {
+    t.classList.remove('active-explore', 'active-practice', 'active-play');
+  });
+  var tabEl = document.querySelector('[data-mode="' + mode + '"]');
+  if (tabEl) tabEl.classList.add('active-' + mode);
+
+  if (mode === 'explore') initExplore();
+  else if (mode === 'practice') initPractice();
+  else initPlay();
+}
+
+function setDiff(diff) {
+  S.diff = diff;
+  document.querySelectorAll('.vinculum-diff-btn').forEach(function(b) { b.classList.remove('active'); });
+  document.getElementById('diff' + diff.charAt(0).toUpperCase()).classList.add('active');
+  setMode(S.mode);
+}
+
+// ════════════════════════════════════════
+// EXPLORE MODE
+// ════════════════════════════════════════
+function initExplore() {
+  var p = getDiffParams();
+  var setIdx = randInt(0, SORT_SETS.length - 1);
+  var sub = pickSubset(setIdx, p.numCats, p.numItems);
+  S.currentSet = setIdx;
+  S.unsorted = shuffle(sub.items.slice());
+  S.bins = buildBins(sub.categories);
+  S.numCategories = sub.categories.length;
+  S.numItems = sub.items.length;
+  S.exploreAttribute = sub.attribute;
+  S.exploreCategories = sub.categories;
+  render();
+}
+
+function renderExplore(ws, sp) {
+  var html = '';
+  var attr = S.exploreAttribute || SORT_SETS[S.currentSet].attribute;
+  var cats = S.exploreCategories || Object.keys(S.bins);
+
+  // Story banner
+  if (window.VinculumStories) {
+    var toolName = window.location.pathname.split('/').pop().replace('.html','');
+    var storyData = VinculumStories.getStory(toolName, {a: totalBinCount(S.bins), b: S.unsorted.length, total: S.unsorted.length + totalBinCount(S.bins), n: S.numItems});
+    if (storyData && storyData.story) {
+      if (window.Vinculum3Reads) {
+        html += Vinculum3Reads.getBannerHTML(storyData);
+      } else {
+        html += '<div id="storyBanner" style="background:var(--card2,#1a1f2e);border:1px solid var(--border);border-radius:12px;padding:16px 20px;margin-bottom:16px;font-size:15px;line-height:1.6;color:var(--text);position:relative;width:100%;max-width:700px;"><span style="font-size:12px;color:var(--cyan);font-weight:700;text-transform:uppercase;letter-spacing:1px;">📖 Story</span><br>' + storyData.story + '<br><em style="color:var(--yellow);font-weight:600;">' + storyData.question + '</em><button onclick="toggleReadAloud()" style="position:absolute;top:12px;right:12px;background:none;border:1px solid var(--border);border-radius:8px;padding:4px 10px;color:var(--cyan);cursor:pointer;font-size:14px;" title="Read story aloud">🔊</button></div>';
+      }
+    }
+  }
+
+  html += '<div class="instruction-box">Sort each object by its <strong>' + attr + '</strong>. Tap an object, then tap the correct bin!</div>';
+
+  // Unsorted area
+  html += '<div class="unsorted-area' + (S.unsorted.length === 0 ? ' empty' : '') + '" id="unsortedArea">';
+  if (S.unsorted.length === 0) {
+    html += 'All sorted! Great job!';
+  } else {
+    S.unsorted.forEach(function(item, i) {
+      html += '<span class="sort-item' + (S.selectedUnsorted === i ? ' pop-in' : '') + '" style="' + (S.selectedUnsorted === i ? 'outline:3px solid var(--cyan);border-radius:8px;' : '') + '" onclick="selectUnsorted(' + i + ')">' + item.emoji + '</span>';
+    });
+  }
+  html += '</div>';
+
+  // Sort bins
+  html += '<div class="sort-bins">';
+  cats.forEach(function(cat, ci) {
+    html += '<div class="sort-bin" onclick="dropIntoBin(\'' + cat + '\')">';
+    html += '<div class="sort-bin-label">' + cat + '</div>';
+    html += '<div class="sort-bin-items">';
+    S.bins[cat].forEach(function(item) {
+      html += '<span class="sort-item placed">' + item.emoji + '</span>';
+    });
+    html += '</div>';
+    html += '<div class="sort-bin-count">' + S.bins[cat].length + ' item' + (S.bins[cat].length !== 1 ? 's' : '') + '</div>';
+    html += '</div>';
+  });
+  html += '</div>';
+
+  // Bar graph
+  var mh = maxBarHeight(S.bins);
+  html += '<div class="bar-graph">';
+  cats.forEach(function(cat, ci) {
+    var count = S.bins[cat].length;
+    var pct = mh > 0 ? (count / mh) * 100 : 0;
+    html += '<div class="bar-col">';
+    html += '<div class="bar-value">' + count + '</div>';
+    html += '<div class="bar" style="height:' + Math.max(pct, 4) + '%;background:' + BAR_COLORS[ci % BAR_COLORS.length] + ';"></div>';
+    html += '<div class="bar-label">' + cat + '</div>';
+    html += '</div>';
+  });
+  html += '</div>';
+
+  // Controls
+  html += '<div class="controls">';
+  html += '<button class="ctrl-btn primary" onclick="initExplore()">New Set</button>';
+  html += '<button class="ctrl-btn" onclick="autoSort()">Auto Sort</button>';
+  html += '</div>';
+
+  ws.innerHTML = html;
+
+  // Side panel
+  sp.innerHTML =
+    '<div class="panel-section">' +
+      '<div class="panel-title">How to Sort</div>' +
+      '<div class="panel-text">' +
+        '1. <strong>Tap</strong> an object in the top area<br><br>' +
+        '2. <strong>Tap</strong> the correct bin below to sort it<br><br>' +
+        '3. Watch the <strong>bar graph</strong> grow as you sort!<br><br>' +
+        '4. Sort by <strong>' + attr + '</strong> \u2014 look at each object carefully' +
+      '</div>' +
+    '</div>' +
+    '<div class="panel-section">' +
+      '<div class="panel-title">Standards</div>' +
+      '<div class="panel-text">' +
+        '<strong>K.MD.3</strong> \u2014 Classify objects into given categories; count the number of objects in each category and sort by count<br><br>' +
+        '<strong>MN K.3.2.2</strong> \u2014 Sort and classify objects by attribute and identify objects that do not belong' +
+      '</div>' +
+    '</div>' +
+    '<div class="panel-section">' +
+      '<div class="panel-title">Key Concept</div>' +
+      '<div class="panel-text">' +
+        'When we <strong>classify</strong>, we look at what is the <strong>same</strong> about objects and put them in groups. Then we <strong>count</strong> how many are in each group.' +
+      '</div>' +
+    '</div>';
+}
+
+function selectUnsorted(idx) {
+  S.selectedUnsorted = idx;
+  render();
+}
+
+function dropIntoBin(cat) {
+  if (S.selectedUnsorted == null || S.selectedUnsorted < 0 || S.selectedUnsorted >= S.unsorted.length) return;
+  var item = S.unsorted[S.selectedUnsorted];
+  var attr = S.exploreAttribute || SORT_SETS[S.currentSet].attribute;
+
+  if (item.cat === cat) {
+    // Correct bin
+    S.bins[cat].push(item);
+    S.unsorted.splice(S.selectedUnsorted, 1);
+    S.selectedUnsorted = null;
+    if (S.unsorted.length === 0) {
+      showFeedback('All sorted!', 'correct');
+    }
+  } else {
+    // Wrong bin — misconception feedback
+    showFeedback(MISCONCEPTIONS.personalPref.msg(attr), 'misconception');
+  }
+  render();
+}
+
+function autoSort() {
+  // Move all unsorted items into correct bins
+  S.unsorted.forEach(function(item) {
+    if (S.bins[item.cat]) {
+      S.bins[item.cat].push(item);
+    }
+  });
+  S.unsorted = [];
+  S.selectedUnsorted = null;
+  render();
+}
+
+// ════════════════════════════════════════
+// PRACTICE MODE
+// ════════════════════════════════════════
+function initPractice() {
+  var p = getDiffParams();
+  var setIdx = randInt(0, SORT_SETS.length - 1);
+  var sub = pickSubset(setIdx, p.numCats, p.numItems);
+  S.pSet = sub;
+  S.pPhase = (S.diff === 'emergent') ? 'counting' : 'sorting';
+  S.pBins = buildBins(sub.categories);
+  S.pUnsorted = shuffle(sub.items.slice());
+  S.pQuestion = '';
+  S.pAnswer = null;
+  S.pChoices = [];
+  S.pCatTarget = '';
+  S.selectedPractice = null;
+
+  if (S.diff === 'emergent') {
+    // Pre-sort items for emergent
+    S.pUnsorted.forEach(function(item) {
+      if (S.pBins[item.cat]) S.pBins[item.cat].push(item);
+    });
+    S.pUnsorted = [];
+    generateCountingQuestion();
+  } else if (S.diff === 'advanced') {
+    // Pre-sort for advanced comparison questions
+    S.pUnsorted.forEach(function(item) {
+      if (S.pBins[item.cat]) S.pBins[item.cat].push(item);
+    });
+    S.pUnsorted = [];
+    generateCompareQuestion();
+  }
+
+  render();
+}
+
+function generateCountingQuestion() {
+  var cats = Object.keys(S.pBins);
+  var cat = cats[randInt(0, cats.length - 1)];
+  var count = S.pBins[cat].length;
+  S.pCatTarget = cat;
+  S.pQuestion = 'How many in the ' + cat + ' group?';
+  S.pAnswer = count;
+
+  // Generate MC choices
+  var choices = new Set([count]);
+  while (choices.size < 4) {
+    var c = count + randInt(-2, 3);
+    if (c >= 0 && c <= 12) choices.add(c);
+  }
+  S.pChoices = Array.from(choices).sort(function(a, b) { return a - b; });
+}
+
+function generateCompareQuestion() {
+  var cats = Object.keys(S.pBins);
+  var counts = {};
+  cats.forEach(function(c) { counts[c] = S.pBins[c].length; });
+
+  var qType = randInt(0, 1);
+  if (qType === 0) {
+    // Which group has the MOST?
+    var maxCount = 0;
+    var maxCat = '';
+    cats.forEach(function(c) { if (counts[c] > maxCount) { maxCount = counts[c]; maxCat = c; } });
+    S.pQuestion = 'Which group has the MOST?';
+    S.pAnswer = maxCat;
+    S.pChoices = shuffle(cats.slice());
+  } else {
+    // Order from least to most
+    var sorted = cats.slice().sort(function(a, b) { return counts[a] - counts[b]; });
+    S.pQuestion = 'Put groups in order: LEAST to MOST';
+    S.pAnswer = sorted.join(', ');
+    // Generate permutations as choices
+    var perms = [sorted.join(', ')];
+    for (var i = 0; i < 3; i++) {
+      var sh = shuffle(cats.slice());
+      var str = sh.join(', ');
+      if (perms.indexOf(str) < 0) perms.push(str);
+    }
+    while (perms.length < 3) {
+      perms.push(shuffle(cats.slice()).join(', '));
+    }
+    S.pChoices = shuffle(perms);
+  }
+}
+
+function renderPractice(ws, sp) {
+  var html = '';
+  var cats = S.pSet ? S.pSet.categories : [];
+  var attr = S.pSet ? S.pSet.attribute : '';
+
+  if (S.pPhase === 'sorting') {
+    // Proficient: mix of sorting and counting
+    html += '<div class="instruction-box">Sort each object by <strong>' + attr + '</strong>. Tap an object, then tap the right bin!</div>';
+
+    // Unsorted
+    html += '<div class="unsorted-area' + (S.pUnsorted.length === 0 ? ' empty' : '') + '">';
+    if (S.pUnsorted.length === 0) {
+      html += 'All sorted!';
+    } else {
+      S.pUnsorted.forEach(function(item, i) {
+        html += '<span class="sort-item" style="' + (S.selectedPractice === i ? 'outline:3px solid var(--cyan);border-radius:8px;' : '') + '" onclick="selectPractice(' + i + ')">' + item.emoji + '</span>';
+      });
+    }
+    html += '</div>';
+
+    // Bins
+    html += '<div class="sort-bins">';
+    cats.forEach(function(cat) {
+      html += '<div class="sort-bin" onclick="dropIntoPracticeBin(\'' + cat + '\')">';
+      html += '<div class="sort-bin-label">' + cat + '</div>';
+      html += '<div class="sort-bin-items">';
+      S.pBins[cat].forEach(function(item) {
+        html += '<span class="sort-item placed">' + item.emoji + '</span>';
+      });
+      html += '</div>';
+      html += '<div class="sort-bin-count">' + S.pBins[cat].length + ' item' + (S.pBins[cat].length !== 1 ? 's' : '') + '</div>';
+      html += '</div>';
+    });
+    html += '</div>';
+
+    // Controls
+    html += '<div class="controls">';
+    html += '<button class="ctrl-btn" onclick="initPractice()">Skip</button>';
+    html += '</div>';
+
+  } else if (S.pPhase === 'counting' || S.pPhase === 'comparing') {
+    // Show pre-sorted bins
+    html += '<div class="instruction-box">' + S.pQuestion + '</div>';
+
+    // Bins (read-only display)
+    html += '<div class="sort-bins">';
+    cats.forEach(function(cat, ci) {
+      var isTarget = (S.pCatTarget === cat);
+      html += '<div class="sort-bin" style="' + (isTarget ? 'border-color:var(--cyan);background:rgba(0,212,255,0.06);' : '') + '">';
+      html += '<div class="sort-bin-label">' + cat + '</div>';
+      html += '<div class="sort-bin-items">';
+      S.pBins[cat].forEach(function(item) {
+        html += '<span class="sort-item">' + item.emoji + '</span>';
+      });
+      html += '</div>';
+      html += '</div>';
+    });
+    html += '</div>';
+
+    // Bar graph
+    var mh = maxBarHeight(S.pBins);
+    html += '<div class="bar-graph">';
+    cats.forEach(function(cat, ci) {
+      var count = S.pBins[cat].length;
+      var pct = mh > 0 ? (count / mh) * 100 : 0;
+      html += '<div class="bar-col">';
+      html += '<div class="bar-value">' + count + '</div>';
+      html += '<div class="bar" style="height:' + Math.max(pct, 4) + '%;background:' + BAR_COLORS[ci % BAR_COLORS.length] + ';"></div>';
+      html += '<div class="bar-label">' + cat + '</div>';
+      html += '</div>';
+    });
+    html += '</div>';
+
+    // MC choices
+    html += '<div class="mc-grid">';
+    S.pChoices.forEach(function(ch, i) {
+      var isText = (typeof ch === 'string' && ch.indexOf(',') >= 0);
+      html += '<button class="mc-btn' + (isText ? ' text-btn' : '') + '" id="pmc' + i + '" onclick="practiceAnswer(' + i + ')">' + ch + '</button>';
+    });
+    html += '</div>';
+
+    // Controls
+    html += '<div class="controls">';
+    html += '<button class="ctrl-btn" onclick="initPractice()">Skip</button>';
+    html += '</div>';
+  }
+
+  ws.innerHTML = html;
+
+  // Side panel
+  sp.innerHTML =
+    '<div class="panel-section">' +
+      '<div class="panel-title">Instructions</div>' +
+      '<div class="panel-text">' +
+        (S.pPhase === 'sorting' ?
+          'Sort each object into the correct group by tapping it, then tapping the bin.<br><br>When all are sorted, answer counting questions!' :
+          (S.diff === 'emergent' ?
+            'The objects are already sorted. <strong>Count</strong> the objects in the highlighted group and choose the right number!' :
+            'Look at the sorted groups. Answer the question about which group has more or less!')) +
+      '</div>' +
+    '</div>' +
+    '<div class="panel-section">' +
+      '<div class="panel-title">Tip</div>' +
+      '<div class="panel-text" style="background:var(--card);padding:12px;border-radius:8px;">' +
+        'Point to each object as you count. The <strong>last number</strong> you say is the total for that group.' +
+      '</div>' +
+    '</div>';
+}
+
+function selectPractice(idx) {
+  S.selectedPractice = idx;
+  render();
+}
+
+function dropIntoPracticeBin(cat) {
+  if (S.selectedPractice == null || S.selectedPractice < 0 || S.selectedPractice >= S.pUnsorted.length) return;
+  var item = S.pUnsorted[S.selectedPractice];
+  var attr = S.pSet ? S.pSet.attribute : '';
+
+  if (item.cat === cat) {
+    S.pBins[cat].push(item);
+    S.pUnsorted.splice(S.selectedPractice, 1);
+    S.selectedPractice = null;
+
+    if (S.pUnsorted.length === 0) {
+      showFeedback('All sorted! Now count!', 'correct');
+      S.pPhase = 'counting';
+      generateCountingQuestion();
+      setTimeout(render, 800);
+      return;
+    }
+  } else {
+    showFeedback(MISCONCEPTIONS.personalPref.msg(attr), 'misconception');
+  }
+  render();
+}
+
+function practiceAnswer(idx) {
+  var chosen = S.pChoices[idx];
+  var btn = document.getElementById('pmc' + idx);
+
+  if (String(chosen) === String(S.pAnswer)) {
+    if (btn) btn.classList.add('correct-flash');
+    showFeedback('Correct!', 'correct');
+    setTimeout(function() {
+      initPractice();
+    }, 1200);
+  } else {
+    if (btn) btn.classList.add('incorrect-flash');
+    // Misconception feedback
+    if (typeof S.pAnswer === 'number') {
+      var diff = Math.abs(chosen - S.pAnswer);
+      if (diff === 1) {
+        showFeedback(MISCONCEPTIONS.offByOne.msg(S.pAnswer, chosen), 'misconception');
+      } else {
+        showFeedback(MISCONCEPTIONS.lostCount.msg(S.pCatTarget, S.pAnswer), 'misconception');
+      }
+    } else {
+      showFeedback(MISCONCEPTIONS.randomGuess.msg(), 'misconception');
+    }
+    setTimeout(function() {
+      if (btn) btn.classList.remove('incorrect-flash');
+    }, 1200);
+  }
+}
+
+// ════════════════════════════════════════
+// PLAY MODE
+// ════════════════════════════════════════
+function initPlay() {
+  S.score = 0;
+  S.streak = 0;
+  S.round = 1;
+  S.playLocked = false;
+  generatePlayRound();
+}
+
+function generatePlayRound() {
+  var p = getDiffParams();
+  var setIdx = randInt(0, SORT_SETS.length - 1);
+  var sub = pickSubset(setIdx, p.numCats, p.numItems);
+  S.playSet = sub;
+  S.playBins = buildBins(sub.categories);
+  sub.items.forEach(function(item) {
+    if (S.playBins[item.cat]) S.playBins[item.cat].push(item);
+  });
+
+  var cats = sub.categories;
+  var counts = {};
+  cats.forEach(function(c) { counts[c] = S.playBins[c].length; });
+
+  // Random question type
+  var qTypes = ['count', 'most', 'least'];
+  if (S.diff === 'advanced') qTypes.push('order');
+  var qType = qTypes[randInt(0, qTypes.length - 1)];
+
+  if (qType === 'count') {
+    var cat = cats[randInt(0, cats.length - 1)];
+    S.playQuestion = 'How many in the ' + cat + ' group?';
+    S.playAnswer = counts[cat];
+    S.playCatTarget = cat;
+    var choices = new Set([counts[cat]]);
+    while (choices.size < 5) {
+      var c = counts[cat] + randInt(-3, 4);
+      if (c >= 0 && c <= 15) choices.add(c);
+    }
+    S.playChoices = Array.from(choices).sort(function(a, b) { return a - b; });
+  } else if (qType === 'most') {
+    var maxCount = 0, maxCat = '';
+    cats.forEach(function(c) { if (counts[c] > maxCount) { maxCount = counts[c]; maxCat = c; } });
+    S.playQuestion = 'Which group has the MOST?';
+    S.playAnswer = maxCat;
+    S.playCatTarget = '';
+    S.playChoices = shuffle(cats.slice());
+  } else if (qType === 'least') {
+    var minCount = 999, minCat = '';
+    cats.forEach(function(c) { if (counts[c] < minCount) { minCount = counts[c]; minCat = c; } });
+    S.playQuestion = 'Which group has the LEAST?';
+    S.playAnswer = minCat;
+    S.playCatTarget = '';
+    S.playChoices = shuffle(cats.slice());
+  } else {
+    var sorted = cats.slice().sort(function(a, b) { return counts[a] - counts[b]; });
+    S.playQuestion = 'Order from LEAST to MOST';
+    S.playAnswer = sorted.join(', ');
+    S.playCatTarget = '';
+    var perms = [sorted.join(', ')];
+    for (var i = 0; i < 4; i++) {
+      var sh = shuffle(cats.slice());
+      var str = sh.join(', ');
+      if (perms.indexOf(str) < 0) perms.push(str);
+    }
+    while (perms.length < 4) perms.push(shuffle(cats.slice()).join(', '));
+    S.playChoices = shuffle(perms.slice(0, 5));
+  }
+
+  S.playLocked = false;
+  render();
+}
+
+function renderPlay(ws, sp) {
+  var html = '';
+  var cats = S.playSet ? S.playSet.categories : [];
+
+  html += '<div style="text-align:center;margin-bottom:8px;">';
+  html += '<div style="font-size:14px;color:var(--muted);">Round ' + S.round + ' of ' + S.total + '</div>';
+  html += '</div>';
+
+  html += '<div class="instruction-box">' + S.playQuestion + '</div>';
+
+  // Show sorted bins
+  html += '<div class="sort-bins">';
+  cats.forEach(function(cat, ci) {
+    var isTarget = (S.playCatTarget === cat);
+    html += '<div class="sort-bin" style="' + (isTarget ? 'border-color:var(--cyan);background:rgba(0,212,255,0.06);' : '') + '">';
+    html += '<div class="sort-bin-label">' + cat + '</div>';
+    html += '<div class="sort-bin-items">';
+    if (S.playBins[cat]) {
+      S.playBins[cat].forEach(function(item) {
+        html += '<span class="sort-item">' + item.emoji + '</span>';
+      });
+    }
+    html += '</div>';
+    html += '</div>';
+  });
+  html += '</div>';
+
+  // Bar graph
+  var mh = maxBarHeight(S.playBins);
+  html += '<div class="bar-graph">';
+  cats.forEach(function(cat, ci) {
+    var count = S.playBins[cat] ? S.playBins[cat].length : 0;
+    var pct = mh > 0 ? (count / mh) * 100 : 0;
+    html += '<div class="bar-col">';
+    html += '<div class="bar-value">' + count + '</div>';
+    html += '<div class="bar" style="height:' + Math.max(pct, 4) + '%;background:' + BAR_COLORS[ci % BAR_COLORS.length] + ';"></div>';
+    html += '<div class="bar-label">' + cat + '</div>';
+    html += '</div>';
+  });
+  html += '</div>';
+
+  // MC choices
+  html += '<div class="mc-grid">';
+  S.playChoices.forEach(function(ch, i) {
+    var isText = (typeof ch === 'string' && ch.indexOf(',') >= 0);
+    html += '<button class="mc-btn' + (isText ? ' text-btn' : '') + '" id="playmc' + i + '" onclick="playAnswer(' + i + ')">' + ch + '</button>';
+  });
+  html += '</div>';
+
+  ws.innerHTML = html;
+
+  // Side panel with score
+  sp.innerHTML =
+    '<div class="score-display">' +
+      '<div class="score-value">' + S.score + '</div>' +
+      '<div class="score-label">Score</div>' +
+    '</div>' +
+    '<div class="score-display" style="background:transparent;padding:8px;">' +
+      '<div style="font-size:18px;font-weight:700;color:var(--yellow);">🔥 ' + S.streak + '</div>' +
+      '<div class="score-label">Streak</div>' +
+      '<div class="streak-bar"><div class="streak-fill" style="width:' + Math.min(S.streak * 20, 100) + '%;"></div></div>' +
+    '</div>' +
+    '<div class="panel-section">' +
+      '<div class="panel-title">How to Play</div>' +
+      '<div class="panel-text">' +
+        'Look at the sorted groups and answer the question.<br><br>' +
+        '<strong>Count carefully</strong> and tap the right answer!<br><br>' +
+        'Build a streak for bonus points!' +
+      '</div>' +
+    '</div>' +
+    '<div class="panel-section">' +
+      '<div class="panel-title">Best Streak</div>' +
+      '<div class="panel-text" style="font-size:24px;font-weight:800;color:var(--purple);">🏆 ' + S.best + '</div>' +
+    '</div>';
+}
+
+function playAnswer(idx) {
+  if (S.playLocked) return;
+  S.playLocked = true;
+
+  var chosen = S.playChoices[idx];
+  var btn = document.getElementById('playmc' + idx);
+
+  if (String(chosen) === String(S.playAnswer)) {
+    if (btn) btn.classList.add('correct-flash');
+    S.score += 10 + (S.streak * 2);
+    S.streak++;
+    if (S.streak > S.best) S.best = S.streak;
+    showFeedback('Correct!', 'correct');
+  } else {
+    if (btn) btn.classList.add('incorrect-flash');
+    S.streak = 0;
+
+    // Misconception feedback
+    if (typeof S.playAnswer === 'number' && typeof chosen === 'number') {
+      var diff = Math.abs(chosen - S.playAnswer);
+      if (diff === 1) {
+        showFeedback(MISCONCEPTIONS.offByOne.msg(S.playAnswer, chosen), 'misconception');
+      } else {
+        showFeedback(MISCONCEPTIONS.lostCount.msg(S.playCatTarget || 'that', S.playAnswer), 'misconception');
+      }
+    } else {
+      showFeedback(MISCONCEPTIONS.randomGuess.msg(), 'misconception');
+    }
+  }
+
+  setTimeout(function() {
+    if (S.round >= S.total) {
+      showFeedback('Game Over! Score: ' + S.score, 'correct');
+      setTimeout(function() {
+        initPlay();
+      }, 2000);
+      return;
+    }
+    S.round++;
+    generatePlayRound();
+  }, 1200);
+}
+
+// ════════════════════════════════════════
+// RENDER
+// ════════════════════════════════════════
+function render() {
+  var ws = document.getElementById('workspace');
+  var sp = document.getElementById('sidePanel');
+
+  if (S.mode === 'explore') renderExplore(ws, sp);
+  else if (S.mode === 'practice') renderPractice(ws, sp);
+  else renderPlay(ws, sp);
+}
+
+// ════════════════════════════════════════
+// INIT
+// ════════════════════════════════════════
+document.querySelectorAll('.vinculum-mode-tab').forEach(function(tab) {
+  tab.addEventListener('click', function() {
+    setMode(this.dataset.mode);
+  });
+});
+
+document.querySelectorAll('.vinculum-diff-btn').forEach(function(btn) {
+  btn.addEventListener('click', function() {
+    setDiff(this.dataset.diff);
+  });
+});
+
+initExplore();
+</script>
+<script src="../../vinculum-core.js"></script>
+<script src="../../vinculum-data.js"></script>
+<script src="../../vinculum-adaptive-hook.js"></script>
+<script src="../../vinculum-3reads.js"></script>
+<script src="../../vinculum-stories.js"></script>
+<script src="../../vinculum-feedback.js"></script>
+<script src="../../vinculum-guide.js"></script>
+<script src="../../vinculum-identity.js"></script>
+<script src="../../vinculum-indigenous.js"></script>
+<script src="../../vinculum-dashboard.js"></script>
+<script src="../../vinculum-hyperfocus.js"></script>
+<script src="../../vinculum-layout.js"></script>
+</body>
+</html>

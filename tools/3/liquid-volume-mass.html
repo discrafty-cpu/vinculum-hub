@@ -1,0 +1,1280 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>VINCULUM — Liquid Volume & Mass</title>
+<link rel="stylesheet" href="../../vinculum-core.css">
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;600&display=swap');
+
+.vinculum-rtm-btn .rtm-icon{font-size:14px;}
+
+/* ═══ FOCUS VISIBLE (Keyboard Navigation) ═══ */
+*:focus-visible {
+  outline:2px solid var(--cyan);outline-offset:2px;border-radius:4px;
+}
+.sr-only {
+  position:absolute;width:1px;height:1px;padding:0;margin:-1px;
+  overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0;
+}
+
+* { margin:0; padding:0; box-sizing:border-box; }
+body {
+  font-family: 'Inter', sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  height: 100vh;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  user-select: none;
+}
+
+/* ── HEADER ── */
+.vinculum-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 24px;
+  background: var(--bg2);
+  border-bottom: 1px solid var(--border);
+  flex-shrink: 0;
+}
+.vinculum-header-left {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+.vinculum-back-btn {
+  padding: 6px 12px;
+  border-radius: 8px;
+  border: 1px solid var(--border);
+  background: transparent;
+  color: var(--text2);
+  font-size: 13px;
+  font-family: inherit;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+.vinculum-back-btn:hover { background: var(--card); color: var(--cyan); }
+.vinculum-header-title {
+  font-size: 18px;
+  font-weight: 800;
+}
+.vinculum-header-title span {
+  background: var(--grad);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+.vinculum-header-badge {
+  font-size: 10px;
+  font-weight: 700;
+  padding: 3px 10px;
+  border-radius: 6px;
+  background: rgba(0,212,255,0.1);
+  color: var(--cyan);
+  border: 1px solid rgba(0,212,255,0.2);
+  letter-spacing: 1px;
+}
+.vinculum-std-tags {
+  display: flex;
+  gap: 6px;
+}
+.vinculum-std-tag {
+  font-size: 10px;
+  font-family: 'JetBrains Mono', monospace;
+  font-weight: 600;
+  padding: 3px 8px;
+  border-radius: 5px;
+  background: rgba(0,212,255,0.08);
+  color: var(--cyan);
+}
+.vinculum-std-tag.mn { background: rgba(255,145,0,0.08); color: var(--orange); }
+
+/* ── MODE TABS ── */
+.vinculum-mode-tabs {
+  display: flex;
+  gap: 4px;
+  padding: 8px 24px;
+  background: var(--bg2);
+  border-bottom: 1px solid var(--border);
+  flex-shrink: 0;
+}
+.vinculum-mode-tab {
+  padding: 8px 20px;
+  border-radius: 8px;
+  border: 1px solid transparent;
+  background: transparent;
+  color: var(--muted);
+  font-size: 13px;
+  font-weight: 600;
+  font-family: inherit;
+  cursor: pointer;
+  transition: all 0.2s;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.vinculum-mode-tab:hover { color: var(--text2); background: var(--card); }
+.vinculum-mode-tab.active-explore { background: rgba(0,212,255,0.1); color: var(--cyan); border-color: rgba(0,212,255,0.3); }
+.vinculum-mode-tab.active-practice { background: rgba(0,230,118,0.1); color: var(--green); border-color: rgba(0,230,118,0.3); }
+.vinculum-mode-tab.active-play { background: rgba(255,59,139,0.1); color: var(--pink); border-color: rgba(255,59,139,0.3); }
+
+/* Difficulty selector */
+.vinculum-diff-selector {
+  margin-left: auto;
+  display: flex;
+  gap: 4px;
+  align-items: center;
+}
+.vinculum-diff-label {
+  font-size: 11px;
+  color: var(--muted);
+  margin-right: 8px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+}
+.vinculum-diff-btn {
+  padding: 5px 12px;
+  border-radius: 6px;
+  border: 1px solid var(--border);
+  background: transparent;
+  color: var(--muted);
+  font-size: 11px;
+  font-weight: 600;
+  font-family: inherit;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+.vinculum-diff-btn:hover { color: var(--text2); }
+.vinculum-diff-btn.active { background: rgba(0,212,255,0.1); color: var(--cyan); border-color: rgba(0,212,255,0.3); }
+
+/* ── MAIN AREA ── */
+.main {
+  flex: 1;
+  display: flex;
+  overflow: hidden;
+}
+
+/* ── WORKSPACE ── */
+.workspace {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+  position: relative;
+  overflow-y: auto;
+}
+
+/* ── CONTAINER ── */
+.volume-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 24px;
+  width: 100%;
+  max-width: 800px;
+}
+
+/* ─── GRADUATED CYLINDER ─── */
+.cylinder-box {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+}
+
+.cylinder-label {
+  font-size: 12px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  color: var(--muted);
+}
+
+.cylinder-svg {
+  width: 120px;
+  height: 280px;
+  border: 2px solid var(--border);
+  border-radius: 8px;
+  background: var(--card);
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  position: relative;
+  overflow: hidden;
+}
+
+.cylinder-fill {
+  width: 80%;
+  background: linear-gradient(180deg, rgba(0,212,255,0.6), rgba(0,212,255,0.2));
+  border-radius: 0 0 4px 4px;
+  position: relative;
+  transition: height 0.3s;
+}
+
+.cylinder-markings {
+  position: absolute;
+  width: 100%;
+  height: 100%;
+  left: 0;
+  top: 0;
+  pointer-events: none;
+}
+
+.marking-line {
+  position: absolute;
+  width: 100%;
+  height: 1px;
+  background: var(--border);
+  left: 0;
+}
+
+.marking-label {
+  position: absolute;
+  font-size: 10px;
+  font-weight: 600;
+  color: var(--text2);
+  right: -28px;
+  transform: translateY(-50%);
+}
+
+.volume-display {
+  text-align: center;
+  padding: 12px;
+  background: rgba(0,212,255,0.05);
+  border-radius: 8px;
+  border: 1px solid rgba(0,212,255,0.2);
+  min-width: 180px;
+}
+
+.volume-label {
+  font-size: 11px;
+  color: var(--muted);
+  margin-bottom: 4px;
+}
+
+.volume-value {
+  font-size: 24px;
+  font-weight: 700;
+  color: var(--cyan);
+  font-family: 'JetBrains Mono', monospace;
+}
+
+/* ─── BALANCE SCALE ─── */
+.scale-box {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+  margin-top: 12px;
+}
+
+.scale-svg {
+  width: 240px;
+  height: 180px;
+  background: var(--card);
+  border: 2px solid var(--border);
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.scale-fulcrum {
+  position: absolute;
+  bottom: 25%;
+  left: 50%;
+  width: 20px;
+  height: 40px;
+  background: var(--text2);
+  border-radius: 0 0 4px 4px;
+  transform: translateX(-50%);
+}
+
+.scale-pan {
+  position: absolute;
+  width: 80px;
+  height: 40px;
+  background: var(--border);
+  border: 2px solid var(--border);
+  border-radius: 4px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text2);
+}
+
+.scale-pan-left {
+  left: 20px;
+  bottom: 35%;
+}
+
+.scale-pan-right {
+  right: 20px;
+  bottom: 35%;
+}
+
+.mass-display {
+  text-align: center;
+  padding: 12px;
+  background: rgba(255,145,0,0.05);
+  border-radius: 8px;
+  border: 1px solid rgba(255,145,0,0.2);
+  min-width: 180px;
+}
+
+.mass-label {
+  font-size: 11px;
+  color: var(--muted);
+  margin-bottom: 4px;
+}
+
+.mass-value {
+  font-size: 24px;
+  font-weight: 700;
+  color: var(--orange);
+  font-family: 'JetBrains Mono', monospace;
+}
+
+/* ── CONTROL SLIDERS ── */
+.measurement-controls {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  width: 100%;
+  padding: 16px;
+  background: var(--card);
+  border-radius: 12px;
+}
+
+.control-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.control-label {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--muted);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  min-width: 100px;
+}
+
+.control-slider {
+  flex: 1;
+  height: 6px;
+  -webkit-appearance: none;
+  appearance: none;
+  background: var(--border);
+  border-radius: 3px;
+  outline: none;
+  cursor: pointer;
+}
+
+.control-slider::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background: var(--cyan);
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.control-slider::-moz-range-thumb {
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background: var(--cyan);
+  cursor: pointer;
+  border: none;
+  transition: all 0.2s;
+}
+
+.control-value {
+  font-size: 13px;
+  font-weight: 600;
+  font-family: 'JetBrains Mono', monospace;
+  color: var(--cyan);
+  min-width: 70px;
+  text-align: center;
+}
+
+/* ── PRACTICE QUESTION ── */
+.practice-question {
+  text-align: center;
+  padding: 20px;
+  background: var(--card);
+  border-radius: 12px;
+  border: 1px solid var(--border);
+  width: 100%;
+  max-width: 600px;
+}
+
+.question-text {
+  font-size: 16px;
+  color: var(--text2);
+  margin-bottom: 12px;
+  font-weight: 600;
+}
+
+.question-highlight {
+  font-size: 28px;
+  font-weight: 800;
+  font-family: 'JetBrains Mono', monospace;
+  color: var(--green);
+  margin: 12px 0;
+}
+
+/* ── INPUT GROUPS ── */
+.input-group {
+  display: flex;
+  gap: 8px;
+  justify-content: center;
+  align-items: center;
+  margin-top: 12px;
+  flex-wrap: wrap;
+}
+
+.measurement-input {
+  padding: 10px 12px;
+  border-radius: 8px;
+  border: 2px solid var(--border);
+  background: var(--card);
+  color: var(--text);
+  font-size: 16px;
+  font-family: 'JetBrains Mono', monospace;
+  text-align: center;
+  transition: all 0.2s;
+}
+
+.measurement-input:focus {
+  border-color: var(--cyan);
+  outline: none;
+}
+
+.measurement-input.number {
+  width: 60px;
+}
+
+/* ── PLAY MODE GAME ── */
+.game-info {
+  display: flex;
+  gap: 20px;
+  justify-content: center;
+  align-items: center;
+  font-size: 14px;
+  color: var(--text2);
+  margin-bottom: 12px;
+}
+
+.info-item {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.info-label {
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+}
+
+/* ── BUTTONS ── */
+.play-btn {
+  padding: 12px 24px;
+  border-radius: 10px;
+  border: 1px solid var(--border);
+  background: var(--card);
+  color: var(--text2);
+  font-size: 14px;
+  font-weight: 600;
+  font-family: inherit;
+  cursor: pointer;
+  transition: all 0.2s;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.play-btn:hover { background: rgba(0,212,255,0.1); color: var(--cyan); }
+
+.play-btn.primary {
+  background: var(--grad);
+  color: var(--bg);
+  border-color: transparent;
+  font-weight: 700;
+}
+
+.play-btn.primary:hover { opacity: 0.9; }
+
+/* ── FEEDBACK ── */
+.feedback {
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%) scale(0);
+  padding: 24px 48px;
+  border-radius: 20px;
+  font-size: 28px;
+  font-weight: 800;
+  z-index: 200;
+  pointer-events: none;
+  transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275), opacity 0.3s;
+  opacity: 0;
+}
+.feedback.show {
+  transform: translate(-50%, -50%) scale(1);
+  opacity: 1;
+}
+.feedback.correct {
+  background: rgba(0,230,118,0.15);
+  color: var(--green);
+  border: 2px solid var(--green);
+}
+.feedback.incorrect {
+  background: rgba(255,59,139,0.15);
+  color: var(--pink);
+  border: 2px solid var(--pink);
+}
+.feedback.try-again {
+  background: rgba(255,193,7,0.15);
+  color: var(--yellow);
+  border: 2px solid var(--yellow);
+}
+
+/* ── SIDE PANEL ── */
+.side-panel {
+  width: 280px;
+  background: var(--bg2);
+  border-left: 1px solid var(--border);
+  padding: 20px;
+  overflow-y: auto;
+  flex-shrink: 0;
+}
+.panel-section {
+  margin-bottom: 20px;
+}
+.panel-title {
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 1.5px;
+  color: var(--muted);
+  margin-bottom: 8px;
+}
+.panel-text {
+  font-size: 13px;
+  color: var(--text2);
+  line-height: 1.6;
+}
+.score-display {
+  text-align: center;
+  padding: 16px;
+  background: var(--card);
+  border-radius: 12px;
+  margin-bottom: 12px;
+}
+.score-value {
+  font-size: 36px;
+  font-weight: 900;
+  font-family: 'JetBrains Mono', monospace;
+  background: var(--grad);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+.score-label {
+  font-size: 11px;
+  color: var(--muted);
+  text-transform: uppercase;
+  letter-spacing: 1px;
+}
+.streak-bar {
+  height: 6px;
+  background: var(--card);
+  border-radius: 3px;
+  overflow: hidden;
+  margin-top: 8px;
+}
+.streak-fill {
+  height: 100%;
+  background: var(--grad);
+  border-radius: 3px;
+  transition: width 0.3s;
+}
+
+/* ── ANIMATIONS ── */
+@keyframes pop {
+  0% { transform: scale(0); opacity: 0; }
+  70% { transform: scale(1.2); }
+  100% { transform: scale(1); opacity: 1; }
+}
+
+@keyframes shake {
+  0%, 100% { transform: translateX(0); }
+  25% { transform: translateX(-8px); }
+  75% { transform: translateX(8px); }
+}
+
+.pop-in { animation: pop 0.3s ease-out forwards; }
+.shake { animation: shake 0.3s ease-in-out; }
+
+/* scrollbar */
+::-webkit-scrollbar { width: 6px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+
+/* Responsive */
+@media (max-width: 768px) {
+  .volume-container {
+    max-width: 600px;
+  }
+  .side-panel {
+    width: 220px;
+  }
+  .cylinder-svg {
+    width: 100px;
+    height: 240px;
+  }
+}
+</style>
+</head>
+<body>
+
+<!-- ═══ HEADER ═══ -->
+<div class="vinculum-header">
+  <div class="vinculum-header-left">
+    <a class="vinculum-back-btn" href="../../VINCULUM-Hub.html" style="text-decoration:none;">◀ Hub</a>
+    <div class="vinculum-header-title"><span>VINCULUM</span> Liquid Volume & Mass</div>
+    <span class="vinculum-header-badge">3 · MD</span>
+    <button class="vinculum-back-btn" id="readAloudBtn" onclick="toggleReadAloud()" aria-label="Read Aloud" title="Read instructions aloud">🔊 Read to Me</button>
+  </div>
+  <div class="vinculum-std-tags">
+    <span class="vinculum-std-tag">3.MD.2</span>
+    <span class="std-tag mn">MN 3.2.1.1</span>
+  </div>
+</div>
+
+<!-- ═══ MODE TABS ═══ -->
+<div class="vinculum-mode-tabs">
+  <button class="vinculum-mode-tab active-explore" id="tabExplore" onclick="setMode('explore')">
+    <svg width="18" height="18" viewBox="0 0 48 48" fill="none"><path d="M4 24C4 24 12 12 24 12C36 12 44 24 44 24C44 24 36 36 24 36C12 36 4 24 4 24Z" stroke="currentColor" stroke-width="3" fill="none"/><circle cx="24" cy="24" r="7" stroke="currentColor" stroke-width="3" fill="none"/><circle cx="24" cy="24" r="3" fill="currentColor"/></svg> Explore
+  </button>
+  <button class="vinculum-mode-tab" id="tabPractice" onclick="setMode('practice')">
+    <svg width="18" height="18" viewBox="0 0 48 48" fill="none"><circle cx="24" cy="24" r="20" stroke="currentColor" stroke-width="3" fill="none" opacity="0.3"/><circle cx="24" cy="24" r="20" stroke="currentColor" stroke-width="3" fill="none" stroke-dasharray="126" stroke-dashoffset="32" stroke-linecap="round"/><polyline points="16,24 22,32 34,16" stroke="currentColor" stroke-width="4" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg> Practice
+  </button>
+  <button class="vinculum-mode-tab" id="tabPlay" onclick="setMode('play')">
+    <svg width="18" height="18" viewBox="0 0 48 48" fill="none"><polygon points="28,4 12,28 22,28 18,44 36,18 26,18" fill="none" stroke="currentColor" stroke-width="3" stroke-linejoin="round"/></svg> Play
+  </button>
+  <div class="vinculum-diff-selector">
+    <span class="vinculum-diff-label">Level</span>
+    <button class="vinculum-diff-btn active" id="diffE" onclick="setDiff('emergent')" data-diff="emergent">E</button>
+    <button class="vinculum-diff-btn" id="diffD" onclick="setDiff('developing')" data-diff="developing">D</button>
+    <button class="vinculum-diff-btn" id="diffS" onclick="setDiff('secure')" data-diff="secure">S</button>
+  </div>
+</div>
+
+<!-- ═══ MAIN ═══ -->
+<div class="main">
+  <div class="workspace" role="main" id="workspace"></div>
+  <div class="side-panel" id="sidePanel"></div>
+</div>
+
+<!-- ═══ FEEDBACK POPUP ═══ -->
+<div class="feedback" id="feedback"></div>
+
+<script src="../../vinculum-input.js"></script>
+<script>
+
+// ════════════════════════════════════════
+// STATE
+// ════════════════════════════════════════
+const S = {
+  mode: 'explore',
+  diff: 'emergent',
+
+  // Explore
+  liquidLevel: 5,
+  liquidUnit: 'L',
+  massWeight: 2,
+  massUnit: 'kg',
+
+  // Practice
+  questionType: null,
+  score: 0,
+  total: 0,
+  targetValue: 0,
+  targetUnit: '',
+  userAnswer: null,
+
+  // Play
+  playScore: 0,
+  playStreak: 0,
+  playRound: 0,
+  gameEnded: false,
+  timerStart: 0
+};
+
+// ════════════════════════════════════════
+// READ-ALOUD
+// ════════════════════════════════════════
+function toggleReadAloud() {
+  if (window.VinculumStories && VinculumStories.isReading()) {
+    VinculumStories.stopReading();
+    document.getElementById('readAloudBtn').textContent = '🔊 Read to Me';
+  } else {
+    const text = document.getElementById('sidePanel')?.textContent || 'Liquid volume and mass are ways to measure liquids and objects.';
+    if (window.VinculumStories) {
+      VinculumStories.readAloud(text, { rate: 0.85, onComplete: () => {
+        document.getElementById('readAloudBtn').textContent = '🔊 Read to Me';
+      }});
+      document.getElementById('readAloudBtn').textContent = '⏹ Stop';
+    }
+  }
+}
+
+// ════════════════════════════════════════
+// HELPERS
+// ════════════════════════════════════════
+function randInt(min, max) {
+  return Math.floor(Math.random() * (max - min + 1)) + min;
+}
+
+function getMaxVolume() {
+  return { emergent: 10, developing: 20, secure: 30 }[S.diff];
+}
+
+function getMaxMass() {
+  return { emergent: 10, developing: 20, secure: 50 }[S.diff];
+}
+
+function drawCylinder(fillPercent) {
+  const svg = document.querySelector('.cylinder-svg');
+  if (!svg) return;
+
+  const fill = svg.querySelector('.cylinder-fill');
+  if (fill) {
+    const maxHeight = 250;
+    fill.style.height = (fillPercent * maxHeight / 100) + 'px';
+  }
+}
+
+// ════════════════════════════════════════
+// MODE SWITCHING
+// ════════════════════════════════════════
+function setMode(mode) {
+  S.mode = mode;
+
+  if (mode === 'practice' && S.total === 0) {
+    S.score = 0;
+    S.total = 0;
+    newPracticeQuestion();
+  }
+
+  if (mode === 'play' && S.playRound === 0) {
+    S.playScore = 0;
+    S.playStreak = 0;
+    S.playRound = 1;
+    S.gameEnded = false;
+  }
+
+  document.querySelectorAll('.vinculum-mode-tab').forEach(t => t.className = 'vinculum-mode-tab');
+  const tabEl = document.getElementById('tab' + mode.charAt(0).toUpperCase() + mode.slice(1));
+  tabEl.className = 'vinculum-mode-tab active-' + mode;
+
+  render();
+}
+
+function setDiff(diff) {
+  S.diff = diff;
+  S.score = 0;
+  S.total = 0;
+  S.playScore = 0;
+  S.playStreak = 0;
+  S.playRound = 0;
+
+  document.querySelectorAll('.vinculum-diff-btn').forEach(b => b.classList.remove('active'));
+  document.getElementById('diff' + diff.charAt(0).toUpperCase()).classList.add('active');
+
+  setMode(S.mode);
+}
+
+// ════════════════════════════════════════
+// RENDER MAIN
+// ════════════════════════════════════════
+function render() {
+  const ws = document.getElementById('workspace');
+  const sp = document.getElementById('sidePanel');
+
+  if (S.mode === 'explore') renderExplore(ws, sp);
+  else if (S.mode === 'practice') renderPractice(ws, sp);
+  else renderPlay(ws, sp);
+}
+
+// ─── EXPLORE MODE ───
+function renderExplore(ws, sp) {
+  const cylinderPercent = (S.liquidLevel / getMaxVolume()) * 100;
+
+  let html = '<div class="volume-container">';
+
+  // Graduated Cylinder
+  html += '<div class="cylinder-box">';
+  html += '<div class="cylinder-label">Graduated Cylinder</div>';
+  html += `<div class="cylinder-svg" id="cylinderSvg">
+    <div class="cylinder-markings">
+      <div class="marking-line" style="bottom:250px;"></div>
+      <div class="marking-label" style="bottom:250px;">0L</div>
+      <div class="marking-line" style="bottom:${250/4}px;"></div>
+      <div class="marking-label" style="bottom:${250/4}px;">${getMaxVolume()/4}L</div>
+      <div class="marking-line" style="bottom:${250*2/4}px;"></div>
+      <div class="marking-label" style="bottom:${250*2/4}px;">${getMaxVolume()/2}L</div>
+      <div class="marking-line" style="bottom:${250*3/4}px;"></div>
+      <div class="marking-label" style="bottom:${250*3/4}px;">${getMaxVolume()*3/4}L</div>
+      <div class="marking-line" style="bottom:250px;"></div>
+      <div class="marking-label" style="bottom:250px;">${getMaxVolume()}L</div>
+    </div>
+    <div class="cylinder-fill" style="height:${cylinderPercent * 250 / 100}px;"></div>
+  </div>`;
+  html += `<div class="volume-display">
+    <div class="volume-label">Volume</div>
+    <div class="volume-value">${S.liquidLevel} L</div>
+  </div>`;
+  html += '</div>';
+
+  // Balance Scale
+  html += '<div class="scale-box">';
+  html += '<div class="cylinder-label">Balance Scale</div>';
+  html += `<svg class="scale-svg" viewBox="0 0 240 180">
+    <rect x="20" y="130" width="80" height="40" rx="4" fill="var(--border)" stroke="var(--border)" stroke-width="2"/>
+    <text x="60" y="160" font-size="12" font-weight="600" text-anchor="middle" fill="var(--text2)">${S.massWeight}${S.massUnit}</text>
+    <rect x="140" y="130" width="80" height="40" rx="4" fill="var(--border)" stroke="var(--border)" stroke-width="2"/>
+    <text x="180" y="160" font-size="12" font-weight="600" text-anchor="middle" fill="var(--text2)">?</text>
+    <rect x="110" y="90" width="20" height="40" rx="2" fill="var(--text2)"/>
+    <polygon points="120,90 100,70 140,70" fill="var(--text2)"/>
+    <line x1="60" y1="130" x2="120" y2="90" stroke="var(--text2)" stroke-width="2"/>
+    <line x1="180" y1="130" x2="120" y2="90" stroke="var(--text2)" stroke-width="2"/>
+  </svg>`;
+  html += `<div class="mass-display">
+    <div class="mass-label">Mass</div>
+    <div class="mass-value">${S.massWeight} ${S.massUnit}</div>
+  </div>`;
+  html += '</div>';
+
+  // Controls
+  html += `<div class="measurement-controls">
+    <div class="control-row">
+      <label class="control-label">Volume (L)</label>
+      <input type="range" min="0" max="${getMaxVolume()}" step="1" value="${S.liquidLevel}" class="control-slider" id="volumeSlider" oninput="updateLiquidLevel(this.value)">
+      <span class="control-value">${S.liquidLevel} L</span>
+    </div>
+    <div class="control-row">
+      <label class="control-label">Mass (kg)</label>
+      <input type="range" min="1" max="${getMaxMass()}" step="1" value="${S.massWeight}" class="control-slider" id="massSlider" oninput="updateMass(this.value)">
+      <span class="control-value">${S.massWeight} ${S.massUnit}</span>
+    </div>
+  </div>`;
+
+  html += '</div>';
+  ws.innerHTML = html;
+
+  sp.innerHTML = `
+    <div class="panel-section">
+      <div class="panel-title">Liquid Volume</div>
+      <div class="panel-text">
+        <strong>Volume</strong> is the amount of space a liquid takes up. We measure it in <strong>liters (L)</strong>.
+      </div>
+    </div>
+    <div class="panel-section">
+      <div class="panel-title">Mass & Weight</div>
+      <div class="panel-text">
+        <strong>Mass</strong> tells us how heavy something is. We measure mass in <strong>grams (g)</strong> or <strong>kilograms (kg)</strong>.<br><br>
+        1 kg = 1000 g
+      </div>
+    </div>
+    <div class="panel-section">
+      <div class="panel-title">Real-World Examples</div>
+      <div class="panel-text">
+        A water bottle holds about 1 liter.<br>
+        A bag of apples weighs about 2 kilograms.
+      </div>
+    </div>
+    <div class="panel-section">
+      <div class="panel-title">Algebraic Connection</div>
+      <div class="panel-text">
+        <strong>Total Volume = Quantity × Unit Volume</strong><br>
+        Example: 4 jugs of 2 liters each = 4 × 2 = 8 liters
+      </div>
+    </div>
+    <div class="panel-section">
+      <div class="panel-title">Standard</div>
+      <div class="panel-text">
+        <strong>3.MD.2</strong> — Measure and estimate liquid volumes and masses
+      </div>
+    </div>
+  `;
+}
+
+function updateLiquidLevel(val) {
+  S.liquidLevel = parseInt(val);
+  render();
+}
+
+function updateMass(val) {
+  S.massWeight = parseInt(val);
+  render();
+}
+
+// ─── PRACTICE MODE ───
+function renderPractice(ws, sp) {
+  let html = '<div class="volume-container">';
+
+  html += `<div style="text-align:center;margin-bottom:12px;">
+    <div style="font-size:14px;color:var(--muted);">⭐ ${S.score}/${S.total}</div>
+  </div>`;
+
+  if (S.questionType === 'read-cylinder') {
+    html += `<div class="practice-question">
+      <div class="question-text">What is the volume?</div>
+      <div style="margin:20px 0;">
+        <svg viewBox="0 0 120 280" width="100" height="240" style="background:var(--card);border:2px solid var(--border);border-radius:8px;">
+          <defs>
+            <linearGradient id="liquidGrad" x1="0%" y1="0%" x2="0%" y2="100%">
+              <stop offset="0%" style="stop-color:rgba(0,212,255,0.6)"/>
+              <stop offset="100%" style="stop-color:rgba(0,212,255,0.2)"/>
+            </linearGradient>
+          </defs>
+          <rect x="20" y="${260 - (S.targetValue / getMaxVolume()) * 250}" width="80" height="${(S.targetValue / getMaxVolume()) * 250}" fill="url(#liquidGrad)" rx="2"/>
+          ${Array.from({length:5}).map((_, i) => {
+            const y = 260 - (i * 250/4);
+            return `<line x1="10" y1="${y}" x2="110" y2="${y}" stroke="var(--border)" stroke-width="1"/>
+                    <text x="115" y="${y+4}" font-size="9" fill="var(--text2)">${i * getMaxVolume()/4}</text>`;
+          }).join('')}
+        </svg>
+      </div>
+      <div class="input-group">
+        <input type="number" class="measurement-input number" id="volumeAns" min="0" max="${getMaxVolume()}" placeholder="0" />
+        <span style="font-weight:700;color:var(--text2);">L</span>
+        <button class="play-btn primary" onclick="submitVolume()">✓ Check</button>
+      </div>
+    </div>`;
+
+  } else if (S.questionType === 'read-scale') {
+    html += `<div class="practice-question">
+      <div class="question-text">What is the mass?</div>
+      <div style="margin:20px 0;">
+        <svg viewBox="0 0 240 180" width="200" height="150" style="background:var(--card);border:2px solid var(--border);border-radius:8px;">
+          <rect x="30" y="100" width="80" height="40" rx="4" fill="var(--border)" stroke="var(--border)" stroke-width="2"/>
+          <text x="70" y="130" font-size="14" font-weight="600" text-anchor="middle" fill="var(--text2)">${S.targetValue}</text>
+          <rect x="130" y="100" width="80" height="40" rx="4" fill="var(--border)" stroke="var(--border)" stroke-width="2"/>
+          <rect x="100" y="60" width="40" height="40" rx="2" fill="var(--text2)"/>
+          <polygon points="120,60 90,30 150,30" fill="var(--text2)"/>
+          <line x1="70" y1="100" x2="120" y2="60" stroke="var(--text2)" stroke-width="2"/>
+          <line x1="170" y1="100" x2="120" y2="60" stroke="var(--text2)" stroke-width="2"/>
+        </svg>
+      </div>
+      <div class="input-group">
+        <input type="number" class="measurement-input number" id="massAns" min="1" max="${getMaxMass()}" placeholder="0" />
+        <span style="font-weight:700;color:var(--text2);">${S.targetUnit}</span>
+        <button class="play-btn primary" onclick="submitMass()">✓ Check</button>
+      </div>
+    </div>`;
+
+  } else if (S.questionType === 'word-problem') {
+    const problem = generateWordProblem();
+    html += `<div class="practice-question">
+      <div class="question-text">${problem.question}</div>
+      <div style="margin:16px 0;padding:12px;background:rgba(0,212,255,0.05);border-radius:8px;border:1px solid rgba(0,212,255,0.2);">
+        <div style="font-size:13px;color:var(--text2);">${problem.details}</div>
+      </div>
+      <div class="input-group">
+        <input type="number" class="measurement-input number" id="problemAns" min="0" placeholder="0" />
+        <span style="font-weight:700;color:var(--text2);">${problem.unit}</span>
+        <button class="play-btn primary" onclick="submitProblem()">✓ Check</button>
+      </div>
+    </div>`;
+  }
+
+  html += '</div>';
+  ws.innerHTML = html;
+
+  setTimeout(() => {
+    const first = document.querySelector('.measurement-input');
+    if (first) first.focus();
+  }, 100);
+
+  sp.innerHTML = `
+    <div class="score-display">
+      <div class="score-value">${S.score}/${S.total}</div>
+      <div class="score-label">Score</div>
+    </div>
+    <div class="panel-section">
+      <div class="panel-title">Units</div>
+      <div class="panel-text">
+        <strong>Liquid:</strong> Liters (L)<br>
+        <strong>Mass:</strong> Grams (g), Kilograms (kg)
+      </div>
+    </div>
+    <div class="panel-section">
+      <div class="panel-title">Tips</div>
+      <div class="panel-text">
+        Look at the scale markings or the balance pans. Read the measurement carefully.
+      </div>
+    </div>
+  `;
+}
+
+function generateWordProblem() {
+  const problems = [
+    {
+      type: 'multiply',
+      question: 'A jug holds 3 liters. How much liquid is in 4 jugs?',
+      answer: 12,
+      details: '3 L × 4 = ?',
+      unit: 'L'
+    },
+    {
+      type: 'multiply',
+      question: 'Each bag of apples weighs 2 kg. What is the total for 5 bags?',
+      answer: 10,
+      details: '2 kg × 5 = ?',
+      unit: 'kg'
+    },
+    {
+      type: 'add',
+      question: 'A jug holds 2 liters and a pitcher holds 3 liters. How much liquid total?',
+      answer: 5,
+      details: '2 L + 3 L = ?',
+      unit: 'L'
+    },
+    {
+      type: 'add',
+      question: 'One bag weighs 3 kg and another weighs 4 kg. What is the total mass?',
+      answer: 7,
+      details: '3 kg + 4 kg = ?',
+      unit: 'kg'
+    }
+  ];
+  const p = problems[Math.floor(Math.random() * problems.length)];
+  S.targetValue = p.answer;
+  S.targetUnit = p.unit;
+  return p;
+}
+
+function newPracticeQuestion() {
+  S.total = (S.total || 0) + 1;
+
+  const types = ['read-cylinder', 'read-scale'];
+  if (S.diff === 'developing' || S.diff === 'secure') types.push('word-problem');
+
+  S.questionType = types[Math.floor(Math.random() * types.length)];
+
+  if (S.questionType === 'read-cylinder') {
+    S.targetValue = randInt(1, getMaxVolume());
+    S.targetUnit = 'L';
+  } else if (S.questionType === 'read-scale') {
+    if (S.diff === 'emergent') {
+      S.targetValue = randInt(1, 10);
+      S.targetUnit = S.diff === 'secure' && Math.random() > 0.5 ? 'g' : 'kg';
+    } else {
+      S.targetValue = randInt(1, getMaxMass());
+      S.targetUnit = S.diff === 'secure' && Math.random() > 0.5 ? 'g' : 'kg';
+    }
+  }
+}
+
+function submitVolume() {
+  const ans = parseInt(document.getElementById('volumeAns')?.value || 0);
+  if (ans === S.targetValue) {
+    showFB('✓ Correct!', 'correct');
+    S.score++;
+    setTimeout(() => {
+      newPracticeQuestion();
+      render();
+    }, 800);
+  } else {
+    showFB('✗ Try again', 'incorrect');
+  }
+}
+
+function submitMass() {
+  const ans = parseInt(document.getElementById('massAns')?.value || 0);
+  if (ans === S.targetValue) {
+    showFB('✓ Correct!', 'correct');
+    S.score++;
+    setTimeout(() => {
+      newPracticeQuestion();
+      render();
+    }, 800);
+  } else {
+    showFB('✗ Try again', 'incorrect');
+  }
+}
+
+function submitProblem() {
+  const ans = parseInt(document.getElementById('problemAns')?.value || 0);
+  if (ans === S.targetValue) {
+    showFB('✓ Correct!', 'correct');
+    S.score++;
+    setTimeout(() => {
+      newPracticeQuestion();
+      render();
+    }, 800);
+  } else {
+    showFB('✗ Try again', 'incorrect');
+  }
+}
+
+// ─── PLAY MODE ───
+function renderPlay(ws, sp) {
+  let html = '<div class="volume-container">';
+
+  if (S.gameEnded) {
+    html += `<div style="text-align:center;padding:40px;font-size:32px;font-weight:800;">
+      Challenge Complete!<br>
+      <div style="font-size:48px;margin:20px 0;background:var(--grad);-webkit-background-clip:text;-webkit-text-fill-color:transparent;">
+        ${S.playScore}
+      </div>
+      <button class="play-btn primary" onclick="playAgain()" style="margin-top:20px;">▶ Play Again</button>
+    </div>`;
+  } else {
+    html += `<div class="game-info">
+      <div class="info-item">
+        <span class="info-label">Round</span>
+        <span>${S.playRound} / 8</span>
+      </div>
+      <div class="info-item">
+        <span class="info-label">⭐ Score</span>
+        <span>${S.playScore}</span>
+      </div>
+      <div class="info-item">
+        <span class="info-label">🔥 Streak</span>
+        <span>${S.playStreak}</span>
+      </div>
+    </div>`;
+
+    const problem = generatePlayProblem();
+    html += `<div class="practice-question">
+      <div class="question-text">${problem.question}</div>
+      <div style="margin:16px 0;padding:12px;background:rgba(0,212,255,0.05);border-radius:8px;">
+        <div style="font-size:14px;color:var(--text2);">${problem.details}</div>
+      </div>
+      <div class="input-group">
+        <input type="number" class="measurement-input number" id="playAnswer" min="0" placeholder="0" />
+        <span style="font-weight:700;color:var(--text2);">${problem.unit}</span>
+        <button class="play-btn primary" onclick="submitPlayAnswer()">✓</button>
+      </div>
+    </div>`;
+  }
+
+  html += '</div>';
+  ws.innerHTML = html;
+
+  if (!S.gameEnded) {
+    setTimeout(() => document.getElementById('playAnswer')?.focus(), 100);
+  }
+
+  sp.innerHTML = `
+    <div class="score-display">
+      <div class="score-value">${S.playScore}</div>
+      <div class="score-label">Score</div>
+    </div>
+    <div class="score-display" style="background:transparent; padding:8px;">
+      <div style="font-size:18px; font-weight:700; color:var(--yellow);">🔥 ${S.playStreak}</div>
+      <div class="score-label">Streak</div>
+      <div class="streak-bar"><div class="streak-fill" style="width:${Math.min(S.playStreak * 12.5, 100)}%;"></div></div>
+    </div>
+    <div class="panel-section">
+      <div class="panel-title">Measurement Master</div>
+      <div class="panel-text">
+        Solve 8 measurement problems. <strong>Read carefully</strong> and answer using the right units.
+      </div>
+    </div>
+    <div class="panel-section">
+      <div class="panel-title">Scoring</div>
+      <div class="panel-text">
+        Base: <strong>15 points</strong><br>
+        Streak bonus: <strong>+3 × streak</strong><br>
+        <strong>Max: 39 pts/round</strong>
+      </div>
+    </div>
+  `;
+}
+
+function generatePlayProblem() {
+  const problems = [
+    { question: 'A bucket holds 5 liters. How much for 2 buckets?', details: '5 L × 2 = ?', answer: 10, unit: 'L' },
+    { question: 'One box weighs 4 kg, another 3 kg. Total?', details: '4 kg + 3 kg = ?', answer: 7, unit: 'kg' },
+    { question: 'A recipe needs 2 liters. Make it 3 times. How much?', details: '2 L × 3 = ?', answer: 6, unit: 'L' },
+    { question: 'Apples weigh 6 kg, oranges 4 kg. Total weight?', details: '6 kg + 4 kg = ?', answer: 10, unit: 'kg' },
+    { question: 'Juice: 3 L, Milk: 2 L. Combined?', details: '3 L + 2 L = ?', answer: 5, unit: 'L' },
+    { question: 'You have 12 kg total. Remove 5 kg. Left?', details: '12 kg - 5 kg = ?', answer: 7, unit: 'kg' }
+  ];
+  const p = problems[Math.floor(Math.random() * problems.length)];
+  S.targetValue = p.answer;
+  S.targetUnit = p.unit;
+  return p;
+}
+
+function submitPlayAnswer() {
+  const ans = parseInt(document.getElementById('playAnswer')?.value || 0);
+
+  if (ans === S.targetValue) {
+    showFB('✓ Yes!', 'correct');
+    S.playScore += 15 + (S.playStreak * 3);
+    S.playStreak++;
+    S.playRound++;
+
+    if (S.playRound > 8) {
+      setTimeout(() => {
+        S.gameEnded = true;
+        render();
+      }, 800);
+    } else {
+      setTimeout(() => {
+        render();
+      }, 800);
+    }
+  } else {
+    showFB('✗ Try again', 'incorrect');
+    S.playStreak = 0;
+  }
+}
+
+function playAgain() {
+  S.playScore = 0;
+  S.playStreak = 0;
+  S.playRound = 1;
+  S.gameEnded = false;
+  render();
+}
+
+// ════════════════════════════════════════
+// INIT
+// ════════════════════════════════════════
+newPracticeQuestion();
+render();
+</script>
+<script src="../../vinculum-core.js"></script>
+<script src="../../vinculum-data.js"></script>
+<script src="../../vinculum-adaptive-hook.js"></script>
+<script src="../../vinculum-3reads.js"></script>
+<script src="../../vinculum-stories.js"></script>
+<script src="../../vinculum-feedback.js"></script>
+  <script src="../../vinculum-guide.js"></script>
+<script src="../../vinculum-identity.js"></script>
+<script src="../../vinculum-indigenous.js"></script>
+<script src="../../vinculum-dashboard.js"></script>
+</body>
+</html>

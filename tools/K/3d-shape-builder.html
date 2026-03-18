@@ -1,0 +1,1309 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>3D Shape Builder — VINCULUM K.G</title>
+  <link rel="stylesheet" href="../../vinculum-core.css">
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      line-height: 1.6;
+      overflow: hidden;
+    }
+
+    .grade-badge {
+      background: var(--cyan);
+      color: var(--bg);
+      padding: 0.35rem 0.75rem;
+      border-radius: 999px;
+      font-size: 0.75rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    .container {
+      display: flex;
+      height: calc(100vh - 65px);
+      gap: 1rem;
+      padding: 1rem;
+      overflow: hidden;
+    }
+
+    .workspace {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      gap: 1rem;
+      background: var(--bg);
+    }
+
+    .tab {
+      flex: 1;
+      padding: 0.75rem 1rem;
+      border: none;
+      border-radius: 0.5rem;
+      background: transparent;
+      color: var(--text2);
+      cursor: pointer;
+      font-size: 0.875rem;
+      font-weight: 500;
+      transition: all 0.2s;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 0.5rem;
+    }
+
+    .tab.active {
+      background: var(--bg);
+      color: var(--cyan);
+      border: 1px solid var(--border);
+    }
+
+    .tab svg {
+      width: 1.25rem;
+      height: 1.25rem;
+    }
+
+    .controls-bar {
+      display: flex;
+      gap: 1rem;
+      align-items: center;
+      background: var(--card);
+      padding: 1rem;
+      border-radius: 0.75rem;
+      border: 1px solid var(--border);
+    }
+
+    .control-group {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+
+    .control-label {
+      font-size: 0.875rem;
+      color: var(--text2);
+      font-weight: 500;
+    }
+
+    .difficulty-btn {
+      background: var(--bg);
+      border: 1px solid var(--border);
+      color: var(--text2);
+      padding: 0.5rem 0.75rem;
+      border-radius: 0.5rem;
+      cursor: pointer;
+      font-size: 0.75rem;
+      font-weight: 600;
+      transition: all 0.2s;
+      text-transform: uppercase;
+    }
+
+    .difficulty-btn.active {
+      background: var(--cyan);
+      color: var(--bg);
+      border-color: var(--cyan);
+    }
+
+    .difficulty-btn:hover {
+      border-color: var(--cyan);
+    }
+
+    .canvas-area {
+      flex: 1;
+      background: linear-gradient(135deg, rgba(79, 248, 210, 0.05), rgba(167, 139, 250, 0.05));
+      border-radius: 1rem;
+      border: 1px solid var(--border);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .canvas-area svg {
+      filter: drop-shadow(0 0 30px rgba(79, 248, 210, 0.2));
+      transition: filter 0.3s;
+    }
+
+    .canvas-area.glowing svg {
+      filter: drop-shadow(0 0 50px rgba(79, 248, 210, 0.6)) drop-shadow(0 0 30px rgba(255, 59, 139, 0.4));
+    }
+
+    .info-panel {
+      position: absolute;
+      top: 1rem;
+      right: 1rem;
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 0.75rem;
+      padding: 1rem;
+      min-width: 200px;
+      backdrop-filter: blur(10px);
+    }
+
+    .info-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 0.5rem 0;
+      font-size: 0.875rem;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .info-row:last-child {
+      border-bottom: none;
+    }
+
+    .info-label {
+      color: var(--text2);
+      font-weight: 500;
+    }
+
+    .info-value {
+      color: var(--cyan);
+      font-weight: 700;
+      font-family: 'JetBrains Mono', monospace;
+    }
+
+    .shape-tray {
+      background: var(--card);
+      border-radius: 0.75rem;
+      border: 1px solid var(--border);
+      padding: 1rem;
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(80px, 1fr));
+      gap: 0.75rem;
+      max-height: 120px;
+      overflow-y: auto;
+    }
+
+    .face-item {
+      background: var(--bg);
+      border: 2px solid var(--border);
+      border-radius: 0.5rem;
+      padding: 0.5rem;
+      cursor: grab;
+      transition: all 0.2s;
+      text-align: center;
+      font-size: 0.75rem;
+      color: var(--text2);
+      user-select: none;
+    }
+
+    .face-item:hover:not(.used) {
+      border-color: var(--cyan);
+      transform: translateY(-2px);
+    }
+
+    .face-item.used {
+      opacity: 0.4;
+      cursor: not-allowed;
+      background: var(--bg2);
+    }
+
+    .face-item svg {
+      width: 100%;
+      height: auto;
+      margin-bottom: 0.25rem;
+    }
+
+    .side-panel {
+      width: 280px;
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 1rem;
+      padding: 1.5rem;
+      overflow-y: auto;
+      display: flex;
+      flex-direction: column;
+      gap: 1.5rem;
+    }
+
+    .panel-section {
+      display: flex;
+      flex-direction: column;
+      gap: 0.75rem;
+    }
+
+    .panel-title {
+      font-size: 0.875rem;
+      font-weight: 700;
+      color: var(--cyan);
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    .panel-content {
+      font-size: 0.8125rem;
+      color: var(--text2);
+      line-height: 1.5;
+    }
+
+    .vocab-item {
+      background: var(--bg);
+      border-left: 3px solid var(--cyan);
+      padding: 0.75rem;
+      border-radius: 0.375rem;
+      margin-bottom: 0.5rem;
+    }
+
+    .vocab-term {
+      font-weight: 700;
+      color: var(--text);
+      font-size: 0.8125rem;
+    }
+
+    .vocab-def {
+      font-size: 0.75rem;
+      color: var(--text2);
+      margin-top: 0.25rem;
+    }
+
+    .feedback {
+      position: fixed;
+      bottom: 2rem;
+      left: 50%;
+      transform: translateX(-50%);
+      background: var(--card);
+      border: 2px solid var(--border);
+      border-radius: 0.75rem;
+      padding: 1rem 1.5rem;
+      backdrop-filter: blur(10px);
+      box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
+      max-width: 400px;
+      z-index: 1000;
+      animation: slideUp 0.3s ease-out;
+      pointer-events: none;
+    }
+
+    .feedback.correct {
+      border-color: var(--green);
+      color: var(--green);
+    }
+
+    .feedback.incorrect {
+      border-color: var(--pink);
+      color: var(--pink);
+    }
+
+    .feedback.info {
+      border-color: var(--cyan);
+      color: var(--cyan);
+    }
+
+    @keyframes slideUp {
+      from {
+        opacity: 0;
+        transform: translateX(-50%) translateY(20px);
+      }
+      to {
+        opacity: 1;
+        transform: translateX(-50%) translateY(0);
+      }
+    }
+
+    .overlay {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: rgba(10, 14, 26, 0.9);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 2000;
+      backdrop-filter: blur(4px);
+    }
+
+    .modal {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 1.5rem;
+      padding: 2rem;
+      max-width: 500px;
+      text-align: center;
+      animation: popIn 0.3s ease-out;
+    }
+
+    @keyframes popIn {
+      from {
+        opacity: 0;
+        transform: scale(0.9);
+      }
+      to {
+        opacity: 1;
+        transform: scale(1);
+      }
+    }
+
+    .modal h1 {
+      background: var(--grad);
+      background-clip: text;
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      font-size: 2rem;
+      margin-bottom: 1rem;
+    }
+
+    .modal p {
+      color: var(--text2);
+      margin-bottom: 1.5rem;
+      line-height: 1.7;
+    }
+
+    .modal-btn {
+      background: var(--grad);
+      border: none;
+      color: white;
+      padding: 0.75rem 2rem;
+      border-radius: 0.5rem;
+      font-size: 1rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+
+    .modal-btn:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 8px 24px rgba(79, 248, 210, 0.3);
+    }
+
+    .rotate-controls {
+      position: absolute;
+      bottom: 1rem;
+      left: 50%;
+      transform: translateX(-50%);
+      display: flex;
+      gap: 0.5rem;
+    }
+
+    .rotate-btn {
+      background: var(--card);
+      border: 1px solid var(--border);
+      color: var(--text);
+      width: 2.5rem;
+      height: 2.5rem;
+      border-radius: 0.5rem;
+      cursor: pointer;
+      font-size: 1rem;
+      transition: all 0.2s;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .rotate-btn:hover {
+      border-color: var(--cyan);
+      color: var(--cyan);
+    }
+
+    .score-display {
+      background: var(--bg);
+      border: 1px solid var(--border);
+      border-radius: 0.5rem;
+      padding: 0.75rem 1rem;
+      font-weight: 700;
+      color: var(--cyan);
+    }
+
+    .hidden {
+      display: none !important;
+    }
+
+    .mode-content {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      gap: 1rem;
+    }
+
+    .problem-text {
+      background: var(--bg2);
+      border: 1px solid var(--border);
+      border-left: 4px solid var(--cyan);
+      padding: 1rem;
+      border-radius: 0.5rem;
+      color: var(--text);
+      font-weight: 500;
+    }
+
+    .multiple-choice {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 0.75rem;
+      margin-top: 1rem;
+    }
+
+    .choice-btn {
+      background: var(--bg);
+      border: 2px solid var(--border);
+      color: var(--text);
+      padding: 1rem;
+      border-radius: 0.5rem;
+      cursor: pointer;
+      font-size: 1.25rem;
+      font-weight: 700;
+      transition: all 0.2s;
+    }
+
+    .choice-btn:hover {
+      border-color: var(--cyan);
+      transform: translateY(-2px);
+    }
+
+    .choice-btn.selected {
+      background: var(--cyan);
+      color: var(--bg);
+      border-color: var(--cyan);
+    }
+
+    .streak-display {
+      background: linear-gradient(135deg, rgba(255, 59, 139, 0.1), rgba(251, 191, 36, 0.1));
+      border: 1px solid var(--border);
+      border-radius: 0.5rem;
+      padding: 1rem;
+      text-align: center;
+    }
+
+    .streak-label {
+      font-size: 0.75rem;
+      color: var(--text2);
+      text-transform: uppercase;
+      font-weight: 600;
+    }
+
+    .streak-number {
+      font-size: 2rem;
+      font-weight: 700;
+      background: var(--grad);
+      background-clip: text;
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+  </style>
+</head>
+<body>
+  <!-- Header -->
+  <header class="vinculum-header">
+    <div class="vinculum-header-left">
+      <a href="../../VINCULUM-Hub.html" class="vinculum-back-btn">
+        <svg viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="2"><path d="M8 1L3 6l5 5"/></svg>
+        Hub
+      </a>
+      <div class="vinculum-header-title"><span class="brand">3D Shape Builder</span></div>
+      <span class="vinculum-header-badge">K.G</span>
+    </div>
+    <div class="vinculum-header-right">
+      <div class="vinculum-std-tags">
+        <span class="vinculum-std-tag">K.G.4</span>
+      </div>
+    </div>
+  </header>
+
+  <!-- Main Container -->
+  <div class="container">
+    <!-- Workspace -->
+    <div class="workspace">
+      <!-- Mode Tabs -->
+      <div class="vinculum-mode-tabs">
+        <button class="vinculum-mode-tab active-explore" data-mode="explore">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <circle cx="12" cy="12" r="1"></circle>
+            <path d="M12 8v4m0 4v.01M8.5 12H4m8-8v4m0 8v4m4-4h4"></path>
+          </svg>
+          Explore
+        </button>
+        <button class="vinculum-mode-tab" data-mode="practice">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <polyline points="20 6 9 17 4 12"></polyline>
+          </svg>
+          Practice
+        </button>
+        <button class="vinculum-mode-tab" data-mode="play">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"></polygon>
+          </svg>
+          Play
+        </button>
+      </div>
+
+      <!-- Controls Bar -->
+      <div class="controls-bar">
+        <div class="control-group">
+          <span class="control-label">Difficulty:</span>
+          <button class="vinculum-diff-btn active" data-diff="emergent">Emergent</button>
+          <button class="vinculum-diff-btn" data-diff="proficient">Proficient</button>
+          <button class="vinculum-diff-btn" data-diff="advanced">Advanced</button>
+        </div>
+        <div id="score-container" class="score-display hidden">Score: <span id="score">0</span></div>
+      </div>
+
+      <!-- Mode Content (Explore) -->
+      <div class="mode-content" id="mode-explore">
+        <!-- Canvas Area with SVG -->
+        <div class="canvas-area" id="canvas-area">
+          <svg id="shape-svg" width="300" height="300" viewBox="0 0 300 300"></svg>
+          <div class="info-panel" id="info-panel">
+            <div class="info-row">
+              <span class="info-label">Shape:</span>
+              <span class="info-value" id="shape-name">—</span>
+            </div>
+            <div class="info-row">
+              <span class="info-label">Faces:</span>
+              <span class="info-value" id="face-count">0/0</span>
+            </div>
+            <div class="info-row">
+              <span class="info-label">Edges:</span>
+              <span class="info-value" id="edge-count">0</span>
+            </div>
+            <div class="info-row">
+              <span class="info-label">Vertices:</span>
+              <span class="info-value" id="vertex-count">0</span>
+            </div>
+          </div>
+          <div class="rotate-controls">
+            <button class="rotate-btn" onclick="rotateShape(-10)">←</button>
+            <button class="rotate-btn" onclick="rotateShape(10)">→</button>
+          </div>
+        </div>
+
+        <!-- Face Tray -->
+        <div>
+          <div style="font-size: 0.875rem; color: var(--text2); font-weight: 500; margin-bottom: 0.5rem;">Drag faces to build:</div>
+          <div class="shape-tray" id="shape-tray"></div>
+        </div>
+      </div>
+
+      <!-- Mode Content (Practice) -->
+      <div class="mode-content hidden" id="mode-practice">
+        <div class="problem-text" id="problem-text">Select a shape to practice building.</div>
+        <div class="canvas-area" id="canvas-area-practice">
+          <svg id="shape-svg-practice" width="300" height="300" viewBox="0 0 300 300"></svg>
+          <div class="info-panel" id="info-panel-practice">
+            <div class="info-row">
+              <span class="info-label">Shape:</span>
+              <span class="info-value" id="shape-name-practice">—</span>
+            </div>
+            <div class="info-row">
+              <span class="info-label">Faces:</span>
+              <span class="info-value" id="face-count-practice">0/0</span>
+            </div>
+          </div>
+        </div>
+        <div style="font-size: 0.875rem; color: var(--text2); font-weight: 500; margin-bottom: 0.5rem;">Drag faces to build:</div>
+        <div class="shape-tray" id="shape-tray-practice"></div>
+      </div>
+
+      <!-- Mode Content (Play) -->
+      <div class="mode-content hidden" id="mode-play">
+        <div class="problem-text" id="problem-text-play">Look at the shape. How many faces does it have?</div>
+        <div class="canvas-area" id="canvas-area-play" style="justify-content: space-between; padding: 2rem;">
+          <svg id="shape-svg-play" width="250" height="250" viewBox="0 0 300 300"></svg>
+          <div class="multiple-choice" id="multiple-choice"></div>
+        </div>
+        <div class="streak-display">
+          <div class="streak-label">Streak</div>
+          <div class="streak-number" id="streak-display">0</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Side Panel -->
+    <div class="side-panel">
+      <div class="panel-section">
+        <div class="panel-title">How to Use</div>
+        <div class="panel-content">
+          <strong>Explore:</strong> Pick a shape and drag 2D faces from the tray to build it. Watch it come together!<br><br>
+          <strong>Practice:</strong> Follow the challenges. Build exactly what's shown.<br><br>
+          <strong>Play:</strong> Answer quick questions about shapes. Beat your streak!
+        </div>
+      </div>
+
+      <div class="panel-section">
+        <div class="panel-title">Key Idea</div>
+        <div class="panel-content">
+          3D shapes are made from flat 2D faces connected by edges at vertices. By assembling faces, we understand how 3D shapes are built!
+        </div>
+      </div>
+
+      <div class="panel-section">
+        <div class="panel-title">Vocabulary</div>
+        <div class="vocab-item">
+          <div class="vocab-term">Face</div>
+          <div class="vocab-def">A flat surface of a 3D shape</div>
+        </div>
+        <div class="vocab-item">
+          <div class="vocab-term">Edge</div>
+          <div class="vocab-def">A line where two faces meet</div>
+        </div>
+        <div class="vocab-item">
+          <div class="vocab-term">Vertex</div>
+          <div class="vocab-def">A corner where edges meet</div>
+        </div>
+      </div>
+
+      <div class="panel-section">
+        <div class="panel-title">Standards</div>
+        <div class="panel-content" style="font-size: 0.75rem;">
+          <strong>K.G.4:</strong> Analyze and compare 2D and 3D shapes<br><br>
+          <strong>K.G.5:</strong> Model shapes using manipulatives, drawings, or software
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Onboarding Overlay -->
+  <div class="overlay" id="onboarding">
+    <div class="modal">
+      <h1>Build 3D Shapes!</h1>
+      <p>Welcome to Shape Builder. You'll learn how flat faces come together to create amazing 3D shapes.</p>
+      <p style="font-size: 0.875rem; color: var(--text);">Drag 2D faces from the tray and watch 3D shapes form before your eyes!</p>
+      <button class="modal-btn" onclick="closeOnboarding()">Let's Start</button>
+    </div>
+  </div>
+
+    <script src="../../vinculum-input.js"></script>
+<script src="../../vinculum-core.js"></script>
+  <script src="../../vinculum-data.js"></script>
+    <script src="../../vinculum-adaptive-hook.js"></script>
+  <script src="../../vinculum-3reads.js"></script>
+<script src="../../vinculum-stories.js"></script>
+  <script src="../../vinculum-feedback.js"></script>
+  <script src="../../vinculum-guide.js"></script>
+  <script src="../../vinculum-identity.js"></script>
+  <script src="../../vinculum-indigenous.js"></script>
+  <script src="../../vinculum-dashboard.js"></script>
+  <script>
+    const MISCONCEPTIONS_3D = {
+      faceCountError: { id:'faceCountError', desc:'Miscounts the number of faces on a 3D shape' },
+      edgeVertexConfusion: { id:'edgeVertexConfusion', desc:'Confuses edges with vertices or vice versa' },
+      flat3dConfusion: { id:'flat3dConfusion', desc:'Confuses 2D shapes with their 3D counterparts (e.g., square vs cube)' },
+      propertyMismatch: { id:'propertyMismatch', desc:'Assigns properties of one 3D shape to another' },
+      noConceptOfFace: { id:'noConceptOfFace', desc:'Does not understand that 3D shapes are composed of 2D faces' }
+    };
+
+    // SHAPE DEFINITIONS
+    const shapes = {
+      cube: {
+        name: 'Cube',
+        faces: 6,
+        edges: 12,
+        vertices: 8,
+        faceShapes: ['square', 'square', 'square', 'square', 'square', 'square'],
+        faceColors: ['#00d4ff', '#ff3b8b', '#00e676', '#a78bfa', '#fbbf24', '#fb923c']
+      },
+      sphere: {
+        name: 'Sphere',
+        faces: 1,
+        edges: 0,
+        vertices: 0,
+        faceShapes: ['circle'],
+        faceColors: ['#00d4ff'],
+        special: true
+      },
+      cylinder: {
+        name: 'Cylinder',
+        faces: 3,
+        edges: 2,
+        vertices: 0,
+        faceShapes: ['circle', 'circle', 'rectangle'],
+        faceColors: ['#00d4ff', '#ff3b8b', '#00e676']
+      },
+      cone: {
+        name: 'Cone',
+        faces: 2,
+        edges: 1,
+        vertices: 1,
+        faceShapes: ['circle', 'triangle'],
+        faceColors: ['#00d4ff', '#ff3b8b']
+      },
+      prism: {
+        name: 'Rectangular Prism',
+        faces: 6,
+        edges: 12,
+        vertices: 8,
+        faceShapes: ['rectangle', 'rectangle', 'rectangle', 'rectangle', 'rectangle', 'rectangle'],
+        faceColors: ['#00d4ff', '#ff3b8b', '#00e676', '#a78bfa', '#fbbf24', '#fb923c']
+      }
+    };
+
+    // STATE
+    let S = {
+      mode: 'explore',
+      difficulty: 'emergent',
+      currentShape: 'cube',
+      rotation: 0,
+      facesPlaced: 0,
+      score: 0,
+      streak: 0,
+      playProblem: 0,
+      playAnswer: null,
+      availableShapes: ['cube'],
+      practiceIdx: 0
+    };
+
+    /* ── Read-Aloud + Story Banner ── */
+    function toggleReadAloud() {
+      if (window.VinculumStories && VinculumStories.isReading()) {
+        VinculumStories.stopReading();
+        document.getElementById('readAloudBtn').textContent = '🔊 Read to Me';
+      } else {
+        const storyEl = document.getElementById('storyBanner');
+        const fb = document.getElementById('feedback');
+        const text = storyEl ? storyEl.textContent : (fb ? fb.textContent : 'Welcome to this math tool!');
+        if (window.VinculumStories) {
+          VinculumStories.readAloud(text, { rate: 0.85, onComplete: () => {
+            document.getElementById('readAloudBtn').textContent = '🔊 Read to Me';
+          }});
+          document.getElementById('readAloudBtn').textContent = '⏹ Stop';
+        }
+      }
+    }
+
+    const shapesByDifficulty = {
+      emergent: ['cube', 'sphere'],
+      proficient: ['cube', 'sphere', 'cylinder', 'cone'],
+      advanced: ['cube', 'sphere', 'cylinder', 'cone', 'prism']
+    };
+
+    const practiceProblems = [
+      { shape: 'cube', target: 6 },
+      { shape: 'sphere', target: 1 },
+      { shape: 'cylinder', target: 3 },
+      { shape: 'cone', target: 2 },
+      { shape: 'prism', target: 6 },
+      { shape: 'cube', target: 6 },
+      { shape: 'cylinder', target: 3 },
+      { shape: 'cone', target: 2 }
+    ];
+
+    // UTILITIES
+    function goBack() {
+      window.location.href = '../../VINCULUM-Hub.html';
+    }
+
+    function closeOnboarding() {
+      document.getElementById('onboarding').style.display = 'none';
+    }
+
+    function switchMode(mode) {
+      S.mode = mode;
+      document.querySelectorAll('.vinculum-mode-tab').forEach(t => {
+        t.classList.remove('active-explore', 'active-practice', 'active-play');
+      });
+      document.querySelector(`[data-mode="${mode}"]`).classList.add(`active-${mode}`);
+
+      document.querySelectorAll('.mode-content').forEach(c => c.classList.add('hidden'));
+      document.getElementById(`mode-${mode}`).classList.remove('hidden');
+
+      if (mode === 'practice') initPractice();
+      if (mode === 'play') initPlay();
+      if (mode === 'explore') renderShape();
+
+      document.getElementById('score-container').classList.toggle('hidden', mode !== 'play');
+    }
+
+    function setDifficulty(diff) {
+      S.difficulty = diff;
+      S.availableShapes = shapesByDifficulty[diff];
+      S.currentShape = S.availableShapes[0];
+      S.facesPlaced = 0;
+
+      document.querySelectorAll('.vinculum-diff-btn').forEach(b => b.classList.remove('active'));
+      document.querySelector(`[data-diff="${diff}"]`).classList.add('active');
+
+      if (S.mode === 'explore') {
+        renderShape();
+        renderFaceTray();
+        refreshStoryBanner();
+      } else if (S.mode === 'practice') {
+        initPractice();
+      } else if (S.mode === 'play') {
+        initPlay();
+      }
+    }
+
+
+    // SHAPE RENDERING
+    function renderShape(shapeId = S.currentShape, svgId = 'shape-svg', infoPanelId = 'info-panel') {
+      const svg = document.getElementById(svgId);
+      const shape = shapes[shapeId];
+      if (!shape) return;
+
+      svg.innerHTML = '';
+      const group = document.createElementNS('http://www.w3.org/2000/svg', 'g');
+      group.setAttribute('transform', `translate(150, 150) rotate(${S.rotation})`);
+
+      if (shapeId === 'cube') {
+        drawCube(group, shape);
+      } else if (shapeId === 'sphere') {
+        drawSphere(group, shape);
+      } else if (shapeId === 'cylinder') {
+        drawCylinder(group, shape);
+      } else if (shapeId === 'cone') {
+        drawCone(group, shape);
+      } else if (shapeId === 'prism') {
+        drawPrism(group, shape);
+      }
+
+      svg.appendChild(group);
+      updateInfoPanel(shape, infoPanelId);
+    }
+
+    function drawCube(group, shape) {
+      const size = 60;
+      const colors = shape.faceColors;
+
+      // Front face
+      const front = document.createElementNS('http://www.w3.org/2000/svg', 'polygon');
+      front.setAttribute('points', `-${size},−${size} ${size},−${size} ${size},${size} -${size},${size}`);
+      front.setAttribute('fill', colors[0]);
+      front.setAttribute('fill-opacity', '0.6');
+      front.setAttribute('stroke', 'var(--border)');
+      front.setAttribute('stroke-width', '2');
+      group.appendChild(front);
+
+      // Top face
+      const top = document.createElementNS('http://www.w3.org/2000/svg', 'polygon');
+      top.setAttribute('points', `-${size},−${size} 0,−${size - 30} ${size},−${size} 0,−${size + 30}`);
+      top.setAttribute('fill', colors[1]);
+      top.setAttribute('fill-opacity', '0.6');
+      top.setAttribute('stroke', 'var(--border)');
+      top.setAttribute('stroke-width', '2');
+      group.appendChild(top);
+
+      // Right face
+      const right = document.createElementNS('http://www.w3.org/2000/svg', 'polygon');
+      right.setAttribute('points', `${size},−${size} ${size + 30},−${size - 15} ${size + 30},${size + 15} ${size},${size}`);
+      right.setAttribute('fill', colors[2]);
+      right.setAttribute('fill-opacity', '0.6');
+      right.setAttribute('stroke', 'var(--border)');
+      right.setAttribute('stroke-width', '2');
+      group.appendChild(right);
+
+      // Edges
+      const edges = [
+        [`-${size},−${size}`, `${size},−${size}`],
+        [`${size},−${size}`, `${size},${size}`],
+        [`${size},${size}`, `-${size},${size}`],
+        [`-${size},${size}`, `-${size},−${size}`],
+        [`-${size},−${size}`, `0,−${size - 30}`],
+        [`${size},−${size}`, `0,−${size - 30}`],
+        [`0,−${size - 30}`, `${size + 30},−${size - 15}`],
+        [`${size},−${size}`, `${size + 30},−${size - 15}`],
+        [`${size + 30},−${size - 15}`, `${size + 30},${size + 15}`],
+        [`${size},${size}`, `${size + 30},${size + 15}`]
+      ];
+
+      // Vertices
+      const vertices = [
+        [`-${size},−${size}`],
+        [`${size},−${size}`],
+        [`${size},${size}`],
+        [`-${size},${size}`],
+        [`0,−${size - 30}`],
+        [`${size + 30},−${size - 15}`],
+        [`${size + 30},${size + 15}`]
+      ];
+      vertices.forEach(([x, y]) => {
+        const dot = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+        dot.setAttribute('cx', x);
+        dot.setAttribute('cy', y);
+        dot.setAttribute('r', '3');
+        dot.setAttribute('fill', 'var(--cyan)');
+        group.appendChild(dot);
+      });
+    }
+
+    function drawSphere(group, shape) {
+      const circle = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+      circle.setAttribute('cx', '0');
+      circle.setAttribute('cy', '0');
+      circle.setAttribute('r', '70');
+      circle.setAttribute('fill', shape.faceColors[0]);
+      circle.setAttribute('fill-opacity', '0.6');
+      circle.setAttribute('stroke', 'var(--border)');
+      circle.setAttribute('stroke-width', '2');
+      group.appendChild(circle);
+    }
+
+    function drawCylinder(group, shape) {
+      const colors = shape.faceColors;
+
+      // Top circle
+      const top = document.createElementNS('http://www.w3.org/2000/svg', 'ellipse');
+      top.setAttribute('cx', '0');
+      top.setAttribute('cy', '-50');
+      top.setAttribute('rx', '50');
+      top.setAttribute('ry', '20');
+      top.setAttribute('fill', colors[0]);
+      top.setAttribute('fill-opacity', '0.6');
+      top.setAttribute('stroke', 'var(--border)');
+      top.setAttribute('stroke-width', '2');
+      group.appendChild(top);
+
+      // Side rectangle
+      const rect = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
+      rect.setAttribute('x', '-50');
+      rect.setAttribute('y', '-50');
+      rect.setAttribute('width', '100');
+      rect.setAttribute('height', '100');
+      rect.setAttribute('fill', colors[1]);
+      rect.setAttribute('fill-opacity', '0.6');
+      rect.setAttribute('stroke', 'var(--border)');
+      rect.setAttribute('stroke-width', '2');
+      group.appendChild(rect);
+
+      // Bottom circle
+      const bottom = document.createElementNS('http://www.w3.org/2000/svg', 'ellipse');
+      bottom.setAttribute('cx', '0');
+      bottom.setAttribute('cy', '50');
+      bottom.setAttribute('rx', '50');
+      bottom.setAttribute('ry', '20');
+      bottom.setAttribute('fill', colors[2]);
+      bottom.setAttribute('fill-opacity', '0.6');
+      bottom.setAttribute('stroke', 'var(--border)');
+      bottom.setAttribute('stroke-width', '2');
+      group.appendChild(bottom);
+    }
+
+    function drawCone(group, shape) {
+      const colors = shape.faceColors;
+
+      // Base circle
+      const circle = document.createElementNS('http://www.w3.org/2000/svg', 'ellipse');
+      circle.setAttribute('cx', '0');
+      circle.setAttribute('cy', '50');
+      circle.setAttribute('rx', '50');
+      circle.setAttribute('ry', '20');
+      circle.setAttribute('fill', colors[0]);
+      circle.setAttribute('fill-opacity', '0.6');
+      circle.setAttribute('stroke', 'var(--border)');
+      circle.setAttribute('stroke-width', '2');
+      group.appendChild(circle);
+
+      // Triangle (cone surface)
+      const triangle = document.createElementNS('http://www.w3.org/2000/svg', 'polygon');
+      triangle.setAttribute('points', '0,-60 -50,50 50,50');
+      triangle.setAttribute('fill', colors[1]);
+      triangle.setAttribute('fill-opacity', '0.6');
+      triangle.setAttribute('stroke', 'var(--border)');
+      triangle.setAttribute('stroke-width', '2');
+      group.appendChild(triangle);
+    }
+
+    function drawPrism(group, shape) {
+      const colors = shape.faceColors;
+      const w = 50, h = 40, d = 30;
+
+      // Front rect
+      const front = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
+      front.setAttribute('x', `-${w}`);
+      front.setAttribute('y', `-${h}`);
+      front.setAttribute('width', `${2 * w}`);
+      front.setAttribute('height', `${2 * h}`);
+      front.setAttribute('fill', colors[0]);
+      front.setAttribute('fill-opacity', '0.6');
+      front.setAttribute('stroke', 'var(--border)');
+      front.setAttribute('stroke-width', '2');
+      group.appendChild(front);
+
+      // Top rect
+      const top = document.createElementNS('http://www.w3.org/2000/svg', 'polygon');
+      top.setAttribute('points', `-${w},−${h} -${w + d},−${h - 15} ${w + d},−${h - 15} ${w},−${h}`);
+      top.setAttribute('fill', colors[1]);
+      top.setAttribute('fill-opacity', '0.6');
+      top.setAttribute('stroke', 'var(--border)');
+      top.setAttribute('stroke-width', '2');
+      group.appendChild(top);
+
+      // Right rect
+      const right = document.createElementNS('http://www.w3.org/2000/svg', 'polygon');
+      right.setAttribute('points', `${w},−${h} ${w + d},−${h - 15} ${w + d},${h + 15} ${w},${h}`);
+      right.setAttribute('fill', colors[2]);
+      right.setAttribute('fill-opacity', '0.6');
+      right.setAttribute('stroke', 'var(--border)');
+      right.setAttribute('stroke-width', '2');
+      group.appendChild(right);
+    }
+
+    function rotateShape(deg) {
+      S.rotation = (S.rotation + deg) % 360;
+      renderShape(S.currentShape, 'shape-svg', 'info-panel');
+    }
+
+    function updateInfoPanel(shape, panelId = 'info-panel') {
+      document.getElementById('shape-name').textContent = shape.name;
+      document.getElementById('face-count').textContent = `${S.facesPlaced}/${shape.faces}`;
+      document.getElementById('edge-count').textContent = shape.edges;
+      document.getElementById('vertex-count').textContent = shape.vertices;
+
+      if (panelId.includes('practice')) {
+        document.getElementById('shape-name-practice').textContent = shape.name;
+        document.getElementById('face-count-practice').textContent = `${S.facesPlaced}/${shape.faces}`;
+      }
+    }
+
+    // FACE TRAY
+    function renderFaceTray(svgId = 'shape-tray', shapeId = S.currentShape) {
+      const tray = document.getElementById(svgId);
+      const shape = shapes[shapeId];
+      tray.innerHTML = '';
+
+      shape.faceShapes.forEach((type, idx) => {
+        const div = document.createElement('div');
+        div.className = `face-item ${idx < S.facesPlaced ? 'used' : ''}`;
+        div.draggable = idx >= S.facesPlaced;
+
+        const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+        svg.setAttribute('viewBox', '0 0 60 60');
+
+        if (type === 'square') {
+          const rect = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
+          rect.setAttribute('x', '10');
+          rect.setAttribute('y', '10');
+          rect.setAttribute('width', '40');
+          rect.setAttribute('height', '40');
+          rect.setAttribute('fill', shape.faceColors[idx]);
+          rect.setAttribute('fill-opacity', '0.7');
+          rect.setAttribute('stroke', 'var(--border)');
+          rect.setAttribute('stroke-width', '2');
+          svg.appendChild(rect);
+        } else if (type === 'rectangle') {
+          const rect = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
+          rect.setAttribute('x', '8');
+          rect.setAttribute('y', '15');
+          rect.setAttribute('width', '44');
+          rect.setAttribute('height', '30');
+          rect.setAttribute('fill', shape.faceColors[idx]);
+          rect.setAttribute('fill-opacity', '0.7');
+          rect.setAttribute('stroke', 'var(--border)');
+          rect.setAttribute('stroke-width', '2');
+          svg.appendChild(rect);
+        } else if (type === 'circle') {
+          const circle = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+          circle.setAttribute('cx', '30');
+          circle.setAttribute('cy', '30');
+          circle.setAttribute('r', '20');
+          circle.setAttribute('fill', shape.faceColors[idx]);
+          circle.setAttribute('fill-opacity', '0.7');
+          circle.setAttribute('stroke', 'var(--border)');
+          circle.setAttribute('stroke-width', '2');
+          svg.appendChild(circle);
+        } else if (type === 'triangle') {
+          const poly = document.createElementNS('http://www.w3.org/2000/svg', 'polygon');
+          poly.setAttribute('points', '30,10 50,45 10,45');
+          poly.setAttribute('fill', shape.faceColors[idx]);
+          poly.setAttribute('fill-opacity', '0.7');
+          poly.setAttribute('stroke', 'var(--border)');
+          poly.setAttribute('stroke-width', '2');
+          svg.appendChild(poly);
+        }
+
+        svg.setAttribute('width', '100%');
+        svg.setAttribute('height', 'auto');
+        div.appendChild(svg);
+        div.appendChild(document.createTextNode(type));
+
+        div.addEventListener('dragstart', (e) => {
+          if (idx < S.facesPlaced) {
+            e.preventDefault();
+            return;
+          }
+          e.dataTransfer.effectAllowed = 'copy';
+          e.dataTransfer.setData('faceIdx', idx);
+        });
+
+        tray.appendChild(div);
+      });
+    }
+
+    // STORY BANNER — refreshes to match the current shape
+    function refreshStoryBanner() {
+      if (!window.VinculumStories) return;
+      const toolName = window.location.pathname.split('/').pop().replace('.html','');
+      const shapeName = shapes[S.currentShape] ? shapes[S.currentShape].name : S.currentShape;
+      const storyData = VinculumStories.getStory(toolName, {
+        a: S.a || S.num || 5, b: S.b || 3,
+        total: S.total || S.num || 7, n: S.num || 8,
+        ones: (S.num || 13) % 10,
+        shape: shapeName
+      });
+      if (!storyData || !storyData.story) return;
+
+      const ws = document.getElementById('workspace') || document.querySelector('.workspace') || document.querySelector('[class*="explore"]');
+      if (!ws) return;
+
+      const existing = document.getElementById('storyBanner');
+      if (existing) existing.remove();
+
+      if (window.Vinculum3Reads) {
+        ws.insertAdjacentHTML('afterbegin', Vinculum3Reads.getBannerHTML(storyData));
+      } else {
+        const bannerHTML = '<div id="storyBanner" style="background:var(--card2,#1a1f2e);border:1px solid var(--border);border-radius:12px;padding:16px 20px;margin-bottom:16px;font-size:15px;line-height:1.6;color:var(--text);position:relative;"><span style="font-size:12px;color:var(--cyan);font-weight:700;text-transform:uppercase;letter-spacing:1px;">📖 Story</span><br>' + storyData.story + '<br><em style="color:var(--yellow);font-weight:600;">' + storyData.question + '</em><button onclick="toggleReadAloud()" style="position:absolute;top:12px;right:12px;background:none;border:1px solid var(--border);border-radius:8px;padding:4px 10px;color:var(--cyan);cursor:pointer;font-size:14px;" title="Read story aloud">🔊</button></div>';
+        ws.insertAdjacentHTML('afterbegin', bannerHTML);
+      }
+    }
+
+    // EXPLORE MODE
+    function initExplore() {
+      renderFaceTray('shape-tray', S.currentShape);
+      renderShape(S.currentShape, 'shape-svg', 'info-panel');
+      refreshStoryBanner();
+
+      document.getElementById('canvas-area').addEventListener('dragover', (e) => {
+        e.preventDefault();
+        e.dataTransfer.dropEffect = 'copy';
+      });
+
+      document.getElementById('canvas-area').addEventListener('drop', (e) => {
+        e.preventDefault();
+        const idx = parseInt(e.dataTransfer.getData('faceIdx'));
+        if (idx === S.facesPlaced) {
+          S.facesPlaced++;
+          const shape = shapes[S.currentShape];
+          if (S.facesPlaced === shape.faces) {
+            document.getElementById('canvas-area').classList.add('glowing');
+            showFB('🎉 Perfect! You built a ' + shape.name + '!', 'correct');
+          } else {
+            showFB(`${S.facesPlaced}/${shape.faces} faces placed!`, 'info');
+          }
+          renderFaceTray('shape-tray', S.currentShape);
+          updateInfoPanel(shape, 'info-panel');
+        }
+      });
+    }
+
+    // PRACTICE MODE
+    function initPractice() {
+      S.practiceIdx = Math.floor(Math.random() * practiceProblems.length);
+      const problem = practiceProblems[S.practiceIdx];
+      S.currentShape = problem.shape;
+      S.facesPlaced = 0;
+
+      const shape = shapes[S.currentShape];
+      document.getElementById('problem-text').textContent = `Build the ${shape.name}! It has ${shape.faces} faces.`;
+
+      renderShape(S.currentShape, 'shape-svg-practice', 'info-panel-practice');
+      renderFaceTray('shape-tray-practice', S.currentShape);
+
+      document.getElementById('canvas-area-practice').addEventListener('dragover', (e) => {
+        e.preventDefault();
+        e.dataTransfer.dropEffect = 'copy';
+      });
+
+      document.getElementById('canvas-area-practice').addEventListener('drop', (e) => {
+        e.preventDefault();
+        const idx = parseInt(e.dataTransfer.getData('faceIdx'));
+        if (idx === S.facesPlaced) {
+          S.facesPlaced++;
+          if (S.facesPlaced === shape.faces) {
+            showFB('Perfect! Challenge complete! 🎉', 'correct');
+            setTimeout(initPractice, 1500);
+          } else {
+            showFB(`${S.facesPlaced}/${shape.faces}`, 'info');
+          }
+          renderFaceTray('shape-tray-practice', S.currentShape);
+          updateInfoPanel(shape, 'info-panel-practice');
+        }
+      });
+    }
+
+    // PLAY MODE
+    function initPlay() {
+      S.playProblem = Math.floor(Math.random() * 20);
+      const allShapes = ['cube', 'sphere', 'cylinder', 'cone', 'prism'];
+      const playShape = S.availableShapes[Math.floor(Math.random() * S.availableShapes.length)];
+      S.currentShape = playShape;
+
+      const shape = shapes[playShape];
+      const questions = [
+        { text: `How many faces?`, answers: [shape.faces - 1, shape.faces, shape.faces + 1], correct: 1 },
+        { text: `How many edges?`, answers: [shape.edges - 1, shape.edges, shape.edges + 1], correct: 1 },
+        { text: `How many vertices?`, answers: [shape.vertices - 1, shape.vertices, shape.vertices + 1], correct: 1 }
+      ];
+
+      const q = questions[Math.floor(Math.random() * questions.length)];
+      document.getElementById('problem-text-play').textContent = `${shape.name} - ${q.text}`;
+
+      renderShape(S.currentShape, 'shape-svg-play', null);
+
+      const mc = document.getElementById('multiple-choice');
+      mc.innerHTML = '';
+      q.answers.forEach((ans, idx) => {
+        const btn = document.createElement('button');
+        btn.className = 'choice-btn';
+        btn.textContent = ans;
+        btn.onclick = () => handlePlayAnswer(idx === q.correct);
+        mc.appendChild(btn);
+      });
+
+      document.getElementById('streak-display').textContent = S.streak;
+    }
+
+    function handlePlayAnswer(correct) {
+      if (correct) {
+        S.score += 10;
+        S.streak++;
+        showFB('Correct! 🎉', 'correct');
+        document.getElementById('score').textContent = S.score;
+        setTimeout(initPlay, 1000);
+      } else {
+        S.streak = 0;
+        const shape = shapes[S.currentShape];
+        const problemText = document.getElementById('problem-text-play').textContent;
+
+        let feedbackText = "Not quite — look at the shape again and count its properties carefully.";
+
+        if (problemText.includes('edges') && problemText.includes('vertices')) {
+          feedbackText = "Edges are the lines where two faces meet. Vertices are the corners. Count carefully!";
+        } else if (problemText.includes('faces')) {
+          feedbackText = "Try counting each flat surface on the shape. Each flat surface is one face.";
+        } else if (problemText.includes('How many')) {
+          const firstWord = problemText.split(' ')[0];
+          if (firstWord.match(/^[A-Z]/)) {
+            feedbackText = "That's a 2D (flat) shape name. We're looking for the 3D (solid) shape!";
+          }
+        }
+
+        showFB(feedbackText, 'incorrect');
+        document.getElementById('streak-display').textContent = S.streak;
+      }
+    }
+
+    // Initialize tab event listeners
+    document.querySelectorAll('.vinculum-mode-tab').forEach(function(tab) {
+      tab.addEventListener('click', function() {
+        switchMode(this.dataset.mode);
+      });
+    });
+
+    // Initialize difficulty button event listeners
+    document.querySelectorAll('.vinculum-diff-btn').forEach(function(btn) {
+      btn.addEventListener('click', function() {
+        setDifficulty(this.dataset.diff);
+      });
+    });
+
+    // INIT
+    window.addEventListener('DOMContentLoaded', () => {
+      initExplore();
+    });
+  </script>
+<div id="feedback" class="feedback"></div>
+</body>
+</html>

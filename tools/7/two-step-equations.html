@@ -1,0 +1,666 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Two-Step Equations — VINCULUM Grade 7</title>
+  <link rel="stylesheet" href="../../vinculum-core.css">
+  <link rel="stylesheet" href="../../shared/vinculum-tiles.css">
+  <script src="../../shared/vinculum-math.js"></script>
+  <script src="../../shared/vinculum-tiles.js"></script>
+  <style>
+    body { font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: var(--bg); color: var(--text); margin: 0; overflow-x: hidden; }
+
+    .container { max-width: 960px; margin: 0 auto; padding: 1.25rem; display: flex; flex-direction: column; gap: 1rem; min-height: calc(100vh - 60px); }
+
+    /* ── Equation Display ── */
+    .equation-display {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 1rem;
+      padding: 1.5rem 2rem;
+      text-align: center;
+    }
+    .equation-text {
+      font-size: 2rem;
+      font-weight: 700;
+      color: var(--cyan);
+      letter-spacing: 2px;
+      font-family: 'JetBrains Mono', 'Fira Code', monospace;
+      min-height: 2.5rem;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .equation-text .katex { font-size: 1em; }
+    .equation-label {
+      font-size: 0.75rem;
+      color: var(--muted);
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      margin-bottom: 0.5rem;
+      font-family: 'Inter', sans-serif;
+    }
+
+    /* ── Steps Panel ── */
+    .steps-panel { display: flex; flex-direction: column; gap: 0.75rem; }
+    .step-card {
+      background: var(--bg2);
+      border: 1px solid var(--border);
+      border-radius: 0.75rem;
+      padding: 1rem 1.25rem;
+      display: flex;
+      align-items: flex-start;
+      gap: 1rem;
+      opacity: 0.3;
+      transition: all 0.4s ease;
+    }
+    .step-card.revealed { opacity: 1; border-left: 3px solid var(--cyan); }
+    .step-card.active { opacity: 1; border-left: 3px solid var(--yellow, #fbbf24); background: color-mix(in srgb, var(--yellow, #fbbf24) 5%, var(--bg2)); }
+    .step-card.completed { opacity: 1; border-left: 3px solid var(--green); }
+    .step-number {
+      background: var(--card); border: 1px solid var(--border); border-radius: 50%;
+      width: 2rem; height: 2rem; display: flex; align-items: center; justify-content: center;
+      font-size: 0.75rem; font-weight: 700; color: var(--cyan); flex-shrink: 0;
+    }
+    .step-card.completed .step-number { background: var(--green); color: var(--bg); border-color: var(--green); }
+    .step-body { flex: 1; }
+    .step-instruction { font-size: 0.875rem; color: var(--text2); margin-bottom: 0.25rem; }
+    .step-equation { font-family: 'JetBrains Mono', monospace; font-size: 1.125rem; font-weight: 600; color: var(--text); }
+
+    /* ── Math Notation Styles ── */
+    .step-math-line { margin: 0.25rem 0; font-size: 1.2rem; }
+    .step-math-line .katex { font-size: 1.15em; }
+    .step-applied { padding: 0.25rem 0; }
+    .step-result { padding: 0.25rem 0; font-weight: 700; }
+    .step-card .vmath-caret { font-size: 10px; margin-top: 4px; color: var(--muted); }
+
+    /* ── Buttons ── */
+    .action-row { display: flex; gap: 0.75rem; justify-content: center; flex-wrap: wrap; }
+    .action-btn {
+      background: var(--card); border: 1px solid var(--border); color: var(--text);
+      padding: 0.625rem 1.25rem; border-radius: 0.5rem; cursor: pointer;
+      font-size: 0.875rem; font-weight: 600; transition: all 0.2s; font-family: inherit;
+    }
+    .action-btn:hover { border-color: var(--cyan); color: var(--cyan); transform: translateY(-1px); }
+    .action-btn.primary { background: var(--cyan); color: var(--bg); border-color: var(--cyan); }
+    .action-btn.primary:hover { background: var(--green); border-color: var(--green); }
+    .action-btn:disabled { opacity: 0.4; cursor: not-allowed; transform: none; }
+
+    /* ── Practice Input ── */
+    .practice-input-row { display: flex; align-items: center; gap: 0.75rem; justify-content: center; margin-top: 0.5rem; }
+    .practice-input-row label { font-size: 0.875rem; color: var(--text2); font-weight: 600; }
+    .step-input {
+      background: var(--bg); border: 2px solid var(--border); color: var(--text);
+      padding: 0.625rem 1rem; border-radius: 0.5rem; font-size: 1.125rem;
+      font-family: 'JetBrains Mono', monospace; font-weight: 600; width: 120px; text-align: center;
+    }
+    .step-input:focus { outline: none; border-color: var(--cyan); }
+
+    /* ── Play Mode ── */
+    .play-stats { display: grid; grid-template-columns: repeat(3, 1fr); gap: 0.75rem; }
+    .stat-card { background: var(--card); border: 1px solid var(--border); border-radius: 0.75rem; padding: 1rem; text-align: center; }
+    .stat-value { font-size: 1.75rem; font-weight: 700; background: var(--grad); background-clip: text; -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+    .stat-label { font-size: 0.7rem; color: var(--muted); text-transform: uppercase; letter-spacing: 1px; margin-top: 0.25rem; }
+
+    /* ── Concepts ── */
+    .concept-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }
+    .concept-card { background: var(--card); border: 1px solid var(--border); border-radius: 0.75rem; padding: 1.25rem; }
+    .concept-card h4 { color: var(--cyan); margin-bottom: 0.5rem; font-size: 0.875rem; text-transform: uppercase; letter-spacing: 0.5px; }
+    .concept-card p { font-size: 0.8125rem; color: var(--text2); line-height: 1.6; }
+
+    .mode-content { display: none; flex-direction: column; gap: 1rem; }
+    .mode-content.active { display: flex; }
+    .hidden { display: none !important; }
+
+    @media (max-width: 768px) {
+      .concept-grid { grid-template-columns: 1fr; }
+      .play-stats { grid-template-columns: 1fr; }
+      .equation-text { font-size: 1.5rem; }
+    }
+  </style>
+</head>
+<body>
+  <header class="vinculum-header">
+    <div class="vinculum-header-left">
+      <a href="../../VINCULUM-Hub.html" class="vinculum-back-btn">
+        <svg viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="2"><path d="M8 1L3 6l5 5"/></svg>
+        Hub
+      </a>
+      <div class="vinculum-header-title"><span class="brand">Two-Step Equations</span></div>
+      <span class="vinculum-header-badge">7</span>
+    </div>
+    <div class="vinculum-header-right">
+      <div class="vinculum-std-tags">
+        <span class="vinculum-std-tag">7.EE.3</span>
+        <span class="vinculum-std-tag">7.EE.4</span>
+      </div>
+    </div>
+  </header>
+
+  <div class="container">
+    <div class="vinculum-mode-tabs">
+      <button class="vinculum-mode-tab active-explore" data-mode="explore"><svg width="18" height="18" viewBox="0 0 48 48" fill="none"><path d="M4 24C4 24 12 12 24 12C36 12 44 24 44 24C44 24 36 36 24 36C12 36 4 24 4 24Z" stroke="currentColor" stroke-width="3" fill="none"/><circle cx="24" cy="24" r="7" stroke="currentColor" stroke-width="3" fill="none"/><circle cx="24" cy="24" r="3" fill="currentColor"/><line x1="24" y1="4" x2="24" y2="9" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" opacity="0.5"/><line x1="10" y1="8" x2="13" y2="12" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" opacity="0.5"/><line x1="38" y1="8" x2="35" y2="12" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" opacity="0.5"/></svg> Explore</button>
+      <button class="vinculum-mode-tab" data-mode="practice"><svg width="18" height="18" viewBox="0 0 48 48" fill="none"><circle cx="24" cy="24" r="20" stroke="currentColor" stroke-width="3" fill="none" opacity="0.3"/><circle cx="24" cy="24" r="20" stroke="currentColor" stroke-width="3" fill="none" stroke-dasharray="126" stroke-dashoffset="32" stroke-linecap="round"/><polyline points="16,24 22,32 34,16" stroke="currentColor" stroke-width="4" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg> Practice</button>
+      <button class="vinculum-mode-tab" data-mode="play"><svg width="18" height="18" viewBox="0 0 48 48" fill="none"><polygon points="28,4 12,28 22,28 18,44 36,18 26,18" fill="none" stroke="currentColor" stroke-width="3" stroke-linejoin="round"/><polygon points="27,8 15,27 23,27 20,40 34,19 26,19" fill="currentColor" opacity="0.15"/></svg> Play</button>
+      <div class="vinculum-diff-selector">
+        <span class="vinculum-diff-label">Level</span>
+        <button class="vinculum-diff-btn active" data-diff="emergent">Basic</button>
+        <button class="vinculum-diff-btn" data-diff="proficient">Negative</button>
+        <button class="vinculum-diff-btn" data-diff="advanced">Harder</button>
+      </div>
+    </div>
+
+    <!-- ═══ EXPLORE MODE ═══ -->
+    <div class="mode-content active" id="mode-explore">
+      <div class="equation-display">
+        <div class="equation-label">Current Equation</div>
+        <div class="equation-text" id="explore-equation"></div>
+      </div>
+
+      <!-- Algebra Tile Mat -->
+      <div id="tile-host"></div>
+
+      <div class="steps-panel" id="explore-steps"></div>
+
+      <div class="action-row">
+        <button class="action-btn" onclick="exploreNew()">New Equation</button>
+        <button class="action-btn primary" id="explore-next-btn" onclick="exploreNext()">Next Step &rarr;</button>
+      </div>
+
+      <div class="concept-grid">
+        <div class="concept-card">
+          <h4>Two Steps, Two Operations</h4>
+          <p>Two-step equations need two inverse operations to isolate x. Always undo addition/subtraction first, then multiplication/division.</p>
+        </div>
+        <div class="concept-card">
+          <h4>Reverse Order of Operations</h4>
+          <p>When solving, work backwards through PEMDAS: undo the outer operation (add/subtract) before the inner one (multiply/divide).</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- ═══ PRACTICE MODE ═══ -->
+    <div class="mode-content" id="mode-practice">
+      <div class="equation-display">
+        <div class="equation-label">Solve step by step</div>
+        <div class="equation-text" id="practice-equation"></div>
+      </div>
+
+      <div class="steps-panel" id="practice-steps"></div>
+
+      <div class="practice-input-row" id="practice-input-area">
+        <label id="practice-prompt">What operation should you do first?</label>
+      </div>
+
+      <div class="action-row" id="practice-actions">
+        <button class="action-btn" onclick="practiceOp('subtract')">Subtract</button>
+        <button class="action-btn" onclick="practiceOp('add')">Add</button>
+        <button class="action-btn" onclick="practiceOp('divide')">Divide</button>
+        <button class="action-btn" onclick="practiceOp('multiply')">Multiply</button>
+      </div>
+
+      <div class="practice-input-row hidden" id="practice-value-row">
+        <label>By how much?</label>
+        <input type="number" class="step-input" id="practice-value" placeholder="?">
+        <button class="action-btn primary" onclick="practiceSubmit()">Apply</button>
+      </div>
+
+      <div class="action-row hidden" id="practice-next-row">
+        <button class="action-btn primary" onclick="practiceNewProblem()">Next Problem &rarr;</button>
+      </div>
+    </div>
+
+    <!-- ═══ PLAY MODE ═══ -->
+    <div class="mode-content" id="mode-play">
+      <div class="play-stats">
+        <div class="stat-card"><div class="stat-value" id="play-score">0</div><div class="stat-label">Score</div></div>
+        <div class="stat-card"><div class="stat-value" id="play-streak">0</div><div class="stat-label">Streak</div></div>
+        <div class="stat-card"><div class="stat-value" id="play-timer">0:00</div><div class="stat-label">Time</div></div>
+      </div>
+
+      <div class="equation-display">
+        <div class="equation-label">Solve for x</div>
+        <div class="equation-text" id="play-equation"></div>
+      </div>
+
+      <div class="steps-panel" id="play-steps"></div>
+
+      <div class="practice-input-row">
+        <label>x =</label>
+        <input type="number" class="step-input" id="play-answer" placeholder="?" step="any">
+        <button class="action-btn primary" onclick="playSubmit()">Submit</button>
+      </div>
+
+      <div class="action-row hidden" id="play-solution-row">
+        <button class="action-btn" onclick="playShowSteps()">Show Solution Steps</button>
+        <button class="action-btn primary" onclick="playNext()">Next &rarr;</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="feedback" class="feedback"></div>
+
+  <script src="../../vinculum-input.js"></script>
+  <script src="../../vinculum-feedback.js"></script>
+  <script src="../../vinculum-guide.js"></script><script src="../../vinculum-indigenous.js"></script><script src="../../indigenous-context-panel.js"></script>
+  <script src="../../vinculum-core.js"></script>
+  <script src="../../vinculum-adaptive-hook.js"></script>
+  <script>
+    // ════════════════════════════════════════════════════
+    // STATE
+    // ════════════════════════════════════════════════════
+    var difficulty = 'emergent';
+    var mode = 'explore';
+    var currentEq = null;
+    var exploreStep = 0;
+    var practiceState = {};
+    var playState = { score: 0, streak: 0, timer: 0, interval: null };
+
+    // ════════════════════════════════════════════════════
+    // MATH RENDERING — delegates to VinculumMath
+    // ════════════════════════════════════════════════════
+    var M = {
+      r: function(latex) {
+        return (typeof VinculumMath !== 'undefined')
+          ? VinculumMath.renderLatex(latex)
+          : '<i>' + latex + '</i>';
+      }
+    };
+
+    var OP_COLOR = '#ff3b8b';
+
+    function latexify(str) { return str.trim(); }
+
+    function buildStepLatex(step) {
+      var bParts = step.before.split('=').map(function(s) { return s.trim(); });
+      var aParts = step.after.split('=').map(function(s) { return s.trim(); });
+      var left = latexify(bParts[0]), right = latexify(bParts[1]);
+      var aLeft = latexify(aParts[0]), aRight = latexify(aParts[1]);
+      var applied, result;
+
+      if (step.opType === 'subtract') {
+        var v = step.opValue;
+        applied = left + ' \\textcolor{' + OP_COLOR + '}{\\;-\\;' + v + '} \\;=\\; '
+                + right + ' \\textcolor{' + OP_COLOR + '}{\\;-\\;' + v + '}';
+      } else if (step.opType === 'add') {
+        var v = step.opValue;
+        applied = left + ' \\textcolor{' + OP_COLOR + '}{\\;+\\;' + v + '} \\;=\\; '
+                + right + ' \\textcolor{' + OP_COLOR + '}{\\;+\\;' + v + '}';
+      } else if (step.opType === 'divide') {
+        var v = step.opValue;
+        applied = '\\dfrac{' + left + '}{\\textcolor{' + OP_COLOR + '}{' + v + '}} \\;=\\; '
+                + '\\dfrac{' + right + '}{\\textcolor{' + OP_COLOR + '}{' + v + '}}';
+      } else if (step.opType === 'multiply') {
+        var v = step.opValue;
+        applied = left + ' \\textcolor{' + OP_COLOR + '}{\\;\\cdot\\;' + v + '} \\;=\\; '
+                + right + ' \\textcolor{' + OP_COLOR + '}{\\;\\cdot\\;' + v + '}';
+      } else {
+        applied = left + ' \\;=\\; ' + right;
+      }
+      result = aLeft + ' \\;=\\; ' + aRight;
+      return { appliedLatex: applied, resultLatex: result };
+    }
+
+    function renderStepHTML(step, index, state) {
+      var sl = buildStepLatex(step);
+      var cls = state ? state : '';
+      return '<div class="step-card ' + cls + '" id="' + (step._cardId || '') + '">'
+        + '<div class="step-number">' + (index + 1) + '</div>'
+        + '<div class="step-body">'
+        + '<div class="step-instruction">' + step.instruction + '</div>'
+        + '<div class="step-equation">'
+        + '<div class="step-math-line step-applied">' + M.r(sl.appliedLatex) + '</div>'
+        + '<div class="step-math-line step-result">' + M.r(sl.resultLatex) + '</div>'
+        + '</div>'
+        + '<div class="vmath-caret">\u2328 ' + step.before + ' \u2192 ' + step.operation + ' \u2192 ' + step.after + '</div>'
+        + '</div></div>';
+    }
+
+    function renderEqDisplay(elId, eqText) {
+      var el = document.getElementById(elId);
+      if (!el) return;
+      var latex = latexify(eqText.replace('=', ' \\;=\\; '));
+      el.innerHTML = M.r(latex);
+    }
+
+    // ════════════════════════════════════════════════════
+    // EQUATION GENERATOR
+    // ════════════════════════════════════════════════════
+    function randInt(min, max) { return Math.floor(Math.random() * (max - min + 1)) + min; }
+
+    function genEquation(diff) {
+      var a, b, c, x, steps, display;
+
+      if (diff === 'emergent') {
+        // ax + b = c  (positive coefficients)
+        a = randInt(2, 6);
+        x = randInt(1, 10);
+        b = randInt(1, 12);
+        c = a * x + b;
+        display = a + 'x + ' + b + ' = ' + c;
+        steps = [
+          { instruction: 'Subtract ' + b + ' from both sides',
+            before: a + 'x + ' + b + ' = ' + c, operation: '- ' + b, after: a + 'x = ' + (c - b),
+            opType: 'subtract', opValue: b },
+          { instruction: 'Divide both sides by ' + a,
+            before: a + 'x = ' + (c - b), operation: '\u00f7 ' + a, after: 'x = ' + x,
+            opType: 'divide', opValue: a }
+        ];
+
+      } else if (diff === 'proficient') {
+        // ax - b = c  (subtraction variant, negative constants)
+        a = randInt(2, 7);
+        x = randInt(2, 10);
+        b = randInt(1, 10);
+        c = a * x - b;
+        display = a + 'x - ' + b + ' = ' + c;
+        steps = [
+          { instruction: 'Add ' + b + ' to both sides',
+            before: a + 'x - ' + b + ' = ' + c, operation: '+ ' + b, after: a + 'x = ' + (c + b),
+            opType: 'add', opValue: b },
+          { instruction: 'Divide both sides by ' + a,
+            before: a + 'x = ' + (c + b), operation: '\u00f7 ' + a, after: 'x = ' + x,
+            opType: 'divide', opValue: a }
+        ];
+
+      } else {
+        // Harder: larger coefficients, mixed operations
+        var type = Math.random();
+        if (type < 0.5) {
+          // ax + b = c with larger numbers
+          a = randInt(3, 9);
+          x = randInt(2, 12);
+          b = randInt(5, 20);
+          c = a * x + b;
+          display = a + 'x + ' + b + ' = ' + c;
+          steps = [
+            { instruction: 'Subtract ' + b + ' from both sides',
+              before: a + 'x + ' + b + ' = ' + c, operation: '- ' + b, after: a + 'x = ' + (c - b),
+              opType: 'subtract', opValue: b },
+            { instruction: 'Divide both sides by ' + a,
+              before: a + 'x = ' + (c - b), operation: '\u00f7 ' + a, after: 'x = ' + x,
+              opType: 'divide', opValue: a }
+          ];
+        } else {
+          // ax - b = c with larger numbers
+          a = randInt(4, 12);
+          x = randInt(3, 10);
+          b = randInt(5, 25);
+          c = a * x - b;
+          display = a + 'x - ' + b + ' = ' + c;
+          steps = [
+            { instruction: 'Add ' + b + ' to both sides',
+              before: a + 'x - ' + b + ' = ' + c, operation: '+ ' + b, after: a + 'x = ' + (c + b),
+              opType: 'add', opValue: b },
+            { instruction: 'Divide both sides by ' + a,
+              before: a + 'x = ' + (c + b), operation: '\u00f7 ' + a, after: 'x = ' + x,
+              opType: 'divide', opValue: a }
+          ];
+        }
+      }
+
+      return { display: display, x: x, steps: steps, difficulty: diff };
+    }
+
+    // ════════════════════════════════════════════════════
+    // EXPLORE MODE
+    // ════════════════════════════════════════════════════
+    function exploreNew() {
+      currentEq = genEquation(difficulty);
+      exploreStep = 0;
+      renderEqDisplay('explore-equation', currentEq.display);
+      document.getElementById('explore-next-btn').disabled = false;
+      document.getElementById('explore-next-btn').innerHTML = 'Next Step &rarr;';
+
+      // Render tiles
+      VinculumTiles.render('tile-left', 'tile-right', currentEq.display);
+      VinculumTiles.setLabel('Each tile represents a term \u2014 keep both sides equal');
+
+      // Render step placeholders
+      var panel = document.getElementById('explore-steps');
+      panel.innerHTML = '';
+      currentEq.steps.forEach(function(step, i) {
+        step._cardId = 'explore-step-' + i;
+        panel.innerHTML += renderStepHTML(step, i, '');
+      });
+    }
+
+    function exploreNext() {
+      if (exploreStep >= currentEq.steps.length) return;
+
+      var card = document.getElementById('explore-step-' + exploreStep);
+      card.classList.add('revealed');
+
+      var step = currentEq.steps[exploreStep];
+      VinculumTiles.animateStep(step);
+      renderEqDisplay('explore-equation', step.after);
+
+      exploreStep++;
+      if (exploreStep >= currentEq.steps.length) {
+        document.getElementById('explore-next-btn').innerHTML = '\u2713 Solved!';
+        document.getElementById('explore-next-btn').disabled = true;
+        VinculumTiles.setLabel('Solution: x = ' + currentEq.x + '. Variable isolated!');
+        showFB('x = ' + currentEq.x + ' \u2014 Equation solved!', 'correct', 3000);
+      }
+    }
+
+    // ════════════════════════════════════════════════════
+    // PRACTICE MODE
+    // ════════════════════════════════════════════════════
+    var selectedOp = null;
+
+    function practiceNewProblem() {
+      currentEq = genEquation(difficulty);
+      practiceState = { stepIdx: 0 };
+
+      renderEqDisplay('practice-equation', currentEq.display);
+      document.getElementById('practice-prompt').textContent = 'What operation should you do first?';
+      document.getElementById('practice-actions').classList.remove('hidden');
+      document.getElementById('practice-value-row').classList.add('hidden');
+      document.getElementById('practice-next-row').classList.add('hidden');
+
+      // Render tiles
+      VinculumTiles.render('tile-left', 'tile-right', currentEq.display);
+      VinculumTiles.setLabel('Use the tiles to visualize each step as you solve');
+
+      var panel = document.getElementById('practice-steps');
+      panel.innerHTML = '';
+      currentEq.steps.forEach(function(step, i) {
+        step._cardId = 'practice-step-' + i;
+        panel.innerHTML += '<div class="step-card" id="practice-step-' + i + '">'
+          + '<div class="step-number">' + (i + 1) + '</div>'
+          + '<div class="step-body">'
+          + '<div class="step-instruction" id="practice-inst-' + i + '">Step ' + (i + 1) + '...</div>'
+          + '<div class="step-equation" id="practice-eq-' + i + '"></div>'
+          + '</div></div>';
+      });
+      document.getElementById('practice-step-0').classList.add('active');
+    }
+
+    function practiceOp(op) {
+      selectedOp = op;
+      var step = currentEq.steps[practiceState.stepIdx];
+      var correctOp = getOp(step.instruction);
+
+      if (op === correctOp) {
+        document.getElementById('practice-actions').classList.add('hidden');
+        document.getElementById('practice-value-row').classList.remove('hidden');
+        document.getElementById('practice-value').value = '';
+        document.getElementById('practice-value').focus();
+        showFB('Correct \u2014 ' + op + '! Now enter the value.', 'correct', 2500);
+      } else {
+        showFB('Not quite. Think: which operation undoes what\u2019s being done to x?', 'incorrect', 3500);
+      }
+    }
+
+    function getOp(inst) {
+      if (inst.indexOf('Subtract') !== -1) return 'subtract';
+      if (inst.indexOf('Add') !== -1) return 'add';
+      if (inst.indexOf('Divide') !== -1) return 'divide';
+      if (inst.indexOf('Multiply') !== -1) return 'multiply';
+      return '';
+    }
+
+    function getVal(inst) {
+      var m = inst.match(/(\d+)/);
+      return m ? parseInt(m[1]) : 0;
+    }
+
+    function practiceSubmit() {
+      var step = currentEq.steps[practiceState.stepIdx];
+      var expected = getVal(step.instruction);
+      var userVal = parseInt(document.getElementById('practice-value').value);
+
+      if (userVal === expected) {
+        var card = document.getElementById('practice-step-' + practiceState.stepIdx);
+        var sl = buildStepLatex(step);
+        card.classList.remove('active');
+        card.classList.add('completed');
+        document.getElementById('practice-inst-' + practiceState.stepIdx).textContent = step.instruction;
+        document.getElementById('practice-eq-' + practiceState.stepIdx).innerHTML =
+          '<div class="step-math-line step-applied">' + M.r(sl.appliedLatex) + '</div>'
+          + '<div class="step-math-line step-result">' + M.r(sl.resultLatex) + '</div>'
+          + '<div class="vmath-caret">\u2328 ' + step.before + ' \u2192 ' + step.operation + ' \u2192 ' + step.after + '</div>';
+
+        renderEqDisplay('practice-equation', step.after);
+        VinculumTiles.animateStep(step);
+
+        practiceState.stepIdx++;
+        showFB('Correct!', 'correct', 2500);
+
+        if (practiceState.stepIdx >= currentEq.steps.length) {
+          document.getElementById('practice-value-row').classList.add('hidden');
+          document.getElementById('practice-next-row').classList.remove('hidden');
+          document.getElementById('practice-prompt').textContent = 'Solved! x = ' + currentEq.x;
+          showFB('x = ' + currentEq.x + ' \u2014 Great work!', 'correct', 3000);
+        } else {
+          document.getElementById('practice-value-row').classList.add('hidden');
+          document.getElementById('practice-actions').classList.remove('hidden');
+          document.getElementById('practice-prompt').textContent = 'What operation next?';
+          document.getElementById('practice-step-' + practiceState.stepIdx).classList.add('active');
+        }
+      } else {
+        showFB('Not quite \u2014 look at the equation. What value do you need to ' + selectedOp + '?', 'incorrect', 3500);
+      }
+    }
+
+    // ════════════════════════════════════════════════════
+    // PLAY MODE
+    // ════════════════════════════════════════════════════
+    function playStart() {
+      playState.score = 0;
+      playState.streak = 0;
+      playState.timer = 0;
+      clearInterval(playState.interval);
+      playState.interval = setInterval(function() {
+        playState.timer++;
+        var m = Math.floor(playState.timer / 60);
+        var s = playState.timer % 60;
+        document.getElementById('play-timer').textContent = m + ':' + (s < 10 ? '0' : '') + s;
+      }, 1000);
+      playNext();
+    }
+
+    function playNext() {
+      currentEq = genEquation(difficulty);
+      renderEqDisplay('play-equation', currentEq.display);
+      document.getElementById('play-answer').value = '';
+      document.getElementById('play-answer').focus();
+      document.getElementById('play-solution-row').classList.add('hidden');
+      document.getElementById('play-steps').innerHTML = '';
+      updatePlayStats();
+    }
+
+    function playSubmit() {
+      var answer = parseFloat(document.getElementById('play-answer').value);
+      if (isNaN(answer)) { showFB('Enter a number for x.', 'info'); return; }
+
+      if (Math.abs(answer - currentEq.x) < 0.01) {
+        playState.score += 10 * currentEq.steps.length;
+        playState.streak++;
+        showFB('Correct! x = ' + currentEq.x, 'correct', 2000);
+        updatePlayStats();
+        setTimeout(playNext, 1200);
+      } else {
+        playState.streak = 0;
+        showFB('Not quite. Try again or view solution steps.', 'incorrect', 3000);
+        document.getElementById('play-solution-row').classList.remove('hidden');
+        updatePlayStats();
+      }
+    }
+
+    function playShowSteps() {
+      var panel = document.getElementById('play-steps');
+      panel.innerHTML = '';
+      currentEq.steps.forEach(function(step, i) {
+        step._cardId = 'play-step-' + i;
+        panel.innerHTML += renderStepHTML(step, i, 'revealed');
+      });
+    }
+
+    function updatePlayStats() {
+      document.getElementById('play-score').textContent = playState.score;
+      document.getElementById('play-streak').textContent = playState.streak;
+    }
+
+    // ════════════════════════════════════════════════════
+    // MODE & DIFFICULTY SWITCHING
+    // ════════════════════════════════════════════════════
+    function switchMode(m) {
+      mode = m;
+      document.querySelectorAll('.vinculum-mode-tab').forEach(function(t) {
+        t.classList.remove('active-explore', 'active-practice', 'active-play');
+      });
+      document.querySelector('[data-mode="' + m + '"]').classList.add('active-' + m);
+      document.querySelectorAll('.mode-content').forEach(function(c) { c.classList.remove('active'); });
+      document.getElementById('mode-' + m).classList.add('active');
+
+      // Show tiles in Explore & Practice, hide in Play
+      if (m === 'play') { VinculumTiles.hide(); } else { VinculumTiles.show(); }
+
+      if (m === 'explore') exploreNew();
+      if (m === 'practice') practiceNewProblem();
+      if (m === 'play') playStart();
+    }
+
+    function setDifficulty(diff) {
+      difficulty = diff;
+      document.querySelectorAll('.vinculum-diff-btn').forEach(function(b) { b.classList.remove('active'); });
+      document.querySelector('[data-diff="' + diff + '"]').classList.add('active');
+      switchMode(mode);
+    }
+
+    // ════════════════════════════════════════════════════
+    // EVENT LISTENERS
+    // ════════════════════════════════════════════════════
+    document.querySelectorAll('.vinculum-mode-tab').forEach(function(tab) {
+      tab.addEventListener('click', function() { switchMode(tab.dataset.mode); });
+    });
+    document.querySelectorAll('.vinculum-diff-btn').forEach(function(btn) {
+      btn.addEventListener('click', function() { setDifficulty(btn.dataset.diff); });
+    });
+    document.getElementById('practice-value').addEventListener('keydown', function(e) {
+      if (e.key === 'Enter') practiceSubmit();
+    });
+    document.getElementById('play-answer').addEventListener('keydown', function(e) {
+      if (e.key === 'Enter') playSubmit();
+    });
+
+    // ════════════════════════════════════════════════════
+    // INIT
+    // ════════════════════════════════════════════════════
+    function init() {
+      // Create tile mat in the host container
+      VinculumTiles.createMat('tile-host');
+      exploreNew();
+    }
+
+    if (typeof VinculumMath !== 'undefined') {
+      VinculumMath.ready(init);
+    } else {
+      window.addEventListener('DOMContentLoaded', init);
+    }
+  </script>
+</body>
+</html>

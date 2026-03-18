@@ -1,0 +1,787 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="VINCULUM Learning Hub - Basic Transformations">
+    <meta name="author" content="VINCULUM">
+    <title>Basic Transformations — VINCULUM Hub</title>
+
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+
+    <link rel="stylesheet" href="../../vinculum-core.css">
+
+    <style>
+        :root {
+            --bg: #f8f9fa;
+            --card: #ffffff;
+            --text: #1a1a1a;
+            --primary: #0066cc;
+            --success: #00a854;
+            --error: #ff4d4f;
+        }
+
+        .explore-content {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 2rem;
+            margin: 1rem 0;
+        }
+
+        .canvas-section {
+            background: var(--card);
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            padding: 1.5rem;
+        }
+
+        .canvas-header {
+            font-weight: 600;
+            color: var(--primary);
+            margin-bottom: 1rem;
+        }
+
+        .grid-canvas {
+            background-image:
+                linear-gradient(rgba(0,0,0,0.1) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(0,0,0,0.1) 1px, transparent 1px);
+            background-size: 30px 30px;
+            background-color: #f9f9f9;
+            border: 2px solid #ddd;
+            border-radius: 4px;
+            width: 100%;
+            height: 300px;
+            position: relative;
+            cursor: crosshair;
+            margin-bottom: 1rem;
+        }
+
+        .grid-point {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: var(--primary);
+            position: absolute;
+            cursor: pointer;
+            z-index: 10;
+        }
+
+        .grid-point.original {
+            background: #0066cc;
+        }
+
+        .grid-point.transformed {
+            background: #00a854;
+        }
+
+        .grid-line {
+            position: absolute;
+            background: var(--primary);
+            opacity: 0.3;
+        }
+
+        .shape-display {
+            padding: 1rem;
+            background: #f5f5f5;
+            border-radius: 4px;
+            text-align: center;
+            font-weight: 500;
+            color: var(--text);
+        }
+
+        .controls {
+            background: var(--card);
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            padding: 1.5rem;
+        }
+
+        .controls h3 {
+            color: var(--primary);
+            margin-bottom: 1rem;
+        }
+
+        .transform-buttons {
+            display: flex;
+            flex-direction: column;
+            gap: 0.75rem;
+            margin-bottom: 1.5rem;
+        }
+
+        .transform-btn {
+            padding: 0.75rem;
+            border: 2px solid #ddd;
+            background: white;
+            border-radius: 4px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .transform-btn:hover {
+            border-color: var(--primary);
+            background: rgba(0,102,204,0.05);
+        }
+
+        .transform-btn.active {
+            border-color: var(--primary);
+            background: var(--primary);
+            color: white;
+        }
+
+        .transform-options {
+            margin-top: 1rem;
+            padding-top: 1rem;
+            border-top: 2px solid #e0e0e0;
+        }
+
+        .option-group {
+            display: flex;
+            flex-direction: column;
+            gap: 0.5rem;
+        }
+
+        .option-group label {
+            font-weight: 500;
+            color: var(--text);
+        }
+
+        .option-group input,
+        .option-group select {
+            padding: 0.5rem;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            font-size: 0.9rem;
+        }
+
+        .practice-content {
+            max-width: 700px;
+        }
+
+        .problem-card {
+            background: var(--card);
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            padding: 1.5rem;
+            margin-bottom: 1.5rem;
+        }
+
+        .problem-title {
+            font-size: 1.1rem;
+            font-weight: 600;
+            color: var(--text);
+            margin-bottom: 1rem;
+        }
+
+        .problem-grid {
+            background-image:
+                linear-gradient(rgba(0,0,0,0.1) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(0,0,0,0.1) 1px, transparent 1px);
+            background-size: 25px 25px;
+            background-color: #f9f9f9;
+            border: 2px solid #ddd;
+            border-radius: 4px;
+            width: 100%;
+            height: 200px;
+            position: relative;
+            margin-bottom: 1rem;
+        }
+
+        .answer-section {
+            display: flex;
+            flex-direction: column;
+            gap: 0.75rem;
+            margin: 1rem 0;
+        }
+
+        .answer-input {
+            padding: 0.75rem;
+            border: 2px solid #ddd;
+            border-radius: 4px;
+            font-size: 1rem;
+        }
+
+        .answer-input:focus {
+            outline: none;
+            border-color: var(--primary);
+        }
+
+        .check-btn {
+            padding: 0.75rem 1.5rem;
+            background: var(--primary);
+            color: white;
+            border: none;
+            border-radius: 4px;
+            font-weight: 600;
+            cursor: pointer;
+            margin-top: 0.5rem;
+        }
+
+        .check-btn:hover {
+            background: #0052a3;
+        }
+
+        .play-content {
+            max-width: 750px;
+        }
+
+        .game-board {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border-radius: 12px;
+            padding: 1.5rem;
+            color: white;
+            margin-bottom: 1.5rem;
+        }
+
+        .game-stats {
+            display: grid;
+            grid-template-columns: 1fr 1fr 1fr;
+            gap: 1rem;
+            margin-bottom: 1rem;
+        }
+
+        .stat-box {
+            background: rgba(255,255,255,0.2);
+            padding: 1rem;
+            border-radius: 8px;
+            text-align: center;
+        }
+
+        .stat-label {
+            font-size: 0.9rem;
+            opacity: 0.9;
+        }
+
+        .stat-value {
+            font-size: 1.8rem;
+            font-weight: 700;
+            margin-top: 0.5rem;
+        }
+
+        .challenge-card {
+            background: var(--card);
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            padding: 1.5rem;
+            margin-bottom: 1.5rem;
+        }
+
+        .challenge-text {
+            font-size: 1.1rem;
+            font-weight: 600;
+            color: var(--text);
+            margin-bottom: 1rem;
+        }
+
+        .challenge-grid {
+            background-image:
+                linear-gradient(rgba(0,0,0,0.1) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(0,0,0,0.1) 1px, transparent 1px);
+            background-size: 25px 25px;
+            background-color: #f9f9f9;
+            border: 2px solid #ddd;
+            border-radius: 4px;
+            width: 100%;
+            height: 250px;
+            position: relative;
+            margin-bottom: 1rem;
+        }
+
+        .transform-choices {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 1rem;
+            margin-bottom: 1rem;
+        }
+
+        .choice-btn {
+            padding: 1rem;
+            border: 2px solid #ddd;
+            background: white;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: 600;
+            transition: all 0.3s;
+        }
+
+        .choice-btn:hover {
+            border-color: var(--primary);
+            background: rgba(0,102,204,0.05);
+        }
+
+        .choice-btn.correct {
+            border-color: var(--success);
+            background: var(--success);
+            color: white;
+        }
+
+        .choice-btn.incorrect {
+            border-color: var(--error);
+            background: var(--error);
+            color: white;
+        }
+
+        .submit-btn {
+            width: 100%;
+            padding: 1rem;
+            background: var(--primary);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-weight: 600;
+            font-size: 1rem;
+            cursor: pointer;
+            margin-top: 1rem;
+        }
+
+        .submit-btn:hover {
+            background: #0052a3;
+        }
+
+        .hidden {
+            display: none;
+        }
+
+        .point-label {
+            position: absolute;
+            font-size: 0.75rem;
+            font-weight: 600;
+            color: var(--primary);
+            pointer-events: none;
+            transform: translate(-50%, -20px);
+        }
+
+        @media (max-width: 768px) {
+            .explore-content {
+                grid-template-columns: 1fr;
+            }
+
+            .transform-choices {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="vinculum-header">
+        <h1>Basic Transformations</h1>
+        <span>Geometry</span>
+        <span>HSG-CO.1-6</span>
+    </div>
+
+    <div class="vinculum-mode-tabs">
+        <button class="vinculum-mode-tab" data-mode="explore"><svg width="18" height="18" viewBox="0 0 48 48" fill="none"><path d="M4 24C4 24 12 12 24 12C36 12 44 24 44 24C44 24 36 36 24 36C12 36 4 24 4 24Z" stroke="currentColor" stroke-width="3" fill="none"/><circle cx="24" cy="24" r="7" stroke="currentColor" stroke-width="3" fill="none"/><circle cx="24" cy="24" r="3" fill="currentColor"/><line x1="24" y1="4" x2="24" y2="9" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" opacity="0.5"/><line x1="10" y1="8" x2="13" y2="12" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" opacity="0.5"/><line x1="38" y1="8" x2="35" y2="12" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" opacity="0.5"/></svg> Explore</button>
+        <button class="vinculum-mode-tab" data-mode="practice"><svg width="18" height="18" viewBox="0 0 48 48" fill="none"><circle cx="24" cy="24" r="20" stroke="currentColor" stroke-width="3" fill="none" opacity="0.3"/><circle cx="24" cy="24" r="20" stroke="currentColor" stroke-width="3" fill="none" stroke-dasharray="126" stroke-dashoffset="32" stroke-linecap="round"/><polyline points="16,24 22,32 34,16" stroke="currentColor" stroke-width="4" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg> Practice</button>
+        <button class="vinculum-mode-tab" data-mode="play"><svg width="18" height="18" viewBox="0 0 48 48" fill="none"><polygon points="28,4 12,28 22,28 18,44 36,18 26,18" fill="none" stroke="currentColor" stroke-width="3" stroke-linejoin="round"/><polygon points="27,8 15,27 23,27 20,40 34,19 26,19" fill="currentColor" opacity="0.15"/></svg> Play</button>
+
+        <div class="difficulty-selector">
+            <label for="difficulty-select">Difficulty:</label>
+            <select id="difficulty-select">
+                <option value="easy">Easy</option>
+                <option value="medium" selected>Medium</option>
+                <option value="hard">Hard</option>
+            </select>
+        </div>
+    </div>
+
+    <div class="vinculum-mode-content" data-mode="explore">
+        <div class="card">
+            <h2>Explore: Interactive Transformations</h2>
+            <div id="explore-content" class="explore-content"></div>
+        </div>
+    </div>
+
+    <div class="vinculum-mode-content" data-mode="practice">
+        <div class="card">
+            <h2>Practice: Identify Transformations</h2>
+            <div id="practice-content" class="practice-content"></div>
+        </div>
+    </div>
+
+    <div class="vinculum-mode-content" data-mode="play">
+        <div class="card">
+            <h2>Play: Transformation Challenge</h2>
+            <div id="play-content" class="play-content"></div>
+        </div>
+    </div>
+
+    <div id="feedback" class="feedback"></div>
+
+    <script src="../../lib/vinculum-input.js"></script>
+    <script src="../../lib/vinculum-feedback.js"></script><script src="../../vinculum-guide.js"></script><script src="../../vinculum-indigenous.js"></script><script src="../../indigenous-context-panel.js"></script>
+
+    <script>
+        let currentDifficulty = 'medium';
+        let practiceIndex = 0;
+        let gameScore = 0;
+        let gameRound = 1;
+
+        const defaultShape = [
+            { x: 2, y: 2 },
+            { x: 4, y: 2 },
+            { x: 4, y: 4 },
+            { x: 2, y: 4 }
+        ];
+
+        const transformations = {
+            translate: {
+                name: 'Translation',
+                icon: '→',
+                apply: (shape, dx, dy) => shape.map(p => ({ x: p.x + dx, y: p.y + dy }))
+            },
+            reflect: {
+                name: 'Reflection',
+                icon: '↔',
+                apply: (shape, axis) => {
+                    if (axis === 'x') return shape.map(p => ({ x: p.x, y: -p.y }));
+                    if (axis === 'y') return shape.map(p => ({ x: -p.x, y: p.y }));
+                }
+            },
+            rotate: {
+                name: 'Rotation',
+                icon: '⟲',
+                apply: (shape, angle) => {
+                    const rad = (angle * Math.PI) / 180;
+                    return shape.map(p => ({
+                        x: p.x * Math.cos(rad) - p.y * Math.sin(rad),
+                        y: p.x * Math.sin(rad) + p.y * Math.cos(rad)
+                    }));
+                }
+            }
+        };
+
+        document.querySelectorAll('.vinculum-mode-tab').forEach(tab => {
+            tab.addEventListener('click', function() {
+                switchMode(this.getAttribute('data-mode'));
+            });
+        });
+
+        document.getElementById('difficulty-select').addEventListener('change', function() {
+            currentDifficulty = this.value;
+        });
+
+        function switchMode(mode) {
+            document.querySelectorAll('.vinculum-mode-content').forEach(el => {
+                el.style.display = 'none';
+            });
+            document.querySelectorAll('.vinculum-mode-tab').forEach(tab => {
+                tab.classList.remove('active');
+            });
+            document.querySelector(`[data-mode="${mode}"]`).style.display = 'block';
+            document.querySelector(`.vinculum-mode-tab[data-mode="${mode}"]`).classList.add('active');
+
+            if (mode === 'explore') renderExplore();
+            else if (mode === 'practice') renderPractice();
+            else if (mode === 'play') renderPlay();
+        }
+
+        function renderExplore() {
+            const container = document.getElementById('explore-content');
+
+            const canvasHtml = `
+                <div class="canvas-section">
+                    <div class="canvas-header">Original Shape</div>
+                    <div class="grid-canvas" id="explore-canvas">
+                        <svg style="position: absolute; top: 0; left: 0; width: 100%; height: 100%;" id="explore-svg">
+                            <polygon id="shape-polygon" points="" fill="rgba(102, 126, 234, 0.3)" stroke="#667eea" stroke-width="2"/>
+                        </svg>
+                    </div>
+                    <div class="shape-display">Rectangle at (2,2) to (4,4)</div>
+                </div>
+            `;
+
+            const controlsHtml = `
+                <div class="controls">
+                    <h3>Apply Transformation</h3>
+                    <div class="transform-buttons">
+                        <button class="transform-btn active" data-transform="translate">Translate (Move)</button>
+                        <button class="transform-btn" data-transform="reflect">Reflect (Flip)</button>
+                        <button class="transform-btn" data-transform="rotate">Rotate (Turn)</button>
+                    </div>
+                    <div class="transform-options" id="options"></div>
+                </div>
+            `;
+
+            container.innerHTML = canvasHtml + controlsHtml;
+
+            drawShape(defaultShape, 'explore-svg');
+
+            document.querySelectorAll('.transform-btn').forEach(btn => {
+                btn.addEventListener('click', function() {
+                    document.querySelectorAll('.transform-btn').forEach(b => b.classList.remove('active'));
+                    this.classList.add('active');
+                    updateTransformOptions(this.dataset.transform);
+                });
+            });
+
+            updateTransformOptions('translate');
+        }
+
+        function updateTransformOptions(transform) {
+            const optionsDiv = document.getElementById('options');
+
+            if (transform === 'translate') {
+                optionsDiv.innerHTML = `
+                    <div class="option-group">
+                        <label>X offset:</label>
+                        <input type="number" id="tx" value="1" min="-5" max="5">
+                    </div>
+                    <div class="option-group">
+                        <label>Y offset:</label>
+                        <input type="number" id="ty" value="1" min="-5" max="5">
+                    </div>
+                `;
+                document.getElementById('tx').addEventListener('change', () => applyExploreTransform());
+                document.getElementById('ty').addEventListener('change', () => applyExploreTransform());
+            } else if (transform === 'reflect') {
+                optionsDiv.innerHTML = `
+                    <div class="option-group">
+                        <label>Reflect across:</label>
+                        <select id="axis">
+                            <option value="x">X-axis</option>
+                            <option value="y">Y-axis</option>
+                        </select>
+                    </div>
+                `;
+                document.getElementById('axis').addEventListener('change', () => applyExploreTransform());
+            } else if (transform === 'rotate') {
+                optionsDiv.innerHTML = `
+                    <div class="option-group">
+                        <label>Angle (degrees):</label>
+                        <select id="angle">
+                            <option value="90">90°</option>
+                            <option value="180">180°</option>
+                            <option value="270">270°</option>
+                        </select>
+                    </div>
+                `;
+                document.getElementById('angle').addEventListener('change', () => applyExploreTransform());
+            }
+        }
+
+        function applyExploreTransform() {
+            const activeBtn = document.querySelector('.transform-btn.active');
+            const transform = activeBtn.dataset.transform;
+            let transformed = [...defaultShape];
+
+            if (transform === 'translate') {
+                const dx = parseInt(document.getElementById('tx').value) || 0;
+                const dy = parseInt(document.getElementById('ty').value) || 0;
+                transformed = transformations.translate.apply(transformed, dx, dy);
+            } else if (transform === 'reflect') {
+                const axis = document.getElementById('axis').value;
+                transformed = transformations.reflect.apply(transformed, axis);
+            } else if (transform === 'rotate') {
+                const angle = parseInt(document.getElementById('angle').value);
+                transformed = transformations.rotate.apply(transformed, angle);
+            }
+
+            drawShape(transformed, 'explore-svg');
+        }
+
+        function drawShape(shape, canvasId) {
+            const svg = document.getElementById(canvasId);
+            if (!svg) return;
+
+            const canvas = svg.parentElement;
+            const width = canvas.clientWidth;
+            const height = canvas.clientHeight;
+            const scale = 30;
+
+            const points = shape.map(p => {
+                const x = (p.x * scale) + 50;
+                const y = height - (p.y * scale) - 50;
+                return `${x},${y}`;
+            }).join(' ');
+
+            const polygon = svg.querySelector('polygon');
+            if (polygon) polygon.setAttribute('points', points);
+        }
+
+        function renderPractice() {
+            const container = document.getElementById('practice-content');
+            practiceIndex = 0;
+
+            const problems = [
+                {
+                    description: 'The square moves 2 units right. What transformation is this?',
+                    options: ['Translation', 'Reflection', 'Rotation'],
+                    correct: 0
+                },
+                {
+                    description: 'The rectangle flips across the y-axis. What transformation is this?',
+                    options: ['Translation', 'Reflection', 'Rotation'],
+                    correct: 1
+                },
+                {
+                    description: 'The shape turns 90 degrees. What transformation is this?',
+                    options: ['Translation', 'Reflection', 'Rotation'],
+                    correct: 2
+                },
+                {
+                    description: 'After translation right 3 and up 2, where does the point (2,2) go?',
+                    options: ['(5,4)', '(4,5)', '(-1,0)'],
+                    correct: 0
+                }
+            ];
+
+            renderPracticeProblem(problems);
+
+            function renderPracticeProblem(problems) {
+                if (practiceIndex >= problems.length) {
+                    container.innerHTML = '<div class="problem-card"><div class="problem-title">🎉 Great job! All problems complete!</div></div>';
+                    return;
+                }
+
+                const problem = problems[practiceIndex];
+                const html = `
+                    <div class="problem-card">
+                        <div class="problem-title">Problem ${practiceIndex + 1} of ${problems.length}</div>
+                        <div class="problem-grid" id="practice-grid"></div>
+                        <div style="background: #f0f0f0; padding: 1rem; border-radius: 4px; margin-bottom: 1rem;">
+                            ${problem.description}
+                        </div>
+                        <div class="answer-section">
+                            ${problem.options.map((opt, i) => `
+                                <button class="answer-input" style="background: white; border: 2px solid #ddd; cursor: pointer; padding: 0.75rem; font-weight: 500;"
+                                        onclick="checkPracticeAnswer(${i}, ${problem.correct})">
+                                    ${opt}
+                                </button>
+                            `).join('')}
+                        </div>
+                    </div>
+                `;
+
+                container.innerHTML = html;
+            }
+        }
+
+        function checkPracticeAnswer(chosen, correct) {
+            const buttons = document.querySelectorAll('.answer-input');
+            buttons.forEach((btn, i) => {
+                btn.disabled = true;
+                if (i === correct) {
+                    btn.style.borderColor = 'var(--success)';
+                    btn.style.background = 'var(--success)';
+                    btn.style.color = 'white';
+                } else if (i === chosen && i !== correct) {
+                    btn.style.borderColor = 'var(--error)';
+                    btn.style.background = 'var(--error)';
+                    btn.style.color = 'white';
+                }
+            });
+
+            if (chosen === correct) {
+                showFeedback('Correct!', 'success');
+            } else {
+                showFeedback('Try again next time!', 'error');
+            }
+
+            setTimeout(() => {
+                practiceIndex++;
+                renderPractice();
+            }, 2000);
+        }
+
+        function renderPlay() {
+            const container = document.getElementById('play-content');
+            gameScore = 0;
+            gameRound = 1;
+
+            const challenges = [
+                { type: 'translation', description: 'Translate 3 right, 2 up', transformations: ['Translation', 'Reflection', 'Rotation'] },
+                { type: 'reflection', description: 'Reflect across the y-axis', transformations: ['Translation', 'Reflection', 'Rotation'] },
+                { type: 'rotation', description: 'Rotate 90° clockwise', transformations: ['Translation', 'Reflection', 'Rotation'] }
+            ];
+
+            renderGameChallenge(challenges);
+
+            function renderGameChallenge(challenges) {
+                if (gameRound > 3) {
+                    container.innerHTML = `
+                        <div class="challenge-card">
+                            <div class="challenge-text">🎉 Game Complete!</div>
+                            <div style="font-size: 1.5rem; font-weight: 700; color: var(--primary); margin: 1rem 0;">Final Score: ${gameScore} points</div>
+                            <button class="submit-btn" onclick="location.reload()">Play Again</button>
+                        </div>
+                    `;
+                    return;
+                }
+
+                const challenge = challenges[gameRound - 1];
+                const shuffled = challenge.transformations.sort(() => Math.random() - 0.5);
+
+                const html = `
+                    <div class="game-board">
+                        <div class="game-stats">
+                            <div class="stat-box">
+                                <div class="stat-label">Score</div>
+                                <div class="stat-value">${gameScore}</div>
+                            </div>
+                            <div class="stat-box">
+                                <div class="stat-label">Round</div>
+                                <div class="stat-value">${gameRound}/3</div>
+                            </div>
+                            <div class="stat-box">
+                                <div class="stat-label">Streak</div>
+                                <div class="stat-value" id="streak">0</div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="challenge-card">
+                        <div class="challenge-text">${challenge.description}</div>
+                        <div class="challenge-grid"></div>
+                        <div class="transform-choices">
+                            ${shuffled.map((opt, i) => `
+                                <button class="choice-btn" onclick="checkGameAnswer('${opt}', '${challenge.type}')">
+                                    ${opt}
+                                </button>
+                            `).join('')}
+                        </div>
+                    </div>
+                `;
+
+                container.innerHTML = html;
+            }
+        }
+
+        function checkGameAnswer(answer, expected) {
+            const expectedMap = { 'translation': 'Translation', 'reflection': 'Reflection', 'rotation': 'Rotation' };
+            const isCorrect = answer === expectedMap[expected];
+
+            const buttons = document.querySelectorAll('.choice-btn');
+            buttons.forEach(btn => {
+                btn.disabled = true;
+                if (btn.textContent === expectedMap[expected]) {
+                    btn.classList.add('correct');
+                } else if (btn.textContent === answer && !isCorrect) {
+                    btn.classList.add('incorrect');
+                }
+            });
+
+            if (isCorrect) {
+                gameScore += 20;
+                showFeedback('Correct!', 'success');
+            } else {
+                showFeedback('Try again next time!', 'error');
+            }
+
+            gameRound++;
+            setTimeout(renderPlay, 2000);
+        }
+
+        function showFeedback(message, type = 'info') {
+            const feedback = document.getElementById('feedback');
+            feedback.innerHTML = `<div class="feedback-${type}">${message}</div>`;
+            feedback.style.display = 'block';
+            setTimeout(() => {
+                feedback.style.display = 'none';
+            }, 2500);
+        }
+
+        switchMode('explore');
+    </script>
+</body>
+</html>

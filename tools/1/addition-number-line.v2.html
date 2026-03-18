@@ -1,0 +1,1213 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>VINCULUM — Addition Number Line</title>
+<link rel="stylesheet" href="../../vinculum-core.css">
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;600&display=swap');
+
+/* Theme system loaded from vinculum-core.css */
+.vinculum-rtm-btn .rtm-icon{font-size:14px;}
+
+/* Focus Visible */
+*:focus-visible {
+  outline:2px solid var(--cyan);outline-offset:2px;border-radius:4px;
+}
+.sr-only {
+  position:absolute;width:1px;height:1px;padding:0;margin:-1px;
+  overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0;
+}
+
+* { margin:0; padding:0; box-sizing:border-box; }
+body {
+  font-family: 'Inter', sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  height: 100vh;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  user-select: none;
+}
+
+/* -- MAIN AREA -- */
+.main {
+  flex: 1;
+  display: flex;
+  overflow: hidden;
+}
+
+/* -- WORKSPACE -- */
+.workspace {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+  position: relative;
+  overflow-y: auto;
+}
+
+/* -- NUMBER LINE -- */
+.number-line-wrap {
+  width: 100%;
+  max-width: 600px;
+  overflow-x: auto;
+  margin: 0 auto;
+  padding: 10px 0;
+}
+.number-line-svg {
+  width: 100%;
+  display: block;
+}
+.nl-tick {
+  stroke: var(--border);
+  stroke-width: 2;
+}
+.nl-number {
+  font-size: 14px;
+  font-family: 'JetBrains Mono', monospace;
+  fill: var(--text2);
+  text-anchor: middle;
+  cursor: pointer;
+}
+.nl-number.active {
+  fill: var(--cyan);
+  font-weight: 700;
+}
+.nl-number.landing {
+  fill: var(--green);
+  font-weight: 700;
+  font-size: 16px;
+}
+.nl-arc {
+  stroke: var(--cyan);
+  stroke-width: 2;
+  fill: none;
+  stroke-dasharray: 100;
+  stroke-dashoffset: 100;
+}
+.nl-arc.visible {
+  animation: arcDraw 0.4s ease-out forwards;
+}
+.nl-arc.subtract {
+  stroke: var(--pink);
+}
+.nl-marker {
+  font-size: 24px;
+  text-anchor: middle;
+  dominant-baseline: auto;
+}
+.nl-landing-circle {
+  fill: rgba(0,230,118,0.2);
+  stroke: var(--green);
+  stroke-width: 2;
+}
+.nl-click-zone {
+  fill: transparent;
+  cursor: pointer;
+}
+.nl-click-zone:hover + .nl-number {
+  fill: var(--cyan);
+}
+
+@keyframes arcDraw {
+  from { stroke-dashoffset: 100; }
+  to   { stroke-dashoffset: 0; }
+}
+
+/* -- EQUATION DISPLAY -- */
+.equation-display {
+  text-align: center;
+  margin: 16px 0;
+  font-size: 32px;
+  font-weight: 800;
+  font-family: 'JetBrains Mono', monospace;
+  color: var(--text);
+  letter-spacing: 2px;
+}
+.equation-display .eq-start { color: var(--cyan); }
+.equation-display .eq-op { color: var(--yellow); }
+.equation-display .eq-jump { color: var(--purple); }
+.equation-display .eq-equals { color: var(--muted); }
+.equation-display .eq-result { color: var(--green); }
+.equation-display .eq-unknown { color: var(--pink); text-decoration: underline; }
+
+/* -- INSTRUCTION BOX -- */
+.instruction-box {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 16px 20px;
+  margin-bottom: 16px;
+  font-size: 16px;
+  line-height: 1.6;
+  color: var(--text2);
+  text-align: center;
+  max-width: 600px;
+  width: 100%;
+}
+
+/* -- CONTROLS -- */
+.controls {
+  display: flex;
+  gap: 8px;
+  margin-top: 16px;
+  flex-wrap: wrap;
+  justify-content: center;
+}
+.ctrl-btn {
+  padding: 10px 20px;
+  border-radius: 10px;
+  border: 1px solid var(--border);
+  background: var(--card);
+  color: var(--text2);
+  font-size: 13px;
+  font-weight: 600;
+  font-family: inherit;
+  cursor: pointer;
+  transition: all 0.2s;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.ctrl-btn:hover { background: var(--card-hover); color: var(--text); }
+.ctrl-btn.primary {
+  background: var(--grad);
+  color: var(--bg);
+  border-color: transparent;
+}
+.ctrl-btn.primary:hover { opacity: 0.9; }
+.ctrl-btn.active-toggle {
+  border-color: var(--cyan);
+  background: rgba(0,212,255,0.1);
+  color: var(--cyan);
+}
+
+/* -- NUMBER SELECTOR BUTTONS -- */
+.num-selector {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+  justify-content: center;
+  margin: 8px 0;
+}
+.num-selector-btn {
+  width: 40px;
+  height: 40px;
+  border-radius: 10px;
+  border: 2px solid var(--border);
+  background: var(--card);
+  color: var(--text2);
+  font-size: 16px;
+  font-weight: 700;
+  font-family: 'JetBrains Mono', monospace;
+  cursor: pointer;
+  transition: all 0.15s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.num-selector-btn:hover { border-color: var(--cyan); transform: scale(1.1); }
+.num-selector-btn.selected { border-color: var(--cyan); background: rgba(0,212,255,0.15); color: var(--cyan); }
+
+/* -- MC GRID -- */
+.mc-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 8px;
+  margin-top: 16px;
+  max-width: 400px;
+  width: 100%;
+}
+.mc-btn {
+  padding: 14px;
+  border-radius: 12px;
+  border: 2px solid var(--border);
+  background: var(--card);
+  color: var(--text);
+  font-size: 20px;
+  font-weight: 700;
+  font-family: 'JetBrains Mono', monospace;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+.mc-btn:hover {
+  border-color: var(--cyan);
+  background: rgba(0,212,255,0.05);
+  transform: scale(1.05);
+}
+.mc-btn.correct-flash {
+  border-color: var(--green);
+  background: rgba(0,230,118,0.15);
+  color: var(--green);
+}
+.mc-btn.incorrect-flash {
+  border-color: var(--pink);
+  background: rgba(255,59,139,0.15);
+  color: var(--pink);
+}
+
+/* -- ANSWER BTN (Play) -- */
+.answer-grid {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 8px;
+  margin-top: 16px;
+  max-width: 400px;
+  width: 100%;
+}
+.answer-btn {
+  padding: 14px;
+  border-radius: 12px;
+  border: 2px solid var(--border);
+  background: var(--card);
+  color: var(--text);
+  font-size: 20px;
+  font-weight: 700;
+  font-family: 'JetBrains Mono', monospace;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+.answer-btn:hover {
+  border-color: var(--cyan);
+  background: rgba(0,212,255,0.05);
+  transform: scale(1.05);
+}
+.answer-btn.correct-flash {
+  border-color: var(--green);
+  background: rgba(0,230,118,0.15);
+  color: var(--green);
+}
+.answer-btn.incorrect-flash {
+  border-color: var(--pink);
+  background: rgba(255,59,139,0.15);
+  color: var(--pink);
+}
+
+/* -- FEEDBACK -- */
+.feedback {
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%) scale(0);
+  padding: 24px 48px;
+  border-radius: 20px;
+  font-size: 18px;
+  font-weight: 700;
+  z-index: 200;
+  pointer-events: none;
+  transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275), opacity 0.3s;
+  opacity: 0;
+  max-width: 90vw;
+  text-align: center;
+  line-height: 1.5;
+}
+.feedback.show {
+  transform: translate(-50%, -50%) scale(1);
+  opacity: 1;
+}
+.feedback.correct {
+  background: rgba(0,230,118,0.15);
+  color: var(--green);
+  border: 2px solid var(--green);
+}
+.feedback.incorrect {
+  background: rgba(255,59,139,0.15);
+  color: var(--pink);
+  border: 2px solid var(--pink);
+}
+.feedback.try-again {
+  background: rgba(255,193,7,0.15);
+  color: var(--yellow);
+  border: 2px solid var(--yellow);
+}
+
+/* -- SIDE PANEL -- */
+.side-panel {
+  width: 280px;
+  background: var(--bg2);
+  border-left: 1px solid var(--border);
+  padding: 20px;
+  overflow-y: auto;
+  flex-shrink: 0;
+}
+.panel-section {
+  margin-bottom: 20px;
+}
+.panel-title {
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 1.5px;
+  color: var(--muted);
+  margin-bottom: 8px;
+}
+.panel-text {
+  font-size: 13px;
+  color: var(--text2);
+  line-height: 1.6;
+}
+
+/* -- SCORE DISPLAY -- */
+.score-display {
+  text-align: center;
+  padding: 16px;
+  background: var(--card);
+  border-radius: 12px;
+  margin-bottom: 12px;
+}
+.score-value {
+  font-size: 36px;
+  font-weight: 900;
+  font-family: 'JetBrains Mono', monospace;
+  background: var(--grad);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+.score-label {
+  font-size: 11px;
+  color: var(--muted);
+  text-transform: uppercase;
+  letter-spacing: 1px;
+}
+.streak-bar {
+  height: 6px;
+  background: var(--card);
+  border-radius: 3px;
+  overflow: hidden;
+  margin-top: 8px;
+}
+.streak-fill {
+  height: 100%;
+  background: var(--grad);
+  border-radius: 3px;
+  transition: width 0.3s;
+}
+
+/* -- ANIMATIONS -- */
+@keyframes pop {
+  0% { transform: scale(0); }
+  70% { transform: scale(1.2); }
+  100% { transform: scale(1); }
+}
+@keyframes shake {
+  0%, 100% { transform: translateX(0); }
+  25% { transform: translateX(-8px); }
+  75% { transform: translateX(8px); }
+}
+.pop-in { animation: pop 0.3s ease-out forwards; }
+.shake { animation: shake 0.3s ease-in-out; }
+
+/* scrollbar */
+::-webkit-scrollbar { width: 6px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+</style>
+</head>
+<body>
+
+<!-- HEADER -->
+<div class="vinculum-header">
+  <div class="vinculum-header-left">
+    <a class="vinculum-back-btn" href="../../VINCULUM-Hub.html" style="text-decoration:none;">&#9664; Hub</a>
+    <div class="vinculum-header-title"><span>VINCULUM</span> Addition Number Line</div>
+    <span class="vinculum-header-badge">1.OA</span>
+  </div>
+  <div class="vinculum-header-right">
+    <div class="vinculum-std-tags">
+      <span class="vinculum-std-tag">1.OA.1</span>
+      <span class="vinculum-std-tag">1.OA.5</span>
+      <span class="vinculum-std-tag">1.OA.6</span>
+      <span class="vinculum-std-tag mn">MN 1.2.2.1</span>
+    </div>
+    <button class="vinculum-back-btn" id="readAloudBtn" onclick="toggleReadAloud()" aria-label="Read Aloud" title="Read instructions aloud" style="margin-left:8px;white-space:nowrap;">&#128264; Read to Me</button>
+  </div>
+</div>
+
+<!-- MODE TABS -->
+<div class="vinculum-mode-tabs">
+  <button class="vinculum-mode-tab active-explore" id="tabExplore" data-mode="explore">
+    <svg width="18" height="18" viewBox="0 0 48 48" fill="none"><path d="M4 24C4 24 12 12 24 12C36 12 44 24 44 24C44 24 36 36 24 36C12 36 4 24 4 24Z" stroke="currentColor" stroke-width="3" fill="none"/><circle cx="24" cy="24" r="7" stroke="currentColor" stroke-width="3" fill="none"/><circle cx="24" cy="24" r="3" fill="currentColor"/></svg> Explore
+  </button>
+  <button class="vinculum-mode-tab" id="tabPractice" data-mode="practice">
+    <svg width="18" height="18" viewBox="0 0 48 48" fill="none"><circle cx="24" cy="24" r="20" stroke="currentColor" stroke-width="3" fill="none" opacity="0.3"/><circle cx="24" cy="24" r="20" stroke="currentColor" stroke-width="3" fill="none" stroke-dasharray="126" stroke-dashoffset="32" stroke-linecap="round"/><polyline points="16,24 22,32 34,16" stroke="currentColor" stroke-width="4" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg> Practice
+  </button>
+  <button class="vinculum-mode-tab" id="tabPlay" data-mode="play">
+    <svg width="18" height="18" viewBox="0 0 48 48" fill="none"><polygon points="28,4 12,28 22,28 18,44 36,18 26,18" fill="none" stroke="currentColor" stroke-width="3" stroke-linejoin="round"/><polygon points="27,8 15,27 23,27 20,40 34,19 26,19" fill="currentColor" opacity="0.15"/></svg> Play
+  </button>
+  <div class="vinculum-diff-selector">
+    <span class="vinculum-diff-label">Level</span>
+    <button class="vinculum-diff-btn active" id="diffE" data-diff="emergent">Within 10</button>
+    <button class="vinculum-diff-btn" id="diffP" data-diff="proficient">Within 20</button>
+    <button class="vinculum-diff-btn" id="diffA" data-diff="advanced">Missing Addend</button>
+  </div>
+</div>
+
+<!-- MAIN -->
+<div class="main">
+  <div class="workspace" role="main" id="workspace"></div>
+  <div class="side-panel" id="sidePanel"></div>
+</div>
+
+<!-- FEEDBACK POPUP -->
+<div class="feedback" id="feedback"></div>
+
+<script src="../../vinculum-input.js"></script>
+<script>
+// ================================================================
+// STATE
+// ================================================================
+let S = {
+  mode: 'explore',
+  diff: 'emergent',
+  maxN: 10,
+  // Explore
+  start: 3,
+  jumpSize: 4,
+  operation: 'add', // add | subtract
+  animating: false,
+  arcCount: 0,
+  // Practice
+  pStart: 0,
+  pJump: 0,
+  pOp: 'add',
+  pAnswer: 0,
+  pType: 'result', // result | jump | start
+  pChoices: [],
+  pAnswered: false,
+  // Play
+  score: 0,
+  streak: 0,
+  best: 0,
+  round: 0,
+  total: 10,
+  playStart: 0,
+  playJump: 0,
+  playOp: 'add',
+  playAnswer: 0,
+  playChoices: [],
+  playAnswered: false
+};
+
+// ================================================================
+// READ-ALOUD
+// ================================================================
+function toggleReadAloud() {
+  if (window.VinculumStories && VinculumStories.isReading()) {
+    VinculumStories.stopReading();
+    document.getElementById('readAloudBtn').innerHTML = '&#128264; Read to Me';
+  } else {
+    const fb = document.getElementById('feedback');
+    const storyEl = document.getElementById('storyBanner');
+    const text = storyEl ? storyEl.textContent : (fb ? fb.textContent : 'Welcome to the Addition Number Line!');
+    if (window.VinculumStories) {
+      VinculumStories.readAloud(text, { rate: 0.85, onComplete: function() {
+        document.getElementById('readAloudBtn').innerHTML = '&#128264; Read to Me';
+      }});
+      document.getElementById('readAloudBtn').textContent = '\u23F9 Stop';
+    }
+  }
+}
+
+// ================================================================
+// MISCONCEPTIONS DATABASE
+// ================================================================
+const MISCONCEPTIONS = {
+  countAtStart: {
+    id: 'count-at',
+    msg: function(start, jump) {
+      return 'Start FROM ' + start + ', not AT ' + start + '! Count ' + jump + ' jumps: ' + (start+1) + ', ' + (start+2) + '...';
+    }
+  },
+  jumpsVsLanding: {
+    id: 'jumps-landing',
+    msg: function(start, jump, ans) {
+      return 'You counted the jumps (' + jump + '), but the ANSWER is where you LAND: ' + ans + '!';
+    }
+  },
+  offByOne: {
+    id: 'off-by-one',
+    msg: function(ans, got) {
+      return 'So close! You landed on ' + got + ' but the correct spot is ' + ans + '.';
+    }
+  },
+  directionConfusion: {
+    id: 'direction',
+    msg: function(op) {
+      return 'For ' + (op === 'add' ? 'addition' : 'subtraction') + ', jump ' + (op === 'add' ? 'RIGHT (bigger)' : 'LEFT (smaller)') + '!';
+    }
+  },
+  randomGuess: {
+    id: 'random',
+    msg: function() {
+      return 'Start at the first number, then hop forward the second number of times.';
+    }
+  }
+};
+
+// ================================================================
+// HELPERS
+// ================================================================
+function randInt(min, max) {
+  return Math.floor(Math.random() * (max - min + 1)) + min;
+}
+
+function showFeedback(text, type) {
+  var fb = document.getElementById('feedback');
+  fb.textContent = text;
+  fb.className = 'feedback ' + type + ' show';
+  setTimeout(function() { fb.classList.remove('show'); }, 2400);
+}
+
+function clamp(v, lo, hi) { return Math.max(lo, Math.min(hi, v)); }
+
+function getMaxN() {
+  if (S.diff === 'emergent') return 10;
+  return 20;
+}
+
+function computeResult(start, jump, op) {
+  return op === 'add' ? start + jump : start - jump;
+}
+
+// ================================================================
+// NUMBER LINE SVG BUILDER
+// ================================================================
+function buildNumberLine(max, start, jumpSize, op, showJumps, highlightLanding, clickable) {
+  var padL = 30, padR = 30, padTop = 70, padBot = 40;
+  var w = Math.max(500, (max + 1) * 36);
+  var h = padTop + padBot + 20;
+  var lineY = padTop + 10;
+  var tickLen = 12;
+  var spacing = (w - padL - padR) / max;
+  var landing = op === 'add' ? start + jumpSize : start - jumpSize;
+
+  var svg = '<svg class="number-line-svg" viewBox="0 0 ' + w + ' ' + h + '" xmlns="http://www.w3.org/2000/svg">';
+
+  // Horizontal line
+  svg += '<line x1="' + padL + '" y1="' + lineY + '" x2="' + (w - padR) + '" y2="' + lineY + '" stroke="var(--border)" stroke-width="2" />';
+
+  // Landing highlight circle
+  if (highlightLanding && landing >= 0 && landing <= max) {
+    var lx = padL + landing * spacing;
+    svg += '<circle class="nl-landing-circle" cx="' + lx + '" cy="' + lineY + '" r="16" />';
+  }
+
+  // Ticks and numbers
+  for (var i = 0; i <= max; i++) {
+    var x = padL + i * spacing;
+    svg += '<line class="nl-tick" x1="' + x + '" y1="' + (lineY - tickLen / 2) + '" x2="' + x + '" y2="' + (lineY + tickLen / 2) + '" />';
+
+    var numClass = 'nl-number';
+    if (i === start) numClass += ' active';
+    if (highlightLanding && i === landing) numClass += ' landing';
+
+    // Clickable zone
+    if (clickable) {
+      svg += '<rect class="nl-click-zone" x="' + (x - spacing / 2) + '" y="' + (lineY - 20) + '" width="' + spacing + '" height="' + 50 + '" onclick="nlClick(' + i + ')" />';
+    }
+
+    svg += '<text class="' + numClass + '" x="' + x + '" y="' + (lineY + tickLen / 2 + 18) + '">' + i + '</text>';
+  }
+
+  // Arc jumps
+  if (showJumps && jumpSize > 0) {
+    var dir = op === 'add' ? 1 : -1;
+    var arcsToShow = S.animating ? S.arcCount : jumpSize;
+    for (var j = 0; j < arcsToShow; j++) {
+      var fromIdx = start + j * dir;
+      var toIdx = fromIdx + dir;
+      if (fromIdx < 0 || fromIdx > max || toIdx < 0 || toIdx > max) break;
+      var fx = padL + fromIdx * spacing;
+      var tx = padL + toIdx * spacing;
+      var midX = (fx + tx) / 2;
+      var arcH = 22 + Math.min(j, 3) * 2;
+      var arcClass = 'nl-arc visible' + (op === 'subtract' ? ' subtract' : '');
+      svg += '<path class="' + arcClass + '" d="M ' + fx + ' ' + (lineY - 8) + ' Q ' + midX + ' ' + (lineY - 8 - arcH) + ' ' + tx + ' ' + (lineY - 8) + '" style="animation-delay:' + (j * 0.15) + 's" />';
+      // Jump label
+      svg += '<text x="' + midX + '" y="' + (lineY - 10 - arcH) + '" fill="var(--muted)" font-size="10" font-family="JetBrains Mono, monospace" text-anchor="middle">+1</text>';
+    }
+  }
+
+  // Frog marker at start
+  if (start >= 0 && start <= max) {
+    var sx = padL + start * spacing;
+    svg += '<text class="nl-marker" x="' + sx + '" y="' + (lineY - 20) + '">&#x1F438;</text>';
+  }
+
+  svg += '</svg>';
+  return svg;
+}
+
+// ================================================================
+// MODE SWITCHING
+// ================================================================
+function setMode(mode) {
+  S.mode = mode;
+  S.animating = false;
+  S.arcCount = 0;
+  S.pAnswered = false;
+  S.playAnswered = false;
+
+  document.querySelectorAll('.vinculum-mode-tab').forEach(function(t) {
+    t.classList.remove('active-explore', 'active-practice', 'active-play');
+  });
+  var tabEl = document.getElementById('tab' + mode.charAt(0).toUpperCase() + mode.slice(1));
+  if (tabEl) tabEl.classList.add('active-' + mode);
+
+  if (mode === 'practice') initPractice();
+  else if (mode === 'play') initPlay();
+
+  render();
+}
+
+function setDiff(diff) {
+  S.diff = diff;
+  S.maxN = getMaxN();
+  document.querySelectorAll('.vinculum-diff-btn').forEach(function(b) { b.classList.remove('active'); });
+  var id = diff === 'emergent' ? 'diffE' : diff === 'proficient' ? 'diffP' : 'diffA';
+  document.getElementById(id).classList.add('active');
+  setMode(S.mode);
+}
+
+// ================================================================
+// EXPLORE MODE
+// ================================================================
+function renderExplore(ws, sp) {
+  var max = S.maxN;
+  var result = computeResult(S.start, S.jumpSize, S.operation);
+  var validResult = result >= 0 && result <= max;
+  var html = '';
+
+  // Story banner
+  if (window.VinculumStories) {
+    var toolName = window.location.pathname.split('/').pop().replace('.html','');
+    var storyData = VinculumStories.getStory(toolName, {a: S.start, b: S.jumpSize, total: validResult ? result : S.start + S.jumpSize, n: max});
+    if (storyData && storyData.story) {
+      if (window.Vinculum3Reads) {
+        html += Vinculum3Reads.getBannerHTML(storyData);
+      } else {
+        html += '<div id="storyBanner" style="background:var(--card2,#1a1f2e);border:1px solid var(--border);border-radius:12px;padding:16px 20px;margin-bottom:16px;font-size:15px;line-height:1.6;color:var(--text);position:relative;max-width:600px;width:100%;"><span style="font-size:12px;color:var(--cyan);font-weight:700;text-transform:uppercase;letter-spacing:1px;">&#128214; Story</span><br>' + storyData.story + '<br><em style="color:var(--yellow);font-weight:600;">' + storyData.question + '</em></div>';
+      }
+    }
+  }
+
+  // Equation display
+  if (validResult) {
+    html += '<div class="equation-display">';
+    html += '<span class="eq-start">' + S.start + '</span> ';
+    html += '<span class="eq-op">' + (S.operation === 'add' ? '+' : '\u2212') + '</span> ';
+    html += '<span class="eq-jump">' + S.jumpSize + '</span> ';
+    html += '<span class="eq-equals">=</span> ';
+    html += '<span class="eq-result">' + result + '</span>';
+    html += '</div>';
+  }
+
+  // Number line
+  html += '<div class="number-line-wrap">';
+  html += buildNumberLine(max, S.start, S.jumpSize, S.operation, !S.animating || S.arcCount > 0, validResult, false);
+  html += '</div>';
+
+  // Start number selector
+  html += '<div style="text-align:center;margin-top:12px;">';
+  html += '<div style="font-size:12px;color:var(--muted);margin-bottom:4px;text-transform:uppercase;letter-spacing:1px;">Start Number</div>';
+  html += '<div class="num-selector">';
+  for (var i = 0; i <= max; i++) {
+    html += '<button class="num-selector-btn' + (i === S.start ? ' selected' : '') + '" onclick="setStart(' + i + ')">' + i + '</button>';
+  }
+  html += '</div></div>';
+
+  // Jump size selector
+  html += '<div style="text-align:center;margin-top:8px;">';
+  html += '<div style="font-size:12px;color:var(--muted);margin-bottom:4px;text-transform:uppercase;letter-spacing:1px;">Jump Size</div>';
+  html += '<div class="num-selector">';
+  var maxJump = S.operation === 'add' ? max - S.start : S.start;
+  for (var j = 1; j <= Math.min(9, max); j++) {
+    var disabled = j > maxJump;
+    html += '<button class="num-selector-btn' + (j === S.jumpSize ? ' selected' : '') + '" onclick="setJump(' + j + ')"' + (disabled ? ' style="opacity:0.3;pointer-events:none;"' : '') + '>' + j + '</button>';
+  }
+  html += '</div></div>';
+
+  // Operation toggle + Animate button
+  html += '<div class="controls">';
+  html += '<button class="ctrl-btn' + (S.operation === 'add' ? ' active-toggle' : '') + '" onclick="setOp(\'add\')">+ Add</button>';
+  html += '<button class="ctrl-btn' + (S.operation === 'subtract' ? ' active-toggle' : '') + '" onclick="setOp(\'subtract\')">\u2212 Subtract</button>';
+  html += '<button class="ctrl-btn primary" onclick="animateJumps()">&#9654; Animate Jumps</button>';
+  html += '</div>';
+
+  ws.innerHTML = html;
+
+  // Side panel
+  sp.innerHTML =
+    '<div class="panel-section">' +
+      '<div class="panel-title">How to Use</div>' +
+      '<div class="panel-text">' +
+        '1. Pick a <strong>start number</strong> on the number line<br><br>' +
+        '2. Choose the <strong>jump size</strong><br><br>' +
+        '3. Toggle between <strong>+ Add</strong> and <strong>\u2212 Subtract</strong><br><br>' +
+        '4. Tap <strong>Animate Jumps</strong> to see the frog hop along the number line!' +
+      '</div>' +
+    '</div>' +
+    '<div class="panel-section">' +
+      '<div class="panel-title">Key Concept</div>' +
+      '<div class="panel-text">' +
+        'Addition means <strong>jumping RIGHT</strong> on the number line (numbers get bigger).<br><br>' +
+        'Subtraction means <strong>jumping LEFT</strong> (numbers get smaller).<br><br>' +
+        'The <strong>landing spot</strong> is your answer!' +
+      '</div>' +
+    '</div>' +
+    '<div class="panel-section">' +
+      '<div class="panel-title">Standards</div>' +
+      '<div class="panel-text">' +
+        '<strong>1.OA.1</strong> \u2014 Add and subtract within 20<br><br>' +
+        '<strong>1.OA.5</strong> \u2014 Relate counting to addition and subtraction<br><br>' +
+        '<strong>1.OA.6</strong> \u2014 Add and subtract within 20 using strategies' +
+      '</div>' +
+    '</div>';
+}
+
+function setStart(n) {
+  S.start = n;
+  S.animating = false;
+  S.arcCount = 0;
+  // Clamp jump size
+  var maxJump = S.operation === 'add' ? S.maxN - S.start : S.start;
+  if (S.jumpSize > maxJump) S.jumpSize = Math.max(1, maxJump);
+  render();
+}
+
+function setJump(n) {
+  S.jumpSize = n;
+  S.animating = false;
+  S.arcCount = 0;
+  render();
+}
+
+function setOp(op) {
+  S.operation = op;
+  S.animating = false;
+  S.arcCount = 0;
+  // Clamp jump size
+  var maxJump = op === 'add' ? S.maxN - S.start : S.start;
+  if (S.jumpSize > maxJump) S.jumpSize = Math.max(1, maxJump);
+  render();
+}
+
+function animateJumps() {
+  if (S.animating) return;
+  S.animating = true;
+  S.arcCount = 0;
+  var steps = S.jumpSize;
+  var i = 0;
+  function step() {
+    if (i >= steps) {
+      S.animating = false;
+      render();
+      return;
+    }
+    i++;
+    S.arcCount = i;
+    render();
+    setTimeout(step, 450);
+  }
+  step();
+}
+
+// ================================================================
+// PRACTICE MODE
+// ================================================================
+function initPractice() {
+  S.pAnswered = false;
+  var max = S.maxN;
+  if (S.diff === 'emergent') {
+    // Addition within 10 with visual jumps
+    S.pOp = 'add';
+    S.pStart = randInt(1, 7);
+    S.pJump = randInt(1, Math.min(5, max - S.pStart));
+    S.pAnswer = S.pStart + S.pJump;
+    S.pType = 'result';
+  } else if (S.diff === 'proficient') {
+    // Addition or subtraction within 20
+    S.pOp = Math.random() < 0.5 ? 'add' : 'subtract';
+    if (S.pOp === 'add') {
+      S.pStart = randInt(1, 14);
+      S.pJump = randInt(1, Math.min(6, max - S.pStart));
+      S.pAnswer = S.pStart + S.pJump;
+    } else {
+      S.pStart = randInt(3, max);
+      S.pJump = randInt(1, Math.min(6, S.pStart));
+      S.pAnswer = S.pStart - S.pJump;
+    }
+    S.pType = 'result';
+  } else {
+    // Missing addend
+    S.pOp = 'add';
+    S.pStart = randInt(1, Math.floor(max * 0.6));
+    S.pAnswer = randInt(S.pStart + 1, Math.min(S.pStart + 9, max));
+    S.pJump = S.pAnswer - S.pStart;
+    S.pType = 'jump';
+  }
+  S.pChoices = generateChoices(S.pType === 'jump' ? S.pJump : S.pAnswer, 0, max, 4);
+}
+
+function generateChoices(correct, min, max, count) {
+  var set = {};
+  set[correct] = true;
+  // Add common misconception answers
+  if (correct - 1 >= min) set[correct - 1] = true; // off by one
+  if (correct + 1 <= max) set[correct + 1] = true; // off by one other way
+  while (Object.keys(set).length < count) {
+    var v = randInt(Math.max(min, correct - 5), Math.min(max, correct + 5));
+    if (v >= min && v <= max) set[v] = true;
+  }
+  var arr = Object.keys(set).map(Number);
+  // Shuffle
+  for (var i = arr.length - 1; i > 0; i--) {
+    var j = randInt(0, i);
+    var tmp = arr[i]; arr[i] = arr[j]; arr[j] = tmp;
+  }
+  return arr.slice(0, count).sort(function(a,b){return a-b;});
+}
+
+function renderPractice(ws, sp) {
+  var max = S.maxN;
+  var html = '';
+
+  // Instruction
+  html += '<div class="instruction-box">';
+  if (S.diff === 'emergent') {
+    html += 'Start at <strong style="color:var(--cyan);">' + S.pStart + '</strong>. Jump <strong style="color:var(--purple);">' + S.pJump + '</strong> forward. Where do you land?';
+  } else if (S.diff === 'proficient') {
+    var word = S.pOp === 'add' ? 'forward' : 'back';
+    html += 'Start at <strong style="color:var(--cyan);">' + S.pStart + '</strong>. Jump <strong style="color:var(--purple);">' + S.pJump + '</strong> ' + word + '. Where do you land?';
+  } else {
+    html += 'Start at <strong style="color:var(--cyan);">' + S.pStart + '</strong>. Land on <strong style="color:var(--green);">' + S.pAnswer + '</strong>. How many jumps?';
+  }
+  html += '</div>';
+
+  // Equation with unknown
+  html += '<div class="equation-display">';
+  if (S.pType === 'result') {
+    html += '<span class="eq-start">' + S.pStart + '</span> ';
+    html += '<span class="eq-op">' + (S.pOp === 'add' ? '+' : '\u2212') + '</span> ';
+    html += '<span class="eq-jump">' + S.pJump + '</span> ';
+    html += '<span class="eq-equals">=</span> ';
+    html += '<span class="eq-unknown">?</span>';
+  } else {
+    html += '<span class="eq-start">' + S.pStart + '</span> ';
+    html += '<span class="eq-op">+</span> ';
+    html += '<span class="eq-unknown">?</span> ';
+    html += '<span class="eq-equals">=</span> ';
+    html += '<span class="eq-result">' + S.pAnswer + '</span>';
+  }
+  html += '</div>';
+
+  // Number line (show arcs only for emergent or after answer)
+  var showArcs = S.diff === 'emergent' || S.pAnswered;
+  html += '<div class="number-line-wrap">';
+  html += buildNumberLine(max, S.pStart, S.pJump, S.pOp, showArcs, S.pAnswered, false);
+  html += '</div>';
+
+  // MC choices
+  html += '<div class="mc-grid" style="margin:16px auto;">';
+  S.pChoices.forEach(function(c) {
+    html += '<button class="mc-btn" id="mc' + c + '" onclick="practiceAnswer(' + c + ')">' + c + '</button>';
+  });
+  html += '</div>';
+
+  // Skip button
+  html += '<div class="controls">';
+  html += '<button class="ctrl-btn" onclick="skipPractice()">Skip \u27A1</button>';
+  html += '</div>';
+
+  ws.innerHTML = html;
+
+  // Side panel
+  sp.innerHTML =
+    '<div class="panel-section">' +
+      '<div class="panel-title">Instructions</div>' +
+      '<div class="panel-text">' +
+        'Look at the number line.<br><br>' +
+        'Find the <strong style="color:var(--cyan);">start</strong> number.<br><br>' +
+        (S.pType === 'result' ?
+          'Count the <strong>jumps</strong> to find where you land.' :
+          'Figure out how many <strong>jumps</strong> get you from start to landing.') +
+        '<br><br>Tap your answer below!' +
+      '</div>' +
+    '</div>' +
+    '<div class="panel-section">' +
+      '<div class="panel-title">Tip</div>' +
+      '<div class="panel-text" style="background:var(--card);padding:12px;border-radius:8px;">' +
+        (S.pOp === 'add' ?
+          'For <strong>addition</strong>, jump <strong style="color:var(--green);">RIGHT</strong> \u2192 to bigger numbers.' :
+          'For <strong>subtraction</strong>, jump <strong style="color:var(--pink);">LEFT</strong> \u2190 to smaller numbers.') +
+      '</div>' +
+    '</div>';
+}
+
+function practiceAnswer(choice) {
+  if (S.pAnswered) return;
+  var correct = S.pType === 'jump' ? S.pJump : S.pAnswer;
+  var btn = document.getElementById('mc' + choice);
+
+  if (choice === correct) {
+    S.pAnswered = true;
+    if (btn) btn.classList.add('correct-flash');
+    showFeedback('\u2713 Correct! ' + S.pStart + (S.pOp === 'add' ? ' + ' : ' \u2212 ') + S.pJump + ' = ' + (S.pOp === 'add' ? S.pStart + S.pJump : S.pStart - S.pJump), 'correct');
+    setTimeout(function() {
+      initPractice();
+      render();
+    }, 1800);
+  } else {
+    if (btn) btn.classList.add('incorrect-flash');
+    setTimeout(function() { if (btn) btn.classList.remove('incorrect-flash'); }, 600);
+
+    // Detect misconception
+    var landing = S.pOp === 'add' ? S.pStart + S.pJump : S.pStart - S.pJump;
+    var feedbackMsg;
+
+    if (S.pType === 'result') {
+      // Student picked the jump size instead of the landing
+      if (choice === S.pJump && S.pJump !== landing) {
+        feedbackMsg = MISCONCEPTIONS.jumpsVsLanding.msg(S.pStart, S.pJump, landing);
+      }
+      // Student counted AT start instead of FROM start (off by jump direction)
+      else if (S.pOp === 'add' && choice === S.pStart + S.pJump - 1) {
+        feedbackMsg = MISCONCEPTIONS.countAtStart.msg(S.pStart, S.pJump);
+      }
+      else if (S.pOp === 'subtract' && choice === S.pStart - S.pJump + 1) {
+        feedbackMsg = MISCONCEPTIONS.countAtStart.msg(S.pStart, S.pJump);
+      }
+      // Wrong direction
+      else if (S.pOp === 'add' && choice < S.pStart) {
+        feedbackMsg = MISCONCEPTIONS.directionConfusion.msg('add');
+      }
+      else if (S.pOp === 'subtract' && choice > S.pStart) {
+        feedbackMsg = MISCONCEPTIONS.directionConfusion.msg('subtract');
+      }
+      // Off by one
+      else if (Math.abs(choice - landing) === 1) {
+        feedbackMsg = MISCONCEPTIONS.offByOne.msg(landing, choice);
+      }
+      else {
+        feedbackMsg = MISCONCEPTIONS.randomGuess.msg();
+      }
+    } else {
+      // Missing addend type
+      if (Math.abs(choice - S.pJump) === 1) {
+        feedbackMsg = MISCONCEPTIONS.offByOne.msg(S.pJump, choice);
+      } else {
+        feedbackMsg = 'Count the jumps from ' + S.pStart + ' to ' + S.pAnswer + '. Each hop is one jump!';
+      }
+    }
+
+    showFeedback(feedbackMsg, 'try-again');
+  }
+}
+
+function skipPractice() {
+  initPractice();
+  render();
+}
+
+// ================================================================
+// PLAY MODE
+// ================================================================
+function initPlay() {
+  S.score = 0;
+  S.streak = 0;
+  S.round = 1;
+  S.playAnswered = false;
+  generatePlayRound();
+}
+
+function generatePlayRound() {
+  S.playAnswered = false;
+  var max = S.maxN;
+  if (S.diff === 'emergent') {
+    S.playOp = 'add';
+    S.playStart = randInt(1, 7);
+    S.playJump = randInt(1, Math.min(5, max - S.playStart));
+    S.playAnswer = S.playStart + S.playJump;
+  } else if (S.diff === 'proficient') {
+    S.playOp = Math.random() < 0.5 ? 'add' : 'subtract';
+    if (S.playOp === 'add') {
+      S.playStart = randInt(1, 14);
+      S.playJump = randInt(1, Math.min(6, max - S.playStart));
+      S.playAnswer = S.playStart + S.playJump;
+    } else {
+      S.playStart = randInt(3, max);
+      S.playJump = randInt(1, Math.min(6, S.playStart));
+      S.playAnswer = S.playStart - S.playJump;
+    }
+  } else {
+    // Missing addend in play
+    S.playOp = 'add';
+    S.playStart = randInt(1, Math.floor(max * 0.6));
+    S.playAnswer = randInt(S.playStart + 1, Math.min(S.playStart + 9, max));
+    S.playJump = S.playAnswer - S.playStart;
+  }
+  S.playChoices = generateChoices(
+    S.diff === 'advanced' ? S.playJump : S.playAnswer,
+    0, max, 5
+  );
+}
+
+function renderPlay(ws, sp) {
+  var max = S.maxN;
+  var html = '';
+
+  // Round indicator
+  html += '<div style="text-align:center;margin-bottom:8px;">';
+  html += '<div style="font-size:14px;color:var(--muted);">Round ' + S.round + ' of ' + S.total + '</div>';
+  html += '</div>';
+
+  // Instruction
+  html += '<div class="instruction-box">';
+  if (S.diff === 'advanced') {
+    html += 'Start at <strong style="color:var(--cyan);">' + S.playStart + '</strong>. Land on <strong style="color:var(--green);">' + S.playAnswer + '</strong>. How many jumps?';
+  } else {
+    var word = S.playOp === 'add' ? 'forward' : 'back';
+    html += 'Start at <strong style="color:var(--cyan);">' + S.playStart + '</strong>. Jump <strong style="color:var(--purple);">' + S.playJump + '</strong> ' + word + '. Where do you land?';
+  }
+  html += '</div>';
+
+  // Number line
+  html += '<div class="number-line-wrap">';
+  html += buildNumberLine(max, S.playStart, S.playJump, S.playOp, S.playAnswered, S.playAnswered, false);
+  html += '</div>';
+
+  // Answer buttons
+  html += '<div class="answer-grid" style="margin:16px auto;">';
+  S.playChoices.forEach(function(c) {
+    html += '<button class="answer-btn" id="play' + c + '" onclick="playAnswer(' + c + ')">' + c + '</button>';
+  });
+  html += '</div>';
+
+  ws.innerHTML = html;
+
+  // Side panel
+  sp.innerHTML =
+    '<div class="score-display">' +
+      '<div class="score-value">' + S.score + '</div>' +
+      '<div class="score-label">Score</div>' +
+    '</div>' +
+    '<div class="score-display" style="background:transparent;padding:8px;">' +
+      '<div style="font-size:18px;font-weight:700;color:var(--yellow);">' +
+        '\uD83D\uDD25 ' + S.streak +
+      '</div>' +
+      '<div class="score-label">Streak</div>' +
+      '<div class="streak-bar"><div class="streak-fill" style="width:' + Math.min(S.streak * 20, 100) + '%;"></div></div>' +
+    '</div>' +
+    '<div class="panel-section">' +
+      '<div class="panel-title">How to Play</div>' +
+      '<div class="panel-text">' +
+        'Read the problem and tap the correct answer.<br><br>' +
+        '<strong>Quick answers</strong> earn bonus points!<br><br>' +
+        'Build a streak for even more!' +
+      '</div>' +
+    '</div>' +
+    '<div class="panel-section">' +
+      '<div class="panel-title">Best Streak</div>' +
+      '<div class="panel-text" style="font-size:24px;font-weight:800;color:var(--purple);">\uD83C\uDFC6 ' + S.best + '</div>' +
+    '</div>';
+}
+
+function playAnswer(choice) {
+  if (S.playAnswered) return;
+  var correct = S.diff === 'advanced' ? S.playJump : S.playAnswer;
+  var btn = document.getElementById('play' + choice);
+
+  if (choice === correct) {
+    S.playAnswered = true;
+    if (btn) btn.classList.add('correct-flash');
+    S.score += 10 + S.streak * 2;
+    S.streak++;
+    if (S.streak > S.best) S.best = S.streak;
+    showFeedback('\u2713 Correct!', 'correct');
+  } else {
+    if (btn) btn.classList.add('incorrect-flash');
+    S.streak = 0;
+
+    // Misconception feedback
+    var landing = S.playOp === 'add' ? S.playStart + S.playJump : S.playStart - S.playJump;
+    var feedbackMsg;
+    if (S.diff !== 'advanced' && choice === S.playJump && S.playJump !== landing) {
+      feedbackMsg = MISCONCEPTIONS.jumpsVsLanding.msg(S.playStart, S.playJump, landing);
+    } else if (Math.abs(choice - correct) === 1) {
+      feedbackMsg = MISCONCEPTIONS.offByOne.msg(correct, choice);
+    } else {
+      feedbackMsg = MISCONCEPTIONS.randomGuess.msg();
+    }
+    showFeedback(feedbackMsg, 'incorrect');
+  }
+
+  setTimeout(function() {
+    if (S.round >= S.total) {
+      showFeedback('Game Over! Score: ' + S.score, 'correct');
+      setTimeout(function() {
+        initPlay();
+        render();
+      }, 2500);
+      return;
+    }
+    S.round++;
+    generatePlayRound();
+    render();
+  }, 1200);
+}
+
+// ================================================================
+// RENDER
+// ================================================================
+function render() {
+  var ws = document.getElementById('workspace');
+  var sp = document.getElementById('sidePanel');
+
+  if (S.mode === 'explore') renderExplore(ws, sp);
+  else if (S.mode === 'practice') renderPractice(ws, sp);
+  else renderPlay(ws, sp);
+}
+
+// ================================================================
+// NUMBER LINE CLICK HANDLER (unused in current modes but available)
+// ================================================================
+function nlClick(n) {
+  // Reserved for future tap-on-number-line interaction
+}
+
+// ================================================================
+// INIT
+// ================================================================
+document.querySelectorAll('.vinculum-mode-tab').forEach(function(tab) {
+  tab.addEventListener('click', function() {
+    setMode(this.dataset.mode);
+  });
+});
+
+document.querySelectorAll('.vinculum-diff-btn').forEach(function(btn) {
+  btn.addEventListener('click', function() {
+    setDiff(this.dataset.diff);
+  });
+});
+
+render();
+</script>
+<script src="../../vinculum-core.js"></script>
+<script src="../../vinculum-data.js"></script>
+<script src="../../vinculum-adaptive-hook.js"></script>
+<script src="../../vinculum-3reads.js"></script>
+<script src="../../vinculum-stories.js"></script>
+<script src="../../vinculum-feedback.js"></script>
+<script src="../../vinculum-guide.js"></script>
+<script src="../../vinculum-identity.js"></script>
+<script src="../../vinculum-indigenous.js"></script>
+<script src="../../vinculum-dashboard.js"></script>
+<script src="../../vinculum-hyperfocus.js"></script>
+<script src="../../vinculum-layout.js"></script>
+</body>
+</html>

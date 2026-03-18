@@ -1,0 +1,518 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Area Model Multiplication - VINCULUM Grade 4</title>
+  <link rel="stylesheet" href="../../vinculum-core.css">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700;900&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      font-family: 'Inter', sans-serif;
+      background-color: var(--bg);
+      color: var(--text);
+      height: 100vh;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+      user-select: none;
+    }
+    .content {
+      flex: 1;
+      overflow-y: auto;
+      padding: 1.5rem;
+      display: none;
+    }
+    .content.active { display: block; }
+    .mode-name {
+      font-size: 0.85rem;
+      color: var(--text2);
+      margin-bottom: 1rem;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+    .card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 1.5rem;
+      margin-bottom: 1.5rem;
+    }
+    h2 {
+      color: var(--cyan);
+      font-size: 1.3rem;
+      margin-bottom: 1rem;
+    }
+    .area-model {
+      background: var(--bg);
+      border-radius: 8px;
+      padding: 2rem;
+      margin-bottom: 1.5rem;
+      display: flex;
+      gap: 2rem;
+      flex-wrap: wrap;
+      justify-content: center;
+      align-items: flex-start;
+    }
+    .area-grid {
+      display: grid;
+      gap: 2px;
+      padding: 1rem;
+      background: var(--border);
+      border-radius: 4px;
+    }
+    .area-cell {
+      min-width: 80px;
+      min-height: 60px;
+      background: var(--cyan);
+      color: white;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 600;
+      border-radius: 2px;
+      animation: slideIn 0.4s ease forwards;
+    }
+    .area-cell:nth-child(1) { animation-delay: 0s; background: #FF6B6B; }
+    .area-cell:nth-child(2) { animation-delay: 0.1s; background: #FFA500; }
+    .area-cell:nth-child(3) { animation-delay: 0.2s; background: #90EE90; }
+    .area-cell:nth-child(4) { animation-delay: 0.3s; background: #87CEEB; }
+    @keyframes slideIn {
+      from { opacity: 0; transform: scale(0.8); }
+      to { opacity: 1; transform: scale(1); }
+    }
+    .method-section {
+      margin-bottom: 2rem;
+      padding: 1rem;
+      background: var(--bg2);
+      border-radius: 8px;
+      border-left: 4px solid var(--cyan);
+    }
+    .method-title {
+      font-weight: 600;
+      color: var(--cyan);
+      margin-bottom: 1rem;
+      font-size: 1rem;
+    }
+    .method-content {
+      color: var(--text2);
+      font-size: 0.9rem;
+      line-height: 1.6;
+    }
+    .question {
+      background: var(--bg2);
+      border-left: 4px solid var(--cyan);
+      padding: 1rem;
+      border-radius: 4px;
+      margin-bottom: 1.5rem;
+      font-size: 0.95rem;
+    }
+    .answer-group {
+      display: flex;
+      gap: 1rem;
+      align-items: center;
+      flex-wrap: wrap;
+      margin-bottom: 1rem;
+    }
+    .answer-input {
+      padding: 0.8rem;
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      background: var(--bg);
+      color: var(--text);
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 1rem;
+      width: 120px;
+      text-align: center;
+    }
+    .answer-input:focus {
+      outline: 2px solid var(--cyan);
+    }
+    .btn {
+      padding: 0.8rem 1.5rem;
+      border: none;
+      border-radius: 8px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: 0.2s;
+      font-size: 0.95rem;
+    }
+    .btn-primary {
+      background: var(--cyan);
+      color: white;
+    }
+    .btn-primary:hover { background: #00acc1; }
+    .btn-primary:focus-visible { outline: 2px solid var(--cyan); }
+    .feedback {
+      position: fixed;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%) scale(0.8);
+      opacity: 0;
+      transition: all 0.3s ease;
+      padding: 1.5rem 2rem;
+      border-radius: 12px;
+      font-weight: 600;
+      z-index: 1000;
+      pointer-events: none;
+    }
+    .feedback.show {
+      opacity: 1;
+      transform: translate(-50%, -50%) scale(1);
+    }
+    .feedback.correct {
+      background: var(--green);
+      color: white;
+    }
+    .feedback.incorrect {
+      background: var(--red);
+      color: white;
+    }
+    .difficulty {
+      display: flex;
+      gap: 1rem;
+      margin-bottom: 1.5rem;
+      align-items: center;
+    }
+    .diff-indicator {
+      font-size: 0.8rem;
+      color: var(--text2);
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      font-weight: 600;
+    }
+    .diff-bar {
+      width: 150px;
+      height: 6px;
+      background: var(--border);
+      border-radius: 3px;
+      overflow: hidden;
+    }
+    .diff-fill {
+      height: 100%;
+      background: var(--cyan);
+      width: 33%;
+      transition: width 0.3s ease;
+    }
+    .stats {
+      display: flex;
+      gap: 2rem;
+      margin-top: 1rem;
+      font-size: 0.9rem;
+    }
+    .stat {
+      display: flex;
+      gap: 0.5rem;
+      color: var(--text2);
+    }
+    .stat strong { color: var(--text); }
+    .sr-only {
+      position: absolute;
+      width: 1px;
+      height: 1px;
+      padding: 0;
+      margin: -1px;
+      overflow: hidden;
+      clip: rect(0, 0, 0, 0);
+      white-space: nowrap;
+      border-width: 0;
+    }
+  </style>
+</head>
+<body>
+  <div class="vinculum-header">
+    <div class="vinculum-header-left">
+      <a href="../../VINCULUM-Hub.html" class="vinculum-back-btn" aria-label="Back to Hub">
+        <svg viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="2"><path d="M8 1L3 6l5 5"/></svg>
+        Hub
+      </a>
+      <div class="vinculum-header-title"><span class="brand">Multi-Digit Multiplication</span></div>
+      <span class="vinculum-header-badge">GRADE 4</span>
+    </div>
+    <div class="vinculum-header-right">
+      <div class="vinculum-std-tags">
+        <span class="vinculum-std-tag">4.NBT.5</span>
+        <span class="vinculum-std-tag mn">MN 4.1.2.4</span>
+      </div>
+    </div>
+  </div>
+  <div class="vinculum-mode-tabs">
+    <button class="vinculum-mode-tab active-explore" data-mode="explore"><svg width="18" height="18" viewBox="0 0 48 48" fill="none"><path d="M4 24C4 24 12 12 24 12C36 12 44 24 44 24C44 24 36 36 24 36C12 36 4 24 4 24Z" stroke="currentColor" stroke-width="3" fill="none"/><circle cx="24" cy="24" r="7" stroke="currentColor" stroke-width="3" fill="none"/><circle cx="24" cy="24" r="3" fill="currentColor"/><line x1="24" y1="4" x2="24" y2="9" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" opacity="0.5"/><line x1="10" y1="8" x2="13" y2="12" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" opacity="0.5"/><line x1="38" y1="8" x2="35" y2="12" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" opacity="0.5"/></svg> Explore</button>
+    <button class="vinculum-mode-tab" data-mode="practice"><svg width="18" height="18" viewBox="0 0 48 48" fill="none"><circle cx="24" cy="24" r="20" stroke="currentColor" stroke-width="3" fill="none" opacity="0.3"/><circle cx="24" cy="24" r="20" stroke="currentColor" stroke-width="3" fill="none" stroke-dasharray="126" stroke-dashoffset="32" stroke-linecap="round"/><polyline points="16,24 22,32 34,16" stroke="currentColor" stroke-width="4" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg> Practice</button>
+    <button class="vinculum-mode-tab" data-mode="play"><svg width="18" height="18" viewBox="0 0 48 48" fill="none"><polygon points="28,4 12,28 22,28 18,44 36,18 26,18" fill="none" stroke="currentColor" stroke-width="3" stroke-linejoin="round"/><polygon points="27,8 15,27 23,27 20,40 34,19 26,19" fill="currentColor" opacity="0.15"/></svg> Play</button>
+    <div class="vinculum-diff-selector">
+      <span class="vinculum-diff-label">Level</span>
+      <button class="vinculum-diff-btn active" data-diff="emergent">Emergent</button>
+      <button class="vinculum-diff-btn" data-diff="developing">Developing</button>
+      <button class="vinculum-diff-btn" data-diff="proficient">Proficient</button>
+    </div>
+  </div>
+  <div class="content active" id="explore">
+    <p class="mode-name"><svg width="18" height="18" viewBox="0 0 48 48" fill="none"><path d="M4 24C4 24 12 12 24 12C36 12 44 24 44 24C44 24 36 36 24 36C12 36 4 24 4 24Z" stroke="currentColor" stroke-width="3" fill="none"/><circle cx="24" cy="24" r="7" stroke="currentColor" stroke-width="3" fill="none"/><circle cx="24" cy="24" r="3" fill="currentColor"/><line x1="24" y1="4" x2="24" y2="9" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" opacity="0.5"/><line x1="10" y1="8" x2="13" y2="12" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" opacity="0.5"/><line x1="38" y1="8" x2="35" y2="12" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" opacity="0.5"/></svg> Explore: Visual Models</p>
+    <div class="card">
+      <h2>Three Methods for Multiplication</h2>
+      <p style="margin-bottom: 1.5rem; color: var(--text2);">See how area models, partial products, and the standard algorithm all show the same multiplication!</p>
+      <div class="answer-group" style="margin-bottom: 1.5rem;">
+        <button class="btn btn-primary" onclick="showExample('23x15')">Example: 23 × 15</button>
+        <button class="btn btn-primary" onclick="showExample('14x23')">Example: 14 × 23</button>
+      </div>
+      <div id="exploreDisplay"></div>
+    </div>
+  </div>
+  <div class="content" id="practice">
+    <p class="mode-name"><svg width="18" height="18" viewBox="0 0 48 48" fill="none"><circle cx="24" cy="24" r="20" stroke="currentColor" stroke-width="3" fill="none" opacity="0.3"/><circle cx="24" cy="24" r="20" stroke="currentColor" stroke-width="3" fill="none" stroke-dasharray="126" stroke-dashoffset="32" stroke-linecap="round"/><polyline points="16,24 22,32 34,16" stroke="currentColor" stroke-width="4" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg> Practice: Build the Model</p>
+    <div class="card">
+      <h2>Area Model Problems</h2>
+      <div class="difficulty">
+        <span class="diff-indicator">Level:</span>
+        <div class="diff-bar"><div class="diff-fill" id="diffFill"></div></div>
+        <span id="diffLabel" style="color: var(--text);">Emergent</span>
+      </div>
+      <div id="practiceContent"></div>
+      <div class="stats">
+        <div class="stat"><span>Score:</span> <strong id="score">0</strong></div>
+        <div class="stat"><span>Total:</span> <strong id="total">0</strong></div>
+        <div class="stat"><span>Streak:</span> <strong id="streak">0</strong></div>
+      </div>
+    </div>
+  </div>
+  <div class="content" id="play">
+    <p class="mode-name"><svg width="18" height="18" viewBox="0 0 48 48" fill="none"><polygon points="28,4 12,28 22,28 18,44 36,18 26,18" fill="none" stroke="currentColor" stroke-width="3" stroke-linejoin="round"/><polygon points="27,8 15,27 23,27 20,40 34,19 26,19" fill="currentColor" opacity="0.15"/></svg> Play: Real-World Patterns</p>
+    <div class="card">
+      <h2>Multiplication Challenges</h2>
+      <div class="difficulty">
+        <span class="diff-indicator">Level:</span>
+        <div class="diff-bar"><div class="diff-fill" id="playDiffFill"></div></div>
+        <span id="playDiffLabel" style="color: var(--text);">Emergent</span>
+      </div>
+      <div id="playContent"></div>
+      <div class="stats">
+        <div class="stat"><span>Score:</span> <strong id="playScore">0</strong></div>
+        <div class="stat"><span>Total:</span> <strong id="playTotal">0</strong></div>
+        <div class="stat"><span>Streak:</span> <strong id="playStreak">0</strong></div>
+      </div>
+    </div>
+  </div>
+  <div id="feedback" class="feedback"></div>
+  <div class="sr-only" role="status" aria-live="polite" id="ariaLive"></div>
+  <script src="../../vinculum-feedback.js"></script><script src="../../vinculum-guide.js"></script>
+<script src="../../vinculum-input.js"></script>
+<script src="../../vinculum-identity.js"></script>
+<script src="../../vinculum-indigenous.js"></script>
+<script src="../../vinculum-dashboard.js"></script>
+  <script>
+    const S = { mode: 'explore', diff: 'emergent', score: 0, total: 0, streak: 0, answers: [] };
+
+
+    function updateDifficultyUI(modeId) {
+      const fillEl = modeId === 'practice' ? document.getElementById("diffFill") : document.getElementById("playDiffFill");
+      const labelEl = modeId === 'practice' ? document.getElementById("diffLabel") : document.getElementById("playDiffLabel");
+      if (!fillEl || !labelEl) return;
+      const pct = S.diff === 'emergent' ? 33 : S.diff === 'developing' ? 66 : 100;
+      fillEl.style.width = pct + '%';
+      labelEl.textContent = S.diff.charAt(0).toUpperCase() + S.diff.slice(1);
+    }
+
+
+    function showExample(example) {
+      const examples = {
+        '23x15': { a: 23, b: 15, result: 345 },
+        '14x23': { a: 14, b: 23, result: 322 }
+      };
+      const ex = examples[example];
+
+      const areaHtml = `
+        <div class="area-model">
+          <div>
+            <div class="method-title">Area Model</div>
+            <div class="area-grid" style="grid-template-columns: repeat(2, 1fr); grid-template-rows: repeat(2, 1fr);">
+              <div class="area-cell" style="grid-column: span 1;">20 × 10 = 200</div>
+              <div class="area-cell">3 × 10 = 30</div>
+              <div class="area-cell">20 × 5 = 100</div>
+              <div class="area-cell">3 × 5 = 15</div>
+            </div>
+          </div>
+          <div>
+            <div class="method-title">Partial Products</div>
+            <div style="background: var(--bg2); padding: 1rem; border-radius: 4px; font-family: 'JetBrains Mono', monospace; font-size: 0.95rem; line-height: 1.8;">
+              200<br>
+              30<br>
+              100<br>
+              +  15<br>
+              <div style="border-top: 2px solid var(--text); margin-top: 0.5rem; padding-top: 0.5rem;">
+              ${ex.result}
+              </div>
+            </div>
+          </div>
+          <div>
+            <div class="method-title">Standard Algorithm</div>
+            <div style="background: var(--bg2); padding: 1rem; border-radius: 4px; font-family: 'JetBrains Mono', monospace; font-size: 0.95rem; line-height: 1.8;">
+                 ${ex.a}<br>
+              ×  ${ex.b}<br>
+              <div style="border-top: 2px solid var(--text); margin-top: 0.5rem; padding-top: 0.5rem;">
+              ${ex.result}
+              </div>
+            </div>
+          </div>
+        </div>
+      `;
+
+      document.getElementById('exploreDisplay').innerHTML = areaHtml;
+    }
+
+    function generatePracticeQuestion() {
+      let a, b;
+      if (S.diff === 'emergent') {
+        a = Math.floor(Math.random() * 9) + 11;
+        b = Math.floor(Math.random() * 9) + 1;
+      } else if (S.diff === 'developing') {
+        a = Math.floor(Math.random() * 9) + 11;
+        b = Math.floor(Math.random() * 9) + 11;
+      } else {
+        a = Math.floor(Math.random() * 900) + 100;
+        b = Math.floor(Math.random() * 9) + 11;
+      }
+      return {
+        question: `${a} × ${b} = ?`,
+        answer: a * b,
+        a: a,
+        b: b
+      };
+    }
+
+    function renderPractice() {
+      const q = generatePracticeQuestion();
+      const html = `
+        <div class="question">${q.question}</div>
+        <div class="answer-group">
+          <input type="text" class="answer-input" id="practiceAns" placeholder="Your answer..." autocomplete="off">
+          <button class="btn btn-primary" onclick="checkPracticeAnswer(${q.answer})">Check</button>
+        </div>
+      `;
+      document.getElementById('practiceContent').innerHTML = html;
+      document.getElementById('practiceAns').focus();
+      updateDifficultyUI('practice');
+    }
+
+    function checkPracticeAnswer(correct) {
+      const input = document.getElementById('practiceAns');
+      const ans = parseInt(input.value.trim());
+      const isCorrect = ans === correct;
+
+      S.total++;
+      if (isCorrect) {
+        S.score++;
+        S.streak++;
+        showFB('Correct! ✓', 'correct');
+        S.answers.push(true);
+      } else {
+        S.streak = 0;
+        showFB('Try again!', 'incorrect');
+        S.answers.push(false);
+      }
+
+      document.getElementById('score').textContent = S.score;
+      document.getElementById('total').textContent = S.total;
+      document.getElementById('streak').textContent = S.streak;
+
+      adaptDifficulty();
+      setTimeout(renderPractice, 800);
+    }
+
+    function generatePlayQuestion() {
+      const scenarios = [
+        {
+          question: 'A Yup\'ik artist designs a parka border that is 14 rows by 23 columns of pattern stitches. How many total stitches?',
+          answer: 322,
+          indigenous: true
+        },
+        {
+          question: 'A garden has 12 rows of flowers with 15 flowers in each row. How many flowers total?',
+          answer: 180,
+          indigenous: false
+        },
+        {
+          question: 'A classroom has 8 desks arranged in 6 rows. How many desks total?',
+          answer: 48,
+          indigenous: false
+        }
+      ];
+
+      return scenarios[Math.floor(Math.random() * scenarios.length)];
+    }
+
+    function renderPlay() {
+      const q = generatePlayQuestion();
+      const html = `
+        <div class="question">${q.question}</div>
+        <div class="answer-group">
+          <input type="text" class="answer-input" id="playAns" placeholder="Your answer..." autocomplete="off">
+          <button class="btn btn-primary" onclick="checkPlayAnswer(${q.answer})">Check</button>
+        </div>
+      `;
+      document.getElementById('playContent').innerHTML = html;
+      document.getElementById('playAns').focus();
+      updateDifficultyUI('play');
+    }
+
+    function checkPlayAnswer(correct) {
+      const input = document.getElementById('playAns');
+      const ans = parseInt(input.value.trim());
+      const isCorrect = ans === correct;
+
+      S.total++;
+      if (isCorrect) {
+        S.score++;
+        S.streak++;
+        showFB('Correct! ✓', 'correct');
+        S.answers.push(true);
+      } else {
+        S.streak = 0;
+        showFB('Try again!', 'incorrect');
+        S.answers.push(false);
+      }
+
+      document.getElementById('playScore').textContent = S.score;
+      document.getElementById('playTotal').textContent = S.total;
+      document.getElementById('playStreak').textContent = S.streak;
+
+      adaptDifficulty();
+      setTimeout(renderPlay, 800);
+    }
+
+    document.querySelectorAll('.vinculum-mode-tab').forEach(tab => {
+      tab.addEventListener('click', function() {
+        const mode = this.dataset.mode;
+        S.mode = mode;
+        document.querySelectorAll('.vinculum-mode-tab').forEach(t => {
+          t.className = 'vinculum-mode-tab';
+        });
+        this.classList.add(mode === 'explore' ? 'active-explore' : mode === 'practice' ? 'active-practice' : 'active-play');
+        document.querySelectorAll('.content').forEach(c => c.classList.remove('active'));
+        document.getElementById(mode).classList.add('active');
+
+        if (mode === 'practice' && document.getElementById('practiceContent').innerHTML === '') {
+          renderPractice();
+        } else if (mode === 'play' && document.getElementById('playContent').innerHTML === '') {
+          renderPlay();
+        } else if (mode === 'explore') {
+          showExample('23x15');
+        }
+      });
+    });
+
+    // Difficulty selector buttons
+    document.querySelectorAll('.vinculum-diff-btn').forEach(btn => {
+      btn.addEventListener('click', function() {
+        S.diff = this.dataset.diff;
+        document.querySelectorAll('.vinculum-diff-btn').forEach(b => b.classList.remove('active'));
+        this.classList.add('active');
+        updateDifficultyUI(S.mode === 'practice' ? 'practice' : 'play');
+      });
+    });
+
+    showExample('23x15');
+  </script>
+</body>
+</html>

@@ -1,0 +1,1425 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>VINCULUM — Picture Graph Builder</title>
+<link rel="stylesheet" href="../../vinculum-core.css">
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;600&display=swap');
+
+/* Theme system loaded from vinculum-core.css */
+.vinculum-rtm-btn .rtm-icon{font-size:14px;}
+
+/* FOCUS VISIBLE (Keyboard Navigation) */
+*:focus-visible {
+  outline:2px solid var(--cyan);outline-offset:2px;border-radius:4px;
+}
+.sr-only {
+  position:absolute;width:1px;height:1px;padding:0;margin:-1px;
+  overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0;
+}
+
+* { margin:0; padding:0; box-sizing:border-box; }
+body {
+  font-family: 'Inter', sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  height: 100vh;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  user-select: none;
+}
+
+/* -- HEADER -- */
+.vinculum-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 24px;
+  background: var(--bg2);
+  border-bottom: 1px solid var(--border);
+  flex-shrink: 0;
+}
+.vinculum-header-left {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+.vinculum-back-btn {
+  padding: 6px 12px;
+  border-radius: 8px;
+  border: 1px solid var(--border);
+  background: transparent;
+  color: var(--text2);
+  font-size: 13px;
+  font-family: inherit;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+.vinculum-back-btn:hover { background: var(--card); color: var(--cyan); }
+.vinculum-header-title {
+  font-size: 18px;
+  font-weight: 800;
+}
+.vinculum-header-title span {
+  background: var(--grad);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+.vinculum-header-badge {
+  font-size: 10px;
+  font-weight: 700;
+  padding: 3px 10px;
+  border-radius: 6px;
+  background: rgba(0,212,255,0.1);
+  color: var(--cyan);
+  border: 1px solid rgba(0,212,255,0.2);
+  letter-spacing: 1px;
+}
+.vinculum-std-tags {
+  display: flex;
+  gap: 6px;
+}
+.vinculum-std-tag {
+  font-size: 10px;
+  font-family: 'JetBrains Mono', monospace;
+  font-weight: 600;
+  padding: 3px 8px;
+  border-radius: 5px;
+  background: rgba(0,212,255,0.08);
+  color: var(--cyan);
+}
+.vinculum-std-tag.mn { background: rgba(255,145,0,0.08); color: var(--orange); }
+
+/* -- MODE TABS -- */
+.vinculum-mode-tabs {
+  display: flex;
+  gap: 4px;
+  padding: 8px 24px;
+  background: var(--bg2);
+  border-bottom: 1px solid var(--border);
+  flex-shrink: 0;
+}
+.vinculum-mode-tab {
+  padding: 8px 20px;
+  border-radius: 8px;
+  border: 1px solid transparent;
+  background: transparent;
+  color: var(--muted);
+  font-size: 13px;
+  font-weight: 600;
+  font-family: inherit;
+  cursor: pointer;
+  transition: all 0.2s;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.vinculum-mode-tab:hover { color: var(--text2); background: var(--card); }
+.vinculum-mode-tab.active-explore { background: rgba(0,212,255,0.1); color: var(--cyan); border-color: rgba(0,212,255,0.3); }
+.vinculum-mode-tab.active-practice { background: rgba(0,230,118,0.1); color: var(--green); border-color: rgba(0,230,118,0.3); }
+.vinculum-mode-tab.active-play { background: rgba(255,59,139,0.1); color: var(--pink); border-color: rgba(255,59,139,0.3); }
+
+/* Difficulty selector */
+.vinculum-diff-selector {
+  margin-left: auto;
+  display: flex;
+  gap: 4px;
+  align-items: center;
+}
+.vinculum-diff-label {
+  font-size: 11px;
+  color: var(--muted);
+  margin-right: 8px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+}
+.vinculum-diff-btn {
+  padding: 5px 12px;
+  border-radius: 6px;
+  border: 1px solid var(--border);
+  background: transparent;
+  color: var(--muted);
+  font-size: 11px;
+  font-weight: 600;
+  font-family: inherit;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+.vinculum-diff-btn:hover { color: var(--text2); }
+.vinculum-diff-btn.active { background: rgba(0,212,255,0.1); color: var(--cyan); border-color: rgba(0,212,255,0.3); }
+
+/* -- MAIN AREA -- */
+.main {
+  flex: 1;
+  display: flex;
+  overflow: hidden;
+}
+
+/* -- WORKSPACE -- */
+.workspace {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: flex-start;
+  padding: 24px;
+  position: relative;
+  overflow-y: auto;
+}
+
+/* -- SIDE PANEL -- */
+.side-panel {
+  width: 260px;
+  background: var(--bg2);
+  border-left: 1px solid var(--border);
+  padding: 20px;
+  overflow-y: auto;
+  flex-shrink: 0;
+}
+.panel-section {
+  margin-bottom: 20px;
+}
+.panel-title {
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  color: var(--muted);
+  margin-bottom: 8px;
+}
+.panel-text {
+  font-size: 13px;
+  color: var(--text2);
+  line-height: 1.6;
+}
+.score-display {
+  text-align: center;
+  padding: 16px;
+  background: var(--card);
+  border-radius: 12px;
+  margin-bottom: 16px;
+}
+.score-value {
+  font-size: 28px;
+  font-weight: 800;
+  background: var(--grad);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+.score-label {
+  font-size: 11px;
+  color: var(--muted);
+  text-transform: uppercase;
+  letter-spacing: 1px;
+}
+.streak-bar {
+  height: 4px;
+  background: var(--border);
+  border-radius: 2px;
+  margin-top: 8px;
+  overflow: hidden;
+}
+.streak-fill {
+  height: 100%;
+  background: var(--grad);
+  border-radius: 2px;
+  transition: width 0.3s;
+}
+
+/* -- PICTURE GRAPH CONTAINER -- */
+.pg-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 16px;
+  width: 100%;
+  max-width: 640px;
+}
+
+/* -- GRAPH GRID -- */
+.pg-graph {
+  background: var(--card);
+  border-radius: 16px;
+  border: 2px solid var(--border);
+  padding: 20px;
+  width: 100%;
+  position: relative;
+}
+.pg-title {
+  text-align: center;
+  font-size: 16px;
+  font-weight: 700;
+  margin-bottom: 16px;
+  color: var(--text);
+}
+.pg-grid {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.pg-row {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+.pg-label {
+  width: 80px;
+  text-align: right;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text2);
+  padding-right: 8px;
+  flex-shrink: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.pg-cells {
+  display: flex;
+  gap: 4px;
+  flex: 1;
+}
+.pg-cell {
+  width: 44px;
+  height: 44px;
+  border-radius: 8px;
+  border: 2px solid var(--border);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 22px;
+  cursor: pointer;
+  transition: all 0.15s;
+  background: transparent;
+}
+.pg-cell:hover { border-color: var(--cyan); transform: scale(1.05); }
+.pg-cell.filled {
+  background: rgba(0,212,255,0.08);
+  border-color: rgba(0,212,255,0.3);
+}
+.pg-cell.locked {
+  cursor: default;
+}
+.pg-cell.locked:hover { transform: none; border-color: rgba(0,212,255,0.3); }
+.pg-numbers {
+  display: flex;
+  gap: 4px;
+  margin-left: 88px;
+  margin-top: 6px;
+}
+.pg-num {
+  width: 44px;
+  text-align: center;
+  font-size: 11px;
+  font-weight: 600;
+  font-family: 'JetBrains Mono', monospace;
+  color: var(--muted);
+}
+
+/* -- BAR GRAPH TOGGLE -- */
+.pg-toggle-bar {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+.pg-toggle-btn {
+  padding: 6px 14px;
+  border-radius: 8px;
+  border: 1px solid var(--border);
+  background: transparent;
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: 600;
+  font-family: inherit;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+.pg-toggle-btn:hover { color: var(--text2); }
+.pg-toggle-btn.active { background: rgba(0,212,255,0.1); color: var(--cyan); border-color: rgba(0,212,255,0.3); }
+
+/* -- BAR GRAPH VIEW -- */
+.bar-graph {
+  background: var(--card);
+  border-radius: 16px;
+  border: 2px solid var(--border);
+  padding: 20px;
+  width: 100%;
+}
+.bar-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 8px;
+}
+.bar-label {
+  width: 80px;
+  text-align: right;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text2);
+  flex-shrink: 0;
+}
+.bar-track {
+  flex: 1;
+  height: 28px;
+  background: var(--bg);
+  border-radius: 6px;
+  overflow: hidden;
+  position: relative;
+}
+.bar-fill {
+  height: 100%;
+  border-radius: 6px;
+  transition: width 0.4s ease;
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  padding-right: 8px;
+  font-size: 12px;
+  font-weight: 700;
+  color: #fff;
+  min-width: 24px;
+}
+
+/* -- DATA SET DISPLAY -- */
+.pg-dataset {
+  background: var(--card);
+  border-radius: 12px;
+  border: 1px solid var(--border);
+  padding: 16px;
+  width: 100%;
+  text-align: center;
+}
+.pg-dataset-title {
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--muted);
+  margin-bottom: 8px;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+}
+.pg-dataset-items {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  justify-content: center;
+}
+.pg-dataset-item {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text);
+  background: var(--bg);
+  padding: 6px 14px;
+  border-radius: 8px;
+}
+
+/* -- QUESTION + MC -- */
+.pg-question {
+  text-align: center;
+  width: 100%;
+}
+.question-text {
+  font-size: 16px;
+  font-weight: 700;
+  color: var(--text);
+  margin-bottom: 16px;
+  line-height: 1.4;
+}
+.mc-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+  max-width: 400px;
+  margin: 0 auto;
+}
+.mc-btn {
+  padding: 14px 12px;
+  border-radius: 10px;
+  border: 2px solid var(--border);
+  background: var(--card);
+  color: var(--text);
+  font-size: 15px;
+  font-weight: 600;
+  font-family: inherit;
+  cursor: pointer;
+  transition: all 0.2s;
+  text-align: center;
+  line-height: 1.3;
+}
+.mc-btn:hover { border-color: var(--cyan); transform: translateY(-1px); }
+.mc-correct {
+  border-color: var(--green) !important;
+  background: rgba(0,230,118,0.12) !important;
+  color: var(--green) !important;
+}
+.mc-wrong {
+  border-color: var(--red, #EF4444) !important;
+  background: rgba(239,68,68,0.1) !important;
+  color: var(--red, #EF4444) !important;
+}
+
+/* -- CHECK BUTTON -- */
+.check-btn {
+  padding: 10px 28px;
+  border-radius: 10px;
+  border: none;
+  font-size: 14px;
+  font-weight: 700;
+  font-family: inherit;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+.check-btn.primary {
+  background: var(--grad);
+  color: #fff;
+}
+.check-btn.primary:hover { transform: translateY(-1px); box-shadow: 0 4px 12px rgba(0,212,255,0.3); }
+
+/* -- PLAY BTN -- */
+.play-btn {
+  padding: 10px 28px;
+  border-radius: 10px;
+  border: none;
+  font-size: 14px;
+  font-weight: 700;
+  font-family: inherit;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+.play-btn.primary {
+  background: var(--grad);
+  color: #fff;
+}
+.play-btn.primary:hover { transform: translateY(-1px); box-shadow: 0 4px 12px rgba(0,212,255,0.3); }
+
+/* -- GAME INFO -- */
+.game-info {
+  display: flex;
+  justify-content: center;
+  gap: 24px;
+  margin-bottom: 16px;
+  width: 100%;
+}
+.info-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+}
+.info-label {
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  color: var(--muted);
+  letter-spacing: 1px;
+}
+.info-item > span:last-child {
+  font-size: 20px;
+  font-weight: 800;
+  color: var(--text);
+}
+
+/* -- FEEDBACK POPUP -- */
+.feedback {
+  position: fixed;
+  bottom: 30px;
+  left: 50%;
+  transform: translateX(-50%) translateY(80px);
+  padding: 12px 28px;
+  border-radius: 12px;
+  font-size: 15px;
+  font-weight: 700;
+  font-family: inherit;
+  background: var(--card);
+  color: var(--text);
+  border: 2px solid var(--border);
+  opacity: 0;
+  pointer-events: none;
+  transition: all 0.25s ease;
+  z-index: 999;
+  white-space: nowrap;
+}
+.feedback.show {
+  transform: translateX(-50%) translateY(0);
+  opacity: 1;
+}
+.feedback.correct { border-color: var(--green); color: var(--green); }
+.feedback.try-again { border-color: var(--yellow, #F59E0B); color: var(--yellow, #F59E0B); }
+
+/* -- SHAKE ANIMATION -- */
+@keyframes shake {
+  0%,100%{transform:translateX(0);}
+  20%{transform:translateX(-6px);}
+  40%{transform:translateX(6px);}
+  60%{transform:translateX(-4px);}
+  80%{transform:translateX(4px);}
+}
+.shake { animation: shake 0.4s ease; }
+
+/* Responsive */
+@media (max-width: 768px) {
+  .pg-cell { width: 36px; height: 36px; font-size: 18px; }
+  .pg-label { width: 64px; font-size: 11px; }
+  .pg-numbers { margin-left: 72px; }
+  .pg-num { width: 36px; }
+  .side-panel { width: 220px; }
+  .mc-btn { font-size: 13px; padding: 10px 8px; }
+}
+</style>
+</head>
+<body>
+
+<!-- HEADER -->
+<div class="vinculum-header">
+  <div class="vinculum-header-left">
+    <a class="vinculum-back-btn" href="../../VINCULUM-Hub.html" style="text-decoration:none;">&#9664; Hub</a>
+    <div class="vinculum-header-title"><span>VINCULUM</span> Picture Graphs</div>
+    <span class="vinculum-header-badge">2 &middot; MD</span>
+  </div>
+  <div class="vinculum-std-tags" style="display:flex;align-items:center;gap:8px;">
+    <button class="vinculum-back-btn" id="readAloudBtn" onclick="toggleReadAloud()" aria-label="Read Aloud" title="Read instructions aloud">&#x1F50A; Read to Me</button>
+    <span class="vinculum-std-tag">2.MD.10</span>
+    <span class="vinculum-std-tag mn">MN 2.3.3.1</span>
+  </div>
+</div>
+
+<!-- MODE TABS -->
+<div class="vinculum-mode-tabs">
+  <button class="vinculum-mode-tab active-explore" id="tabExplore" onclick="setMode('explore')">
+    <svg width="18" height="18" viewBox="0 0 48 48" fill="none"><path d="M4 24C4 24 12 12 24 12C36 12 44 24 44 24C44 24 36 36 24 36C12 36 4 24 4 24Z" stroke="currentColor" stroke-width="3" fill="none"/><circle cx="24" cy="24" r="7" stroke="currentColor" stroke-width="3" fill="none"/><circle cx="24" cy="24" r="3" fill="currentColor"/></svg> Explore
+  </button>
+  <button class="vinculum-mode-tab" id="tabPractice" onclick="setMode('practice')">
+    <svg width="18" height="18" viewBox="0 0 48 48" fill="none"><circle cx="24" cy="24" r="20" stroke="currentColor" stroke-width="3" fill="none" opacity="0.3"/><circle cx="24" cy="24" r="20" stroke="currentColor" stroke-width="3" fill="none" stroke-dasharray="126" stroke-dashoffset="32" stroke-linecap="round"/><polyline points="16,24 22,32 34,16" stroke="currentColor" stroke-width="4" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg> Practice
+  </button>
+  <button class="vinculum-mode-tab" id="tabPlay" onclick="setMode('play')">
+    <svg width="18" height="18" viewBox="0 0 48 48" fill="none"><polygon points="28,4 12,28 22,28 18,44 36,18 26,18" fill="none" stroke="currentColor" stroke-width="3" stroke-linejoin="round"/><polygon points="27,8 15,27 23,27 20,40 34,19 26,19" fill="currentColor" opacity="0.15"/></svg> Play
+  </button>
+  <div class="vinculum-diff-selector">
+    <span class="vinculum-diff-label">Level</span>
+    <button class="vinculum-diff-btn active" id="diffE" onclick="setDiff('emergent')" data-diff="emergent">Emergent</button>
+    <button class="vinculum-diff-btn" id="diffP" onclick="setDiff('proficient')" data-diff="proficient">Proficient</button>
+    <button class="vinculum-diff-btn" id="diffA" onclick="setDiff('advanced')" data-diff="advanced">Advanced</button>
+  </div>
+</div>
+
+<!-- MAIN -->
+<div class="main">
+  <div class="workspace" role="main" id="workspace"></div>
+  <div class="side-panel" id="sidePanel"></div>
+</div>
+
+<!-- FEEDBACK POPUP -->
+<div class="feedback" id="feedback"></div>
+
+<script src="../../vinculum-input.js"></script>
+<script>
+
+// ════════════════════════════════════════
+// MISCONCEPTIONS DATABASE (2.MD.10)
+// ════════════════════════════════════════
+var MISCONCEPTIONS = {
+  miscountIcons: {
+    id: 'miscount-icons',
+    label: 'Miscounts picture icons in a graph',
+    detect: function(correct, answer) { return Math.abs(answer - correct) === 1; },
+    msg: 'Count each picture carefully. Point to each one as you count!'
+  },
+  labelAsCount: {
+    id: 'label-as-count',
+    label: 'Confuses category label with the count',
+    detect: function() { return false; },
+    msg: 'The label tells the category name. Count the pictures to find the number!'
+  },
+  comparisonStruggle: {
+    id: 'comparison-struggle',
+    label: 'Struggles with "how many more" questions',
+    detect: function() { return false; },
+    msg: '"How many more" means find the difference. Subtract the smaller from the bigger!'
+  },
+  addsInsteadOfSubtracts: {
+    id: 'adds-not-subtracts',
+    label: 'Adds instead of subtracts for comparison',
+    detect: function(a, b, answer) { return answer === a + b; },
+    msg: 'For "how many more," subtract the smaller number from the bigger number.'
+  },
+  readsWrongRow: {
+    id: 'reads-wrong-row',
+    label: 'Reads the wrong row of the graph',
+    detect: function() { return false; },
+    msg: 'Check the label on the left. Make sure you are reading the correct row!'
+  },
+  confusesMostLeast: {
+    id: 'confuses-most-least',
+    label: 'Confuses most and least (fewest)',
+    detect: function() { return false; },
+    msg: 'Most means the biggest number. Fewest means the smallest number.'
+  }
+};
+
+// ════════════════════════════════════════
+// THEMES & DATA SETS
+// ════════════════════════════════════════
+var THEMES = [
+  { title: 'Favorite Fruit', icon: '\uD83C\uDF4E', cats: ['Apples', 'Bananas', 'Grapes', 'Oranges'], icons: ['\uD83C\uDF4E', '\uD83C\uDF4C', '\uD83C\uDF47', '\uD83C\uDF4A'] },
+  { title: 'Favorite Pet', icon: '\uD83D\uDC36', cats: ['Dogs', 'Cats', 'Fish', 'Birds'], icons: ['\uD83D\uDC36', '\uD83D\uDC31', '\uD83D\uDC1F', '\uD83D\uDC26'] },
+  { title: 'Favorite Sport', icon: '\u26BD', cats: ['Soccer', 'Baseball', 'Basketball', 'Swimming'], icons: ['\u26BD', '\u26BE', '\uD83C\uDFC0', '\uD83C\uDFCA'] },
+  { title: 'Favorite Season', icon: '\u2600\uFE0F', cats: ['Spring', 'Summer', 'Fall', 'Winter'], icons: ['\uD83C\uDF38', '\u2600\uFE0F', '\uD83C\uDF42', '\u2744\uFE0F'] },
+  { title: 'Favorite Color', icon: '\uD83C\uDF08', cats: ['Red', 'Blue', 'Green', 'Yellow'], icons: ['\u2764\uFE0F', '\uD83D\uDC99', '\uD83D\uDC9A', '\uD83D\uDC9B'] },
+  { title: 'Animals at the Zoo', icon: '\uD83E\uDD81', cats: ['Lions', 'Monkeys', 'Elephants', 'Penguins'], icons: ['\uD83E\uDD81', '\uD83D\uDC12', '\uD83D\uDC18', '\uD83D\uDC27'] }
+];
+
+var BAR_COLORS = ['#00D4FF', '#00E676', '#F59E0B', '#EC4899', '#EF4444', '#A78BFA'];
+
+// ════════════════════════════════════════
+// STATE
+// ════════════════════════════════════════
+var S = {
+  mode: 'explore',
+  diff: 'emergent',
+  view: 'picture',   // 'picture' or 'bar'
+
+  // Explore
+  theme: null,
+  categories: [],
+  counts: [],
+  maxCount: 5,
+  numCats: 2,
+
+  // Practice
+  pTheme: null,
+  pCategories: [],
+  pCounts: [],
+  pQuestion: '',
+  pAnswer: 0,
+  pQuestionType: '',
+  score: 0,
+  total: 0,
+  practiceAnswered: false,
+
+  // Play
+  playScore: 0,
+  playStreak: 0,
+  playRound: 0,
+  playBest: 0,
+  gameEnded: false,
+  playAnswered: false,
+  playTheme: null,
+  playCategories: [],
+  playCounts: [],
+  playQuestion: '',
+  playAnswer: 0,
+  playChoices: [],
+  playQuestionType: ''
+};
+
+// ════════════════════════════════════════
+// READ-ALOUD
+// ════════════════════════════════════════
+function toggleReadAloud() {
+  if (window.VinculumStories && VinculumStories.isReading()) {
+    VinculumStories.stopReading();
+    document.getElementById('readAloudBtn').textContent = '\u{1F50A} Read to Me';
+  } else {
+    var text = document.getElementById('sidePanel').textContent || 'A picture graph uses pictures to show data.';
+    if (window.VinculumStories) {
+      VinculumStories.readAloud(text, { rate: 0.85, onComplete: function() {
+        document.getElementById('readAloudBtn').textContent = '\u{1F50A} Read to Me';
+      }});
+      document.getElementById('readAloudBtn').textContent = '\u23F9 Stop';
+    }
+  }
+}
+
+// ════════════════════════════════════════
+// HELPERS
+// ════════════════════════════════════════
+function getDiffConfig() {
+  if (S.diff === 'emergent') return { numCats: 2, maxCount: 5 };
+  if (S.diff === 'proficient') return { numCats: 3, maxCount: 8 };
+  return { numCats: 4, maxCount: 10 };
+}
+
+function randInt(min, max) {
+  return Math.floor(Math.random() * (max - min + 1)) + min;
+}
+
+function rand(arr) {
+  return arr[Math.floor(Math.random() * arr.length)];
+}
+
+function shuffle(arr) {
+  var a = arr.slice();
+  for (var i = a.length - 1; i > 0; i--) {
+    var j = randInt(0, i);
+    var tmp = a[i]; a[i] = a[j]; a[j] = tmp;
+  }
+  return a;
+}
+
+function showFB(text, type) {
+  var fb = document.getElementById('feedback');
+  fb.textContent = text;
+  fb.className = 'feedback show ' + (type || '');
+  clearTimeout(showFB._t);
+  showFB._t = setTimeout(function() { fb.className = 'feedback'; }, 1800);
+}
+
+function generateCounts(numCats, maxCount) {
+  var counts = [];
+  for (var i = 0; i < numCats; i++) {
+    counts.push(randInt(1, maxCount));
+  }
+  // Ensure at least two different values for comparison questions
+  if (numCats >= 2) {
+    while (counts.every(function(c) { return c === counts[0]; })) {
+      counts[randInt(0, numCats - 1)] = randInt(1, maxCount);
+    }
+  }
+  return counts;
+}
+
+function pickTheme(numCats) {
+  var t = rand(THEMES);
+  return {
+    title: t.title,
+    categories: t.cats.slice(0, numCats),
+    icons: t.icons.slice(0, numCats)
+  };
+}
+
+// ════════════════════════════════════════
+// MODE / DIFF SWITCHING
+// ════════════════════════════════════════
+function setMode(mode) {
+  S.mode = mode;
+  S.view = 'picture';
+
+  document.getElementById('tabExplore').className = 'vinculum-mode-tab' + (mode === 'explore' ? ' active-explore' : '');
+  document.getElementById('tabPractice').className = 'vinculum-mode-tab' + (mode === 'practice' ? ' active-practice' : '');
+  document.getElementById('tabPlay').className = 'vinculum-mode-tab' + (mode === 'play' ? ' active-play' : '');
+
+  if (mode === 'explore') initExplore();
+  if (mode === 'practice') { S.score = 0; S.total = 0; newPracticeQuestion(); }
+  if (mode === 'play') { S.playScore = 0; S.playStreak = 0; S.playRound = 1; S.playBest = 0; S.gameEnded = false; startPlayChallenge(); return; }
+  render();
+}
+
+function setDiff(diff) {
+  S.diff = diff;
+  document.querySelectorAll('.vinculum-diff-btn').forEach(function(btn) {
+    btn.classList.toggle('active', btn.getAttribute('data-diff') === diff);
+  });
+  setMode(S.mode);
+}
+
+// ════════════════════════════════════════
+// EXPLORE MODE
+// ════════════════════════════════════════
+function initExplore() {
+  var cfg = getDiffConfig();
+  S.numCats = cfg.numCats;
+  S.maxCount = cfg.maxCount;
+  var theme = pickTheme(cfg.numCats);
+  S.theme = theme;
+  S.categories = theme.categories;
+  S.counts = [];
+  for (var i = 0; i < cfg.numCats; i++) S.counts.push(0);
+}
+
+function renderExplore(ws, sp) {
+  var html = '<div class="pg-container">';
+
+  // Toggle buttons
+  html += '<div class="pg-toggle-bar">';
+  html += '<button class="pg-toggle-btn' + (S.view === 'picture' ? ' active' : '') + '" onclick="setView(\'picture\')">Picture Graph</button>';
+  html += '<button class="pg-toggle-btn' + (S.view === 'bar' ? ' active' : '') + '" onclick="setView(\'bar\')">Bar Graph</button>';
+  html += '</div>';
+
+  if (S.view === 'picture') {
+    html += buildPictureGraph(S.theme, S.categories, S.counts, S.maxCount, true);
+  } else {
+    html += buildBarGraph(S.theme, S.categories, S.counts, S.maxCount);
+  }
+
+  // Data summary
+  html += '<div class="pg-dataset">';
+  html += '<div class="pg-dataset-title">Data</div>';
+  html += '<div class="pg-dataset-items">';
+  for (var i = 0; i < S.categories.length; i++) {
+    html += '<div class="pg-dataset-item">' + S.theme.icons[i] + ' ' + S.categories[i] + ': ' + S.counts[i] + '</div>';
+  }
+  html += '</div></div>';
+
+  // New data button
+  html += '<button class="check-btn primary" onclick="randomizeExplore()">New Data Set</button>';
+  html += '</div>';
+  ws.innerHTML = html;
+
+  // Side panel
+  sp.innerHTML =
+    '<div class="panel-section"><div class="panel-title">Instructions</div><div class="panel-text">' +
+    'Tap cells to <strong>add</strong> or <strong>remove</strong> pictures.<br><br>' +
+    'Build a picture graph that shows data for each category.<br><br>' +
+    'Try the <strong>Bar Graph</strong> toggle to see the same data as bars!' +
+    '</div></div>' +
+    '<div class="panel-section"><div class="panel-title">Key Idea</div><div class="panel-text">' +
+    'Each picture stands for <strong>1</strong>. Count the pictures to find the number for each category.' +
+    '</div></div>' +
+    '<div class="panel-section"><div class="panel-title">Vocabulary</div><div class="panel-text">' +
+    '<strong>Picture graph</strong> &mdash; uses pictures to show data<br>' +
+    '<strong>Category</strong> &mdash; a group of similar things<br>' +
+    '<strong>Data</strong> &mdash; information collected by counting' +
+    '</div></div>';
+}
+
+function randomizeExplore() {
+  var cfg = getDiffConfig();
+  S.counts = generateCounts(cfg.numCats, cfg.maxCount);
+  var theme = pickTheme(cfg.numCats);
+  S.theme = theme;
+  S.categories = theme.categories;
+  render();
+}
+
+function setView(v) {
+  S.view = v;
+  render();
+}
+
+function toggleCell(catIndex, colIndex) {
+  // Toggle: if filled, remove; if empty, fill
+  if (S.counts[catIndex] > colIndex) {
+    // Remove this and all after it
+    S.counts[catIndex] = colIndex;
+  } else {
+    // Fill up to and including this cell
+    S.counts[catIndex] = colIndex + 1;
+  }
+  render();
+}
+
+// ════════════════════════════════════════
+// BUILD PICTURE GRAPH HTML
+// ════════════════════════════════════════
+function buildPictureGraph(theme, categories, counts, maxCount, interactive) {
+  var html = '<div class="pg-graph">';
+  html += '<div class="pg-title">' + theme.title + '</div>';
+  html += '<div class="pg-grid">';
+
+  for (var r = 0; r < categories.length; r++) {
+    html += '<div class="pg-row">';
+    html += '<div class="pg-label">' + categories[r] + '</div>';
+    html += '<div class="pg-cells">';
+    for (var c = 0; c < maxCount; c++) {
+      var filled = c < counts[r];
+      var cls = 'pg-cell' + (filled ? ' filled' : '') + (interactive ? '' : ' locked');
+      if (interactive) {
+        html += '<div class="' + cls + '" onclick="toggleCell(' + r + ',' + c + ')" role="button" aria-label="' + categories[r] + ' column ' + (c + 1) + '">';
+      } else {
+        html += '<div class="' + cls + '">';
+      }
+      html += filled ? theme.icons[r] : '';
+      html += '</div>';
+    }
+    html += '</div></div>';
+  }
+
+  // Number line along bottom
+  html += '</div>';
+  html += '<div class="pg-numbers">';
+  for (var n = 1; n <= maxCount; n++) {
+    html += '<div class="pg-num">' + n + '</div>';
+  }
+  html += '</div>';
+  html += '</div>';
+  return html;
+}
+
+// ════════════════════════════════════════
+// BUILD BAR GRAPH HTML
+// ════════════════════════════════════════
+function buildBarGraph(theme, categories, counts, maxCount) {
+  var html = '<div class="bar-graph">';
+  html += '<div class="pg-title">' + theme.title + '</div>';
+
+  for (var i = 0; i < categories.length; i++) {
+    var pct = maxCount > 0 ? (counts[i] / maxCount) * 100 : 0;
+    html += '<div class="bar-row">';
+    html += '<div class="bar-label">' + theme.icons[i] + ' ' + categories[i] + '</div>';
+    html += '<div class="bar-track">';
+    html += '<div class="bar-fill" style="width:' + Math.max(pct, 5) + '%;background:' + BAR_COLORS[i] + ';">' + counts[i] + '</div>';
+    html += '</div></div>';
+  }
+
+  html += '</div>';
+  return html;
+}
+
+// ════════════════════════════════════════
+// PRACTICE MODE
+// ════════════════════════════════════════
+function newPracticeQuestion() {
+  S.total = (S.total || 0) + 1;
+  S.practiceAnswered = false;
+  S.view = 'picture';
+
+  var cfg = getDiffConfig();
+  var theme = pickTheme(cfg.numCats);
+  S.pTheme = theme;
+  S.pCategories = theme.categories;
+  S.pCounts = generateCounts(cfg.numCats, cfg.maxCount);
+
+  // Pick question type based on difficulty
+  var types = ['count', 'most', 'least'];
+  if (S.diff === 'proficient') types.push('total', 'most', 'least');
+  if (S.diff === 'advanced') types.push('howManyMore', 'howManyMore', 'total');
+  S.pQuestionType = rand(types);
+
+  generatePracticeQA();
+}
+
+function generatePracticeQA() {
+  var cats = S.pCategories;
+  var counts = S.pCounts;
+
+  if (S.pQuestionType === 'count') {
+    // How many in a specific category?
+    var idx = randInt(0, cats.length - 1);
+    S.pQuestion = 'How many students chose ' + cats[idx] + '?';
+    S.pAnswer = counts[idx];
+  } else if (S.pQuestionType === 'most') {
+    S.pQuestion = 'Which category has the most?';
+    var maxVal = Math.max.apply(null, counts);
+    var maxIdx = counts.indexOf(maxVal);
+    S.pAnswer = cats[maxIdx];
+  } else if (S.pQuestionType === 'least') {
+    S.pQuestion = 'Which category has the fewest?';
+    var minVal = Math.min.apply(null, counts);
+    var minIdx = counts.indexOf(minVal);
+    S.pAnswer = cats[minIdx];
+  } else if (S.pQuestionType === 'total') {
+    S.pQuestion = 'How many students voted in all?';
+    var sum = 0;
+    for (var i = 0; i < counts.length; i++) sum += counts[i];
+    S.pAnswer = sum;
+  } else if (S.pQuestionType === 'howManyMore') {
+    // Pick two categories with different counts
+    var sorted = counts.slice().sort(function(a, b) { return b - a; });
+    var highIdx = counts.indexOf(sorted[0]);
+    var lowIdx = -1;
+    for (var j = 0; j < counts.length; j++) {
+      if (j !== highIdx && counts[j] < counts[highIdx]) { lowIdx = j; break; }
+    }
+    if (lowIdx === -1) lowIdx = (highIdx + 1) % cats.length;
+    S.pQuestion = 'How many more chose ' + cats[highIdx] + ' than ' + cats[lowIdx] + '?';
+    S.pAnswer = Math.abs(counts[highIdx] - counts[lowIdx]);
+  }
+}
+
+function renderPractice(ws, sp) {
+  var html = '<div class="pg-container">';
+  html += '<div style="text-align:center;margin-bottom:4px;">';
+  html += '<div style="font-size:14px;color:var(--muted);">Score: ' + S.score + '/' + S.total + '</div>';
+  html += '</div>';
+
+  // Show the picture graph (not interactive)
+  html += buildPictureGraph(S.pTheme, S.pCategories, S.pCounts, getDiffConfig().maxCount, false);
+
+  // Question
+  html += '<div class="pg-question">';
+  html += '<div class="question-text">' + S.pQuestion + '</div>';
+  html += '<div class="mc-grid" id="mcGrid"></div>';
+  html += '</div>';
+
+  html += '</div>';
+  ws.innerHTML = html;
+
+  setTimeout(function() { initPracticeMC(); }, 50);
+
+  // Side panel
+  sp.innerHTML =
+    '<div class="score-display"><div class="score-value">' + S.score + '/' + S.total + '</div><div class="score-label">Score</div></div>' +
+    '<div class="panel-section"><div class="panel-title">Instructions</div><div class="panel-text">' +
+    'Read the picture graph, then <strong>tap the answer</strong> to the question.' +
+    '</div></div>' +
+    '<div class="panel-section"><div class="panel-title">Hint</div><div class="panel-text">' +
+    (S.pQuestionType === 'count' ? 'Count each picture in the row. Each picture = 1.' : '') +
+    (S.pQuestionType === 'most' ? 'Find the row with the most pictures.' : '') +
+    (S.pQuestionType === 'least' ? 'Find the row with the fewest pictures.' : '') +
+    (S.pQuestionType === 'total' ? 'Add up all the pictures across every row.' : '') +
+    (S.pQuestionType === 'howManyMore' ? 'Subtract the smaller count from the bigger count.' : '') +
+    '</div></div>';
+}
+
+function initPracticeMC() {
+  var grid = document.getElementById('mcGrid');
+  if (!grid) return;
+  grid.innerHTML = '';
+
+  var choices = generatePracticeChoices();
+  choices.forEach(function(choice) {
+    var btn = document.createElement('button');
+    btn.className = 'mc-btn';
+    btn.textContent = choice.text;
+    btn.addEventListener('click', function() {
+      handlePracticeMC(btn, choice, grid);
+    });
+    grid.appendChild(btn);
+  });
+}
+
+function generatePracticeChoices() {
+  var answer = S.pAnswer;
+  var choices = [];
+  var used = new Set();
+
+  if (S.pQuestionType === 'most' || S.pQuestionType === 'least') {
+    // Answer is a category name
+    var correct = { text: answer, isCorrect: true };
+    choices.push(correct);
+    used.add(answer);
+    // Add other categories as distractors
+    S.pCategories.forEach(function(cat) {
+      if (!used.has(cat)) {
+        used.add(cat);
+        var mis = null;
+        if (S.pQuestionType === 'most') {
+          var minVal = Math.min.apply(null, S.pCounts);
+          if (S.pCounts[S.pCategories.indexOf(cat)] === minVal) mis = 'confusesMostLeast';
+        } else {
+          var maxVal = Math.max.apply(null, S.pCounts);
+          if (S.pCounts[S.pCategories.indexOf(cat)] === maxVal) mis = 'confusesMostLeast';
+        }
+        choices.push({ text: cat, isCorrect: false, misconception: mis });
+      }
+    });
+    while (choices.length < 4) {
+      choices.push({ text: '-', isCorrect: false });
+    }
+  } else {
+    // Answer is a number
+    var correct = { text: '' + answer, isCorrect: true };
+    choices.push(correct);
+    used.add(answer);
+
+    function tryAdd(val, mis) {
+      if (val >= 0 && !used.has(val)) {
+        used.add(val);
+        choices.push({ text: '' + val, isCorrect: false, misconception: mis || null });
+      }
+    }
+
+    // Misconception distractors
+    tryAdd(answer + 1, 'miscountIcons');
+    tryAdd(answer - 1, 'miscountIcons');
+
+    if (S.pQuestionType === 'howManyMore') {
+      // Add sum distractor (adds instead of subtracts)
+      var sorted = S.pCounts.slice().sort(function(a, b) { return b - a; });
+      tryAdd(sorted[0] + sorted[1], 'addsInsteadOfSubtracts');
+      tryAdd(sorted[0], 'readsWrongRow');
+    }
+
+    if (S.pQuestionType === 'count') {
+      // Other category counts as distractors
+      S.pCounts.forEach(function(c) { tryAdd(c); });
+    }
+
+    if (S.pQuestionType === 'total') {
+      // Partial sum or max count
+      tryAdd(Math.max.apply(null, S.pCounts), 'readsWrongRow');
+      var partSum = 0;
+      for (var i = 0; i < S.pCounts.length - 1; i++) partSum += S.pCounts[i];
+      tryAdd(partSum, 'miscountIcons');
+    }
+
+    // Fill to 4
+    while (choices.length < 4) {
+      var v = randInt(Math.max(0, answer - 5), answer + 5);
+      tryAdd(v);
+    }
+  }
+
+  return shuffle(choices).slice(0, 4);
+}
+
+function handlePracticeMC(btn, choice, grid) {
+  if (S.practiceAnswered) return;
+  if (choice.isCorrect) {
+    S.practiceAnswered = true;
+    btn.classList.add('mc-correct');
+    showFB('\u2713 Correct!', 'correct');
+    S.score++;
+    grid.querySelectorAll('.mc-btn').forEach(function(b) { b.style.pointerEvents = 'none'; });
+    setTimeout(function() { S.practiceAnswered = false; newPracticeQuestion(); render(); }, 900);
+  } else {
+    btn.classList.add('mc-wrong');
+    btn.style.pointerEvents = 'none';
+    var msg = getMisconceptionMsg(choice);
+    showFB(msg || '\u2717 Try again', 'try-again');
+  }
+}
+
+function getMisconceptionMsg(choice) {
+  if (choice.misconception && MISCONCEPTIONS[choice.misconception]) {
+    return MISCONCEPTIONS[choice.misconception].msg;
+  }
+  return null;
+}
+
+// ════════════════════════════════════════
+// PLAY MODE (10 rounds, 10pts + streak*2)
+// ════════════════════════════════════════
+function startPlayChallenge() {
+  var cfg = getDiffConfig();
+  var theme = pickTheme(cfg.numCats);
+  S.playTheme = theme;
+  S.playCategories = theme.categories;
+  S.playCounts = generateCounts(cfg.numCats, cfg.maxCount);
+  S.playAnswered = false;
+
+  // Pick question type
+  var types = ['count', 'most'];
+  if (S.diff === 'proficient') types.push('least', 'total');
+  if (S.diff === 'advanced') types.push('howManyMore', 'howManyMore', 'least', 'total');
+  S.playQuestionType = rand(types);
+
+  generatePlayQA();
+  S.playChoices = generatePlayChoices();
+  render();
+}
+
+function generatePlayQA() {
+  var cats = S.playCategories;
+  var counts = S.playCounts;
+
+  if (S.playQuestionType === 'count') {
+    var idx = randInt(0, cats.length - 1);
+    S.playQuestion = 'How many chose ' + cats[idx] + '?';
+    S.playAnswer = counts[idx];
+  } else if (S.playQuestionType === 'most') {
+    S.playQuestion = 'Which has the most?';
+    var maxVal = Math.max.apply(null, counts);
+    S.playAnswer = cats[counts.indexOf(maxVal)];
+  } else if (S.playQuestionType === 'least') {
+    S.playQuestion = 'Which has the fewest?';
+    var minVal = Math.min.apply(null, counts);
+    S.playAnswer = cats[counts.indexOf(minVal)];
+  } else if (S.playQuestionType === 'total') {
+    S.playQuestion = 'How many in all?';
+    var sum = 0;
+    for (var i = 0; i < counts.length; i++) sum += counts[i];
+    S.playAnswer = sum;
+  } else if (S.playQuestionType === 'howManyMore') {
+    var sorted = counts.slice().sort(function(a, b) { return b - a; });
+    var highIdx = counts.indexOf(sorted[0]);
+    var lowIdx = -1;
+    for (var j = 0; j < counts.length; j++) {
+      if (j !== highIdx && counts[j] < counts[highIdx]) { lowIdx = j; break; }
+    }
+    if (lowIdx === -1) lowIdx = (highIdx + 1) % cats.length;
+    S.playQuestion = 'How many more ' + cats[highIdx] + ' than ' + cats[lowIdx] + '?';
+    S.playAnswer = Math.abs(counts[highIdx] - counts[lowIdx]);
+  }
+}
+
+function generatePlayChoices() {
+  var answer = S.playAnswer;
+  var choices = [];
+  var used = new Set();
+
+  if (S.playQuestionType === 'most' || S.playQuestionType === 'least') {
+    choices.push({ text: answer, isCorrect: true });
+    used.add(answer);
+    S.playCategories.forEach(function(cat) {
+      if (!used.has(cat)) {
+        used.add(cat);
+        var mis = null;
+        if (S.playQuestionType === 'most') {
+          var minVal = Math.min.apply(null, S.playCounts);
+          if (S.playCounts[S.playCategories.indexOf(cat)] === minVal) mis = 'confusesMostLeast';
+        } else {
+          var maxVal = Math.max.apply(null, S.playCounts);
+          if (S.playCounts[S.playCategories.indexOf(cat)] === maxVal) mis = 'confusesMostLeast';
+        }
+        choices.push({ text: cat, isCorrect: false, misconception: mis });
+      }
+    });
+    while (choices.length < 4) choices.push({ text: '-', isCorrect: false });
+  } else {
+    choices.push({ text: '' + answer, isCorrect: true });
+    used.add(answer);
+
+    function tryAdd(val, mis) {
+      if (val >= 0 && !used.has(val)) {
+        used.add(val);
+        choices.push({ text: '' + val, isCorrect: false, misconception: mis || null });
+      }
+    }
+
+    tryAdd(answer + 1, 'miscountIcons');
+    tryAdd(answer - 1, 'miscountIcons');
+
+    if (S.playQuestionType === 'howManyMore') {
+      var sorted = S.playCounts.slice().sort(function(a, b) { return b - a; });
+      tryAdd(sorted[0] + sorted[1], 'addsInsteadOfSubtracts');
+      tryAdd(sorted[0], 'readsWrongRow');
+    }
+
+    S.playCounts.forEach(function(c) { tryAdd(c); });
+
+    while (choices.length < 4) {
+      tryAdd(randInt(Math.max(0, answer - 5), answer + 5));
+    }
+  }
+
+  return shuffle(choices).slice(0, 4);
+}
+
+function renderPlay(ws, sp) {
+  var html = '<div class="pg-container">';
+
+  if (S.gameEnded) {
+    html += '<div style="text-align:center;padding:40px;font-size:32px;font-weight:800;">';
+    html += 'Game Complete!<br>';
+    html += '<div style="font-size:48px;margin:20px 0;background:var(--grad);-webkit-background-clip:text;-webkit-text-fill-color:transparent;">';
+    html += S.playScore;
+    html += '</div>';
+    html += '<div style="font-size:14px;color:var(--muted);margin-bottom:20px;">Best streak: ' + S.playBest + '</div>';
+    html += '<button class="play-btn primary" onclick="playAgain()">\u25B6 Play Again</button>';
+    html += '</div>';
+  } else {
+    // Game info bar
+    html += '<div class="game-info">';
+    html += '<div class="info-item"><span class="info-label">Round</span><span>' + S.playRound + ' / 10</span></div>';
+    html += '<div class="info-item"><span class="info-label">Score</span><span>' + S.playScore + '</span></div>';
+    html += '<div class="info-item"><span class="info-label">Streak</span><span>' + S.playStreak + '</span></div>';
+    html += '</div>';
+
+    // Picture graph (locked)
+    html += buildPictureGraph(S.playTheme, S.playCategories, S.playCounts, getDiffConfig().maxCount, false);
+
+    // Question
+    html += '<div class="pg-question">';
+    html += '<div class="question-text">' + S.playQuestion + '</div>';
+    html += '<div class="mc-grid" id="playMcGrid"></div>';
+    html += '</div>';
+  }
+
+  html += '</div>';
+  ws.innerHTML = html;
+
+  if (!S.gameEnded) {
+    setTimeout(function() { initPlayMC(); }, 50);
+  }
+
+  // Side panel
+  sp.innerHTML =
+    '<div class="score-display"><div class="score-value">' + S.playScore + '</div><div class="score-label">Score</div></div>' +
+    '<div class="score-display" style="background:transparent;padding:8px;">' +
+    '<div style="font-size:18px;font-weight:700;color:var(--yellow, #F59E0B);">\uD83D\uDD25 ' + S.playStreak + '</div>' +
+    '<div class="score-label">Streak</div>' +
+    '<div class="streak-bar"><div class="streak-fill" style="width:' + Math.min(S.playStreak * 10, 100) + '%;"></div></div>' +
+    '</div>' +
+    '<div class="panel-section"><div class="panel-title">How to Play</div><div class="panel-text">' +
+    'Read each <strong>picture graph</strong> and tap the correct answer.<br><br>' +
+    '10 rounds. Build your <strong>streak</strong> for bonus points!' +
+    '</div></div>' +
+    '<div class="panel-section"><div class="panel-title">Scoring</div><div class="panel-text">' +
+    'Base: <strong>10 points</strong><br>' +
+    'Streak bonus: <strong>+2 &times; streak</strong><br>' +
+    '<strong>Max: 30 pts/round</strong>' +
+    '</div></div>';
+}
+
+function initPlayMC() {
+  var grid = document.getElementById('playMcGrid');
+  if (!grid) return;
+  grid.innerHTML = '';
+
+  S.playChoices.forEach(function(choice) {
+    var btn = document.createElement('button');
+    btn.className = 'mc-btn';
+    btn.textContent = choice.text;
+    btn.addEventListener('click', function() {
+      handlePlayMC(btn, choice, grid);
+    });
+    grid.appendChild(btn);
+  });
+}
+
+function handlePlayMC(btn, choice, grid) {
+  if (S.playAnswered) return;
+
+  if (choice.isCorrect) {
+    S.playAnswered = true;
+    btn.classList.add('mc-correct');
+    var pts = Math.min(10 + (S.playStreak * 2), 30);
+    showFB('\u2713 +' + pts + ' pts!', 'correct');
+    S.playScore += pts;
+    S.playStreak++;
+    S.playBest = Math.max(S.playBest, S.playStreak);
+    grid.querySelectorAll('.mc-btn').forEach(function(b) { b.style.pointerEvents = 'none'; });
+
+    if (S.playRound >= 10) {
+      setTimeout(function() { S.gameEnded = true; render(); }, 900);
+    } else {
+      S.playRound++;
+      setTimeout(function() { S.playAnswered = false; startPlayChallenge(); }, 900);
+    }
+  } else {
+    btn.classList.add('mc-wrong');
+    btn.style.pointerEvents = 'none';
+    S.playStreak = 0;
+    var msg = getMisconceptionMsg(choice);
+    showFB(msg || '\u2717 Not quite', 'try-again');
+    var graph = document.querySelector('.pg-graph');
+    if (graph) { graph.classList.add('shake'); setTimeout(function() { graph.classList.remove('shake'); }, 400); }
+  }
+}
+
+function playAgain() {
+  S.playScore = 0;
+  S.playStreak = 0;
+  S.playRound = 1;
+  S.gameEnded = false;
+  S.playAnswered = false;
+  S.playBest = 0;
+  startPlayChallenge();
+}
+
+// ════════════════════════════════════════
+// RENDER DISPATCHER
+// ════════════════════════════════════════
+function render() {
+  var ws = document.getElementById('workspace');
+  var sp = document.getElementById('sidePanel');
+  if (S.mode === 'explore') renderExplore(ws, sp);
+  else if (S.mode === 'practice') renderPractice(ws, sp);
+  else if (S.mode === 'play') renderPlay(ws, sp);
+}
+
+// ════════════════════════════════════════
+// INIT
+// ════════════════════════════════════════
+initExplore();
+render();
+</script>
+<script src="../../vinculum-core.js"></script>
+<script src="../../vinculum-data.js"></script>
+<script src="../../vinculum-adaptive-hook.js"></script>
+<script src="../../vinculum-3reads.js"></script>
+<script src="../../vinculum-stories.js"></script>
+<script src="../../vinculum-feedback.js"></script>
+<script src="../../vinculum-guide.js"></script>
+<script src="../../vinculum-identity.js"></script>
+<script src="../../vinculum-indigenous.js"></script>
+<script src="../../vinculum-dashboard.js"></script>
+<script src="../../vinculum-hyperfocus.js"></script>
+<script src="../../vinculum-layout.js"></script>
+</body>
+</html>

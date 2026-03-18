@@ -1,0 +1,1027 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>VINCULUM — Addition Strategies</title>
+<link rel="stylesheet" href="../../vinculum-core.css">
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;600&display=swap');
+
+.vinculum-rtm-btn .rtm-icon{font-size:14px;}
+
+/* ═══ FOCUS VISIBLE ═══ */
+*:focus-visible {
+  outline:2px solid var(--cyan);outline-offset:2px;border-radius:4px;
+}
+.sr-only {
+  position:absolute;width:1px;height:1px;padding:0;margin:-1px;
+  overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0;
+}
+*{margin:0;padding:0;box-sizing:border-box;}
+body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);height:100vh;display:flex;flex-direction:column;overflow:hidden;user-select:none;}
+
+.main{flex:1;display:flex;overflow:hidden;}
+.workspace{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:24px;gap:12px;overflow-y:auto;}
+.side-panel{width:280px;background:var(--bg2);border-left:1px solid var(--border);padding:20px;overflow-y:auto;flex-shrink:0;}
+.panel-section{margin-bottom:20px;}
+.panel-title{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:1.5px;color:var(--muted);margin-bottom:8px;}
+.panel-text{font-size:13px;color:var(--text2);line-height:1.6;}
+
+/* ═══ STRATEGY CARDS ═══ */
+.strategy-grid {
+  display:grid;
+  grid-template-columns:1fr 1fr;
+  gap:16px;
+  max-width:680px;
+  width:100%;
+}
+.strategy-card {
+  background:var(--card);
+  border:2px solid var(--border);
+  border-radius:16px;
+  padding:20px;
+  cursor:pointer;
+  transition:all 0.25s;
+  text-align:center;
+}
+.strategy-card:hover, .strategy-card.active {
+  border-color:var(--cyan);
+  transform:translateY(-2px);
+  box-shadow:0 4px 20px rgba(0,212,255,0.15);
+}
+.strategy-card.active { background:rgba(0,212,255,0.08); }
+.strategy-card .card-icon {
+  font-size:32px;
+  margin-bottom:8px;
+  display:block;
+}
+.strategy-card .card-label {
+  font-size:14px;
+  font-weight:700;
+  color:var(--text);
+  margin-bottom:4px;
+}
+.strategy-card .card-desc {
+  font-size:11px;
+  color:var(--muted);
+  line-height:1.4;
+}
+
+/* ═══ WALKTHROUGH PANEL ═══ */
+.walkthrough {
+  background:var(--card);
+  border:2px solid var(--border);
+  border-radius:16px;
+  padding:24px;
+  max-width:680px;
+  width:100%;
+  min-height:220px;
+}
+.walk-title {
+  font-size:16px;font-weight:800;margin-bottom:4px;
+}
+.walk-problem {
+  font-family:'JetBrains Mono',monospace;
+  font-size:28px;font-weight:700;text-align:center;
+  margin:12px 0;color:var(--cyan);
+}
+.walk-steps {
+  display:flex;flex-direction:column;gap:10px;margin-top:12px;
+}
+.walk-step {
+  display:flex;align-items:flex-start;gap:10px;
+  padding:10px 14px;border-radius:10px;
+  background:var(--bg);border:1px solid var(--border);
+  font-size:13px;line-height:1.5;
+  opacity:0.3;transition:opacity 0.4s, border-color 0.4s;
+}
+.walk-step.visible { opacity:1; }
+.walk-step.active { border-color:var(--cyan);opacity:1; }
+.walk-step-num {
+  width:22px;height:22px;border-radius:50%;
+  background:var(--cyan);color:var(--bg);
+  display:flex;align-items:center;justify-content:center;
+  font-size:11px;font-weight:800;flex-shrink:0;
+}
+.walk-step.visible .walk-step-num { background:var(--green); }
+.walk-step.active .walk-step-num { background:var(--cyan); }
+
+/* ═══ SVG VISUAL ═══ */
+.svg-visual {
+  display:flex;justify-content:center;align-items:center;
+  margin:12px 0;min-height:80px;
+}
+.svg-visual svg { max-width:100%; }
+
+/* ═══ OPERATION DISPLAY ═══ */
+.operation-display {
+  display:flex;align-items:center;justify-content:center;
+  gap:12px;font-size:36px;font-weight:800;
+  font-family:'JetBrains Mono',monospace;
+  padding:12px 0;
+}
+.op-num { color:var(--cyan); }
+.op-num.b { color:var(--pink); }
+.op-sign { color:var(--yellow);font-size:28px; }
+.op-eq { color:var(--muted);font-size:28px; }
+
+/* ═══ MC GRID ═══ */
+.mc-grid {
+  display:flex;gap:12px;flex-wrap:wrap;justify-content:center;
+  margin-top:16px;
+}
+.mc-btn {
+  min-width:72px;padding:14px 20px;border-radius:12px;
+  border:2px solid var(--border);background:var(--card);
+  color:var(--text);font-size:22px;font-weight:700;
+  font-family:'JetBrains Mono',monospace;
+  cursor:pointer;transition:all 0.2s;
+}
+.mc-btn:hover { border-color:var(--cyan);transform:translateY(-2px); }
+.mc-btn.correct-flash { background:var(--green);border-color:var(--green);color:#000;animation:popScale 0.4s; }
+.mc-btn.incorrect-flash { background:var(--pink);border-color:var(--pink);color:#fff;animation:shake 0.35s; }
+@keyframes popScale { 0%{transform:scale(1);} 50%{transform:scale(1.12);} 100%{transform:scale(1);} }
+@keyframes shake { 0%,100%{transform:translateX(0);} 20%{transform:translateX(-6px);} 40%{transform:translateX(6px);} 60%{transform:translateX(-4px);} 80%{transform:translateX(4px);} }
+
+/* ═══ STRATEGY PROMPT BADGE ═══ */
+.strategy-prompt {
+  display:inline-flex;align-items:center;gap:6px;
+  padding:6px 16px;border-radius:20px;
+  background:rgba(0,212,255,0.1);border:1px solid var(--cyan);
+  font-size:13px;font-weight:600;color:var(--cyan);
+  margin-bottom:8px;
+}
+
+/* ═══ CONTROLS ═══ */
+.controls { display:flex;gap:10px;justify-content:center;margin-top:12px; }
+.ctrl-btn {
+  padding:8px 20px;border-radius:10px;
+  border:1px solid var(--border);background:var(--card);
+  color:var(--text);font-size:13px;font-weight:600;cursor:pointer;
+  transition:all 0.2s;
+}
+.ctrl-btn:hover { border-color:var(--cyan); }
+.ctrl-btn.primary { background:var(--cyan);color:#000;border-color:var(--cyan); }
+
+/* ═══ SCORE / STREAK ═══ */
+.score-display {
+  text-align:center;padding:16px;background:var(--card);
+  border-radius:12px;margin-bottom:16px;
+}
+.score-value { font-size:36px;font-weight:900;background:var(--grad);-webkit-background-clip:text;-webkit-text-fill-color:transparent; }
+.score-label { font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:1.5px;color:var(--muted); }
+.streak-bar { height:6px;background:var(--bg);border-radius:3px;margin-top:6px;overflow:hidden; }
+.streak-fill { height:100%;background:var(--yellow);border-radius:3px;transition:width 0.4s; }
+
+/* ═══ ANSWER GRID (PLAY) ═══ */
+.answer-grid {
+  display:flex;gap:10px;flex-wrap:wrap;justify-content:center;margin-top:12px;
+}
+.answer-btn {
+  min-width:68px;padding:14px 18px;border-radius:12px;
+  border:2px solid var(--border);background:var(--card);
+  color:var(--text);font-size:22px;font-weight:700;
+  font-family:'JetBrains Mono',monospace;cursor:pointer;transition:all 0.2s;
+}
+.answer-btn:hover { border-color:var(--cyan);transform:translateY(-2px); }
+.answer-btn.correct-flash { background:var(--green);border-color:var(--green);color:#000;animation:popScale 0.4s; }
+.answer-btn.incorrect-flash { background:var(--pink);border-color:var(--pink);color:#fff;animation:shake 0.35s; }
+
+/* ═══ STEP NAV ═══ */
+.step-nav {
+  display:flex;gap:8px;justify-content:center;margin-top:10px;
+}
+.step-dot {
+  width:10px;height:10px;border-radius:50%;
+  background:var(--border);transition:background 0.3s;
+}
+.step-dot.done { background:var(--green); }
+.step-dot.current { background:var(--cyan); }
+
+/* ═══ FEEDBACK ═══ */
+.feedback {
+  position:fixed;bottom:24px;left:50%;transform:translateX(-50%) translateY(80px);
+  padding:14px 28px;border-radius:12px;font-size:15px;font-weight:600;
+  opacity:0;transition:all 0.4s;pointer-events:none;z-index:999;
+  max-width:500px;text-align:center;
+}
+.feedback.show { transform:translateX(-50%) translateY(0);opacity:1; }
+.feedback.correct { background:var(--green);color:#000; }
+.feedback.try-again { background:var(--pink);color:#fff; }
+</style>
+</head>
+<body>
+
+<!-- ═══ HEADER ═══ -->
+<div class="vinculum-header">
+  <div class="vinculum-header-left">
+    <a class="vinculum-back-btn" href="../../VINCULUM-Hub.html" style="text-decoration:none;">&#9664; Hub</a>
+    <div class="vinculum-header-title"><span>VINCULUM</span> Addition Strategies</div>
+    <span class="vinculum-header-badge">2.NBT</span>
+  </div>
+  <div class="vinculum-header-right">
+    <div class="vinculum-std-tags">
+      <span class="vinculum-std-tag">2.NBT.5</span>
+      <span class="vinculum-std-tag">2.NBT.6</span>
+      <span class="vinculum-std-tag">2.NBT.9</span>
+      <span class="vinculum-std-tag mn">MN 2.2.2.1</span>
+    </div>
+    <button class="vinculum-back-btn" id="readAloudBtn" onclick="toggleReadAloud()" aria-label="Read Aloud" title="Read instructions aloud" style="margin-left:8px;white-space:nowrap;">&#128264; Read to Me</button>
+  </div>
+</div>
+
+<!-- ═══ MODE TABS ═══ -->
+<div class="vinculum-mode-tabs">
+  <button class="vinculum-mode-tab active-explore" id="tabExplore" data-mode="explore">
+    <svg width="18" height="18" viewBox="0 0 48 48" fill="none"><path d="M4 24C4 24 12 12 24 12C36 12 44 24 44 24C44 24 36 36 24 36C12 36 4 24 4 24Z" stroke="currentColor" stroke-width="3" fill="none"/><circle cx="24" cy="24" r="7" stroke="currentColor" stroke-width="3" fill="none"/><circle cx="24" cy="24" r="3" fill="currentColor"/><line x1="24" y1="4" x2="24" y2="9" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" opacity="0.5"/><line x1="10" y1="8" x2="13" y2="12" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" opacity="0.5"/><line x1="38" y1="8" x2="35" y2="12" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" opacity="0.5"/></svg> Explore
+  </button>
+  <button class="vinculum-mode-tab" id="tabPractice" data-mode="practice">
+    <svg width="18" height="18" viewBox="0 0 48 48" fill="none"><circle cx="24" cy="24" r="20" stroke="currentColor" stroke-width="3" fill="none" opacity="0.3"/><circle cx="24" cy="24" r="20" stroke="currentColor" stroke-width="3" fill="none" stroke-dasharray="126" stroke-dashoffset="32" stroke-linecap="round"/><polyline points="16,24 22,32 34,16" stroke="currentColor" stroke-width="4" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg> Practice
+  </button>
+  <button class="vinculum-mode-tab" id="tabPlay" data-mode="play">
+    <svg width="18" height="18" viewBox="0 0 48 48" fill="none"><polygon points="28,4 12,28 22,28 18,44 36,18 26,18" fill="none" stroke="currentColor" stroke-width="3" stroke-linejoin="round"/><polygon points="27,8 15,27 23,27 20,40 34,19 26,19" fill="currentColor" opacity="0.15"/></svg> Play
+  </button>
+  <div class="vinculum-diff-selector">
+    <span class="vinculum-diff-label">Level</span>
+    <button class="vinculum-diff-btn active" id="diffE" data-diff="emergent">Sums to 50</button>
+    <button class="vinculum-diff-btn" id="diffP" data-diff="proficient">Sums to 100</button>
+    <button class="vinculum-diff-btn" id="diffA" data-diff="advanced">Explain Why</button>
+  </div>
+</div>
+
+<!-- ═══ MAIN ═══ -->
+<div class="main">
+  <div class="workspace" role="main" id="workspace"></div>
+  <div class="side-panel" id="sidePanel"></div>
+</div>
+
+<!-- ═══ FEEDBACK POPUP ═══ -->
+<div class="feedback" id="feedback"></div>
+
+<script src="../../vinculum-input.js"></script>
+<script>
+/* ════════════════════════════════════════
+   STATE
+   ════════════════════════════════════════ */
+var S = {
+  mode: 'explore', diff: 'emergent',
+  strategy: 'makeTen',
+  eA: 27, eB: 15,
+  walkStep: 0, walkMax: 0,
+  // Practice
+  pA: 0, pB: 0, pAnswer: 0, pChoices: [], pStrategy: '',
+  // Play
+  score: 0, streak: 0, best: 0, round: 0, total: 10,
+  playA: 0, playB: 0, playAnswer: 0, playChoices: [], playStrategy: ''
+};
+
+var STRATEGIES = ['makeTen', 'decompose', 'numberLine', 'compensation'];
+var STRAT_LABELS = { makeTen: 'Make a Ten', decompose: 'Decompose', numberLine: 'Number Line', compensation: 'Compensation' };
+var STRAT_ICONS = { makeTen: '\uD83C\uDFAF', decompose: '\uD83E\uDDE9', numberLine: '\u2194\uFE0F', compensation: '\u2696\uFE0F' };
+var STRAT_COLORS = { makeTen: 'var(--cyan)', decompose: 'var(--pink)', numberLine: 'var(--yellow)', compensation: 'var(--purple)' };
+
+/* ════════════════════════════════════════
+   READ-ALOUD
+   ════════════════════════════════════════ */
+function toggleReadAloud() {
+  if (window.VinculumStories && VinculumStories.isReading()) {
+    VinculumStories.stopReading();
+    document.getElementById('readAloudBtn').innerHTML = '&#128264; Read to Me';
+  } else {
+    var fb = document.getElementById('feedback');
+    var storyEl = document.getElementById('storyBanner');
+    var text = storyEl ? storyEl.textContent : (fb ? fb.textContent : 'Welcome to Addition Strategies!');
+    if (window.VinculumStories) {
+      VinculumStories.readAloud(text, { rate: 0.85, onComplete: function() {
+        document.getElementById('readAloudBtn').innerHTML = '&#128264; Read to Me';
+      }});
+      document.getElementById('readAloudBtn').textContent = '\u23F9 Stop';
+    }
+  }
+}
+
+/* ════════════════════════════════════════
+   MISCONCEPTIONS DATABASE
+   ════════════════════════════════════════ */
+var MISCONCEPTIONS = {
+  singleStrategy: {
+    id: 'single-strat',
+    msg: function() { return 'Try a different strategy! Good mathematicians use MORE than one way to solve.'; }
+  },
+  noUnderstanding: {
+    id: 'no-why',
+    msg: function() { return 'Think about WHY this strategy works. What happens to the place values?'; }
+  },
+  offByTen: {
+    id: 'off-by-ten',
+    msg: function(ans, got) { return 'Off by 10! Did you lose a ten when regrouping? The answer is ' + ans + '.'; }
+  },
+  forgotCarry: {
+    id: 'forgot-carry',
+    msg: function(a, b) { return 'The ones make more than 10! Remember to carry the extra ten.'; }
+  },
+  compensationError: {
+    id: 'comp-error',
+    msg: function() { return 'When you adjust one number, you must adjust the answer too! Add then subtract the same amount.'; }
+  },
+  randomGuess: {
+    id: 'random',
+    msg: function() { return 'Try breaking the numbers apart. Use tens and ones to help you add!'; }
+  }
+};
+
+/* ════════════════════════════════════════
+   HELPERS
+   ════════════════════════════════════════ */
+function rand(a, b) {
+  return Math.floor(Math.random() * (b - a + 1)) + a;
+}
+
+function showFB(msg, type) {
+  var fb = document.getElementById('feedback');
+  fb.textContent = msg;
+  fb.className = 'feedback ' + type + ' show';
+  setTimeout(function() { fb.classList.remove('show'); }, 2800);
+}
+
+function tens(n) { return Math.floor(n / 10); }
+function ones(n) { return n % 10; }
+
+function generateChoices(answer, count) {
+  var choices = new Set([answer]);
+  if (answer + 10 <= 150) choices.add(answer + 10);
+  if (answer - 10 >= 0) choices.add(answer - 10);
+  if (answer + 1 <= 150) choices.add(answer + 1);
+  if (answer - 1 >= 0) choices.add(answer - 1);
+  choices.add(answer + 2);
+  choices.add(answer - 2);
+  while (choices.size < count + 2) {
+    var off = rand(-9, 9);
+    if (off === 0) off = 3;
+    var c = answer + off;
+    if (c >= 5 && c <= 150) choices.add(c);
+  }
+  var arr = Array.from(choices);
+  arr = arr.filter(function(v) { return v >= 5 && v <= 150 && v !== answer; });
+  arr.sort(function() { return Math.random() - 0.5; });
+  arr = arr.slice(0, count - 1);
+  arr.push(answer);
+  arr.sort(function(a, b) { return a - b; });
+  return arr;
+}
+
+function pickPair() {
+  if (S.diff === 'emergent') {
+    var a = rand(12, 29);
+    var b = rand(8, 50 - a);
+    return [a, b];
+  } else {
+    var a = rand(15, 65);
+    var b = rand(12, 99 - a);
+    return [a, b];
+  }
+}
+
+function pickStrategy() {
+  return STRATEGIES[rand(0, 3)];
+}
+
+/* ════════════════════════════════════════
+   STRATEGY STEP BUILDERS
+   ════════════════════════════════════════ */
+function makeTenSteps(a, b) {
+  var oB = ones(b);
+  var need = 10 - ones(a);
+  if (need > oB) need = oB;
+  var aNew = a + need;
+  var bNew = b - need;
+  var answer = a + b;
+  return {
+    title: 'Make a Ten',
+    steps: [
+      'Start with ' + a + ' + ' + b,
+      a + ' needs ' + need + ' more to reach ' + aNew + ' (a friendly ten!)',
+      'Take ' + need + ' from ' + b + ' \u2192 ' + b + ' becomes ' + bNew,
+      'Now add: ' + aNew + ' + ' + bNew + ' = ' + answer,
+      'Answer: ' + a + ' + ' + b + ' = ' + answer
+    ]
+  };
+}
+
+function decomposeSteps(a, b) {
+  var tA = tens(a) * 10, oA = ones(a);
+  var tB = tens(b) * 10, oB = ones(b);
+  var tensSum = tA + tB;
+  var onesSum = oA + oB;
+  var answer = a + b;
+  return {
+    title: 'Decompose (Break Apart)',
+    steps: [
+      'Break ' + a + ' into ' + tA + ' + ' + oA,
+      'Break ' + b + ' into ' + tB + ' + ' + oB,
+      'Add the tens: ' + tA + ' + ' + tB + ' = ' + tensSum,
+      'Add the ones: ' + oA + ' + ' + oB + ' = ' + onesSum,
+      'Combine: ' + tensSum + ' + ' + onesSum + ' = ' + answer
+    ]
+  };
+}
+
+function numberLineSteps(a, b) {
+  var tB = tens(b) * 10;
+  var oB = ones(b);
+  var mid = a + tB;
+  var answer = a + b;
+  return {
+    title: 'Number Line (Jump Strategy)',
+    steps: [
+      'Start at ' + a + ' on the number line',
+      'Jump ' + tB + ' (the tens of ' + b + ') \u2192 land on ' + mid,
+      'Jump ' + oB + ' (the ones of ' + b + ') \u2192 land on ' + answer,
+      'Answer: ' + a + ' + ' + b + ' = ' + answer
+    ]
+  };
+}
+
+function compensationSteps(a, b) {
+  var oB = ones(b);
+  var adjust = (oB > 5) ? (10 - oB) : oB;
+  var bRound, op, answer = a + b;
+  if (oB > 5) {
+    bRound = b + adjust;
+    op = 'Round ' + b + ' up to ' + bRound + ' (add ' + adjust + ')';
+    return {
+      title: 'Compensation',
+      steps: [
+        'Start with ' + a + ' + ' + b,
+        op,
+        'Add the easier problem: ' + a + ' + ' + bRound + ' = ' + (a + bRound),
+        'Subtract the extra ' + adjust + ': ' + (a + bRound) + ' \u2212 ' + adjust + ' = ' + answer,
+        'Answer: ' + a + ' + ' + b + ' = ' + answer
+      ]
+    };
+  } else {
+    bRound = b - adjust;
+    op = 'Round ' + b + ' down to ' + bRound + ' (subtract ' + adjust + ')';
+    return {
+      title: 'Compensation',
+      steps: [
+        'Start with ' + a + ' + ' + b,
+        op,
+        'Add the easier problem: ' + a + ' + ' + bRound + ' = ' + (a + bRound),
+        'Add back the ' + adjust + ': ' + (a + bRound) + ' + ' + adjust + ' = ' + answer,
+        'Answer: ' + a + ' + ' + b + ' = ' + answer
+      ]
+    };
+  }
+}
+
+function getSteps(strat, a, b) {
+  if (strat === 'makeTen') return makeTenSteps(a, b);
+  if (strat === 'decompose') return decomposeSteps(a, b);
+  if (strat === 'numberLine') return numberLineSteps(a, b);
+  return compensationSteps(a, b);
+}
+
+/* ════════════════════════════════════════
+   SVG VISUALS
+   ════════════════════════════════════════ */
+function svgMakeTen(a, b, step) {
+  var need = 10 - ones(a);
+  if (need > ones(b)) need = ones(b);
+  var aNew = a + need;
+  var w = 340, h = 70;
+  var s = '<svg width="' + w + '" height="' + h + '" viewBox="0 0 ' + w + ' ' + h + '">';
+  // A block
+  s += '<rect x="10" y="15" width="70" height="40" rx="10" fill="rgba(0,212,255,0.15)" stroke="var(--cyan)" stroke-width="2"/>';
+  s += '<text x="45" y="42" text-anchor="middle" font-size="20" font-weight="800" fill="var(--cyan)">' + a + '</text>';
+  // Arrow
+  if (step >= 1) {
+    s += '<path d="M90 35 L120 35" stroke="var(--yellow)" stroke-width="2" marker-end="url(#arr)"/>';
+    s += '<text x="105" y="22" text-anchor="middle" font-size="11" fill="var(--yellow)">+' + need + '</text>';
+  }
+  // Friendly ten
+  if (step >= 2) {
+    s += '<rect x="130" y="15" width="70" height="40" rx="10" fill="rgba(0,230,118,0.15)" stroke="var(--green)" stroke-width="2"/>';
+    s += '<text x="165" y="42" text-anchor="middle" font-size="20" font-weight="800" fill="var(--green)">' + aNew + '</text>';
+  }
+  // Plus remainder
+  if (step >= 3) {
+    s += '<text x="215" y="42" text-anchor="middle" font-size="20" font-weight="700" fill="var(--muted)">+</text>';
+    s += '<rect x="230" y="15" width="50" height="40" rx="10" fill="rgba(255,59,139,0.15)" stroke="var(--pink)" stroke-width="2"/>';
+    s += '<text x="255" y="42" text-anchor="middle" font-size="20" font-weight="800" fill="var(--pink)">' + (b - need) + '</text>';
+  }
+  // Result
+  if (step >= 4) {
+    s += '<text x="295" y="42" text-anchor="middle" font-size="20" font-weight="700" fill="var(--muted)">=</text>';
+    s += '<text x="325" y="42" text-anchor="middle" font-size="20" font-weight="900" fill="var(--purple)">' + (a + b) + '</text>';
+  }
+  s += '<defs><marker id="arr" markerWidth="6" markerHeight="6" refX="5" refY="3" orient="auto"><path d="M0 0L6 3L0 6" fill="var(--yellow)"/></marker></defs>';
+  s += '</svg>';
+  return s;
+}
+
+function svgDecompose(a, b, step) {
+  var w = 360, h = 100;
+  var s = '<svg width="' + w + '" height="' + h + '" viewBox="0 0 ' + w + ' ' + h + '">';
+  // A split
+  s += '<rect x="10" y="5" width="60" height="30" rx="8" fill="rgba(0,212,255,0.15)" stroke="var(--cyan)" stroke-width="2"/>';
+  s += '<text x="40" y="26" text-anchor="middle" font-size="16" font-weight="800" fill="var(--cyan)">' + a + '</text>';
+  if (step >= 0) {
+    s += '<line x1="40" y1="38" x2="25" y2="55" stroke="var(--cyan)" stroke-width="1.5" opacity="0.5"/>';
+    s += '<line x1="40" y1="38" x2="55" y2="55" stroke="var(--cyan)" stroke-width="1.5" opacity="0.5"/>';
+    s += '<rect x="5" y="58" width="40" height="26" rx="6" fill="rgba(0,212,255,0.08)" stroke="var(--cyan)" stroke-width="1.5"/>';
+    s += '<text x="25" y="76" text-anchor="middle" font-size="13" font-weight="700" fill="var(--cyan)">' + (tens(a) * 10) + '</text>';
+    s += '<rect x="50" y="58" width="30" height="26" rx="6" fill="rgba(0,212,255,0.08)" stroke="var(--cyan)" stroke-width="1.5"/>';
+    s += '<text x="65" y="76" text-anchor="middle" font-size="13" font-weight="700" fill="var(--cyan)">' + ones(a) + '</text>';
+  }
+  // B split
+  if (step >= 1) {
+    s += '<rect x="120" y="5" width="60" height="30" rx="8" fill="rgba(255,59,139,0.15)" stroke="var(--pink)" stroke-width="2"/>';
+    s += '<text x="150" y="26" text-anchor="middle" font-size="16" font-weight="800" fill="var(--pink)">' + b + '</text>';
+    s += '<line x1="150" y1="38" x2="135" y2="55" stroke="var(--pink)" stroke-width="1.5" opacity="0.5"/>';
+    s += '<line x1="150" y1="38" x2="165" y2="55" stroke="var(--pink)" stroke-width="1.5" opacity="0.5"/>';
+    s += '<rect x="115" y="58" width="40" height="26" rx="6" fill="rgba(255,59,139,0.08)" stroke="var(--pink)" stroke-width="1.5"/>';
+    s += '<text x="135" y="76" text-anchor="middle" font-size="13" font-weight="700" fill="var(--pink)">' + (tens(b) * 10) + '</text>';
+    s += '<rect x="160" y="58" width="30" height="26" rx="6" fill="rgba(255,59,139,0.08)" stroke="var(--pink)" stroke-width="1.5"/>';
+    s += '<text x="175" y="76" text-anchor="middle" font-size="13" font-weight="700" fill="var(--pink)">' + ones(b) + '</text>';
+  }
+  // Tens + Ones sums
+  if (step >= 2) {
+    s += '<text x="220" y="76" text-anchor="middle" font-size="13" font-weight="700" fill="var(--yellow)">' + (tens(a) * 10) + '+' + (tens(b) * 10) + '=' + (tens(a) * 10 + tens(b) * 10) + '</text>';
+  }
+  if (step >= 3) {
+    s += '<text x="315" y="76" text-anchor="middle" font-size="13" font-weight="700" fill="var(--yellow)">' + ones(a) + '+' + ones(b) + '=' + (ones(a) + ones(b)) + '</text>';
+  }
+  // Final answer
+  if (step >= 4) {
+    s += '<rect x="250" y="5" width="80" height="30" rx="8" fill="rgba(168,85,247,0.15)" stroke="var(--purple)" stroke-width="2"/>';
+    s += '<text x="290" y="26" text-anchor="middle" font-size="18" font-weight="900" fill="var(--purple)">' + (a + b) + '</text>';
+  }
+  s += '</svg>';
+  return s;
+}
+
+function svgNumberLine(a, b, step) {
+  var answer = a + b;
+  var lo = Math.floor(a / 10) * 10;
+  var hi = Math.ceil(answer / 10) * 10 + 10;
+  var w = 360, h = 80;
+  var pad = 30;
+  var range = hi - lo || 1;
+  function xOf(n) { return pad + ((n - lo) / range) * (w - 2 * pad); }
+  var s = '<svg width="' + w + '" height="' + h + '" viewBox="0 0 ' + w + ' ' + h + '">';
+  // Line
+  s += '<line x1="' + pad + '" y1="55" x2="' + (w - pad) + '" y2="55" stroke="var(--border)" stroke-width="2"/>';
+  // Tick marks
+  for (var t = lo; t <= hi; t += 10) {
+    var tx = xOf(t);
+    s += '<line x1="' + tx + '" y1="50" x2="' + tx + '" y2="60" stroke="var(--muted)" stroke-width="1.5"/>';
+    s += '<text x="' + tx + '" y="73" text-anchor="middle" font-size="10" fill="var(--muted)">' + t + '</text>';
+  }
+  // Start dot
+  var ax = xOf(a);
+  s += '<circle cx="' + ax + '" cy="55" r="5" fill="var(--cyan)"/>';
+  s += '<text x="' + ax + '" y="47" text-anchor="middle" font-size="11" font-weight="700" fill="var(--cyan)">' + a + '</text>';
+  // Big jump (tens)
+  if (step >= 1) {
+    var mid = a + tens(b) * 10;
+    var mx = xOf(mid);
+    s += '<path d="M' + ax + ' 40 Q' + ((ax + mx) / 2) + ' 10 ' + mx + ' 40" fill="none" stroke="var(--yellow)" stroke-width="2"/>';
+    s += '<text x="' + ((ax + mx) / 2) + '" y="15" text-anchor="middle" font-size="11" font-weight="700" fill="var(--yellow)">+' + (tens(b) * 10) + '</text>';
+    s += '<circle cx="' + mx + '" cy="55" r="4" fill="var(--yellow)"/>';
+  }
+  // Small jump (ones)
+  if (step >= 2) {
+    var mid = a + tens(b) * 10;
+    var mx = xOf(mid);
+    var ex = xOf(answer);
+    if (ones(b) > 0) {
+      s += '<path d="M' + mx + ' 40 Q' + ((mx + ex) / 2) + ' 22 ' + ex + ' 40" fill="none" stroke="var(--pink)" stroke-width="2"/>';
+      s += '<text x="' + ((mx + ex) / 2) + '" y="28" text-anchor="middle" font-size="11" font-weight="700" fill="var(--pink)">+' + ones(b) + '</text>';
+    }
+    s += '<circle cx="' + ex + '" cy="55" r="5" fill="var(--green)"/>';
+    s += '<text x="' + ex + '" y="47" text-anchor="middle" font-size="12" font-weight="800" fill="var(--green)">' + answer + '</text>';
+  }
+  s += '</svg>';
+  return s;
+}
+
+function svgCompensation(a, b, step) {
+  var oB = ones(b);
+  var adjust = (oB > 5) ? (10 - oB) : oB;
+  var bRound = (oB > 5) ? b + adjust : b - adjust;
+  var tempSum = a + bRound;
+  var answer = a + b;
+  var w = 360, h = 80;
+  var s = '<svg width="' + w + '" height="' + h + '" viewBox="0 0 ' + w + ' ' + h + '">';
+  // Original B
+  s += '<rect x="10" y="20" width="55" height="36" rx="8" fill="rgba(255,59,139,0.15)" stroke="var(--pink)" stroke-width="2"/>';
+  s += '<text x="37" y="44" text-anchor="middle" font-size="16" font-weight="800" fill="var(--pink)">' + b + '</text>';
+  // Arrow to rounded
+  if (step >= 1) {
+    s += '<path d="M75 38 L105 38" stroke="var(--yellow)" stroke-width="2" marker-end="url(#arr2)"/>';
+    s += '<text x="90" y="28" text-anchor="middle" font-size="10" fill="var(--yellow)">' + (oB > 5 ? '+' : '\u2212') + adjust + '</text>';
+    s += '<rect x="115" y="20" width="55" height="36" rx="8" fill="rgba(255,193,7,0.15)" stroke="var(--yellow)" stroke-width="2"/>';
+    s += '<text x="142" y="44" text-anchor="middle" font-size="16" font-weight="800" fill="var(--yellow)">' + bRound + '</text>';
+  }
+  // Easy sum
+  if (step >= 2) {
+    s += '<text x="195" y="44" text-anchor="middle" font-size="14" fill="var(--muted)">' + a + '+' + bRound + '=' + tempSum + '</text>';
+  }
+  // Adjust back
+  if (step >= 3) {
+    s += '<text x="290" y="30" text-anchor="middle" font-size="11" fill="var(--muted)">' + tempSum + (oB > 5 ? '\u2212' : '+') + adjust + '</text>';
+    s += '<rect x="260" y="38" width="70" height="32" rx="8" fill="rgba(168,85,247,0.15)" stroke="var(--purple)" stroke-width="2"/>';
+    s += '<text x="295" y="60" text-anchor="middle" font-size="18" font-weight="900" fill="var(--purple)">' + answer + '</text>';
+  }
+  s += '<defs><marker id="arr2" markerWidth="6" markerHeight="6" refX="5" refY="3" orient="auto"><path d="M0 0L6 3L0 6" fill="var(--yellow)"/></marker></defs>';
+  s += '</svg>';
+  return s;
+}
+
+function getSVG(strat, a, b, step) {
+  if (strat === 'makeTen') return svgMakeTen(a, b, step);
+  if (strat === 'decompose') return svgDecompose(a, b, step);
+  if (strat === 'numberLine') return svgNumberLine(a, b, step);
+  return svgCompensation(a, b, step);
+}
+
+/* ════════════════════════════════════════
+   MODE / DIFF SETTERS
+   ════════════════════════════════════════ */
+function setMode(m) {
+  S.mode = m;
+  S.round = 0;
+  document.querySelectorAll('.vinculum-mode-tab').forEach(function(t) {
+    t.className = 'vinculum-mode-tab' + (t.dataset.mode === m ? ' active-' + m : '');
+  });
+  render();
+}
+
+function setDiff(d) {
+  S.diff = d;
+  S.round = 0;
+  document.querySelectorAll('.vinculum-diff-btn').forEach(function(b) {
+    b.classList.toggle('active', b.dataset.diff === d);
+  });
+  render();
+}
+
+/* ════════════════════════════════════════
+   RENDER ROUTER
+   ════════════════════════════════════════ */
+function render() {
+  var ws = document.getElementById('workspace');
+  var sp = document.getElementById('sidePanel');
+  if (S.mode === 'explore') renderExplore(ws, sp);
+  else if (S.mode === 'practice') renderPractice(ws, sp);
+  else renderPlay(ws, sp);
+}
+
+/* ════════════════════════════════════════
+   EXPLORE MODE
+   ════════════════════════════════════════ */
+function newExplorePair() {
+  var pair = pickPair();
+  S.eA = pair[0]; S.eB = pair[1];
+  S.walkStep = 0;
+}
+
+function renderExplore(ws, sp) {
+  var h = '';
+
+  // Problem display
+  h += '<div class="operation-display">';
+  h += '<span class="op-num">' + S.eA + '</span>';
+  h += '<span class="op-sign">+</span>';
+  h += '<span class="op-num b">' + S.eB + '</span>';
+  h += '<span class="op-eq">=</span>';
+  h += '<span style="color:var(--purple);font-weight:900;">' + (S.eA + S.eB) + '</span>';
+  h += '</div>';
+
+  // Strategy picker cards
+  h += '<div class="strategy-grid">';
+  STRATEGIES.forEach(function(key) {
+    var active = S.strategy === key ? ' active' : '';
+    h += '<div class="strategy-card' + active + '" onclick="S.strategy=\'' + key + '\';S.walkStep=0;render();">';
+    h += '<span class="card-icon">' + STRAT_ICONS[key] + '</span>';
+    h += '<div class="card-label" style="color:' + STRAT_COLORS[key] + ';">' + STRAT_LABELS[key] + '</div>';
+    h += '<div class="card-desc">' + stratDesc(key) + '</div>';
+    h += '</div>';
+  });
+  h += '</div>';
+
+  // Walkthrough
+  var info = getSteps(S.strategy, S.eA, S.eB);
+  S.walkMax = info.steps.length;
+  h += '<div class="walkthrough">';
+  h += '<div class="walk-title" style="color:' + STRAT_COLORS[S.strategy] + ';">' + STRAT_ICONS[S.strategy] + ' ' + info.title + '</div>';
+  // SVG
+  h += '<div class="svg-visual">' + getSVG(S.strategy, S.eA, S.eB, S.walkStep) + '</div>';
+  // Steps
+  h += '<div class="walk-steps">';
+  info.steps.forEach(function(st, i) {
+    var cls = i < S.walkStep ? 'visible' : (i === S.walkStep ? 'active' : '');
+    h += '<div class="walk-step ' + cls + '">';
+    h += '<div class="walk-step-num">' + (i + 1) + '</div>';
+    h += '<div>' + st + '</div>';
+    h += '</div>';
+  });
+  h += '</div>';
+  // Nav
+  h += '<div class="controls" style="margin-top:14px;">';
+  if (S.walkStep > 0) h += '<button class="ctrl-btn" onclick="S.walkStep--;render();">\u25C0 Back</button>';
+  if (S.walkStep < S.walkMax - 1) h += '<button class="ctrl-btn primary" onclick="S.walkStep++;render();">Next \u25B6</button>';
+  else h += '<button class="ctrl-btn" onclick="newExplorePair();render();">New Problem</button>';
+  h += '</div>';
+  h += '</div>';
+
+  ws.innerHTML = h;
+
+  // Side panel
+  var spH = '<div class="panel-section"><div class="panel-title">About This Strategy</div>';
+  spH += '<div class="panel-text" style="background:var(--card);padding:12px;border-radius:8px;">' + stratExplain(S.strategy) + '</div></div>';
+  if (S.diff === 'advanced') {
+    spH += '<div class="panel-section"><div class="panel-title">Why Does It Work?</div>';
+    spH += '<div class="panel-text" style="background:var(--card);padding:12px;border-radius:8px;color:var(--yellow);">' + stratWhy(S.strategy) + '</div></div>';
+  }
+  spH += '<div class="panel-section"><div class="panel-title">Try All Four!</div>';
+  spH += '<div class="panel-text">Click each card above to see how the SAME problem can be solved FOUR different ways.</div></div>';
+  sp.innerHTML = spH;
+}
+
+function stratDesc(key) {
+  if (key === 'makeTen') return 'Adjust one number to reach the next ten.';
+  if (key === 'decompose') return 'Break both numbers into tens and ones.';
+  if (key === 'numberLine') return 'Jump by tens, then ones on a number line.';
+  return 'Round one number, then adjust the answer.';
+}
+
+function stratExplain(key) {
+  if (key === 'makeTen') return '<strong>Make a Ten</strong> means you move some ones from one number to the other so you get a "friendly" number ending in 0. Friendly tens are easy to add!';
+  if (key === 'decompose') return '<strong>Decompose</strong> means break each number into its tens and ones. Add the tens together, add the ones together, then combine.';
+  if (key === 'numberLine') return '<strong>Number Line</strong> means start at the first number and make jumps. Jump the tens first (big jumps), then the ones (small jumps).';
+  return '<strong>Compensation</strong> means round one number to make it easier, add, then adjust the answer to make up for what you changed.';
+}
+
+function stratWhy(key) {
+  if (key === 'makeTen') return 'It works because you are not changing the TOTAL. You just move ones from one addend to the other. The sum stays the same!';
+  if (key === 'decompose') return 'It works because of PLACE VALUE. Tens plus tens stay in the tens place, ones plus ones stay in the ones place. Then you combine.';
+  if (key === 'numberLine') return 'It works because addition means "counting on." The number line shows you are counting forward by tens and ones from where you start.';
+  return 'It works because if you add extra, you must subtract the same amount. If you remove some, you add it back. The total does not change!';
+}
+
+/* ════════════════════════════════════════
+   PRACTICE MODE
+   ════════════════════════════════════════ */
+function newPractice() {
+  var pair = pickPair();
+  S.pA = pair[0]; S.pB = pair[1];
+  S.pAnswer = S.pA + S.pB;
+  S.pStrategy = pickStrategy();
+  S.pChoices = generateChoices(S.pAnswer, 5);
+}
+
+function renderPractice(ws, sp) {
+  if (!S.pA) newPractice();
+
+  var h = '';
+
+  // Strategy prompt
+  h += '<div class="strategy-prompt" style="border-color:' + STRAT_COLORS[S.pStrategy] + ';color:' + STRAT_COLORS[S.pStrategy] + ';background:rgba(0,0,0,0.15);">';
+  h += STRAT_ICONS[S.pStrategy] + ' Use: <strong>' + STRAT_LABELS[S.pStrategy] + '</strong>';
+  h += '</div>';
+
+  // Problem
+  h += '<div class="operation-display">';
+  h += '<span class="op-num">' + S.pA + '</span>';
+  h += '<span class="op-sign">+</span>';
+  h += '<span class="op-num b">' + S.pB + '</span>';
+  h += '<span class="op-eq">=</span>';
+  h += '<span style="color:var(--purple);border-bottom:4px solid var(--purple);min-width:48px;text-align:center;font-weight:900;">?</span>';
+  h += '</div>';
+
+  // SVG hint
+  h += '<div class="svg-visual" style="opacity:0.6;">' + getSVG(S.pStrategy, S.pA, S.pB, 1) + '</div>';
+
+  // MC answers
+  h += '<div class="mc-grid">';
+  S.pChoices.forEach(function(c) {
+    h += '<button class="mc-btn" id="mc' + c + '" onclick="checkPractice(' + c + ')">' + c + '</button>';
+  });
+  h += '</div>';
+
+  // Skip
+  h += '<div class="controls"><button class="ctrl-btn" onclick="newPractice();render();">Skip \u279C</button></div>';
+
+  ws.innerHTML = h;
+
+  // Side panel
+  var info = getSteps(S.pStrategy, S.pA, S.pB);
+  var spH = '<div class="panel-section"><div class="panel-title">' + STRAT_ICONS[S.pStrategy] + ' ' + STRAT_LABELS[S.pStrategy] + ' Steps</div>';
+  spH += '<div class="panel-text" style="background:var(--card);padding:12px;border-radius:8px;">';
+  info.steps.forEach(function(st, i) {
+    spH += '<div style="margin-bottom:6px;"><strong style="color:' + STRAT_COLORS[S.pStrategy] + ';">\u2460</strong> ' + st + '</div>'.replace('\u2460', String.fromCharCode(0x2460 + i));
+  });
+  spH += '</div></div>';
+
+  if (S.diff === 'advanced') {
+    spH += '<div class="panel-section"><div class="panel-title">Explain Your Thinking</div>';
+    spH += '<div class="panel-text" style="background:var(--card);padding:12px;border-radius:8px;color:var(--yellow);">Can you explain to a partner WHY ' + STRAT_LABELS[S.pStrategy] + ' works for this problem?</div></div>';
+  }
+
+  sp.innerHTML = spH;
+}
+
+function checkPractice(n) {
+  var btn = document.getElementById('mc' + n);
+  if (!btn) return;
+
+  if (n === S.pAnswer) {
+    btn.classList.add('correct-flash');
+    showFB('\u2713 Correct! ' + S.pA + ' + ' + S.pB + ' = ' + S.pAnswer, 'correct');
+    setTimeout(function() { newPractice(); render(); }, 1500);
+  } else {
+    btn.classList.add('incorrect-flash');
+    var diff = Math.abs(n - S.pAnswer);
+    var feedbackMsg;
+    if (diff === 10) {
+      feedbackMsg = MISCONCEPTIONS.offByTen.msg(S.pAnswer, n);
+    } else if (n === tens(S.pA) * 10 + tens(S.pB) * 10 + ones(S.pA) + ones(S.pB) && n !== S.pAnswer) {
+      feedbackMsg = MISCONCEPTIONS.forgotCarry.msg(S.pA, S.pB);
+    } else if (S.pStrategy === 'compensation') {
+      feedbackMsg = MISCONCEPTIONS.compensationError.msg();
+    } else if (diff > 10) {
+      feedbackMsg = MISCONCEPTIONS.noUnderstanding.msg();
+    } else {
+      feedbackMsg = MISCONCEPTIONS.randomGuess.msg();
+    }
+    showFB(feedbackMsg, 'try-again');
+    setTimeout(function() { if (btn) btn.classList.remove('incorrect-flash'); }, 500);
+  }
+}
+
+/* ════════════════════════════════════════
+   PLAY MODE
+   ════════════════════════════════════════ */
+function newPlayRound() {
+  var pair = pickPair();
+  S.playA = pair[0]; S.playB = pair[1];
+  S.playAnswer = S.playA + S.playB;
+  S.playStrategy = pickStrategy();
+  S.playChoices = generateChoices(S.playAnswer, 5);
+}
+
+var playLocked = false;
+
+function renderPlay(ws, sp) {
+  if (S.round === 0) {
+    S.score = 0;
+    S.streak = 0;
+    S.round = 1;
+    newPlayRound();
+  }
+
+  var h = '';
+
+  // Game over
+  if (S.round > S.total) {
+    h += '<div style="text-align:center;">';
+    h += '<div style="font-size:48px;font-weight:900;background:var(--grad);-webkit-background-clip:text;-webkit-text-fill-color:transparent;margin-bottom:12px;">Game Over!</div>';
+    h += '<div class="score-display" style="display:inline-block;padding:24px 48px;">';
+    h += '<div class="score-value" style="font-size:56px;">' + S.score + '</div>';
+    h += '<div class="score-label">Final Score</div>';
+    h += '</div>';
+    h += '<div style="margin-top:12px;font-size:18px;color:var(--text2);">Best Streak: <strong style="color:var(--yellow);">' + S.best + '</strong></div>';
+    h += '<div class="controls" style="margin-top:24px;">';
+    h += '<button class="ctrl-btn primary" onclick="S.round=0;render();">Play Again</button>';
+    h += '</div></div>';
+    ws.innerHTML = h;
+    sp.innerHTML = '<div class="score-display"><div class="score-value">' + S.score + '</div><div class="score-label">Final Score</div></div>' +
+      '<div class="panel-section"><div class="panel-title">Best Streak</div><div class="panel-text" style="font-size:24px;font-weight:800;color:var(--purple);">' + S.best + '</div></div>';
+    return;
+  }
+
+  // Round indicator
+  h += '<div style="text-align:center;margin-bottom:4px;">';
+  h += '<div style="font-size:14px;color:var(--muted);">Round ' + S.round + ' of ' + S.total + '</div>';
+  h += '</div>';
+
+  // Strategy hint
+  h += '<div class="strategy-prompt" style="border-color:' + STRAT_COLORS[S.playStrategy] + ';color:' + STRAT_COLORS[S.playStrategy] + ';background:rgba(0,0,0,0.15);">';
+  h += STRAT_ICONS[S.playStrategy] + ' Hint: Try <strong>' + STRAT_LABELS[S.playStrategy] + '</strong>';
+  h += '</div>';
+
+  // Equation
+  h += '<div class="operation-display">';
+  h += '<span class="op-num">' + S.playA + '</span>';
+  h += '<span class="op-sign">+</span>';
+  h += '<span class="op-num b">' + S.playB + '</span>';
+  h += '<span class="op-eq">=</span>';
+  h += '<span style="color:var(--purple);border-bottom:4px solid var(--purple);min-width:48px;text-align:center;font-weight:900;">?</span>';
+  h += '</div>';
+
+  // 5 MC answer buttons
+  h += '<div class="answer-grid">';
+  S.playChoices.forEach(function(c) {
+    h += '<button class="answer-btn" id="play' + c + '" onclick="playPick(' + c + ')">' + c + '</button>';
+  });
+  h += '</div>';
+
+  ws.innerHTML = h;
+
+  // Side panel with score
+  sp.innerHTML = '<div class="score-display">' +
+    '<div class="score-value">' + S.score + '</div>' +
+    '<div class="score-label">Score</div>' +
+    '</div>' +
+    '<div class="score-display" style="background:transparent;padding:8px;">' +
+    '<div style="font-size:18px;font-weight:700;color:var(--yellow);">\uD83D\uDD25 ' + S.streak + '</div>' +
+    '<div class="score-label">Streak</div>' +
+    '<div class="streak-bar"><div class="streak-fill" style="width:' + Math.min(S.streak * 20, 100) + '%;"></div></div>' +
+    '</div>' +
+    '<div class="panel-section">' +
+    '<div class="panel-title">How to Play</div>' +
+    '<div class="panel-text">' +
+      'Solve 10 addition problems!<br><br>' +
+      '<strong>Tap the correct sum.</strong><br><br>' +
+      'Use the <strong style="color:var(--cyan);">strategy hint</strong> to help you solve.<br><br>' +
+      '<strong style="color:var(--yellow);">Build a streak</strong> for bonus points!' +
+    '</div>' +
+    '</div>' +
+    '<div class="panel-section">' +
+    '<div class="panel-title">Scoring</div>' +
+    '<div class="panel-text">10 pts + streak \u00D7 2 bonus</div>' +
+    '</div>';
+}
+
+function playPick(n) {
+  if (playLocked) return;
+  playLocked = true;
+  var btn = document.getElementById('play' + n);
+
+  if (n === S.playAnswer) {
+    if (btn) btn.classList.add('correct-flash');
+    S.score += 10 + (S.streak * 2);
+    S.streak++;
+    if (S.streak > S.best) S.best = S.streak;
+    showFB('\u2713 ' + S.playA + ' + ' + S.playB + ' = ' + S.playAnswer + '!', 'correct');
+  } else {
+    if (btn) btn.classList.add('incorrect-flash');
+    S.streak = 0;
+    var diff = Math.abs(n - S.playAnswer);
+    var feedbackMsg;
+    if (diff === 10) {
+      feedbackMsg = MISCONCEPTIONS.offByTen.msg(S.playAnswer, n);
+    } else if (n === tens(S.playA) * 10 + tens(S.playB) * 10 + ones(S.playA) + ones(S.playB) && n !== S.playAnswer) {
+      feedbackMsg = MISCONCEPTIONS.forgotCarry.msg(S.playA, S.playB);
+    } else if (diff > 10) {
+      feedbackMsg = MISCONCEPTIONS.singleStrategy.msg();
+    } else {
+      feedbackMsg = MISCONCEPTIONS.randomGuess.msg();
+    }
+    showFB(feedbackMsg, 'try-again');
+  }
+
+  setTimeout(function() {
+    playLocked = false;
+    S.round++;
+    if (S.round <= S.total) {
+      newPlayRound();
+    }
+    render();
+  }, 1200);
+}
+
+/* ════════════════════════════════════════
+   INIT
+   ════════════════════════════════════════ */
+document.querySelectorAll('.vinculum-mode-tab').forEach(function(tab) {
+  tab.addEventListener('click', function() {
+    setMode(this.dataset.mode);
+  });
+});
+
+document.querySelectorAll('.vinculum-diff-btn').forEach(function(btn) {
+  btn.addEventListener('click', function() {
+    setDiff(this.dataset.diff);
+  });
+});
+
+render();
+</script>
+<script src="../../vinculum-core.js"></script>
+<script src="../../vinculum-data.js"></script>
+<script src="../../vinculum-adaptive-hook.js"></script>
+<script src="../../vinculum-3reads.js"></script>
+<script src="../../vinculum-stories.js"></script>
+<script src="../../vinculum-feedback.js"></script>
+<script src="../../vinculum-guide.js"></script>
+<script src="../../vinculum-identity.js"></script>
+<script src="../../vinculum-indigenous.js"></script>
+<script src="../../vinculum-dashboard.js"></script>
+<script src="../../vinculum-hyperfocus.js"></script>
+<script src="../../vinculum-layout.js"></script>
+</body>
+</html>

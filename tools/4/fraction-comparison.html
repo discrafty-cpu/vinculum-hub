@@ -1,0 +1,688 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Fraction Comparator</title>
+    <link rel="stylesheet" href="../../vinculum-core.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700;900&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+    <style>
+        * { box-sizing: border-box; }
+        body {
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+            background: var(--bg);
+            color: var(--text);
+            font-family: 'Inter', sans-serif;
+            user-select: none;
+            margin: 0;
+            padding: 0;
+        }
+        .container {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            overflow-y: auto;
+            padding: 1.5rem;
+            gap: 1rem;
+        }
+        .mode { display: none; }
+        .mode.active { display: flex; flex-direction: column; gap: 1rem; }
+        .card {
+            background: var(--card);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 1.5rem;
+            box-shadow: 0 2px 6px rgba(0,0,0,0.05);
+        }
+        .label {
+            font-size: 0.95rem;
+            font-weight: 600;
+            color: var(--text);
+            margin-bottom: 0.5rem;
+        }
+        .slider-group {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            margin: 1rem 0;
+        }
+        .slider-group input[type="range"] {
+            flex: 1;
+            cursor: pointer;
+            accent-color: var(--cyan);
+        }
+        .slider-value {
+            min-width: 50px;
+            text-align: center;
+            font-weight: 600;
+            color: var(--cyan);
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 1rem;
+        }
+        .comparison-section {
+            display: flex;
+            justify-content: space-around;
+            align-items: flex-start;
+            margin: 2rem 0;
+            gap: 1.5rem;
+        }
+        .fraction-panel {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 0.8rem;
+            flex: 1;
+        }
+        .bar {
+            width: 100%;
+            max-width: 200px;
+            display: flex;
+            gap: 2px;
+            background: var(--bg2);
+            padding: 2px;
+            border-radius: 4px;
+        }
+        .segment {
+            flex: 1;
+            height: 50px;
+            min-width: 15px;
+            background: var(--cyan);
+            border-radius: 3px;
+            transition: all 0.3s;
+        }
+        .segment.filled { background: var(--green); }
+        .fraction-label {
+            font-size: 1.3rem;
+            font-weight: 700;
+            color: var(--text);
+            font-family: 'JetBrains Mono', monospace;
+            margin-top: 0.5rem;
+        }
+        .comparison-result {
+            font-size: 2rem;
+            font-weight: 700;
+            color: var(--cyan);
+            text-align: center;
+            min-width: 80px;
+            display: flex;
+            align-items: center;
+        }
+        .number-line {
+            width: 100%;
+            max-width: 400px;
+            margin: 1.5rem auto;
+        }
+        .line {
+            position: relative;
+            height: 4px;
+            background: var(--border);
+            border-radius: 2px;
+            margin: 2rem 0;
+        }
+        .tick {
+            position: absolute;
+            top: -8px;
+            width: 2px;
+            height: 20px;
+            background: var(--text2);
+        }
+        .point {
+            position: absolute;
+            top: -10px;
+            width: 16px;
+            height: 16px;
+            background: var(--green);
+            border: 3px solid white;
+            border-radius: 50%;
+            transform: translateX(-50%);
+            box-shadow: 0 0 0 3px var(--green);
+            transition: all 0.3s;
+        }
+        .point.left { background: var(--cyan); box-shadow: 0 0 0 3px var(--cyan); }
+        .point.right { background: var(--green); box-shadow: 0 0 0 3px var(--green); }
+        .tick-label {
+            position: absolute;
+            font-size: 0.75rem;
+            color: var(--text2);
+            transform: translateX(-50%);
+            top: 25px;
+        }
+        .benchmark-section {
+            background: rgba(0, 200, 200, 0.05);
+            border: 1px solid var(--border);
+            padding: 1rem;
+            border-radius: 8px;
+            margin: 1rem 0;
+        }
+        .strategy-label {
+            font-size: 0.85rem;
+            font-weight: 600;
+            color: var(--text2);
+            text-transform: uppercase;
+            margin-bottom: 0.5rem;
+        }
+        .strategy-content {
+            font-size: 0.9rem;
+            color: var(--text);
+            line-height: 1.6;
+        }
+        .question {
+            font-size: 1.1rem;
+            font-weight: 600;
+            color: var(--text);
+            margin-bottom: 1rem;
+        }
+        .button-group {
+            display: flex;
+            gap: 0.8rem;
+            flex-wrap: wrap;
+            margin-top: 1rem;
+        }
+        .btn {
+            padding: 0.7rem 1.4rem;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 0.95rem;
+            font-weight: 600;
+            transition: all 0.2s;
+        }
+        .btn-primary {
+            background: var(--cyan);
+            color: white;
+            flex: 1;
+            min-width: 120px;
+        }
+        .btn-primary:hover { background: var(--green); }
+        .btn-option {
+            background: var(--bg2);
+            color: var(--text);
+            border: 2px solid var(--border);
+            flex: 1;
+            min-width: 80px;
+            padding: 1rem;
+        }
+        .btn-option:hover { border-color: var(--cyan); }
+        .btn-option.selected {
+            background: var(--cyan);
+            color: white;
+            border-color: var(--cyan);
+        }
+        .btn:focus-visible { outline: 2px solid var(--cyan); outline-offset: 2px; }
+        .feedback {
+            position: fixed;
+            top: 2rem;
+            right: 2rem;
+            padding: 1rem 1.5rem;
+            background: var(--card);
+            border: 2px solid var(--border);
+            border-radius: 8px;
+            font-weight: 600;
+            opacity: 0;
+            transform: translateY(-20px);
+            transition: all 0.3s;
+            pointer-events: none;
+            z-index: 1000;
+        }
+        .feedback.show {
+            opacity: 1;
+            transform: translateY(0);
+        }
+        .feedback.correct {
+            border-color: var(--green);
+            color: var(--green);
+        }
+        .feedback.incorrect {
+            border-color: var(--red);
+            color: var(--red);
+        }
+        .stats {
+            display: flex;
+            gap: 1.5rem;
+            padding: 1rem;
+            background: var(--bg2);
+            border-radius: 8px;
+            justify-content: center;
+        }
+        .stat {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+        .stat-value {
+            font-size: 1.8rem;
+            font-weight: 700;
+            color: var(--cyan);
+            font-family: 'JetBrains Mono', monospace;
+        }
+        .stat-label {
+            font-size: 0.8rem;
+            color: var(--text2);
+            text-transform: uppercase;
+            margin-top: 0.2rem;
+        }
+        .cultural-note {
+            background: rgba(0, 200, 100, 0.1);
+            border-left: 4px solid var(--green);
+            padding: 0.8rem;
+            border-radius: 4px;
+            font-size: 0.9rem;
+            color: var(--text2);
+            margin-top: 1rem;
+        }
+        .sr-only {
+            position: absolute;
+            width: 1px;
+            height: 1px;
+            padding: 0;
+            margin: -1px;
+            overflow: hidden;
+            clip: rect(0,0,0,0);
+            border: 0;
+        }
+    </style>
+</head>
+<body>
+    <div class="vinculum-header">
+      <div class="vinculum-header-left">
+        <a href="../../VINCULUM-Hub.html" class="vinculum-back-btn" aria-label="Back to Hub">
+          <svg viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="2"><path d="M8 1L3 6l5 5"/></svg>
+          Hub
+        </a>
+        <div class="vinculum-header-title"><span class="brand">Fraction Comparison</span></div>
+        <span class="vinculum-header-badge">GRADE 4</span>
+      </div>
+      <div class="vinculum-header-right">
+        <div class="vinculum-std-tags">
+          <span class="vinculum-std-tag">CCSS.4.NF.2</span>
+          <span class="vinculum-std-tag mn">MN 4.1.3.2</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="vinculum-mode-tabs">
+      <button class="vinculum-mode-tab active-explore" data-mode="explore"><svg width="18" height="18" viewBox="0 0 48 48" fill="none"><path d="M4 24C4 24 12 12 24 12C36 12 44 24 44 24C44 24 36 36 24 36C12 36 4 24 4 24Z" stroke="currentColor" stroke-width="3" fill="none"/><circle cx="24" cy="24" r="7" stroke="currentColor" stroke-width="3" fill="none"/><circle cx="24" cy="24" r="3" fill="currentColor"/><line x1="24" y1="4" x2="24" y2="9" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" opacity="0.5"/><line x1="10" y1="8" x2="13" y2="12" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" opacity="0.5"/><line x1="38" y1="8" x2="35" y2="12" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" opacity="0.5"/></svg> Explore</button>
+      <button class="vinculum-mode-tab" data-mode="practice"><svg width="18" height="18" viewBox="0 0 48 48" fill="none"><circle cx="24" cy="24" r="20" stroke="currentColor" stroke-width="3" fill="none" opacity="0.3"/><circle cx="24" cy="24" r="20" stroke="currentColor" stroke-width="3" fill="none" stroke-dasharray="126" stroke-dashoffset="32" stroke-linecap="round"/><polyline points="16,24 22,32 34,16" stroke="currentColor" stroke-width="4" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg> Practice</button>
+      <button class="vinculum-mode-tab" data-mode="play"><svg width="18" height="18" viewBox="0 0 48 48" fill="none"><polygon points="28,4 12,28 22,28 18,44 36,18 26,18" fill="none" stroke="currentColor" stroke-width="3" stroke-linejoin="round"/><polygon points="27,8 15,27 23,27 20,40 34,19 26,19" fill="currentColor" opacity="0.15"/></svg> Play</button>
+      <div class="vinculum-diff-selector">
+        <span class="vinculum-diff-label">Level</span>
+        <button class="vinculum-diff-btn active" data-diff="emergent">Emergent</button>
+        <button class="vinculum-diff-btn" data-diff="developing">Developing</button>
+        <button class="vinculum-diff-btn" data-diff="proficient">Proficient</button>
+      </div>
+    </div>
+
+    <div class="container">
+        <div id="feedback" class="feedback"></div>
+
+        <!-- EXPLORE MODE -->
+        <div class="mode active" data-mode="explore">
+            <div class="card">
+                <div class="label">Adjust fractions to compare</div>
+                <div class="slider-group">
+                    <span>Fraction 1: </span>
+                    <input type="range" id="frac1Num" min="1" max="8" value="2">
+                    <span class="slider-value" id="frac1NumVal">2</span>
+                    <span>/</span>
+                    <input type="range" id="frac1Den" min="2" max="8" value="4">
+                    <span class="slider-value" id="frac1DenVal">4</span>
+                </div>
+                <div class="slider-group">
+                    <span>Fraction 2: </span>
+                    <input type="range" id="frac2Num" min="1" max="8" value="3">
+                    <span class="slider-value" id="frac2NumVal">3</span>
+                    <span>/</span>
+                    <input type="range" id="frac2Den" min="2" max="8" value="8">
+                    <span class="slider-value" id="frac2DenVal">8</span>
+                </div>
+            </div>
+
+            <div class="card">
+                <div class="label">Visual Comparison</div>
+                <div class="comparison-section">
+                    <div class="fraction-panel">
+                        <div id="exploreBar1"></div>
+                        <div class="fraction-label" id="exploreLbl1">2/4</div>
+                    </div>
+                    <div class="comparison-result" id="exploreResult">=</div>
+                    <div class="fraction-panel">
+                        <div id="exploreBar2"></div>
+                        <div class="fraction-label" id="exploreLbl2">3/8</div>
+                    </div>
+                </div>
+                <div class="number-line">
+                    <div class="label">Number Line Comparison</div>
+                    <div class="line">
+                        <div class="tick" style="left: 0%;"></div>
+                        <div class="tick" style="left: 100%;"></div>
+                        <div class="point left" id="explorePoint1" style="left: 50%;"></div>
+                        <div class="point right" id="explorePoint2" style="left: 37.5%;"></div>
+                    </div>
+                    <div style="position: relative; height: 20px;">
+                        <div class="tick-label" style="left: 0%;">0</div>
+                        <div class="tick-label" style="left: 100%;">1</div>
+                    </div>
+                </div>
+                <div class="benchmark-section">
+                    <div class="strategy-label">Benchmark Strategy</div>
+                    <div class="strategy-content" id="exploreStrategy">Compare to 1/2: 2/4 = 1/2, so 2/4 > 3/8</div>
+                </div>
+                <div class="cultural-note">
+                    🐟 <strong>Indigenous Knowledge:</strong> Two families share fish. One family gets 3/8 of the catch. Another gets 2/5. Which family gets more? Understanding fair shares is essential to community wellbeing.
+                    <!-- INDIGENOUS: nation=Dakota, context=community_sharing -->
+                </div>
+            </div>
+        </div>
+
+        <!-- PRACTICE MODE -->
+        <div class="mode" data-mode="practice">
+            <div class="card">
+                <div class="question" id="practiceQuestion"></div>
+                <div class="comparison-section">
+                    <div class="fraction-panel">
+                        <div id="practiceBar1"></div>
+                        <div class="fraction-label" id="practiceLbl1"></div>
+                    </div>
+                    <div style="flex: 0 0 auto;">
+                        <div class="button-group" style="flex-direction: column; gap: 0.5rem; width: 100%;">
+                            <button class="btn btn-option" data-op="<">Less Than</button>
+                            <button class="btn btn-option" data-op="=">Equal To</button>
+                            <button class="btn btn-option" data-op=">">Greater Than</button>
+                        </div>
+                    </div>
+                    <div class="fraction-panel">
+                        <div id="practiceBar2"></div>
+                        <div class="fraction-label" id="practiceLbl2"></div>
+                    </div>
+                </div>
+                <button class="btn btn-primary" id="checkBtn" style="width: 100%; margin-top: 1rem;">Check Answer</button>
+                <button class="btn btn-secondary" id="nextBtn" style="display: none; width: 100%; margin-top: 1rem;">Next Problem</button>
+            </div>
+            <div class="stats">
+                <div class="stat">
+                    <div class="stat-value" id="practiceScore">0</div>
+                    <div class="stat-label">Correct</div>
+                </div>
+                <div class="stat">
+                    <div class="stat-value" id="practiceTotal">0</div>
+                    <div class="stat-label">Total</div>
+                </div>
+                <div class="stat">
+                    <div class="stat-value" id="practiceStreak">0</div>
+                    <div class="stat-label">Streak</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- PLAY MODE -->
+        <div class="mode" data-mode="play">
+            <div class="card">
+                <div class="question" id="playQuestion"></div>
+                <div class="comparison-section" style="margin: 1.5rem 0;">
+                    <div class="fraction-panel">
+                        <div id="playBar1"></div>
+                        <div class="fraction-label" id="playLbl1"></div>
+                    </div>
+                    <div style="flex: 0 0 auto;">
+                        <div class="button-group" style="flex-direction: column; gap: 0.5rem; width: 100%;">
+                            <button class="btn btn-option" data-op="<">❮</button>
+                            <button class="btn btn-option" data-op="=">=</button>
+                            <button class="btn btn-option" data-op=">">❯</button>
+                        </div>
+                    </div>
+                    <div class="fraction-panel">
+                        <div id="playBar2"></div>
+                        <div class="fraction-label" id="playLbl2"></div>
+                    </div>
+                </div>
+                <button class="btn btn-secondary" id="playSkip" style="width: 100%;">Skip</button>
+            </div>
+            <div class="stats">
+                <div class="stat">
+                    <div class="stat-value" id="playScore">0</div>
+                    <div class="stat-label">Correct</div>
+                </div>
+                <div class="stat">
+                    <div class="stat-value" id="playTotal">0</div>
+                    <div class="stat-label">Total</div>
+                </div>
+                <div class="stat">
+                    <div class="stat-value" id="playStreak">0</div>
+                    <div class="stat-label">Streak</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="../../vinculum-feedback.js"></script><script src="../../vinculum-guide.js"></script>
+<script src="../../vinculum-input.js"></script>
+<script src="../../vinculum-identity.js"></script>
+<script src="../../vinculum-indigenous.js"></script>
+<script src="../../vinculum-dashboard.js"></script>
+    <script>
+        const S = { mode: 'explore', diff: 'emergent', score: 0, total: 0, streak: 0, answers: [] };
+
+
+        function drawBar(num, den) {
+            const segments = [];
+            for (let i = 0; i < den; i++) {
+                const filled = i < num;
+                segments.push(`<div class="segment ${filled ? 'filled' : ''}"></div>`);
+            }
+            return `<div class="bar">${segments.join('')}</div>`;
+        }
+
+        // Tab switching
+        document.querySelectorAll('.vinculum-mode-tab').forEach(function(tab) {
+          tab.addEventListener('click', function() {
+            var mode = this.dataset.mode;
+            S.mode = mode;
+            document.querySelectorAll('.vinculum-mode-tab').forEach(function(t) { t.className = 'vinculum-mode-tab'; });
+            this.classList.add(mode === 'explore' ? 'active-explore' : mode === 'practice' ? 'active-practice' : 'active-play');
+            document.querySelectorAll('.mode').forEach(function(m) { m.classList.remove('active'); });
+            document.querySelector(`.mode[data-mode="${mode}"]`).classList.add('active');
+            if (mode === 'practice') initPractice();
+            if (mode === 'play') initPlay();
+          });
+        });
+
+        // EXPLORE MODE
+        const exploreInputs = ['frac1Num', 'frac1Den', 'frac2Num', 'frac2Den'];
+        exploreInputs.forEach(id => {
+            document.getElementById(id).addEventListener('input', updateExplore);
+        });
+
+        function updateExplore() {
+            const n1 = parseInt(document.getElementById('frac1Num').value);
+            const d1 = parseInt(document.getElementById('frac1Den').value);
+            const n2 = parseInt(document.getElementById('frac2Num').value);
+            const d2 = parseInt(document.getElementById('frac2Den').value);
+
+            document.getElementById('frac1NumVal').textContent = n1;
+            document.getElementById('frac1DenVal').textContent = d1;
+            document.getElementById('frac2NumVal').textContent = n2;
+            document.getElementById('frac2DenVal').textContent = d2;
+
+            const v1 = n1 / d1;
+            const v2 = n2 / d2;
+
+            document.getElementById('exploreBar1').innerHTML = drawBar(n1, d1);
+            document.getElementById('exploreBar2').innerHTML = drawBar(n2, d2);
+            document.getElementById('exploreLbl1').textContent = n1 + '/' + d1;
+            document.getElementById('exploreLbl2').textContent = n2 + '/' + d2;
+
+            if (v1 > v2) document.getElementById('exploreResult').textContent = '>';
+            else if (v1 < v2) document.getElementById('exploreResult').textContent = '<';
+            else document.getElementById('exploreResult').textContent = '=';
+
+            const p1 = v1 * 100;
+            const p2 = v2 * 100;
+            document.getElementById('explorePoint1').style.left = Math.max(0, Math.min(100, p1)) + '%';
+            document.getElementById('explorePoint2').style.left = Math.max(0, Math.min(100, p2)) + '%';
+
+            // Benchmark strategy
+            const b1 = Math.abs(v1 - 0.5);
+            const b2 = Math.abs(v2 - 0.5);
+            let strategy = '';
+            if (b1 < 0.01 && b2 < 0.01) {
+                strategy = `Both fractions equal 1/2.`;
+            } else if (v1 > 0.5 && v2 < 0.5) {
+                strategy = `${n1}/${d1} is greater than 1/2, while ${n2}/${d2} is less than 1/2, so ${n1}/${d1} > ${n2}/${d2}.`;
+            } else if (v1 < 0.5 && v2 > 0.5) {
+                strategy = `${n1}/${d1} is less than 1/2, while ${n2}/${d2} is greater than 1/2, so ${n1}/${d1} < ${n2}/${d2}.`;
+            } else if (v1 > 0.5 && v2 > 0.5) {
+                strategy = `Both are greater than 1/2. Compare how far: ${n1}/${d1} is ${(v1 - 0.5).toFixed(2)} away, ${n2}/${d2} is ${(v2 - 0.5).toFixed(2)} away.`;
+            } else {
+                strategy = `Both are less than 1/2. Compare distances from 1/2.`;
+            }
+            document.getElementById('exploreStrategy').textContent = strategy;
+        }
+
+        // PRACTICE MODE
+        const practiceProblems = [
+            { n1: 1, d1: 2, n2: 3, d2: 8, op: '>' },
+            { n1: 2, d1: 5, n2: 1, d2: 3, op: '<' },
+            { n1: 3, d1: 4, n2: 5, d2: 8, op: '>' },
+            { n1: 2, d1: 3, n2: 3, d2: 4, op: '<' },
+            { n1: 1, d1: 4, n2: 2, d2: 8, op: '=' },
+        ];
+
+        let practiceProblemIdx = 0;
+        let practiceSelected = null;
+
+        function initPractice() {
+            practiceProblemIdx = 0;
+            S.score = 0;
+            S.total = 0;
+            S.streak = 0;
+            updatePracticeStats();
+            generatePracticeProblem();
+        }
+
+        function generatePracticeProblem() {
+            const p = practiceProblems[practiceProblemIdx % practiceProblems.length];
+            document.getElementById('practiceQuestion').textContent = `Compare the fractions:`;
+            document.getElementById('practiceBar1').innerHTML = drawBar(p.n1, p.d1);
+            document.getElementById('practiceBar2').innerHTML = drawBar(p.n2, p.d2);
+            document.getElementById('practiceLbl1').textContent = p.n1 + '/' + p.d1;
+            document.getElementById('practiceLbl2').textContent = p.n2 + '/' + p.d2;
+            practiceSelected = null;
+
+            document.querySelectorAll('.mode[data-mode="practice"] .btn-option').forEach(btn => {
+                btn.classList.remove('selected');
+                btn.onclick = function() {
+                    document.querySelectorAll('.mode[data-mode="practice"] .btn-option').forEach(b => b.classList.remove('selected'));
+                    this.classList.add('selected');
+                    practiceSelected = this.dataset.op;
+                };
+            });
+
+            document.getElementById('checkBtn').style.display = 'block';
+            document.getElementById('nextBtn').style.display = 'none';
+            document.getElementById('checkBtn').onclick = function() {
+                if (!practiceSelected) {
+                    showFB('Select an answer first', 'incorrect');
+                    return;
+                }
+                if (practiceSelected === p.op) {
+                    showFB('✓ Correct!', 'correct');
+                    S.score++;
+                    S.streak++;
+                    S.answers.push(1);
+                } else {
+                    showFB('✗ Try again! The answer is ' + p.op, 'incorrect');
+                    S.streak = 0;
+                    S.answers.push(0);
+                }
+                S.total++;
+                updatePracticeStats();
+                adaptDifficulty();
+                document.getElementById('checkBtn').style.display = 'none';
+                document.getElementById('nextBtn').style.display = 'block';
+            };
+
+            document.getElementById('nextBtn').onclick = function() {
+                practiceProblemIdx++;
+                generatePracticeProblem();
+            };
+        }
+
+        function updatePracticeStats() {
+            document.getElementById('practiceScore').textContent = S.score;
+            document.getElementById('practiceTotal').textContent = S.total;
+            document.getElementById('practiceStreak').textContent = S.streak;
+        }
+
+        // PLAY MODE
+        let playProblemIdx = 0;
+        let playSelected = null;
+        const playProblems = [
+            { n1: 1, d1: 2, n2: 3, d2: 8, op: '>' },
+            { n1: 2, d1: 5, n2: 1, d2: 3, op: '<' },
+            { n1: 3, d1: 4, n2: 5, d2: 8, op: '>' },
+            { n1: 1, d1: 3, n2: 2, d2: 6, op: '=' },
+            { n1: 3, d1: 5, n2: 1, d2: 2, op: '>' },
+        ];
+
+        function initPlay() {
+            playProblemIdx = 0;
+            S.score = 0;
+            S.total = 0;
+            S.streak = 0;
+            updatePlayStats();
+            generatePlayProblem();
+        }
+
+        function generatePlayProblem() {
+            const p = playProblems[playProblemIdx % playProblems.length];
+            document.getElementById('playQuestion').textContent = `Which is correct?`;
+            document.getElementById('playBar1').innerHTML = drawBar(p.n1, p.d1);
+            document.getElementById('playBar2').innerHTML = drawBar(p.n2, p.d2);
+            document.getElementById('playLbl1').textContent = p.n1 + '/' + p.d1;
+            document.getElementById('playLbl2').textContent = p.n2 + '/' + p.d2;
+
+            document.querySelectorAll('.mode[data-mode="play"] .btn-option').forEach(btn => {
+                btn.classList.remove('selected');
+                btn.onclick = function() {
+                    if (this.dataset.op === p.op) {
+                        showFB('✓ Correct!', 'correct');
+                        S.score++;
+                        S.streak++;
+                        this.style.background = 'var(--green)';
+                    } else {
+                        showFB('✗ Not quite!', 'incorrect');
+                        S.streak = 0;
+                        this.style.background = 'var(--red)';
+                    }
+                    S.total++;
+                    updatePlayStats();
+                    adaptDifficulty();
+                    setTimeout(() => {
+                        playProblemIdx++;
+                        generatePlayProblem();
+                    }, 800);
+                };
+            });
+
+            document.getElementById('playSkip').onclick = function() {
+                playProblemIdx++;
+                generatePlayProblem();
+            };
+        }
+
+        function updatePlayStats() {
+            document.getElementById('playScore').textContent = S.score;
+            document.getElementById('playTotal').textContent = S.total;
+            document.getElementById('playStreak').textContent = S.streak;
+        }
+
+
+        updateExplore();
+    </script>
+</body>
+</html>

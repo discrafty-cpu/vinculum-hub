@@ -1,0 +1,807 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Integer Number Line - VINCULUM</title>
+  <link rel="stylesheet" href="../../vinculum-core.css">
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      background-color: var(--bg);
+      color: var(--text);
+      padding: 20px;
+      transition: background-color 0.3s, color 0.3s;
+    }
+
+    .container {
+      max-width: 900px;
+      margin: 0 auto;
+    }
+
+    .vinculum-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 30px;
+      padding: 20px;
+      background-color: var(--card);
+      border-radius: 12px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    }
+
+    .vinculum-header-left {
+      display: flex;
+      align-items: center;
+      gap: 20px;
+    }
+
+    .vinculum-back-btn {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      width: 40px;
+      height: 40px;
+      background-color: var(--bg2);
+      border-radius: 8px;
+      cursor: pointer;
+      transition: background-color 0.2s;
+      color: var(--text);
+      text-decoration: none;
+    }
+
+    .vinculum-back-btn:hover {
+      background-color: var(--cyan);
+      color: white;
+    }
+
+    .vinculum-title-group {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    .vinculum-title {
+      font-size: 28px;
+      font-weight: 700;
+      margin: 0;
+    }
+
+    .vinculum-badges {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+
+    .badge, .tag {
+      display: inline-block;
+      padding: 4px 12px;
+      border-radius: 20px;
+      font-size: 12px;
+      font-weight: 600;
+    }
+
+    .badge {
+      background-color: var(--cyan);
+      color: white;
+    }
+
+    .tag {
+      background-color: var(--pink);
+      color: white;
+    }
+
+    .vinculum-header-right {
+      display: flex;
+      gap: 12px;
+    }
+.mode-tabs {
+      display: flex;
+      gap: 12px;
+      margin-bottom: 30px;
+      border-bottom: 2px solid var(--border);
+    }
+
+    .mode-tab {
+      padding: 12px 24px;
+      background: none;
+      border: none;
+      color: var(--text2);
+      font-size: 16px;
+      font-weight: 600;
+      cursor: pointer;
+      border-bottom: 3px solid transparent;
+      transition: all 0.3s;
+    }
+
+    .mode-tab.active {
+      color: var(--cyan);
+      border-bottom-color: var(--cyan);
+    }
+
+    .mode-content {
+      display: none;
+    }
+
+    .mode-content.active {
+      display: block;
+      animation: fadeIn 0.3s ease-in;
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; }
+      to { opacity: 1; }
+    }
+
+    .content-section {
+      background-color: var(--card);
+      border-radius: 12px;
+      padding: 24px;
+      margin-bottom: 20px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    }
+
+    .content-section h2 {
+      margin-bottom: 20px;
+      color: var(--text);
+      font-size: 22px;
+    }
+
+    .difficulty-selector {
+      margin-bottom: 20px;
+      display: flex;
+      gap: 12px;
+      align-items: center;
+    }
+
+    .difficulty-selector label {
+      font-weight: 600;
+      color: var(--text2);
+    }
+
+    .difficulty-btn {
+      padding: 8px 16px;
+      border: 2px solid var(--border);
+      border-radius: 8px;
+      background-color: var(--bg2);
+      color: var(--text);
+      cursor: pointer;
+      transition: all 0.3s;
+      font-weight: 600;
+    }
+
+    .difficulty-btn.active {
+      background-color: var(--cyan);
+      border-color: var(--cyan);
+      color: white;
+    }
+
+    .number-line {
+      background-color: var(--bg2);
+      padding: 40px 20px;
+      border-radius: 8px;
+      margin: 30px 0;
+      position: relative;
+      overflow-x: auto;
+    }
+
+    .number-line svg {
+      min-width: 100%;
+      height: auto;
+    }
+
+    .number-marker {
+      cursor: pointer;
+      transition: all 0.3s;
+    }
+
+    .number-marker:hover circle {
+      r: 8;
+    }
+
+    .number-marker.selected circle {
+      fill: var(--cyan);
+      r: 8;
+    }
+
+    .button-group {
+      display: flex;
+      gap: 12px;
+      margin-top: 20px;
+      flex-wrap: wrap;
+    }
+
+    button {
+      padding: 12px 24px;
+      border: none;
+      border-radius: 8px;
+      font-size: 16px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.3s;
+    }
+
+    .btn-primary {
+      background-color: var(--cyan);
+      color: white;
+    }
+
+    .btn-primary:hover {
+      opacity: 0.9;
+      transform: translateY(-2px);
+    }
+
+    .btn-secondary {
+      background-color: var(--card2);
+      color: var(--text);
+      border: 2px solid var(--border);
+    }
+
+    .btn-secondary:hover {
+      background-color: var(--border);
+    }
+
+    #feedback {
+      margin-top: 20px;
+      padding: 16px;
+      border-radius: 8px;
+      display: none;
+      font-weight: 600;
+    }
+
+    .feedback.success {
+      background-color: rgba(50, 200, 100, 0.2);
+      color: var(--green);
+      border: 2px solid var(--green);
+      display: block;
+    }
+
+    .feedback.error {
+      background-color: rgba(255, 100, 150, 0.2);
+      color: var(--pink);
+      border: 2px solid var(--pink);
+      display: block;
+    }
+
+    .info-box {
+      background-color: var(--bg2);
+      border-left: 4px solid var(--cyan);
+      padding: 16px;
+      border-radius: 6px;
+      margin-bottom: 20px;
+    }
+
+    .info-box p {
+      margin: 0;
+      color: var(--text);
+      font-size: 14px;
+    }
+
+    .info-display {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 16px;
+      margin: 20px 0;
+    }
+
+    .info-card {
+      background-color: var(--bg2);
+      padding: 16px;
+      border-radius: 8px;
+      text-align: center;
+      border: 2px solid var(--border);
+    }
+
+    .info-card label {
+      display: block;
+      font-weight: 600;
+      color: var(--text2);
+      font-size: 12px;
+      margin-bottom: 8px;
+    }
+
+    .info-card .value {
+      font-size: 24px;
+      font-weight: 700;
+      color: var(--cyan);
+    }
+
+    .grid-input {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 16px;
+      margin-bottom: 20px;
+    }
+
+    .input-field {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    .input-field label {
+      font-weight: 600;
+      color: var(--text2);
+    }
+
+    .input-field input {
+      padding: 12px;
+      border: 2px solid var(--border);
+      border-radius: 8px;
+      font-size: 16px;
+      background-color: var(--bg2);
+      color: var(--text);
+    }
+
+    .input-field input:focus {
+      outline: none;
+      border-color: var(--cyan);
+    }
+
+    .progress-bar {
+      width: 100%;
+      height: 8px;
+      background-color: var(--border);
+      border-radius: 4px;
+      overflow: hidden;
+      margin: 20px 0;
+    }
+
+    .progress-fill {
+      height: 100%;
+      background: linear-gradient(90deg, var(--cyan), var(--green));
+      width: 0%;
+      transition: width 0.3s;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <!-- Header -->
+    <div class="vinculum-header">
+      <div class="vinculum-header-left">
+        <a href="../../VINCULUM-Hub.html" class="vinculum-back-btn" aria-label="Back to Hub">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>
+        </a>
+        <div class="vinculum-title-group">
+          <h1 class="vinculum-title">Integer Number Line</h1>
+          <div class="vinculum-badges">
+            <span class="badge">6.NS</span>
+            <span class="tag">6.NS.5</span>
+            <span class="tag">6.NS.6</span>
+            <span class="tag">6.NS.7</span>
+          </div>
+        </div>
+      </div>
+      <div class="vinculum-header-right"></div>
+    </div>
+
+    <!-- Mode Tabs -->
+    <div class="mode-tabs">
+      <button class="vinculum-mode-tab active" onclick="switchMode('explore')">Explore</button>
+      <button class="vinculum-mode-tab" onclick="switchMode('practice')">Practice</button>
+      <button class="vinculum-mode-tab" onclick="switchMode('play')">Play</button>
+    </div>
+
+    <!-- EXPLORE MODE -->
+    <div id="explore" class="mode-content active">
+      <div class="content-section">
+        <h2><svg width="18" height="18" viewBox="0 0 48 48" fill="none"><path d="M4 24C4 24 12 12 24 12C36 12 44 24 44 24C44 24 36 36 24 36C12 36 4 24 4 24Z" stroke="currentColor" stroke-width="3" fill="none"/><circle cx="24" cy="24" r="7" stroke="currentColor" stroke-width="3" fill="none"/><circle cx="24" cy="24" r="3" fill="currentColor"/><line x1="24" y1="4" x2="24" y2="9" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" opacity="0.5"/><line x1="10" y1="8" x2="13" y2="12" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" opacity="0.5"/><line x1="38" y1="8" x2="35" y2="12" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" opacity="0.5"/></svg> Explore: The Integer Number Line</h2>
+        <div class="info-box">
+          <p>Click on integers to explore. Find opposites, absolute values, and compare positive and negative numbers.</p>
+        </div>
+
+        <div id="explore-line" class="number-line"></div>
+
+        <div class="info-display">
+          <div class="info-card">
+            <label>Selected Number</label>
+            <div class="value" id="explore-selected">0</div>
+          </div>
+          <div class="info-card">
+            <label>Opposite</label>
+            <div class="value" id="explore-opposite">0</div>
+          </div>
+          <div class="info-card">
+            <label>Absolute Value</label>
+            <div class="value" id="explore-absolute">0</div>
+          </div>
+          <div class="info-card">
+            <label>Distance from 0</label>
+            <div class="value" id="explore-distance">0</div>
+          </div>
+        </div>
+
+        <button class="btn-secondary" onclick="resetExplore()">Clear Selection</button>
+      </div>
+    </div>
+
+    <!-- PRACTICE MODE -->
+    <div id="practice" class="mode-content">
+      <div class="content-section">
+        <h2><svg width="18" height="18" viewBox="0 0 48 48" fill="none"><circle cx="24" cy="24" r="20" stroke="currentColor" stroke-width="3" fill="none" opacity="0.3"/><circle cx="24" cy="24" r="20" stroke="currentColor" stroke-width="3" fill="none" stroke-dasharray="126" stroke-dashoffset="32" stroke-linecap="round"/><polyline points="16,24 22,32 34,16" stroke="currentColor" stroke-width="4" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg> Practice: Order & Compare Integers</h2>
+
+        <div class="difficulty-selector">
+          <label>Difficulty:</label>
+          <button class="difficulty-btn active" onclick="setPracticeDifficulty('easy')">Easy</button>
+          <button class="difficulty-btn" onclick="setPracticeDifficulty('medium')">Medium</button>
+          <button class="difficulty-btn" onclick="setPracticeDifficulty('hard')">Hard</button>
+        </div>
+
+        <div style="background-color: var(--bg2); padding: 20px; border-radius: 8px; margin: 20px 0; text-align: center; font-size: 18px; font-weight: 600;">
+          <div id="practice-problem"></div>
+        </div>
+
+        <div class="grid-input">
+          <div class="input-field">
+            <label id="practice-label">Answer</label>
+            <input type="text" id="practice-answer" placeholder="Enter answer">
+          </div>
+        </div>
+
+        <div class="button-group">
+          <button class="btn-primary" onclick="checkPracticeAnswer()">Check Answer</button>
+          <button class="btn-secondary" onclick="newPracticeProblem()">Next Problem</button>
+        </div>
+
+        <div id="feedback" class="feedback"></div>
+      </div>
+    </div>
+
+    <!-- PLAY MODE -->
+    <div id="play" class="mode-content">
+      <div class="content-section">
+        <h2><svg width="18" height="18" viewBox="0 0 48 48" fill="none"><polygon points="28,4 12,28 22,28 18,44 36,18 26,18" fill="none" stroke="currentColor" stroke-width="3" stroke-linejoin="round"/><polygon points="27,8 15,27 23,27 20,40 34,19 26,19" fill="currentColor" opacity="0.15"/></svg> Play: Integer Jump</h2>
+        <div class="info-box">
+          <p>Jump left and right to land on the target integer!</p>
+        </div>
+
+        <div class="difficulty-selector">
+          <label>Difficulty:</label>
+          <button class="difficulty-btn active" onclick="setPlayDifficulty('easy')">Easy</button>
+          <button class="difficulty-btn" onclick="setPlayDifficulty('medium')">Medium</button>
+          <button class="difficulty-btn" onclick="setPlayDifficulty('hard')">Hard</button>
+        </div>
+
+        <div class="progress-bar">
+          <div class="progress-fill" id="play-progress"></div>
+        </div>
+
+        <p style="text-align: center; font-size: 18px; margin-bottom: 20px;">
+          Problem <span id="play-count">1</span> / 10 | Score: <span id="play-score">0</span>
+        </p>
+
+        <div style="background-color: var(--bg2); padding: 24px; border-radius: 8px; margin-bottom: 20px;">
+          <p id="play-problem" style="text-align: center; font-size: 18px; font-weight: 600; margin-bottom: 20px;"></p>
+          <div id="play-line" class="number-line"></div>
+        </div>
+
+        <div id="feedback" class="feedback"></div>
+      </div>
+    </div>
+  </div>
+
+  <script src="../../vinculum-feedback.js"></script><script src="../../vinculum-guide.js"></script><script src="../../vinculum-indigenous.js"></script><script src="../../indigenous-context-panel.js"></script>
+  <script src="../../vinculum-input.js"></script>
+
+  <script>
+    let currentMode = 'explore';
+    let practiceDifficulty = 'easy';
+    let playDifficulty = 'easy';
+    let playScore = 0;
+    let playCurrent = 0;
+    let playProblems = [];
+    let playCurrentTarget = 0;
+    let playCurrentSelected = 0;
+
+    function switchMode(mode) {
+      currentMode = mode;
+      document.querySelectorAll('.mode-content').forEach(el => el.classList.remove('active'));
+      document.querySelectorAll('.mode-tab').forEach(el => el.classList.remove('active'));
+      document.getElementById(mode).classList.add('active');
+
+      if (mode === 'practice') {
+        newPracticeProblem();
+      } else if (mode === 'play') {
+        generatePlayProblems();
+        nextPlayProblem();
+      }
+    }
+
+    document.querySelectorAll('.mode-tab').forEach((btn, idx) => {
+      btn.addEventListener('click', function() {
+        document.querySelectorAll('.mode-tab').forEach(b => b.classList.remove('active'));
+        this.classList.add('active');
+      });
+    });
+
+    // EXPLORE MODE
+    function buildExploreNumberLine() {
+      const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+      svg.setAttribute('viewBox', '0 0 1000 100');
+      svg.setAttribute('width', '100%');
+      svg.setAttribute('height', '80');
+
+      // Draw line
+      const line = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+      line.setAttribute('x1', '50');
+      line.setAttribute('y1', '50');
+      line.setAttribute('x2', '950');
+      line.setAttribute('y2', '50');
+      line.setAttribute('stroke', 'var(--border)');
+      line.setAttribute('stroke-width', '3');
+      svg.appendChild(line);
+
+      // Draw numbers from -10 to 10
+      for (let i = -10; i <= 10; i++) {
+        const x = 50 + (i + 10) * 80;
+
+        // Tick mark
+        const tick = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+        tick.setAttribute('x1', x);
+        tick.setAttribute('y1', '40');
+        tick.setAttribute('x2', x);
+        tick.setAttribute('y2', '60');
+        tick.setAttribute('stroke', 'var(--text)');
+        tick.setAttribute('stroke-width', '2');
+        svg.appendChild(tick);
+
+        // Number marker
+        const g = document.createElementNS('http://www.w3.org/2000/svg', 'g');
+        g.setAttribute('class', 'number-marker');
+        g.setAttribute('data-number', i);
+        g.addEventListener('click', () => selectExploreNumber(i));
+
+        const circle = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+        circle.setAttribute('cx', x);
+        circle.setAttribute('cy', '50');
+        circle.setAttribute('r', '5');
+        circle.setAttribute('fill', i === 0 ? 'var(--orange)' : 'var(--card2)');
+        circle.setAttribute('stroke', 'var(--border)');
+        circle.setAttribute('stroke-width', '2');
+        g.appendChild(circle);
+
+        const text = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+        text.setAttribute('x', x);
+        text.setAttribute('y', '75');
+        text.setAttribute('text-anchor', 'middle');
+        text.setAttribute('fill', 'var(--text)');
+        text.setAttribute('font-weight', '600');
+        text.setAttribute('font-size', '14');
+        text.textContent = i;
+        g.appendChild(text);
+
+        svg.appendChild(g);
+      }
+
+      document.getElementById('explore-line').innerHTML = '';
+      document.getElementById('explore-line').appendChild(svg);
+    }
+
+    function selectExploreNumber(num) {
+      document.querySelectorAll('#explore-line .number-marker').forEach(m => {
+        if (parseInt(m.getAttribute('data-number')) === num) {
+          m.classList.add('selected');
+        } else {
+          m.classList.remove('selected');
+        }
+      });
+
+      document.getElementById('explore-selected').textContent = num;
+      document.getElementById('explore-opposite').textContent = -num;
+      document.getElementById('explore-absolute').textContent = Math.abs(num);
+      document.getElementById('explore-distance').textContent = Math.abs(num);
+    }
+
+    function resetExplore() {
+      document.querySelectorAll('#explore-line .number-marker').forEach(m => m.classList.remove('selected'));
+      selectExploreNumber(0);
+    }
+
+    // PRACTICE MODE
+    function generatePracticeProblem() {
+      const ranges = {
+        easy: [-5, 5],
+        medium: [-10, 10],
+        hard: [-20, 20]
+      };
+
+      const [min, max] = ranges[practiceDifficulty];
+      const problemType = Math.floor(Math.random() * 3);
+      let a, b, problemText, answer;
+
+      if (problemType === 0) {
+        // Absolute value
+        a = Math.floor(Math.random() * (max - min + 1)) + min;
+        problemText = `What is |${a}|? (absolute value)`;
+        answer = Math.abs(a).toString();
+      } else if (problemType === 1) {
+        // Opposite
+        a = Math.floor(Math.random() * (max - min + 1)) + min;
+        problemText = `What is the opposite of ${a}?`;
+        answer = (-a).toString();
+      } else {
+        // Compare
+        a = Math.floor(Math.random() * (max - min + 1)) + min;
+        b = Math.floor(Math.random() * (max - min + 1)) + min;
+        if (a !== b) {
+          problemText = `Compare: ${a} ___ ${b} (use <, >, or =)`;
+          answer = a < b ? '<' : a > b ? '>' : '=';
+        } else {
+          return generatePracticeProblem();
+        }
+      }
+
+      return { problemText, answer };
+    }
+
+    function newPracticeProblem() {
+      const problem = generatePracticeProblem();
+      document.getElementById('practice-problem').textContent = problem.problemText;
+      document.getElementById('practice-answer').value = '';
+      document.getElementById('feedback').innerHTML = '';
+    }
+
+    function checkPracticeAnswer() {
+      const problem = generatePracticeProblem();
+      const answer = document.getElementById('practice-answer').value.toLowerCase().trim();
+
+      if (answer === problem.answer.toLowerCase().trim()) {
+        showFeedback('feedback', 'success', 'Correct! 🎉');
+      } else {
+        showFeedback('feedback', 'error', `Incorrect. Answer: ${problem.answer}`);
+      }
+    }
+
+    function setPracticeDifficulty(level) {
+      practiceDifficulty = level;
+      document.querySelectorAll('#practice .difficulty-btn').forEach((btn, idx) => {
+        btn.classList.toggle('active', ['easy', 'medium', 'hard'][idx] === level);
+      });
+      newPracticeProblem();
+    }
+
+    // PLAY MODE
+    function generatePlayProblems() {
+      const ranges = {
+        easy: [-5, 5],
+        medium: [-10, 10],
+        hard: [-15, 15]
+      };
+
+      const [min, max] = ranges[playDifficulty];
+      playProblems = [];
+
+      for (let i = 0; i < 10; i++) {
+        const target = Math.floor(Math.random() * (max - min + 1)) + min;
+        playProblems.push({ target });
+      }
+    }
+
+    function buildPlayNumberLine() {
+      const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+      svg.setAttribute('viewBox', '0 0 1200 100');
+      svg.setAttribute('width', '100%');
+      svg.setAttribute('height', '80');
+
+      // Draw line
+      const line = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+      line.setAttribute('x1', '50');
+      line.setAttribute('y1', '50');
+      line.setAttribute('x2', '1150');
+      line.setAttribute('y2', '50');
+      line.setAttribute('stroke', 'var(--border)');
+      line.setAttribute('stroke-width', '3');
+      svg.appendChild(line);
+
+      const min = playDifficulty === 'easy' ? -5 : playDifficulty === 'medium' ? -10 : -15;
+      const max = playDifficulty === 'easy' ? 5 : playDifficulty === 'medium' ? 10 : 15;
+
+      // Draw numbers
+      for (let i = min; i <= max; i++) {
+        const x = 50 + (i - min) * (1100 / (max - min));
+
+        // Tick mark
+        const tick = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+        tick.setAttribute('x1', x);
+        tick.setAttribute('y1', '40');
+        tick.setAttribute('x2', x);
+        tick.setAttribute('y2', '60');
+        tick.setAttribute('stroke', 'var(--text)');
+        tick.setAttribute('stroke-width', '2');
+        svg.appendChild(tick);
+
+        // Number marker
+        const g = document.createElementNS('http://www.w3.org/2000/svg', 'g');
+        g.setAttribute('class', 'number-marker');
+        g.setAttribute('data-number', i);
+        g.addEventListener('click', () => selectPlayNumber(i));
+
+        const circle = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+        circle.setAttribute('cx', x);
+        circle.setAttribute('cy', '50');
+        circle.setAttribute('r', '5');
+        circle.setAttribute('fill', playCurrentSelected === i ? 'var(--cyan)' : 'var(--card2)');
+        circle.setAttribute('stroke', 'var(--border)');
+        circle.setAttribute('stroke-width', '2');
+        g.appendChild(circle);
+
+        const text = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+        text.setAttribute('x', x);
+        text.setAttribute('y', '75');
+        text.setAttribute('text-anchor', 'middle');
+        text.setAttribute('fill', 'var(--text)');
+        text.setAttribute('font-weight', '600');
+        text.setAttribute('font-size', '14');
+        text.textContent = i;
+        g.appendChild(text);
+
+        svg.appendChild(g);
+      }
+
+      document.getElementById('play-line').innerHTML = '';
+      document.getElementById('play-line').appendChild(svg);
+    }
+
+    function selectPlayNumber(num) {
+      playCurrentSelected = num;
+      buildPlayNumberLine();
+
+      if (num === playCurrentTarget) {
+        playScore++;
+        showFeedback('feedback', 'success', 'Correct! 🎉');
+        document.getElementById('play-score').textContent = playScore;
+
+        if (playCurrent < 10) {
+          setTimeout(nextPlayProblem, 1200);
+        } else {
+          document.getElementById('play-progress').style.width = '100%';
+        }
+      } else {
+        showFeedback('feedback', 'error', 'Incorrect. Try again!');
+      }
+    }
+
+    function nextPlayProblem() {
+      playCurrent++;
+      const problem = playProblems[playCurrent - 1];
+      playCurrentTarget = problem.target;
+      playCurrentSelected = 0;
+
+      document.getElementById('play-count').textContent = playCurrent;
+      document.getElementById('play-problem').textContent = `Land on ${playCurrentTarget}`;
+      document.getElementById('play-progress').style.width = ((playCurrent - 1) / 10) * 100 + '%';
+      document.getElementById('feedback').innerHTML = '';
+
+      buildPlayNumberLine();
+    }
+
+    function setPlayDifficulty(level) {
+      playDifficulty = level;
+      playScore = 0;
+      playCurrent = 0;
+      document.querySelectorAll('#play .difficulty-btn').forEach((btn, idx) => {
+        btn.classList.toggle('active', ['easy', 'medium', 'hard'][idx] === level);
+      });
+      generatePlayProblems();
+      nextPlayProblem();
+    }
+
+    function showFeedback(elementId, type, message) {
+      const el = document.getElementById(elementId);
+      el.className = `feedback ${type}`;
+      el.textContent = message;
+    }
+
+    // Initialize
+    buildExploreNumberLine();
+    selectExploreNumber(0);
+  </script>
+</body>
+</html>

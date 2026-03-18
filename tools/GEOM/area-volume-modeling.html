@@ -1,0 +1,473 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Area & Volume Modeling — VINCULUM Hub</title>
+    <link rel="stylesheet" href="../../vinculum-core.css">
+    <style>
+        :root {
+            --bg: #f8f9fa;
+            --bg2: #f0f1f3;
+            --card: #ffffff;
+            --card2: #fafbfc;
+            --border: #d9d9d9;
+            --text: #1a1a1a;
+            --text2: #666666;
+            --muted: #999999;
+            --cyan: #00b8e6;
+            --green: #00a854;
+            --pink: #ff1493;
+            --yellow: #ffc500;
+            --purple: #722ed1;
+            --orange: #ff7a45;
+            --grad: linear-gradient(135deg, #0066cc, #00b8e6);
+            --glow: 0 0 20px rgba(0, 180, 230, 0.3);
+        }
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { background: var(--bg); color: var(--text); font-family: 'Inter', sans-serif; }
+        .header { background: var(--card); padding: 1.5rem; border-bottom: 2px solid var(--border); margin-bottom: 2rem; }
+        .header-top { display: flex; align-items: center; justify-content: space-between; }
+        .back-btn { background: none; border: none; color: var(--cyan); font-size: 1.5rem; cursor: pointer; }
+        .header-title { flex: 1; text-align: center; font-size: 1.8rem; font-weight: 700; background: var(--grad); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+        .header-title span { color: var(--cyan); }
+        .badge { background: var(--cyan); color: white; padding: 0.4rem 0.8rem; border-radius: 20px; font-size: 0.75rem; }
+        .std-tags { display: flex; gap: 0.5rem; flex-wrap: wrap; font-size: 0.75rem; margin-top: 0.8rem; }
+        .std-tag { background: var(--bg2); padding: 0.3rem 0.6rem; border-radius: 4px; color: var(--text2); border: 1px solid var(--border); }
+        .container { display: flex; gap: 1rem; padding: 0 1.5rem 1.5rem; max-width: 1400px; margin: 0 auto; }
+        .workspace { flex: 1; }
+        .side-panel { width: 280px; display: flex; flex-direction: column; gap: 1rem; }
+        .tabs { display: flex; gap: 0.5rem; background: var(--card); padding: 1rem; border-radius: 8px; border: 2px solid var(--border); margin-bottom: 1rem; }
+        .tab-btn { flex: 1; padding: 0.75rem 1rem; border: none; background: var(--bg2); color: var(--text2); border-radius: 6px; cursor: pointer; font-weight: 600; }
+        .tab-btn.active-explore { background: var(--cyan); color: white; }
+        .tab-btn.active-practice { background: var(--green); color: white; }
+        .tab-btn.active-play { background: var(--orange); color: white; }
+        .tab-content { display: none; }
+        .tab-content.show { display: block; }
+        .explore-content, .practice-content, .play-content { background: var(--card); border: 2px solid var(--border); border-radius: 8px; padding: 1.5rem; min-height: 500px; }
+        svg { border: 2px solid var(--border); border-radius: 8px; background: #fafafa; width: 100%; }
+        .control-group { background: var(--bg2); padding: 1rem; border-radius: 8px; border: 1px solid var(--border); margin-bottom: 1rem; }
+        .control-label { font-weight: 600; margin-bottom: 0.5rem; color: var(--text); font-size: 0.9rem; }
+        .slider-row { display: flex; align-items: center; gap: 1rem; margin-bottom: 0.8rem; }
+        input[type="range"] { flex: 1; cursor: pointer; }
+        .slider-value { min-width: 50px; text-align: right; font-weight: 600; color: var(--cyan); font-family: 'JetBrains Mono', monospace; }
+        .shape-selector { display: grid; grid-template-columns: repeat(2, 1fr); gap: 0.5rem; margin-bottom: 1rem; }
+        .shape-btn { padding: 0.75rem; border: 2px solid var(--border); background: var(--card); border-radius: 6px; cursor: pointer; font-weight: 600; }
+        .shape-btn.selected { background: var(--cyan); border-color: var(--cyan); color: white; }
+        .formulas { background: var(--bg2); padding: 1rem; border-radius: 8px; border-left: 4px solid var(--cyan); font-family: 'JetBrains Mono', monospace; font-size: 0.9rem; }
+        .formula-item { margin-bottom: 0.8rem; }
+        .formula-label { color: var(--text2); font-weight: 600; margin-bottom: 0.3rem; }
+        .formula-text { color: var(--text); }
+        .problem-card { background: var(--bg2); padding: 1.5rem; border-radius: 8px; border: 2px solid var(--border); margin-bottom: 1rem; }
+        .problem-text { font-weight: 600; margin-bottom: 1rem; color: var(--text); }
+        .answer-input { display: flex; gap: 0.5rem; margin-bottom: 1rem; }
+        input[type="text"], input[type="number"] { flex: 1; padding: 0.75rem; border: 2px solid var(--border); border-radius: 6px; }
+        .check-btn { padding: 0.75rem 1.5rem; background: var(--green); color: white; border: none; border-radius: 6px; cursor: pointer; font-weight: 600; }
+        .check-btn:hover { opacity: 0.9; }
+        .panel-card { background: var(--card); border: 2px solid var(--border); border-radius: 8px; padding: 1rem; }
+        .panel-title { font-weight: 700; margin-bottom: 0.8rem; color: var(--cyan); font-size: 0.95rem; }
+        .difficulty-selector { display: flex; flex-direction: column; gap: 0.5rem; }
+        .diff-btn { padding: 0.75rem; border: 2px solid var(--border); background: var(--card); border-radius: 6px; cursor: pointer; font-weight: 600; }
+        .diff-btn.selected { background: var(--cyan); border-color: var(--cyan); color: white; }
+        .stats-display { display: flex; flex-direction: column; gap: 0.8rem; font-size: 0.9rem; }
+        .stat-row { display: flex; justify-content: space-between; }
+        .stat-label { color: var(--text2); }
+        .stat-value { font-weight: 700; color: var(--cyan); font-family: 'JetBrains Mono', monospace; }
+        .feedback-popup { position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%) scale(0.8); background: var(--card); padding: 2rem; border-radius: 12px; border: 3px solid var(--cyan); box-shadow: 0 8px 32px rgba(0, 0, 0, 0.15); z-index: 1000; opacity: 0; pointer-events: none; animation: popupAppear 0.3s ease-out forwards; text-align: center; }
+        @keyframes popupAppear { to { opacity: 1; transform: translate(-50%, -50%) scale(1); } }
+        .popup-icon { font-size: 2rem; margin-bottom: 0.5rem; }
+        .popup-text { font-weight: 600; margin-bottom: 0.5rem; }
+        .multiple-choice { display: flex; flex-direction: column; gap: 0.5rem; margin-top: 1rem; }
+        .choice-btn { padding: 0.75rem 1rem; border: 2px solid var(--border); background: var(--card); border-radius: 6px; cursor: pointer; text-align: left; }
+        .choice-btn.correct { background: var(--green); border-color: var(--green); color: white; }
+        .choice-btn.incorrect { background: var(--pink); border-color: var(--pink); color: white; }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <div class="header-top">
+            <button class="back-btn" onclick="window.location.href='../../VINCULUM-Hub.html'">←</button>
+            <h1 class="header-title"><span>VINCULUM</span> Area & Volume Modeling</h1>
+            <div class="badge">GEOM</div>
+        </div>
+        <div class="std-tags">
+            <span class="std-tag">G-GMD.1</span>
+            <span class="std-tag">G-GMD.3</span>
+            <span class="std-tag">G-MG.1</span>
+        </div>
+    </div>
+
+    <div class="container">
+        <div class="workspace">
+            <div class="tabs">
+                <button class="tab-btn active-explore" onclick="switchTab('explore')">Explore</button>
+                <button class="tab-btn" onclick="switchTab('practice')">Practice</button>
+                <button class="tab-btn" onclick="switchTab('play')">Play</button>
+            </div>
+
+            <div id="explore" class="tab-content show">
+                <div class="explore-content">
+                    <div class="shape-selector">
+                        <button class="shape-btn selected" onclick="changeShape('prism')">Prism</button>
+                        <button class="shape-btn" onclick="changeShape('cylinder')">Cylinder</button>
+                        <button class="shape-btn" onclick="changeShape('cone')">Cone</button>
+                        <button class="shape-btn" onclick="changeShape('sphere')">Sphere</button>
+                    </div>
+                    <svg id="shapeCanvas" height="350"></svg>
+                    <div class="control-group">
+                        <div class="control-label">Dimensions</div>
+                        <div class="slider-row" id="slider1Container">
+                            <label>Width:</label>
+                            <input type="range" id="dim1" min="2" max="10" value="4" oninput="updateShape()">
+                            <span class="slider-value" id="dim1Value">4</span>
+                        </div>
+                        <div class="slider-row" id="slider2Container">
+                            <label>Height:</label>
+                            <input type="range" id="dim2" min="2" max="10" value="6" oninput="updateShape()">
+                            <span class="slider-value" id="dim2Value">6</span>
+                        </div>
+                        <div class="slider-row" id="slider3Container">
+                            <label>Depth:</label>
+                            <input type="range" id="dim3" min="2" max="10" value="3" oninput="updateShape()">
+                            <span class="slider-value" id="dim3Value">3</span>
+                        </div>
+                    </div>
+                    <div class="formulas">
+                        <div class="formula-item">
+                            <div class="formula-label">Surface Area:</div>
+                            <div class="formula-text" id="saFormula"></div>
+                            <div style="color: var(--cyan); font-weight: 700; margin-top: 0.3rem;" id="saValue"></div>
+                        </div>
+                        <div class="formula-item">
+                            <div class="formula-label">Volume:</div>
+                            <div class="formula-text" id="vFormula"></div>
+                            <div style="color: var(--cyan); font-weight: 700; margin-top: 0.3rem;" id="vValue"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div id="practice" class="tab-content">
+                <div class="practice-content">
+                    <div class="problem-card">
+                        <div class="problem-text" id="problemText"></div>
+                        <div class="answer-input">
+                            <input type="number" id="answerInput" placeholder="Enter answer" step="0.1">
+                            <button class="check-btn" onclick="checkAnswer()">Check</button>
+                        </div>
+                        <div id="feedbackArea"></div>
+                        <div class="multiple-choice" id="mcChoices"></div>
+                    </div>
+                    <button class="check-btn" style="width: 100%; margin-top: 1rem;" onclick="nextProblem()">Next Problem</button>
+                </div>
+            </div>
+
+            <div id="play" class="tab-content">
+                <div class="play-content">
+                    <div style="text-align: center; padding: 2rem;">
+                        <h2 style="margin-bottom: 1rem;">Speed Round Challenge</h2>
+                        <p style="margin-bottom: 1.5rem; color: var(--text2);">Identify the shape and compute its volume!</p>
+                        <svg id="playShapeCanvas" height="300"></svg>
+                        <div class="answer-input" style="margin-top: 1rem;">
+                            <input type="text" id="playAnswer" placeholder="Shape name, Volume">
+                            <button class="check-btn" onclick="checkPlayAnswer()">Submit</button>
+                        </div>
+                        <div id="playFeedback"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="side-panel">
+            <div class="panel-card">
+                <div class="panel-title">Difficulty</div>
+                <div class="difficulty-selector">
+                    <button class="diff-btn selected" onclick="setDifficulty('easy')">Easy</button>
+                    <button class="diff-btn" onclick="setDifficulty('medium')">Medium</button>
+                    <button class="diff-btn" onclick="setDifficulty('hard')">Hard</button>
+                </div>
+            </div>
+
+            <div class="panel-card">
+                <div class="panel-title">Score</div>
+                <div class="stats-display">
+                    <div class="stat-row">
+                        <span class="stat-label">Correct:</span>
+                        <span class="stat-value" id="scoreCorrect">0</span>
+                    </div>
+                    <div class="stat-row">
+                        <span class="stat-label">Streak:</span>
+                        <span class="stat-value" id="scoreStreak">0</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="feedback-popup" id="feedbackPopup"></div>
+
+    <script>
+        let currentShape = 'prism', currentMode = 'explore', difficulty = 'easy';
+        let score = { correct: 0, streak: 0 }, currentProblem = null;
+
+        function switchTab(tab) {
+            document.querySelectorAll('.tab-content').forEach(e => e.classList.remove('show'));
+            document.querySelectorAll('.tab-btn').forEach(e => e.classList.remove('active-explore','active-practice','active-play'));
+            document.getElementById(tab).classList.add('show');
+            event.target.classList.add(`active-${tab}`);
+            currentMode = tab;
+            if (tab === 'practice') generateProblem();
+            if (tab === 'play') generatePlayProblem();
+        }
+
+        function changeShape(shape) {
+            currentShape = shape;
+            document.querySelectorAll('.shape-btn').forEach(b => b.classList.remove('selected'));
+            event.target.classList.add('selected');
+            updateSliders();
+            updateShape();
+        }
+
+        function updateSliders() {
+            const labels = ['slider1Container', 'slider2Container', 'slider3Container'];
+            labels.forEach(l => document.getElementById(l).style.display = 'flex');
+            if (currentShape === 'sphere') {
+                document.getElementById('slider2Container').style.display = 'none';
+                document.getElementById('slider3Container').style.display = 'none';
+            } else if (currentShape === 'cylinder') {
+                document.getElementById('slider3Container').style.display = 'none';
+            }
+        }
+
+        function updateShape() {
+            const d1 = parseFloat(document.getElementById('dim1').value);
+            const d2 = parseFloat(document.getElementById('dim2').value);
+            const d3 = parseFloat(document.getElementById('dim3').value);
+            document.getElementById('dim1Value').textContent = d1.toFixed(1);
+            document.getElementById('dim2Value').textContent = d2.toFixed(1);
+            document.getElementById('dim3Value').textContent = d3.toFixed(1);
+
+            const svg = document.getElementById('shapeCanvas');
+            svg.setAttribute('viewBox', '0 0 400 350');
+            svg.innerHTML = '';
+
+            let sa, v, fsa, fv;
+            if (currentShape === 'prism') {
+                const g = document.createElementNS('http://www.w3.org/2000/svg', 'g');
+                const rect = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
+                rect.setAttribute('x', '80'); rect.setAttribute('y', '80');
+                rect.setAttribute('width', d1 * 40); rect.setAttribute('height', d2 * 40);
+                rect.setAttribute('fill', 'rgba(0,184,230,0.2)'); rect.setAttribute('stroke', 'var(--cyan)');
+                rect.setAttribute('stroke-width', '2');
+                g.appendChild(rect);
+                svg.appendChild(g);
+                sa = 2 * (d1 * d2 + d2 * d3 + d1 * d3);
+                v = d1 * d2 * d3;
+                fsa = `SA = 2(lw + lh + wh) = ${sa.toFixed(1)} u²`;
+                fv = `V = lwh = ${v.toFixed(1)} u³`;
+            } else if (currentShape === 'cylinder') {
+                const e = document.createElementNS('http://www.w3.org/2000/svg', 'ellipse');
+                e.setAttribute('cx', '200'); e.setAttribute('cy', '100');
+                e.setAttribute('rx', d1 * 30); e.setAttribute('ry', d1 * 10);
+                e.setAttribute('fill', 'rgba(0,184,230,0.2)'); e.setAttribute('stroke', 'var(--cyan)');
+                e.setAttribute('stroke-width', '2');
+                svg.appendChild(e);
+                const r = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
+                r.setAttribute('x', 200 - d1 * 30); r.setAttribute('y', '100');
+                r.setAttribute('width', d1 * 60); r.setAttribute('height', d2 * 40);
+                r.setAttribute('fill', 'none'); r.setAttribute('stroke', 'var(--cyan)');
+                r.setAttribute('stroke-width', '2');
+                svg.appendChild(r);
+                sa = 2 * Math.PI * d1 * d1 + 2 * Math.PI * d1 * d2;
+                v = Math.PI * d1 * d1 * d2;
+                fsa = `SA = 2πr² + 2πrh ≈ ${sa.toFixed(1)} u²`;
+                fv = `V = πr²h ≈ ${v.toFixed(1)} u³`;
+            } else if (currentShape === 'cone') {
+                const e = document.createElementNS('http://www.w3.org/2000/svg', 'ellipse');
+                e.setAttribute('cx', '200'); e.setAttribute('cy', '280');
+                e.setAttribute('rx', d1 * 35); e.setAttribute('ry', d1 * 10);
+                e.setAttribute('fill', 'rgba(0,184,230,0.2)'); e.setAttribute('stroke', 'var(--cyan)');
+                e.setAttribute('stroke-width', '2');
+                svg.appendChild(e);
+                const l1 = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+                l1.setAttribute('x1', 200 - d1 * 35); l1.setAttribute('y1', '280');
+                l1.setAttribute('x2', '200'); l1.setAttribute('y2', 280 - d2 * 40);
+                l1.setAttribute('stroke', 'var(--cyan)'); l1.setAttribute('stroke-width', '2');
+                svg.appendChild(l1);
+                const l2 = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+                l2.setAttribute('x1', 200 + d1 * 35); l2.setAttribute('y1', '280');
+                l2.setAttribute('x2', '200'); l2.setAttribute('y2', 280 - d2 * 40);
+                l2.setAttribute('stroke', 'var(--cyan)'); l2.setAttribute('stroke-width', '2');
+                svg.appendChild(l2);
+                const s = Math.sqrt(d1 * d1 + d2 * d2);
+                sa = Math.PI * d1 * d1 + Math.PI * d1 * s;
+                v = (Math.PI * d1 * d1 * d2) / 3;
+                fsa = `SA = πr² + πrs ≈ ${sa.toFixed(1)} u²`;
+                fv = `V = (1/3)πr²h ≈ ${v.toFixed(1)} u³`;
+            } else if (currentShape === 'sphere') {
+                const c = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+                c.setAttribute('cx', '200'); c.setAttribute('cy', '175');
+                c.setAttribute('r', d1 * 40);
+                c.setAttribute('fill', 'rgba(0,184,230,0.2)'); c.setAttribute('stroke', 'var(--cyan)');
+                c.setAttribute('stroke-width', '2');
+                svg.appendChild(c);
+                sa = 4 * Math.PI * d1 * d1;
+                v = (4 * Math.PI * d1 * d1 * d1) / 3;
+                fsa = `SA = 4πr² ≈ ${sa.toFixed(1)} u²`;
+                fv = `V = (4/3)πr³ ≈ ${v.toFixed(1)} u³`;
+            }
+
+            document.getElementById('saFormula').textContent = fsa;
+            document.getElementById('saValue').textContent = '';
+            document.getElementById('vFormula').textContent = fv;
+            document.getElementById('vValue').textContent = '';
+        }
+
+        function generateProblem() {
+            const shapes = ['prism','cylinder','cone'];
+            const shape = shapes[Math.floor(Math.random() * shapes.length)];
+            let d1, d2, ans, q;
+
+            if (difficulty === 'easy') {
+                d1 = Math.floor(Math.random() * 5) + 2;
+                d2 = Math.floor(Math.random() * 5) + 2;
+                if (shape === 'prism') {
+                    ans = d1 * d2 * 3;
+                    q = `A rectangular prism: length ${d1}, width ${d2}, height 3. Volume?`;
+                } else if (shape === 'cylinder') {
+                    ans = (Math.PI * d1 * d1 * d2).toFixed(1);
+                    q = `Cylinder: radius ${d1}, height ${d2}. Volume (π≈3.14)?`;
+                } else {
+                    ans = ((Math.PI * d1 * d1 * d2) / 3).toFixed(1);
+                    q = `Cone: radius ${d1}, height ${d2}. Volume (π≈3.14)?`;
+                }
+            } else if (difficulty === 'medium') {
+                d1 = Math.floor(Math.random() * 6) + 3;
+                d2 = Math.floor(Math.random() * 6) + 3;
+                ans = 2 * (d1 * d2 + d2 * 4 + d1 * 4);
+                q = `Prism: length ${d1}, width ${d2}, height 4. Surface area?`;
+            } else {
+                d1 = Math.floor(Math.random() * 5) + 3;
+                d2 = Math.floor(Math.random() * 5) + 3;
+                ans = (d1 * d2 * d3 + Math.PI * 4 * 5).toFixed(1);
+                q = `Composite: prism (${d1}×${d2}×3) + cylinder (r=2, h=5). Volume?`;
+            }
+
+            currentProblem = { answer: ans, q };
+            document.getElementById('problemText').textContent = q;
+            document.getElementById('answerInput').value = '';
+        }
+
+        function checkAnswer() {
+            const ua = parseFloat(document.getElementById('answerInput').value);
+            if (isNaN(ua)) return;
+            const correct = Math.abs(ua - currentProblem.answer) < 1;
+            showFeedback(correct ? '✓ Correct!' : '✗ Incorrect');
+            if (correct) { score.correct++; score.streak++; } else score.streak = 0;
+            updateStats();
+        }
+
+        function nextProblem() { generateProblem(); }
+
+        function generatePlayProblem() {
+            const shapes = ['prism','cylinder','cone','sphere'];
+            const shape = shapes[Math.floor(Math.random() * shapes.length)];
+            const svg = document.getElementById('playShapeCanvas');
+            svg.setAttribute('viewBox', '0 0 400 300');
+            svg.innerHTML = '';
+
+            const d1 = Math.floor(Math.random() * 4) + 2;
+            const d2 = Math.floor(Math.random() * 4) + 2;
+            let ans, label;
+
+            if (shape === 'prism') {
+                label = 'Prism'; ans = d1 * d2 * 3;
+                const r = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
+                r.setAttribute('x', '80'); r.setAttribute('y', '80');
+                r.setAttribute('width', d1 * 40); r.setAttribute('height', d2 * 40);
+                r.setAttribute('fill', 'rgba(0,184,230,0.2)'); r.setAttribute('stroke', 'var(--cyan)');
+                r.setAttribute('stroke-width', '2');
+                svg.appendChild(r);
+            } else if (shape === 'cylinder') {
+                label = 'Cylinder'; ans = (Math.PI * d1 * d1 * d2).toFixed(1);
+                const e = document.createElementNS('http://www.w3.org/2000/svg', 'ellipse');
+                e.setAttribute('cx', '200'); e.setAttribute('cy', '80');
+                e.setAttribute('rx', d1 * 30); e.setAttribute('ry', d1 * 10);
+                e.setAttribute('fill', 'rgba(0,184,230,0.2)'); e.setAttribute('stroke', 'var(--cyan)');
+                e.setAttribute('stroke-width', '2');
+                svg.appendChild(e);
+            } else if (shape === 'cone') {
+                label = 'Cone'; ans = ((Math.PI * d1 * d1 * d2) / 3).toFixed(1);
+                const e = document.createElementNS('http://www.w3.org/2000/svg', 'ellipse');
+                e.setAttribute('cx', '200'); e.setAttribute('cy', '240');
+                e.setAttribute('rx', d1 * 40); e.setAttribute('ry', d1 * 10);
+                e.setAttribute('fill', 'rgba(0,184,230,0.2)'); e.setAttribute('stroke', 'var(--cyan)');
+                e.setAttribute('stroke-width', '2');
+                svg.appendChild(e);
+            } else {
+                label = 'Sphere'; ans = ((4 * Math.PI * d1 * d1 * d1) / 3).toFixed(1);
+                const c = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+                c.setAttribute('cx', '200'); c.setAttribute('cy', '150');
+                c.setAttribute('r', d1 * 35);
+                c.setAttribute('fill', 'rgba(0,184,230,0.2)'); c.setAttribute('stroke', 'var(--cyan)');
+                c.setAttribute('stroke-width', '2');
+                svg.appendChild(c);
+            }
+
+            currentProblem = { answer: ans, shape: label };
+            document.getElementById('playAnswer').value = '';
+        }
+
+        function checkPlayAnswer() {
+            const inp = document.getElementById('playAnswer').value.trim();
+            const pts = inp.split(',').map(p => p.trim());
+            if (pts.length < 2) return;
+            const vol = parseFloat(pts[1]);
+            if (pts[0].toLowerCase().includes(currentProblem.shape.toLowerCase()) && Math.abs(vol - currentProblem.answer) < 2) {
+                showFeedback('✓ Correct!');
+                score.correct++; score.streak++;
+                setTimeout(generatePlayProblem, 1500);
+            } else {
+                showFeedback('✗ Try again');
+                score.streak = 0;
+            }
+            updateStats();
+        }
+
+        function setDifficulty(d) {
+            difficulty = d;
+            document.querySelectorAll('.diff-btn').forEach(b => b.classList.remove('selected'));
+            event.target.classList.add('selected');
+            if (currentMode === 'practice') generateProblem();
+        }
+
+        function showFeedback(msg) {
+            const p = document.getElementById('feedbackPopup');
+            const col = msg.includes('✓') ? 'var(--green)' : 'var(--pink)';
+            p.innerHTML = `<div class="popup-icon" style="color:${col}">${msg.charAt(0)}</div><div class="popup-text">${msg}</div>`;
+            p.style.opacity = '1'; p.style.pointerEvents = 'auto';
+            setTimeout(() => { p.style.opacity = '0'; p.style.pointerEvents = 'none'; }, 1500);
+        }
+
+        function updateStats() {
+            document.getElementById('scoreCorrect').textContent = score.correct;
+            document.getElementById('scoreStreak').textContent = score.streak;
+        }
+
+        updateShape();
+        updateSliders();
+    </script>
+
+    <script src="../../vinculum-input.js"></script>
+    <script src="../../vinculum-core.js"></script>
+    <script src="../../vinculum-data.js"></script>
+    <script src="../../vinculum-adaptive-hook.js"></script>
+    <script src="../../vinculum-3reads.js"></script>
+    <script src="../../vinculum-stories.js"></script>
+    <script src="../../vinculum-feedback.js"></script>
+    <script src="../../vinculum-guide.js"></script>
+    <script src="../../vinculum-identity.js"></script>
+    <script src="../../vinculum-indigenous.js"></script>
+    <script src="../../vinculum-dashboard.js"></script>
+</body>
+</html>

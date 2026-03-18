@@ -1,0 +1,199 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>VINCULUM — Circle Explorer</title>
+<link rel="stylesheet" href="../../vinculum-core.css">
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:'Segoe UI',system-ui,sans-serif;background:var(--bg);color:var(--text);overflow-x:hidden}
+.app{display:grid;grid-template-columns:1fr 340px;grid-template-rows:auto 1fr;height:100vh;gap:0}
+.top-bar{grid-column:1/-1;display:flex;align-items:center;justify-content:space-between;padding:10px 24px;background:var(--card);border-bottom:1px solid var(--border)}
+.top-bar h1{font-size:22px;font-weight:800;letter-spacing:1px}
+.top-bar h1 span{background:var(--grad);-webkit-background-clip:text;-webkit-text-fill-color:transparent}
+.top-bar .stats{display:flex;gap:24px;font-size:13px;font-weight:700;text-transform:uppercase;letter-spacing:1.5px}
+.badge{background:var(--cyan);color:#fff;padding:3px 10px;border-radius:12px;font-size:11px;font-weight:700;margin:0 2px}
+.badge.pink{background:var(--pink)}
+.main-canvas{position:relative;overflow:hidden;background:var(--bg2)}
+.sidebar{background:var(--card);border-left:1px solid var(--border);overflow-y:auto;padding:0}
+.vinculum-mode-tabs{display:flex;border-bottom:2px solid var(--border);background:var(--card2)}
+.vinculum-mode-tab{flex:1;padding:12px;text-align:center;font-weight:700;font-size:13px;text-transform:uppercase;letter-spacing:1px;cursor:pointer;border:none;background:none;color:var(--text2);transition:all .2s}
+.vinculum-mode-tab.active-explore{color:var(--cyan);border-bottom:3px solid var(--cyan)}
+.vinculum-mode-tab.active-practice{color:var(--green);border-bottom:3px solid var(--green)}
+.vinculum-mode-tab.active-play{color:var(--yellow);border-bottom:3px solid var(--yellow)}
+.panel{display:none;padding:16px}
+.panel.active{display:block}
+.panel-section{background:var(--bg2);border:1px solid var(--border);border-radius:10px;padding:14px;margin-bottom:12px}
+.panel-section h3{font-size:13px;text-transform:uppercase;letter-spacing:1.5px;color:var(--text2);margin-bottom:10px}
+.slider-row{display:flex;align-items:center;gap:10px;margin:8px 0}
+.slider-row label{font-size:12px;font-weight:700;color:var(--text2);min-width:70px;text-transform:uppercase;letter-spacing:1px}
+.slider-row input[type=range]{flex:1;accent-color:var(--cyan);height:6px}
+.slider-row .slider-val{font-size:18px;font-weight:800;color:var(--cyan);min-width:40px;text-align:right}
+.vinculum-diff-selector{display:flex;gap:6px;margin:8px 0}
+.vinculum-diff-btn{padding:6px 12px;border:1px solid var(--border);border-radius:6px;background:var(--bg);color:var(--text2);font-size:12px;font-weight:700;cursor:pointer;transition:all .2s}
+.vinculum-diff-btn.active{background:var(--cyan);color:#fff;border-color:var(--cyan)}
+.btn{padding:8px 16px;border:none;border-radius:8px;font-weight:700;font-size:13px;cursor:pointer;transition:all .2s}
+.btn-primary{background:var(--cyan);color:#fff}
+.btn-primary:hover{filter:brightness(1.2)}
+.svg-container{width:100%;height:100%;display:flex;align-items:center;justify-content:center}
+#feedback{min-height:24px;text-align:center;font-weight:700;font-size:14px;margin:8px 0;transition:all .3s;color:var(--green)}
+.answer-input{width:100%;padding:10px;border:2px solid var(--border);border-radius:8px;background:var(--bg2);color:var(--text);font-size:16px;font-weight:700;text-align:center}
+.answer-input:focus{outline:none;border-color:var(--cyan);box-shadow:0 0 0 3px var(--glow)}
+svg text{font-family:'Segoe UI',system-ui,sans-serif}
+.hub-link{text-decoration:none;color:var(--text2);font-size:13px;font-weight:600;display:flex;align-items:center;gap:6px}
+.hub-link:hover{color:var(--cyan)}
+.readout{display:grid;grid-template-columns:1fr 1fr;gap:6px;margin:8px 0}
+.readout-item{background:var(--card);border:1px solid var(--border);border-radius:8px;padding:8px 10px;text-align:center}
+.readout-item .label{font-size:10px;text-transform:uppercase;letter-spacing:1.5px;color:var(--text2)}
+.readout-item .value{font-size:18px;font-weight:800;color:var(--cyan)}
+.vocab-item{margin:8px 0;padding:8px;background:var(--bg);border-radius:4px;font-size:12px;color:var(--text2)}
+.vocab-item strong{color:var(--cyan)}
+</style>
+</head>
+<body data-theme="">
+<div class="app">
+<div class="top-bar">
+<div style="display:flex;align-items:center;gap:16px">
+<a href="../../VINCULUM-Hub.html" class="hub-link">← Hub</a>
+<h1>VINCULUM <span>Circle Explorer</span></h1>
+<span class="badge">7.G.4</span>
+<span class="badge pink">MN: 7.3.1.2</span>
+</div>
+<div class="stats">
+<div>r <span class="val" id="topR">5</span></div>
+<div>C <span class="val" id="topC">31.4</span></div>
+<div style="color:var(--cyan)">A <span class="val" id="topA">78.5</span></div>
+</div>
+</div>
+<div class="main-canvas" id="mainCanvas">
+<div class="svg-container" id="svgContainer"></div>
+</div>
+<div class="sidebar">
+<div class="vinculum-mode-tabs">
+<button class="vinculum-mode-tab active-explore" data-mode="explore" onclick="switchMode('explore')"><svg width="18" height="18" viewBox="0 0 48 48" fill="none"><path d="M4 24C4 24 12 12 24 12C36 12 44 24 44 24C44 24 36 36 24 36C12 36 4 24 4 24Z" stroke="currentColor" stroke-width="3" fill="none"/><circle cx="24" cy="24" r="7" stroke="currentColor" stroke-width="3" fill="none"/><circle cx="24" cy="24" r="3" fill="currentColor"/><line x1="24" y1="4" x2="24" y2="9" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" opacity="0.5"/><line x1="10" y1="8" x2="13" y2="12" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" opacity="0.5"/><line x1="38" y1="8" x2="35" y2="12" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" opacity="0.5"/></svg> Explore</button>
+<button class="vinculum-mode-tab" data-mode="practice" onclick="switchMode('practice')"><svg width="18" height="18" viewBox="0 0 48 48" fill="none"><circle cx="24" cy="24" r="20" stroke="currentColor" stroke-width="3" fill="none" opacity="0.3"/><circle cx="24" cy="24" r="20" stroke="currentColor" stroke-width="3" fill="none" stroke-dasharray="126" stroke-dashoffset="32" stroke-linecap="round"/><polyline points="16,24 22,32 34,16" stroke="currentColor" stroke-width="4" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg> Practice</button>
+<button class="vinculum-mode-tab" data-mode="play" onclick="switchMode('play')"><svg width="18" height="18" viewBox="0 0 48 48" fill="none"><polygon points="28,4 12,28 22,28 18,44 36,18 26,18" fill="none" stroke="currentColor" stroke-width="3" stroke-linejoin="round"/><polygon points="27,8 15,27 23,27 20,40 34,19 26,19" fill="currentColor" opacity="0.15"/></svg> Play</button>
+</div>
+<div class="panel active" id="panel-explore">
+<div class="panel-section">
+<h3>Circle Measurements</h3>
+<p style="font-size:12px;color:var(--text2);margin-bottom:8px">Adjust radius slider. See circumference and area update live.</p>
+<div class="slider-row">
+<label>Radius</label>
+<input type="range" id="radiusSlider" min="1" max="12" value="5" oninput="updateExplore()">
+<span class="slider-val" id="radiusVal">5</span>
+</div>
+<div class="readout">
+<div class="readout-item"><div class="label">r</div><div class="value" id="readR">5</div></div>
+<div class="readout-item"><div class="label">d</div><div class="value" id="readD">10</div></div>
+</div>
+<div class="readout" style="margin-top:8px">
+<div class="readout-item"><div class="label">C = 2πr</div><div class="value" id="readC">31.4</div></div>
+<div class="readout-item"><div class="label">A = πr²</div><div class="value" id="readA">78.5</div></div>
+</div>
+</div>
+</div>
+<div class="panel" id="panel-practice">
+<div class="panel-section">
+<h3>Difficulty</h3>
+<div class="vinculum-diff-selector">
+<button class="vinculum-diff-btn active" data-diff="easy" onclick="setDiff('easy')">Easy</button>
+<button class="vinculum-diff-btn" data-diff="medium" onclick="setDiff('medium')">Medium</button>
+<button class="vinculum-diff-btn" data-diff="hard" onclick="setDiff('hard')">Hard</button>
+</div>
+</div>
+<div class="panel-section">
+<h3>Your Answer</h3>
+<input type="number" id="practAns" class="answer-input" placeholder="Enter measurement" step="0.01" min="0">
+<button class="btn btn-primary" style="width:100%;margin-top:8px;" onclick="checkAns()">Check</button>
+<div id="feedback"></div>
+</div>
+<div class="panel-section">
+<h3>Score</h3>
+<div class="readout">
+<div class="readout-item"><div class="label">Correct</div><div class="value" id="practScore">0</div></div>
+<div class="readout-item"><div class="label">Total</div><div class="value" id="practTotal">0</div></div>
+</div>
+</div>
+</div>
+<div class="panel" id="panel-play">
+<div class="panel-section">
+<h3>Speed Round</h3>
+<p style="font-size:12px;color:var(--text2)">Calculate C or A fast!</p>
+</div>
+<div class="panel-section">
+<h3>Your Answer</h3>
+<input type="number" id="playAns" class="answer-input" placeholder="Enter measurement" step="0.01" min="0">
+<button class="btn btn-primary" style="width:100%;margin-top:8px;" onclick="submitPlay()">Submit</button>
+<div id="playFb" style="margin-top:8px"></div>
+</div>
+<div class="panel-section">
+<h3>Score</h3>
+<div class="readout">
+<div class="readout-item"><div class="label">Points</div><div class="value" id="playScore">0</div></div>
+<div class="readout-item"><div class="label">Time</div><div class="value" id="playTime">60s</div></div>
+</div>
+<button class="btn btn-primary" style="width:100%;margin-top:8px;" id="playBtn" onclick="startPlay()">Start</button>
+</div>
+<div class="panel-section">
+<h3>Formulas</h3>
+<div class="vocab-item"><strong>Circumference:</strong> C = 2πr = πd</div>
+<div class="vocab-item"><strong>Area:</strong> A = πr²</div>
+<div class="vocab-item"><strong>π ≈ 3.14159</strong></div>
+</div>
+</div>
+<div class="panel active" id="panel-info" style="display:block;padding:16px">
+<div class="panel-section">
+<h3>How to Use</h3>
+<p style="font-size:12px;color:var(--text2);line-height:1.5">Drag the radius slider to explore how changing the radius affects circumference and area. The circle redraws instantly.</p>
+</div>
+<div class="panel-section">
+<h3>Vocabulary</h3>
+<div class="vocab-item"><strong>Radius (r):</strong> Distance from center to edge</div>
+<div class="vocab-item"><strong>Diameter (d):</strong> Distance across circle = 2r</div>
+<div class="vocab-item"><strong>Circumference:</strong> Distance around circle</div>
+<div class="vocab-item"><strong>Area:</strong> Space inside circle</div>
+<div class="vocab-item"><strong>Pi (π):</strong> Ratio ≈ 3.14159</div>
+</div>
+<div class="panel-section">
+<h3>Standards</h3>
+<p style="font-size:11px;color:var(--text2);line-height:1.6"><strong>7.G.4</strong> Know the formulas for the area and circumference of a circle and use them to solve problems.</p>
+</div>
+</div>
+</div>
+</div>
+
+<script>
+let mode='explore',diff='easy',practScore=0,practTotal=0,playScore=0,playTime=60,playActive=false,curProblem=null;
+const PI=3.14159;
+function switchMode(m){mode=m;document.querySelectorAll('.vinculum-mode-tab').forEach(t=>t.classList.remove('active-explore','active-practice','active-play'));document.querySelectorAll('.panel').forEach(p=>p.classList.remove('active'));const tab=document.querySelector(`[data-mode="${m}"]`),cls=m==='explore'?'active-explore':m==='practice'?'active-practice':'active-play';tab.classList.add(cls);if(m==='explore'){document.getElementById('panel-explore').classList.add('active');document.getElementById('panel-info').style.display='block';updateExplore()}else if(m==='practice'){document.getElementById('panel-practice').classList.add('active');document.getElementById('panel-info').style.display='none';genPractice()}else{document.getElementById('panel-play').classList.add('active');document.getElementById('panel-info').style.display='none'}}
+function setDiff(d){diff=d;document.querySelectorAll('[data-diff]').forEach(b=>b.classList.remove('active'));event.target.classList.add('active');genPractice()}
+function updateExplore(){const r=parseInt(document.getElementById('radiusSlider').value),d=r*2,c=(2*PI*r).toFixed(2),a=(PI*r*r).toFixed(2);document.getElementById('radiusVal').textContent=r;document.getElementById('readR').textContent=r;document.getElementById('readD').textContent=d;document.getElementById('readC').textContent=c;document.getElementById('readA').textContent=a;document.getElementById('topR').textContent=r;document.getElementById('topC').textContent=c;document.getElementById('topA').textContent=a;drawCircle(r)}
+function drawCircle(r){const c=document.getElementById('svgContainer'),w=c.clientWidth||600,h=c.clientHeight||400,cx=w/2,cy=h/2,scale=20;let s='<svg width="'+w+'" height="'+h+'" style="display:block">';const pr=r*scale;s+='<circle cx="'+cx+'" cy="'+cy+'" r="'+pr+'" fill="rgba(0,180,255,0.15)" stroke="var(--cyan)" stroke-width="2"/>';s+='<line x1="'+cx+'" y1="'+cy+'" x2="'+(cx+pr)+'" y2="'+cy+'" stroke="var(--cyan)" stroke-width="2"/>';s+='<text x="'+(cx+pr/2)+'" y="'+(cy-5)+'" font-size="14" font-weight="700" fill="var(--cyan)">r='+r+'</text>';s+='<line x1="'+(cx-pr)+'" y1="'+cy+'" x2="'+(cx+pr)+'" y2="'+cy+'" stroke="var(--green)" stroke-width="1" stroke-dasharray="4,2"/>';s+='<text x="'+cx+'" y="'+(cy+30)+'" font-size="14" font-weight="700" fill="var(--green)" text-anchor="middle">d='+(r*2)+'</text>';s+='</svg>';c.innerHTML=s}
+function genPractice(){const probs={easy:[{r:3,calc:'c',ans:18.85},{r:4,calc:'a',ans:50.27},{r:5,calc:'c',ans:31.42},{r:2,calc:'a',ans:12.57},{r:6,calc:'c',ans:37.7}],medium:[{r:7,calc:'a',ans:153.94},{r:5,calc:'c',ans:31.42},{r:8,calc:'c',ans:50.27},{r:6,calc:'a',ans:113.1},{r:9,calc:'c',ans:56.55}],hard:[{r:3.5,calc:'c',ans:21.99},{r:4.5,calc:'a',ans:63.62},{r:7.5,calc:'a',ans:176.71},{r:6.5,calc:'c',ans:40.84},{r:8.5,calc:'a',ans:226.87}]};curProblem=probs[diff][Math.floor(Math.random()*probs[diff].length)];const calcText=curProblem.calc==='c'?'Find circumference. r='+curProblem.r:'Find area. r='+curProblem.r;document.getElementById('svgContainer').innerHTML='';drawCircle(curProblem.r);document.querySelectorAll('.panel-section h3')[2].textContent=calcText;document.getElementById('practAns').value='';document.getElementById('feedback').textContent=''}
+function checkAns(){const ans=parseFloat(document.getElementById('practAns').value),fb=document.getElementById('feedback'),ok=curProblem.ans;if(isNaN(ans)){fb.textContent='❌ Enter number';fb.style.color='var(--pink)';return}
+if(Math.abs(ans-ok)<0.5){fb.textContent='✓ Correct!';fb.style.color='var(--green)';practScore++;practTotal++;document.getElementById('practScore').textContent=practScore;document.getElementById('practTotal').textContent=practTotal;setTimeout(genPractice,1200)}else{fb.textContent='❌ Answer: '+ok.toFixed(2);fb.style.color='var(--pink)';practTotal++;document.getElementById('practTotal').textContent=practTotal}}
+function startPlay(){playActive=true;playScore=0;playTime=60;document.getElementById('playBtn').textContent='Playing...';document.getElementById('playBtn').disabled=true;document.getElementById('playScore').textContent='0';document.getElementById('playTime').textContent='60s';document.getElementById('playAns').disabled=false;document.getElementById('playFb').textContent='';const interval=setInterval(()=>{playTime--;document.getElementById('playTime').textContent=playTime+'s';if(playTime<=0){clearInterval(interval);endPlay()}},1000);genPlayProblem()}
+function genPlayProblem(){const calcs=['c','a'];const calc=calcs[Math.floor(Math.random()*2)];const radii=[3,4,5,6,7,8,9];const r=radii[Math.floor(Math.random()*radii.length)];let ans;if(calc==='c'){ans=(2*PI*r).toFixed(2)}else{ans=(PI*r*r).toFixed(2)}
+curProblem={r,calc,ans:parseFloat(ans)};const calcText=calc==='c'?'Find C. r='+r:'Find A. r='+r;document.querySelectorAll('.panel-section h3')[1].textContent=calcText;document.getElementById('svgContainer').innerHTML='';drawCircle(r);document.getElementById('playAns').value=''}
+function submitPlay(){if(!playActive)return;const ans=parseFloat(document.getElementById('playAns').value),fb=document.getElementById('playFb');if(isNaN(ans)){fb.textContent='❌ Enter answer';fb.style.color='var(--pink)';return}
+if(Math.abs(ans-curProblem.ans)<0.5){fb.textContent='✓ +1';fb.style.color='var(--green)';playScore++;document.getElementById('playScore').textContent=playScore}else{fb.textContent='❌ '+curProblem.ans.toFixed(2);fb.style.color='var(--pink)'}
+document.getElementById('playAns').value='';setTimeout(genPlayProblem,600)}
+function endPlay(){playActive=false;document.getElementById('playBtn').textContent='Final: '+playScore;document.getElementById('playBtn').disabled=true}
+switchMode('explore');
+</script>
+
+<script src="../../vinculum-input.js"></script>
+<script src="../../vinculum-core.js"></script>
+<script src="../../vinculum-data.js"></script>
+<script src="../../vinculum-adaptive-hook.js"></script>
+<script src="../../vinculum-3reads.js"></script>
+<script src="../../vinculum-stories.js"></script>
+<script src="../../vinculum-feedback.js"></script>
+<script src="../../vinculum-guide.js"></script>
+<script src="../../vinculum-identity.js"></script>
+<script src="../../vinculum-indigenous.js"></script>
+<script src="../../vinculum-dashboard.js"></script>
+</body>
+</html>

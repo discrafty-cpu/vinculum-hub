@@ -1,0 +1,1082 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>VINCULUM — Word Problem Workshop</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="../../vinculum-core.css">
+    <link rel="stylesheet" href="word-problems.css">
+</head>
+<body>
+
+    <div class="vinculum-header">
+        <div class="vinculum-header-left">
+            <a class="vinculum-back-btn" href="../../VINCULUM-Hub.html" aria-label="Back to Hub">← Hub</a>
+            <div class="vinculum-header-title"><span>VINCULUM</span> Word Problems</div>
+            <span class="vinculum-header-badge">2.OA</span>
+        </div>
+        <div class="vinculum-header-right">
+            <div class="vinculum-std-tags">
+                <span class="vinculum-std-tag">2.OA.A.1</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- Mode and Difficulty -->
+    <div class="mode-difficulty" style="display:flex; gap:20px; align-items:center; padding:12px 24px; background:var(--bg); border-bottom:1px solid var(--border);">
+        <div class="pill-group">
+            <button class="pill active" data-mode="explore">Explore</button>
+            <button class="pill" data-mode="practice">Practice</button>
+            <button class="pill" data-mode="play">Play</button>
+        </div>
+        <div class="pill-group" style="margin-left:auto;">
+            <button class="pill active" data-difficulty="emergent">Emergent</button>
+            <button class="pill" data-difficulty="proficient">Proficient</button>
+            <button class="pill" data-difficulty="advanced">Advanced</button>
+        </div>
+    </div>
+
+    <div class="main-container">
+        <div class="workspace" role="main" id="workspace"></div>
+        <div class="side-panel" id="sidePanel"></div>
+    </div>
+
+<div class="feedback" id="feedback"></div>
+    <script>
+        // State management
+        const S = {
+            mode: 'explore',
+            difficulty: 'emergent',
+            currentProblemIdx: 0,
+            currentProblem: null,
+            selectedStrategy: 'bar-model',
+            selectedProblemType: null,
+            selectedUnknown: null,
+            selectedOperation: null,
+            score: 0,
+            streak: 0,
+            timeLeft: 10,
+            timerRunning: false,
+            playProblems: [],
+            practiceFeedback: null,
+        };
+
+        // Problem database (loaded from external JSON)
+        let PROBLEMS = {};
+
+        // Load problems from external JSON file
+        fetch('data/word-problems-bank.json')
+            .then(response => response.json())
+            .then(data => {
+                PROBLEMS = data;
+                console.log('Word problem bank loaded:', Object.keys(PROBLEMS).length, 'difficulty levels');
+            })
+            .catch(error => console.error('Error loading problem bank:', error));
+
+        // Generate answer choices
+        function generateChoices(answer, difficulty) {
+            const offset = difficulty === 'emergent' ? 2 : difficulty === 'proficient' ? 5 : 8;
+            const choices = [answer];
+            choices.push(answer - offset);
+            choices.push(answer + offset);
+            choices.push(answer - Math.floor(offset / 2));
+            return choices.sort(() => Math.random() - 0.5);
+        }
+
+        // Load current problem
+        function loadProblem() {
+            const problems = PROBLEMS[S.difficulty];
+            S.currentProblem = problems[S.currentProblemIdx % problems.length];
+        }
+
+        // Render bar model SVG
+        function renderBarModel(problem) {
+            const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+            svg.setAttribute('viewBox', '0 0 500 300');
+            svg.setAttribute('class', 'bar-model-svg');
+
+            const defs = document.createElementNS('http://www.w3.org/2000/svg', 'defs');
+            const style = document.createElementNS('http://www.w3.org/2000/svg', 'style');
+            style.textContent = `
+                .bar { fill-opacity: 0.8; stroke-width: 2; }
+                .bar-label { font-family: 'JetBrains Mono'; font-size: 14px; font-weight: 600; }
+                .bar-part-label { font-family: 'Inter'; font-size: 12px; }
+                .bar-unknown { stroke-dasharray: 4,4; fill-opacity: 0.4; }
+            `;
+            defs.appendChild(style);
+            svg.appendChild(defs);
+
+            const barModelType = problem.barModelType || 'addTo';
+
+            switch (barModelType) {
+                case 'addTo':
+                case 'takeFrom':
+                    renderAddToModel(svg, problem);
+                    break;
+                case 'putTogether':
+                    renderPutTogetherModel(svg, problem);
+                    break;
+                case 'compare':
+                    renderCompareModel(svg, problem);
+                    break;
+                case 'twoStep':
+                    renderTwoStepModel(svg, problem);
+                    break;
+            }
+
+            return svg;
+        }
+
+        function renderAddToModel(svg, problem) {
+            const unknownPos = problem.unknownPosition || 'result';
+            let num1, num2, total;
+
+            // Determine which numbers to use based on unknown position
+            if (unknownPos === 'result') {
+                // Standard: start + change = result (unknown result)
+                num1 = problem.numbers[0];
+                num2 = problem.numbers[1];
+                total = num1 + num2;
+            } else if (unknownPos === 'change') {
+                // Unknown change: start + ? = total
+                total = problem.numbers[1];
+                num1 = problem.numbers[0];
+                num2 = total - num1;
+            } else if (unknownPos === 'start') {
+                // Unknown start: ? + change = total
+                total = problem.numbers[1];
+                num2 = problem.numbers[0];
+                num1 = total - num2;
+            }
+
+            const scale = 150 / Math.max(num1, num2, total);
+
+            // Part 1 (Start - may be unknown)
+            const rect1 = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
+            rect1.setAttribute('x', '50');
+            rect1.setAttribute('y', '50');
+            const width1 = unknownPos === 'start' ? 40 : Math.max(num1 * scale, 30);
+            rect1.setAttribute('width', width1);
+            rect1.setAttribute('height', '40');
+            rect1.setAttribute('class', unknownPos === 'start' ? 'bar bar-unknown' : 'bar');
+            rect1.setAttribute('fill', '#00d4ff');
+            rect1.setAttribute('stroke', '#00d4ff');
+            svg.appendChild(rect1);
+
+            const text1 = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+            text1.setAttribute('x', 50 + width1 / 2);
+            text1.setAttribute('y', '78');
+            text1.setAttribute('text-anchor', 'middle');
+            text1.setAttribute('class', 'bar-label');
+            text1.setAttribute('fill', '#0a0e1a');
+            text1.textContent = unknownPos === 'start' ? '?' : num1;
+            svg.appendChild(text1);
+
+            // Part 2 (Change - may be unknown)
+            const rect2 = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
+            rect2.setAttribute('x', 50 + width1 + 5);
+            rect2.setAttribute('y', '50');
+            const width2 = unknownPos === 'change' ? 40 : Math.max(num2 * scale, 30);
+            rect2.setAttribute('width', width2);
+            rect2.setAttribute('height', '40');
+            rect2.setAttribute('class', unknownPos === 'change' ? 'bar bar-unknown' : 'bar');
+            rect2.setAttribute('fill', '#ff3b8b');
+            rect2.setAttribute('stroke', '#ff3b8b');
+            svg.appendChild(rect2);
+
+            const text2 = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+            text2.setAttribute('x', 50 + width1 + 5 + width2 / 2);
+            text2.setAttribute('y', '78');
+            text2.setAttribute('text-anchor', 'middle');
+            text2.setAttribute('class', 'bar-label');
+            text2.setAttribute('fill', '#0a0e1a');
+            text2.textContent = unknownPos === 'change' ? '?' : num2;
+            svg.appendChild(text2);
+
+            // Whole bar (Result - may be unknown)
+            const rectWhole = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
+            rectWhole.setAttribute('x', '50');
+            rectWhole.setAttribute('y', '130');
+            const totalWidth = unknownPos === 'result' ? 80 : width1 + width2 + 5;
+            rectWhole.setAttribute('width', unknownPos === 'result' ? totalWidth : Math.max(total * scale, 50));
+            rectWhole.setAttribute('height', '40');
+            rectWhole.setAttribute('class', unknownPos === 'result' ? 'bar bar-unknown' : 'bar');
+            rectWhole.setAttribute('fill', '#b388ff');
+            rectWhole.setAttribute('stroke', '#b388ff');
+            svg.appendChild(rectWhole);
+
+            const textWhole = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+            const wholeWidth = unknownPos === 'result' ? totalWidth : Math.max(total * scale, 50);
+            textWhole.setAttribute('x', 50 + wholeWidth / 2);
+            textWhole.setAttribute('y', '158');
+            textWhole.setAttribute('text-anchor', 'middle');
+            textWhole.setAttribute('class', 'bar-label');
+            textWhole.setAttribute('fill', '#0a0e1a');
+            textWhole.textContent = unknownPos === 'result' ? '?' : total;
+            svg.appendChild(textWhole);
+
+            // Labels
+            const label1 = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+            label1.setAttribute('x', '30');
+            label1.setAttribute('y', '75');
+            label1.setAttribute('class', 'bar-part-label');
+            label1.setAttribute('fill', '#8b9cc0');
+            label1.textContent = 'Start';
+            svg.appendChild(label1);
+
+            const label2 = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+            label2.setAttribute('x', '30');
+            label2.setAttribute('y', '155');
+            label2.setAttribute('class', 'bar-part-label');
+            label2.setAttribute('fill', '#8b9cc0');
+            label2.textContent = 'Total';
+            svg.appendChild(label2);
+        }
+
+        function renderPutTogetherModel(svg, problem) {
+            const unknownPos = problem.unknownPosition || 'result';
+            let num1, num2, total;
+
+            // Determine which numbers to use based on unknown position
+            if (unknownPos === 'result') {
+                // Standard: group1 + group2 = total (unknown total)
+                num1 = problem.numbers[0];
+                num2 = problem.numbers[1];
+                total = num1 + num2;
+            } else if (unknownPos === 'change') {
+                // Unknown group2: group1 + ? = total
+                total = problem.numbers[1];
+                num1 = problem.numbers[0];
+                num2 = total - num1;
+            } else if (unknownPos === 'start') {
+                // Unknown group1: ? + group2 = total
+                total = problem.numbers[1];
+                num2 = problem.numbers[0];
+                num1 = total - num2;
+            }
+
+            const scale = 120 / Math.max(num1, num2, total);
+
+            // Whole bar
+            const rectWhole = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
+            rectWhole.setAttribute('x', '50');
+            rectWhole.setAttribute('y', '50');
+            const wholeWidth = unknownPos === 'result' ? 80 : Math.max(total * scale, 60);
+            rectWhole.setAttribute('width', wholeWidth);
+            rectWhole.setAttribute('height', '40');
+            rectWhole.setAttribute('class', unknownPos === 'result' ? 'bar bar-unknown' : 'bar');
+            rectWhole.setAttribute('fill', '#b388ff');
+            rectWhole.setAttribute('stroke', '#b388ff');
+            svg.appendChild(rectWhole);
+
+            const textWhole = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+            textWhole.setAttribute('x', 50 + wholeWidth / 2);
+            textWhole.setAttribute('y', '78');
+            textWhole.setAttribute('text-anchor', 'middle');
+            textWhole.setAttribute('class', 'bar-label');
+            textWhole.setAttribute('fill', '#0a0e1a');
+            textWhole.textContent = unknownPos === 'result' ? '?' : total;
+            svg.appendChild(textWhole);
+
+            // Part 1 (may be unknown)
+            const rect1 = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
+            rect1.setAttribute('x', '50');
+            rect1.setAttribute('y', '130');
+            const width1 = unknownPos === 'start' ? 40 : Math.max(num1 * scale, 30);
+            rect1.setAttribute('width', width1);
+            rect1.setAttribute('height', '40');
+            rect1.setAttribute('class', unknownPos === 'start' ? 'bar bar-unknown' : 'bar');
+            rect1.setAttribute('fill', '#00d4ff');
+            rect1.setAttribute('stroke', '#00d4ff');
+            svg.appendChild(rect1);
+
+            const text1 = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+            text1.setAttribute('x', 50 + width1 / 2);
+            text1.setAttribute('y', '158');
+            text1.setAttribute('text-anchor', 'middle');
+            text1.setAttribute('class', 'bar-label');
+            text1.setAttribute('fill', '#0a0e1a');
+            text1.textContent = unknownPos === 'start' ? '?' : num1;
+            svg.appendChild(text1);
+
+            // Part 2 (may be unknown)
+            const rect2 = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
+            rect2.setAttribute('x', 50 + width1 + 5);
+            rect2.setAttribute('y', '130');
+            const width2 = unknownPos === 'change' ? 40 : Math.max(num2 * scale, 30);
+            rect2.setAttribute('width', width2);
+            rect2.setAttribute('height', '40');
+            rect2.setAttribute('class', unknownPos === 'change' ? 'bar bar-unknown' : 'bar');
+            rect2.setAttribute('fill', '#ff3b8b');
+            rect2.setAttribute('stroke', '#ff3b8b');
+            svg.appendChild(rect2);
+
+            const text2 = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+            text2.setAttribute('x', 50 + width1 + 5 + width2 / 2);
+            text2.setAttribute('y', '158');
+            text2.setAttribute('text-anchor', 'middle');
+            text2.setAttribute('class', 'bar-label');
+            text2.setAttribute('fill', '#0a0e1a');
+            text2.textContent = unknownPos === 'change' ? '?' : num2;
+            svg.appendChild(text2);
+
+            const labelWhole = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+            labelWhole.setAttribute('x', '30');
+            labelWhole.setAttribute('y', '75');
+            labelWhole.setAttribute('class', 'bar-part-label');
+            labelWhole.setAttribute('fill', '#8b9cc0');
+            labelWhole.textContent = 'Total';
+            svg.appendChild(labelWhole);
+
+            const label1 = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+            label1.setAttribute('x', '30');
+            label1.setAttribute('y', '155');
+            label1.setAttribute('class', 'bar-part-label');
+            label1.setAttribute('fill', '#8b9cc0');
+            label1.textContent = 'Group 1';
+            svg.appendChild(label1);
+        }
+
+        function renderCompareModel(svg, problem) {
+            const num1 = problem.numbers[0];
+            const num2 = problem.numbers[1];
+            const scale = 120 / num1;
+
+            // Bar 1
+            const rect1 = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
+            rect1.setAttribute('x', '50');
+            rect1.setAttribute('y', '50');
+            rect1.setAttribute('width', num1 * scale);
+            rect1.setAttribute('height', '40');
+            rect1.setAttribute('class', 'bar');
+            rect1.setAttribute('fill', '#00d4ff');
+            rect1.setAttribute('stroke', '#00d4ff');
+            svg.appendChild(rect1);
+
+            const text1 = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+            text1.setAttribute('x', 50 + num1 * scale / 2);
+            text1.setAttribute('y', '78');
+            text1.setAttribute('text-anchor', 'middle');
+            text1.setAttribute('class', 'bar-label');
+            text1.setAttribute('fill', '#0a0e1a');
+            text1.textContent = num1;
+            svg.appendChild(text1);
+
+            // Bar 2
+            const rect2 = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
+            rect2.setAttribute('x', '50');
+            rect2.setAttribute('y', '110');
+            rect2.setAttribute('width', num2 * scale);
+            rect2.setAttribute('height', '40');
+            rect2.setAttribute('class', 'bar');
+            rect2.setAttribute('fill', '#ff3b8b');
+            rect2.setAttribute('stroke', '#ff3b8b');
+            svg.appendChild(rect2);
+
+            const text2 = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+            text2.setAttribute('x', 50 + num2 * scale / 2);
+            text2.setAttribute('y', '138');
+            text2.setAttribute('text-anchor', 'middle');
+            text2.setAttribute('class', 'bar-label');
+            text2.setAttribute('fill', '#0a0e1a');
+            text2.textContent = num2;
+            svg.appendChild(text2);
+
+            // Difference indicator
+            const diffLine1 = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+            diffLine1.setAttribute('x1', 50 + num2 * scale);
+            diffLine1.setAttribute('y1', '110');
+            diffLine1.setAttribute('x2', 50 + num2 * scale);
+            diffLine1.setAttribute('y2', '85');
+            diffLine1.setAttribute('stroke', '#b388ff');
+            diffLine1.setAttribute('stroke-width', '2');
+            svg.appendChild(diffLine1);
+
+            const diffLine2 = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+            diffLine2.setAttribute('x1', 50 + num2 * scale);
+            diffLine2.setAttribute('y1', '85');
+            diffLine2.setAttribute('x2', 50 + num1 * scale);
+            diffLine2.setAttribute('y2', '85');
+            diffLine2.setAttribute('stroke', '#b388ff');
+            diffLine2.setAttribute('stroke-width', '2');
+            svg.appendChild(diffLine2);
+
+            const diffLine3 = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+            diffLine3.setAttribute('x1', 50 + num1 * scale);
+            diffLine3.setAttribute('y1', '85');
+            diffLine3.setAttribute('x2', 50 + num1 * scale);
+            diffLine3.setAttribute('y2', '60');
+            diffLine3.setAttribute('stroke', '#b388ff');
+            diffLine3.setAttribute('stroke-width', '2');
+            svg.appendChild(diffLine3);
+
+            const diffText = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+            diffText.setAttribute('x', 50 + (num1 + num2) * scale / 2);
+            diffText.setAttribute('y', '75');
+            diffText.setAttribute('text-anchor', 'middle');
+            diffText.setAttribute('class', 'bar-label');
+            diffText.setAttribute('fill', '#b388ff');
+            diffText.textContent = '?';
+            svg.appendChild(diffText);
+
+            const label1 = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+            label1.setAttribute('x', '30');
+            label1.setAttribute('y', '75');
+            label1.setAttribute('class', 'bar-part-label');
+            label1.setAttribute('fill', '#8b9cc0');
+            label1.textContent = 'More';
+            svg.appendChild(label1);
+        }
+
+        function renderTwoStepModel(svg, problem) {
+            const num1 = problem.numbers[0];
+            const num2 = problem.numbers[1];
+            const num3 = problem.numbers[2] || 0;
+            const scale = 80 / Math.max(num1, num2);
+
+            // First calculation
+            const rect1 = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
+            rect1.setAttribute('x', '50');
+            rect1.setAttribute('y', '30');
+            rect1.setAttribute('width', Math.max(num1 * scale, 25));
+            rect1.setAttribute('height', '30');
+            rect1.setAttribute('class', 'bar');
+            rect1.setAttribute('fill', '#00d4ff');
+            svg.appendChild(rect1);
+
+            const text1 = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+            text1.setAttribute('x', 50 + Math.max(num1 * scale, 25) / 2);
+            text1.setAttribute('y', '52');
+            text1.setAttribute('text-anchor', 'middle');
+            text1.setAttribute('class', 'bar-label');
+            text1.setAttribute('fill', '#0a0e1a');
+            text1.setAttribute('font-size', '12');
+            text1.textContent = num1;
+            svg.appendChild(text1);
+
+            const rect2 = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
+            rect2.setAttribute('x', 50 + Math.max(num1 * scale, 25) + 3);
+            rect2.setAttribute('y', '30');
+            rect2.setAttribute('width', Math.max(num2 * scale, 25));
+            rect2.setAttribute('height', '30');
+            rect2.setAttribute('class', 'bar');
+            rect2.setAttribute('fill', '#ff3b8b');
+            svg.appendChild(rect2);
+
+            const text2 = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+            text2.setAttribute('x', 50 + Math.max(num1 * scale, 25) + 3 + Math.max(num2 * scale, 25) / 2);
+            text2.setAttribute('y', '52');
+            text2.setAttribute('text-anchor', 'middle');
+            text2.setAttribute('class', 'bar-label');
+            text2.setAttribute('fill', '#0a0e1a');
+            text2.setAttribute('font-size', '12');
+            text2.textContent = num2;
+            svg.appendChild(text2);
+
+            // Step 1 result
+            const rectStep1 = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
+            rectStep1.setAttribute('x', '50');
+            rectStep1.setAttribute('y', '75');
+            rectStep1.setAttribute('width', Math.max((num1 + num2) * scale, 40));
+            rectStep1.setAttribute('height', '30');
+            rectStep1.setAttribute('class', 'bar');
+            rectStep1.setAttribute('fill', '#ffc107');
+            svg.appendChild(rectStep1);
+
+            const textStep1 = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+            textStep1.setAttribute('x', 50 + Math.max((num1 + num2) * scale, 40) / 2);
+            textStep1.setAttribute('y', '97');
+            textStep1.setAttribute('text-anchor', 'middle');
+            textStep1.setAttribute('class', 'bar-label');
+            textStep1.setAttribute('fill', '#0a0e1a');
+            textStep1.setAttribute('font-size', '12');
+            textStep1.textContent = num1 + num2;
+            svg.appendChild(textStep1);
+
+            // Step 2
+            if (num3) {
+                const rect3 = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
+                rect3.setAttribute('x', '50');
+                rect3.setAttribute('y', '120');
+                rect3.setAttribute('width', Math.max((num1 + num2 - num3) * scale, 40));
+                rect3.setAttribute('height', '30');
+                rect3.setAttribute('class', 'bar');
+                rect3.setAttribute('fill', '#b388ff');
+                svg.appendChild(rect3);
+
+                const textStep2 = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+                textStep2.setAttribute('x', 50 + Math.max((num1 + num2 - num3) * scale, 40) / 2);
+                textStep2.setAttribute('y', '142');
+                textStep2.setAttribute('text-anchor', 'middle');
+                textStep2.setAttribute('class', 'bar-label');
+                textStep2.setAttribute('fill', '#0a0e1a');
+                textStep2.setAttribute('font-size', '12');
+                textStep2.textContent = num1 + num2 - num3;
+                svg.appendChild(textStep2);
+
+                const stepLabel = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+                stepLabel.setAttribute('x', '30');
+                stepLabel.setAttribute('y', '130');
+                stepLabel.setAttribute('class', 'bar-part-label');
+                stepLabel.setAttribute('fill', '#8b9cc0');
+                stepLabel.setAttribute('font-size', '11');
+                stepLabel.textContent = 'Step 2';
+                svg.appendChild(stepLabel);
+            }
+
+            const stepLabel1 = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+            stepLabel1.setAttribute('x', '30');
+            stepLabel1.setAttribute('y', '40');
+            stepLabel1.setAttribute('class', 'bar-part-label');
+            stepLabel1.setAttribute('fill', '#8b9cc0');
+            stepLabel1.setAttribute('font-size', '11');
+            stepLabel1.textContent = 'Step 1';
+            svg.appendChild(stepLabel1);
+        }
+
+        // Render functions
+        function renderExplore() {
+            const workspace = document.getElementById('workspace');
+            workspace.innerHTML = '';
+
+            const container = document.createElement('div');
+            container.className = 'animate-in';
+
+            const problemText = document.createElement('div');
+            problemText.className = 'problem-text';
+            problemText.innerHTML = S.currentProblem.text;
+            container.appendChild(problemText);
+
+            const barContainer = document.createElement('div');
+            barContainer.className = 'bar-model-container';
+            const barModel = renderBarModel(S.currentProblem);
+            barContainer.appendChild(barModel);
+            container.appendChild(barContainer);
+
+            const problemTypeSelector = document.createElement('div');
+            problemTypeSelector.className = 'problem-type-selector';
+
+            const selectorLabel = document.createElement('label');
+            selectorLabel.className = 'selector-label';
+            selectorLabel.textContent = 'Problem Type:';
+            problemTypeSelector.appendChild(selectorLabel);
+
+            const typeOptions = document.createElement('div');
+            typeOptions.className = 'type-options';
+
+            const types = ['Add-To', 'Take-From', 'Put-Together', 'Compare'];
+            const typeValues = ['add-to', 'take-from', 'put-together', 'compare'];
+
+            types.forEach((type, idx) => {
+                const btn = document.createElement('button');
+                btn.className = 'type-option';
+                btn.textContent = type;
+                btn.dataset.type = typeValues[idx];
+                if (typeValues[idx] === S.currentProblem.type) {
+                    btn.classList.add('active');
+                }
+                btn.addEventListener('click', () => {
+                    document.querySelectorAll('.type-option').forEach(b => b.classList.remove('active'));
+                    btn.classList.add('active');
+                    S.selectedProblemType = typeValues[idx];
+                    renderSidePanel();
+                });
+                typeOptions.appendChild(btn);
+            });
+
+            problemTypeSelector.appendChild(typeOptions);
+            container.appendChild(problemTypeSelector);
+
+            const strategyButtons = document.createElement('div');
+            strategyButtons.className = 'strategy-buttons';
+            const strategies = [
+                { label: 'Bar Model', value: 'bar-model' },
+                { label: 'Number Line', value: 'number-line' },
+                { label: 'Equation', value: 'equation' },
+            ];
+
+            strategies.forEach(strategy => {
+                const btn = document.createElement('button');
+                btn.className = 'strategy-btn';
+                btn.textContent = strategy.label;
+                btn.dataset.strategy = strategy.value;
+                if (S.selectedStrategy === strategy.value) {
+                    btn.classList.add('active');
+                }
+                btn.addEventListener('click', () => {
+                    document.querySelectorAll('.strategy-btn').forEach(b => b.classList.remove('active'));
+                    btn.classList.add('active');
+                    S.selectedStrategy = strategy.value;
+                    renderExplore();
+                });
+                strategyButtons.appendChild(btn);
+            });
+
+            container.appendChild(strategyButtons);
+
+            if (S.selectedStrategy === 'equation') {
+                const eqContainer = document.createElement('div');
+                const unknownPos = S.currentProblem.unknownPosition || 'result';
+                const eqDisplay = document.createElement('div');
+                eqDisplay.className = 'equation-display';
+
+                // Build equation based on unknown position
+                let eqText = '';
+                if (unknownPos === 'result') {
+                    const num1 = S.currentProblem.numbers[0];
+                    const num2 = S.currentProblem.numbers[1];
+                    const op = S.currentProblem.operation === 'add' ? '+' : '-';
+                    eqText = `${num1} ${op} ${num2} = ?`;
+                } else if (unknownPos === 'change') {
+                    const num1 = S.currentProblem.numbers[0];
+                    const total = S.currentProblem.numbers[1];
+                    const op = S.currentProblem.operation === 'add' ? '+' : '-';
+                    eqText = `${num1} ${op} ? = ${total}`;
+                } else if (unknownPos === 'start') {
+                    const num2 = S.currentProblem.numbers[0];
+                    const total = S.currentProblem.numbers[1];
+                    const op = S.currentProblem.operation === 'add' ? '+' : '-';
+                    eqText = `? ${op} ${num2} = ${total}`;
+                }
+
+                eqDisplay.textContent = eqText;
+                eqContainer.appendChild(eqDisplay);
+                container.appendChild(eqContainer);
+            }
+
+            workspace.appendChild(container);
+            renderSidePanel();
+        }
+
+        function renderPractice() {
+            const workspace = document.getElementById('workspace');
+            workspace.innerHTML = '';
+
+            const container = document.createElement('div');
+            container.className = 'animate-in';
+
+            const problemText = document.createElement('div');
+            problemText.className = 'problem-text';
+            problemText.innerHTML = S.currentProblem.text;
+            container.appendChild(problemText);
+
+            const barContainer = document.createElement('div');
+            barContainer.className = 'bar-model-container';
+            const barModel = renderBarModel(S.currentProblem);
+            barContainer.appendChild(barModel);
+            container.appendChild(barContainer);
+
+            let scaffoldingStep = 1;
+            if (S.selectedUnknown !== null) scaffoldingStep = 2;
+            if (S.selectedOperation !== null) scaffoldingStep = 3;
+
+            // Step 1: What to find
+            if (scaffoldingStep === 1) {
+                const section = document.createElement('div');
+                section.className = 'scaffolding-section animate-in';
+
+                const title = document.createElement('div');
+                title.className = 'scaffolding-title';
+                title.textContent = '1. What do we need to find?';
+                section.appendChild(title);
+
+                const choices = document.createElement('div');
+                choices.className = 'choice-group';
+
+                const unknownOptions = [
+                    `How many altogether?`,
+                    `How many more?`,
+                    `How many are left?`,
+                    `How many total?`,
+                ];
+
+                unknownOptions.forEach((option, idx) => {
+                    const btn = document.createElement('button');
+                    btn.className = 'choice-btn';
+                    btn.textContent = option;
+                    btn.addEventListener('click', () => {
+                        S.selectedUnknown = idx;
+                        renderPractice();
+                    });
+                    choices.appendChild(btn);
+                });
+
+                section.appendChild(choices);
+                container.appendChild(section);
+            }
+
+            // Step 2: Add or subtract
+            if (scaffoldingStep === 2 && S.selectedUnknown !== null) {
+                const section = document.createElement('div');
+                section.className = 'scaffolding-section animate-in';
+
+                const title = document.createElement('div');
+                title.className = 'scaffolding-title';
+                title.textContent = '2. Add or subtract?';
+                section.appendChild(title);
+
+                const choices = document.createElement('div');
+                choices.className = 'choice-group';
+
+                const operations = ['Add (+)', 'Subtract (-)'];
+                operations.forEach((op, idx) => {
+                    const btn = document.createElement('button');
+                    btn.className = 'choice-btn';
+                    btn.textContent = op;
+                    btn.addEventListener('click', () => {
+                        S.selectedOperation = idx === 0 ? 'add' : 'subtract';
+                        renderPractice();
+                    });
+                    choices.appendChild(btn);
+                });
+
+                section.appendChild(choices);
+                container.appendChild(section);
+            }
+
+            // Step 3: Solve
+            if (scaffoldingStep === 3 && S.selectedOperation !== null) {
+                const section = document.createElement('div');
+                section.className = 'scaffolding-section animate-in';
+
+                const title = document.createElement('div');
+                title.className = 'scaffolding-title';
+                title.textContent = '3. Solve it!';
+                section.appendChild(title);
+
+                const choices = document.createElement('div');
+                choices.className = 'choice-group';
+
+                const answerChoices = generateChoices(S.currentProblem.answer, S.difficulty);
+                answerChoices.forEach(choice => {
+                    const btn = document.createElement('button');
+                    btn.className = 'choice-btn';
+                    btn.textContent = choice;
+
+                    btn.addEventListener('click', () => {
+                        if (choice === S.currentProblem.answer) {
+                            btn.classList.add('correct');
+                            S.practiceFeedback = 'correct';
+                            showFB('✓ Correct!','correct');
+                            setTimeout(() => {
+                                S.currentProblemIdx++;
+                                S.selectedUnknown = null;
+                                S.selectedOperation = null;
+                                S.practiceFeedback = null;
+                                renderPractice();
+                            }, 1500);
+                        } else {
+                            btn.classList.add('incorrect');
+                            S.practiceFeedback = 'incorrect';
+                            showFB('Try again!','incorrect');
+                            setTimeout(() => {
+                                S.practiceFeedback = null;
+                                renderPractice();
+                            }, 800);
+                        }
+                    });
+                    choices.appendChild(btn);
+                });
+
+                section.appendChild(choices);
+                container.appendChild(section);
+
+                if (S.practiceFeedback === 'incorrect') {
+                    const hint = document.createElement('div');
+                    hint.style.cssText = `
+                        background: rgba(255, 59, 139, 0.1);
+                        border: 1px solid #ff3b8b;
+                        padding: 1rem;
+                        border-radius: 0.5rem;
+                        color: #ff3b8b;
+                        font-size: 0.9rem;
+                        margin-top: 1rem;
+                    `;
+                    hint.textContent = `Hint: Try using the bar model to count the parts.`;
+                    container.appendChild(hint);
+                }
+            }
+
+            workspace.appendChild(container);
+            renderSidePanel();
+        }
+
+        function renderPlay() {
+            const workspace = document.getElementById('workspace');
+            workspace.innerHTML = '';
+
+            if (S.playProblems.length === 0) {
+                S.playProblems = [...PROBLEMS[S.difficulty]].sort(() => Math.random() - 0.5);
+            }
+
+            const problem = S.playProblems[0];
+
+            const container = document.createElement('div');
+            container.className = 'animate-in';
+
+            // Timer bar
+            const timerBar = document.createElement('div');
+            timerBar.className = 'timer-bar';
+            const timerFill = document.createElement('div');
+            timerFill.className = 'timer-fill';
+            timerFill.style.width = (S.timeLeft / 10) * 100 + '%';
+            timerBar.appendChild(timerFill);
+            container.appendChild(timerBar);
+
+            // Score display
+            const scoreDisplay = document.createElement('div');
+            scoreDisplay.className = 'score-display';
+
+            const scoreItem = document.createElement('div');
+            scoreItem.className = 'score-item';
+            const scoreLabel = document.createElement('div');
+            scoreLabel.className = 'score-label';
+            scoreLabel.textContent = 'Score';
+            scoreItem.appendChild(scoreLabel);
+            const scoreValue = document.createElement('div');
+            scoreValue.className = 'score-value';
+            scoreValue.textContent = S.score;
+            scoreItem.appendChild(scoreValue);
+            scoreDisplay.appendChild(scoreItem);
+
+            const streakItem = document.createElement('div');
+            streakItem.className = 'streak-indicator';
+            streakItem.innerHTML = `<svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor" style="vertical-align:-2px;"><path d="M12 23c-4.97 0-8-3.58-8-7.5 0-3.07 2.17-5.84 4.5-7.5-.28 2.5 1.5 4.5 1.5 4.5s2-2.5 2-5.5c0-1.5-.5-3-1-4 3 1.5 5 4 5 7 0 .5-.08 1-.08 1s1.08-1.18 1.58-2.5C19.78 11.72 20 14.5 20 15.5c0 3.92-3.03 7.5-8 7.5z"/></svg> Streak: ${S.streak}`;
+            scoreDisplay.appendChild(streakItem);
+
+            container.appendChild(scoreDisplay);
+
+            // Problem
+            const problemCard = document.createElement('div');
+            problemCard.className = 'problem-card';
+            problemCard.innerHTML = problem.text;
+            container.appendChild(problemCard);
+
+            // Answers
+            const choices = document.createElement('div');
+            choices.className = 'choice-group';
+
+            const answerChoices = generateChoices(problem.answer, S.difficulty);
+            answerChoices.forEach(choice => {
+                const btn = document.createElement('button');
+                btn.className = 'choice-btn';
+                btn.textContent = choice;
+
+                btn.addEventListener('click', () => {
+                    if (choice === problem.answer) {
+                        btn.classList.add('correct');
+                        showFB('✓ Correct!','correct');
+                        S.score += 10;
+                        S.streak++;
+                        setTimeout(() => {
+                            S.timeLeft = 10;
+                            S.playProblems.shift();
+                            if (S.playProblems.length === 0) {
+                                S.playProblems = [...PROBLEMS[S.difficulty]].sort(() => Math.random() - 0.5);
+                            }
+                            renderPlay();
+                        }, 1000);
+                    } else {
+                        btn.classList.add('incorrect');
+                        showFB('Try again!','incorrect');
+                        S.streak = 0;
+                        setTimeout(() => {
+                            S.timeLeft = 10;
+                            S.playProblems.shift();
+                            if (S.playProblems.length === 0) {
+                                S.playProblems = [...PROBLEMS[S.difficulty]].sort(() => Math.random() - 0.5);
+                            }
+                            renderPlay();
+                        }, 1500);
+                    }
+                });
+                choices.appendChild(btn);
+            });
+
+            container.appendChild(choices);
+            workspace.appendChild(container);
+
+            // Timer
+            if (!S.timerRunning) {
+                S.timerRunning = true;
+                const timerInterval = setInterval(() => {
+                    S.timeLeft--;
+                    if (S.timeLeft <= 0) {
+                        clearInterval(timerInterval);
+                        S.timerRunning = false;
+                        S.streak = 0;
+                        S.timeLeft = 10;
+                        S.playProblems.shift();
+                        if (S.playProblems.length === 0) {
+                            S.playProblems = [...PROBLEMS[S.difficulty]].sort(() => Math.random() - 0.5);
+                        }
+                        renderPlay();
+                    } else {
+                        renderPlay();
+                    }
+                }, 1000);
+            }
+
+            renderSidePanel();
+        }
+
+        function renderSidePanel() {
+            const sidePanel = document.getElementById('sidePanel');
+            sidePanel.innerHTML = '';
+
+            const section = document.createElement('div');
+            section.className = 'side-section';
+
+            const title = document.createElement('div');
+            title.className = 'side-title';
+            title.textContent = 'Problem Type';
+            section.appendChild(title);
+
+            const typeInfo = document.createElement('div');
+            typeInfo.className = 'info-text';
+
+            const problemType = S.selectedProblemType || S.currentProblem.type;
+            const typeDescriptions = {
+                'add-to': 'Start with an amount. Add more. Find the total.',
+                'take-from': 'Start with an amount. Take away some. Find what is left.',
+                'put-together': 'Two groups. Combine them. Find the total.',
+                'compare': 'Compare two amounts. Find the difference.',
+                'two-step-add': 'Multiple steps using addition.',
+            };
+
+            typeInfo.textContent = typeDescriptions[problemType] || 'Solve this word problem.';
+            section.appendChild(typeInfo);
+
+            sidePanel.appendChild(section);
+
+            // Key words section
+            const keywordSection = document.createElement('div');
+            keywordSection.className = 'side-section';
+
+            const keywordTitle = document.createElement('div');
+            keywordTitle.className = 'side-title';
+            keywordTitle.textContent = 'Key Words';
+            keywordSection.appendChild(keywordTitle);
+
+            const keywordList = document.createElement('div');
+            keywordList.className = 'keyword-list';
+
+            S.currentProblem.keyWords.forEach(word => {
+                const keyword = document.createElement('div');
+                keyword.className = 'keyword';
+                keyword.textContent = word;
+                keywordList.appendChild(keyword);
+            });
+
+            keywordSection.appendChild(keywordList);
+            sidePanel.appendChild(keywordSection);
+
+            // Stats section (for practice mode)
+            if (S.mode === 'practice') {
+                const statsSection = document.createElement('div');
+                statsSection.className = 'side-section';
+
+                const statsTitle = document.createElement('div');
+                statsTitle.className = 'side-title';
+                statsTitle.textContent = 'Scaffolding';
+                statsSection.appendChild(statsTitle);
+
+                const steps = ['Find unknown', 'Choose operation', 'Solve'];
+                const progress = (S.selectedUnknown !== null ? 1 : 0) + (S.selectedOperation !== null ? 1 : 0);
+
+                steps.forEach((step, idx) => {
+                    const bar = document.createElement('div');
+                    bar.className = 'stat-bar';
+
+                    const label = document.createElement('div');
+                    label.style.fontSize = '0.75rem';
+                    label.textContent = step;
+
+                    const barFill = document.createElement('div');
+                    barFill.className = 'stat-bar-fill';
+                    const progress_el = document.createElement('div');
+                    progress_el.className = 'stat-bar-progress';
+                    progress_el.style.width = (idx < progress ? 100 : 0) + '%';
+                    barFill.appendChild(progress_el);
+
+                    bar.appendChild(label);
+                    bar.appendChild(barFill);
+                    statsSection.appendChild(bar);
+                });
+
+                sidePanel.appendChild(statsSection);
+            }
+        }
+
+        function render() {
+            loadProblem();
+
+            switch (S.mode) {
+                case 'explore':
+                    renderExplore();
+                    break;
+                case 'practice':
+                    renderPractice();
+                    break;
+                case 'play':
+                    renderPlay();
+                    break;
+            }
+        }
+
+        // Event listeners
+        document.addEventListener('click', (e) => {
+            if (e.target.classList.contains('pill')) {
+                const mode = e.target.dataset.mode;
+                const difficulty = e.target.dataset.difficulty;
+
+                if (mode) {
+                    document.querySelectorAll('.pill-group:first-child .pill').forEach(p => p.classList.remove('active'));
+                    e.target.classList.add('active');
+                    S.mode = mode;
+                    S.currentProblemIdx = 0;
+                    S.selectedUnknown = null;
+                    S.selectedOperation = null;
+                    S.selectedStrategy = 'bar-model';
+                    S.timerRunning = false;
+                    S.playProblems = [];
+                    S.timeLeft = 10;
+                    S.score = 0;
+                    S.streak = 0;
+                    render();
+                }
+
+                if (difficulty) {
+                    document.querySelectorAll('.pill-group:last-child .pill').forEach(p => p.classList.remove('active'));
+                    e.target.classList.add('active');
+                    S.difficulty = difficulty;
+                    S.currentProblemIdx = 0;
+                    S.selectedUnknown = null;
+                    S.selectedOperation = null;
+                    S.timerRunning = false;
+                    S.playProblems = [];
+                    render();
+                }
+            }
+        });
+
+        // Initial render
+        render();
+    </script>
+<script src="../../vinculum-input.js"></script>
+<script src="../../vinculum-core.js"></script>
+<script src="../../vinculum-data.js"></script>
+<script src="../../vinculum-adaptive-hook.js"></script>
+<script src="../../vinculum-3reads.js"></script>
+<script src="../../vinculum-stories.js"></script>
+<script src="../../vinculum-feedback.js"></script>
+  <script src="../../vinculum-guide.js"></script>
+<script src="../../vinculum-identity.js"></script>
+<script src="../../vinculum-indigenous.js"></script>
+<script src="../../vinculum-dashboard.js"></script>
+<!-- Foundation loaded from vinculum-core.js -->
+</body>
+</html>

@@ -1,0 +1,1142 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>VINCULUM — Word Problems</title>
+<link rel="stylesheet" href="../../vinculum-core.css">
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;600&display=swap');
+
+/* Theme system loaded from vinculum-core.css */
+.vinculum-rtm-btn .rtm-icon{font-size:14px;}
+
+/* Focus Visible */
+*:focus-visible {
+  outline:2px solid var(--cyan);outline-offset:2px;border-radius:4px;
+}
+.sr-only {
+  position:absolute;width:1px;height:1px;padding:0;margin:-1px;
+  overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0;
+}
+
+* { margin:0; padding:0; box-sizing:border-box; }
+body {
+  font-family: 'Inter', sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  height: 100vh;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  user-select: none;
+}
+
+/* -- MAIN AREA -- */
+.main {
+  flex: 1;
+  display: flex;
+  overflow: hidden;
+}
+
+/* -- WORKSPACE -- */
+.workspace {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+  position: relative;
+  overflow-y: auto;
+}
+
+/* -- STORY BOX -- */
+.story-box {
+  background: var(--card);
+  border: 2px solid var(--border);
+  border-radius: 16px;
+  padding: 24px 28px;
+  margin-bottom: 20px;
+  font-size: 20px;
+  line-height: 1.7;
+  color: var(--text);
+  text-align: center;
+  max-width: 560px;
+  width: 100%;
+  font-weight: 500;
+}
+.story-box .story-number {
+  color: var(--cyan);
+  font-weight: 800;
+  font-family: 'JetBrains Mono', monospace;
+}
+.story-box .story-question {
+  color: var(--yellow);
+  font-weight: 700;
+}
+
+/* -- BAR MODEL SVG -- */
+.bar-model-wrap {
+  width: 100%;
+  max-width: 520px;
+  margin: 0 auto 16px;
+}
+.bar-model-svg {
+  width: 100%;
+  display: block;
+}
+.bar-rect {
+  rx: 8;
+  ry: 8;
+  stroke-width: 2;
+  transition: opacity 0.4s;
+}
+.bar-label {
+  font-family: 'JetBrains Mono', monospace;
+  font-weight: 700;
+  text-anchor: middle;
+  dominant-baseline: central;
+}
+.bar-bracket {
+  stroke-width: 2;
+  fill: none;
+}
+.bar-total-label {
+  font-family: 'JetBrains Mono', monospace;
+  font-weight: 700;
+  text-anchor: middle;
+}
+@keyframes barGrow {
+  from { transform: scaleX(0); }
+  to   { transform: scaleX(1); }
+}
+.bar-animate {
+  animation: barGrow 0.6s ease-out forwards;
+  transform-origin: left center;
+}
+
+/* -- INSTRUCTION BOX -- */
+.instruction-box {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 16px 20px;
+  margin-bottom: 16px;
+  font-size: 16px;
+  line-height: 1.6;
+  color: var(--text2);
+  text-align: center;
+  max-width: 560px;
+  width: 100%;
+}
+
+/* -- EQUATION DISPLAY -- */
+.equation-display {
+  text-align: center;
+  margin: 12px 0;
+  font-size: 28px;
+  font-weight: 800;
+  font-family: 'JetBrains Mono', monospace;
+  color: var(--text);
+  letter-spacing: 2px;
+}
+.equation-display .eq-part { color: var(--cyan); }
+.equation-display .eq-op { color: var(--yellow); }
+.equation-display .eq-total { color: var(--green); }
+.equation-display .eq-unknown { color: var(--pink); text-decoration: underline; }
+
+/* -- CONTROLS -- */
+.controls {
+  display: flex;
+  gap: 8px;
+  margin-top: 16px;
+  flex-wrap: wrap;
+  justify-content: center;
+}
+.ctrl-btn {
+  padding: 10px 20px;
+  border-radius: 10px;
+  border: 1px solid var(--border);
+  background: var(--card);
+  color: var(--text2);
+  font-size: 13px;
+  font-weight: 600;
+  font-family: inherit;
+  cursor: pointer;
+  transition: all 0.2s;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.ctrl-btn:hover { background: var(--card-hover); color: var(--text); }
+.ctrl-btn.primary {
+  background: var(--grad);
+  color: var(--bg);
+  border-color: transparent;
+}
+.ctrl-btn.primary:hover { opacity: 0.9; }
+
+/* -- MC GRID -- */
+.mc-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 10px;
+  margin-top: 16px;
+  max-width: 440px;
+  width: 100%;
+}
+.mc-btn {
+  padding: 16px;
+  border-radius: 12px;
+  border: 2px solid var(--border);
+  background: var(--card);
+  color: var(--text);
+  font-size: 22px;
+  font-weight: 700;
+  font-family: 'JetBrains Mono', monospace;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+.mc-btn:hover {
+  border-color: var(--cyan);
+  background: rgba(0,212,255,0.05);
+  transform: scale(1.05);
+}
+.mc-btn.correct-flash {
+  border-color: var(--green);
+  background: rgba(0,230,118,0.15);
+  color: var(--green);
+}
+.mc-btn.incorrect-flash {
+  border-color: var(--pink);
+  background: rgba(255,59,139,0.15);
+  color: var(--pink);
+}
+
+/* -- PROBLEM TYPE TAG -- */
+.type-tag {
+  display: inline-block;
+  padding: 3px 10px;
+  border-radius: 6px;
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  margin-bottom: 10px;
+}
+.type-tag.add-to      { background: rgba(0,212,255,0.15); color: var(--cyan); }
+.type-tag.take-from   { background: rgba(255,59,139,0.15); color: var(--pink); }
+.type-tag.put-together { background: rgba(0,230,118,0.15); color: var(--green); }
+.type-tag.compare     { background: rgba(255,193,7,0.15); color: var(--yellow); }
+
+/* -- FEEDBACK -- */
+.feedback {
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%) scale(0);
+  padding: 24px 48px;
+  border-radius: 20px;
+  font-size: 18px;
+  font-weight: 700;
+  z-index: 200;
+  pointer-events: none;
+  transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275), opacity 0.3s;
+  opacity: 0;
+  max-width: 90vw;
+  text-align: center;
+  line-height: 1.5;
+}
+.feedback.show {
+  transform: translate(-50%, -50%) scale(1);
+  opacity: 1;
+}
+.feedback.correct {
+  background: rgba(0,230,118,0.15);
+  color: var(--green);
+  border: 2px solid var(--green);
+}
+.feedback.incorrect {
+  background: rgba(255,59,139,0.15);
+  color: var(--pink);
+  border: 2px solid var(--pink);
+}
+.feedback.try-again {
+  background: rgba(255,193,7,0.15);
+  color: var(--yellow);
+  border: 2px solid var(--yellow);
+}
+
+/* -- SIDE PANEL -- */
+.side-panel {
+  width: 280px;
+  background: var(--bg2);
+  border-left: 1px solid var(--border);
+  padding: 20px;
+  overflow-y: auto;
+  flex-shrink: 0;
+}
+.panel-section {
+  margin-bottom: 20px;
+}
+.panel-title {
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 1.5px;
+  color: var(--muted);
+  margin-bottom: 8px;
+}
+.panel-text {
+  font-size: 13px;
+  color: var(--text2);
+  line-height: 1.6;
+}
+
+/* -- SCORE DISPLAY -- */
+.score-display {
+  text-align: center;
+  padding: 16px;
+  background: var(--card);
+  border-radius: 12px;
+  margin-bottom: 12px;
+}
+.score-value {
+  font-size: 36px;
+  font-weight: 900;
+  font-family: 'JetBrains Mono', monospace;
+  background: var(--grad);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+.score-label {
+  font-size: 11px;
+  color: var(--muted);
+  text-transform: uppercase;
+  letter-spacing: 1px;
+}
+.streak-bar {
+  height: 6px;
+  background: var(--card);
+  border-radius: 3px;
+  overflow: hidden;
+  margin-top: 8px;
+}
+.streak-fill {
+  height: 100%;
+  background: var(--grad);
+  border-radius: 3px;
+  transition: width 0.3s;
+}
+
+/* -- STEP TRACKER -- */
+.step-tracker {
+  display: flex;
+  gap: 6px;
+  justify-content: center;
+  margin-bottom: 12px;
+}
+.step-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: var(--border);
+  transition: all 0.2s;
+}
+.step-dot.active { background: var(--cyan); transform: scale(1.3); }
+.step-dot.done { background: var(--green); }
+
+/* -- ANIMATIONS -- */
+@keyframes pop {
+  0% { transform: scale(0); }
+  70% { transform: scale(1.2); }
+  100% { transform: scale(1); }
+}
+@keyframes shake {
+  0%, 100% { transform: translateX(0); }
+  25% { transform: translateX(-8px); }
+  75% { transform: translateX(8px); }
+}
+.pop-in { animation: pop 0.3s ease-out forwards; }
+.shake { animation: shake 0.3s ease-in-out; }
+
+/* scrollbar */
+::-webkit-scrollbar { width: 6px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+</style>
+</head>
+<body>
+
+<!-- HEADER -->
+<div class="vinculum-header">
+  <div class="vinculum-header-left">
+    <a class="vinculum-back-btn" href="../../VINCULUM-Hub.html" style="text-decoration:none;">&#9664; Hub</a>
+    <div class="vinculum-header-title"><span>VINCULUM</span> Word Problems</div>
+    <span class="vinculum-header-badge">2.OA</span>
+  </div>
+  <div class="vinculum-header-right">
+    <div class="vinculum-std-tags">
+      <span class="vinculum-std-tag">2.OA.1</span>
+      <span class="vinculum-std-tag mn">MN 2.2.1.1</span>
+    </div>
+    <button class="vinculum-back-btn" id="readAloudBtn" onclick="toggleReadAloud()" aria-label="Read Aloud" title="Read instructions aloud" style="margin-left:8px;white-space:nowrap;">&#128264; Read to Me</button>
+  </div>
+</div>
+
+<!-- MODE TABS -->
+<div class="vinculum-mode-tabs">
+  <button class="vinculum-mode-tab active-explore" id="tabExplore" data-mode="explore">
+    <svg width="18" height="18" viewBox="0 0 48 48" fill="none"><path d="M4 24C4 24 12 12 24 12C36 12 44 24 44 24C44 24 36 36 24 36C12 36 4 24 4 24Z" stroke="currentColor" stroke-width="3" fill="none"/><circle cx="24" cy="24" r="7" stroke="currentColor" stroke-width="3" fill="none"/><circle cx="24" cy="24" r="3" fill="currentColor"/></svg> Explore
+  </button>
+  <button class="vinculum-mode-tab" id="tabPractice" data-mode="practice">
+    <svg width="18" height="18" viewBox="0 0 48 48" fill="none"><circle cx="24" cy="24" r="20" stroke="currentColor" stroke-width="3" fill="none" opacity="0.3"/><circle cx="24" cy="24" r="20" stroke="currentColor" stroke-width="3" fill="none" stroke-dasharray="126" stroke-dashoffset="32" stroke-linecap="round"/><polyline points="16,24 22,32 34,16" stroke="currentColor" stroke-width="4" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg> Practice
+  </button>
+  <button class="vinculum-mode-tab" id="tabPlay" data-mode="play">
+    <svg width="18" height="18" viewBox="0 0 48 48" fill="none"><polygon points="28,4 12,28 22,28 18,44 36,18 26,18" fill="none" stroke="currentColor" stroke-width="3" stroke-linejoin="round"/><polygon points="27,8 15,27 23,27 20,40 34,19 26,19" fill="currentColor" opacity="0.15"/></svg> Play
+  </button>
+  <div class="vinculum-diff-selector">
+    <span class="vinculum-diff-label">Level</span>
+    <button class="vinculum-diff-btn active" id="diffE" data-diff="emergent">Visual Support</button>
+    <button class="vinculum-diff-btn" id="diffP" data-diff="proficient">Bar Models</button>
+    <button class="vinculum-diff-btn" id="diffA" data-diff="advanced">Multi-Step</button>
+  </div>
+</div>
+
+<!-- MAIN -->
+<div class="main">
+  <div class="workspace" role="main" id="workspace"></div>
+  <div class="side-panel" id="sidePanel"></div>
+</div>
+
+<!-- FEEDBACK POPUP -->
+<div class="feedback" id="feedback"></div>
+
+<script src="../../vinculum-input.js"></script>
+<script>
+// ================================================================
+// PROBLEMS DATABASE — 18 templates across 4 types
+// ================================================================
+var PROBLEMS = [
+  // ADD-TO
+  { type:'add-to', template: function(a,b) { return 'There were <span class="story-number">' + a + '</span> birds in a tree. <span class="story-number">' + b + '</span> more birds flew in. <span class="story-question">How many birds are in the tree now?</span>'; }, op:'+', partA:function(){return rand(2,12);}, partB:function(){return rand(2,9);} },
+  { type:'add-to', template: function(a,b) { return 'Sam had <span class="story-number">' + a + '</span> stickers. His friend gave him <span class="story-number">' + b + '</span> more. <span class="story-question">How many stickers does Sam have now?</span>'; }, op:'+', partA:function(){return rand(3,15);}, partB:function(){return rand(2,8);} },
+  { type:'add-to', template: function(a,b) { return 'A bus had <span class="story-number">' + a + '</span> people. At the next stop, <span class="story-number">' + b + '</span> more people got on. <span class="story-question">How many people are on the bus now?</span>'; }, op:'+', partA:function(){return rand(5,14);}, partB:function(){return rand(3,9);} },
+  { type:'add-to', template: function(a,b) { return 'Mia picked <span class="story-number">' + a + '</span> flowers. Then she picked <span class="story-number">' + b + '</span> more. <span class="story-question">How many flowers did Mia pick in all?</span>'; }, op:'+', partA:function(){return rand(4,12);}, partB:function(){return rand(2,7);} },
+
+  // TAKE-FROM
+  { type:'take-from', template: function(a,b) { return 'There were <span class="story-number">' + a + '</span> cookies on a plate. Emma ate <span class="story-number">' + b + '</span>. <span class="story-question">How many cookies are left?</span>'; }, op:'-', partA:function(){return rand(8,18);}, partB:function(){return rand(2,7);} },
+  { type:'take-from', template: function(a,b) { return 'A farmer had <span class="story-number">' + a + '</span> eggs. <span class="story-number">' + b + '</span> eggs broke. <span class="story-question">How many eggs are left?</span>'; }, op:'-', partA:function(){return rand(10,20);}, partB:function(){return rand(3,8);} },
+  { type:'take-from', template: function(a,b) { return 'Jake had <span class="story-number">' + a + '</span> marbles. He gave <span class="story-number">' + b + '</span> to his sister. <span class="story-question">How many marbles does Jake have now?</span>'; }, op:'-', partA:function(){return rand(9,17);}, partB:function(){return rand(2,6);} },
+  { type:'take-from', template: function(a,b) { return 'There were <span class="story-number">' + a + '</span> ducks in the pond. <span class="story-number">' + b + '</span> flew away. <span class="story-question">How many ducks are still in the pond?</span>'; }, op:'-', partA:function(){return rand(7,16);}, partB:function(){return rand(2,6);} },
+
+  // PUT-TOGETHER
+  { type:'put-together', template: function(a,b) { return 'A garden has <span class="story-number">' + a + '</span> red roses and <span class="story-number">' + b + '</span> yellow roses. <span class="story-question">How many roses are there in all?</span>'; }, op:'+', partA:function(){return rand(3,12);}, partB:function(){return rand(3,10);} },
+  { type:'put-together', template: function(a,b) { return 'In a class, there are <span class="story-number">' + a + '</span> boys and <span class="story-number">' + b + '</span> girls. <span class="story-question">How many students are there altogether?</span>'; }, op:'+', partA:function(){return rand(5,14);}, partB:function(){return rand(5,12);} },
+  { type:'put-together', template: function(a,b) { return 'Leo has <span class="story-number">' + a + '</span> toy cars and <span class="story-number">' + b + '</span> toy trucks. <span class="story-question">How many toys does Leo have?</span>'; }, op:'+', partA:function(){return rand(4,11);}, partB:function(){return rand(3,9);} },
+  { type:'put-together', template: function(a,b) { return 'A fruit bowl has <span class="story-number">' + a + '</span> apples and <span class="story-number">' + b + '</span> bananas. <span class="story-question">How many pieces of fruit are in the bowl?</span>'; }, op:'+', partA:function(){return rand(3,10);}, partB:function(){return rand(2,8);} },
+
+  // COMPARE
+  { type:'compare', template: function(a,b) { return 'Ana has <span class="story-number">' + a + '</span> crayons. Ben has <span class="story-number">' + b + '</span> crayons. <span class="story-question">How many more crayons does Ana have than Ben?</span>'; }, op:'-', partA:function(){return rand(10,18);}, partB:function(){return rand(3,9);} },
+  { type:'compare', template: function(a,b) { return 'Team A scored <span class="story-number">' + a + '</span> points. Team B scored <span class="story-number">' + b + '</span> points. <span class="story-question">How many fewer points did Team B score?</span>'; }, op:'-', partA:function(){return rand(12,20);}, partB:function(){return rand(4,10);} },
+  { type:'compare', template: function(a,b) { return 'A cat weighs <span class="story-number">' + a + '</span> pounds. A puppy weighs <span class="story-number">' + b + '</span> pounds. <span class="story-question">How much more does the cat weigh?</span>'; }, op:'-', partA:function(){return rand(8,16);}, partB:function(){return rand(3,7);} },
+  { type:'compare', template: function(a,b) { return 'Maya read <span class="story-number">' + a + '</span> pages. Noah read <span class="story-number">' + b + '</span> pages. <span class="story-question">How many more pages did Maya read?</span>'; }, op:'-', partA:function(){return rand(10,19);}, partB:function(){return rand(3,9);} },
+
+  // MORE ADD-TO for variety
+  { type:'add-to', template: function(a,b) { return 'There were <span class="story-number">' + a + '</span> fish in a tank. The pet shop added <span class="story-number">' + b + '</span> more. <span class="story-question">How many fish are in the tank now?</span>'; }, op:'+', partA:function(){return rand(4,13);}, partB:function(){return rand(3,8);} },
+  { type:'take-from', template: function(a,b) { return 'A shelf had <span class="story-number">' + a + '</span> books. The teacher took <span class="story-number">' + b + '</span> away. <span class="story-question">How many books are on the shelf now?</span>'; }, op:'-', partA:function(){return rand(10,20);}, partB:function(){return rand(2,8);} }
+];
+
+// ================================================================
+// STATE
+// ================================================================
+var S = {
+  mode: 'explore',
+  diff: 'emergent',
+  // Current problem
+  prob: null,
+  a: 0,
+  b: 0,
+  answer: 0,
+  storyHTML: '',
+  // Explore
+  exploreStep: 0, // 0=read, 1=see model, 2=see equation
+  // Practice
+  practiceStep: 0, // 0=read, 1=identify type, 2=solve
+  pChoices: [],
+  pAnswered: false,
+  // Play
+  score: 0,
+  streak: 0,
+  best: 0,
+  round: 0,
+  total: 10,
+  playChoices: [],
+  playAnswered: false
+};
+
+// ================================================================
+// MISCONCEPTIONS DATABASE
+// ================================================================
+var MISCONCEPTIONS = {
+  addAllNumbers: {
+    id: 'add-all',
+    detect: function(answer, prob, a, b) {
+      if (prob.op === '-' && answer === a + b) return true;
+      return false;
+    },
+    msg: function(a, b) {
+      return 'You added all the numbers! Read the story again. Not every problem is addition. Look for words like "left," "fewer," or "took away."';
+    }
+  },
+  noModel: {
+    id: 'no-model',
+    msg: function() {
+      return 'Try drawing a bar model! It helps you SEE what the problem is asking.';
+    }
+  },
+  wrongOperation: {
+    id: 'wrong-op',
+    detect: function(answer, prob, a, b) {
+      if (prob.op === '+' && answer === a - b) return true;
+      if (prob.op === '-' && answer === a + b) return true;
+      return false;
+    },
+    msg: function(op) {
+      return 'Check the action! ' + (op === '+' ? 'The story is putting groups TOGETHER.' : 'The story is taking a part AWAY from the whole.');
+    }
+  },
+  offByOne: {
+    id: 'off-by-one',
+    detect: function(answer, prob, a, b) {
+      var correct = prob.op === '+' ? a + b : a - b;
+      return Math.abs(answer - correct) === 1;
+    },
+    msg: function(answer) {
+      return 'So close! Off by 1. Double-check your counting.';
+    }
+  },
+  swappedParts: {
+    id: 'swapped',
+    detect: function(answer, prob, a, b) {
+      if (prob.op === '-' && answer === b - a) return true;
+      return false;
+    },
+    msg: function() {
+      return 'You subtracted the bigger number from the smaller one! The WHOLE goes first in subtraction.';
+    }
+  },
+  randomGuess: {
+    id: 'random',
+    msg: function() {
+      return 'Read the story carefully. Draw a picture or bar model to help you see what is happening.';
+    }
+  }
+};
+
+// ================================================================
+// HELPERS
+// ================================================================
+function rand(min, max) {
+  return Math.floor(Math.random() * (max - min + 1)) + min;
+}
+
+function shuffle(arr) {
+  for (var i = arr.length - 1; i > 0; i--) {
+    var j = Math.floor(Math.random() * (i + 1));
+    var tmp = arr[i]; arr[i] = arr[j]; arr[j] = tmp;
+  }
+  return arr;
+}
+
+function showFeedback(text, type) {
+  var fb = document.getElementById('feedback');
+  fb.textContent = text;
+  fb.className = 'feedback ' + type + ' show';
+  setTimeout(function() { fb.classList.remove('show'); }, 2400);
+}
+
+function generateProblem() {
+  var pool = PROBLEMS.slice();
+  if (S.diff === 'emergent') {
+    // Simpler: add-to and put-together only, smaller numbers
+    pool = PROBLEMS.filter(function(p) { return p.type === 'add-to' || p.type === 'put-together'; });
+  } else if (S.diff === 'advanced') {
+    // All types allowed
+    pool = PROBLEMS.slice();
+  }
+  var prob = pool[Math.floor(Math.random() * pool.length)];
+  var a = prob.partA();
+  var b = prob.partB();
+  // Clamp for emergent
+  if (S.diff === 'emergent') {
+    a = Math.min(a, 10);
+    b = Math.min(b, 8);
+    if (a + b > 18) b = 18 - a;
+  }
+  // Ensure a >= b for subtraction
+  if (prob.op === '-' && a < b) { var t = a; a = b; b = t; }
+  if (prob.op === '-' && a === b) a++;
+
+  S.prob = prob;
+  S.a = a;
+  S.b = b;
+  S.answer = prob.op === '+' ? a + b : a - b;
+  S.storyHTML = prob.template(a, b);
+}
+
+function generateMultiStepProblem() {
+  // Two-step: e.g. "had X, got Y more, then lost Z"
+  var a = rand(8, 15);
+  var b = rand(3, 7);
+  var c = rand(2, Math.min(6, a + b - 1));
+  var answer = a + b - c;
+  S.prob = { type: 'add-to', op: 'multi', template: null };
+  S.a = a;
+  S.b = b;
+  S.answer = answer;
+  var templates = [
+    function() { return 'Ella had <span class="story-number">' + a + '</span> beads. She found <span class="story-number">' + b + '</span> more, then gave <span class="story-number">' + c + '</span> to her friend. <span class="story-question">How many beads does Ella have now?</span>'; },
+    function() { return 'A store had <span class="story-number">' + a + '</span> balls. They got <span class="story-number">' + b + '</span> new ones but sold <span class="story-number">' + c + '</span>. <span class="story-question">How many balls does the store have now?</span>'; },
+    function() { return 'There were <span class="story-number">' + a + '</span> ants on a log. <span class="story-number">' + b + '</span> more crawled on, then <span class="story-number">' + c + '</span> left. <span class="story-question">How many ants are on the log now?</span>'; },
+    function() { return 'Kai had <span class="story-number">' + a + '</span> cards. He won <span class="story-number">' + b + '</span> more, then lost <span class="story-number">' + c + '</span>. <span class="story-question">How many cards does Kai have?</span>'; }
+  ];
+  S.storyHTML = templates[Math.floor(Math.random() * templates.length)]();
+}
+
+function makeChoices(answer) {
+  var choices = [answer];
+  var attempts = 0;
+  while (choices.length < 4 && attempts < 50) {
+    var d;
+    // Diagnostic distractors
+    if (choices.length === 1 && S.prob.op === '-') {
+      d = S.a + S.b; // add-all misconception
+    } else if (choices.length === 2) {
+      d = answer + (Math.random() < 0.5 ? 1 : -1); // off by one
+    } else {
+      d = answer + rand(-5, 5);
+    }
+    if (d > 0 && d !== answer && choices.indexOf(d) === -1) {
+      choices.push(d);
+    }
+    attempts++;
+  }
+  // Fill remaining if needed
+  while (choices.length < 4) {
+    var v = answer + rand(-8, 8);
+    if (v > 0 && choices.indexOf(v) === -1) choices.push(v);
+  }
+  return shuffle(choices);
+}
+
+function detectMisconception(chosen) {
+  if (MISCONCEPTIONS.addAllNumbers.detect(chosen, S.prob, S.a, S.b)) {
+    return MISCONCEPTIONS.addAllNumbers.msg(S.a, S.b);
+  }
+  if (MISCONCEPTIONS.wrongOperation.detect(chosen, S.prob, S.a, S.b)) {
+    return MISCONCEPTIONS.wrongOperation.msg(S.prob.op);
+  }
+  if (MISCONCEPTIONS.swappedParts.detect(chosen, S.prob, S.a, S.b)) {
+    return MISCONCEPTIONS.swappedParts.msg();
+  }
+  if (MISCONCEPTIONS.offByOne.detect(chosen, S.prob, S.a, S.b)) {
+    return MISCONCEPTIONS.offByOne.msg(chosen);
+  }
+  return MISCONCEPTIONS.randomGuess.msg();
+}
+
+// ================================================================
+// READ-ALOUD
+// ================================================================
+function toggleReadAloud() {
+  if (window.VinculumStories && VinculumStories.isReading()) {
+    VinculumStories.stopReading();
+    document.getElementById('readAloudBtn').innerHTML = '&#128264; Read to Me';
+  } else {
+    var storyEl = document.querySelector('.story-box');
+    var text = storyEl ? storyEl.textContent : 'Welcome to Word Problems!';
+    if (window.VinculumStories) {
+      VinculumStories.readAloud(text, { rate: 0.85, onComplete: function() {
+        document.getElementById('readAloudBtn').innerHTML = '&#128264; Read to Me';
+      }});
+      document.getElementById('readAloudBtn').textContent = '\u23F9 Stop';
+    }
+  }
+}
+
+// ================================================================
+// BAR MODEL SVG BUILDER
+// ================================================================
+function buildBarModel(a, b, answer, op, type, showParts, showTotal, animate) {
+  var W = 480, H = 140;
+  var barY = 50, barH = 40;
+  var padL = 40, padR = 40;
+  var barW = W - padL - padR;
+  var total = op === '+' ? a + b : a;
+  var svg = '<svg class="bar-model-svg" viewBox="0 0 ' + W + ' ' + H + '" xmlns="http://www.w3.org/2000/svg">';
+
+  if (op === '+' || type === 'put-together') {
+    // Two-part bar: [a][b] with bracket showing total
+    var wA = (a / total) * barW;
+    var wB = (b / total) * barW;
+
+    // Part A
+    svg += '<rect class="bar-rect' + (animate ? ' bar-animate' : '') + '" x="' + padL + '" y="' + barY + '" width="' + wA + '" height="' + barH + '" fill="rgba(0,212,255,0.25)" stroke="var(--cyan)" />';
+    if (showParts) {
+      svg += '<text class="bar-label" x="' + (padL + wA / 2) + '" y="' + (barY + barH / 2) + '" fill="var(--cyan)" font-size="18">' + a + '</text>';
+    }
+
+    // Part B
+    svg += '<rect class="bar-rect' + (animate ? ' bar-animate' : '') + '" x="' + (padL + wA) + '" y="' + barY + '" width="' + wB + '" height="' + barH + '" fill="rgba(0,230,118,0.25)" stroke="var(--green)"' + (animate ? ' style="animation-delay:0.3s"' : '') + ' />';
+    if (showParts) {
+      svg += '<text class="bar-label" x="' + (padL + wA + wB / 2) + '" y="' + (barY + barH / 2) + '" fill="var(--green)" font-size="18">' + b + '</text>';
+    }
+
+    // Bracket below
+    var bracketY = barY + barH + 12;
+    svg += '<path class="bar-bracket" d="M ' + padL + ' ' + bracketY + ' L ' + padL + ' ' + (bracketY + 8) + ' L ' + (padL + barW) + ' ' + (bracketY + 8) + ' L ' + (padL + barW) + ' ' + bracketY + '" stroke="var(--yellow)" />';
+    if (showTotal) {
+      svg += '<text class="bar-total-label" x="' + (padL + barW / 2) + '" y="' + (bracketY + 28) + '" fill="var(--yellow)" font-size="18">' + answer + '</text>';
+    } else {
+      svg += '<text class="bar-total-label" x="' + (padL + barW / 2) + '" y="' + (bracketY + 28) + '" fill="var(--pink)" font-size="18">?</text>';
+    }
+
+    // Labels
+    svg += '<text x="' + (padL + wA / 2) + '" y="' + (barY - 10) + '" fill="var(--muted)" font-size="11" text-anchor="middle" font-family="Inter, sans-serif">Part A</text>';
+    svg += '<text x="' + (padL + wA + wB / 2) + '" y="' + (barY - 10) + '" fill="var(--muted)" font-size="11" text-anchor="middle" font-family="Inter, sans-serif">Part B</text>';
+
+  } else {
+    // Subtraction / compare: whole bar with removed part
+    var wWhole = barW;
+    var wRemoved = (b / a) * barW;
+    var wRemain = barW - wRemoved;
+
+    // Whole bar (faded)
+    svg += '<rect class="bar-rect" x="' + padL + '" y="' + barY + '" width="' + wWhole + '" height="' + barH + '" fill="rgba(0,212,255,0.1)" stroke="var(--border)" stroke-dasharray="4" />';
+
+    // Remaining part
+    svg += '<rect class="bar-rect' + (animate ? ' bar-animate' : '') + '" x="' + padL + '" y="' + barY + '" width="' + wRemain + '" height="' + barH + '" fill="rgba(0,212,255,0.25)" stroke="var(--cyan)" />';
+    if (showTotal) {
+      svg += '<text class="bar-label" x="' + (padL + wRemain / 2) + '" y="' + (barY + barH / 2) + '" fill="var(--cyan)" font-size="18">' + answer + '</text>';
+    } else {
+      svg += '<text class="bar-label" x="' + (padL + wRemain / 2) + '" y="' + (barY + barH / 2) + '" fill="var(--pink)" font-size="18">?</text>';
+    }
+
+    // Removed part
+    svg += '<rect class="bar-rect' + (animate ? ' bar-animate' : '') + '" x="' + (padL + wRemain) + '" y="' + barY + '" width="' + wRemoved + '" height="' + barH + '" fill="rgba(255,59,139,0.15)" stroke="var(--pink)" stroke-dasharray="6"' + (animate ? ' style="animation-delay:0.4s"' : '') + ' />';
+    if (showParts) {
+      svg += '<text class="bar-label" x="' + (padL + wRemain + wRemoved / 2) + '" y="' + (barY + barH / 2) + '" fill="var(--pink)" font-size="16">' + b + '</text>';
+    }
+
+    // Whole label on top
+    svg += '<path class="bar-bracket" d="M ' + padL + ' ' + (barY - 6) + ' L ' + padL + ' ' + (barY - 14) + ' L ' + (padL + barW) + ' ' + (barY - 14) + ' L ' + (padL + barW) + ' ' + (barY - 6) + '" stroke="var(--muted)" />';
+    svg += '<text class="bar-total-label" x="' + (padL + barW / 2) + '" y="' + (barY - 22) + '" fill="var(--muted)" font-size="14">Whole: ' + a + '</text>';
+
+    if (type === 'compare') {
+      svg += '<text x="' + (padL + wRemain / 2) + '" y="' + (barY + barH + 22) + '" fill="var(--muted)" font-size="11" text-anchor="middle" font-family="Inter, sans-serif">Difference?</text>';
+    }
+  }
+
+  svg += '</svg>';
+  return svg;
+}
+
+// ================================================================
+// RENDER — EXPLORE
+// ================================================================
+function renderExplore(ws, sp) {
+  if (!S.prob) {
+    generateProblem();
+    S.exploreStep = 0;
+  }
+
+  var html = '';
+  html += '<span class="type-tag ' + S.prob.type + '">' + S.prob.type.replace('-', ' ') + '</span>';
+
+  // Step tracker
+  html += '<div class="step-tracker">';
+  for (var i = 0; i < 3; i++) {
+    var cls = 'step-dot';
+    if (i < S.exploreStep) cls += ' done';
+    if (i === S.exploreStep) cls += ' active';
+    html += '<div class="' + cls + '"></div>';
+  }
+  html += '</div>';
+
+  // Step 0: Read the story
+  html += '<div class="story-box" id="storyBanner">' + S.storyHTML + '</div>';
+
+  // Step 1: Show bar model
+  if (S.exploreStep >= 1) {
+    html += '<div class="bar-model-wrap">';
+    html += buildBarModel(S.a, S.b, S.answer, S.prob.op, S.prob.type, true, S.exploreStep >= 2, S.exploreStep === 1);
+    html += '</div>';
+  }
+
+  // Step 2: Show equation
+  if (S.exploreStep >= 2) {
+    html += '<div class="equation-display pop-in">';
+    html += '<span class="eq-part">' + S.a + '</span>';
+    html += ' <span class="eq-op">' + S.prob.op + '</span> ';
+    html += '<span class="eq-part">' + S.b + '</span>';
+    html += ' <span class="eq-op">=</span> ';
+    html += '<span class="eq-total">' + S.answer + '</span>';
+    html += '</div>';
+  }
+
+  // Instruction
+  var stepLabels = [
+    'Read the story carefully. What is happening? What are we looking for?',
+    'Look at the bar model. It shows the parts and the whole.',
+    'Here is the equation! The bar model matches the number sentence.'
+  ];
+  html += '<div class="instruction-box">' + stepLabels[S.exploreStep] + '</div>';
+
+  // Controls
+  html += '<div class="controls">';
+  if (S.exploreStep < 2) {
+    html += '<button class="ctrl-btn primary" onclick="S.exploreStep++; render();">Next Step &#9654;</button>';
+  } else {
+    html += '<button class="ctrl-btn primary" onclick="S.prob=null; S.exploreStep=0; render();">New Problem &#9654;</button>';
+  }
+  html += '</div>';
+
+  ws.innerHTML = html;
+
+  // Side panel
+  sp.innerHTML =
+    '<div class="panel-section"><div class="panel-title">Explore Mode</div>' +
+    '<div class="panel-text">' + getDiffDescription() + '</div></div>' +
+    '<div class="panel-section"><div class="panel-title">Problem Type</div>' +
+    '<div class="panel-text">' + getTypeExplanation(S.prob.type) + '</div></div>' +
+    '<div class="panel-section"><div class="panel-title">Tip</div>' +
+    '<div class="panel-text">Read the story. Picture what is happening. Draw a model. Write the equation.</div></div>';
+}
+
+// ================================================================
+// RENDER — PRACTICE
+// ================================================================
+function renderPractice(ws, sp) {
+  if (!S.prob) {
+    if (S.diff === 'advanced') {
+      generateMultiStepProblem();
+    } else {
+      generateProblem();
+    }
+    S.practiceStep = 0;
+    S.pAnswered = false;
+    S.pChoices = makeChoices(S.answer);
+  }
+
+  var html = '';
+  html += '<span class="type-tag ' + S.prob.type + '">' + S.prob.type.replace('-', ' ') + '</span>';
+
+  // Story
+  html += '<div class="story-box" id="storyBanner">' + S.storyHTML + '</div>';
+
+  // Bar model (always shown in proficient+)
+  if (S.diff !== 'emergent' || S.practiceStep >= 1) {
+    html += '<div class="bar-model-wrap">';
+    html += buildBarModel(S.a, S.b, S.answer, S.prob.op === 'multi' ? '+' : S.prob.op, S.prob.type, true, S.pAnswered, false);
+    html += '</div>';
+  }
+
+  // Equation with unknown
+  if (!S.pAnswered) {
+    html += '<div class="equation-display">';
+    if (S.prob.op === 'multi') {
+      html += '<span class="eq-part">' + S.a + '</span>';
+      html += ' <span class="eq-op">+</span> ';
+      html += '<span class="eq-part">' + S.b + '</span>';
+      html += ' <span class="eq-op">-</span> ';
+      html += '<span class="eq-part">?</span>';
+      html += ' <span class="eq-op">=</span> ';
+      html += '<span class="eq-unknown">?</span>';
+    } else {
+      html += '<span class="eq-part">' + S.a + '</span>';
+      html += ' <span class="eq-op">' + S.prob.op + '</span> ';
+      html += '<span class="eq-part">' + S.b + '</span>';
+      html += ' <span class="eq-op">=</span> ';
+      html += '<span class="eq-unknown">?</span>';
+    }
+    html += '</div>';
+  } else {
+    html += '<div class="equation-display pop-in">';
+    html += '<span class="eq-part">' + S.a + '</span>';
+    html += ' <span class="eq-op">' + (S.prob.op === 'multi' ? '+' : S.prob.op) + '</span> ';
+    html += '<span class="eq-part">' + S.b + '</span>';
+    html += ' <span class="eq-op">=</span> ';
+    html += '<span class="eq-total">' + S.answer + '</span>';
+    html += '</div>';
+  }
+
+  // MC choices
+  if (!S.pAnswered) {
+    html += '<div class="instruction-box">Choose the correct answer:</div>';
+    html += '<div class="mc-grid">';
+    for (var i = 0; i < S.pChoices.length; i++) {
+      html += '<button class="mc-btn" onclick="checkPractice(' + S.pChoices[i] + ')">' + S.pChoices[i] + '</button>';
+    }
+    html += '</div>';
+  } else {
+    html += '<div class="controls">';
+    html += '<button class="ctrl-btn primary" onclick="S.prob=null; render();">Next Problem &#9654;</button>';
+    html += '</div>';
+  }
+
+  ws.innerHTML = html;
+
+  // Side panel
+  sp.innerHTML =
+    '<div class="panel-section"><div class="panel-title">Practice Mode</div>' +
+    '<div class="panel-text">Read the story, look at the bar model, and solve!</div></div>' +
+    '<div class="panel-section"><div class="panel-title">Strategy</div>' +
+    '<div class="panel-text">1. Read the story<br>2. What do I know?<br>3. What do I need to find?<br>4. Choose an operation<br>5. Solve and check</div></div>';
+}
+
+// ================================================================
+// RENDER — PLAY
+// ================================================================
+function renderPlay(ws, sp) {
+  if (S.round === 0) initPlay();
+
+  var html = '';
+  html += '<span class="type-tag ' + S.prob.type + '">' + S.prob.type.replace('-', ' ') + '</span>';
+
+  // Story
+  html += '<div class="story-box" id="storyBanner">' + S.storyHTML + '</div>';
+
+  // Bar model (shown for proficient+ only)
+  if (S.diff !== 'emergent') {
+    html += '<div class="bar-model-wrap">';
+    html += buildBarModel(S.a, S.b, S.answer, S.prob.op === 'multi' ? '+' : S.prob.op, S.prob.type, true, S.playAnswered, false);
+    html += '</div>';
+  }
+
+  // MC answers
+  if (!S.playAnswered) {
+    html += '<div class="mc-grid">';
+    for (var i = 0; i < S.playChoices.length; i++) {
+      html += '<button class="mc-btn" onclick="checkPlay(' + S.playChoices[i] + ', this)">' + S.playChoices[i] + '</button>';
+    }
+    html += '</div>';
+  }
+
+  // Round indicator
+  html += '<div style="text-align:center;margin-top:12px;color:var(--muted);font-size:13px;">Round ' + S.round + ' of ' + S.total + '</div>';
+
+  ws.innerHTML = html;
+
+  // Side panel — score
+  sp.innerHTML =
+    '<div class="score-display">' +
+      '<div class="score-value">' + S.score + '</div>' +
+      '<div class="score-label">Score</div>' +
+      '<div class="streak-bar"><div class="streak-fill" style="width:' + Math.min(S.streak * 20, 100) + '%"></div></div>' +
+      '<div style="font-size:11px;color:var(--muted);margin-top:4px;">Streak: ' + S.streak + ' | Best: ' + S.best + '</div>' +
+    '</div>' +
+    '<div class="panel-section"><div class="panel-title">Play Mode</div>' +
+    '<div class="panel-text">10 rounds. Earn 10 pts + streak bonus (streak &times; 2) for each correct answer. Read fast, think carefully!</div></div>' +
+    '<div class="panel-section"><div class="panel-title">Round Progress</div>' +
+    '<div class="panel-text">' + buildRoundDots() + '</div></div>';
+}
+
+function buildRoundDots() {
+  var html = '<div style="display:flex;gap:4px;flex-wrap:wrap;">';
+  for (var i = 1; i <= S.total; i++) {
+    var c = i < S.round ? 'var(--green)' : (i === S.round ? 'var(--cyan)' : 'var(--border)');
+    html += '<div style="width:16px;height:16px;border-radius:50%;background:' + c + ';display:flex;align-items:center;justify-content:center;font-size:9px;color:var(--bg);font-weight:700;">' + i + '</div>';
+  }
+  html += '</div>';
+  return html;
+}
+
+// ================================================================
+// PLAY LOGIC
+// ================================================================
+function initPlay() {
+  S.score = 0;
+  S.streak = 0;
+  S.best = 0;
+  S.round = 1;
+  S.playAnswered = false;
+  generatePlayRound();
+}
+
+function generatePlayRound() {
+  if (S.diff === 'advanced') {
+    generateMultiStepProblem();
+  } else {
+    generateProblem();
+  }
+  S.playChoices = makeChoices(S.answer);
+  S.playAnswered = false;
+}
+
+function checkPlay(chosen, btnEl) {
+  if (S.playAnswered) return;
+  S.playAnswered = true;
+
+  var correct = chosen === S.answer;
+  // Flash button
+  var btns = document.querySelectorAll('.mc-btn');
+  btns.forEach(function(b) {
+    if (parseInt(b.textContent) === S.answer) b.classList.add('correct-flash');
+    if (b === btnEl && !correct) b.classList.add('incorrect-flash');
+  });
+
+  if (correct) {
+    var pts = 10 + S.streak * 2;
+    S.score += pts;
+    S.streak++;
+    if (S.streak > S.best) S.best = S.streak;
+    showFeedback('Correct! +' + pts + ' pts', 'correct');
+  } else {
+    S.streak = 0;
+    var msg = detectMisconception(chosen);
+    showFeedback(msg, 'incorrect');
+  }
+
+  setTimeout(function() {
+    if (S.round >= S.total) {
+      showFeedback('Game Over! Score: ' + S.score, 'correct');
+      setTimeout(function() {
+        initPlay();
+        render();
+      }, 2500);
+      return;
+    }
+    S.round++;
+    generatePlayRound();
+    render();
+  }, 1400);
+}
+
+// ================================================================
+// PRACTICE CHECK
+// ================================================================
+function checkPractice(chosen) {
+  if (S.pAnswered) return;
+
+  if (chosen === S.answer) {
+    S.pAnswered = true;
+    showFeedback('Correct! ' + S.a + ' ' + (S.prob.op === 'multi' ? '+ ' + S.b + ' - ...' : S.prob.op + ' ' + S.b) + ' = ' + S.answer, 'correct');
+    // Flash correct
+    var btns = document.querySelectorAll('.mc-btn');
+    btns.forEach(function(b) {
+      if (parseInt(b.textContent) === S.answer) b.classList.add('correct-flash');
+    });
+    setTimeout(function() { render(); }, 1200);
+  } else {
+    var msg = detectMisconception(chosen);
+    showFeedback(msg, 'incorrect');
+    // Flash incorrect
+    var btns = document.querySelectorAll('.mc-btn');
+    btns.forEach(function(b) {
+      if (parseInt(b.textContent) === chosen) {
+        b.classList.add('incorrect-flash');
+        setTimeout(function() { b.classList.remove('incorrect-flash'); }, 800);
+      }
+    });
+  }
+}
+
+// ================================================================
+// HELPER — descriptions
+// ================================================================
+function getDiffDescription() {
+  if (S.diff === 'emergent') return 'Solve simple word problems with visual support. Numbers stay small and friendly.';
+  if (S.diff === 'proficient') return 'Create and solve word problems using bar models. All problem types included.';
+  return 'Solve multi-step word problems and justify solutions. Two operations in one problem!';
+}
+
+function getTypeExplanation(type) {
+  var map = {
+    'add-to': '<strong>Add-To:</strong> Something starts, then more is added. "There were 5, then 3 more came."',
+    'take-from': '<strong>Take-From:</strong> Something starts, then part is taken away. "There were 8, then 3 left."',
+    'put-together': '<strong>Put-Together:</strong> Two groups are combined. "5 red and 3 blue. How many total?"',
+    'compare': '<strong>Compare:</strong> Two amounts are compared. "Ana has 8, Ben has 5. How many more?"'
+  };
+  return map[type] || '';
+}
+
+// ================================================================
+// MODE SWITCHING
+// ================================================================
+function setMode(mode) {
+  S.mode = mode;
+  S.prob = null;
+  S.exploreStep = 0;
+  S.practiceStep = 0;
+  S.pAnswered = false;
+  S.playAnswered = false;
+  if (mode === 'play') S.round = 0;
+
+  document.querySelectorAll('.vinculum-mode-tab').forEach(function(t) {
+    t.classList.remove('active-explore', 'active-practice', 'active-play');
+  });
+  var tabEl = document.getElementById('tab' + mode.charAt(0).toUpperCase() + mode.slice(1));
+  if (tabEl) tabEl.classList.add('active-' + mode);
+
+  render();
+}
+
+function setDiff(diff) {
+  S.diff = diff;
+  S.prob = null;
+  S.exploreStep = 0;
+  S.pAnswered = false;
+  if (S.mode === 'play') S.round = 0;
+
+  document.querySelectorAll('.vinculum-diff-btn').forEach(function(b) { b.classList.remove('active'); });
+  var id = diff === 'emergent' ? 'diffE' : (diff === 'proficient' ? 'diffP' : 'diffA');
+  document.getElementById(id).classList.add('active');
+
+  render();
+}
+
+// ================================================================
+// RENDER
+// ================================================================
+function render() {
+  var ws = document.getElementById('workspace');
+  var sp = document.getElementById('sidePanel');
+
+  if (S.mode === 'explore') renderExplore(ws, sp);
+  else if (S.mode === 'practice') renderPractice(ws, sp);
+  else renderPlay(ws, sp);
+}
+
+// ================================================================
+// INIT
+// ================================================================
+document.querySelectorAll('.vinculum-mode-tab').forEach(function(tab) {
+  tab.addEventListener('click', function() {
+    setMode(this.dataset.mode);
+  });
+});
+
+document.querySelectorAll('.vinculum-diff-btn').forEach(function(btn) {
+  btn.addEventListener('click', function() {
+    setDiff(this.dataset.diff);
+  });
+});
+
+render();
+</script>
+<script src="../../vinculum-core.js"></script>
+<script src="../../vinculum-data.js"></script>
+<script src="../../vinculum-adaptive-hook.js"></script>
+<script src="../../vinculum-3reads.js"></script>
+<script src="../../vinculum-stories.js"></script>
+<script src="../../vinculum-feedback.js"></script>
+<script src="../../vinculum-guide.js"></script>
+<script src="../../vinculum-identity.js"></script>
+<script src="../../vinculum-indigenous.js"></script>
+<script src="../../vinculum-dashboard.js"></script>
+<script src="../../vinculum-hyperfocus.js"></script>
+<script src="../../vinculum-layout.js"></script>
+</body>
+</html>

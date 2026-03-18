@@ -1,0 +1,1084 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Story Problem Theater | K.OA.2</title>
+  <link rel="stylesheet" href="../../vinculum-core.css">
+  <style>
+    :root {
+      --bg: #0a0e1a;
+      --bg2: #141926;
+      --card: #1a1f2e;
+      --border: #2a2f3e;
+      --text: #e8ecf4;
+      --text2: #a0a8b8;
+      --muted: #6b7280;
+      --cyan: #00d4ff;
+      --pink: #ff3b8b;
+      --green: #00e676;
+      --purple: #a78bfa;
+      --yellow: #fbbf24;
+      --orange: #fb923c;
+      --grad: linear-gradient(135deg, #4ff8d2, #a78bfa, #ff3b8b);
+    }
+
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      padding: 0;
+      background: var(--bg);
+      color: var(--text);
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+      overflow: hidden;
+    }
+
+    .title-group h1 {
+      margin: 0;
+      font-size: 24px;
+      font-weight: 700;
+      background: var(--grad);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+
+    .grade-badge {
+      display: inline-block;
+      padding: 0.4rem 0.8rem;
+      background: var(--card);
+      border: 1px solid var(--cyan);
+      border-radius: 6px;
+      font-size: 12px;
+      font-weight: 600;
+      color: var(--cyan);
+      margin-top: 0.2rem;
+    }
+
+    .vinculum-mode-tab.active {
+      background: var(--cyan);
+      color: var(--bg);
+      border-color: var(--cyan);
+    }
+
+    .vinculum-diff-btn:hover {
+      border-color: var(--purple);
+    }
+
+    .main {
+      display: flex;
+      height: calc(100vh - 70px);
+      gap: 0;
+    }
+
+    .workspace {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      background: linear-gradient(135deg, var(--bg) 0%, var(--bg2) 100%);
+      padding: 2rem;
+      overflow-y: auto;
+    }
+
+    .scene-container {
+      flex: 1;
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 2rem;
+      position: relative;
+      overflow: hidden;
+      min-height: 300px;
+    }
+
+    .scene-svg {
+      max-width: 100%;
+      max-height: 100%;
+      filter: drop-shadow(0 8px 16px rgba(0, 0, 0, 0.3));
+    }
+
+    .narration-bubble {
+      position: absolute;
+      top: 20px;
+      left: 50%;
+      transform: translateX(-50%);
+      background: rgba(255, 255, 255, 0.95);
+      color: #000;
+      padding: 1rem 1.5rem;
+      border-radius: 12px;
+      font-size: 16px;
+      font-weight: 600;
+      max-width: 80%;
+      text-align: center;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+      pointer-events: none;
+      z-index: 10;
+      min-height: 50px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .counter-tray {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 1.5rem;
+      margin-top: 1.5rem;
+      min-height: 120px;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.8rem;
+      align-items: flex-start;
+      align-content: flex-start;
+      overflow-y: auto;
+      max-height: 180px;
+    }
+
+    .counter {
+      width: 60px;
+      height: 60px;
+      cursor: grab;
+      user-select: none;
+      transition: transform 0.2s ease;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .counter:hover {
+      transform: scale(1.1);
+    }
+
+    .counter:active {
+      cursor: grabbing;
+    }
+
+    .counter-duck,
+    .counter-apple,
+    .counter-dog,
+    .counter-kid,
+    .counter-flower,
+    .counter-cookie {
+      width: 100%;
+      height: 100%;
+    }
+
+    @keyframes bounce {
+      0% { transform: scale(1); }
+      50% { transform: scale(1.15); }
+      100% { transform: scale(1); }
+    }
+
+    .counter.placed {
+      animation: bounce 0.4s ease;
+    }
+
+    .equation-display {
+      background: var(--bg2);
+      border: 2px solid var(--purple);
+      border-radius: 12px;
+      padding: 1.5rem;
+      margin-top: 1.5rem;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 32px;
+      font-weight: 700;
+      text-align: center;
+      color: var(--purple);
+      min-height: 70px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .equation-display.correct {
+      color: var(--green);
+      border-color: var(--green);
+      background: rgba(0, 230, 118, 0.1);
+    }
+
+    .equation-display.incorrect {
+      color: var(--pink);
+      border-color: var(--pink);
+      background: rgba(255, 59, 139, 0.1);
+    }
+
+    .side-panel {
+      width: 280px;
+      background: var(--card);
+      border-left: 1px solid var(--border);
+      padding: 1.5rem;
+      overflow-y: auto;
+      font-size: 13px;
+      line-height: 1.6;
+    }
+
+    .panel-section {
+      margin-bottom: 2rem;
+    }
+
+    .panel-section h3 {
+      font-size: 12px;
+      font-weight: 700;
+      text-transform: uppercase;
+      color: var(--cyan);
+      margin: 0 0 0.8rem 0;
+      letter-spacing: 0.5px;
+    }
+
+    .panel-section p,
+    .panel-section ul {
+      margin: 0;
+      color: var(--text2);
+      padding-left: 0;
+    }
+
+    .panel-section ul {
+      list-style: none;
+    }
+
+    .panel-section li {
+      padding-left: 1.4rem;
+      position: relative;
+      margin-bottom: 0.6rem;
+    }
+
+    .panel-section li:before {
+      content: "▸";
+      position: absolute;
+      left: 0;
+      color: var(--purple);
+    }
+
+    .feedback {
+      position: fixed;
+      bottom: 30px;
+      right: 30px;
+      padding: 1rem 1.5rem;
+      border-radius: 8px;
+      font-size: 14px;
+      font-weight: 600;
+      animation: slideInUp 0.4s ease;
+      z-index: 999;
+    }
+
+    .feedback.correct {
+      background: var(--green);
+      color: #000;
+    }
+
+    .feedback.incorrect {
+      background: var(--pink);
+      color: #fff;
+    }
+
+    .feedback.try-again {
+      background: var(--yellow);
+      color: #000;
+    }
+
+    @keyframes slideInUp {
+      from {
+        opacity: 0;
+        transform: translateY(20px);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    .overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(0, 0, 0, 0.8);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 9999;
+      animation: fadeIn 0.3s ease;
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; }
+      to { opacity: 1; }
+    }
+
+    .modal {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 2rem;
+      max-width: 500px;
+      text-align: center;
+      animation: scaleIn 0.3s ease;
+    }
+
+    @keyframes scaleIn {
+      from { transform: scale(0.9); opacity: 0; }
+      to { transform: scale(1); opacity: 1; }
+    }
+
+    .modal h2 {
+      font-size: 28px;
+      margin: 0 0 1rem 0;
+      background: var(--grad);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+
+    .modal p {
+      color: var(--text2);
+      margin: 0.8rem 0;
+      line-height: 1.6;
+    }
+
+    .modal .btn-group {
+      display: flex;
+      gap: 1rem;
+      margin-top: 2rem;
+      justify-content: center;
+    }
+
+    .btn {
+      padding: 0.8rem 1.5rem;
+      border: none;
+      border-radius: 8px;
+      font-size: 14px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.3s ease;
+    }
+
+    .btn-primary {
+      background: var(--cyan);
+      color: var(--bg);
+    }
+
+    .btn-primary:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 8px 16px rgba(0, 212, 255, 0.3);
+    }
+
+    .btn-secondary {
+      background: var(--card);
+      border: 1px solid var(--border);
+      color: var(--text);
+    }
+
+    .btn-secondary:hover {
+      background: var(--border);
+    }
+
+    .stats {
+      display: flex;
+      justify-content: space-between;
+      margin-top: 1rem;
+      padding-top: 1rem;
+      border-top: 1px solid var(--border);
+    }
+
+    .stat {
+      text-align: center;
+    }
+
+    .stat-value {
+      font-size: 24px;
+      font-weight: 700;
+      color: var(--cyan);
+      font-family: 'JetBrains Mono', monospace;
+    }
+
+    .stat-label {
+      font-size: 11px;
+      color: var(--text2);
+      margin-top: 0.3rem;
+      text-transform: uppercase;
+    }
+
+    .hidden { display: none !important; }
+
+    @media (max-width: 1024px) {
+      .side-panel { width: 250px; }
+      .workspace { padding: 1.5rem; }
+    }
+
+    @media (max-width: 768px) {
+      .main { flex-direction: column; }
+      .side-panel { width: 100%; border-left: none; border-top: 1px solid var(--border); }
+      }
+  </style>
+</head>
+<body>
+  <header class="vinculum-header">
+    <div class="vinculum-header-left">
+      <button class="vinculum-back-btn" onclick="window.location.href='../../VINCULUM-Hub.html'">◀</button>
+      <div class="title-group">
+        <h1>Story Problem Theater</h1>
+        <div class="grade-badge">K.OA.2</div>
+      </div>
+      <button class="vinculum-back-btn" id="readAloudBtn" onclick="toggleReadAloud()" aria-label="Read Aloud" title="Read instructions aloud" style="padding:6px 12px;font-size:13px;white-space:nowrap;">🔊 Read to Me</button>
+    </div>
+    <div class="vinculum-header-right">
+      <div class="vinculum-mode-tabs">
+        <button class="vinculum-mode-tab active-explore" data-mode="explore">
+          <span>👁️</span> Explore
+        </button>
+        <button class="vinculum-mode-tab" data-mode="practice">
+          <span>✓</span> Practice
+        </button>
+        <button class="vinculum-mode-tab" data-mode="play">
+          <span>⚡</span> Play
+        </button>
+      </div>
+      <div class="vinculum-diff-selector">
+        <button class="vinculum-diff-btn active" data-diff="emergent">Emg</button>
+        <button class="vinculum-diff-btn" data-diff="proficient">Prof</button>
+        <button class="vinculum-diff-btn" data-diff="advanced">Adv</button>
+      </div>
+    </div>
+  </header>
+
+  <div class="main">
+    <div class="workspace">
+      <div class="scene-container" id="sceneContainer">
+        <div class="narration-bubble" id="narration"></div>
+        <svg id="sceneSvg" class="scene-svg" width="500" height="300" viewBox="0 0 500 300"></svg>
+      </div>
+
+      <div class="counter-tray" id="counterTray">
+        <!-- Counters populated by JS -->
+      </div>
+
+      <div class="equation-display" id="equationDisplay">
+        <span id="equationText">-</span>
+      </div>
+    </div>
+
+    <aside class="side-panel">
+      <div class="panel-section">
+        <h3>How to Use</h3>
+        <ul id="instructions">
+          <li id="inst-explore">Watch the story unfold, then drag counters to match</li>
+          <li id="inst-practice" class="hidden">Drag counters to solve each story problem</li>
+          <li id="inst-play" class="hidden">Pick the correct answer before time runs out!</li>
+        </ul>
+      </div>
+
+      <div class="panel-section">
+        <h3>Key Idea</h3>
+        <p>Addition and subtraction are all around us. When we see a story, we can use objects and counters to understand and solve the math.</p>
+      </div>
+
+      <div class="panel-section">
+        <h3>Standards</h3>
+        <div class="vinculum-std-tag">K.OA.1</div>
+        <div class="vinculum-std-tag">K.OA.2</div>
+        <div class="vinculum-std-tag">K.OA.3</div>
+      </div>
+
+      <div class="panel-section" id="statsSection">
+        <h3>Progress</h3>
+        <div class="stats">
+          <div class="stat">
+            <div class="stat-value" id="scoreValue">0</div>
+            <div class="stat-label">Score</div>
+          </div>
+          <div class="stat">
+            <div class="stat-value" id="streakValue">0</div>
+            <div class="stat-label">Streak</div>
+          </div>
+          <div class="stat">
+            <div class="stat-value" id="timerValue">—</div>
+            <div class="stat-label">Time</div>
+          </div>
+        </div>
+      </div>
+    </aside>
+  </div>
+
+    <script src="../../vinculum-input.js"></script>
+<script src="../../vinculum-core.js"></script>
+  <script src="../../vinculum-data.js"></script>
+    <script src="../../vinculum-adaptive-hook.js"></script>
+  <script src="../../vinculum-3reads.js"></script>
+<script src="../../vinculum-stories.js"></script>
+  <script src="../../vinculum-feedback.js"></script>
+  <script src="../../vinculum-guide.js"></script>
+  <script src="../../vinculum-identity.js"></script>
+  <script src="../../vinculum-indigenous.js"></script>
+  <script src="../../vinculum-dashboard.js"></script>
+  <script>
+    // SCENE LIBRARY
+    const SCENES = [
+      {
+        name: 'Pond',
+        counter: 'duck',
+        svg: `
+          <rect width="500" height="300" fill="#e3f2fd"/>
+          <ellipse cx="250" cy="200" rx="200" ry="80" fill="#64b5f6"/>
+          <g id="ducks"></g>
+        `,
+        generateDucks: (num1, num2) => {
+          let svg = '';
+          for (let i = 0; i < num1; i++) {
+            svg += makeDuckSvg(80 + i*60, 160, i);
+          }
+          return svg;
+        },
+        makePart2: (num2) => {
+          let svg = '';
+          for (let i = 0; i < num2; i++) {
+            svg += makeDuckSvg(380 + i*30, 220, 10 + i, true);
+          }
+          return svg;
+        }
+      },
+      {
+        name: 'Tree',
+        counter: 'apple',
+        svg: `
+          <rect width="500" height="300" fill="#e8f5e9"/>
+          <rect x="200" y="180" width="100" height="120" fill="#8d6e63"/>
+          <circle cx="250" cy="130" r="80" fill="#4caf50"/>
+          <g id="apples"></g>
+        `,
+        generateApples: (num1, num2) => {
+          let svg = '';
+          for (let i = 0; i < num1; i++) {
+            svg += makeAppleSvg(250 + Math.cos(i*Math.PI*2/num1)*60, 130 + Math.sin(i*Math.PI*2/num1)*60, i);
+          }
+          return svg;
+        },
+        makePart2: (num2) => {
+          let svg = '';
+          for (let i = 0; i < num2; i++) {
+            svg += makeAppleSvg(200 + Math.random()*100, 80 + Math.random()*60, 10 + i, true);
+          }
+          return svg;
+        }
+      },
+      {
+        name: 'Park',
+        counter: 'dog',
+        svg: `
+          <rect width="500" height="300" fill="#fff9c4"/>
+          <ellipse cx="250" cy="280" rx="250" ry="40" fill="#81c784"/>
+          <g id="dogs"></g>
+        `,
+        generateDogs: (num1, num2) => {
+          let svg = '';
+          for (let i = 0; i < num1; i++) {
+            svg += makeDogSvg(100 + i*80, 200, i);
+          }
+          return svg;
+        },
+        makePart2: (num2) => {
+          let svg = '';
+          for (let i = 0; i < num2; i++) {
+            svg += makeDogSvg(380 + i*50, 220, 10 + i, true);
+          }
+          return svg;
+        }
+      },
+      {
+        name: 'Bus',
+        counter: 'kid',
+        svg: `
+          <rect width="500" height="300" fill="#b3e5fc"/>
+          <rect x="80" y="140" width="340" height="100" fill="#f57c00" rx="10"/>
+          <circle cx="120" cy="250" r="20" fill="#424242"/>
+          <circle cx="420" cy="250" r="20" fill="#424242"/>
+          <g id="kids"></g>
+        `,
+        generateKids: (num1, num2) => {
+          let svg = '';
+          for (let i = 0; i < num1; i++) {
+            svg += makeKidSvg(130 + i*40, 170, i);
+          }
+          return svg;
+        },
+        makePart2: (num2) => {
+          let svg = '';
+          for (let i = 0; i < num2; i++) {
+            svg += makeKidSvg(360 + i*35, 180, 10 + i, true);
+          }
+          return svg;
+        }
+      },
+      {
+        name: 'Garden',
+        counter: 'flower',
+        svg: `
+          <rect width="500" height="300" fill="#e1bee7"/>
+          <rect x="0" y="200" width="500" height="100" fill="#8d6e63"/>
+          <g id="flowers"></g>
+        `,
+        generateFlowers: (num1, num2) => {
+          let svg = '';
+          for (let i = 0; i < num1; i++) {
+            svg += makeFlowerSvg(100 + i*80, 200, i);
+          }
+          return svg;
+        },
+        makePart2: (num2) => {
+          let svg = '';
+          for (let i = 0; i < num2; i++) {
+            svg += makeFlowerSvg(360 + i*50, 190, 10 + i, true);
+          }
+          return svg;
+        }
+      },
+      {
+        name: 'Plate',
+        counter: 'cookie',
+        svg: `
+          <rect width="500" height="300" fill="#fce4ec"/>
+          <circle cx="250" cy="200" r="120" fill="#fff3e0" stroke="#ffb74d" stroke-width="3"/>
+          <g id="cookies"></g>
+        `,
+        generateCookies: (num1, num2) => {
+          let svg = '';
+          for (let i = 0; i < num1; i++) {
+            svg += makeCookieSvg(250 + Math.cos(i*Math.PI*2/num1)*80, 200 + Math.sin(i*Math.PI*2/num1)*80, i);
+          }
+          return svg;
+        },
+        makePart2: (num2) => {
+          let svg = '';
+          for (let i = 0; i < num2; i++) {
+            svg += makeCookieSvg(150 + Math.random()*100, 150 + Math.random()*60, 10 + i, true);
+          }
+          return svg;
+        }
+      }
+    ];
+
+    // SVG MAKERS
+    function makeDuckSvg(x, y, id, incoming = false) {
+      const anim = incoming ? `<animateTransform attributeName="transform" type="translate" from="${x+60} ${y}" to="${x} ${y}" dur="1.5s" begin="1.5s" fill="freeze"/>` : '';
+      return `<g id="duck${id}" transform="translate(${x} ${y})" ${incoming ? `opacity="0"` : ''}>
+        ${anim}
+        <circle cx="0" cy="0" r="12" fill="#ffd54f"/>
+        <circle cx="8" cy="-5" r="8" fill="#ffd54f"/>
+        <polygon points="12,-5 18,-3 15,-1" fill="#ff9800"/>
+        <circle cx="10" cy="-4" r="1.5" fill="#000"/>
+      </g>`;
+    }
+
+    function makeAppleSvg(x, y, id, falling = false) {
+      const anim = falling ? `<animateTransform attributeName="transform" type="translate" from="${x} ${y-80}" to="${x} ${y}" dur="1s" begin="1.5s" fill="freeze"/>` : '';
+      return `<g id="apple${id}" transform="translate(${x} ${y})" ${falling ? `opacity="0"` : ''}>
+        ${anim}
+        <circle cx="0" cy="0" r="10" fill="#d32f2f"/>
+        <line x1="0" y1="-10" x2="0" y2="-15" stroke="#4caf50" stroke-width="2"/>
+        <ellipse cx="3" cy="-12" rx="2" ry="3" fill="#4caf50"/>
+      </g>`;
+    }
+
+    function makeDogSvg(x, y, id, entering = false) {
+      const anim = entering ? `<animateTransform attributeName="transform" type="translate" from="${x+50} ${y}" to="${x} ${y}" dur="1.5s" begin="1.5s" fill="freeze"/>` : '';
+      return `<g id="dog${id}" transform="translate(${x} ${y})" ${entering ? `opacity="0"` : ''}>
+        ${anim}
+        <ellipse cx="0" cy="0" rx="14" ry="10" fill="#8d6e63"/>
+        <circle cx="-6" cy="-8" r="7" fill="#8d6e63"/>
+        <circle cx="-8" cy="-7" r="1.5" fill="#000"/>
+        <circle cx="10" cy="-2" r="2" fill="#d7ccc8"/>
+        <line x1="8" y1="8" x2="6" y2="15" stroke="#8d6e63" stroke-width="2"/>
+      </g>`;
+    }
+
+    function makeKidSvg(x, y, id, entering = false) {
+      const anim = entering ? `<animateTransform attributeName="transform" type="translate" from="${x} ${y-40}" to="${x} ${y}" dur="1.5s" begin="1.5s" fill="freeze"/>` : '';
+      return `<g id="kid${id}" transform="translate(${x} ${y})" ${entering ? `opacity="0"` : ''}>
+        ${anim}
+        <circle cx="0" cy="-8" r="5" fill="#ffdbac"/>
+        <rect x="-5" y="-2" width="10" height="8" fill="#e57373" rx="2"/>
+        <circle cx="-3" cy="8" r="2" fill="#fff3e0"/>
+        <circle cx="3" cy="8" r="2" fill="#fff3e0"/>
+      </g>`;
+    }
+
+    function makeFlowerSvg(x, y, id, growing = false) {
+      const anim = growing ? `<animateTransform attributeName="transform" type="scale" from="0.3" to="1" dur="1.5s" begin="1.5s" fill="freeze"/>` : '';
+      return `<g id="flower${id}" transform="translate(${x} ${y}) ${anim ? anim : ''}" ${growing ? `opacity="0"` : ''}>
+        <line x1="0" y1="0" x2="0" y2="30" stroke="#558b2f" stroke-width="2"/>
+        <circle cx="0" cy="-10" r="6" fill="#e91e63"/>
+        <circle cx="-6" cy="-6" r="5" fill="#f06292"/>
+        <circle cx="6" cy="-6" r="5" fill="#f06292"/>
+        <circle cx="-4" cy="-12" r="5" fill="#f06292"/>
+        <circle cx="4" cy="-12" r="5" fill="#f06292"/>
+        <circle cx="0" cy="-8" r="3" fill="#ffd54f"/>
+      </g>`;
+    }
+
+    function makeCookieSvg(x, y, id, appearing = false) {
+      const anim = appearing ? `<animateTransform attributeName="transform" type="scale" from="0" to="1" dur="1s" begin="1.5s" fill="freeze"/>` : '';
+      return `<g id="cookie${id}" transform="translate(${x} ${y}) ${anim ? anim : ''}" ${appearing ? `opacity="0"` : ''}>
+        <circle cx="0" cy="0" r="9" fill="#d2691e"/>
+        <circle cx="-3" cy="-2" r="1.5" fill="#6d4c41"/>
+        <circle cx="2" cy="0" r="1.5" fill="#6d4c41"/>
+        <circle cx="0" cy="3" r="1.5" fill="#6d4c41"/>
+      </g>`;
+    }
+
+    // MISCONCEPTIONS ARCHITECTURE
+    const MISCONCEPTIONS_STORY = {
+      operationConfusion: { id: 'operationConfusion', desc: 'Adds when should subtract, or vice versa' },
+      grabbedOperand: { id: 'grabbedOperand', desc: 'Picked one of the numbers from the story instead of computing' },
+      offByOne: { id: 'offByOne', desc: 'Answer is off by exactly one' },
+      countAllError: { id: 'countAllError', desc: 'Counts all mentioned numbers rather than operating on them' },
+      misreadAction: { id: 'misreadAction', desc: 'Misidentifies the action in the story (joining vs separating)' }
+    };
+
+    // STATE
+    let S = {
+      mode: 'explore',
+      diff: 'emergent',
+      score: 0,
+      streak: 0,
+      currentScene: null,
+      currentProblem: null,
+      countersPlaced: [],
+      playTimer: null,
+      playTimeLeft: 5,
+      problemIndex: 0,
+      totalProblems: 10
+    };
+
+    /* ── Read-Aloud + Story Banner ── */
+    function toggleReadAloud() {
+      if (window.VinculumStories && VinculumStories.isReading()) {
+        VinculumStories.stopReading();
+        document.getElementById('readAloudBtn').textContent = '🔊 Read to Me';
+      } else {
+        const storyEl = document.getElementById('storyBanner') || document.getElementById('narration');
+        const fb = document.querySelector('.feedback');
+        const text = storyEl ? storyEl.textContent : (fb ? fb.textContent : 'Welcome to this math tool!');
+        if (window.VinculumStories) {
+          VinculumStories.readAloud(text, { rate: 0.85, onComplete: () => {
+            document.getElementById('readAloudBtn').textContent = '🔊 Read to Me';
+          }});
+          document.getElementById('readAloudBtn').textContent = '⏹ Stop';
+        }
+      }
+    }
+
+    // PROBLEM GENERATOR
+    function generateProblems(difficulty) {
+      const problems = [];
+      const ranges = {
+        emergent: { max: 5, types: ['add'] },
+        proficient: { max: 5, types: ['subtract'] },
+        advanced: { max: 10, types: ['add', 'subtract'] }
+      };
+      const range = ranges[difficulty];
+
+      for (let i = 0; i < 10; i++) {
+        const type = range.types[Math.floor(Math.random() * range.types.length)];
+        let num1 = Math.floor(Math.random() * range.max) + 1;
+        let num2 = Math.floor(Math.random() * range.max) + 1;
+
+        if (type === 'subtract' && num2 > num1) [num1, num2] = [num2, num1];
+
+        problems.push({
+          num1,
+          num2,
+          operation: type,
+          answer: type === 'add' ? num1 + num2 : num1 - num2,
+          scene: SCENES[Math.floor(Math.random() * SCENES.length)]
+        });
+      }
+      return problems;
+    }
+
+    // COUNTER CREATOR
+    function makeCounterSvg(type) {
+      const makers = {
+        duck: (id) => makeDuckSvg(0, 0, `counter${id}`),
+        apple: (id) => makeAppleSvg(0, 0, `counter${id}`),
+        dog: (id) => makeDogSvg(0, 0, `counter${id}`),
+        kid: (id) => makeKidSvg(0, 0, `counter${id}`),
+        flower: (id) => makeFlowerSvg(0, 0, `counter${id}`),
+        cookie: (id) => makeCookieSvg(0, 0, `counter${id}`)
+      };
+      return makers[type] || makers['duck'];
+    }
+
+    function populateCounterTray() {
+      const tray = document.getElementById('counterTray');
+      tray.innerHTML = '';
+      const problem = S.currentProblem;
+      const scene = problem.scene;
+      const total = problem.num1 + problem.num2;
+      const maker = makeCounterSvg(scene.counter);
+
+      for (let i = 0; i < total; i++) {
+        const div = document.createElement('div');
+        div.className = 'counter';
+        div.innerHTML = `<svg class="counter-${scene.counter}" width="60" height="60" viewBox="-15 -15 30 30">${maker(i)}</svg>`;
+        div.dataset.counterType = scene.counter;
+        div.dataset.index = i;
+        div.onclick = (e) => handleCounterClick(e, div);
+        tray.appendChild(div);
+      }
+    }
+
+    function handleCounterClick(e, el) {
+      if (S.mode === 'explore') {
+        if (!S.countersPlaced.includes(parseInt(el.dataset.index))) {
+          S.countersPlaced.push(parseInt(el.dataset.index));
+          el.classList.add('placed');
+          updateEquationDisplay();
+        }
+      } else if (S.mode === 'practice') {
+        if (!S.countersPlaced.includes(parseInt(el.dataset.index))) {
+          S.countersPlaced.push(parseInt(el.dataset.index));
+          el.classList.add('placed');
+          updateEquationDisplay();
+          if (S.countersPlaced.length === S.currentProblem.answer) {
+            checkAnswer();
+          }
+        }
+      }
+    }
+
+    function updateEquationDisplay() {
+      const p = S.currentProblem;
+      const placed = S.countersPlaced.length;
+      const eq = document.getElementById('equationDisplay');
+      const text = document.getElementById('equationText');
+      const op = p.operation === 'add' ? '+' : '−';
+      text.textContent = `${p.num1} ${op} ${p.num2} = ${placed === p.answer ? placed : ''}`;
+
+      if (S.mode === 'practice' && placed === p.answer) {
+        eq.classList.add('correct');
+      } else if (S.mode === 'practice' && placed > p.answer) {
+        eq.classList.add('incorrect');
+      } else {
+        eq.classList.remove('correct', 'incorrect');
+      }
+    }
+
+    function checkAnswer() {
+      const p = S.currentProblem;
+      const studentAnswer = S.countersPlaced.length;
+
+      if (studentAnswer === p.answer) {
+        showFB('✓ Correct!', 'correct');
+        S.score++;
+        S.streak++;
+        setTimeout(nextProblem, 1500);
+      } else {
+        // Diagnostic feedback for wrong answer
+        let feedbackText = 'Try again!';
+
+        // Check if student picked one of the operands
+        if (studentAnswer === p.num1 || studentAnswer === p.num2) {
+          const op = p.operation === 'add' ? 'add' : 'subtract';
+          const verb = p.operation === 'add' ? 'add' : 'subtract';
+          feedbackText = `You picked one of the numbers from the story. But we need to ${verb} them! What do you get when you ${op} ${p.num1} and ${p.num2}?`;
+        }
+        // Check if student answer is off by one
+        else if (Math.abs(studentAnswer - p.answer) === 1) {
+          feedbackText = "So close! You're off by one. Try counting again carefully.";
+        }
+        // Check if student confused the operation
+        else if (p.operation === 'add' && studentAnswer === (p.num1 - p.num2)) {
+          feedbackText = "Read the story again — are we putting groups TOGETHER (adding) or TAKING AWAY (subtracting)?";
+        }
+        else if (p.operation === 'subtract' && studentAnswer === (p.num1 + p.num2)) {
+          feedbackText = "Read the story again — are we putting groups TOGETHER (adding) or TAKING AWAY (subtracting)?";
+        }
+        // Fallback for other errors
+        else {
+          feedbackText = "Let's re-read the story. Find the two numbers and the action word. Are we joining or separating?";
+        }
+
+        showFB(feedbackText, 'try-again');
+        S.streak = 0;
+      }
+    }
+
+
+    function nextProblem() {
+      S.problemIndex++;
+      if (S.problemIndex >= S.totalProblems) {
+        endSession();
+      } else {
+        loadProblem();
+      }
+    }
+
+    function endSession() {
+      const finalScore = S.score;
+      showModal(`
+        <h2>Great Work! 🎉</h2>
+        <p>You solved <strong>${finalScore}/10</strong> problems correctly.</p>
+        <p style="font-size: 18px; color: var(--cyan); margin-top: 1.5rem;">Score: ${finalScore}</p>
+        <div class="btn-group">
+          <button class="btn btn-primary" onclick="location.reload()">Play Again</button>
+          <button class="btn btn-secondary" onclick="window.location.href='../../VINCULUM-Hub.html'">Back to Hub</button>
+        </div>
+      `);
+    }
+
+    function showModal(content) {
+      const overlay = document.createElement('div');
+      overlay.className = 'overlay';
+      overlay.innerHTML = `<div class="modal">${content}</div>`;
+      document.body.appendChild(overlay);
+    }
+
+    function loadProblem() {
+      if (S.problemIndex >= S.totalProblems) {
+        endSession();
+        return;
+      }
+
+      S.currentProblem = S.currentProblems[S.problemIndex];
+      S.countersPlaced = [];
+      populateCounterTray();
+      playStory();
+    }
+
+    function playStory() {
+      const p = S.currentProblem;
+      const scene = p.scene;
+      const narration = document.getElementById('narration');
+      const sceneSvg = document.getElementById('sceneSvg');
+
+      // Proper, teacher-quality story sentences using counter type (not scene name)
+      const counterWord1 = pluralize(scene.counter, p.num1);
+      const counterWord2 = pluralize(scene.counter, p.num2);
+      const storyTemplates = {
+        add: {
+          Pond: `There are ${p.num1} ${counterWord1} on the pond. ${p.num2} more ${counterWord2} swim over. How many ducks are there now?`,
+          Tree: `There are ${p.num1} ${counterWord1} on the tree. ${p.num2} more ${counterWord2} grow. How many apples are there in all?`,
+          Park: `${p.num1} ${counterWord1} are playing in the park. ${p.num2} more ${counterWord2} run over to join them. How many dogs are there altogether?`,
+          Bus: `There are ${p.num1} ${counterWord1} on the bus. ${p.num2} more ${counterWord2} get on at the next stop. How many kids are on the bus now?`,
+          Garden: `${p.num1} ${counterWord1} are blooming in the garden. ${p.num2} more ${counterWord2} open up. How many flowers are there now?`,
+          Plate: `There are ${p.num1} ${counterWord1} on the plate. Someone puts ${p.num2} more ${counterWord2} on the plate. How many cookies are there in all?`
+        },
+        subtract: {
+          Pond: `There are ${p.num1} ${counterWord1} on the pond. ${p.num2} ${counterWord2} fly away. How many ducks are left?`,
+          Tree: `There are ${p.num1} ${counterWord1} on the tree. ${p.num2} ${counterWord2} fall off. How many apples are left on the tree?`,
+          Park: `${p.num1} ${counterWord1} are playing in the park. ${p.num2} ${counterWord2} go home. How many dogs are still in the park?`,
+          Bus: `There are ${p.num1} ${counterWord1} on the bus. ${p.num2} ${counterWord2} get off at the next stop. How many kids are still on the bus?`,
+          Garden: `There are ${p.num1} ${counterWord1} in the garden. ${p.num2} ${counterWord2} get picked. How many flowers are left?`,
+          Plate: `There are ${p.num1} ${counterWord1} on the plate. Someone eats ${p.num2} ${counterWord2}. How many cookies are left?`
+        }
+      };
+
+      const stories = {
+        add: storyTemplates.add[scene.name] || `There are ${p.num1} ${counterWord1}. ${p.num2} more ${counterWord2} come. How many are there now?`,
+        subtract: storyTemplates.subtract[scene.name] || `There are ${p.num1} ${counterWord1}. ${p.num2} ${counterWord2} go away. How many are left?`
+      };
+
+      narration.textContent = stories[p.operation];
+      // Build function name from counter type, not scene name
+      // e.g. counter='duck' → 'generateDucks', counter='kid' → 'generateKids'
+      var fnName = 'generate' + scene.counter.charAt(0).toUpperCase() + scene.counter.slice(1) + 's';
+      sceneSvg.innerHTML = scene.svg + (scene[fnName] ? scene[fnName](p.num1, p.num2) : '') + scene.makePart2(p.num2);
+
+      const equation = document.getElementById('equationDisplay');
+      const text = document.getElementById('equationText');
+      const op = p.operation === 'add' ? '+' : '−';
+      text.textContent = `${p.num1} ${op} ${p.num2} = ?`;
+      equation.classList.remove('correct', 'incorrect');
+
+      if (S.mode === 'explore') {
+        showFB('Watch and then drag counters!', 'try-again');
+      }
+    }
+
+    function pluralize(word, count) {
+      const singulars = {
+        duck: 'duck', apple: 'apple', dog: 'dog',
+        kid: 'kid', flower: 'flower', cookie: 'cookie'
+      };
+      const plurals = {
+        duck: 'ducks', apple: 'apples', dog: 'dogs',
+        kid: 'kids', flower: 'flowers', cookie: 'cookies'
+      };
+      if (count === 1) return singulars[word] || word;
+      return plurals[word] || word + 's';
+    }
+
+    // EVENT LISTENERS
+    document.querySelectorAll('.vinculum-mode-tab').forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        document.querySelectorAll('.vinculum-mode-tab').forEach(b => {
+          b.classList.remove('active-explore', 'active-practice', 'active-play');
+        });
+        const mode = e.target.closest('.vinculum-mode-tab').dataset.mode;
+        e.target.closest('.vinculum-mode-tab').classList.add(`active-${mode}`);
+        S.mode = mode;
+
+        // Update instructions
+        document.querySelectorAll('#instructions li').forEach(li => li.classList.add('hidden'));
+        document.getElementById(`inst-${S.mode}`).classList.remove('hidden');
+
+        S.problemIndex = 0;
+        S.score = 0;
+        S.streak = 0;
+        updateStats();
+        S.currentProblems = generateProblems(S.diff);
+        loadProblem();
+      });
+    });
+
+    document.querySelectorAll('.vinculum-diff-btn').forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        document.querySelectorAll('.vinculum-diff-btn').forEach(b => b.classList.remove('active'));
+        e.target.classList.add('active');
+        S.diff = e.target.dataset.diff;
+
+        S.problemIndex = 0;
+        S.score = 0;
+        S.streak = 0;
+        updateStats();
+        S.currentProblems = generateProblems(S.diff);
+        loadProblem();
+      });
+    });
+
+    function updateStats() {
+      document.getElementById('scoreValue').textContent = S.score;
+      document.getElementById('streakValue').textContent = S.streak;
+    }
+
+    // INIT
+    function init() {
+      showOnboarding();
+    }
+
+    function showOnboarding() {
+      showModal(`
+        <h2>Story Problem Theater</h2>
+        <p style="margin: 1.5rem 0;">Watch stories unfold. Drag counters to solve math problems. Build equations and discover patterns!</p>
+        <p style="font-size: 13px; color: var(--text2); margin: 1rem 0;">
+          <strong>Explore:</strong> Watch & learn | <strong>Practice:</strong> Solve 10 problems | <strong>Play:</strong> Race against time
+        </p>
+        <div class="btn-group">
+          <button class="btn btn-primary" onclick="startApp()">Get Started</button>
+        </div>
+      `);
+    }
+
+    function startApp() {
+      document.querySelectorAll('.overlay').forEach(o => o.remove());
+      S.currentProblems = generateProblems(S.diff);
+      loadProblem();
+    }
+
+    init();
+  </script>
+<div id="feedback" class="feedback"></div>
+</body>
+</html>

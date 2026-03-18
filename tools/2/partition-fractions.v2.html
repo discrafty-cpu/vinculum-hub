@@ -1,0 +1,998 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>VINCULUM — Partition Fractions</title>
+<link rel="stylesheet" href="../../vinculum-core.css">
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;600&display=swap');
+/* Theme system loaded from vinculum-core.css */
+.vinculum-rtm-btn .rtm-icon{font-size:14px;}
+
+/* === FOCUS VISIBLE (Keyboard Navigation) === */
+*:focus-visible {
+  outline:2px solid var(--cyan);outline-offset:2px;border-radius:4px;
+}
+.sr-only {
+  position:absolute;width:1px;height:1px;padding:0;margin:-1px;
+  overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0;
+}
+*{margin:0;padding:0;box-sizing:border-box;}
+body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);height:100vh;display:flex;flex-direction:column;overflow:hidden;user-select:none;}
+
+.main{flex:1;display:flex;overflow:hidden;}
+.workspace{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:24px;gap:16px;overflow-y:auto;}
+.side-panel{width:280px;background:var(--bg2);border-left:1px solid var(--border);padding:20px;overflow-y:auto;flex-shrink:0;}
+.panel-section{margin-bottom:20px;}
+.panel-title{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:1.5px;color:var(--muted);margin-bottom:8px;}
+.panel-text{font-size:13px;color:var(--text2);line-height:1.6;}
+
+/* == Shape SVG == */
+.shape-display{display:flex;flex-direction:column;align-items:center;gap:8px;}
+.shape-display svg{display:block;}
+.shape-row{display:flex;gap:24px;align-items:flex-start;justify-content:center;flex-wrap:wrap;}
+.shape-card{display:flex;flex-direction:column;align-items:center;gap:4px;background:var(--card);border:1px solid var(--border);border-radius:14px;padding:16px 12px;}
+
+.shape-section{cursor:pointer;transition:fill 0.2s;}
+.shape-section:hover{opacity:0.85;}
+.shaded{fill:var(--cyan,#00d4ff);opacity:0.7;}
+.partition-line{stroke:var(--text,#e0e0e0);stroke-width:2;stroke-dasharray:6,3;}
+
+.fraction-label{font-size:18px;font-weight:800;font-family:'JetBrains Mono',monospace;text-align:center;color:var(--purple,#b388ff);margin:8px 0;}
+.fraction-notation{font-size:28px;font-weight:900;font-family:'JetBrains Mono',monospace;text-align:center;margin:4px 0;}
+
+/* == Instruction & Controls == */
+.instruction-box{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:14px 20px;text-align:center;font-size:15px;color:var(--text2);font-weight:500;max-width:600px;transition:all 0.3s;}
+.instruction-box.highlight-cyan{border-color:var(--cyan);color:var(--cyan);}
+.instruction-box.highlight-pink{border-color:var(--pink);color:var(--pink);}
+.instruction-box.highlight-green{border-color:var(--green);color:var(--green);}
+
+.controls{display:flex;gap:8px;flex-wrap:wrap;justify-content:center;}
+.ctrl-btn{padding:10px 20px;border-radius:10px;border:1px solid var(--border);background:var(--card);color:var(--text2);font-size:13px;font-weight:600;font-family:inherit;cursor:pointer;transition:all 0.2s;display:flex;align-items:center;gap:6px;}
+.ctrl-btn:hover{background:var(--card2);color:var(--text);}
+.ctrl-btn.primary{background:var(--grad);color:var(--bg);border-color:transparent;}
+.ctrl-btn.active{border-color:var(--cyan);background:rgba(0,212,255,0.12);color:var(--cyan);}
+
+/* == Shape Selector == */
+.shape-selector{display:flex;gap:10px;justify-content:center;margin:8px 0;}
+.shape-btn{width:64px;height:64px;border-radius:14px;border:2px solid var(--border);background:var(--card);cursor:pointer;transition:all 0.15s;display:flex;align-items:center;justify-content:center;}
+.shape-btn:hover{border-color:var(--purple);transform:scale(1.08);}
+.shape-btn.active{border-color:var(--purple);background:rgba(179,136,255,0.12);}
+.shape-btn svg{width:36px;height:36px;}
+
+/* == Partition Selector == */
+.partition-selector{display:flex;gap:10px;justify-content:center;margin:8px 0;}
+.part-btn{padding:10px 18px;border-radius:12px;border:2px solid var(--border);background:var(--card);color:var(--text2);font-size:14px;font-weight:700;font-family:'JetBrains Mono',monospace;cursor:pointer;transition:all 0.15s;}
+.part-btn:hover{border-color:var(--cyan);transform:scale(1.06);}
+.part-btn.active{border-color:var(--cyan);background:rgba(0,212,255,0.12);color:var(--cyan);}
+
+/* == MC Grid == */
+.mc-grid{display:flex;gap:10px;flex-wrap:wrap;justify-content:center;max-width:500px;}
+.mc-btn{min-width:140px;padding:12px 16px;border-radius:12px;border:2px solid var(--border);background:var(--card);color:var(--text);font-size:14px;font-weight:600;font-family:'JetBrains Mono',monospace;cursor:pointer;transition:all 0.15s;display:flex;align-items:center;justify-content:center;text-align:center;}
+.mc-btn:hover{border-color:var(--cyan);transform:scale(1.04);}
+.mc-btn.correct-flash{border-color:var(--green);background:rgba(0,230,118,0.2);color:var(--green);animation:correctFlash 0.4s ease-out;}
+.mc-btn.incorrect-flash{border-color:var(--pink);background:rgba(255,59,139,0.2);color:var(--pink);animation:shake 0.3s ease-in-out;}
+
+@keyframes correctFlash{0%{transform:scale(1.1);}100%{transform:scale(1);}}
+@keyframes shake{0%,100%{transform:translateX(0);}25%{transform:translateX(-4px);}75%{transform:translateX(4px);}}
+
+/* == Score & Streak == */
+.score-display{text-align:center;padding:16px;background:var(--card);border-radius:12px;margin-bottom:12px;}
+.score-value{font-size:36px;font-weight:900;font-family:'JetBrains Mono',monospace;background:var(--grad);-webkit-background-clip:text;-webkit-text-fill-color:transparent;}
+.score-label{font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:1px;}
+.streak-bar{height:6px;background:var(--card);border-radius:3px;overflow:hidden;margin-top:8px;}
+.streak-fill{height:100%;background:var(--grad);border-radius:3px;transition:width 0.3s;}
+
+/* == Feedback == */
+.feedback{position:fixed;top:50%;left:50%;transform:translate(-50%,-50%) scale(0);padding:24px 48px;border-radius:20px;font-size:28px;font-weight:800;z-index:200;pointer-events:none;transition:transform 0.3s cubic-bezier(0.175,0.885,0.32,1.275),opacity 0.3s;opacity:0;max-width:90vw;text-align:center;}
+.feedback.show{transform:translate(-50%,-50%) scale(1);opacity:1;}
+.feedback.correct{background:rgba(0,230,118,0.15);color:var(--green);border:2px solid var(--green);}
+.feedback.incorrect{background:rgba(255,59,139,0.15);color:var(--pink);border:2px solid var(--pink);}
+.feedback.try-again{background:rgba(255,193,7,0.15);color:var(--yellow);border:2px solid var(--yellow);}
+
+/* == Equal-parts highlight == */
+.equal-label{font-size:12px;font-weight:600;color:var(--green);text-align:center;margin-top:4px;}
+.unequal-label{font-size:12px;font-weight:600;color:var(--pink);text-align:center;margin-top:4px;}
+
+/* == Progress dots (practice) == */
+.progress-dots{display:flex;gap:6px;justify-content:center;margin:8px 0;}
+.progress-dot{width:10px;height:10px;border-radius:50%;background:var(--border);transition:all 0.2s;}
+.progress-dot.correct{background:var(--green);}
+.progress-dot.incorrect{background:var(--pink);}
+.progress-dot.current{background:var(--cyan);box-shadow:0 0 6px var(--cyan);}
+
+/* == Game-over overlay == */
+.game-over{display:flex;flex-direction:column;align-items:center;gap:16px;padding:24px;}
+.game-over-title{font-size:32px;font-weight:900;background:var(--grad);-webkit-background-clip:text;-webkit-text-fill-color:transparent;}
+.game-over-score{font-size:56px;font-weight:900;font-family:'JetBrains Mono',monospace;color:var(--cyan);}
+.game-over-stat{font-size:14px;color:var(--text2);font-weight:600;}
+.game-over-stars{font-size:36px;letter-spacing:4px;}
+
+/* == Compare == */
+.compare-row{display:flex;gap:24px;align-items:flex-start;justify-content:center;flex-wrap:wrap;}
+.compare-vs{font-size:20px;font-weight:900;color:var(--muted);align-self:center;padding-top:60px;}
+
+::-webkit-scrollbar{width:6px;}::-webkit-scrollbar-track{background:transparent;}::-webkit-scrollbar-thumb{background:var(--border);border-radius:3px;}
+</style>
+</head>
+<body>
+
+<div class="vinculum-header">
+  <div class="vinculum-header-left">
+    <a class="vinculum-back-btn" href="../../VINCULUM-Hub.html" style="text-decoration:none;">&#9664; Hub</a>
+    <div class="vinculum-header-title"><span>VINCULUM</span> Partition Fractions</div>
+    <span class="vinculum-header-badge">2.G</span>
+  </div>
+  <div class="vinculum-header-right">
+    <div class="vinculum-std-tags">
+      <span class="vinculum-std-tag">2.G.2</span>
+      <span class="vinculum-std-tag">2.G.3</span>
+      <span class="vinculum-std-tag mn">MN 2.4.1.2</span>
+    </div>
+    <button class="vinculum-back-btn" id="readAloudBtn" onclick="toggleReadAloud()" aria-label="Read Aloud" title="Read instructions aloud" style="margin-left:8px;white-space:nowrap;">&#128264; Read to Me</button>
+  </div>
+</div>
+
+<div class="vinculum-mode-tabs">
+  <button class="vinculum-mode-tab active-explore" data-mode="explore" id="tabExplore" onclick="setMode('explore')"><svg width="18" height="18" viewBox="0 0 48 48" fill="none"><path d="M4 24C4 24 12 12 24 12C36 12 44 24 44 24C44 24 36 36 24 36C12 36 4 24 4 24Z" stroke="currentColor" stroke-width="3" fill="none"/><circle cx="24" cy="24" r="7" stroke="currentColor" stroke-width="3" fill="none"/><circle cx="24" cy="24" r="3" fill="currentColor"/><line x1="24" y1="4" x2="24" y2="9" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" opacity="0.5"/><line x1="10" y1="8" x2="13" y2="12" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" opacity="0.5"/><line x1="38" y1="8" x2="35" y2="12" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" opacity="0.5"/></svg> Explore</button>
+  <button class="vinculum-mode-tab" id="tabPractice" data-mode="practice" onclick="setMode('practice')"><svg width="18" height="18" viewBox="0 0 48 48" fill="none"><circle cx="24" cy="24" r="20" stroke="currentColor" stroke-width="3" fill="none" opacity="0.3"/><circle cx="24" cy="24" r="20" stroke="currentColor" stroke-width="3" fill="none" stroke-dasharray="126" stroke-dashoffset="32" stroke-linecap="round"/><polyline points="16,24 22,32 34,16" stroke="currentColor" stroke-width="4" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg> Practice</button>
+  <button class="vinculum-mode-tab" id="tabPlay" data-mode="play" onclick="setMode('play')"><svg width="18" height="18" viewBox="0 0 48 48" fill="none"><polygon points="28,4 12,28 22,28 18,44 36,18 26,18" fill="none" stroke="currentColor" stroke-width="3" stroke-linejoin="round"/><polygon points="27,8 15,27 23,27 20,40 34,19 26,19" fill="currentColor" opacity="0.15"/></svg> Play</button>
+  <div class="vinculum-diff-selector">
+    <span class="vinculum-diff-label">Level</span>
+    <button class="vinculum-diff-btn active" id="diffE" data-diff="emergent" onclick="setDiff('emergent')">Halves</button>
+    <button class="vinculum-diff-btn" id="diffP" data-diff="proficient" onclick="setDiff('proficient')">Thirds &amp; Fourths</button>
+    <button class="vinculum-diff-btn" id="diffA" data-diff="advanced" onclick="setDiff('advanced')">Compare</button>
+  </div>
+</div>
+
+<div class="main">
+  <div class="workspace" role="main" id="workspace"></div>
+  <div class="side-panel" id="sidePanel"></div>
+</div>
+<div class="feedback" id="feedback"></div>
+
+<script src="../../vinculum-input.js"></script>
+<script>
+/* =============================================
+   PARTITION FRACTIONS — Grade 2 Geometry
+   CCSS 2.G.2 / 2.G.3  |  MN 2.4.1.2
+   ============================================= */
+
+let S = {
+  mode: 'explore', diff: 'emergent',
+  shapeType: 'circle',
+  partitions: 2,
+  shaded: new Set(),
+  showCompare: false,
+  /* Practice */
+  pShape: 'circle', pPartitions: 2, pShaded: 0,
+  pAnswer: '', pType: 'partition', pChoices: [],
+  pCorrect: 0, pAttempted: 0, pTotal: 8, pHistory: [],
+  pLocked: false,
+  /* Play */
+  score: 0, streak: 0, best: 0, round: 0, total: 10,
+  playShape: 'circle', playPartitions: 2, playShaded: 0,
+  playType: 'name', playAnswer: '', playChoices: [],
+  gameOver: false, roundResults: [], playLocked: false
+};
+
+/* ── Misconceptions (6 targeted) ── */
+const MISCONCEPTIONS = {
+  sameShape: {
+    id: 'same-shape',
+    msg: () => 'Equal parts must be the same SIZE, not the same shape. Different-looking pieces can still be equal parts!'
+  },
+  wholeMismatch: {
+    id: 'whole-mismatch',
+    msg: () => 'The WHOLE matters when naming fractions. One half of a small shape is not the same amount as one half of a big shape.'
+  },
+  offByOne: {
+    id: 'off-by-one',
+    msg: (ans, got) => 'Close! Count the shaded parts again carefully. You said ' + got + ' but the answer is ' + ans + '.'
+  },
+  randomGuess: {
+    id: 'random-guess',
+    msg: () => 'Look at the shape. How many EQUAL parts total? How many are shaded?'
+  },
+  halvesVsThirds: {
+    id: 'halves-vs-thirds',
+    msg: () => 'Halves means 2 equal parts. Thirds means 3 equal parts. Fourths means 4 equal parts. Count the dividing lines!'
+  },
+  shadedVsUnshaded: {
+    id: 'shaded-vs-unshaded',
+    msg: (shaded, total) => 'You may have counted the UNSHADED parts! There are ' + shaded + ' shaded and ' + (total - shaded) + ' unshaded.'
+  }
+};
+
+/* ── Utility ── */
+function rand(a, b) { return Math.floor(Math.random() * (b - a + 1)) + a; }
+function shuffle(arr) { for (let i = arr.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [arr[i], arr[j]] = [arr[j], arr[i]]; } return arr; }
+function pick(arr) { return arr[Math.floor(Math.random() * arr.length)]; }
+
+function showFB(msg, type) {
+  const fb = document.getElementById('feedback');
+  fb.className = 'feedback ' + type;
+  fb.textContent = msg;
+  fb.classList.add('show');
+  setTimeout(() => { fb.classList.remove('show'); }, 2400);
+}
+
+/* ── Read-Aloud ── */
+function toggleReadAloud() {
+  if (window.VinculumStories && VinculumStories.isReading()) {
+    VinculumStories.stopReading();
+    document.getElementById('readAloudBtn').innerHTML = '&#128264; Read to Me';
+  } else {
+    const storyEl = document.getElementById('storyBanner');
+    const instEl = document.querySelector('.instruction-box');
+    const text = storyEl ? storyEl.textContent
+               : instEl ? instEl.textContent
+               : 'Welcome to Partition Fractions!';
+    if (window.VinculumStories) {
+      VinculumStories.readAloud(text, { rate: 0.85, onComplete: () => {
+        document.getElementById('readAloudBtn').innerHTML = '&#128264; Read to Me';
+      }});
+      document.getElementById('readAloudBtn').innerHTML = '&#9209; Stop';
+    }
+  }
+}
+
+/* ── Mode & Difficulty ── */
+function setMode(m) {
+  S.mode = m;
+  S.shaded = new Set();
+  S.showCompare = false;
+  S.gameOver = false;
+  document.querySelectorAll('.vinculum-mode-tab').forEach(t => t.classList.remove('active-explore', 'active-practice', 'active-play'));
+  document.getElementById('tab' + m.charAt(0).toUpperCase() + m.slice(1)).classList.add('active-' + m);
+  S.round = 0; S.score = 0; S.streak = 0;
+  S.pCorrect = 0; S.pAttempted = 0; S.pHistory = []; S.pLocked = false;
+  S.roundResults = []; S.playLocked = false;
+  if (m === 'practice') newPractice();
+  if (m === 'play') newPlayRound();
+  render();
+}
+
+function setDiff(d) {
+  S.diff = d;
+  S.partitions = d === 'emergent' ? 2 : (d === 'proficient' ? 3 : 2);
+  document.querySelectorAll('.vinculum-diff-btn').forEach(b => b.classList.remove('active'));
+  document.getElementById('diff' + d.charAt(0).toUpperCase()).classList.add('active');
+  S.shaded = new Set();
+  S.showCompare = false;
+  S.gameOver = false;
+  S.roundResults = [];
+  S.pLocked = false; S.playLocked = false;
+  if (S.mode === 'practice') { S.pCorrect = 0; S.pAttempted = 0; S.pHistory = []; newPractice(); }
+  if (S.mode === 'play') { S.round = 0; S.score = 0; S.streak = 0; S.roundResults = []; newPlayRound(); }
+  render();
+}
+
+/* ── Allowed partitions by difficulty ── */
+function allowedParts() {
+  if (S.diff === 'emergent') return [2];
+  if (S.diff === 'proficient') return [2, 3, 4];
+  return [2, 3, 4];
+}
+
+/* ── Fraction naming helpers ── */
+function fractionWord(num, denom) {
+  if (num === 0) return '0 parts';
+  const names = { 2: ['half', 'halves'], 3: ['third', 'thirds'], 4: ['fourth', 'fourths'] };
+  const n = names[denom] || [denom + 'th', denom + 'ths'];
+  return num + ' ' + (num === 1 ? n[0] : n[1]);
+}
+
+function fractionSymbol(num, denom) {
+  if (num === 0) return '0';
+  if (num === denom) return '1';
+  if (num === 1 && denom === 2) return '\u00BD';
+  if (num === 1 && denom === 3) return '\u2153';
+  if (num === 2 && denom === 3) return '\u2154';
+  if (num === 1 && denom === 4) return '\u00BC';
+  if (num === 3 && denom === 4) return '\u00BE';
+  if (num === 2 && denom === 4) return '\u00BD';
+  return '<sup>' + num + '</sup>\u2044<sub>' + denom + '</sub>';
+}
+
+function denomWord(d) {
+  return { 2: 'halves', 3: 'thirds', 4: 'fourths' }[d] || d + 'ths';
+}
+
+function denomWordSingular(d) {
+  return { 2: 'half', 3: 'third', 4: 'fourth' }[d] || d + 'th';
+}
+
+/* ── Stars for game-over ── */
+function getStars(score, maxPossible) {
+  const pct = score / maxPossible;
+  if (pct >= 0.9) return 3;
+  if (pct >= 0.6) return 2;
+  if (pct >= 0.3) return 1;
+  return 0;
+}
+
+function starsHTML(count) {
+  let h = '';
+  for (let i = 0; i < 3; i++) h += i < count ? '&#11088;' : '&#9734;';
+  return h;
+}
+
+/* ═══════════════════════════════════════════════
+   SVG SHAPE BUILDERS
+   ═══════════════════════════════════════════════ */
+
+function buildCircleSVG(parts, shadedSet, interactive, idPrefix, size) {
+  idPrefix = idPrefix || 'sec';
+  size = size || 200;
+  const vb = 200;
+  const cx = 100, cy = 100, r = 90;
+  let svg = '<svg viewBox="0 0 ' + vb + ' ' + vb + '" width="' + size + '" height="' + size + '">';
+
+  for (let i = 0; i < parts; i++) {
+    const startAngle = (i * 360 / parts) - 90;
+    const endAngle = ((i + 1) * 360 / parts) - 90;
+    const startRad = startAngle * Math.PI / 180;
+    const endRad = endAngle * Math.PI / 180;
+    const x1 = cx + r * Math.cos(startRad);
+    const y1 = cy + r * Math.sin(startRad);
+    const x2 = cx + r * Math.cos(endRad);
+    const y2 = cy + r * Math.sin(endRad);
+    const largeArc = (360 / parts) > 180 ? 1 : 0;
+    const isShaded = shadedSet.has(i);
+    const fillColor = isShaded ? 'var(--cyan,#00d4ff)' : 'var(--card,#1a1f2e)';
+    const fillOpacity = isShaded ? '0.55' : '1';
+    const onclick = interactive ? ' onclick="toggleSection(' + i + ')" style="cursor:pointer;"' : '';
+    const role = interactive ? ' role="button" tabindex="0" aria-label="Section ' + (i + 1) + ' of ' + parts + (isShaded ? ', shaded' : ', not shaded') + '"' : '';
+    svg += '<path id="' + idPrefix + i + '" d="M' + cx + ',' + cy + ' L' + x1.toFixed(2) + ',' + y1.toFixed(2) + ' A' + r + ',' + r + ' 0 ' + largeArc + ',1 ' + x2.toFixed(2) + ',' + y2.toFixed(2) + ' Z" fill="' + fillColor + '" fill-opacity="' + fillOpacity + '" stroke="var(--border,#2a3654)" stroke-width="2" class="shape-section' + (isShaded ? ' shaded' : '') + '"' + onclick + role + '/>';
+  }
+
+  // Partition lines
+  for (let i = 0; i < parts; i++) {
+    const angle = (i * 360 / parts) - 90;
+    const rad = angle * Math.PI / 180;
+    const x = cx + r * Math.cos(rad);
+    const y = cy + r * Math.sin(rad);
+    svg += '<line x1="' + cx + '" y1="' + cy + '" x2="' + x.toFixed(2) + '" y2="' + y.toFixed(2) + '" class="partition-line"/>';
+  }
+
+  svg += '<circle cx="' + cx + '" cy="' + cy + '" r="' + r + '" fill="none" stroke="var(--text,#e0e0e0)" stroke-width="2.5"/>';
+  svg += '</svg>';
+  return svg;
+}
+
+function buildRectSVG(parts, shadedSet, interactive, idPrefix, size) {
+  idPrefix = idPrefix || 'sec';
+  size = size || 200;
+  const vb = 200;
+  const w = 180, h = 120, x0 = 10, y0 = 40;
+  let svg = '<svg viewBox="0 0 ' + vb + ' ' + vb + '" width="' + size + '" height="' + size + '">';
+
+  if (parts === 2) {
+    const halfW = w / 2;
+    for (let i = 0; i < 2; i++) {
+      const isShaded = shadedSet.has(i);
+      const fillColor = isShaded ? 'var(--cyan,#00d4ff)' : 'var(--card,#1a1f2e)';
+      const fillOpacity = isShaded ? '0.55' : '1';
+      const onclick = interactive ? ' onclick="toggleSection(' + i + ')" style="cursor:pointer;"' : '';
+      const role = interactive ? ' role="button" tabindex="0" aria-label="Section ' + (i + 1) + ' of 2' + (isShaded ? ', shaded' : ', not shaded') + '"' : '';
+      svg += '<rect id="' + idPrefix + i + '" x="' + (x0 + i * halfW) + '" y="' + y0 + '" width="' + halfW + '" height="' + h + '" fill="' + fillColor + '" fill-opacity="' + fillOpacity + '" stroke="var(--border,#2a3654)" stroke-width="2" class="shape-section' + (isShaded ? ' shaded' : '') + '"' + onclick + role + '/>';
+    }
+    svg += '<line x1="' + (x0 + halfW) + '" y1="' + y0 + '" x2="' + (x0 + halfW) + '" y2="' + (y0 + h) + '" class="partition-line"/>';
+  } else if (parts === 3) {
+    const thirdW = w / 3;
+    for (let i = 0; i < 3; i++) {
+      const isShaded = shadedSet.has(i);
+      const fillColor = isShaded ? 'var(--cyan,#00d4ff)' : 'var(--card,#1a1f2e)';
+      const fillOpacity = isShaded ? '0.55' : '1';
+      const onclick = interactive ? ' onclick="toggleSection(' + i + ')" style="cursor:pointer;"' : '';
+      const role = interactive ? ' role="button" tabindex="0" aria-label="Section ' + (i + 1) + ' of 3' + (isShaded ? ', shaded' : ', not shaded') + '"' : '';
+      svg += '<rect id="' + idPrefix + i + '" x="' + (x0 + i * thirdW) + '" y="' + y0 + '" width="' + thirdW + '" height="' + h + '" fill="' + fillColor + '" fill-opacity="' + fillOpacity + '" stroke="var(--border,#2a3654)" stroke-width="2" class="shape-section' + (isShaded ? ' shaded' : '') + '"' + onclick + role + '/>';
+    }
+    for (let i = 1; i < 3; i++) {
+      svg += '<line x1="' + (x0 + i * thirdW) + '" y1="' + y0 + '" x2="' + (x0 + i * thirdW) + '" y2="' + (y0 + h) + '" class="partition-line"/>';
+    }
+  } else {
+    // 4 parts: 2x2 grid
+    const halfW = w / 2, halfH = h / 2;
+    const positions = [
+      [x0, y0], [x0 + halfW, y0],
+      [x0, y0 + halfH], [x0 + halfW, y0 + halfH]
+    ];
+    for (let i = 0; i < 4; i++) {
+      const isShaded = shadedSet.has(i);
+      const fillColor = isShaded ? 'var(--cyan,#00d4ff)' : 'var(--card,#1a1f2e)';
+      const fillOpacity = isShaded ? '0.55' : '1';
+      const onclick = interactive ? ' onclick="toggleSection(' + i + ')" style="cursor:pointer;"' : '';
+      const role = interactive ? ' role="button" tabindex="0" aria-label="Section ' + (i + 1) + ' of 4' + (isShaded ? ', shaded' : ', not shaded') + '"' : '';
+      svg += '<rect id="' + idPrefix + i + '" x="' + positions[i][0] + '" y="' + positions[i][1] + '" width="' + halfW + '" height="' + halfH + '" fill="' + fillColor + '" fill-opacity="' + fillOpacity + '" stroke="var(--border,#2a3654)" stroke-width="2" class="shape-section' + (isShaded ? ' shaded' : '') + '"' + onclick + role + '/>';
+    }
+    svg += '<line x1="' + (x0 + halfW) + '" y1="' + y0 + '" x2="' + (x0 + halfW) + '" y2="' + (y0 + h) + '" class="partition-line"/>';
+    svg += '<line x1="' + x0 + '" y1="' + (y0 + halfH) + '" x2="' + (x0 + w) + '" y2="' + (y0 + halfH) + '" class="partition-line"/>';
+  }
+
+  svg += '<rect x="' + x0 + '" y="' + y0 + '" width="' + w + '" height="' + h + '" fill="none" stroke="var(--text,#e0e0e0)" stroke-width="2.5" rx="4"/>';
+  svg += '</svg>';
+  return svg;
+}
+
+function buildShapeSVG(type, parts, shadedSet, interactive, idPrefix, size) {
+  if (type === 'circle') return buildCircleSVG(parts, shadedSet, interactive, idPrefix, size);
+  return buildRectSVG(parts, shadedSet, interactive, idPrefix, size);
+}
+
+function toggleSection(idx) {
+  if (S.mode === 'explore') {
+    if (S.shaded.has(idx)) S.shaded.delete(idx);
+    else S.shaded.add(idx);
+    render();
+  }
+}
+
+/* ═══════════════════════════════════════════════
+   RENDER DISPATCH
+   ═══════════════════════════════════════════════ */
+
+function render() {
+  const ws = document.getElementById('workspace');
+  const sp = document.getElementById('sidePanel');
+  if (S.mode === 'explore') renderExplore(ws, sp);
+  else if (S.mode === 'practice') renderPractice(ws, sp);
+  else renderPlay(ws, sp);
+}
+
+/* ═══════════════════════════════════════════════
+   EXPLORE MODE
+   ═══════════════════════════════════════════════ */
+
+function renderExplore(ws, sp) {
+  const parts = S.partitions;
+  const type = S.shapeType;
+  let h = '';
+
+  // Story banner (3-Reads integration)
+  if (window.VinculumStories) {
+    const toolName = window.location.pathname.split('/').pop().replace('.html', '');
+    const storyData = VinculumStories.getStory(toolName, { partitions: parts, shapeType: type });
+    if (storyData && storyData.story) {
+      if (window.Vinculum3Reads) {
+        h += Vinculum3Reads.getBannerHTML(storyData);
+      } else {
+        h += '<div id="storyBanner" style="background:var(--card2,#1a1f2e);border:1px solid var(--border);border-radius:12px;padding:16px 20px;margin-bottom:16px;font-size:15px;line-height:1.6;color:var(--text);position:relative;"><span style="font-size:12px;color:var(--cyan);font-weight:700;text-transform:uppercase;letter-spacing:1px;">&#128214; Story</span><br>' + storyData.story + '<br><em style="color:var(--yellow);font-weight:600;">' + storyData.question + '</em></div>';
+      }
+    }
+  }
+
+  h += '<div class="instruction-box">Pick a shape, partition it into equal parts, then tap sections to shade them!</div>';
+
+  // Shape selector
+  h += '<div class="shape-selector">';
+  h += '<button class="shape-btn ' + (type === 'circle' ? 'active' : '') + '" onclick="S.shapeType=\'circle\';S.shaded=new Set();render();" aria-label="Circle"><svg viewBox="0 0 48 48"><circle cx="24" cy="24" r="18" fill="none" stroke="currentColor" stroke-width="3"/></svg></button>';
+  h += '<button class="shape-btn ' + (type === 'rectangle' ? 'active' : '') + '" onclick="S.shapeType=\'rectangle\';S.shaded=new Set();render();" aria-label="Rectangle"><svg viewBox="0 0 48 48"><rect x="6" y="12" width="36" height="24" rx="3" fill="none" stroke="currentColor" stroke-width="3"/></svg></button>';
+  h += '</div>';
+
+  // Partition buttons
+  h += '<div class="partition-selector">';
+  var ap = allowedParts();
+  if (S.diff !== 'emergent') {
+    h += '<button class="part-btn ' + (parts === 2 ? 'active' : '') + '" onclick="S.partitions=2;S.shaded=new Set();render();">&#189; Halves</button>';
+    h += '<button class="part-btn ' + (parts === 3 ? 'active' : '') + '" onclick="S.partitions=3;S.shaded=new Set();render();">&#8531; Thirds</button>';
+    h += '<button class="part-btn ' + (parts === 4 ? 'active' : '') + '" onclick="S.partitions=4;S.shaded=new Set();render();">&#188; Fourths</button>';
+  } else {
+    h += '<button class="part-btn active" onclick="S.partitions=2;S.shaded=new Set();render();">&#189; Halves</button>';
+  }
+  h += '</div>';
+
+  // Clear button
+  h += '<div class="controls" style="margin:4px 0;">';
+  h += '<button class="ctrl-btn" onclick="S.shaded=new Set();render();">&#8635; Clear</button>';
+  if (S.diff === 'advanced') {
+    h += '<button class="ctrl-btn ' + (S.showCompare ? 'active' : '') + '" onclick="S.showCompare=!S.showCompare;render();">&#9878; Compare</button>';
+  }
+  h += '</div>';
+
+  // Compare view
+  if (S.showCompare && S.diff === 'advanced') {
+    h += '<div class="compare-row">';
+    h += '<div class="shape-card"><div style="font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:1px;margin-bottom:4px;">Circle</div>';
+    h += buildCircleSVG(parts, S.shaded, true, 'sec', 160);
+    h += '<div class="fraction-label" style="font-size:14px;">' + fractionWord(S.shaded.size, parts) + '</div></div>';
+    h += '<div class="compare-vs">vs</div>';
+    h += '<div class="shape-card"><div style="font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:1px;margin-bottom:4px;">Rectangle</div>';
+    h += buildRectSVG(parts, S.shaded, false, 'cmp', 160);
+    h += '<div class="fraction-label" style="font-size:14px;">' + fractionWord(S.shaded.size, parts) + '</div></div>';
+    h += '</div>';
+    h += '<div class="equal-label" style="margin-top:12px;">' + fractionWord(S.shaded.size, parts) + ' is the SAME fraction no matter the shape!</div>';
+  } else {
+    // Single shape
+    h += '<div class="shape-display">';
+    h += buildShapeSVG(type, parts, S.shaded, true, 'sec', 220);
+    h += '</div>';
+  }
+
+  // Labels
+  const sc = S.shaded.size;
+  if (!S.showCompare || S.diff !== 'advanced') {
+    h += '<div class="fraction-label">' + fractionWord(sc, parts) + ' shaded</div>';
+    if (sc > 0) {
+      h += '<div class="fraction-notation" style="color:var(--cyan,#00d4ff);">' + fractionSymbol(sc, parts) + '</div>';
+    }
+    h += '<div class="equal-label">' + parts + ' equal parts &mdash; these are called <strong>' + denomWord(parts) + '</strong></div>';
+  }
+
+  ws.innerHTML = h;
+
+  // Side panel
+  let sph = '';
+  sph += '<div class="panel-section"><div class="panel-title">What Are Equal Parts?</div>';
+  sph += '<div class="panel-text">When we <strong>partition</strong> (cut) a shape into <strong>equal parts</strong>, every piece takes up the <strong>same amount of space</strong>.</div></div>';
+
+  sph += '<div class="panel-section"><div class="panel-title">Naming Fractions</div><div class="panel-text">';
+  sph += '<strong style="color:var(--cyan);">Halves</strong> &mdash; 2 equal parts. Each is <strong>&frac12;</strong>.<br>';
+  if (S.diff !== 'emergent') {
+    sph += '<strong style="color:var(--purple);">Thirds</strong> &mdash; 3 equal parts. Each is <strong>&#8531;</strong>.<br>';
+    sph += '<strong style="color:var(--green);">Fourths</strong> &mdash; 4 equal parts. Each is <strong>&frac14;</strong>.';
+  }
+  sph += '</div></div>';
+
+  sph += '<div class="panel-section"><div class="panel-title">How To</div><div class="panel-text">';
+  sph += '<div style="margin-bottom:8px;"><strong style="color:var(--purple);">&#9312; Pick</strong><br><span style="font-size:12px;">Choose circle or rectangle</span></div>';
+  sph += '<div style="margin-bottom:8px;"><strong style="color:var(--cyan);">&#9313; Partition</strong><br><span style="font-size:12px;">Select halves' + (S.diff !== 'emergent' ? ', thirds, or fourths' : '') + '</span></div>';
+  sph += '<div><strong style="color:var(--green);">&#9314; Shade</strong><br><span style="font-size:12px;">Tap sections to shade them</span></div>';
+  sph += '</div></div>';
+
+  if (S.diff === 'advanced') {
+    sph += '<div class="panel-section"><div class="panel-title">Key Idea</div>';
+    sph += '<div class="panel-text">The size of the <strong>whole</strong> matters! One half of a small pizza is less pizza than one half of a large pizza.</div></div>';
+  }
+
+  sp.innerHTML = sph;
+}
+
+/* ═══════════════════════════════════════════════
+   PRACTICE MODE
+   ═══════════════════════════════════════════════ */
+
+function newPractice() {
+  S.pLocked = false;
+  const ap = allowedParts();
+  S.pPartitions = pick(ap);
+  S.pShape = pick(['circle', 'rectangle']);
+  S.pShaded = rand(1, S.pPartitions - 1);
+
+  // Question types rotate: 'partition' (how many equal parts?), 'name' (what fraction is shaded?), 'count' (how many are shaded?)
+  const types = ['partition', 'name', 'name', 'count'];
+  S.pType = pick(types);
+
+  if (S.pType === 'partition') {
+    // "Partition this shape into ____"
+    S.pAnswer = denomWord(S.pPartitions);
+    const allDenoms = [2, 3, 4];
+    let choices = [S.pAnswer];
+    allDenoms.forEach(d => { if (denomWord(d) !== S.pAnswer && choices.length < 4) choices.push(denomWord(d)); });
+    S.pChoices = shuffle(choices);
+  } else if (S.pType === 'name') {
+    // "What fraction is shaded?"
+    S.pAnswer = fractionWord(S.pShaded, S.pPartitions);
+    let choices = [S.pAnswer];
+    // Generate distractors
+    const complement = S.pPartitions - S.pShaded;
+    if (complement > 0 && complement !== S.pShaded) choices.push(fractionWord(complement, S.pPartitions));
+    ap.forEach(d => {
+      if (choices.length < 4) {
+        const alt = rand(1, d - 1);
+        const w = fractionWord(alt, d);
+        if (!choices.includes(w)) choices.push(w);
+      }
+    });
+    // Fill to 4 if needed
+    while (choices.length < 4) {
+      const d = pick([2, 3, 4]);
+      const n = rand(1, d);
+      const w = fractionWord(n, d);
+      if (!choices.includes(w)) choices.push(w);
+    }
+    S.pChoices = shuffle(choices.slice(0, 4));
+  } else {
+    // count: "How many parts are shaded?"
+    S.pAnswer = String(S.pShaded);
+    let choices = [S.pAnswer];
+    const complement = S.pPartitions - S.pShaded;
+    if (String(complement) !== S.pAnswer) choices.push(String(complement));
+    for (let i = 1; i <= 4 && choices.length < 4; i++) {
+      if (!choices.includes(String(i))) choices.push(String(i));
+    }
+    S.pChoices = shuffle(choices.slice(0, 4));
+  }
+}
+
+function renderPractice(ws, sp) {
+  let h = '';
+
+  // Progress dots
+  h += '<div class="progress-dots">';
+  for (let i = 0; i < S.pTotal; i++) {
+    let cls = 'progress-dot';
+    if (i < S.pHistory.length) cls += S.pHistory[i] === 'correct' ? ' correct' : ' incorrect';
+    else if (i === S.pHistory.length) cls += ' current';
+    h += '<div class="' + cls + '"></div>';
+  }
+  h += '</div>';
+
+  // Question
+  const shadedSet = new Set();
+  for (let i = 0; i < S.pShaded; i++) shadedSet.add(i);
+
+  if (S.pType === 'partition') {
+    h += '<div class="instruction-box highlight-cyan">This ' + S.pShape + ' is cut into <strong>' + S.pPartitions + ' equal parts</strong>. What are these parts called?</div>';
+    h += '<div class="shape-display" style="margin:12px 0;">';
+    h += buildShapeSVG(S.pShape, S.pPartitions, new Set(), false, 'psec', 180);
+    h += '</div>';
+  } else if (S.pType === 'name') {
+    h += '<div class="instruction-box highlight-cyan">What <strong>fraction</strong> of the ' + S.pShape + ' is shaded?</div>';
+    h += '<div class="shape-display" style="margin:12px 0;">';
+    h += buildShapeSVG(S.pShape, S.pPartitions, shadedSet, false, 'psec', 180);
+    h += '</div>';
+  } else {
+    h += '<div class="instruction-box highlight-cyan">How many <strong>shaded parts</strong> does this ' + S.pShape + ' have?</div>';
+    h += '<div class="shape-display" style="margin:12px 0;">';
+    h += buildShapeSVG(S.pShape, S.pPartitions, shadedSet, false, 'psec', 180);
+    h += '</div>';
+  }
+
+  // MC Buttons
+  h += '<div class="mc-grid">';
+  S.pChoices.forEach((c, idx) => {
+    h += '<button class="mc-btn" id="pmc' + idx + '" onclick="checkPractice(\'' + c.replace(/'/g, "\\'") + '\',' + idx + ')">' + c + '</button>';
+  });
+  h += '</div>';
+
+  // Practice complete?
+  if (S.pAttempted >= S.pTotal) {
+    h = '<div class="game-over">';
+    h += '<div class="game-over-title">Practice Complete!</div>';
+    h += '<div class="game-over-score">' + S.pCorrect + '/' + S.pTotal + '</div>';
+    h += '<div class="game-over-stat">' + Math.round(S.pCorrect / S.pTotal * 100) + '% correct</div>';
+    h += '<div class="game-over-stars">' + starsHTML(getStars(S.pCorrect, S.pTotal)) + '</div>';
+    h += '<button class="ctrl-btn primary" onclick="S.pCorrect=0;S.pAttempted=0;S.pHistory=[];newPractice();render();">Try Again</button>';
+    h += '</div>';
+  }
+
+  ws.innerHTML = h;
+
+  // Side panel
+  let sph = '';
+  sph += '<div class="panel-section"><div class="panel-title">Practice Progress</div>';
+  sph += '<div class="panel-text"><strong style="color:var(--green);">' + S.pCorrect + '</strong> correct out of <strong>' + S.pAttempted + '</strong></div></div>';
+
+  sph += '<div class="panel-section"><div class="panel-title">Tips</div><div class="panel-text">';
+  if (S.pType === 'partition') {
+    sph += 'Count how many <strong>equal parts</strong> the shape is divided into.<br>2 parts = halves<br>3 parts = thirds<br>4 parts = fourths';
+  } else if (S.pType === 'name') {
+    sph += 'Look at how many parts are <strong style="color:var(--cyan);">shaded</strong> and how many parts <strong>total</strong>.<br>The fraction is: shaded / total.';
+  } else {
+    sph += 'Count only the <strong style="color:var(--cyan);">colored</strong> sections, not the empty ones!';
+  }
+  sph += '</div></div>';
+
+  sph += '<div class="panel-section"><div class="panel-title">Remember</div><div class="panel-text">';
+  sph += 'Equal parts must be the same <strong>size</strong> &mdash; they do not have to be the same shape!';
+  sph += '</div></div>';
+
+  sp.innerHTML = sph;
+}
+
+function checkPractice(clicked, idx) {
+  if (S.pLocked || S.pAttempted >= S.pTotal) return;
+  S.pLocked = true;
+  const btn = document.getElementById('pmc' + idx);
+
+  if (clicked === S.pAnswer) {
+    S.pCorrect++;
+    S.pAttempted++;
+    S.pHistory.push('correct');
+    btn.classList.add('correct-flash');
+    showFB('Correct!', 'correct');
+    setTimeout(() => {
+      if (S.pAttempted < S.pTotal) newPractice();
+      render();
+    }, 1200);
+  } else {
+    S.pAttempted++;
+    S.pHistory.push('incorrect');
+    btn.classList.add('incorrect-flash');
+
+    // Targeted misconception feedback
+    const fb = detectPracticeMisconception(clicked);
+    showFB(fb, 'try-again');
+
+    setTimeout(() => {
+      btn.classList.remove('incorrect-flash');
+      if (S.pAttempted < S.pTotal) newPractice();
+      render();
+    }, 2400);
+  }
+}
+
+function detectPracticeMisconception(clicked) {
+  if (S.pType === 'partition') {
+    // Confused about partition names
+    return MISCONCEPTIONS.halvesVsThirds.msg();
+  }
+  if (S.pType === 'count') {
+    const complement = S.pPartitions - S.pShaded;
+    if (clicked === String(complement) && complement !== S.pShaded) {
+      return MISCONCEPTIONS.shadedVsUnshaded.msg(S.pShaded, S.pPartitions);
+    }
+    if (Math.abs(parseInt(clicked) - S.pShaded) === 1) {
+      return MISCONCEPTIONS.offByOne.msg(S.pShaded, clicked);
+    }
+    return MISCONCEPTIONS.randomGuess.msg();
+  }
+  // name type
+  const complement = S.pPartitions - S.pShaded;
+  if (complement > 0 && clicked === fractionWord(complement, S.pPartitions)) {
+    return MISCONCEPTIONS.shadedVsUnshaded.msg(S.pShaded, S.pPartitions);
+  }
+  // Check halves/thirds/fourths confusion
+  const clickedHas = (w) => clicked.toLowerCase().includes(w);
+  const answerHas = (w) => S.pAnswer.toLowerCase().includes(w);
+  if ((clickedHas('half') && !answerHas('half')) || (clickedHas('third') && !answerHas('third')) || (clickedHas('fourth') && !answerHas('fourth'))) {
+    return MISCONCEPTIONS.halvesVsThirds.msg();
+  }
+  return MISCONCEPTIONS.randomGuess.msg();
+}
+
+/* ═══════════════════════════════════════════════
+   PLAY MODE — 10 rounds, 10pts + streak×2
+   ═══════════════════════════════════════════════ */
+
+function newPlayRound() {
+  S.playLocked = false;
+  S.round++;
+  if (S.round > S.total) { S.gameOver = true; return; }
+
+  const ap = allowedParts();
+  S.playPartitions = pick(ap);
+  S.playShape = pick(['circle', 'rectangle']);
+  S.playShaded = rand(1, S.playPartitions - 1);
+
+  // Question types
+  const types = S.diff === 'advanced'
+    ? ['name', 'name', 'compare', 'partition']
+    : ['name', 'name', 'count', 'partition'];
+  S.playType = pick(types);
+
+  if (S.playType === 'partition') {
+    S.playAnswer = denomWord(S.playPartitions);
+    let choices = [S.playAnswer];
+    [2, 3, 4].forEach(d => { if (denomWord(d) !== S.playAnswer && choices.length < 4) choices.push(denomWord(d)); });
+    S.playChoices = shuffle(choices);
+  } else if (S.playType === 'name') {
+    S.playAnswer = fractionWord(S.playShaded, S.playPartitions);
+    let choices = [S.playAnswer];
+    const complement = S.playPartitions - S.playShaded;
+    if (complement > 0 && complement !== S.playShaded) choices.push(fractionWord(complement, S.playPartitions));
+    [2, 3, 4].forEach(d => {
+      if (choices.length < 4) {
+        const alt = rand(1, d - 1);
+        const w = fractionWord(alt, d);
+        if (!choices.includes(w)) choices.push(w);
+      }
+    });
+    while (choices.length < 4) {
+      const d = pick([2, 3, 4]);
+      const n = rand(1, d);
+      const w = fractionWord(n, d);
+      if (!choices.includes(w)) choices.push(w);
+    }
+    S.playChoices = shuffle(choices.slice(0, 4));
+  } else if (S.playType === 'count') {
+    S.playAnswer = String(S.playShaded);
+    let choices = [S.playAnswer];
+    const complement = S.playPartitions - S.playShaded;
+    if (String(complement) !== S.playAnswer) choices.push(String(complement));
+    for (let i = 1; i <= 4 && choices.length < 4; i++) {
+      if (!choices.includes(String(i))) choices.push(String(i));
+    }
+    S.playChoices = shuffle(choices.slice(0, 4));
+  } else {
+    // compare: which shows a bigger fraction?
+    const d1 = pick(ap);
+    const d2 = pick(ap.filter(x => x !== d1) || ap);
+    const n1 = rand(1, d1 - 1);
+    const n2 = rand(1, d2 - 1);
+    const f1 = n1 / d1;
+    const f2 = n2 / d2;
+    S.playCompareA = { n: n1, d: d1 };
+    S.playCompareB = { n: n2, d: d2 };
+    if (f1 > f2) {
+      S.playAnswer = 'A';
+    } else if (f2 > f1) {
+      S.playAnswer = 'B';
+    } else {
+      S.playAnswer = 'Same';
+    }
+    S.playChoices = shuffle(['A', 'B', 'Same']);
+  }
+}
+
+function renderPlay(ws, sp) {
+  let h = '';
+
+  if (S.gameOver) {
+    const maxScore = S.total * 10 + (S.total - 1) * 2 * S.total; // theoretical max approximation
+    const stars = getStars(S.score, S.total * 20);
+    h += '<div class="game-over">';
+    h += '<div class="game-over-title">Game Over!</div>';
+    h += '<div class="game-over-score">' + S.score + '</div>';
+    h += '<div class="game-over-stat">Score from ' + S.total + ' rounds</div>';
+    const correct = S.roundResults.filter(r => r === 'correct').length;
+    h += '<div class="game-over-stat">' + correct + '/' + S.total + ' correct &bull; Best streak: ' + S.best + '</div>';
+    h += '<div class="game-over-stars">' + starsHTML(stars) + '</div>';
+    h += '<button class="ctrl-btn primary" onclick="S.score=0;S.streak=0;S.best=0;S.round=0;S.roundResults=[];S.gameOver=false;newPlayRound();render();">Play Again</button>';
+    h += '</div>';
+    ws.innerHTML = h;
+
+    sp.innerHTML = '<div class="panel-section"><div class="panel-title">Results</div><div class="panel-text">' +
+      S.roundResults.map((r, i) => '<span style="color:var(--' + (r === 'correct' ? 'green' : 'pink') + ');font-weight:700;">R' + (i + 1) + '</span>').join(' &bull; ') +
+      '</div></div>';
+    return;
+  }
+
+  // Round indicator
+  h += '<div style="font-size:12px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:1.5px;">Round ' + S.round + ' / ' + S.total + '</div>';
+
+  const shadedSet = new Set();
+  for (let i = 0; i < S.playShaded; i++) shadedSet.add(i);
+
+  if (S.playType === 'partition') {
+    h += '<div class="instruction-box highlight-cyan">This ' + S.playShape + ' has <strong>' + S.playPartitions + ' equal parts</strong>. What are they called?</div>';
+    h += '<div class="shape-display" style="margin:12px 0;">';
+    h += buildShapeSVG(S.playShape, S.playPartitions, new Set(), false, 'gsec', 180);
+    h += '</div>';
+  } else if (S.playType === 'name') {
+    h += '<div class="instruction-box highlight-cyan">What <strong>fraction</strong> is shaded?</div>';
+    h += '<div class="shape-display" style="margin:12px 0;">';
+    h += buildShapeSVG(S.playShape, S.playPartitions, shadedSet, false, 'gsec', 180);
+    h += '</div>';
+  } else if (S.playType === 'count') {
+    h += '<div class="instruction-box highlight-cyan">How many <strong>shaded parts</strong>?</div>';
+    h += '<div class="shape-display" style="margin:12px 0;">';
+    h += buildShapeSVG(S.playShape, S.playPartitions, shadedSet, false, 'gsec', 180);
+    h += '</div>';
+  } else {
+    // compare
+    h += '<div class="instruction-box highlight-cyan">Which shows a <strong>bigger fraction</strong>?</div>';
+    const shadedA = new Set();
+    for (let i = 0; i < S.playCompareA.n; i++) shadedA.add(i);
+    const shadedB = new Set();
+    for (let i = 0; i < S.playCompareB.n; i++) shadedB.add(i);
+    h += '<div class="compare-row" style="margin:12px 0;">';
+    h += '<div class="shape-card"><div style="font-size:13px;font-weight:800;color:var(--cyan);margin-bottom:4px;">A</div>';
+    h += buildCircleSVG(S.playCompareA.d, shadedA, false, 'ca', 140);
+    h += '</div>';
+    h += '<div class="compare-vs">vs</div>';
+    h += '<div class="shape-card"><div style="font-size:13px;font-weight:800;color:var(--purple);margin-bottom:4px;">B</div>';
+    h += buildCircleSVG(S.playCompareB.d, shadedB, false, 'cb', 140);
+    h += '</div>';
+    h += '</div>';
+  }
+
+  // MC buttons
+  h += '<div class="mc-grid">';
+  S.playChoices.forEach((c, idx) => {
+    let label = c;
+    if (S.playType === 'compare') {
+      if (c === 'A') label = 'A is bigger';
+      else if (c === 'B') label = 'B is bigger';
+      else label = 'They are the same';
+    }
+    h += '<button class="mc-btn" id="gmc' + idx + '" onclick="checkPlay(\'' + c.replace(/'/g, "\\'") + '\',' + idx + ')">' + label + '</button>';
+  });
+  h += '</div>';
+
+  ws.innerHTML = h;
+
+  // Side panel
+  let sph = '';
+  sph += '<div class="score-display"><div class="score-label">Score</div><div class="score-value">' + S.score + '</div>';
+  sph += '<div class="score-label" style="margin-top:8px;">Streak</div>';
+  sph += '<div class="streak-bar"><div class="streak-fill" style="width:' + Math.min(S.streak * 20, 100) + '%;"></div></div>';
+  sph += '<div style="font-size:11px;color:var(--muted);margin-top:4px;">' + S.streak + ' in a row (best: ' + S.best + ')</div>';
+  sph += '</div>';
+
+  sph += '<div class="panel-section"><div class="panel-title">Scoring</div><div class="panel-text">';
+  sph += '<strong>+10</strong> base points<br><strong>+streak &times; 2</strong> bonus<br>Build your streak for bigger points!';
+  sph += '</div></div>';
+
+  sph += '<div class="panel-section"><div class="panel-title">Round Results</div><div class="panel-text">';
+  if (S.roundResults.length > 0) {
+    sph += S.roundResults.map((r, i) => '<span style="color:var(--' + (r === 'correct' ? 'green' : 'pink') + ');font-weight:700;">' + (i + 1) + '</span>').join(' ');
+  } else {
+    sph += '<span style="color:var(--muted);">No rounds yet</span>';
+  }
+  sph += '</div></div>';
+
+  sp.innerHTML = sph;
+}
+
+function checkPlay(clicked, idx) {
+  if (S.playLocked || S.gameOver) return;
+  S.playLocked = true;
+  const btn = document.getElementById('gmc' + idx);
+
+  if (clicked === S.playAnswer) {
+    const pts = 10 + S.streak * 2;
+    S.score += pts;
+    S.streak++;
+    if (S.streak > S.best) S.best = S.streak;
+    S.roundResults.push('correct');
+    btn.classList.add('correct-flash');
+    showFB('+' + pts + ' points!', 'correct');
+    setTimeout(() => { newPlayRound(); render(); }, 1200);
+  } else {
+    S.roundResults.push('incorrect');
+    S.streak = 0;
+    btn.classList.add('incorrect-flash');
+
+    // Targeted misconception feedback
+    const fb = detectPlayMisconception(clicked);
+    showFB(fb, 'incorrect');
+
+    setTimeout(() => {
+      btn.classList.remove('incorrect-flash');
+      newPlayRound();
+      render();
+    }, 2400);
+  }
+}
+
+function detectPlayMisconception(clicked) {
+  if (S.playType === 'partition') {
+    return MISCONCEPTIONS.halvesVsThirds.msg();
+  }
+  if (S.playType === 'compare') {
+    return MISCONCEPTIONS.wholeMismatch.msg();
+  }
+  if (S.playType === 'count') {
+    const complement = S.playPartitions - S.playShaded;
+    if (clicked === String(complement) && complement !== S.playShaded) {
+      return MISCONCEPTIONS.shadedVsUnshaded.msg(S.playShaded, S.playPartitions);
+    }
+    if (Math.abs(parseInt(clicked) - S.playShaded) === 1) {
+      return MISCONCEPTIONS.offByOne.msg(S.playShaded, clicked);
+    }
+    return MISCONCEPTIONS.randomGuess.msg();
+  }
+  // name type
+  const complement = S.playPartitions - S.playShaded;
+  if (complement > 0 && clicked === fractionWord(complement, S.playPartitions)) {
+    return MISCONCEPTIONS.shadedVsUnshaded.msg(S.playShaded, S.playPartitions);
+  }
+  const clickedHas = (w) => clicked.toLowerCase().includes(w);
+  const answerHas = (w) => S.playAnswer.toLowerCase().includes(w);
+  if ((clickedHas('half') && !answerHas('half')) || (clickedHas('third') && !answerHas('third')) || (clickedHas('fourth') && !answerHas('fourth'))) {
+    return MISCONCEPTIONS.halvesVsThirds.msg();
+  }
+  return MISCONCEPTIONS.randomGuess.msg();
+}
+
+/* ── Init ── */
+render();
+</script>
+<script src="../../vinculum-core.js"></script>
+<script src="../../vinculum-data.js"></script>
+<script src="../../vinculum-adaptive-hook.js"></script>
+<script src="../../vinculum-3reads.js"></script>
+<script src="../../vinculum-stories.js"></script>
+<script src="../../vinculum-feedback.js"></script>
+<script src="../../vinculum-guide.js"></script>
+<script src="../../vinculum-identity.js"></script>
+<script src="../../vinculum-indigenous.js"></script>
+<script src="../../vinculum-dashboard.js"></script>
+<script src="../../vinculum-hyperfocus.js"></script>
+<script src="../../vinculum-layout.js"></script>
+</body>
+</html>

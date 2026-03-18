@@ -1,0 +1,780 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>3D Geometry Viewer — VINCULUM Hub</title>
+<link href="https://fonts.googleapis.com/css2?family=Fira+Code:wght@400;600&family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<style>
+:root {
+  --neon: #00f2ff; --bg: #050507; --bg2: rgba(10,10,15,0.98); --card: rgba(10,10,15,0.98);
+  --card-hover: rgba(15,15,25,0.98); --border: rgba(255,255,255,0.1);
+  --text: #e8edf5; --muted: rgba(255,255,255,0.5); --dim: rgba(255,255,255,0.3);
+  --cyan: #00f2ff; --purple: #bc13fe; --green: #10b981; --pink: #ff3b8b;
+  --yellow: #fde047; --orange: #ff9100; --accent: #bc13fe; --emerald: #10b981;
+  --grad: linear-gradient(135deg, #00f2ff, #bc13fe);
+}
+* { margin:0; padding:0; box-sizing:border-box; }
+body { font-family:'Inter',system-ui,sans-serif; background:var(--bg); color:var(--text); min-height:100vh; }
+
+/* Header */
+.header { display:flex; align-items:center; justify-content:space-between; padding:16px 24px; background:var(--bg2); backdrop-filter:blur(20px); border-bottom:1px solid var(--border); position:sticky; top:0; z-index:100; }
+.header a { color:var(--cyan); text-decoration:none; font-size:14px; display:flex; align-items:center; gap:6px; transition:color 0.2s; }
+.header a:hover { color:var(--purple); }
+.header h1 { font-size:20px; font-weight:700; background:var(--grad); -webkit-background-clip:text; -webkit-text-fill-color:transparent; }
+
+/* Container */
+.container { max-width:1100px; margin:0 auto; padding:24px; }
+
+/* Grade Filter */
+.grade-filter { display:flex; gap:8px; margin-bottom:28px; flex-wrap:wrap; }
+.grade-btn { padding:8px 18px; border:1px solid var(--border); border-radius:8px; background:var(--card); color:var(--muted); font-size:13px; font-weight:600; cursor:pointer; transition:all 0.2s; font-family:inherit; }
+.grade-btn:hover { border-color:var(--cyan); color:var(--text); }
+.grade-btn.active { background:var(--grad); color:#0a0e1a; border-color:transparent; }
+
+/* Topic Cards */
+.topics-grid { display:grid; grid-template-columns:repeat(auto-fill, minmax(340px, 1fr)); gap:16px; margin-bottom:28px; }
+.topic-card { background:var(--card); border:1px solid var(--border); border-radius:12px; padding:20px; transition:all 0.25s; cursor:default; }
+.topic-card:hover { border-color:var(--cyan); background:var(--card-hover); transform:translateY(-2px); box-shadow:0 8px 24px rgba(0,212,255,0.08); }
+.topic-card.hidden { display:none; }
+.tc-top { display:flex; align-items:flex-start; gap:14px; margin-bottom:12px; }
+.tc-icon { width:44px; height:44px; border-radius:10px; background:rgba(0,212,255,0.12); display:flex; align-items:center; justify-content:center; font-size:22px; flex-shrink:0; }
+.tc-title { font-size:16px; font-weight:700; margin-bottom:2px; }
+.tc-grades { font-size:11px; color:var(--muted); }
+.tc-desc { font-size:13px; color:var(--muted); line-height:1.5; margin-bottom:10px; }
+.tc-formulas { font-size:12px; color:var(--cyan); font-family:'JetBrains Mono',monospace; margin-bottom:10px; display:flex; flex-wrap:wrap; gap:6px 14px; }
+.tc-standards { display:flex; flex-wrap:wrap; gap:4px; margin-bottom:14px; }
+.std-badge { font-size:10px; padding:3px 7px; border-radius:4px; background:rgba(179,136,255,0.15); color:var(--purple); border:1px solid rgba(179,136,255,0.2); }
+.tc-actions { display:flex; gap:8px; }
+.btn { padding:8px 16px; border:none; border-radius:8px; font-size:13px; font-weight:600; cursor:pointer; font-family:inherit; transition:all 0.2s; display:flex; align-items:center; gap:6px; }
+.btn-3d { background:var(--grad); color:#0a0e1a; }
+.btn-3d:hover { transform:translateY(-1px); box-shadow:0 4px 14px rgba(0,212,255,0.3); }
+.btn-print { background:rgba(0,230,118,0.12); color:var(--green); border:1px solid rgba(0,230,118,0.25); }
+.btn-print:hover { background:rgba(0,230,118,0.2); }
+
+/* 3D Viewer Panel */
+.viewer-panel { max-height:0; overflow:hidden; transition:max-height 0.5s ease, opacity 0.3s ease; opacity:0; margin-bottom:20px; border-radius:12px; border:1px solid var(--border); background:var(--card); }
+.viewer-panel.open { max-height:85vh; opacity:1; }
+.viewer-header { display:flex; align-items:center; justify-content:space-between; padding:12px 20px; background:linear-gradient(135deg,#1E2761,#2D3A8C); border-radius:12px 12px 0 0; }
+.viewer-header h3 { color:#fff; font-size:15px; font-weight:600; }
+.viewer-close { background:rgba(255,255,255,0.15); border:none; color:#fff; width:32px; height:32px; border-radius:8px; cursor:pointer; font-size:18px; transition:background 0.2s; }
+.viewer-close:hover { background:rgba(255,255,255,0.25); }
+.viewer-frame { width:100%; height:80vh; border:none; display:block; }
+.viewer-loading { display:flex; align-items:center; justify-content:center; height:80vh; background:#0f1629; }
+.spinner { width:40px; height:40px; border:3px solid var(--border); border-top-color:var(--cyan); border-radius:50%; animation:spin 0.8s linear infinite; }
+@keyframes spin { to { transform:rotate(360deg); } }
+
+/* Print Options Panel */
+.print-panel { background:var(--card); border:1px solid var(--border); border-radius:12px; padding:20px; margin-bottom:20px; display:none; }
+.print-panel.open { display:block; animation:fadeIn 0.3s ease; }
+@keyframes fadeIn { from { opacity:0; transform:translateY(-8px); } to { opacity:1; transform:translateY(0); } }
+.print-panel h3 { font-size:15px; font-weight:700; margin-bottom:16px; background:var(--grad); -webkit-background-clip:text; -webkit-text-fill-color:transparent; }
+.print-row { display:flex; align-items:center; gap:12px; margin-bottom:14px; flex-wrap:wrap; }
+.print-label { font-size:13px; color:var(--muted); min-width:90px; font-weight:600; }
+.grid-btn { padding:6px 14px; border:1px solid var(--border); border-radius:6px; background:var(--bg); color:var(--muted); font-size:12px; font-weight:600; cursor:pointer; font-family:inherit; transition:all 0.2s; }
+.grid-btn:hover { border-color:var(--cyan); color:var(--text); }
+.grid-btn.active { background:var(--cyan); color:#0a0e1a; border-color:var(--cyan); }
+.chk-label { display:flex; align-items:center; gap:6px; font-size:13px; color:var(--text); cursor:pointer; }
+.chk-label input { accent-color:var(--cyan); }
+.dok-dot { display:inline-block; width:10px; height:10px; border-radius:50%; }
+.dok1 { background:var(--green); }
+.dok2 { background:var(--cyan); }
+.dok3 { background:var(--pink); }
+.btn-generate { padding:12px 28px; background:var(--grad); color:#0a0e1a; border:none; border-radius:10px; font-size:15px; font-weight:700; cursor:pointer; font-family:inherit; transition:all 0.2s; margin-top:8px; }
+.btn-generate:hover { transform:translateY(-2px); box-shadow:0 6px 20px rgba(0,212,255,0.3); }
+
+/* Section label */
+.section-label { font-size:11px; letter-spacing:0.08em; color:var(--dim); font-weight:700; text-transform:uppercase; margin-bottom:12px; }
+
+/* Glass & Glow */
+.topic-card, .print-panel, .viewer-panel { backdrop-filter: blur(20px); }
+.topic-card:hover { border-color: var(--neon); box-shadow: 0 0 20px rgba(0,242,255,0.15); }
+.grade-btn.active { background: var(--neon); color: #050507; border-color: var(--neon); box-shadow: 0 0 15px rgba(0,242,255,0.4); font-weight: 900; }
+.grid-btn.active { background: var(--neon); color: #050507; box-shadow: 0 0 12px rgba(0,242,255,0.3); }
+.btn-3d { box-shadow: 0 0 12px rgba(0,242,255,0.2); }
+.btn-3d:hover { box-shadow: 0 0 25px rgba(0,242,255,0.5); }
+.btn-generate { box-shadow: 0 0 20px rgba(0,242,255,0.2); }
+.btn-generate:hover { box-shadow: 0 0 30px rgba(0,242,255,0.5); }
+.tc-title { font-weight: 900; letter-spacing: -0.02em; }
+.tc-formulas { font-family: 'Fira Code', monospace; color: var(--neon); }
+.tc-icon { background: rgba(0,242,255,0.08); border: 1px solid rgba(0,242,255,0.15); }
+.std-badge { background: rgba(188,19,254,0.12); color: var(--purple); border: 1px solid rgba(188,19,254,0.2); }
+.section-label { color: var(--neon); font-family: 'Fira Code', monospace; letter-spacing: 0.3em; }
+.viewer-header { background: linear-gradient(135deg, rgba(0,242,255,0.15), rgba(188,19,254,0.15)); backdrop-filter: blur(20px); }
+.viewer-close { background: rgba(0,242,255,0.15); border: 1px solid rgba(0,242,255,0.2); }
+.viewer-close:hover { background: rgba(0,242,255,0.3); box-shadow: 0 0 12px rgba(0,242,255,0.3); }
+.dok-dot { box-shadow: 0 0 6px currentColor; }
+
+/* Explode Animation */
+@keyframes pulse-border { 0% { border-color: var(--neon); } 50% { border-color: var(--accent); } 100% { border-color: var(--neon); } }
+.explode-active { animation: pulse-border 2s infinite; }
+@keyframes explode-in { 0% { opacity:0; transform: scale(0.85) translateY(15px); } 100% { opacity:1; transform: scale(1) translateY(0); } }
+.explode-card { animation: explode-in 0.5s cubic-bezier(0.16,1,0.3,1) forwards; }
+@keyframes neon-pulse { 0%,100% { text-shadow: 0 0 4px rgba(0,242,255,0.4); } 50% { text-shadow: 0 0 16px rgba(0,242,255,0.8), 0 0 30px rgba(0,242,255,0.3); } }
+.neon-glow { animation: neon-pulse 3s ease-in-out infinite; }
+
+@media (max-width:600px) {
+  .topics-grid { grid-template-columns:1fr; }
+  .tc-actions { flex-direction:column; }
+  .btn { width:100%; justify-content:center; }
+}
+</style>
+</head>
+<body>
+
+<div class="header">
+  <a href="VINCULUM-Hub.html"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M19 12H5M12 19l-7-7 7-7"/></svg> Back to Hub</a>
+  <h1 style="font-weight:900;font-style:italic;letter-spacing:-0.02em;">VINCULUM<span style="color:var(--neon);-webkit-text-fill-color:var(--neon);"> 3D</span></h1>
+</div>
+
+<div class="container">
+  <div class="grade-filter" id="gradeFilter"></div>
+  <div class="section-label">GEOMETRY TOPICS</div>
+  <div class="topics-grid" id="topicsGrid"></div>
+
+  <div class="viewer-panel" id="viewerPanel">
+    <div class="viewer-header">
+      <h3 id="viewerTitle">3D Geometry Explorer</h3>
+      <button class="viewer-close" onclick="closeViewer()">&times;</button>
+    </div>
+    <div id="viewerBody">
+      <div class="viewer-loading" id="viewerLoading"><div class="spinner"></div></div>
+      <iframe class="viewer-frame" id="viewerFrame" src="" allow="fullscreen" style="display:none;"></iframe>
+    </div>
+  </div>
+
+  <div class="print-panel" id="printPanel">
+    <h3 id="printTitle">Print: Pythagorean Theorem</h3>
+    <div class="print-row">
+      <span class="print-label">Grid Density</span>
+      <button class="grid-btn" onclick="setGrid(4)" data-grid="4">4 / page</button>
+      <button class="grid-btn active" onclick="setGrid(6)" data-grid="6">6 / page</button>
+      <button class="grid-btn" onclick="setGrid(8)" data-grid="8">8 / page</button>
+      <button class="grid-btn" onclick="setGrid(10)" data-grid="10">10 / page</button>
+    </div>
+    <div class="print-row">
+      <span class="print-label">Include</span>
+      <label class="chk-label"><input type="checkbox" id="chkRef" checked> Reference Sheet</label>
+      <label class="chk-label"><input type="checkbox" id="chkKey" checked> Answer Key</label>
+    </div>
+    <div class="print-row">
+      <span class="print-label">DOK Levels</span>
+      <label class="chk-label"><input type="checkbox" id="chkD1" checked> <span class="dok-dot dok1"></span> DOK 1</label>
+      <label class="chk-label"><input type="checkbox" id="chkD2" checked> <span class="dok-dot dok2"></span> DOK 2</label>
+      <label class="chk-label"><input type="checkbox" id="chkD3" checked> <span class="dok-dot dok3"></span> DOK 3</label>
+    </div>
+    <button class="btn-generate" onclick="generatePDF()">Generate PDF</button>
+  </div>
+</div>
+
+<footer style="height:32px;background:var(--bg2);backdrop-filter:blur(20px);border-top:1px solid var(--border);display:flex;align-items:center;padding:0 24px;justify-content:space-between;">
+  <span style="font-family:'Fira Code',monospace;font-size:9px;color:rgba(255,255,255,0.3);letter-spacing:0.4em;text-transform:uppercase;">System: Geometry Core</span>
+  <span style="font-family:'Fira Code',monospace;font-size:9px;color:var(--neon);font-weight:700;letter-spacing:0.2em;">VINCULUM 3D Viewer | Drummond Math Solutions</span>
+</footer>
+
+<script>
+// ═══════════════════════════════════════════════════════════
+//  GEOMETRY TOPICS DATABASE
+// ═══════════════════════════════════════════════════════════
+const TOPICS = [
+  {
+    id:'pythagorean', name:'Pythagorean Theorem', icon:'△', grades:[8],
+    standards:['8.G.6','8.G.7','8.G.8','8.3.1.1'],
+    desc:'In a right triangle, a² + b² = c². Explore this relationship with interactive 3D geometry.',
+    formulas:['a² + b² = c²','c = √(a² + b²)'],
+    vocab:['hypotenuse','leg','right triangle','Pythagorean triple','converse']
+  },
+  {
+    id:'volume', name:'Volume & Measurement', icon:'⬡', grades:[6,7,8],
+    standards:['6.G.2','7.G.6','8.G.9','7.3.1.2'],
+    desc:'Calculate volume and surface area of 3D shapes: prisms, cylinders, cones, and spheres.',
+    formulas:['V = lwh','V = πr²h','V = ⅓πr²h','V = ⁴⁄₃πr³'],
+    vocab:['volume','surface area','prism','cylinder','cone','sphere','cubic units']
+  },
+  {
+    id:'circles', name:'Circumference & Area of Circles', icon:'○', grades:[7],
+    standards:['7.G.4','7.3.1.1'],
+    desc:'Understand the relationship between diameter and circumference (π). Calculate circumference and area.',
+    formulas:['C = πd = 2πr','A = πr²','π ≈ 3.14159'],
+    vocab:['circumference','radius','diameter','pi','arc','sector']
+  },
+  {
+    id:'similarity', name:'Similarity & Scaling', icon:'◇', grades:[7,8],
+    standards:['8.G.4','7.3.2.1','7.3.2.2'],
+    desc:'Visualize how scaling affects dimensions, area, and volume of geometric figures.',
+    formulas:['Length × k','Area × k²','Volume × k³'],
+    vocab:['similar','congruent','scale factor','dilation','proportion']
+  },
+  {
+    id:'proofs', name:'Geometric Proofs & Reasoning', icon:'▽', grades:[10],
+    standards:['G.CO.10','G.CO.11'],
+    desc:'Examine polyhedra, prove geometric relationships, and explore triangle congruence criteria.',
+    formulas:['∠ sum = 180°','SSS, SAS, ASA, AAS'],
+    vocab:['congruent','proof','postulate','theorem','CPCTC']
+  },
+  {
+    id:'trig', name:'Right Triangle Trigonometry', icon:'📐', grades:[10],
+    standards:['G.SRT.6','G.SRT.8'],
+    desc:'Visualize sine, cosine, and tangent ratios on a 3D right triangle.',
+    formulas:['sin = opp/hyp','cos = adj/hyp','tan = opp/adj'],
+    vocab:['sine','cosine','tangent','opposite','adjacent','angle of elevation']
+  },
+  {
+    id:'transforms', name:'Circles & Transformations', icon:'↻', grades:[8,10],
+    standards:['8.G.1','8.G.3','G.CO.2'],
+    desc:'Apply rotations, reflections, and translations. Explore circle equations in coordinate space.',
+    formulas:['(x-h)²+(y-k)²=r²','90° CCW: (x,y)→(-y,x)'],
+    vocab:['rotation','reflection','translation','rigid transformation','center of rotation']
+  },
+  {
+    id:'surface', name:'Surface Area', icon:'⬜', grades:[6,7],
+    standards:['6.G.4','7.G.6'],
+    desc:'Unfold and measure the surface area of 3D shapes. See nets come alive.',
+    formulas:['SA = 2(lw+lh+wh)','SA cyl = 2πr²+2πrh'],
+    vocab:['surface area','net','face','lateral area','base area']
+  }
+];
+
+// ═══════════════════════════════════════════════════════════
+//  GEOMETRY PROBLEMS DATABASE (from lesson-digester)
+// ═══════════════════════════════════════════════════════════
+const PROBLEMS = {
+  'pythagorean': {
+    dok1: [
+      {stem:'State the Pythagorean Theorem.', answer:'a² + b² = c², where c is the hypotenuse.', hint:'The theorem relates the three sides of a right triangle.'},
+      {stem:'A right triangle has legs 3 and 4. Find the hypotenuse.', answer:'c = √(9+16) = √25 = 5', hint:'Substitute into a² + b² = c².'},
+      {stem:'A right triangle has legs 6 and 8. Find the hypotenuse.', answer:'c = √(36+64) = √100 = 10', hint:'6² + 8² = c².'},
+      {stem:'Is a triangle with sides 5, 12, 13 a right triangle?', answer:'Yes. 5² + 12² = 25 + 144 = 169 = 13².', hint:'Check if the sum of the squares of the two shorter sides equals the square of the longest.'},
+      {stem:'A right triangle has hypotenuse 10 and one leg 6. Find the other leg.', answer:'a = √(100-36) = √64 = 8', hint:'Rearrange: a² = c² - b².'},
+      {stem:'Find the hypotenuse: legs 5 and 12.', answer:'c = √(25+144) = √169 = 13', hint:'5² + 12² = c².'},
+      {stem:'A right triangle has legs 1 and 1. Find the hypotenuse.', answer:'c = √2 ≈ 1.414', hint:'1² + 1² = c² → c = √2.'},
+      {stem:'Is (7, 24, 25) a Pythagorean triple?', answer:'Yes. 7² + 24² = 49 + 576 = 625 = 25².', hint:'Check if a² + b² = c².'}
+    ],
+    dok2: [
+      {stem:'A 13-foot ladder leans against a wall. The base is 5 feet from the wall. How high does the ladder reach?', answer:'h = √(169-25) = √144 = 12 feet', hint:'The ladder is the hypotenuse.'},
+      {stem:'A rectangular field is 40m by 30m. How long is the diagonal?', answer:'d = √(1600+900) = √2500 = 50m', hint:'The diagonal forms a right triangle with the sides.'},
+      {stem:'A ship sails 8 km east then 15 km north. How far is it from its starting point?', answer:'d = √(64+225) = √289 = 17 km', hint:'The path forms a right triangle.'},
+      {stem:'Find the distance between (1, 2) and (4, 6).', answer:'d = √(9+16) = √25 = 5', hint:'Use the distance formula: d = √((x₂-x₁)² + (y₂-y₁)²).'},
+      {stem:'A ramp rises 3 feet over a horizontal distance of 4 feet. How long is the ramp surface?', answer:'L = √(9+16) = √25 = 5 feet', hint:'The ramp is the hypotenuse.'},
+      {stem:'An isosceles right triangle has legs of length 7. Find the hypotenuse.', answer:'c = 7√2 ≈ 9.899', hint:'In a 45-45-90 triangle, hypotenuse = leg × √2.'},
+      {stem:'A 20-foot wire is attached from the top of a pole to a point 16 feet from the base. How tall is the pole?', answer:'h = √(400-256) = √144 = 12 feet', hint:'The wire is the hypotenuse.'}
+    ],
+    dok3: [
+      {stem:'A park has corners at (0,0), (6,0), (6,8), and (0,8). A path goes from (0,0) to (6,8). Another goes from (0,0) to (6,0) to (6,8). How much shorter is the diagonal path?', answer:'Diagonal: √(36+64)=10. L-path: 6+8=14. Shorter by 4 units.', hint:'Calculate each path length using distance formula.'},
+      {stem:'Prove that a triangle with sides 9, 40, and 41 is a right triangle. Then find its area.', answer:'9²+40²=81+1600=1681=41². Area = ½(9)(40) = 180 sq units.', hint:'Verify the Pythagorean relationship, then use A = ½ × leg × leg.'},
+      {stem:'A 25-foot ladder reaches a window 24 feet high. If the ladder is moved so its base is 7 feet farther from the wall, will it still reach the window? Justify.', answer:'Original base: √(625-576)=7 ft. New base: 14 ft. New height: √(625-196)=√429≈20.7 ft. No, it falls short by about 3.3 feet.', hint:'Find the original base distance, add 7, then recalculate the height.'}
+    ]
+  },
+  'volume': {
+    dok1: [
+      {stem:'Find the volume of a rectangular prism: l=5, w=3, h=4.', answer:'V = 60 cubic units', hint:'V = l × w × h'},
+      {stem:'Find the volume of a cube with side 6.', answer:'V = 216 cubic units', hint:'V = s³'},
+      {stem:'Find the volume of a cylinder: r=3, h=10.', answer:'V = 90π ≈ 282.7 cubic units', hint:'V = πr²h'},
+      {stem:'A box is 10 in × 8 in × 5 in. What is its volume?', answer:'400 cubic inches', hint:'Multiply length × width × height.'},
+      {stem:'Find the volume of a cone: r=4, h=9.', answer:'V = 48π ≈ 150.8 cubic units', hint:'V = ⅓πr²h'},
+      {stem:'Find the volume of a sphere with r=3.', answer:'V = 36π ≈ 113.1 cubic units', hint:'V = ⁴⁄₃πr³'}
+    ],
+    dok2: [
+      {stem:'A cylindrical water tank has diameter 6 ft and height 8 ft. How many cubic feet of water does it hold?', answer:'V = π(3²)(8) = 72π ≈ 226.2 ft³', hint:'Diameter = 6, so radius = 3.'},
+      {stem:'A cone and cylinder have the same radius (5) and height (12). How do their volumes compare?', answer:'Cylinder: 300π. Cone: 100π. The cone is exactly ⅓ the cylinder.', hint:'V_cone = ⅓ × V_cylinder when r and h are equal.'},
+      {stem:'A rectangular box has volume 240 cm³. Its length is 8 cm and width is 6 cm. Find the height.', answer:'h = 240/(8×6) = 5 cm', hint:'V = lwh → h = V/(lw).'},
+      {stem:'A basketball has diameter 9.4 inches. Find its volume.', answer:'V = ⁴⁄₃π(4.7)³ ≈ 434.9 in³', hint:'r = 9.4/2 = 4.7'},
+      {stem:'Which has more volume: a cube with side 8 or a cylinder with r=5, h=8?', answer:'Cube: 512. Cylinder: 200π ≈ 628.3. The cylinder holds more.', hint:'Calculate both and compare.'}
+    ],
+    dok3: [
+      {stem:'A company ships balls (r=3 in) in cubic boxes. What percentage of the box space is wasted?', answer:'Ball V = 36π ≈ 113.1 in³. Box = 6³ = 216 in³. Wasted: (216-113.1)/216 ≈ 47.6%.', hint:'The box side = diameter = 6 inches.'},
+      {stem:'A cone has volume 150π cm³ and height 18 cm. If you double the radius and halve the height, what is the new volume?', answer:'Original: 150π = ⅓πr²(18) → r² = 25 → r = 5. New: ⅓π(10²)(9) = 300π cm³. Volume doubled.', hint:'Find original radius, then calculate with new dimensions.'},
+      {stem:'Design a cylindrical container that holds exactly 1000 cm³ and uses the minimum material (surface area). What should the dimensions be?', answer:'Optimal when h = 2r. 1000 = πr²(2r) → r³ = 500/π → r ≈ 5.42 cm, h ≈ 10.84 cm. SA ≈ 553.6 cm².', hint:'Minimum SA for fixed volume occurs when h = 2r (height = diameter).'}
+    ]
+  },
+  'circles': {
+    dok1: [
+      {stem:'Find the circumference of a circle with radius 7.', answer:'C = 2π(7) = 14π ≈ 43.98', hint:'C = 2πr'},
+      {stem:'Find the area of a circle with radius 5.', answer:'A = π(25) = 25π ≈ 78.54', hint:'A = πr²'},
+      {stem:'A circle has diameter 12. Find its circumference.', answer:'C = 12π ≈ 37.70', hint:'C = πd'},
+      {stem:'Find the area of a circle with diameter 10.', answer:'A = π(5²) = 25π ≈ 78.54', hint:'r = d/2 = 5'},
+      {stem:'A circle has circumference 20π. What is its radius?', answer:'r = 10 (since 2πr = 20π)', hint:'Divide circumference by 2π.'},
+      {stem:'Find the area of a semicircle with radius 6.', answer:'A = ½π(36) = 18π ≈ 56.55', hint:'Half the area of a full circle.'}
+    ],
+    dok2: [
+      {stem:'A circular garden has radius 8 m. How much fencing is needed to enclose it? How much soil to fill it 0.5 m deep?', answer:'Fence: 16π ≈ 50.27 m. Soil: 64π(0.5) = 32π ≈ 100.53 m³.', hint:'Fence = circumference. Soil = area × depth.'},
+      {stem:'A pizza has diameter 16 inches. You eat a slice with central angle 45°. What area did you eat?', answer:'A = (45/360)π(8²) = 8π ≈ 25.13 in²', hint:'Sector area = (θ/360)πr²'},
+      {stem:'A tire has outer diameter 26 in. How far does the bike travel in 100 full wheel rotations?', answer:'C = 26π. Distance = 100(26π) = 2600π ≈ 8168 inches ≈ 681 feet.', hint:'Each rotation = one circumference.'},
+      {stem:'Two concentric circles have radii 5 and 8. Find the area of the ring between them.', answer:'A = π(64) - π(25) = 39π ≈ 122.52', hint:'Subtract inner area from outer area.'}
+    ],
+    dok3: [
+      {stem:'A farmer has 100 meters of fence. Compare: (a) a square pen vs (b) a circular pen. Which encloses more area? By what percent?', answer:'Square: side=25, area=625 m². Circle: 2πr=100, r≈15.92, area≈795.8 m². Circle is ≈27.3% larger.', hint:'Set perimeter = 100 for each, solve for dimensions, calculate areas.'},
+      {stem:'A running track has two straight sides of 100 m and two semicircular ends. The total track length is 400 m. Find the radius of the semicircles and the total area enclosed.', answer:'Semicircles total: 400-200=200 m = full circumference. r = 200/(2π) ≈ 31.83 m. Area = 100(2r) + πr² = 6366 + 3183 ≈ 9549 m².', hint:'The two semicircles form a full circle with circumference 200m.'}
+    ]
+  },
+  'similarity': {
+    dok1: [
+      {stem:'Two similar triangles have a scale factor of 3. If a side of the smaller is 4, what is the corresponding side of the larger?', answer:'12', hint:'Multiply by the scale factor.'},
+      {stem:'A rectangle is 6×8. A similar rectangle has width 12. What is its length?', answer:'16 (scale factor = 2)', hint:'Find the scale factor: 12/6 = 2.'},
+      {stem:'Are two squares always similar?', answer:'Yes. All squares have equal angles and proportional sides.', hint:'Similar means same shape, not same size.'},
+      {stem:'Triangle ABC ~ Triangle DEF. AB=5, DE=10. What is the scale factor?', answer:'k = 2 (or 1:2)', hint:'Scale factor = larger/smaller.'},
+      {stem:'If two figures are similar with scale factor 4, and a side of the small figure is 3 cm, find the corresponding side.', answer:'12 cm', hint:'Multiply: 3 × 4 = 12.'}
+    ],
+    dok2: [
+      {stem:'A model car is built at 1:24 scale. The real car is 180 inches long. How long is the model?', answer:'180/24 = 7.5 inches', hint:'Divide real length by scale factor.'},
+      {stem:'Two similar triangles have sides 5,12,13 and 10,24,26. What is the ratio of their areas?', answer:'Scale factor = 2. Area ratio = 2² = 4:1.', hint:'Area ratio = (scale factor)².'},
+      {stem:'A map has scale 1 inch = 5 miles. Two cities are 3.5 inches apart on the map. How far apart are they?', answer:'3.5 × 5 = 17.5 miles', hint:'Multiply map distance by the scale.'},
+      {stem:'If the scale factor between two similar solids is 3, what is the ratio of their volumes?', answer:'3³ = 27:1', hint:'Volume ratio = (scale factor)³.'}
+    ],
+    dok3: [
+      {stem:'A statue is 6 feet tall and casts an 8-foot shadow. A nearby building casts a 56-foot shadow. How tall is the building? Explain why this method works.', answer:'6/8 = h/56 → h = 42 feet. This works because the sun creates similar triangles — same angle of elevation means proportional sides.', hint:'Set up a proportion using similar triangles.'},
+      {stem:'A company wants to build a tank similar to their current one (2m × 3m × 4m) that holds 8 times the volume. What should the dimensions be?', answer:'Volume factor = 8 = k³, so k = 2. New: 4m × 6m × 8m.', hint:'If volume multiplies by 8, the scale factor is ∛8 = 2.'}
+    ]
+  },
+  'proofs': {
+    dok1: [
+      {stem:'Name the triangle congruence postulate: two sides and the included angle match.', answer:'SAS (Side-Angle-Side)', hint:'The angle must be between the two sides.'},
+      {stem:'What is the sum of interior angles in a triangle?', answer:'180°', hint:'Triangle Angle Sum Theorem.'},
+      {stem:'Two supplementary angles: one is 112°. Find the other.', answer:'68°', hint:'Supplementary angles sum to 180°.'},
+      {stem:'If ∠A = 40° and ∠B = 75° in △ABC, find ∠C.', answer:'65° (180 - 40 - 75)', hint:'Angles sum to 180°.'},
+      {stem:'List the four triangle congruence criteria.', answer:'SSS, SAS, ASA, AAS', hint:'Combinations of sides (S) and angles (A).'},
+      {stem:'Two parallel lines cut by a transversal: one angle is 65°. Find its alternate interior angle.', answer:'65° (alternate interior angles are congruent)', hint:'Alternate interior angles are equal when lines are parallel.'}
+    ],
+    dok2: [
+      {stem:'In △PQR and △STU: PQ=ST, QR=TU, ∠Q=∠T=90°. Which congruence criterion applies?', answer:'SAS: the right angle is included between the two known sides.', hint:'Check if the angle is between the two sides.'},
+      {stem:'Two parallel lines cut by a transversal form angles (3x+10)° and (5x-20)° (corresponding). Find x.', answer:'3x+10=5x-20 → 2x=30 → x=15. Both angles = 55°.', hint:'Corresponding angles are equal.'},
+      {stem:'Prove a triangle with sides 8, 8, 6 is isosceles and find its height.', answer:'Isosceles (8=8). Height bisects base: h²+3²=8² → h=√55 ≈ 7.42.', hint:'Use Pythagorean theorem with half the base.'},
+      {stem:'∠1 and ∠2 are vertical angles. ∠2 and ∠3 are supplementary. If ∠3=130°, find ∠1.', answer:'∠2 = 50° (supplementary). ∠1 = 50° (vertical).', hint:'Work backward through the relationships.'}
+    ],
+    dok3: [
+      {stem:'Write a proof: Given parallelogram ABCD, prove AB=CD and BC=DA.', answer:'Draw diagonal AC. Alt int angles give △ABC ≅ △CDA by ASA. Then AB=CD and BC=DA by CPCTC.', hint:'A diagonal creates two congruent triangles.'},
+      {stem:'Prove that the angle bisector of the vertex angle of an isosceles triangle is also the perpendicular bisector of the base.', answer:'SAS gives △ABD ≅ △ACD. Then BD=CD (midpoint) and ∠ADB=∠ADC=90° (linear pair).', hint:'Use SAS with the bisected angle and equal sides.'}
+    ]
+  },
+  'trig': {
+    dok1: [
+      {stem:'In a right triangle, opposite=5, hypotenuse=13. Find sin(A).', answer:'sin(A) = 5/13', hint:'SOH: sin = opposite/hypotenuse.'},
+      {stem:'Find cos(60°).', answer:'0.5', hint:'Special angle from 30-60-90 triangle.'},
+      {stem:'Legs 3 and 4. Find tan(θ) where θ is opposite the side of 3.', answer:'tan(θ) = 3/4', hint:'TOA: tan = opposite/adjacent.'},
+      {stem:'What are the side ratios in a 45-45-90 triangle?', answer:'1 : 1 : √2', hint:'Isosceles right triangle.'},
+      {stem:'What are the side ratios in a 30-60-90 triangle?', answer:'1 : √3 : 2', hint:'Shortest side opposite 30°.'},
+      {stem:'If tan(θ) = 1, what is θ?', answer:'45°', hint:'When opposite = adjacent.'}
+    ],
+    dok2: [
+      {stem:'A 20-ft ladder at 65° to the ground. How high does it reach?', answer:'h = 20·sin(65°) ≈ 18.13 ft', hint:'Height is opposite the angle.'},
+      {stem:'From a 150-ft lighthouse, angle of depression to a ship is 12°. How far is the ship?', answer:'d = 150/tan(12°) ≈ 705.7 ft', hint:'Use tangent with opposite = 150.'},
+      {stem:'A ramp rises 3 ft over 18 ft horizontal. Find the angle.', answer:'θ = arctan(3/18) ≈ 9.46°', hint:'Use inverse tangent.'},
+      {stem:'A surveyor is 80 m from a tower. Angle of elevation = 52°. Find the height.', answer:'h = 80·tan(52°) ≈ 102.4 m', hint:'Height is opposite, distance is adjacent.'}
+    ],
+    dok3: [
+      {stem:'From two points 500m apart on a road, a hiker is spotted at angles 72° and 58° from the road. How far is the hiker from the road?', answer:'x·tan(72°) = (500-x)·tan(58°). Solve: x ≈ 171.1m. Distance = 171.1·tan(72°) ≈ 526.5m.', hint:'Set up two right triangles sharing the same height.'},
+      {stem:'Design an ADA ramp (max 1:12 slope) for a 30-inch entrance. Find length, angle, and whether a landing is needed (required every 30 ft).', answer:'Run: 360 in = 30 ft. Length ≈ 30.1 ft. Angle ≈ 4.76°. One landing needed (>30 ft).', hint:'1:12 means 1 inch rise per 12 inches run.'}
+    ]
+  },
+  'transforms': {
+    dok1: [
+      {stem:'Write the equation of a circle: center (3,-2), radius 5.', answer:'(x-3)² + (y+2)² = 25', hint:'Standard form: (x-h)² + (y-k)² = r².'},
+      {stem:'Identify center and radius: (x+1)² + (y-4)² = 36', answer:'Center (-1,4), radius 6', hint:'h = -1, k = 4, r = √36 = 6.'},
+      {stem:'Reflect (4,-3) over the x-axis.', answer:'(4, 3)', hint:'Change sign of y-coordinate.'},
+      {stem:'Translate (2,5) by ⟨-3,4⟩.', answer:'(-1, 9)', hint:'Add vector components.'},
+      {stem:'Rotate (1,0) by 90° CCW about the origin.', answer:'(0, 1)', hint:'Rule: (x,y) → (-y,x).'},
+      {stem:'Find arc length: 90° arc, radius 8.', answer:'4π ≈ 12.57 units', hint:'Arc = (θ/360) × 2πr.'}
+    ],
+    dok2: [
+      {stem:'Sprinkler at (5,-3) with range 10. Does it reach (13,3)?', answer:'(13-5)²+(3+3)²=64+36=100=10². Yes, exactly on the circle.', hint:'Substitute into the equation.'},
+      {stem:'Rewrite x²+y²-6x+4y-12=0 in standard form.', answer:'(x-3)²+(y+2)²=25. Center (3,-2), r=5.', hint:'Complete the square for x and y.'},
+      {stem:'Reflect △ABC with A(1,2), B(4,2), C(4,6) over the y-axis.', answer:"A'(-1,2), B'(-4,2), C'(-4,6)", hint:'Negate x-coordinates.'},
+      {stem:'A Ferris wheel (r=30 ft) completes one revolution in 2 min. How far in 45 sec?', answer:'(45/120)(60π) = 22.5π ≈ 70.7 ft', hint:'45 sec = 3/8 of a revolution.'}
+    ],
+    dok3: [
+      {stem:'Tower at (2,3) range 8 mi. Tower at (10,9) range 6 mi. Do coverages overlap? Prove it.', answer:'Distance = √(64+36) = 10. Sum of radii = 14 > 10, |8-6| = 2 < 10. Yes, overlap exists.', hint:'Compare distance between centers to sum and difference of radii.'},
+      {stem:'Logo starts as unit square at (0,0),(1,0),(1,1),(0,1). Apply: reflect over y=x, rotate 90° CCW, translate ⟨2,3⟩. Find final coordinates and the single equivalent transformation.', answer:'Final: (2,3),(1,3),(1,4),(2,4). Combined: (x,y)→(2-y, 3+x), a 90° CCW rotation about (-0.5, 2.5).', hint:'Apply each transformation in sequence.'}
+    ]
+  },
+  'surface': {
+    dok1: [
+      {stem:'Find the surface area of a cube with side 4.', answer:'SA = 6(16) = 96 sq units', hint:'SA = 6s²'},
+      {stem:'Find the surface area of a rectangular prism: 3×4×5.', answer:'SA = 2(12+15+20) = 94 sq units', hint:'SA = 2(lw+lh+wh)'},
+      {stem:'A cylinder has r=3, h=10. Find its lateral surface area.', answer:'LA = 2π(3)(10) = 60π ≈ 188.5 sq units', hint:'Lateral area = 2πrh'},
+      {stem:'How many faces does a rectangular prism have?', answer:'6 faces', hint:'Top, bottom, front, back, left, right.'}
+    ],
+    dok2: [
+      {stem:'A gift box is 12×8×5 inches. How much wrapping paper is needed (no overlap)?', answer:'SA = 2(96+60+40) = 392 in²', hint:'Calculate all 6 faces.'},
+      {stem:'A soup can has diameter 6 cm and height 10 cm. Find total surface area.', answer:'SA = 2π(9)+2π(3)(10) = 18π+60π = 78π ≈ 245.0 cm²', hint:'Two circular bases + lateral area.'},
+      {stem:'You need to paint a room (no floor): 12×10×8 ft. Find wall + ceiling area.', answer:'Walls: 2(12×8)+2(10×8)=192+160=352. Ceiling: 120. Total: 472 ft².', hint:'Four walls plus ceiling.'}
+    ],
+    dok3: [
+      {stem:'A cube and a sphere have the same volume of 1000 cm³. Which has less surface area? By what percent?', answer:'Cube: s=10, SA=600. Sphere: r=6.20, SA=4π(38.47)≈483.6. Sphere has 19.4% less SA.', hint:'Find dimensions from volume, then calculate SA for each.'},
+      {stem:'An open-top box is made from a 20×20 sheet by cutting squares of side x from each corner. Express SA and volume in terms of x. What x maximizes volume?', answer:'V = x(20-2x)². Max when dV/dx=0: x≈3.33 cm. SA = (20-2x)² + 4x(20-2x).', hint:'Volume is base area × height. Take derivative to optimize.'}
+    ]
+  }
+};
+
+// ═══════════════════════════════════════════════════════════
+//  STATE
+// ═══════════════════════════════════════════════════════════
+let state = {
+  gradeFilter: 'all',
+  viewerOpen: false,
+  viewerTopic: null,
+  printTopic: null,
+  gridDensity: 6
+};
+
+// ═══════════════════════════════════════════════════════════
+//  RENDER
+// ═══════════════════════════════════════════════════════════
+function init() {
+  renderGradeFilter();
+  renderTopics();
+}
+
+function renderGradeFilter() {
+  const grades = ['all', '6', '7', '8', '10'];
+  const labels = { all:'All Grades', '6':'Grade 6', '7':'Grade 7', '8':'Grade 8', '10':'Grade 10' };
+  document.getElementById('gradeFilter').innerHTML = grades.map(g =>
+    `<button class="grade-btn ${state.gradeFilter===g?'active':''}" onclick="filterGrade('${g}')">${labels[g]}</button>`
+  ).join('');
+}
+
+function filterGrade(g) {
+  state.gradeFilter = g;
+  renderGradeFilter();
+  renderTopics();
+}
+
+function renderTopics() {
+  const grid = document.getElementById('topicsGrid');
+  grid.innerHTML = TOPICS.map(t => {
+    const show = state.gradeFilter === 'all' || t.grades.some(g => String(g) === state.gradeFilter);
+    const gradeStr = t.grades.length > 1 ? `Grades ${t.grades.join(', ')}` : `Grade ${t.grades[0]}`;
+    const probCount = PROBLEMS[t.id] ? Object.values(PROBLEMS[t.id]).reduce((s,a) => s+a.length, 0) : 0;
+    return `
+      <div class="topic-card ${show?'':'hidden'}">
+        <div class="tc-top">
+          <div class="tc-icon">${t.icon}</div>
+          <div>
+            <div class="tc-title">${t.name}</div>
+            <div class="tc-grades">${gradeStr} · ${probCount} problems</div>
+          </div>
+        </div>
+        <div class="tc-desc">${t.desc}</div>
+        <div class="tc-formulas">${t.formulas.map(f => `<span>${f}</span>`).join('')}</div>
+        <div class="tc-standards">${t.standards.map(s => `<span class="std-badge">${s}</span>`).join('')}</div>
+        <div class="tc-actions">
+          <button class="btn btn-3d" onclick="launch3D('${t.id}')">Launch 3D</button>
+          <button class="btn btn-print" onclick="openPrint('${t.id}')">Print Problems</button>
+        </div>
+      </div>`;
+  }).join('');
+}
+
+// ═══════════════════════════════════════════════════════════
+//  3D VIEWER
+// ═══════════════════════════════════════════════════════════
+function launch3D(topicId) {
+  const topic = TOPICS.find(t => t.id === topicId);
+  const panel = document.getElementById('viewerPanel');
+  const frame = document.getElementById('viewerFrame');
+  const loading = document.getElementById('viewerLoading');
+  const title = document.getElementById('viewerTitle');
+
+  if (state.viewerOpen && state.viewerTopic === topicId) { closeViewer(); return; }
+
+  title.textContent = topic ? topic.name + ' — 3D Explorer' : '3D Explorer';
+  loading.style.display = 'flex';
+  frame.style.display = 'none';
+  frame.src = 'https://discrafty-cpu.github.io/vinculum-3d-graphing-solution/';
+  frame.onload = () => { loading.style.display = 'none'; frame.style.display = 'block'; };
+
+  panel.classList.add('open');
+  state.viewerOpen = true;
+  state.viewerTopic = topicId;
+  panel.scrollIntoView({ behavior: 'smooth', block: 'start' });
+}
+
+function closeViewer() {
+  const panel = document.getElementById('viewerPanel');
+  const frame = document.getElementById('viewerFrame');
+  panel.classList.remove('open');
+  state.viewerOpen = false;
+  state.viewerTopic = null;
+  setTimeout(() => { frame.src = ''; }, 500);
+}
+
+document.addEventListener('keydown', e => { if (e.key === 'Escape' && state.viewerOpen) closeViewer(); });
+
+// ═══════════════════════════════════════════════════════════
+//  PRINT PANEL
+// ═══════════════════════════════════════════════════════════
+function openPrint(topicId) {
+  const topic = TOPICS.find(t => t.id === topicId);
+  const panel = document.getElementById('printPanel');
+  const title = document.getElementById('printTitle');
+
+  if (state.printTopic === topicId && panel.classList.contains('open')) {
+    panel.classList.remove('open'); state.printTopic = null; return;
+  }
+
+  title.textContent = 'Print: ' + topic.name;
+  state.printTopic = topicId;
+  panel.classList.add('open');
+  panel.scrollIntoView({ behavior: 'smooth', block: 'start' });
+}
+
+function setGrid(n) {
+  state.gridDensity = n;
+  document.querySelectorAll('.grid-btn').forEach(b => b.classList.toggle('active', b.dataset.grid == n));
+}
+
+// ═══════════════════════════════════════════════════════════
+//  PDF GENERATION
+// ═══════════════════════════════════════════════════════════
+function generatePDF() {
+  const topic = TOPICS.find(t => t.id === state.printTopic);
+  if (!topic) return alert('Select a topic first.');
+  const probs = PROBLEMS[topic.id];
+  if (!probs) return alert('No problems available for this topic.');
+
+  const includeRef = document.getElementById('chkRef').checked;
+  const includeKey = document.getElementById('chkKey').checked;
+  const dokFilter = [];
+  if (document.getElementById('chkD1').checked) dokFilter.push('dok1');
+  if (document.getElementById('chkD2').checked) dokFilter.push('dok2');
+  if (document.getElementById('chkD3').checked) dokFilter.push('dok3');
+
+  // Collect filtered problems
+  let allProbs = [];
+  dokFilter.forEach(dk => {
+    const level = dk === 'dok1' ? 1 : dk === 'dok2' ? 2 : 3;
+    (probs[dk] || []).forEach(p => allProbs.push({ ...p, dok: level }));
+  });
+
+  if (allProbs.length === 0) return alert('No problems match the selected DOK levels.');
+
+  const { jsPDF } = window.jspdf;
+  const pdf = new jsPDF({ unit: 'pt', format: 'letter' });
+  const W = 612, H = 792, M = 45, CW = W - 2*M;
+
+  // ── Reference Sheet ──
+  if (includeRef) {
+    // Header bar
+    pdf.setFillColor(30, 39, 97);
+    pdf.rect(0, 0, W, 70, 'F');
+    pdf.setFillColor(0, 212, 255);
+    pdf.rect(0, 68, W, 3, 'F');
+    pdf.setFont('helvetica', 'bold');
+    pdf.setFontSize(22);
+    pdf.setTextColor(255, 255, 255);
+    pdf.text(topic.icon + '  ' + topic.name, M, 42);
+    pdf.setFontSize(10);
+    pdf.setTextColor(200, 220, 255);
+    pdf.text(topic.grades.map(g => 'Grade ' + g).join(' · ') + '  |  ' + topic.standards.join(' · '), M, 58);
+
+    let y = 95;
+
+    // Key Concepts
+    pdf.setFontSize(13);
+    pdf.setTextColor(30, 39, 97);
+    pdf.setFont('helvetica', 'bold');
+    pdf.text('KEY CONCEPTS', M, y); y += 18;
+    pdf.setFont('helvetica', 'normal');
+    pdf.setFontSize(11);
+    pdf.setTextColor(50, 50, 50);
+    const descLines = pdf.splitTextToSize(topic.desc, CW);
+    pdf.text(descLines, M, y); y += descLines.length * 14 + 12;
+
+    // Formulas
+    pdf.setFillColor(240, 245, 255);
+    pdf.roundedRect(M, y, CW, 20 + topic.formulas.length * 18, 6, 6, 'F');
+    y += 14;
+    pdf.setFontSize(12);
+    pdf.setTextColor(30, 39, 97);
+    pdf.setFont('helvetica', 'bold');
+    pdf.text('FORMULAS', M + 12, y); y += 16;
+    pdf.setFont('helvetica', 'normal');
+    pdf.setFontSize(12);
+    pdf.setTextColor(40, 40, 40);
+    topic.formulas.forEach(f => { pdf.text('•  ' + f, M + 16, y); y += 18; });
+    y += 12;
+
+    // Vocabulary
+    pdf.setFontSize(13);
+    pdf.setTextColor(30, 39, 97);
+    pdf.setFont('helvetica', 'bold');
+    pdf.text('VOCABULARY', M, y); y += 16;
+    pdf.setFont('helvetica', 'normal');
+    pdf.setFontSize(11);
+    pdf.setTextColor(50, 50, 50);
+    const vocabStr = topic.vocab.join('  •  ');
+    const vocabLines = pdf.splitTextToSize(vocabStr, CW);
+    pdf.text(vocabLines, M, y); y += vocabLines.length * 14 + 16;
+
+    // Worked Example
+    if (allProbs.length > 0) {
+      const ex = allProbs[0];
+      pdf.setFillColor(248, 250, 252);
+      pdf.setDrawColor(0, 212, 255);
+      pdf.setLineWidth(2);
+      const exH = 90;
+      pdf.roundedRect(M, y, CW, exH, 6, 6, 'FD');
+      y += 16;
+      pdf.setFontSize(12);
+      pdf.setTextColor(30, 39, 97);
+      pdf.setFont('helvetica', 'bold');
+      pdf.text('WORKED EXAMPLE (DOK ' + ex.dok + ')', M + 12, y); y += 16;
+      pdf.setFont('helvetica', 'normal');
+      pdf.setFontSize(10);
+      pdf.setTextColor(40, 40, 40);
+      const stemLines = pdf.splitTextToSize(ex.stem, CW - 24);
+      pdf.text(stemLines, M + 12, y); y += stemLines.length * 13 + 8;
+      pdf.setTextColor(13, 148, 136);
+      pdf.setFont('helvetica', 'bold');
+      const ansLines = pdf.splitTextToSize('Answer: ' + ex.answer, CW - 24);
+      pdf.text(ansLines, M + 12, y);
+      y += ansLines.length * 13 + 20;
+    }
+
+    // Explore directions
+    y += 10;
+    pdf.setFontSize(13);
+    pdf.setTextColor(30, 39, 97);
+    pdf.setFont('helvetica', 'bold');
+    pdf.text('EXPLORE IN 3D', M, y); y += 16;
+    pdf.setFont('helvetica', 'normal');
+    pdf.setFontSize(10);
+    pdf.setTextColor(80, 80, 80);
+    pdf.text('Visit the VINCULUM 3D Geometry Viewer to interact with these shapes.', M, y); y += 14;
+    pdf.text('Rotate, zoom, and measure — build intuition before solving problems.', M, y);
+
+    // Footer
+    pdf.setFontSize(8);
+    pdf.setTextColor(150, 150, 150);
+    pdf.text('VINCULUM Math Solutions  |  3D Geometry  |  Reference Sheet', M, H - 25);
+
+    if (allProbs.length > 0) pdf.addPage();
+  }
+
+  // ── Problem Grid Pages ──
+  const density = state.gridDensity;
+  const cols = 2;
+  const rows = density / cols;
+  const cellW = (CW - 10) / cols;
+  const cellH = (H - 120) / rows;
+  const dokColors = { 1: [0, 230, 118], 2: [0, 212, 255], 3: [255, 59, 139] };
+  const dokLabels = { 1: 'DOK 1', 2: 'DOK 2', 3: 'DOK 3' };
+
+  // Skip first problem if it was used as worked example
+  const gridProbs = includeRef && allProbs.length > 1 ? allProbs.slice(1) : allProbs;
+  const totalPages = Math.ceil(gridProbs.length / density);
+
+  for (let page = 0; page < totalPages; page++) {
+    if (page > 0 || includeRef) { if (page > 0) pdf.addPage(); }
+
+    // Page header
+    pdf.setFillColor(30, 39, 97);
+    pdf.rect(0, 0, W, 50, 'F');
+    pdf.setFont('helvetica', 'bold');
+    pdf.setFontSize(14);
+    pdf.setTextColor(255, 255, 255);
+    pdf.text(topic.name + ' — Practice Problems', M, 32);
+    pdf.setFontSize(9);
+    pdf.setTextColor(200, 220, 255);
+    pdf.text('Page ' + (page + 1) + ' of ' + totalPages + '  |  ' + density + ' problems/page', W - M - 140, 32);
+
+    const startIdx = page * density;
+    for (let i = 0; i < density; i++) {
+      const pIdx = startIdx + i;
+      if (pIdx >= gridProbs.length) break;
+      const prob = gridProbs[pIdx];
+
+      const col = i % cols;
+      const row = Math.floor(i / cols);
+      const x = M + col * (cellW + 10);
+      const y = 65 + row * cellH;
+
+      // Cell background
+      pdf.setFillColor(248, 250, 252);
+      pdf.setDrawColor(200, 210, 225);
+      pdf.setLineWidth(0.5);
+      pdf.roundedRect(x, y, cellW, cellH - 6, 4, 4, 'FD');
+
+      // DOK badge
+      const dc = dokColors[prob.dok] || [100, 100, 100];
+      pdf.setFillColor(dc[0], dc[1], dc[2]);
+      pdf.roundedRect(x + cellW - 42, y + 4, 38, 14, 3, 3, 'F');
+      pdf.setFontSize(7);
+      pdf.setTextColor(255, 255, 255);
+      pdf.setFont('helvetica', 'bold');
+      pdf.text(dokLabels[prob.dok], x + cellW - 38, y + 13);
+
+      // Problem number
+      pdf.setFillColor(30, 39, 97);
+      pdf.circle(x + 14, y + 14, 9, 'F');
+      pdf.setFontSize(9);
+      pdf.setTextColor(255, 255, 255);
+      pdf.text(String(pIdx + 1), x + 14 - (pIdx + 1 > 9 ? 5 : 3), y + 17);
+
+      // Stem text
+      pdf.setFont('helvetica', 'normal');
+      pdf.setFontSize(9);
+      pdf.setTextColor(30, 30, 30);
+      const stemLines = pdf.splitTextToSize(prob.stem, cellW - 30);
+      const maxStemLines = Math.min(stemLines.length, Math.floor((cellH - 60) / 12));
+      pdf.text(stemLines.slice(0, maxStemLines), x + 10, y + 34);
+
+      // Workspace lines
+      const linesStart = y + 34 + maxStemLines * 12 + 8;
+      const linesEnd = y + cellH - 14;
+      pdf.setDrawColor(220, 225, 235);
+      pdf.setLineWidth(0.3);
+      for (let ly = linesStart; ly < linesEnd; ly += 14) {
+        pdf.line(x + 10, ly, x + cellW - 10, ly);
+      }
+    }
+
+    // Footer
+    pdf.setFontSize(7);
+    pdf.setTextColor(150, 150, 150);
+    pdf.text('VINCULUM Math Solutions  |  3D Geometry', M, H - 20);
+    pdf.text('Name: ___________________________  Date: __________', W - M - 220, H - 20);
+  }
+
+  // ── Answer Key ──
+  if (includeKey && gridProbs.length > 0) {
+    pdf.addPage();
+    pdf.setFillColor(30, 39, 97);
+    pdf.rect(0, 0, W, 50, 'F');
+    pdf.setFont('helvetica', 'bold');
+    pdf.setFontSize(14);
+    pdf.setTextColor(255, 255, 255);
+    pdf.text(topic.name + ' — Answer Key', M, 32);
+
+    let y = 75;
+    pdf.setFontSize(9);
+    gridProbs.forEach((prob, i) => {
+      if (y > H - 60) { pdf.addPage(); y = 50; }
+      pdf.setFont('helvetica', 'bold');
+      pdf.setTextColor(30, 39, 97);
+      pdf.text((i + 1) + '.', M, y);
+      pdf.setFont('helvetica', 'normal');
+      pdf.setTextColor(80, 80, 80);
+      const truncStem = prob.stem.length > 60 ? prob.stem.substring(0, 57) + '...' : prob.stem;
+      pdf.text(truncStem, M + 18, y);
+      y += 13;
+      pdf.setTextColor(13, 148, 136);
+      pdf.setFont('helvetica', 'bold');
+      const ansLines = pdf.splitTextToSize(prob.answer, CW - 18);
+      pdf.text(ansLines, M + 18, y);
+      y += ansLines.length * 12 + 8;
+    });
+
+    pdf.setFontSize(7);
+    pdf.setTextColor(150, 150, 150);
+    pdf.text('VINCULUM Math Solutions  |  Answer Key', M, H - 20);
+  }
+
+  pdf.save(topic.id + '-worksheet.pdf');
+}
+
+// Init
+document.addEventListener('DOMContentLoaded', init);
+</script>
+</body>
+</html>

@@ -1,0 +1,687 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>VINCULUM — Shape Builder</title>
+<link rel="stylesheet" href="../../vinculum-core.css">
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;600&display=swap');
+*{margin:0;padding:0;box-sizing:border-box;}
+body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);height:100vh;display:flex;flex-direction:column;overflow:hidden;user-select:none;}
+*:focus-visible{outline:2px solid var(--cyan);outline-offset:2px;border-radius:4px;}
+.sr-only{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0;}
+
+/* ═══ HEADER ═══ */
+/* ═══ MODE TABS ═══ */
+/* ═══ LAYOUT ═══ */
+.main{flex:1;display:flex;overflow:hidden;}
+.workspace{flex:1;display:flex;flex-direction:column;align-items:center;padding:12px 16px;gap:8px;overflow-y:auto;}
+.side-panel{width:240px;background:var(--bg2);border-left:1px solid var(--border);padding:16px;overflow-y:auto;flex-shrink:0;}
+.panel-section{margin-bottom:14px;}
+.panel-title{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:1.5px;color:var(--muted);margin-bottom:5px;}
+.panel-text{font-size:13px;color:var(--text2);line-height:1.5;}
+
+/* ═══ INSTRUCTION ═══ */
+.instruction{background:var(--card);border:1px solid var(--border);border-radius:10px;padding:8px 20px;text-align:center;font-size:14px;color:var(--text2);font-weight:500;width:100%;max-width:700px;}
+.instruction strong{color:var(--cyan);}
+.instruction .icon{font-size:20px;margin-right:6px;vertical-align:middle;}
+
+/* ═══ CANVAS ═══ */
+.canvas-area{display:flex;gap:16px;align-items:flex-start;justify-content:center;width:100%;max-width:800px;}
+.canvas-wrap{position:relative;background:var(--card);border:2px solid var(--border);border-radius:14px;overflow:hidden;flex-shrink:0;}
+.canvas-inner{position:relative;}
+
+/* Grid dots */
+.dot{position:absolute;width:3px;height:3px;border-radius:50%;background:var(--border);opacity:0.2;transform:translate(-1.5px,-1.5px);pointer-events:none;}
+
+/* Ghost slots — vibrant, glowing, inviting */
+.ghost{position:absolute;border:2.5px dashed;border-radius:8px;opacity:0.7;pointer-events:none;transition:opacity 0.4s,transform 0.3s;animation:ghostPulse 2s ease-in-out infinite;}
+.ghost.filled{opacity:0;pointer-events:none;transform:scale(0.95);animation:none;}
+@keyframes ghostPulse{0%,100%{opacity:0.55;filter:brightness(1);}50%{opacity:0.8;filter:brightness(1.3);}}
+
+/* Placed pieces */
+.piece{position:absolute;border-radius:6px;transition:transform 0.15s,box-shadow 0.15s;cursor:pointer;}
+.piece:hover{transform:scale(1.04);z-index:10;}
+.piece.just-placed{animation:popIn 0.3s ease;}
+@keyframes popIn{0%{transform:scale(0.6);opacity:0.5;}60%{transform:scale(1.1);}100%{transform:scale(1);opacity:1;}}
+.piece.locked{cursor:default;}
+.piece.locked:hover{transform:none;}
+
+/* Click targets — bright hover glow */
+.click-target{position:absolute;border-radius:8px;cursor:pointer;z-index:5;transition:background 0.2s,box-shadow 0.2s,transform 0.15s;}
+.click-target:hover{background:rgba(0,212,255,0.12);box-shadow:0 0 20px rgba(0,212,255,0.25),inset 0 0 15px rgba(0,212,255,0.1);transform:scale(1.03);}
+
+/* ═══ PIECE TRAY ═══ */
+.tray{display:flex;gap:6px;flex-wrap:wrap;justify-content:center;width:100%;max-width:700px;}
+.tray-piece{display:flex;flex-direction:column;align-items:center;gap:2px;padding:6px 10px;background:var(--card);border:2px solid var(--border);border-radius:10px;cursor:pointer;transition:all 0.2s;min-width:60px;}
+.tray-piece:hover{border-color:var(--cyan);transform:translateY(-2px);}
+.tray-piece.selected{border-color:var(--cyan);background:rgba(0,212,255,0.08);box-shadow:0 0 16px rgba(0,212,255,0.2);}
+.tray-piece.used{opacity:0.2;pointer-events:none;border-style:dashed;}
+.tray-piece .t-label{font-size:8px;font-weight:700;text-transform:uppercase;letter-spacing:0.8px;color:var(--muted);}
+.tray-piece.selected .t-label{color:var(--cyan);}
+.tray-piece .t-count{font-size:10px;font-weight:800;color:var(--cyan);}
+
+/* ═══ CONTROLS ═══ */
+.controls{display:flex;gap:8px;flex-wrap:wrap;justify-content:center;}
+.ctrl-btn{padding:8px 18px;border-radius:10px;border:1px solid var(--border);background:var(--card);color:var(--text2);font-size:12px;font-weight:600;font-family:inherit;cursor:pointer;transition:all 0.2s;display:flex;align-items:center;gap:5px;}
+.ctrl-btn:hover{background:var(--card2);color:var(--text);}
+.ctrl-btn.primary{background:rgba(0,230,118,0.12);border-color:rgba(0,230,118,0.3);color:var(--green);}
+.ctrl-btn.primary:hover{background:rgba(0,230,118,0.2);}
+
+/* ═══ SCORE ═══ */
+.score-display{text-align:center;padding:12px;background:var(--card);border-radius:10px;margin-bottom:10px;}
+.score-value{font-size:30px;font-weight:900;font-family:'JetBrains Mono',monospace;background:var(--grad);-webkit-background-clip:text;-webkit-text-fill-color:transparent;}
+.score-label{font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:1px;}
+
+/* ═══ FEEDBACK ═══ */
+.feedback{position:fixed;top:50%;left:50%;transform:translate(-50%,-50%) scale(0);padding:20px 44px;border-radius:18px;font-size:26px;font-weight:800;z-index:9999;pointer-events:none;transition:transform 0.3s cubic-bezier(0.175,0.885,0.32,1.275),opacity 0.3s;opacity:0;backdrop-filter:blur(8px);}
+.feedback.show{transform:translate(-50%,-50%) scale(1);opacity:1;}
+.feedback.correct{background:rgba(0,230,118,0.35);color:var(--green);border:2px solid var(--green);box-shadow:0 0 40px rgba(0,230,118,0.2);}
+.feedback.incorrect{background:rgba(255,59,139,0.35);color:var(--pink);border:2px solid var(--pink);}
+.feedback.try-again{background:rgba(255,193,7,0.35);color:var(--yellow);border:2px solid var(--yellow);}
+
+/* Particles */
+.particle{position:fixed;pointer-events:none;z-index:9998;border-radius:50%;animation:fly 1s ease-out forwards;}
+@keyframes fly{0%{opacity:1;transform:translate(0,0) scale(1);}100%{opacity:0;transform:translate(var(--px),var(--py)) scale(0);}}
+
+/* Explore free-place canvas hover */
+.canvas-inner.explore-mode .click-target{display:none;}
+.canvas-inner.explore-mode{cursor:pointer;}
+
+::-webkit-scrollbar{width:6px;}::-webkit-scrollbar-track{background:transparent;}::-webkit-scrollbar-thumb{background:var(--border);border-radius:3px;}
+</style>
+</head>
+<body>
+
+<div class="vinculum-header">
+  <div class="vinculum-header-left">
+    <a class="vinculum-back-btn" href="../../VINCULUM-Hub.html">&#9664; Hub</a>
+    <div class="vinculum-header-title"><span class="brand">Shape Builder</span></div>
+    <span class="vinculum-header-badge">K.G</span>
+  </div>
+  <div class="vinculum-header-right">
+    <div class="vinculum-std-tags">
+      <span class="vinculum-std-tag">K.G.5</span>
+      <span class="vinculum-std-tag">K.G.6</span>
+    </div>
+  </div>
+</div>
+
+<div class="vinculum-mode-tabs">
+  <button class="vinculum-mode-tab active-explore" data-mode="explore" id="tabExplore" onclick="setMode('explore')">&#128065; Explore</button>
+  <button class="vinculum-mode-tab" id="tabPractice" data-mode="practice" onclick="setMode('practice')">&#9989; Practice</button>
+  <button class="vinculum-mode-tab" id="tabPlay" data-mode="play" onclick="setMode('play')">&#9889; Play</button>
+  <div class="vinculum-diff-selector">
+    <span class="vinculum-diff-label">Level</span>
+    <button class="vinculum-diff-btn active" id="diffS">Simple</button>
+    <button class="vinculum-diff-btn" id="diffC">Combine</button>
+    <button class="vinculum-diff-btn" id="diffP">Puzzles</button>
+  </div>
+</div>
+
+<div class="main">
+  <div class="workspace" id="workspace"></div>
+  <div class="side-panel" id="sidePanel"></div>
+</div>
+<div class="feedback" id="feedback"></div>
+
+  <script src="../../vinculum-input.js"></script>
+<script src="../../vinculum-3reads.js"></script>
+<script src="../../vinculum-stories.js"></script>
+<script src="../../vinculum-feedback.js"></script>
+  <script src="../../vinculum-guide.js"></script>
+<script>
+/* ════════════════════════════════════════════════════════════
+   VINCULUM — Shape Builder v3 — K.G.5, K.G.6
+   Click-to-select, click-to-place. No dragging.
+   ════════════════════════════════════════════════════════════ */
+
+const CELL = 52;
+
+/* ═══ MISCONCEPTIONS ═══ */
+const MISCONCEPTIONS_SHAPEBUILD = {
+  wrongShapeSelected: { id:'wrongShapeSelected', desc:'Selected a shape that does not fit the target composition' },
+  rotationNeeded: { id:'rotationNeeded', desc:'Right shape but wrong orientation' },
+  sizeConfusion: { id:'sizeConfusion', desc:'Picks correct shape type but wrong size' },
+  decompositionError: { id:'decompositionError', desc:'Cannot break target into component shapes' },
+  spatialPlacement: { id:'spatialPlacement', desc:'Correct shape but placed in wrong position' }
+};
+
+/* ═══ SHAPE DEFINITIONS ═══ */
+const SHAPES = {
+  square:     { name:'Square',     w:1, h:1, color:'#00d4ff', icon:'&#9632;' },
+  rect:       { name:'Rectangle',  w:2, h:1, color:'#ff3b8b', icon:'&#9644;' },
+  tallRect:   { name:'Tall Rect',  w:1, h:2, color:'#00e676', icon:'&#9645;' },
+  bigSquare:  { name:'Big Square', w:2, h:2, color:'#b388ff', icon:'&#11200;' },
+  triangle:   { name:'Triangle',   w:1, h:1, color:'#ffc107', icon:'&#9650;' },
+  wideTriangle:{ name:'Wide Tri',  w:2, h:1, color:'#ff9100', icon:'&#9650;' },
+  circle:     { name:'Circle',     w:1, h:1, color:'#e040fb', icon:'&#9679;' },
+  diamond:    { name:'Diamond',    w:1, h:1, color:'#ff6d00', icon:'&#9670;' },
+  longBar:    { name:'Long Bar',   w:3, h:1, color:'#76ff03', icon:'&#9644;' },
+  halfCircle: { name:'Half Circle',w:2, h:1, color:'#18ffff', icon:'&#9680;' },
+};
+
+/* SVG renderers for each shape */
+function shapeSVG(type, cs, color){
+  const s = SHAPES[type]; if(!s) return '';
+  const w = s.w*cs, h = s.h*cs, p = 3, r = 5;
+  switch(type){
+    case 'square':     return `<svg width="${w}" height="${h}"><rect x="${p}" y="${p}" width="${w-p*2}" height="${h-p*2}" rx="${r}" fill="${color}"/></svg>`;
+    case 'rect':       return `<svg width="${w}" height="${h}"><rect x="${p}" y="${p}" width="${w-p*2}" height="${h-p*2}" rx="${r}" fill="${color}"/></svg>`;
+    case 'tallRect':   return `<svg width="${w}" height="${h}"><rect x="${p}" y="${p}" width="${w-p*2}" height="${h-p*2}" rx="${r}" fill="${color}"/></svg>`;
+    case 'bigSquare':  return `<svg width="${w}" height="${h}"><rect x="${p}" y="${p}" width="${w-p*2}" height="${h-p*2}" rx="${r+2}" fill="${color}"/></svg>`;
+    case 'triangle':   return `<svg width="${w}" height="${h}"><polygon points="${w/2},${p} ${w-p},${h-p} ${p},${h-p}" fill="${color}"/></svg>`;
+    case 'wideTriangle':return `<svg width="${w}" height="${h}"><polygon points="${w/2},${p} ${w-p},${h-p} ${p},${h-p}" fill="${color}"/></svg>`;
+    case 'circle':     return `<svg width="${w}" height="${h}"><ellipse cx="${w/2}" cy="${h/2}" rx="${w/2-p}" ry="${h/2-p}" fill="${color}"/></svg>`;
+    case 'diamond':    return `<svg width="${w}" height="${h}"><polygon points="${w/2},${p} ${w-p},${h/2} ${w/2},${h-p} ${p},${h/2}" fill="${color}"/></svg>`;
+    case 'longBar':    return `<svg width="${w}" height="${h}"><rect x="${p}" y="${p}" width="${w-p*2}" height="${h-p*2}" rx="${r}" fill="${color}"/></svg>`;
+    case 'halfCircle': return `<svg width="${w}" height="${h}"><path d="M${p},${h-p} A${w/2-p},${h-p*2} 0 0,1 ${w-p},${h-p} Z" fill="${color}"/></svg>`;
+    default: return `<svg width="${w}" height="${h}"><rect x="${p}" y="${p}" width="${w-p*2}" height="${h-p*2}" rx="${r}" fill="${color}"/></svg>`;
+  }
+}
+function thumbSVG(type, size){
+  const s = SHAPES[type]; if(!s) return '';
+  const scale = size / (Math.max(s.w, s.h) * CELL);
+  const cs = CELL * scale;
+  return shapeSVG(type, cs, s.color);
+}
+
+/* ═══ PUZZLE LIBRARY ═══
+   ALL puzzles validated: zero overlaps, all pieces within grid bounds.
+   Rule: no two pieces share any grid cell. */
+const PUZZLES = {
+  simple: [
+    { name:'House', icon:'🏠', gridW:3, gridH:3, pieces:[
+        {type:'triangle',gx:1,gy:0},{type:'bigSquare',gx:0,gy:1},{type:'tallRect',gx:2,gy:1}
+      ], teach:'A triangle roof on top, big square walls, and a tall rectangle chimney!' },
+    { name:'Tree', icon:'🌲', gridW:3, gridH:4, pieces:[
+        {type:'wideTriangle',gx:0,gy:0},{type:'wideTriangle',gx:0,gy:1},{type:'tallRect',gx:1,gy:2}
+      ], teach:'Two wide triangles make leafy layers, a tall rectangle is the trunk!' },
+    { name:'Train Car', icon:'🚃', gridW:4, gridH:2, pieces:[
+        {type:'rect',gx:0,gy:0},{type:'rect',gx:2,gy:0},{type:'circle',gx:0,gy:1},{type:'circle',gx:3,gy:1}
+      ], teach:'Two rectangles side by side = the car body. Two circles = the wheels!' },
+    { name:'Boat', icon:'⛵', gridW:3, gridH:2, pieces:[
+        {type:'triangle',gx:1,gy:0},{type:'longBar',gx:0,gy:1}
+      ], teach:'A triangle sail sits on top of a long bar hull!' },
+    { name:'Flower', icon:'🌸', gridW:3, gridH:4, pieces:[
+        {type:'circle',gx:1,gy:0},{type:'circle',gx:0,gy:1},{type:'circle',gx:1,gy:1},{type:'circle',gx:2,gy:1},{type:'tallRect',gx:1,gy:2}
+      ], teach:'4 circle petals around a center, with a tall rectangle stem below!' },
+    { name:'Tower', icon:'🏗', gridW:2, gridH:4, pieces:[
+        {type:'bigSquare',gx:0,gy:0},{type:'rect',gx:0,gy:2},{type:'rect',gx:0,gy:3}
+      ], teach:'A big square base with two rectangles stacked on top!' },
+  ],
+  combine: [
+    { name:'Castle', icon:'🏰', gridW:5, gridH:3, pieces:[
+        {type:'triangle',gx:0,gy:0},{type:'triangle',gx:2,gy:0},{type:'triangle',gx:4,gy:0},
+        {type:'tallRect',gx:0,gy:1},{type:'longBar',gx:1,gy:1},{type:'tallRect',gx:4,gy:1},
+        {type:'rect',gx:1,gy:2},{type:'square',gx:3,gy:2}
+      ], teach:'Triangle roofs on towers, tall rectangles for towers, a long bar wall, and a rectangle gate!' },
+    { name:'Rocket', icon:'🚀', gridW:3, gridH:5, pieces:[
+        {type:'triangle',gx:1,gy:0},{type:'tallRect',gx:1,gy:1},{type:'tallRect',gx:1,gy:3},
+        {type:'triangle',gx:0,gy:4},{type:'triangle',gx:2,gy:4}
+      ], teach:'Triangle nose, two tall rectangles for the body, triangle fins at the base!' },
+    { name:'Truck', icon:'🚛', gridW:6, gridH:3, pieces:[
+        {type:'bigSquare',gx:0,gy:0},{type:'rect',gx:2,gy:0},{type:'rect',gx:4,gy:0},
+        {type:'rect',gx:2,gy:1},{type:'rect',gx:4,gy:1},
+        {type:'circle',gx:0,gy:2},{type:'circle',gx:3,gy:2},{type:'circle',gx:5,gy:2}
+      ], teach:'Big square cab, four rectangles for the trailer, three circle wheels!' },
+    { name:'Butterfly', icon:'🦋', gridW:5, gridH:3, pieces:[
+        {type:'bigSquare',gx:0,gy:0},{type:'tallRect',gx:2,gy:0},{type:'bigSquare',gx:3,gy:0},
+        {type:'square',gx:2,gy:2}
+      ], teach:'Two big square wings, a tall rectangle body in the middle, and a square tail!' },
+    { name:'Crown', icon:'👑', gridW:5, gridH:2, pieces:[
+        {type:'triangle',gx:0,gy:0},{type:'triangle',gx:2,gy:0},{type:'triangle',gx:4,gy:0},
+        {type:'rect',gx:0,gy:1},{type:'square',gx:2,gy:1},{type:'rect',gx:3,gy:1}
+      ], teach:'Three triangle points on top, rectangles and a square jewel on the band!' },
+  ],
+  puzzles: [
+    { name:'Snowman', icon:'⛄', gridW:3, gridH:5, pieces:[
+        {type:'circle',gx:1,gy:0},
+        {type:'square',gx:0,gy:1},{type:'square',gx:1,gy:1},{type:'square',gx:2,gy:1},
+        {type:'rect',gx:0,gy:2},{type:'square',gx:2,gy:2},
+        {type:'rect',gx:0,gy:3},{type:'square',gx:2,gy:3},
+        {type:'longBar',gx:0,gy:4}
+      ], teach:'Circle head, squares for the middle, rectangles for the belly, long bar base!' },
+    { name:'Caterpillar', icon:'🐛', gridW:6, gridH:2, pieces:[
+        {type:'circle',gx:0,gy:0},{type:'circle',gx:1,gy:0},{type:'circle',gx:2,gy:0},
+        {type:'circle',gx:3,gy:0},{type:'circle',gx:4,gy:0},{type:'circle',gx:5,gy:0},
+        {type:'triangle',gx:1,gy:1},{type:'triangle',gx:3,gy:1},{type:'triangle',gx:5,gy:1}
+      ], teach:'Six circles in a row for the body, three triangle feet underneath!' },
+    { name:'Fish', icon:'🐟', gridW:4, gridH:3, pieces:[
+        {type:'triangle',gx:3,gy:0},{type:'rect',gx:1,gy:0},{type:'circle',gx:0,gy:0},
+        {type:'rect',gx:0,gy:1},{type:'rect',gx:2,gy:1},
+        {type:'triangle',gx:3,gy:2},{type:'rect',gx:1,gy:2},{type:'circle',gx:0,gy:2}
+      ], teach:'Circles for the eye and tail, rectangles for the body, triangles for the fins!' },
+    { name:'Robot', icon:'🤖', gridW:3, gridH:4, pieces:[
+        {type:'square',gx:0,gy:0},{type:'square',gx:2,gy:0},{type:'rect',gx:0,gy:1},
+        {type:'square',gx:2,gy:1},{type:'longBar',gx:0,gy:2},{type:'square',gx:0,gy:3},{type:'square',gx:2,gy:3}
+      ], teach:'Square eyes, rectangle mouth, long bar body, square feet!' },
+  ]
+};
+
+/* ═══ STATE ═══ */
+let S = {
+  mode:'explore', diff:'simple',
+  canvasW:6, canvasH:5,
+  placed:[],     // {id, type, gx, gy, color}
+  nextId:0,
+  selected:null, // type string (from tray)
+  // Practice
+  puzzle:null, puzzleIdx:0,
+  ghosts:[],     // {type, gx, gy, filled:bool}
+  // Play
+  score:0, round:0, total:6, streak:0, best:0, startTime:0,
+  // Explore
+  exSelected:'square',
+};
+
+/* ── Read-Aloud + Story Banner ── */
+function toggleReadAloud() {
+  if (window.VinculumStories && VinculumStories.isReading()) {
+    VinculumStories.stopReading();
+    document.getElementById('readAloudBtn').textContent = '🔊 Read to Me';
+  } else {
+    const storyEl = document.getElementById('storyBanner');
+    const text = storyEl ? storyEl.textContent : (S.puzzle ? S.puzzle.name : 'Welcome to this math tool!');
+    if (window.VinculumStories) {
+      VinculumStories.readAloud(text, { rate: 0.85, onComplete: () => {
+        document.getElementById('readAloudBtn').textContent = '🔊 Read to Me';
+      }});
+      document.getElementById('readAloudBtn').textContent = '⏹ Stop';
+    }
+  }
+}
+
+function rand(a,b){return Math.floor(Math.random()*(b-a+1))+a;}
+function celebrate(x,y){
+  const colors=['#00d4ff','#ff3b8b','#00e676','#ffc107','#b388ff','#e040fb'];
+  for(let i=0;i<14;i++){
+    const p=document.createElement('div');p.className='particle';
+    const a=Math.random()*Math.PI*2, d=50+Math.random()*100;
+    p.style.cssText=`left:${x}px;top:${y}px;width:${6+Math.random()*6}px;height:${6+Math.random()*6}px;background:${colors[i%colors.length]};--px:${Math.cos(a)*d}px;--py:${Math.sin(a)*d}px;`;
+    document.body.appendChild(p);setTimeout(()=>p.remove(),1000);
+  }
+}
+
+/* ═══ MODE/DIFF ═══ */
+function setMode(m){
+  S.mode=m;
+  document.querySelectorAll('.vinculum-mode-tab').forEach(t=>t.className='mode-tab');
+  document.getElementById('tab'+m.charAt(0).toUpperCase()+m.slice(1)).className='mode-tab active-'+m;
+  if(m==='explore') initExplore();
+  if(m==='practice'){ S.puzzleIdx=0; initPractice(); }
+  if(m==='play'){ S.round=0; S.score=0; S.streak=0; }
+  render();
+}
+function setDiff(d){
+  S.diff=d;
+  document.querySelectorAll('.vinculum-diff-btn').forEach(b=>b.classList.remove('active'));
+  document.getElementById('diff'+d.charAt(0).toUpperCase()).classList.add('active');
+  if(S.mode==='explore') initExplore();
+  if(S.mode==='practice'){ S.puzzleIdx=0; initPractice(); }
+  if(S.mode==='play'){ S.round=0; S.score=0; S.streak=0; }
+  render();
+}
+
+/* ═══ OVERLAP CHECK ═══ */
+function overlaps(type,gx,gy,ignoreId){
+  const s=SHAPES[type];
+  for(const p of S.placed){
+    if(p.id===ignoreId) continue;
+    const ps=SHAPES[p.type];
+    if(gx<p.gx+ps.w && gx+s.w>p.gx && gy<p.gy+ps.h && gy+s.h>p.gy) return true;
+  }
+  return false;
+}
+function inBounds(type,gx,gy,cw,ch){
+  const s=SHAPES[type];
+  return gx>=0 && gy>=0 && gx+s.w<=cw && gy+s.h<=ch;
+}
+
+/* ═══════════════════════════════
+   CLICK-TO-PLACE SYSTEM
+   ═══════════════════════════════ */
+
+/* Practice/Play: click a ghost slot to fill it */
+function clickSlot(idx){
+  const slot = S.ghosts[idx];
+  if(!slot || slot.filled) return;
+
+  // Check if tray has this piece type available
+  const needed = trayRemaining();
+  if(!needed[slot.type] || needed[slot.type] <= 0){
+    showFB("That shape doesn't match what we need. Look at the outline — how many sides does the missing piece have?",'try-again');
+    return;
+  }
+
+  // Place it
+  const s = SHAPES[slot.type];
+  S.placed.push({ id:S.nextId++, type:slot.type, gx:slot.gx, gy:slot.gy, color:s.color });
+  slot.filled = true;
+  showFB('Nice!','correct');
+
+  // Check completion
+  if(S.ghosts.every(g=>g.filled)){
+    const name = S.puzzle.name;
+    const icon = S.puzzle.icon;
+    setTimeout(()=>{
+      const ce = document.getElementById('canvas');
+      if(ce){ const r=ce.getBoundingClientRect(); celebrate(r.left+r.width/2, r.top+r.height/2); }
+    },300);
+
+    if(S.mode==='play'){
+      const elapsed=(Date.now()-S.startTime)/1000;
+      const bonus=Math.max(0,Math.floor(20-elapsed));
+      const pts=10+bonus+S.streak*3;
+      S.score+=pts; S.streak++;
+      if(S.streak>S.best) S.best=S.streak;
+      showFB(icon+' '+name+'! +'+pts,'correct');
+      setTimeout(()=>{
+        if(S.round>=S.total){
+          showFB('Game Over! Score: '+S.score,'correct');
+          setTimeout(()=>{ S.round=0; render(); },2500);
+          return;
+        }
+        S.round++; loadPlayPuzzle(); render();
+      },1800);
+    } else {
+      showFB(icon+' You built a '+name+'!','correct');
+      setTimeout(()=>{ S.puzzleIdx++; initPractice(); render(); },2200);
+    }
+  }
+  render();
+}
+
+/* Undo last placed piece */
+function undoLast(){
+  if(!S.placed.length) return;
+  const last = S.placed.pop();
+  // Un-fill the matching ghost
+  const slot = S.ghosts.find(g=>g.type===last.type && g.gx===last.gx && g.gy===last.gy && g.filled);
+  if(slot) slot.filled = false;
+  render();
+}
+
+/* Explore: click canvas grid to place selected shape */
+function clickCanvas(gx, gy){
+  const type = S.exSelected;
+  const s = SHAPES[type];
+  if(!s) return;
+  const cw = S.canvasW, ch = S.canvasH;
+  if(!inBounds(type,gx,gy,cw,ch)){ showFB('Good shape choice! But try placing it in a different spot. Look at where the gap is.','try-again'); return; }
+  if(overlaps(type,gx,gy,-1)){ showFB('Look at the target picture. What shapes do you see? Pick the one that fills the space.','try-again'); return; }
+  S.placed.push({ id:S.nextId++, type, gx, gy, color:s.color });
+  render();
+}
+
+/* Remove a placed piece in explore mode */
+function removePiece(id){
+  S.placed = S.placed.filter(p=>p.id!==id);
+  render();
+}
+
+/* Tray remaining counts for practice/play */
+function trayRemaining(){
+  if(!S.puzzle) return {};
+  const counts={};
+  S.puzzle.pieces.forEach(p=>{ counts[p.type]=(counts[p.type]||0)+1; });
+  S.placed.forEach(p=>{ if(counts[p.type]) counts[p.type]--; });
+  return counts;
+}
+
+/* ═══════════════════════════════
+   EXPLORE MODE
+   ═══════════════════════════════ */
+function initExplore(){
+  S.canvasW = S.diff==='simple'?5 : S.diff==='combine'?7 : 9;
+  S.canvasH = S.diff==='simple'?4 : S.diff==='combine'?5 : 6;
+  S.placed=[]; S.nextId=0; S.exSelected='square';
+}
+
+function renderExplore(ws,sp){
+  if(!S.placed.length && !S.canvasW) initExplore();
+  const avail = S.diff==='simple'?['square','rect','tallRect','triangle','circle']:
+                S.diff==='combine'?['square','rect','tallRect','bigSquare','triangle','wideTriangle','circle','diamond']:
+                Object.keys(SHAPES);
+  let h='';
+
+  /* Inject story banner */
+  if (window.VinculumStories) {
+    const toolName = window.location.pathname.split('/').pop().replace('.html','');
+    const storyData = VinculumStories.getStory(toolName, {shapes: S.placed.length, selected: S.exSelected});
+    if (storyData && storyData.story) {
+      if (window.Vinculum3Reads) {
+
+        h += Vinculum3Reads.getBannerHTML(storyData);
+
+      } else {
+
+        const bannerHTML = '<div id="storyBanner" style="background:var(--card2,#1a1f2e);border:1px solid var(--border);border-radius:12px;padding:16px 20px;margin-bottom:16px;font-size:15px;line-height:1.6;color:var(--text);position:relative;"><span style="font-size:12px;color:var(--cyan);font-weight:700;text-transform:uppercase;letter-spacing:1px;">📖 Story</span><br>' + storyData.story + '<br><em style="color:var(--yellow);font-weight:600;">' + storyData.question + '</em><button onclick="toggleReadAloud()" style="position:absolute;top:12px;right:12px;background:none;border:1px solid var(--border);border-radius:8px;padding:4px 10px;color:var(--cyan);cursor:pointer;font-size:14px;" title="Read story aloud">🔊</button></div>';
+      h += bannerHTML;
+
+      }
+    }
+  }
+
+  h+='<div class="instruction"><span class="icon">🎨</span> Select a shape below, then <strong>click the canvas</strong> to place it. Click a placed shape to remove it.</div>';
+  h+=renderCanvas(S.canvasW,S.canvasH,S.placed,null,true);
+  h+=renderExploreTray(avail);
+  h+='<div class="controls"><button class="ctrl-btn" onclick="initExplore();render();">&#8634; Clear All</button></div>';
+  ws.innerHTML=h;
+
+  sp.innerHTML=`
+    <div class="panel-section"><div class="panel-title">How to Build</div>
+    <div class="panel-text">1. Pick a shape from the tray<br><br>2. Click anywhere on the canvas<br><br>3. Click a placed shape to remove it<br><br>Build a house, robot, or anything!</div></div>
+    <div class="panel-section"><div class="panel-title">Your Build</div>
+    <div class="panel-text" style="background:var(--card);padding:10px;border-radius:8px;">
+    <strong>${S.placed.length}</strong> shapes placed</div></div>
+    <div class="panel-section"><div class="panel-title">Key Ideas</div>
+    <div class="panel-text">Shapes <strong>compose</strong> into bigger shapes!<br><br>
+    ▪ 2 squares → rectangle<br>
+    ▪ Triangle + square → house<br>
+    ▪ Circles + rectangle → car</div></div>`;
+}
+
+/* ═══════════════════════════════
+   PRACTICE MODE
+   ═══════════════════════════════ */
+function initPractice(){
+  const pool=PUZZLES[S.diff]||PUZZLES.simple;
+  S.puzzle=pool[S.puzzleIdx%pool.length];
+  S.placed=[]; S.nextId=0;
+  S.ghosts=S.puzzle.pieces.map(p=>({...p,filled:false}));
+}
+
+function renderPractice(ws,sp){
+  if(!S.puzzle) initPractice();
+  const remaining=trayRemaining();
+  const types=[]; S.puzzle.pieces.forEach(p=>{if(!types.includes(p.type))types.push(p.type);});
+  const totalCounts={}; S.puzzle.pieces.forEach(p=>{totalCounts[p.type]=(totalCounts[p.type]||0)+1;});
+
+  let h='';
+  h+=`<div class="instruction"><span class="icon">${S.puzzle.icon}</span> Build the <strong>${S.puzzle.name}</strong>! Click each outlined slot to fill it.</div>`;
+  h+=renderCanvas(S.puzzle.gridW,S.puzzle.gridH,S.placed,S.ghosts,false);
+  h+=renderPracticeTray(types,totalCounts,remaining);
+  h+='<div class="controls">';
+  h+='<button class="ctrl-btn" onclick="undoLast();">&#8617; Undo</button>';
+  h+='<button class="ctrl-btn" onclick="initPractice();render();">&#8634; Reset</button>';
+  h+='<button class="ctrl-btn" onclick="S.puzzleIdx++;initPractice();render();" style="opacity:0.7;">Skip →</button>';
+  h+='</div>';
+  ws.innerHTML=h;
+
+  const total=S.ghosts.length, filled=S.ghosts.filter(g=>g.filled).length;
+  sp.innerHTML=`
+    <div class="panel-section"><div class="panel-title">${S.puzzle.icon} ${S.puzzle.name}</div>
+    <div class="panel-text" style="background:var(--card);padding:10px;border-radius:8px;">
+    Click the dashed outlines to place each piece!<br><br>
+    <div style="display:flex;align-items:center;gap:8px;">
+      <div style="flex:1;height:8px;background:var(--bg);border-radius:4px;overflow:hidden;">
+        <div style="width:${total>0?Math.round(filled/total*100):0}%;height:100%;background:var(--green);border-radius:4px;transition:width 0.3s;"></div>
+      </div>
+      <span style="font-size:11px;font-weight:700;color:var(--green);">${filled}/${total}</span>
+    </div></div></div>
+    <div class="panel-section"><div class="panel-title">Learning</div>
+    <div class="panel-text" style="background:rgba(0,230,118,0.05);padding:10px;border-radius:8px;border:1px solid rgba(0,230,118,0.15);color:var(--green);">
+    ${S.puzzle.teach}</div></div>`;
+}
+
+/* ═══════════════════════════════
+   PLAY MODE
+   ═══════════════════════════════ */
+function startGame(){ S.round=1;S.score=0;S.streak=0; loadPlayPuzzle(); }
+function loadPlayPuzzle(){
+  const pool=S.diff==='simple'?PUZZLES.simple:
+             S.diff==='combine'?[...PUZZLES.simple,...PUZZLES.combine]:
+             [...PUZZLES.simple,...PUZZLES.combine,...PUZZLES.puzzles];
+  S.puzzle=pool[rand(0,pool.length-1)];
+  S.placed=[]; S.nextId=0;
+  S.ghosts=S.puzzle.pieces.map(p=>({...p,filled:false}));
+  S.startTime=Date.now();
+}
+
+function renderPlay(ws,sp){
+  if(S.round===0) startGame();
+  const remaining=trayRemaining();
+  const types=[]; S.puzzle.pieces.forEach(p=>{if(!types.includes(p.type))types.push(p.type);});
+  const totalCounts={}; S.puzzle.pieces.forEach(p=>{totalCounts[p.type]=(totalCounts[p.type]||0)+1;});
+
+  let h='';
+  h+=`<div style="font-size:12px;color:var(--muted);font-weight:600;">Round ${S.round} of ${S.total}</div>`;
+  h+=`<div class="instruction"><span class="icon">${S.puzzle.icon}</span> Build: <strong>${S.puzzle.name}</strong> — click the slots!</div>`;
+  h+=renderCanvas(S.puzzle.gridW,S.puzzle.gridH,S.placed,S.ghosts,false);
+  h+=renderPracticeTray(types,totalCounts,remaining);
+  ws.innerHTML=h;
+
+  sp.innerHTML=`
+    <div class="score-display"><div class="score-value">${S.score}</div><div class="score-label">Score</div></div>
+    <div class="score-display" style="background:transparent;padding:6px;">
+      <div style="font-size:18px;font-weight:700;color:var(--yellow);">${S.streak} streak</div>
+      <div class="score-label">In a row</div></div>
+    <div class="panel-section"><div class="panel-title">Hint</div>
+    <div class="panel-text">${S.puzzle.teach}</div></div>
+    <div class="panel-section"><div class="panel-title">Best Streak</div>
+    <div class="panel-text" style="font-size:22px;font-weight:800;color:var(--purple);">${S.best}</div></div>`;
+}
+
+/* ═══════════════════════════════
+   CANVAS RENDERER
+   ═══════════════════════════════ */
+function renderCanvas(cw,ch,placed,ghosts,isExplore){
+  const pw=cw*CELL, ph=ch*CELL;
+  let h=`<div class="canvas-wrap" style="width:${pw+4}px;height:${ph+4}px;">`;
+  h+=`<div id="canvas" class="canvas-inner${isExplore?' explore-mode':''}" style="width:${pw}px;height:${ph}px;">`;
+
+  // Dot grid
+  for(let y=0;y<=ch;y++) for(let x=0;x<=cw;x++)
+    h+=`<div class="dot" style="left:${x*CELL}px;top:${y*CELL}px;"></div>`;
+
+  // Ghost outlines (practice/play)
+  if(ghosts){
+    ghosts.forEach((g,i)=>{
+      const s=SHAPES[g.type]; if(!s) return;
+      const w=s.w*CELL, ht=s.h*CELL;
+      h+=`<div class="ghost ${g.filled?'filled':''}" style="left:${g.gx*CELL}px;top:${g.gy*CELL}px;width:${w}px;height:${ht}px;border-color:${s.color};box-shadow:0 0 12px ${s.color}44,inset 0 0 8px ${s.color}22;background:${s.color}08;">`;
+      // Vibrant shape preview inside ghost
+      if(!g.filled) h+=`<div style="opacity:0.65;display:flex;align-items:center;justify-content:center;width:100%;height:100%;filter:saturate(1.3) brightness(1.1);">${shapeSVG(g.type,CELL,s.color)}</div>`;
+      h+='</div>';
+      // Clickable overlay for unfilled slots
+      if(!g.filled){
+        h+=`<div class="click-target" onclick="clickSlot(${i})" style="left:${g.gx*CELL}px;top:${g.gy*CELL}px;width:${w}px;height:${ht}px;" title="Click to place ${s.name}"></div>`;
+      }
+    });
+  }
+
+  // Placed pieces
+  placed.forEach(p=>{
+    const s=SHAPES[p.type]; if(!s) return;
+    const w=s.w*CELL, ht=s.h*CELL;
+    const onclick = isExplore ? `onclick="removePiece(${p.id})"` : '';
+    h+=`<div class="piece just-placed" ${onclick} style="left:${p.gx*CELL}px;top:${p.gy*CELL}px;width:${w}px;height:${ht}px;filter:drop-shadow(0 0 8px ${p.color}66);">`;
+    h+=shapeSVG(p.type,CELL,p.color);
+    h+='</div>';
+  });
+
+  // Explore mode: clickable grid cells
+  if(isExplore){
+    for(let y=0;y<ch;y++) for(let x=0;x<cw;x++){
+      // Only show click target if no piece is there
+      const occupied = placed.some(p=>{
+        const ps=SHAPES[p.type];
+        return x>=p.gx && x<p.gx+ps.w && y>=p.gy && y<p.gy+ps.h;
+      });
+      if(!occupied){
+        h+=`<div class="click-target" onclick="clickCanvas(${x},${y})" style="left:${x*CELL}px;top:${y*CELL}px;width:${CELL}px;height:${CELL}px;"></div>`;
+      }
+    }
+  }
+
+  h+='</div></div>';
+  return h;
+}
+
+/* ═══ TRAY RENDERERS ═══ */
+function renderExploreTray(types){
+  let h='<div class="tray">';
+  types.forEach(type=>{
+    const s=SHAPES[type];
+    const sel = S.exSelected===type;
+    h+=`<div class="tray-piece ${sel?'selected':''}" onclick="S.exSelected='${type}';render();">`;
+    h+=`<div>${thumbSVG(type,28)}</div>`;
+    h+=`<div class="t-label">${s.name}</div>`;
+    h+='</div>';
+  });
+  h+='</div>';
+  return h;
+}
+
+function renderPracticeTray(types,totalCounts,remaining){
+  let h='<div class="tray">';
+  types.forEach(type=>{
+    const s=SHAPES[type];
+    const left=remaining[type]||0;
+    const used=left<=0;
+    h+=`<div class="tray-piece ${used?'used':''}">`;
+    h+=`<div>${thumbSVG(type,28)}</div>`;
+    h+=`<div class="t-count">${used?'✓':'×'+left}</div>`;
+    h+=`<div class="t-label">${s.name}</div>`;
+    h+='</div>';
+  });
+  h+='</div>';
+  return h;
+}
+
+/* ═══ MAIN RENDER ═══ */
+function render(){
+  const ws=document.getElementById('workspace');
+  const sp=document.getElementById('sidePanel');
+  if(S.mode==='explore') renderExplore(ws,sp);
+  else if(S.mode==='practice') renderPractice(ws,sp);
+  else renderPlay(ws,sp);
+}
+
+initExplore();
+    // Initialize tab event listeners
+    document.querySelectorAll('.vinculum-mode-tab').forEach(function(tab) {
+      tab.addEventListener('click', function() {
+        switchMode(this.dataset.mode);
+      });
+    });
+
+    // Initialize difficulty button event listeners
+    document.querySelectorAll('.vinculum-diff-btn').forEach(function(btn) {
+      btn.addEventListener('click', function() {
+        setDiff(this.dataset.diff);
+      });
+    });
+
+render();
+</script>
+<script src="../../vinculum-core.js"></script>
+<script src="../../vinculum-data.js"></script>
+    <script src="../../vinculum-adaptive-hook.js"></script>
+    <script src="../../vinculum-identity.js"></script>
+    <script src="../../vinculum-indigenous.js"></script>
+    <script src="../../vinculum-dashboard.js"></script>
+</body>
+</html>

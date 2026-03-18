@@ -1,0 +1,1016 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <!--
+        viewport-fit=cover  — uses full iPad screen inc. notch area
+        maximum-scale / user-scalable=no — blocks accidental pinch-zoom during play
+    -->
+    <meta name="viewport" content="width=device-width, initial-scale=1.0,
+          maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <title>Jack's Dino Math</title>
+
+    <!--
+        Google Fonts — gracefully falls back to system fonts if the
+        network is blocked (common on school / whiteboard networks).
+        No other external CDN is used anywhere in this file.
+    -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link rel="stylesheet"
+          href="https://fonts.googleapis.com/css2?family=Fredoka+One&family=Quicksand:wght@500;700&display=swap">
+
+    <style>
+    /* ═══════════════════════════════════════════════════════════════
+       RESET & BASE
+       ═══════════════════════════════════════════════════════════════ */
+    *, *::before, *::after {
+        box-sizing: border-box;
+        margin: 0; padding: 0;
+        /* Kills the blue-grey flash on every tap (iOS / Android) */
+        -webkit-tap-highlight-color: transparent;
+    }
+
+    html {
+        /* Prevents pull-to-refresh (Android Chrome) and over-scroll bounce */
+        overscroll-behavior: none;
+        height: 100%;
+    }
+
+    body {
+        font-family: 'Quicksand', 'Nunito', 'Comic Sans MS', Arial, sans-serif;
+        background: #f0f9ff;
+        overflow: hidden;
+        overscroll-behavior: none;
+        /* manipulation = allow tap / pan but block double-tap zoom */
+        touch-action: manipulation;
+        user-select: none;
+        -webkit-user-select: none;
+        /* Dual height: 100vh for old browsers, 100dvh (dynamic) for modern ones */
+        height: 100vh;
+        height: 100dvh;
+        display: flex;
+        flex-direction: column;
+        /* Safe-area insets keep content clear of iPad notch / home bar */
+        padding: max(env(safe-area-inset-top,    4px), 6px)
+                 max(env(safe-area-inset-right,   4px), 6px)
+                 max(env(safe-area-inset-bottom,  4px), 6px)
+                 max(env(safe-area-inset-left,    4px), 6px);
+        gap: clamp(4px, 1.1vmin, 10px);
+    }
+
+    .hidden { display: none !important; }
+
+    /* ═══════════════════════════════════════════════════════════════
+       GLASS CARD STYLE  (frosted-glass look)
+       ═══════════════════════════════════════════════════════════════ */
+    .glass {
+        background: rgba(255, 255, 255, 0.82);
+        -webkit-backdrop-filter: blur(12px);
+                backdrop-filter: blur(12px);
+        border: 2px solid rgba(255, 255, 255, 0.65);
+        border-radius: 18px;
+    }
+
+    /* ═══════════════════════════════════════════════════════════════
+       START OVERLAY
+       ═══════════════════════════════════════════════════════════════ */
+    #startOverlay {
+        position: fixed;
+        inset: 0;
+        background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%);
+        z-index: 100;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        gap: 1.4rem;
+        color: white;
+        padding: 2rem;
+        transition: opacity 0.4s ease;
+        touch-action: manipulation;
+    }
+
+    #startOverlay h1 {
+        font-family: 'Fredoka One', 'Arial Rounded MT Bold', cursive;
+        font-size: clamp(2.5rem, 10vmin, 5rem);
+        text-align: center;
+    }
+
+    #startOverlay p {
+        font-size: clamp(0.9rem, 3vmin, 1.25rem);
+        color: rgba(255,255,255,0.75);
+        text-align: center;
+    }
+
+    #startBtn {
+        font-family: inherit;
+        font-weight: 700;
+        font-size: clamp(1.4rem, 5vmin, 2.2rem);
+        background: white;
+        color: #6366f1;
+        /* Generous padding = big tap target for small hands */
+        padding: clamp(14px, 3vmin, 22px) clamp(36px, 7vmin, 64px);
+        border-radius: 100px;
+        border: none;
+        cursor: pointer;
+        touch-action: manipulation;
+        box-shadow: 0 8px 32px rgba(0,0,0,0.2);
+        transition: transform 0.1s ease;
+        min-height: 72px;
+    }
+    #startBtn:active { transform: scale(0.96); }
+
+    /* ═══════════════════════════════════════════════════════════════
+       GAME BANNER  ("Find number X")
+       ═══════════════════════════════════════════════════════════════ */
+    #callOverlay {
+        position: fixed;
+        top: 10px;
+        left: 50%;
+        transform: translateX(-50%) translateY(-170%);
+        z-index: 50;
+        opacity: 0;
+        transition: all 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        width: min(90%, 500px);
+        padding: 10px 28px;
+        display: flex;
+        align-items: center;
+        justify-content: space-around;
+        gap: 16px;
+        pointer-events: none;
+    }
+    #callOverlay.visible {
+        transform: translateX(-50%) translateY(0);
+        opacity: 1;
+    }
+    #targetHintDisplay {
+        font-weight: 700;
+        font-size: clamp(0.7rem, 2.5vmin, 1rem);
+        text-transform: uppercase;
+        letter-spacing: 0.1em;
+        color: #6b7280;
+    }
+    #targetNumberDisplay {
+        font-family: 'Fredoka One', 'Arial Rounded MT Bold', cursive;
+        font-size: clamp(3rem, 12vmin, 6rem);
+        color: #6366f1;
+        line-height: 1;
+    }
+
+    /* ═══════════════════════════════════════════════════════════════
+       HEADER
+       ═══════════════════════════════════════════════════════════════ */
+    header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        gap: 8px;
+        flex-shrink: 0;
+    }
+
+    .title-pill {
+        padding: 6px 14px;
+        flex-shrink: 0;
+    }
+    .title-pill h1 {
+        font-family: 'Fredoka One', 'Arial Rounded MT Bold', cursive;
+        font-size: clamp(1rem, 3vmin, 1.5rem);
+        color: #6366f1;
+        white-space: nowrap;
+    }
+    /* Hide title on very small screens to save space */
+    @media (max-width: 480px) { .title-pill { display: none; } }
+
+    .header-btns {
+        display: flex;
+        gap: 8px;
+        align-items: center;
+        margin-left: auto;
+    }
+
+    /* ── Shared button ── */
+    .btn {
+        font-family: inherit;
+        font-weight: 700;
+        font-size: clamp(0.72rem, 2vmin, 0.95rem);
+        min-height: 48px;       /* Apple / Google min tap-target */
+        padding: 8px 14px;
+        border: none;
+        border-radius: 16px;
+        cursor: pointer;
+        touch-action: manipulation;
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        white-space: nowrap;
+        transition: transform 0.1s ease;
+    }
+    .btn:active { transform: scale(0.95); }
+
+    .btn-toggle  { color: #374151; min-width: 48px; }
+    .btn-game    { background: #6366f1; color: white;
+                   box-shadow: 0 4px 12px rgba(99,102,241,0.3); }
+    .btn-fs      { color: #4b5563; min-width: 48px; justify-content: center; }
+
+    /* Button dino — scales with viewport like the game dinos do */
+    .btn-dino-icon {
+        width:  clamp(20px, 3.5vmin, 30px);
+        height: clamp(20px, 3.5vmin, 30px);
+        display: inline-block;
+        vertical-align: middle;
+        flex-shrink: 0;
+    }
+
+    /* Dino used inline inside headings — matches the text cap-height */
+    .dino-inline {
+        width:  0.85em;
+        height: 0.85em;
+        vertical-align: -0.08em;
+        display: inline-block;
+        flex-shrink: 0;
+    }
+
+    /* Dino on the start button — slightly larger than heading inline */
+    .dino-start {
+        width:  1.2em;
+        height: 1.2em;
+        vertical-align: -0.14em;
+        display: inline-block;
+        flex-shrink: 0;
+    }
+
+    /* Dino inside the toast celebration pop-up */
+    .dino-toast {
+        width:  0.72em;
+        height: 0.72em;
+        vertical-align: -0.06em;
+        display: inline-block;
+        flex-shrink: 0;
+    }
+
+    /* ═══════════════════════════════════════════════════════════════
+       GAME BOARD
+       ═══════════════════════════════════════════════════════════════ */
+    #gameBoard {
+        flex: 1;
+        min-height: 0;
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        grid-template-rows: repeat(3, 1fr);
+        gap: clamp(4px, 1.2vmin, 10px);
+        overflow: hidden;
+    }
+
+    /* ═══════════════════════════════════════════════════════════════
+       NUMBER CARD
+       ═══════════════════════════════════════════════════════════════ */
+    .number-card {
+        /* GPU hint — avoids repaint jank on low-powered tablet CPUs */
+        will-change: transform;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        gap: clamp(2px, 0.8vmin, 8px);
+        padding: clamp(4px, 1.2vmin, 10px);
+        min-height: 0;
+        min-width: 0;
+        position: relative;
+        overflow: hidden;
+        cursor: pointer;
+        touch-action: manipulation;
+        transition: transform 0.15s ease, box-shadow 0.15s ease;
+    }
+    .number-card:active:not(.locked) { transform: scale(0.95); }
+    .number-card.locked {
+        cursor: default;
+        opacity: 0.9;
+        /* NOTE: do NOT add pointer-events:none — dino taps still need to fire */
+    }
+
+    /* ═══════════════════════════════════════════════════════════════
+       NUMBER TEXT
+       ═══════════════════════════════════════════════════════════════ */
+    .num-label {
+        /* Button reset — keeps the visual style but makes it a native button */
+        background: none;
+        border: none;
+        padding: 0;
+        touch-action: manipulation;
+        -webkit-tap-highlight-color: transparent;
+        font-family: 'Fredoka One', 'Arial Rounded MT Bold', cursive;
+        font-size: clamp(2rem, 9vmin, 6rem);
+        line-height: 1;
+        flex-shrink: 0;
+        cursor: pointer;
+        user-select: none;
+    }
+    @media (orientation: landscape) {
+        .num-label { font-size: clamp(1.6rem, 7vh, 4.5rem); }
+    }
+
+    /* ── Number invite: pulse to draw child's eye to tap a number ── */
+    .num-label.invite-pick {
+        animation: num-invite 2.2s ease-in-out infinite;
+    }
+    @keyframes num-invite {
+        0%, 100% { transform: scale(1);    text-shadow: 0 0 0px transparent; }
+        50%       { transform: scale(1.12); text-shadow: 0 0 24px rgba(255,190,0,0.9),
+                                                         0 0 8px  rgba(255,255,255,0.6); }
+    }
+
+    /* ═══════════════════════════════════════════════════════════════
+       STORY BUTTON  ✨
+       Minimum 44 px — Apple HIG tap-target guideline
+       ═══════════════════════════════════════════════════════════════ */
+    .story-btn {
+        position: absolute;
+        top: 5px; right: 5px;
+        background: white;
+        border: none;
+        border-radius: 50%;
+        width:  clamp(44px, 9vmin, 56px);
+        height: clamp(44px, 9vmin, 56px);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        box-shadow: 0 2px 10px rgba(0,0,0,0.12);
+        font-size: clamp(1.1rem, 3.5vmin, 1.5rem);
+        z-index: 5;
+        cursor: pointer;
+        touch-action: manipulation;
+        transition: transform 0.1s ease;
+    }
+    .story-btn:active { transform: scale(0.88); }
+
+    /* ═══════════════════════════════════════════════════════════════
+       DINO BOX
+       ─────────────────────────────────────────────────────────────
+       Uses flex-wrap so dinos flow into rows naturally.
+       Each .counter-dino is a fixed vw-based size so all dinos look
+       the same across every card — no shrinking for higher numbers.
+       ═══════════════════════════════════════════════════════════════ */
+    .dino-box {
+        display: flex;
+        flex-wrap: wrap;
+        justify-content: center;
+        align-items: center;
+        align-content: center;
+        gap: clamp(2px, 0.7vmin, 7px);
+        padding: clamp(2px, 0.5vmin, 6px);
+        overflow: visible;
+        width: 100%;
+    }
+
+    /* ═══════════════════════════════════════════════════════════════
+       DINO BUTTON WRAPPER
+       — Native <button> guarantees click events fire on every platform,
+         including iOS Safari, without any event-bubbling hacks.
+       ═══════════════════════════════════════════════════════════════ */
+    .dino-btn {
+        background: none;
+        border: none;
+        padding: 0;
+        margin: 0;
+        cursor: pointer;
+        touch-action: manipulation;
+        -webkit-tap-highlight-color: transparent;
+        /* Same size as the SVG used to be — fits 5 per row on a card */
+        width:  clamp(30px, 5.5vw, 65px);
+        height: clamp(30px, 5.5vw, 65px);
+        flex-shrink: 0;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+
+    /* ═══════════════════════════════════════════════════════════════
+       INDIVIDUAL DINO SVG  (lives inside .dino-btn)
+       ═══════════════════════════════════════════════════════════════ */
+    .counter-dino {
+        width:  100%;
+        height: 100%;
+        display: block;
+        opacity: 0.28;          /* dim by default — waiting to be counted */
+        /* SVG and its children must NOT intercept touches — the parent
+           <button> handles all clicks. Without this, iOS fires the tap
+           on the <path>/<circle> inside the SVG and the button onclick
+           never gets called. pointer-events:none passes all touches
+           through to the parent button while keeping the visual intact. */
+        pointer-events: none;
+        transition: opacity 0.22s ease,
+                    filter  0.22s ease,
+                    transform 0.22s ease;
+    }
+
+    /* ── Next dino to tap: warm golden pulse ── */
+    .counter-dino.invite {
+        opacity: 1;
+        animation: invite-glow 1.3s ease-in-out infinite;
+    }
+    @keyframes invite-glow {
+        0%, 100% {
+            transform: scale(0.88);
+            filter: drop-shadow(0 0 5px rgba(255,195,0,0.8));
+        }
+        50% {
+            transform: scale(1.12);
+            filter: drop-shadow(0 0 18px rgba(255,195,0,1))
+                    drop-shadow(0 0 7px rgba(255,255,255,0.7));
+        }
+    }
+
+    /* ── App modeling ("watch me"): blue glow stays lit after spoken ── */
+    .counter-dino.model-active {
+        opacity: 1;
+        filter: drop-shadow(0 0 12px rgba(80,160,255,0.95))
+                drop-shadow(0 0 5px  rgba(255,255,255,0.6));
+        transform: scale(1);
+        animation: none;
+    }
+
+    /* ── Already counted: bright and cheerful ── */
+    .counter-dino.active {
+        opacity: 1;
+        filter: drop-shadow(0 2px 4px rgba(0,0,0,0.12));
+        transform: scale(1);
+        animation: none;
+    }
+
+    /* ── Sparkle when tapped ── */
+    .counter-dino.tap-spark {
+        animation: sparkle-pop 0.68s ease-out forwards;
+    }
+    @keyframes sparkle-pop {
+        0%   { transform: scale(1);    filter: brightness(2.2)  drop-shadow(0 0 14px rgba(255,220,0,0.9)); }
+        28%  { transform: scale(1.40); filter: brightness(2.8)  drop-shadow(0 0 26px rgba(255,220,0,1)); }
+        65%  { transform: scale(0.94); filter: brightness(1.15); }
+        100% { transform: scale(1);    filter: drop-shadow(0 2px 4px rgba(0,0,0,0.12)); }
+    }
+
+    /* ── Story-button dino flutter ── */
+    .counter-dino.flutter {
+        opacity: 0.9;
+        animation: dino-flutter 0.6s ease-in-out infinite;
+    }
+    @keyframes dino-flutter {
+        0%, 100% { transform: scale(0.9) rotate(0deg); }
+        50%       { transform: scale(1.1) rotate(6deg); }
+    }
+
+    /* ═══════════════════════════════════════════════════════════════
+       STATE FEEDBACK
+       ═══════════════════════════════════════════════════════════════ */
+    .disabled-input { pointer-events: none; opacity: 0.5; }
+
+    .correct-glow {
+        box-shadow: 0 0 50px #4ade80, 0 0 18px #4ade80 inset !important;
+        border-color: #4ade80 !important;
+        transform: scale(1.03) !important;
+    }
+    .wrong-glow {
+        box-shadow: 0 0 42px #f87171 !important;
+        border-color: #f87171 !important;
+        animation: shake 0.35s ease-in-out;
+    }
+    @keyframes shake {
+        0%,100% { transform: translateX(0); }
+        25%     { transform: translateX(-10px); }
+        75%     { transform: translateX( 10px); }
+    }
+    .sparkle-success { animation: celebrate 0.5s ease-out infinite; }
+    @keyframes celebrate {
+        0%,100% { filter: brightness(1);    transform: scale(1); }
+        50%     { filter: brightness(1.15) hue-rotate(10deg); transform: scale(1.04); }
+    }
+
+    /* ═══════════════════════════════════════════════════════════════
+       TOAST  (big celebratory pop-up)
+       ═══════════════════════════════════════════════════════════════ */
+    #toast {
+        position: fixed;
+        top: 50%; left: 50%;
+        transform: translate(-50%, -50%) scale(0.5);
+        pointer-events: none;
+        opacity: 0;
+        z-index: 60;
+        width: 80%;
+        text-align: center;
+        font-family: 'Fredoka One', cursive;
+        font-size: clamp(3rem, 14vmin, 7rem);
+        font-weight: 900;
+        filter: drop-shadow(0 4px 10px rgba(0,0,0,0.25));
+        line-height: 1.2;
+        transition: opacity 0.4s ease,
+                    transform 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        white-space: pre-line;
+    }
+    #toast.show {
+        opacity: 1;
+        transform: translate(-50%, -50%) scale(1);
+    }
+    </style>
+</head>
+<body>
+
+<!-- ══════════════════════════════════════════════════════════════════
+     START SCREEN
+     ══════════════════════════════════════════════════════════════════ -->
+<div id="startOverlay">
+    <h1><span id="startTitleDino"></span> Jack's Dino Math</h1>
+    <p>Count, learn, and roar!</p>
+    <button id="startBtn">Tap to Play! <span id="startBtnDino"></span></button>
+    <p>Works on tablets &amp; whiteboards</p>
+</div>
+
+<!-- ══════════════════════════════════════════════════════════════════
+     GAME BANNER  (slides down when game mode is active)
+     ══════════════════════════════════════════════════════════════════ -->
+<div id="callOverlay" class="glass">
+    <span id="targetHintDisplay">Find…</span>
+    <span id="targetNumberDisplay">?</span>
+</div>
+
+<!-- ══════════════════════════════════════════════════════════════════
+     HEADER
+     ══════════════════════════════════════════════════════════════════ -->
+<header>
+    <div class="glass title-pill">
+        <h1><span id="headerTitleDino"></span> Jack's Dino Math</h1>
+    </div>
+
+    <div class="header-btns">
+        <!-- Toggle dino counters on/off -->
+        <button id="toggleCounters" class="glass btn btn-toggle">
+            <span id="headerDinoIcon"></span>
+            Dinos:&nbsp;<span id="counterStatus" style="color:#6366f1">ON</span>
+        </button>
+
+        <!-- Game / scramble mode -->
+        <button id="scrambleBtn" class="btn btn-game">🎲 Game!</button>
+
+        <!-- Fullscreen — essential for hiding browser UI on whiteboards -->
+        <button id="fullscreenBtn" class="glass btn btn-fs"
+                title="Toggle fullscreen" aria-label="Toggle fullscreen">
+            <!-- Expand icon -->
+            <svg id="fsExpand" width="20" height="20" viewBox="0 0 20 20" fill="currentColor">
+                <path d="M1 1h6v2H3v4H1zm12 0h6v6h-2V3h-4zm-12 12h2v4h4v2H1zm14 4v-4h2v6h-6v-2z"/>
+            </svg>
+            <!-- Contract icon (shown when fullscreen) -->
+            <svg id="fsContract" width="20" height="20" viewBox="0 0 20 20"
+                 fill="currentColor" style="display:none">
+                <path d="M7 1v6H1V5h4V1zm6 0v4h4v2h-6V1zm-6 12H1v-2h6v6H5v-4zm8 4h-4v-6h6v2h-4v4z"/>
+            </svg>
+        </button>
+    </div>
+</header>
+
+<!-- ══════════════════════════════════════════════════════════════════
+     GAME BOARD  (3 × 3 number grid)
+     ══════════════════════════════════════════════════════════════════ -->
+<main id="gameBoard"></main>
+
+<!-- ══════════════════════════════════════════════════════════════════
+     TOAST  (celebration pop-up)
+     ══════════════════════════════════════════════════════════════════ -->
+<div id="toast"></div>
+
+
+<!-- ══════════════════════════════════════════════════════════════════
+     JAVASCRIPT  — all logic, no external libraries
+     ══════════════════════════════════════════════════════════════════ -->
+<script>
+'use strict';
+
+// ── Palette & stories ────────────────────────────────────────────────────────
+const COLORS = [
+    '#e85d5d','#2bbfa8','#3a9fd1','#e8823a',
+    '#5bc4a0','#e8b84b','#7c64d8','#7dca9e','#e87b8a'
+];
+
+const STORIES = {
+    1: "One brave long-neck is searching for the tallest, yummiest tree!",
+    2: "Two dino pals are splashing in a giant muddy puddle!",
+    3: "Three sleepy dinosaurs are snoozing under the warm stars!",
+    4: "Four happy dinos are having a big stompy dance party!",
+    5: "Five giant dinosaurs found the most delicious leafy feast!",
+    6: "Six little dinos are playing hide-and-seek in the jungle!",
+    7: "Seven hungry dinos discovered a mountain of yummy berries!",
+    8: "Eight silly dinosaurs are making funny faces at the birds!",
+    9: "Nine long-neck dinosaurs are stretching to reach the clouds!"
+};
+
+// ── App state ────────────────────────────────────────────────────────────────
+let showCounters = true;
+let isGameMode   = false;
+let targetNum    = null;
+let numbers      = [1,2,3,4,5,6,7,8,9];
+let toastTimer   = null;
+
+// Single busy flag — prevents overlapping async interactions
+let busy       = false;
+let activeCard = null;   // card currently being counted
+let activeNum  = 0;
+let countNext  = 0;      // index of next dino to tap
+
+// ── DOM refs ─────────────────────────────────────────────────────────────────
+const board        = document.getElementById('gameBoard');
+const toggleBtn    = document.getElementById('toggleCounters');
+const scrambleBtn  = document.getElementById('scrambleBtn');
+const overlay      = document.getElementById('callOverlay');
+const targetDisp   = document.getElementById('targetNumberDisplay');
+const targetHint   = document.getElementById('targetHintDisplay');
+const toast        = document.getElementById('toast');
+const startOverlay = document.getElementById('startOverlay');
+const startBtn     = document.getElementById('startBtn');
+const dinoIconSpan = document.getElementById('headerDinoIcon');
+const fsExpand     = document.getElementById('fsExpand');
+const fsContract   = document.getElementById('fsContract');
+const statusText   = document.getElementById('counterStatus');
+
+// ── Prevent scroll / swipe-navigation while the game is running ──────────────
+document.addEventListener('touchmove', e => {
+    if (startOverlay.style.display === 'none') e.preventDefault();
+}, { passive: false });
+
+// ═══════════════════════════════════════════════════════════════════════════
+// BRONTOSAURUS SVG
+// ─────────────────────────────────────────────────────────────────────────
+// A friendly long-neck dinosaur — same shape used both in the counter grid
+// and in the header toggle button.  viewBox="0 0 100 100" fits comfortably
+// inside CSS grid cells at any size.
+// ═══════════════════════════════════════════════════════════════════════════
+// className is the full SVG class string.
+// Defaults to 'counter-dino' for game-board dinos.
+// Pass a different class for decorative uses (titles, buttons, toast).
+function getDinoSvg(color, index = 0, className = 'counter-dino') {
+    const cls = className;
+    return `<svg class="${cls}" data-index="${index}"
+                 viewBox="0 -6 100 106"
+                 style="fill:${color};"
+                 role="img" aria-label="dinosaur ${index}">
+        <!-- Tail — sweeping curve to the right -->
+        <path d="M78,63 C90,54 94,41 87,34"
+              stroke="${color}" stroke-width="9" fill="none" stroke-linecap="round"/>
+        <!-- Body — wide egg shape -->
+        <ellipse cx="52" cy="70" rx="30" ry="21"/>
+        <!-- Neck — thick curved stroke from body up to the left -->
+        <path d="M35,53 C29,37 27,20 34,8"
+              stroke="${color}" stroke-width="14" fill="none" stroke-linecap="round"/>
+        <!-- Head — round circle -->
+        <circle cx="35" cy="7" r="10"/>
+        <!-- Back eye — higher up, smaller (Option A: cy=2) -->
+        <circle cx="30" cy="2"   r="3"   fill="white"/>
+        <circle cx="30" cy="2.5" r="1.8" fill="#1a1a2e"/>
+        <circle cx="31" cy="1.5" r="0.7" fill="white"/>
+        <!-- Front eye — lower, bigger (Option A: cy=7) -->
+        <circle cx="39" cy="7"   r="4"   fill="white"/>
+        <circle cx="40" cy="7"   r="2.4" fill="#1a1a2e"/>
+        <circle cx="41" cy="6"   r="1"   fill="white"/>
+        <!-- Nostril -->
+        <circle cx="32" cy="13"  r="1.8" fill="rgba(0,0,0,0.18)"/>
+        <!-- Four stubby legs -->
+        <rect x="27" y="85" width="10" height="15" rx="5"/>
+        <rect x="41" y="87" width="10" height="13" rx="5"/>
+        <rect x="55" y="87" width="10" height="13" rx="5"/>
+        <rect x="69" y="85" width="10" height="15" rx="5"/>
+    </svg>`;
+}
+
+// ── Inject SVG dinos everywhere emojis used to be ────────────────────────────
+// Header toggle button (proportional to game dinos via vmin CSS)
+dinoIconSpan.innerHTML = getDinoSvg('#6366f1', 0, 'btn-dino-icon');
+// Start-screen heading
+document.getElementById('startTitleDino').innerHTML  = getDinoSvg('#f0e6ff', 0, 'dino-inline');
+// Start-screen "Tap to Play!" button
+document.getElementById('startBtnDino').innerHTML    = getDinoSvg('#6366f1', 0, 'dino-start');
+// Header title pill
+document.getElementById('headerTitleDino').innerHTML = getDinoSvg('#6366f1', 0, 'dino-inline');
+
+// ── Fullscreen ────────────────────────────────────────────────────────────────
+function updateFsIcons() {
+    const full = !!(document.fullscreenElement || document.webkitFullscreenElement);
+    fsExpand.style.display   = full ? 'none' : '';
+    fsContract.style.display = full ? ''     : 'none';
+}
+function toggleFullscreen() {
+    const el = document.documentElement;
+    if (!document.fullscreenElement && !document.webkitFullscreenElement) {
+        (el.requestFullscreen || el.webkitRequestFullscreen ||
+         el.mozRequestFullScreen || el.msRequestFullscreen)?.call(el);
+    } else {
+        (document.exitFullscreen || document.webkitExitFullscreen ||
+         document.mozCancelFullScreen)?.call(document);
+    }
+}
+['fullscreenchange','webkitfullscreenchange'].forEach(e =>
+    document.addEventListener(e, updateFsIcons)
+);
+document.getElementById('fullscreenBtn').onclick = toggleFullscreen;
+
+// ── Speech — Promise-based, matches original working GAS app ─────────────────
+// Returns a Promise that resolves when the utterance finishes.
+// cancel() before each speak() keeps iOS audio unlocked across all calls.
+// Safety timeout resolves the Promise if onend never fires (known iOS bug).
+function speak(text, rate = 0.65) {
+    return new Promise(resolve => {
+        if (!window.speechSynthesis) { resolve(); return; }
+        let done = false;
+        const finish = () => { if (!done) { done = true; resolve(); } };
+        window.speechSynthesis.cancel();
+        const u = new SpeechSynthesisUtterance(text);
+        u.rate   = rate;
+        u.pitch  = 1.2;
+        u.volume = 1;
+        u.onend  = finish;
+        u.onerror = finish;
+        window.speechSynthesis.speak(u);
+        // Safety net: resolve after estimated duration + buffer
+        setTimeout(finish, Math.ceil(text.length * 95 / rate) + 1200);
+    });
+}
+
+// Simple async delay helper
+const delay = ms => new Promise(r => setTimeout(r, ms));
+
+// ── Toast ─────────────────────────────────────────────────────────────────────
+function showToast(text, color, ms = 2200) {
+    if (toastTimer) clearTimeout(toastTimer);
+    toast.innerHTML   = text;
+    toast.style.color = color;
+    toast.classList.add('show');
+    toastTimer = setTimeout(() => toast.classList.remove('show'), ms);
+}
+
+// ── Card helpers ──────────────────────────────────────────────────────────────
+function resetCardToIdle(card) {
+    card.querySelectorAll('.counter-dino').forEach(d => d.className = 'counter-dino');
+    if (showCounters) {
+        const first = card.querySelector('.counter-dino');
+        if (first) first.classList.add('invite');
+    }
+    card.classList.remove('correct-glow', 'wrong-glow', 'sparkle-success');
+}
+
+// ── Teaching sequence: "I do → You do" ───────────────────────────────────────
+// async/await means timing is natural — each word waits for the previous to end.
+// No hardcoded intervals needed.
+async function teachSequence(num, card) {
+    document.querySelectorAll('.num-label').forEach(l => l.classList.remove('invite-pick'));
+
+    const dinos = card.querySelectorAll('.counter-dino');
+    dinos.forEach(d => d.className = 'counter-dino');
+
+    // Phase 1: "Count with me!"
+    await speak('Count with me!');
+
+    // Phase 2: app models each dino (blue glow + number)
+    for (let i = 0; i < num; i++) {
+        dinos[i].classList.add('model-active');
+        requestAnimationFrame(() => requestAnimationFrame(() => dinos[i].classList.add('tap-spark')));
+        await speak(String(i + 1), 0.40);
+        await delay(250);
+    }
+
+    await delay(400);
+    dinos.forEach(d => d.className = 'counter-dino');
+
+    // Phase 3: "Can you count with me?"
+    await speak('Can you count with me?');
+    await delay(500);
+
+    // Phase 4: set up child's turn
+    activeCard = card;
+    activeNum  = num;
+    countNext  = 0;
+    const first = card.querySelector('.counter-dino');
+    if (first && showCounters) first.classList.add('invite');
+
+    busy = false;
+}
+
+// ── Child taps a dino ─────────────────────────────────────────────────────────
+async function countOneDino() {
+    const card = activeCard;
+    const num  = activeNum;
+    const idx  = countNext;
+
+    if (idx >= num) { resetCardToIdle(card); activeCard = null; busy = false; return; }
+
+    countNext++;
+
+    const dinos = card.querySelectorAll('.counter-dino');
+    const dino  = dinos[idx];
+    dino.classList.remove('invite', 'tap-spark');
+    dino.classList.add('active');
+    requestAnimationFrame(() => requestAnimationFrame(() => dino.classList.add('tap-spark')));
+
+    await speak(String(countNext), 0.45);
+
+    if (countNext === num) {
+        // 🎉 All dinos counted!
+        card.classList.add('sparkle-success');
+        await delay(400);
+        const label = num === 1 ? 'dinosaur' : 'dinosaurs';
+        const td    = getDinoSvg(COLORS[num - 1], 0, 'dino-toast');
+        showToast(td + ' ' + num + '! ' + td, COLORS[num - 1], 2800);
+        await speak(num + ' ' + label + '! Great job!', 0.68);
+        await delay(800);
+        card.classList.remove('sparkle-success');
+        activeCard = null;
+        countNext  = 0;
+        if (isGameMode) {
+            isGameMode = false;
+            overlay.classList.remove('visible');
+            numbers = [1,2,3,4,5,6,7,8,9];
+            scrambleBtn.textContent = '🎲 Game!';
+            busy = false;
+            renderBoard();
+        } else {
+            resetCardToIdle(card);
+            busy = false;
+        }
+    } else {
+        if (dinos[countNext]) dinos[countNext].classList.add('invite');
+        busy = false;
+    }
+}
+
+// ── Card / dino tap router ────────────────────────────────────────────────────
+async function handleCardTap(num, card) {
+    if (busy) return;
+    busy = true;
+
+    if (isGameMode) {
+        if (num !== targetNum) {
+            card.classList.add('wrong-glow');
+            await speak('That\'s number ' + num + '. Can you find number ' + targetNum + '?');
+            card.classList.remove('wrong-glow');
+            busy = false;
+            return;
+        }
+        card.classList.add('correct-glow');
+        showToast('🌟 RAWR! 🌟', '#4ade80', 1400);
+        await speak('Yes! Now count the dinos!');
+        card.classList.remove('correct-glow');
+        overlay.classList.remove('visible');
+        isGameMode = false;
+        activeCard = card;
+        activeNum  = num;
+        countNext  = 0;
+        card.querySelectorAll('.counter-dino').forEach(d => d.className = 'counter-dino');
+        const first = card.querySelector('.counter-dino');
+        if (first && showCounters) first.classList.add('invite');
+        busy = false;
+        return;
+    }
+
+    if (activeCard === card) {
+        await countOneDino();
+    } else {
+        if (activeCard) resetCardToIdle(activeCard);
+        activeCard = null;
+        await teachSequence(num, card);
+    }
+}
+
+// ── Story button ──────────────────────────────────────────────────────────────
+async function playDinoStory(num, card) {
+    if (busy) return;
+    busy = true;
+    const first = card.querySelector('.counter-dino');
+    if (first) first.classList.add('flutter');
+    await speak(STORIES[num]);
+    if (first) first.classList.remove('flutter');
+    if (activeCard && activeCard !== card) resetCardToIdle(activeCard);
+    activeCard = card;
+    activeNum  = num;
+    countNext  = 0;
+    card.querySelectorAll('.counter-dino').forEach(d => d.className = 'counter-dino');
+    const dino0 = card.querySelector('.counter-dino');
+    if (dino0 && showCounters) dino0.classList.add('invite');
+    await speak('Count the dinos!');
+    busy = false;
+}
+
+// ── Card factory ──────────────────────────────────────────────────────────────
+function createNumberCard(num) {
+    const color = COLORS[num - 1];
+
+    const card = document.createElement('div');
+    card.className      = 'number-card glass';
+    card.dataset.number = num;
+
+    // Each dino SVG is wrapped in a native <button> so iOS always fires click.
+    // Native <button> elements receive click on every browser & platform without
+    // any event-bubbling workarounds — this is the only reliable approach on iOS.
+    let dinoHtml = `<div class="dino-box${showCounters ? '' : ' hidden'}">`;
+    for (let i = 0; i < num; i++) {
+        dinoHtml += `<button class="dino-btn" type="button" aria-label="dinosaur ${i + 1}">${getDinoSvg(color, i)}</button>`;
+    }
+    dinoHtml += '</div>';
+
+    card.innerHTML = `
+        <button class="story-btn" type="button" aria-label="Dino story for ${num}">✨</button>
+        <button class="num-label" type="button" style="color:${color};">${num}</button>
+        ${dinoHtml}
+    `;
+
+    if (showCounters) {
+        const first = card.querySelector('.counter-dino');
+        if (first) first.classList.add('invite');
+    }
+
+    // Simple onclick on every native button — no hacks needed.
+    card.querySelector('.num-label').onclick  = () => handleCardTap(num, card);
+    card.querySelector('.story-btn').onclick  = () => playDinoStory(num, card);
+    card.querySelectorAll('.dino-btn').forEach(btn => {
+        btn.onclick = () => handleCardTap(num, card);
+    });
+
+    return card;
+}
+
+// ── Render board ──────────────────────────────────────────────────────────────
+function renderBoard() {
+    board.innerHTML = '';
+    busy      = false;
+    activeCard = null;
+    activeNum  = 0;
+    countNext  = 0;
+    numbers.forEach(n => board.appendChild(createNumberCard(n)));
+    if (!isGameMode) {
+        board.querySelectorAll('.num-label').forEach(l => l.classList.add('invite-pick'));
+    }
+}
+
+// ── Game mode ─────────────────────────────────────────────────────────────────
+function scramble() {
+    if (busy) return;
+    numbers.sort(() => Math.random() - 0.5);
+    targetNum  = Math.floor(Math.random() * 9) + 1;
+    isGameMode = true;
+    renderBoard();
+    setTimeout(() => {
+        overlay.classList.add('visible');
+        scrambleBtn.textContent = '✕ Exit';
+        targetHint.textContent  = 'Find…';
+        targetDisp.textContent  = targetNum;
+        speak('Can you find the number ' + targetNum + '?');
+    }, 60);
+}
+
+// ── Button wiring ─────────────────────────────────────────────────────────────
+toggleBtn.onclick = () => {
+    if (busy) return;
+    showCounters = !showCounters;
+    statusText.textContent = showCounters ? 'ON' : 'OFF';
+    renderBoard();
+};
+
+scrambleBtn.onclick = () => {
+    if (isGameMode) {
+        isGameMode = false;
+        overlay.classList.remove('visible');
+        numbers = [1,2,3,4,5,6,7,8,9];
+        scrambleBtn.textContent = '🎲 Game!';
+        busy = false;
+        renderBoard();
+    } else {
+        scramble();
+    }
+};
+
+startBtn.onclick = function() {
+    if (window.speechSynthesis) window.speechSynthesis.resume();
+    speak("Let's play! Tap a number!");
+    startOverlay.style.opacity = '0';
+    setTimeout(() => {
+        startOverlay.style.display = 'none';
+        renderBoard();
+    }, 400);
+};
+
+// ── Responsive rebuild (debounced) ────────────────────────────────────────────
+let rTimer;
+function debouncedRender() {
+    clearTimeout(rTimer);
+    rTimer = setTimeout(() => { if (!busy) renderBoard(); }, 180);
+}
+window.addEventListener('resize', debouncedRender);
+window.addEventListener('orientationchange', () => setTimeout(debouncedRender, 320));
+
+// ── iOS dynamic viewport height ───────────────────────────────────────────────
+function setAppHeight() {
+    document.documentElement.style.setProperty('--app-height', window.innerHeight + 'px');
+}
+window.addEventListener('resize', setAppHeight);
+setAppHeight();
+
+</script>
+</body>
+</html>
