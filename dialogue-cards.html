@@ -1,0 +1,1095 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Dialogue Cards — VINCULUM Hub</title>
+<link href="https://fonts.googleapis.com/css2?family=Fira+Code:wght@400;600&family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script src="shared/vinculum-cra.js?v=5"></script>
+<style>
+:root {
+  --neon:#00f2ff; --bg:#050507; --bg2:rgba(10,10,15,0.98); --card:rgba(10,10,15,0.98);
+  --card-hover:rgba(15,15,25,0.98); --border:rgba(255,255,255,0.1);
+  --text:#e8edf5; --muted:rgba(255,255,255,0.5); --dim:rgba(255,255,255,0.3);
+  --cyan:#00f2ff; --purple:#bc13fe; --green:#10b981; --pink:#ff3b8b;
+  --yellow:#fde047; --orange:#ff9100; --accent:#bc13fe; --emerald:#10b981;
+  --grad:linear-gradient(135deg,#00f2ff,#bc13fe);
+}
+*{margin:0;padding:0;box-sizing:border-box;}
+body{font-family:'Inter',system-ui,sans-serif;background:var(--bg);color:var(--text);min-height:100vh;}
+
+.header{display:flex;align-items:center;justify-content:space-between;padding:16px 24px;background:var(--bg2);backdrop-filter:blur(20px);border-bottom:1px solid var(--border);position:sticky;top:0;z-index:100;}
+.header a{color:var(--cyan);text-decoration:none;font-size:14px;display:flex;align-items:center;gap:6px;transition:color .2s;}
+.header a:hover{color:var(--purple);}
+.header h1{font-size:20px;font-weight:700;background:var(--grad);-webkit-background-clip:text;-webkit-text-fill-color:transparent;}
+
+.container{max-width:1100px;margin:0 auto;padding:24px;}
+
+.section-label{font-size:11px;letter-spacing:.08em;color:var(--dim);font-weight:700;text-transform:uppercase;margin-bottom:12px;}
+
+/* Grade bar */
+.grade-bar{display:flex;gap:8px;margin-bottom:24px;flex-wrap:wrap;}
+.g-btn{padding:10px 22px;border:1px solid var(--border);border-radius:8px;background:var(--card);color:var(--muted);font-size:14px;font-weight:700;cursor:pointer;font-family:inherit;transition:all .2s;}
+.g-btn:hover{border-color:var(--cyan);color:var(--text);}
+.g-btn.active{background:var(--grad);color:#0a0e1a;border-color:transparent;}
+
+/* Topics */
+.topics-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:12px;margin-bottom:24px;}
+.t-card{background:var(--card);border:1px solid var(--border);border-radius:10px;padding:16px;cursor:pointer;transition:all .25s;}
+.t-card:hover{border-color:var(--cyan);background:var(--card-hover);transform:translateY(-2px);}
+.t-card.selected{border-color:var(--cyan);box-shadow:0 0 0 2px rgba(0,212,255,.2),0 4px 20px rgba(0,212,255,.1);}
+.t-name{font-size:15px;font-weight:700;margin-bottom:4px;text-transform:capitalize;}
+.t-meta{font-size:12px;color:var(--muted);}
+
+/* Group size & Protocol selectors */
+.config-row{display:flex;gap:16px;margin-bottom:20px;flex-wrap:wrap;align-items:flex-start;}
+.config-group{flex:1;min-width:240px;}
+.config-group label{font-size:11px;letter-spacing:.08em;color:var(--dim);font-weight:700;text-transform:uppercase;display:block;margin-bottom:8px;}
+.config-btns{display:flex;gap:6px;flex-wrap:wrap;}
+.cfg-btn{padding:8px 16px;border:1px solid var(--border);border-radius:8px;background:var(--card);color:var(--muted);font-size:13px;font-weight:600;cursor:pointer;font-family:inherit;transition:all .2s;}
+.cfg-btn:hover{border-color:var(--cyan);color:var(--text);}
+.cfg-btn.active{background:rgba(0,242,255,0.12);border-color:var(--cyan);color:var(--cyan);}
+
+/* Reveal control */
+.step-scrubber{margin-top:14px;margin-bottom:20px;display:none;}
+.reveal-steps{display:flex;align-items:center;justify-content:center;gap:0;}
+.reveal-step{
+  display:flex;flex-direction:column;align-items:center;gap:4px;
+  background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.08);
+  border-radius:10px;padding:8px 14px;cursor:pointer;transition:all 0.3s ease;
+  min-width:68px;
+}
+.reveal-step:hover{background:rgba(0,242,255,0.08);border-color:rgba(0,242,255,0.3);}
+.reveal-step.active{background:rgba(0,242,255,0.12);border-color:var(--neon);box-shadow:0 0 12px rgba(0,242,255,0.2);}
+.reveal-step.passed{background:rgba(0,242,255,0.06);border-color:rgba(0,242,255,0.25);}
+.reveal-icon{font-size:16px;line-height:1;}
+.reveal-text{font-family:'Fira Code',monospace;font-size:9px;color:rgba(255,255,255,0.4);text-transform:uppercase;letter-spacing:0.1em;transition:color 0.3s;}
+.reveal-step.active .reveal-text,.reveal-step.passed .reveal-text{color:var(--neon);}
+.reveal-step.active .reveal-text{font-weight:700;}
+.reveal-connector{width:18px;height:2px;background:rgba(255,255,255,0.08);flex-shrink:0;}
+.reveal-step.passed+.reveal-connector{background:var(--neon);box-shadow:0 0 6px rgba(0,242,255,0.3);}
+
+/* Role cards area */
+.cards-stage{margin-bottom:24px;min-height:200px;}
+.role-card{
+  background:var(--card);border:1px solid var(--border);border-radius:12px;
+  padding:20px;margin-bottom:12px;position:relative;overflow:hidden;
+  opacity:0;transform:translateY(20px);transition:all 0.5s cubic-bezier(0.22,1,0.36,1);
+}
+.role-card.visible{opacity:1;transform:translateY(0);}
+.role-card.active-speaker{animation:pulse-border 2s ease-in-out infinite;}
+@keyframes pulse-border{
+  0%,100%{border-color:var(--role-color,var(--cyan));box-shadow:0 0 8px rgba(var(--role-rgb,0,242,255),0.2);}
+  50%{border-color:var(--role-color,var(--cyan));box-shadow:0 0 20px rgba(var(--role-rgb,0,242,255),0.5);}
+}
+.role-badge{
+  display:inline-flex;align-items:center;gap:8px;padding:6px 14px;
+  border-radius:6px;font-size:13px;font-weight:700;margin-bottom:12px;
+  color:white;
+}
+.role-job{font-size:11px;color:var(--muted);font-style:italic;margin-bottom:12px;}
+.role-greeting{font-size:13px;color:var(--text);margin-bottom:8px;padding:8px 12px;background:rgba(255,255,255,0.03);border-radius:6px;border-left:3px solid var(--role-color,var(--cyan));}
+.role-line{font-size:13px;color:var(--text);margin-bottom:6px;padding:6px 12px;background:rgba(255,255,255,0.02);border-radius:4px;}
+.role-line.hidden-line{opacity:0.15;filter:blur(4px);user-select:none;}
+.role-line.hint-line{color:var(--yellow);font-style:italic;}
+.role-line.answer-line{color:var(--green);font-weight:600;}
+
+/* Sentence frames */
+.frames-panel{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:20px;margin-bottom:20px;display:none;}
+.frames-panel.open{display:block;}
+.comfort-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(250px,1fr));gap:12px;}
+.comfort-card{padding:14px;border:1px solid var(--border);border-radius:8px;background:rgba(255,255,255,0.02);}
+.comfort-title{font-size:12px;font-weight:700;margin-bottom:8px;padding:4px 10px;border-radius:4px;color:white;display:inline-block;}
+.comfort-frame{font-size:12px;color:var(--muted);margin-bottom:4px;padding-left:12px;border-left:2px solid var(--border);}
+
+/* Print section */
+.print-section{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:20px;margin-bottom:20px;display:none;}
+.print-section.open{display:block;}
+.print-row{display:flex;gap:12px;align-items:center;margin-bottom:12px;flex-wrap:wrap;}
+.print-label{font-size:12px;font-weight:700;color:var(--dim);min-width:100px;text-transform:uppercase;letter-spacing:.05em;}
+.btn-generate{
+  padding:12px 28px;border:none;border-radius:8px;
+  background:var(--grad);color:#0a0e1a;font-size:14px;font-weight:700;
+  cursor:pointer;font-family:inherit;transition:transform .15s,box-shadow .15s;
+  margin-top:8px;
+}
+.btn-generate:hover{transform:translateY(-2px);box-shadow:0 4px 20px rgba(0,242,255,0.3);}
+
+/* Greeting exemplars panel */
+.greetings-panel{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:20px;margin-bottom:20px;display:none;}
+.greetings-panel.open{display:block;}
+.greeting-item{font-size:13px;color:var(--text);padding:8px 12px;margin-bottom:4px;border-radius:6px;background:rgba(255,255,255,0.02);cursor:pointer;transition:all .2s;}
+.greeting-item:hover{background:rgba(0,242,255,0.08);border-color:var(--cyan);}
+.greeting-item.selected{background:rgba(0,242,255,0.1);border-left:3px solid var(--cyan);}
+
+/* Protocol info */
+.protocol-info{font-size:12px;color:var(--muted);padding:12px;background:rgba(255,255,255,0.02);border-radius:8px;border-left:3px solid var(--purple);margin-bottom:16px;display:none;}
+.protocol-info.open{display:block;}
+
+@keyframes fadeIn{from{opacity:0;transform:translateY(-8px);}to{opacity:1;transform:translateY(0);}}
+@keyframes neon-pulse{0%,100%{text-shadow:0 0 4px rgba(0,242,255,0.4);}50%{text-shadow:0 0 16px rgba(0,242,255,0.8),0 0 30px rgba(0,242,255,0.3);}}
+.neon-glow{animation:neon-pulse 3s ease-in-out infinite;}
+
+@media(max-width:600px){.topics-grid{grid-template-columns:1fr;}.config-row{flex-direction:column;}}
+
+footer{height:32px;background:var(--bg2);backdrop-filter:blur(20px);border-top:1px solid var(--border);display:flex;align-items:center;padding:0 24px;justify-content:space-between;margin-top:auto;}
+</style>
+</head>
+<body>
+
+<div class="header">
+  <a href="VINCULUM-Hub.html">Back to Hub</a>
+  <h1>Dialogue Cards</h1>
+  <span style="font-family:'Fira Code',monospace;font-size:9px;color:var(--dim);letter-spacing:0.2em;text-transform:uppercase;">Academic Conversations</span>
+</div>
+
+<div class="container">
+
+  <!-- Grade Bar -->
+  <div class="section-label">SELECT GRADE</div>
+  <div class="grade-bar" id="gradeBar"></div>
+
+  <!-- Topics -->
+  <div class="section-label" id="topicsLabel">TOPICS</div>
+  <div class="topics-grid" id="topicsGrid"></div>
+
+  <!-- Config: Group Size + Protocol -->
+  <div class="config-row" id="configRow" style="display:none;">
+    <div class="config-group">
+      <label>Group Size</label>
+      <div class="config-btns" id="groupBtns">
+        <button class="cfg-btn" onclick="setGroup(2)">2 Partners</button>
+        <button class="cfg-btn active" onclick="setGroup(3)">3 Trio</button>
+        <button class="cfg-btn" onclick="setGroup(4)">4 Team</button>
+        <button class="cfg-btn" onclick="setGroup(5)">5 Extended</button>
+      </div>
+    </div>
+    <div class="config-group">
+      <label>Discussion Protocol</label>
+      <div class="config-btns" id="protocolBtns">
+        <button class="cfg-btn active" onclick="setProtocol('socratic')">Socratic</button>
+        <button class="cfg-btn" onclick="setProtocol('harkness')">Harkness</button>
+        <button class="cfg-btn" onclick="setProtocol('sac')">SAC</button>
+        <button class="cfg-btn" onclick="setProtocol('litcircle')">Lit Circles</button>
+        <button class="cfg-btn" onclick="setProtocol('accountable')">Accountable Talk</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Protocol description -->
+  <div class="protocol-info" id="protocolInfo"></div>
+
+  <!-- Reveal control -->
+  <div class="step-scrubber" id="stepScrubber">
+    <div class="section-label">CARD REVEAL LEVEL</div>
+    <div class="reveal-steps" id="revealSteps">
+      <button class="reveal-step" data-step="0" onclick="setReveal(0)" title="Hide everything">
+        <span class="reveal-icon">&#x25EF;</span><span class="reveal-text">Hidden</span>
+      </button>
+      <div class="reveal-connector"></div>
+      <button class="reveal-step active" data-step="1" onclick="setReveal(1)" title="Show the question">
+        <span class="reveal-icon">&#x1F4D6;</span><span class="reveal-text">Question</span>
+      </button>
+      <div class="reveal-connector"></div>
+      <button class="reveal-step" data-step="2" onclick="setReveal(2)" title="Show the hint">
+        <span class="reveal-icon">&#x1F4A1;</span><span class="reveal-text">Hint</span>
+      </button>
+      <div class="reveal-connector"></div>
+      <button class="reveal-step" data-step="3" onclick="setReveal(3)" title="Show the answer">
+        <span class="reveal-icon">&#x2713;</span><span class="reveal-text">Answer</span>
+      </button>
+    </div>
+  </div>
+
+  <!-- Greeting Exemplars -->
+  <div class="greetings-panel" id="greetingsPanel">
+    <div class="section-label">CHOOSE A GREETING TO START THE DIALOGUE</div>
+    <div id="greetingsList"></div>
+  </div>
+
+  <!-- Role Cards Stage -->
+  <div class="cards-stage" id="cardsStage"></div>
+
+  <!-- Sentence Frames -->
+  <div class="frames-panel" id="framesPanel">
+    <div class="section-label">SENTENCE FRAMES — Self-Select Your Comfort Level</div>
+    <div class="comfort-grid" id="comfortGrid"></div>
+  </div>
+
+  <!-- Print / PDF Options -->
+  <div class="print-section" id="printSection">
+    <div class="section-label">PRINT OPTIONS</div>
+    <div class="print-row">
+      <span class="print-label">Layout</span>
+      <button class="cfg-btn active" onclick="setLayout('one-per-page')" data-layout="one-per-page">1 Person / Page</button>
+      <button class="cfg-btn" onclick="setLayout('all-on-one')" data-layout="all-on-one">All on One Page</button>
+      <button class="cfg-btn" onclick="setLayout('half-sheet')" data-layout="half-sheet">Half-Sheet (Cut)</button>
+    </div>
+    <div class="print-row">
+      <span class="print-label">Include</span>
+      <label style="font-size:13px;color:var(--muted);cursor:pointer;display:flex;align-items:center;gap:6px;">
+        <input type="checkbox" id="chkFrames" checked> Sentence Frames Page
+      </label>
+      <label style="font-size:13px;color:var(--muted);cursor:pointer;display:flex;align-items:center;gap:6px;">
+        <input type="checkbox" id="chkTeacher" checked> Teacher Guide
+      </label>
+    </div>
+    <button class="btn-generate" onclick="generatePDF()">Generate Dialogue Cards PDF</button>
+  </div>
+
+</div>
+
+<footer>
+  <span style="font-family:'Fira Code',monospace;font-size:9px;color:rgba(255,255,255,0.3);letter-spacing:0.4em;text-transform:uppercase;">System: Dialogue Cards</span>
+  <span style="font-family:'Fira Code',monospace;font-size:9px;color:var(--neon);font-weight:700;letter-spacing:0.2em;">VINCULUM Dialogue Engine | Drummond Math Solutions</span>
+</footer>
+
+<script>
+// ═══════════════════════════════════════════════════════════
+//  DOK PROBLEMS — inline copy from worksheet-generator
+// ═══════════════════════════════════════════════════════════
+// We reference the same file to avoid duplication
+// Load DOK_PROBLEMS dynamically from worksheet-generator
+let DOK_PROBLEMS = {};
+let BENCHMARK_TOPIC_MAP = {};
+
+// We'll inline-define them to keep this page standalone
+// (Loaded via fetch from shared data or inline below)
+
+// ═══════════════════════════════════════════════════════════
+//  ROLE DEFINITIONS — 5 standard roles across all protocols
+// ═══════════════════════════════════════════════════════════
+const ROLES = {
+  A: { label: 'Speaker A', color: '#0d9488', rgb: '13,148,136', job: 'Introduce the idea and start the conversation.' },
+  B: { label: 'Speaker B', color: '#3b82f6', rgb: '59,130,246', job: 'Respond, explain, and build on Speaker A\'s ideas.' },
+  C: { label: 'Questioner', color: '#7c3aed', rgb: '124,58,237', job: 'Ask clarifying questions. Push the group to explain WHY.' },
+  D: { label: 'Summarizer', color: '#d4870f', rgb: '212,135,15', job: 'Restate the key idea in your own words at the end.' },
+  E: { label: 'Connector', color: '#e8436d', rgb: '232,67,109', job: 'Link this conversation to something the class learned before.' }
+};
+
+// Protocol-specific role naming
+const PROTOCOL_ROLES = {
+  socratic: {
+    2: { A: 'Inner Voice', B: 'Challenger' },
+    3: { A: 'Inner Voice', B: 'Challenger', C: 'Questioner' },
+    4: { A: 'Inner Voice', B: 'Challenger', C: 'Questioner', D: 'Summarizer' },
+    5: { A: 'Inner Voice', B: 'Challenger', C: 'Questioner', D: 'Summarizer', E: 'Connector' }
+  },
+  harkness: {
+    2: { A: 'Discussion Lead', B: 'Respondent' },
+    3: { A: 'Discussion Lead', B: 'Respondent', C: 'Tracker' },
+    4: { A: 'Discussion Lead', B: 'Respondent', C: 'Tracker', D: 'Summarizer' },
+    5: { A: 'Discussion Lead', B: 'Respondent', C: 'Tracker', D: 'Summarizer', E: 'Connector' }
+  },
+  sac: {
+    2: { A: 'Position A Advocate', B: 'Position B Advocate' },
+    3: { A: 'Position A Advocate', B: 'Position B Advocate', C: 'Mediator' },
+    4: { A: 'Pair A — Advocate', B: 'Pair A — Listener', C: 'Pair B — Advocate', D: 'Pair B — Listener' },
+    5: { A: 'Pair A — Advocate', B: 'Pair A — Listener', C: 'Pair B — Advocate', D: 'Pair B — Listener', E: 'Consensus Builder' }
+  },
+  litcircle: {
+    2: { A: 'Discussion Director', B: 'Passage Master' },
+    3: { A: 'Discussion Director', B: 'Passage Master', C: 'Connector' },
+    4: { A: 'Discussion Director', B: 'Passage Master', C: 'Connector', D: 'Summarizer' },
+    5: { A: 'Discussion Director', B: 'Passage Master', C: 'Connector', D: 'Summarizer', E: 'Word Wizard' }
+  },
+  accountable: {
+    2: { A: 'Claim Maker', B: 'Evidence Challenger' },
+    3: { A: 'Claim Maker', B: 'Evidence Challenger', C: 'Revoicer' },
+    4: { A: 'Claim Maker', B: 'Evidence Challenger', C: 'Revoicer', D: 'Summarizer' },
+    5: { A: 'Claim Maker', B: 'Evidence Challenger', C: 'Revoicer', D: 'Summarizer', E: 'Connector' }
+  }
+};
+
+// Protocol descriptions
+const PROTOCOL_INFO = {
+  socratic: { name: 'Socratic Seminar', origin: 'Socrates / Adler (1982)', desc: 'Open-ended questioning drives inquiry. Students examine a problem, cite evidence, challenge assumptions, and build understanding through dialogue. No single right answer — the process IS the learning.' },
+  harkness: { name: 'Harkness Discussion', origin: 'Phillips Exeter Academy (1930)', desc: 'Student-owned discussion with no teacher intervention. One student opens with a question; others build organically. A Tracker maps who speaks to whom, creating a "Harkness web" to assess equity.' },
+  sac: { name: 'Structured Academic Controversy', origin: 'Johnson & Johnson, U of Minnesota', desc: 'Two pairs study assigned positions, present with evidence, then DROP positions and build consensus. Depersonalizes conflict. Forces students to understand BOTH sides before forming a view.' },
+  litcircle: { name: 'Literature Circles', origin: 'Karen Smith (1982) / Harvey Daniels (1994)', desc: 'Rotating roles ensure every student practices different thinking skills. Discussion Director leads, Passage Master selects key evidence, Connector links to prior learning, Summarizer captures key ideas.' },
+  accountable: { name: 'Accountable Talk', origin: 'Lauren Resnick, U of Pittsburgh (1990s)', desc: 'Three accountabilities govern all talk: to Community (listen, include), to Knowledge (evidence-based claims), and to Reasoning (logical justification). Talk moves: revoice, press for evidence, challenge, build on.' }
+};
+
+// ═══════════════════════════════════════════════════════════
+//  GREETING EXEMPLARS — research-based opening phrases
+// ═══════════════════════════════════════════════════════════
+const GREETINGS = [
+  { text: "Hey, good to see you today. Ready to think together?", tone: 'warm' },
+  { text: "Thanks for being in my group today. Let's figure this out.", tone: 'warm' },
+  { text: "I'm looking forward to hearing your ideas on this one.", tone: 'warm' },
+  { text: "How's everyone doing? Let's dig in.", tone: 'casual' },
+  { text: "It's great to be working with you all today.", tone: 'inclusive' },
+  { text: "So, who'd like to get us started?", tone: 'democratic' },
+  { text: "Let's jump in — what did everyone notice first?", tone: 'direct' },
+  { text: "Before we start, let's remember: every idea matters here.", tone: 'norms' },
+  { text: "I want to make sure we all get a chance to share today.", tone: 'equity' },
+  { text: "I had some interesting thoughts — did anyone else?", tone: 'curious' }
+];
+
+// ═══════════════════════════════════════════════════════════
+//  COMFORT-LEVEL SENTENCE FRAMES
+// ═══════════════════════════════════════════════════════════
+const COMFORT_FRAMES = {
+  wordBank: {
+    label: 'I need the words', level: 1, color: '#0d9488',
+    frames: [
+      'A _____ is when you _____.',
+      'The answer is _____ because _____.',
+      'I agree / disagree because _____.',
+      'Can you explain what _____ means?'
+    ]
+  },
+  guided: {
+    label: 'I know a little', level: 2, color: '#3b82f6',
+    frames: [
+      'I think the first step is...',
+      'This is similar to... because...',
+      'I\'m not sure about... but I think...',
+      'What if we tried...?'
+    ]
+  },
+  independent: {
+    label: 'I can talk about it', level: 3, color: '#7c3aed',
+    frames: [
+      'My strategy was... and it works because...',
+      'I notice that... which tells me...',
+      'Another way to think about this is...',
+      'I respectfully disagree because...'
+    ]
+  },
+  expert: {
+    label: 'I can explain and teach', level: 4, color: '#d4870f',
+    frames: [
+      'The mathematical reasoning here is...',
+      'This connects to [concept] because...',
+      'A common mistake would be... and here\'s why...',
+      'Can you create a similar problem? How would you solve it?'
+    ]
+  }
+};
+
+// ═══════════════════════════════════════════════════════════
+//  SOCRATIC STEMS — from the Socratic Flow Engine
+// ═══════════════════════════════════════════════════════════
+const SOCRATIC_STEMS = {
+  clarify: ['What do you mean by that?', 'Can you say it another way?', 'Can you give an example?'],
+  probe: ['Why do you think that?', 'What evidence supports that?', 'How do you know?'],
+  perspective: ['Is there another way to look at this?', 'Could someone disagree? Why?', 'What would happen if...?'],
+  consequence: ['If that\'s true, what else must be true?', 'What are the implications?', 'Does this always work?'],
+  origin: ['Where did that idea come from?', 'What assumptions are we making?', 'What rule or property justifies this?']
+};
+
+// ═══════════════════════════════════════════════════════════
+//  STATE
+// ═══════════════════════════════════════════════════════════
+let S = {
+  grade: null,
+  topic: null,
+  groupSize: 3,
+  protocol: 'socratic',
+  revealLevel: 1,
+  layout: 'one-per-page',
+  greeting: 0,
+  problem: null
+};
+
+// ═══════════════════════════════════════════════════════════
+//  INIT — load problems from worksheet-generator
+// ═══════════════════════════════════════════════════════════
+async function init() {
+  // Load from problem matrix JSON (canonical data source)
+  try {
+      const resp = await fetch('data/vinculum-problem-matrix.json');
+      const data = await resp.json();
+      // Convert to DOK_PROBLEMS format
+      const gradeNums = { grade_K: 0, grade_1: 1, grade_2: 2, grade_3: 3, grade_4: 4, grade_5: 5, grade_6: 6, grade_7: 7, grade_8: 8, grade_9: 9, grade_10: 10, grade_ALG1: 10, grade_ALG2: 10, grade_GEOM: 10, grade_PREC: 10 };
+      for (const [gk, gv] of Object.entries(data.grades)) {
+        const gn = gradeNums[gk] ?? parseInt(gk.replace('grade_',''));
+        if (!BENCHMARK_TOPIC_MAP[gn]) BENCHMARK_TOPIC_MAP[gn] = {};
+        for (const [tk, tv] of Object.entries(gv.topics)) {
+          // Build DOK_PROBLEMS entry
+          DOK_PROBLEMS[tk] = DOK_PROBLEMS[tk] || { grade: gn, dok1: [], dok2: [], dok3: [] };
+          if (tv.dok1) DOK_PROBLEMS[tk].dok1 = tv.dok1;
+          if (tv.dok2) DOK_PROBLEMS[tk].dok2 = tv.dok2;
+          if (tv.dok3) DOK_PROBLEMS[tk].dok3 = tv.dok3;
+          // Also pull from scaffolding if DOK arrays are empty
+          if (DOK_PROBLEMS[tk].dok1.length === 0 && tv.scaffolding) {
+            if (tv.scaffolding.beginning) DOK_PROBLEMS[tk].dok1 = tv.scaffolding.beginning.problems || [];
+            if (tv.scaffolding.partial) DOK_PROBLEMS[tk].dok2 = tv.scaffolding.partial.problems || [];
+            if (tv.scaffolding.proficient) {
+              DOK_PROBLEMS[tk].dok3 = (tv.scaffolding.proficient.problems || [])
+                .concat(tv.scaffolding.mastery?.problems || []);
+            }
+          }
+          // Benchmark map
+          const codes = [];
+          if (tv.benchmarkCodes) {
+            for (const fw of Object.values(tv.benchmarkCodes)) codes.push(...fw);
+          }
+          BENCHMARK_TOPIC_MAP[gn][tk] = codes;
+        }
+      }
+      console.log(`[DialogueCards] Loaded ${Object.keys(DOK_PROBLEMS).length} topics from problem matrix`);
+    } catch(e) {
+      console.warn('Could not load problem matrix:', e);
+    }
+
+  renderGrades();
+}
+
+// ═══════════════════════════════════════════════════════════
+//  RENDERING
+// ═══════════════════════════════════════════════════════════
+function renderGrades() {
+  const grades = [0,1,2,3,4,5,6,7,8,10];
+  document.getElementById('gradeBar').innerHTML = grades.map(g =>
+    `<button class="g-btn ${S.grade===g?'active':''}" onclick="selectGrade(${g})">${g===0?'K':'Grade '+g}</button>`
+  ).join('');
+}
+
+function selectGrade(g) {
+  S.grade = g;
+  S.topic = null;
+  S.problem = null;
+  renderGrades();
+  renderTopics();
+  document.getElementById('configRow').style.display = 'none';
+  document.getElementById('stepScrubber').style.display = 'none';
+  document.getElementById('greetingsPanel').classList.remove('open');
+  document.getElementById('cardsStage').innerHTML = '';
+  document.getElementById('framesPanel').classList.remove('open');
+  document.getElementById('printSection').classList.remove('open');
+  document.getElementById('protocolInfo').classList.remove('open');
+}
+
+function renderTopics() {
+  const map = BENCHMARK_TOPIC_MAP[S.grade];
+  if (!map) { document.getElementById('topicsGrid').innerHTML = ''; return; }
+  document.getElementById('topicsLabel').textContent = `TOPICS FOR ${S.grade === 0 ? 'KINDERGARTEN' : 'GRADE ' + S.grade}`;
+  const grid = document.getElementById('topicsGrid');
+  grid.innerHTML = Object.keys(map).map(topic => {
+    const p = DOK_PROBLEMS[topic];
+    const count = p ? (p.dok1||[]).length + (p.dok2||[]).length + (p.dok3||[]).length : 0;
+    return `<div class="t-card ${S.topic===topic?'selected':''}" onclick="selectTopic('${topic.replace(/'/g,"\\'")}')">
+      <div class="t-name">${topic}</div>
+      <div class="t-meta">${count} problems</div>
+    </div>`;
+  }).join('');
+}
+
+function selectTopic(topic) {
+  S.topic = topic;
+  renderTopics();
+  // Pick a random DOK2 problem (good for dialogue)
+  const p = DOK_PROBLEMS[topic];
+  if (p) {
+    const pool = [...(p.dok2||[]), ...(p.dok3||[]), ...(p.dok1||[])];
+    S.problem = pool.length > 0 ? pool[Math.floor(Math.random() * Math.min(pool.length, 5))] : null;
+  }
+  document.getElementById('configRow').style.display = 'flex';
+  document.getElementById('stepScrubber').style.display = 'block';
+  setReveal(1);
+  updateProtocolInfo();
+  renderGreetings();
+  renderCards();
+  renderFrames();
+  document.getElementById('printSection').classList.add('open');
+}
+
+// ═══════════════════════════════════════════════════════════
+//  CONFIG SETTERS
+// ═══════════════════════════════════════════════════════════
+function setGroup(n) {
+  S.groupSize = n;
+  document.querySelectorAll('#groupBtns .cfg-btn').forEach((b, i) => b.classList.toggle('active', [2,3,4,5][i] === n));
+  renderCards();
+}
+
+function setProtocol(p) {
+  S.protocol = p;
+  document.querySelectorAll('#protocolBtns .cfg-btn').forEach((b, i) =>
+    b.classList.toggle('active', ['socratic','harkness','sac','litcircle','accountable'][i] === p));
+  updateProtocolInfo();
+  renderCards();
+}
+
+function setReveal(val) {
+  val = parseInt(val);
+  S.revealLevel = val;
+  document.querySelectorAll('.reveal-step').forEach(btn => {
+    const step = parseInt(btn.dataset.step);
+    btn.classList.toggle('active', step === val);
+    btn.classList.toggle('passed', step < val);
+  });
+  document.querySelectorAll('.reveal-connector').forEach((conn, i) => {
+    conn.style.background = i < val ? 'var(--neon)' : 'rgba(255,255,255,0.08)';
+    conn.style.boxShadow = i < val ? '0 0 6px rgba(0,242,255,0.3)' : 'none';
+  });
+  applyReveal();
+}
+
+function setLayout(layout) {
+  S.layout = layout;
+  document.querySelectorAll('[data-layout]').forEach(b => b.classList.toggle('active', b.dataset.layout === layout));
+}
+
+function updateProtocolInfo() {
+  const info = PROTOCOL_INFO[S.protocol];
+  const el = document.getElementById('protocolInfo');
+  if (info) {
+    el.innerHTML = `<strong>${info.name}</strong> <span style="color:var(--dim);font-size:11px;">(${info.origin})</span><br>${info.desc}`;
+    el.classList.add('open');
+  }
+}
+
+// ═══════════════════════════════════════════════════════════
+//  GREETINGS
+// ═══════════════════════════════════════════════════════════
+function renderGreetings() {
+  const panel = document.getElementById('greetingsPanel');
+  panel.classList.add('open');
+  const list = document.getElementById('greetingsList');
+  list.innerHTML = GREETINGS.map((g, i) =>
+    `<div class="greeting-item ${S.greeting===i?'selected':''}" onclick="pickGreeting(${i})">"${g.text}"</div>`
+  ).join('');
+}
+
+function pickGreeting(i) {
+  S.greeting = i;
+  renderGreetings();
+  renderCards();
+}
+
+// ═══════════════════════════════════════════════════════════
+//  BUILD DIALOGUE SCRIPT from DOK problem
+// ═══════════════════════════════════════════════════════════
+function buildDialogueScript(problem, topic, groupSize, protocol) {
+  const lines = [];
+  if (!problem) return lines;
+
+  const greeting = GREETINGS[S.greeting].text;
+  const stem = problem.stem || '';
+  const hint = problem.hint || '';
+  const answer = problem.answer || '';
+
+  // Socratic stems for Questioner
+  const probeQ = SOCRATIC_STEMS.probe[Math.floor(Math.random() * SOCRATIC_STEMS.probe.length)];
+  const clarifyQ = SOCRATIC_STEMS.clarify[Math.floor(Math.random() * SOCRATIC_STEMS.clarify.length)];
+  const perspQ = SOCRATIC_STEMS.perspective[Math.floor(Math.random() * SOCRATIC_STEMS.perspective.length)];
+
+  // Speaker A: greeting + present problem
+  lines.push({ role: 'A', type: 'greeting', text: greeting });
+  lines.push({ role: 'A', type: 'question', text: `Let me read the problem: "${stem}"` });
+  lines.push({ role: 'A', type: 'question', text: 'My first thought is... I think we should start by _____.' });
+
+  // Speaker B: respond
+  lines.push({ role: 'B', type: 'question', text: 'I see it differently. I would start with _____.' });
+  lines.push({ role: 'B', type: 'hint', text: `Here's something that might help: ${hint}` });
+  lines.push({ role: 'B', type: 'question', text: 'So based on that, I think the approach is _____.' });
+
+  // Speaker A: build
+  lines.push({ role: 'A', type: 'question', text: 'That makes sense! Let me build on that: _____.' });
+  lines.push({ role: 'A', type: 'answer', text: `I believe the answer is: ${answer}` });
+
+  // Questioner (C) for groups of 3+
+  if (groupSize >= 3) {
+    lines.push({ role: 'C', type: 'question', text: probeQ });
+    lines.push({ role: 'C', type: 'question', text: clarifyQ });
+    lines.push({ role: 'C', type: 'question', text: perspQ });
+  }
+
+  // Summarizer (D) for groups of 4+
+  if (groupSize >= 4) {
+    lines.push({ role: 'D', type: 'question', text: 'So what I\'m hearing is that the key idea is _____.' });
+    lines.push({ role: 'D', type: 'answer', text: `To summarize: the strategy was _____ and the answer is ${answer}.` });
+  }
+
+  // Connector (E) for groups of 5
+  if (groupSize >= 5) {
+    lines.push({ role: 'E', type: 'question', text: 'This reminds me of when we learned about _____.' });
+    lines.push({ role: 'E', type: 'question', text: 'In real life, this connects to _____ because _____.' });
+  }
+
+  return lines;
+}
+
+// ═══════════════════════════════════════════════════════════
+//  RENDER ROLE CARDS — sequential reveal animation
+// ═══════════════════════════════════════════════════════════
+function renderCards() {
+  const stage = document.getElementById('cardsStage');
+  if (!S.topic || !S.problem) {
+    stage.innerHTML = '<div style="text-align:center;color:var(--muted);padding:40px;">Select a grade and topic to generate dialogue cards.</div>';
+    return;
+  }
+
+  const roleKeys = ['A','B','C','D','E'].slice(0, S.groupSize);
+  const protoRoles = PROTOCOL_ROLES[S.protocol]?.[S.groupSize] || {};
+  const script = buildDialogueScript(S.problem, S.topic, S.groupSize, S.protocol);
+
+  let html = '';
+  for (let i = 0; i < roleKeys.length; i++) {
+    const key = roleKeys[i];
+    const role = ROLES[key];
+    const roleName = protoRoles[key] || role.label;
+    const roleLines = script.filter(l => l.role === key);
+
+    html += `<div class="role-card" id="roleCard${key}" style="--role-color:${role.color};--role-rgb:${role.rgb};">
+      <div class="role-badge" style="background:${role.color};">${roleName}</div>
+      <div class="role-job">${role.job}</div>`;
+
+    for (const line of roleLines) {
+      let cls = 'role-line';
+      if (line.type === 'hint') cls += ' hint-line';
+      if (line.type === 'answer') cls += ' answer-line';
+      html += `<div class="${cls}" data-line-type="${line.type}">${line.text}</div>`;
+    }
+
+    html += '</div>';
+  }
+
+  stage.innerHTML = html;
+
+  // Animate cards appearing sequentially
+  const cards = stage.querySelectorAll('.role-card');
+  cards.forEach((card, i) => {
+    setTimeout(() => {
+      card.classList.add('visible');
+      // Briefly pulse the active speaker
+      card.classList.add('active-speaker');
+      setTimeout(() => card.classList.remove('active-speaker'), 2000);
+    }, i * 300);
+  });
+
+  applyReveal();
+}
+
+// ═══════════════════════════════════════════════════════════
+//  APPLY REVEAL LEVEL to cards
+// ═══════════════════════════════════════════════════════════
+function applyReveal() {
+  const lines = document.querySelectorAll('.role-line');
+  lines.forEach(line => {
+    const type = line.dataset.lineType;
+    line.classList.remove('hidden-line');
+
+    if (S.revealLevel === 0) {
+      // Hidden: blur everything
+      line.classList.add('hidden-line');
+    } else if (S.revealLevel === 1) {
+      // Question: show question lines, blur hints and answers
+      if (type === 'hint' || type === 'answer') line.classList.add('hidden-line');
+    } else if (S.revealLevel === 2) {
+      // Hint: show questions + hints, blur answers
+      if (type === 'answer') line.classList.add('hidden-line');
+    }
+    // Level 3: show everything
+  });
+
+  // Also show/hide greeting lines based on reveal
+  document.querySelectorAll('.role-line[data-line-type="greeting"]').forEach(el => {
+    el.classList.remove('hidden-line');
+    if (S.revealLevel === 0) el.classList.add('hidden-line');
+  });
+}
+
+// ═══════════════════════════════════════════════════════════
+//  RENDER SENTENCE FRAMES
+// ═══════════════════════════════════════════════════════════
+function renderFrames() {
+  const panel = document.getElementById('framesPanel');
+  panel.classList.add('open');
+  const grid = document.getElementById('comfortGrid');
+  grid.innerHTML = Object.values(COMFORT_FRAMES).map(cf => `
+    <div class="comfort-card">
+      <div class="comfort-title" style="background:${cf.color};">Level ${cf.level}: ${cf.label}</div>
+      ${cf.frames.map(f => `<div class="comfort-frame">${f}</div>`).join('')}
+    </div>
+  `).join('');
+}
+
+// ═══════════════════════════════════════════════════════════
+//  PDF GENERATION
+// ═══════════════════════════════════════════════════════════
+function generatePDF() {
+  const PDF = (typeof jspdf !== 'undefined') ? jspdf.jsPDF : jsPDF;
+  const pdf = new PDF({ orientation: 'portrait', unit: 'pt', format: 'letter' });
+
+  const W = 612, H = 792, M = 40, CW = W - M * 2;
+  const roleKeys = ['A','B','C','D','E'].slice(0, S.groupSize);
+  const protoRoles = PROTOCOL_ROLES[S.protocol]?.[S.groupSize] || {};
+  const script = buildDialogueScript(S.problem, S.topic, S.groupSize, S.protocol);
+  const protoInfo = PROTOCOL_INFO[S.protocol];
+
+  function hexToRgb(hex) {
+    const r = parseInt(hex.slice(1,3), 16);
+    const g = parseInt(hex.slice(3,5), 16);
+    const b = parseInt(hex.slice(5,7), 16);
+    return [r, g, b];
+  }
+
+  function drawHeader(title, subtitle, color) {
+    pdf.setFillColor(color[0], color[1], color[2]);
+    pdf.rect(0, 0, W, 7, 'F');
+    pdf.setFontSize(16); pdf.setFont('helvetica','bold');
+    pdf.setTextColor(color[0], color[1], color[2]);
+    pdf.text(title, M, 28);
+    pdf.setFontSize(9); pdf.setFont('helvetica','normal');
+    pdf.setTextColor(100, 116, 139);
+    pdf.text(subtitle, M, 42);
+    pdf.setDrawColor(color[0], color[1], color[2]); pdf.setLineWidth(1);
+    pdf.line(M, 48, W - M, 48);
+    return 58;
+  }
+
+  function drawFooter(text, color) {
+    pdf.setDrawColor(color[0], color[1], color[2]); pdf.setLineWidth(0.5);
+    pdf.line(M, H - 28, W - M, H - 28);
+    pdf.setFontSize(7); pdf.setFont('helvetica','normal');
+    pdf.setTextColor(148, 163, 184);
+    pdf.text(text, M, H - 18);
+  }
+
+  function wrapText(text, maxW) {
+    const words = (text || '').split(' ');
+    const lines = []; let line = '';
+    for (const w of words) {
+      const test = line ? line + ' ' + w : w;
+      if (pdf.getTextWidth(test) > maxW && line) { lines.push(line); line = w; }
+      else line = test;
+    }
+    if (line) lines.push(line);
+    return lines.length ? lines : [''];
+  }
+
+  function drawCutLine(y) {
+    pdf.setLineDashPattern([3, 3], 0);
+    pdf.setDrawColor(180, 190, 200); pdf.setLineWidth(0.3);
+    pdf.line(M - 10, y, W - M + 10, y);
+    pdf.setLineDashPattern([], 0);
+    // Scissors icon
+    pdf.setFontSize(6); pdf.setTextColor(200, 200, 200);
+    pdf.text('\u2702', M - 18, y + 2);
+  }
+
+  // ── LAYOUT: ONE PER PAGE ──
+  if (S.layout === 'one-per-page') {
+    for (let i = 0; i < roleKeys.length; i++) {
+      if (i > 0) pdf.addPage();
+      const key = roleKeys[i];
+      const role = ROLES[key];
+      const roleName = protoRoles[key] || role.label;
+      const color = hexToRgb(role.color);
+      const roleLines = script.filter(l => l.role === key);
+
+      let y = drawHeader(roleName, `${S.topic} | ${protoInfo.name} | Group of ${S.groupSize}`, color);
+
+      // Role job
+      pdf.setFontSize(10); pdf.setFont('helvetica','italic');
+      pdf.setTextColor(100, 116, 139);
+      pdf.text('Your job: ' + role.job, M, y); y += 18;
+
+      // Greeting
+      const greeting = script.find(l => l.role === key && l.type === 'greeting');
+      if (greeting) {
+        pdf.setFillColor(color[0], color[1], color[2]);
+        pdf.roundedRect(M, y, CW, 28, 4, 4, 'F');
+        pdf.setFontSize(11); pdf.setFont('helvetica','bold');
+        pdf.setTextColor(255, 255, 255);
+        pdf.text('Start: "' + greeting.text + '"', M + 12, y + 18);
+        y += 38;
+      }
+
+      // Dialogue lines
+      pdf.setFontSize(11); pdf.setFont('helvetica','normal');
+      pdf.setTextColor(30, 41, 59);
+      for (const line of roleLines.filter(l => l.type !== 'greeting')) {
+        if (y > H - 60) { pdf.addPage(); y = 40; }
+        const prefix = line.type === 'hint' ? 'HINT: ' : line.type === 'answer' ? 'ANSWER: ' : '';
+        if (line.type === 'hint') { pdf.setTextColor(180, 130, 0); pdf.setFont('helvetica','italic'); }
+        else if (line.type === 'answer') { pdf.setTextColor(16, 185, 129); pdf.setFont('helvetica','bold'); }
+        else { pdf.setTextColor(30, 41, 59); pdf.setFont('helvetica','normal'); }
+
+        const wrappedLines = wrapText(prefix + line.text, CW - 24);
+        for (const wl of wrappedLines) {
+          pdf.text(wl, M + 12, y); y += 15;
+        }
+        y += 6;
+      }
+
+      // Socratic question starters (bonus)
+      if (key === 'C' || roleKeys.length <= 2) {
+        y += 10;
+        pdf.setFontSize(9); pdf.setFont('helvetica','bold');
+        pdf.setTextColor(color[0], color[1], color[2]);
+        pdf.text('SOCRATIC QUESTION STARTERS:', M, y); y += 14;
+        pdf.setFont('helvetica','normal'); pdf.setTextColor(71, 85, 105);
+        const allStems = Object.values(SOCRATIC_STEMS).flat();
+        for (let s = 0; s < Math.min(5, allStems.length); s++) {
+          if (y > H - 40) break;
+          pdf.text('* ' + allStems[s], M + 8, y); y += 13;
+        }
+      }
+
+      drawFooter(`Dialogue Cards | ${roleName} | ${protoInfo.name} | VINCULUM Hub | Drummond Math Solutions`, color);
+    }
+  }
+
+  // ── LAYOUT: ALL ON ONE PAGE ──
+  else if (S.layout === 'all-on-one') {
+    const color = [13, 148, 136];
+    let y = drawHeader('Dialogue Cards — All Roles', `${S.topic} | ${protoInfo.name} | Group of ${S.groupSize}`, color);
+
+    const cardH = Math.min(130, (H - y - M - 30) / roleKeys.length - 8);
+
+    for (let i = 0; i < roleKeys.length; i++) {
+      const key = roleKeys[i];
+      const role = ROLES[key];
+      const roleName = protoRoles[key] || role.label;
+      const rc = hexToRgb(role.color);
+      const cardY = y + i * (cardH + 6);
+
+      if (i > 0) drawCutLine(cardY - 3);
+
+      // Card background
+      pdf.setFillColor(rc[0], rc[1], rc[2]);
+      pdf.roundedRect(M, cardY, CW, cardH, 4, 4, 'FD');
+      pdf.setFillColor(255, 255, 255);
+      pdf.roundedRect(M + 1, cardY + 1, CW - 2, cardH - 2, 3, 3, 'F');
+
+      // Role badge
+      pdf.setFillColor(rc[0], rc[1], rc[2]);
+      pdf.roundedRect(M + 6, cardY + 6, 120, 18, 3, 3, 'F');
+      pdf.setFontSize(10); pdf.setFont('helvetica','bold');
+      pdf.setTextColor(255, 255, 255);
+      pdf.text(roleName, M + 14, cardY + 18);
+
+      // Job
+      pdf.setFontSize(7.5); pdf.setFont('helvetica','italic');
+      pdf.setTextColor(rc[0], rc[1], rc[2]);
+      pdf.text(role.job, M + 132, cardY + 18);
+
+      // Lines
+      const roleLines = script.filter(l => l.role === key);
+      pdf.setFontSize(9); pdf.setFont('helvetica','normal');
+      pdf.setTextColor(30, 41, 59);
+      let lineY = cardY + 34;
+      for (const line of roleLines.slice(0, 4)) {
+        if (lineY > cardY + cardH - 10) break;
+        const text = (line.type === 'greeting' ? '"' + line.text + '"' : line.text);
+        const wrappedLines = wrapText(text, CW - 28);
+        for (const wl of wrappedLines) {
+          if (lineY > cardY + cardH - 10) break;
+          pdf.text(wl, M + 14, lineY); lineY += 12;
+        }
+        lineY += 2;
+      }
+    }
+
+    drawFooter(`Dialogue Cards | All Roles | ${protoInfo.name} | VINCULUM Hub | Drummond Math Solutions`, color);
+  }
+
+  // ── LAYOUT: HALF-SHEET (2 per page with faint cut lines) ──
+  else if (S.layout === 'half-sheet') {
+    const color = [13, 148, 136];
+    const halfH = H / 2;
+    let pageIdx = 0;
+
+    for (let i = 0; i < roleKeys.length; i++) {
+      const slot = i % 2; // 0 = top half, 1 = bottom half
+      if (i > 0 && slot === 0) pdf.addPage();
+
+      const key = roleKeys[i];
+      const role = ROLES[key];
+      const roleName = protoRoles[key] || role.label;
+      const rc = hexToRgb(role.color);
+      const baseY = slot * halfH;
+
+      // Cut line between halves
+      if (slot === 1) {
+        drawCutLine(halfH);
+      }
+
+      // Header for this half
+      const headerY = baseY + 20;
+      pdf.setFillColor(rc[0], rc[1], rc[2]);
+      pdf.rect(M, headerY, CW, 5, 'F');
+
+      pdf.setFontSize(14); pdf.setFont('helvetica','bold');
+      pdf.setTextColor(rc[0], rc[1], rc[2]);
+      pdf.text(roleName, M, headerY + 22);
+
+      pdf.setFontSize(8); pdf.setFont('helvetica','normal');
+      pdf.setTextColor(100, 116, 139);
+      pdf.text(`${S.topic} | ${protoInfo.name} | Group of ${S.groupSize}`, M, headerY + 34);
+
+      // Job
+      pdf.setFontSize(9); pdf.setFont('helvetica','italic');
+      pdf.setTextColor(71, 85, 105);
+      pdf.text('Your job: ' + role.job, M, headerY + 48);
+
+      // Lines
+      const roleLines = script.filter(l => l.role === key);
+      pdf.setFontSize(10); pdf.setFont('helvetica','normal');
+      let lineY = headerY + 64;
+      const maxY = baseY + halfH - 20;
+
+      for (const line of roleLines) {
+        if (lineY > maxY) break;
+        if (line.type === 'hint') { pdf.setTextColor(180, 130, 0); pdf.setFont('helvetica','italic'); }
+        else if (line.type === 'answer') { pdf.setTextColor(16, 185, 129); pdf.setFont('helvetica','bold'); }
+        else if (line.type === 'greeting') { pdf.setTextColor(rc[0], rc[1], rc[2]); pdf.setFont('helvetica','bold'); }
+        else { pdf.setTextColor(30, 41, 59); pdf.setFont('helvetica','normal'); }
+
+        const prefix = line.type === 'greeting' ? '"' : line.type === 'hint' ? 'HINT: ' : line.type === 'answer' ? 'ANSWER: ' : '';
+        const suffix = line.type === 'greeting' ? '"' : '';
+        const wrappedLines = wrapText(prefix + line.text + suffix, CW - 24);
+        for (const wl of wrappedLines) {
+          if (lineY > maxY) break;
+          pdf.text(wl, M + 12, lineY); lineY += 14;
+        }
+        lineY += 4;
+      }
+
+      // Footer for this half
+      pdf.setFontSize(6); pdf.setTextColor(180, 180, 180);
+      pdf.text('VINCULUM Hub | Drummond Math Solutions', M, maxY + 8);
+    }
+  }
+
+  // ── SENTENCE FRAMES PAGE ──
+  if (document.getElementById('chkFrames')?.checked) {
+    pdf.addPage();
+    const color = [13, 148, 136];
+    let y = drawHeader('Sentence Frames — Self-Select Your Comfort Level', `${S.topic} | Choose the level that fits you TODAY`, color);
+
+    const levels = Object.values(COMFORT_FRAMES);
+    const boxH = 140;
+    for (let i = 0; i < levels.length; i++) {
+      const lev = levels[i];
+      const col = i < 2 ? 0 : 1;
+      const row = i % 2;
+      const bx = M + col * (CW / 2 + 4);
+      const by = y + row * (boxH + 8);
+      const bw = CW / 2 - 4;
+      const lc = hexToRgb(lev.color);
+
+      pdf.setFillColor(250, 251, 252);
+      pdf.setDrawColor(lc[0], lc[1], lc[2]); pdf.setLineWidth(0.8);
+      pdf.roundedRect(bx, by, bw, boxH, 4, 4, 'FD');
+
+      // Badge
+      pdf.setFillColor(lc[0], lc[1], lc[2]);
+      pdf.roundedRect(bx + 6, by + 6, bw - 12, 20, 3, 3, 'F');
+      pdf.setFontSize(9); pdf.setFont('helvetica','bold');
+      pdf.setTextColor(255, 255, 255);
+      pdf.text('Level ' + lev.level + ': ' + lev.label, bx + 14, by + 19);
+
+      // Frames
+      pdf.setFontSize(9); pdf.setFont('helvetica','normal');
+      pdf.setTextColor(30, 41, 59);
+      let fy = by + 36;
+      for (const frame of lev.frames) {
+        const flines = wrapText('* ' + frame, bw - 24);
+        for (const fl of flines) { pdf.text(fl, bx + 12, fy); fy += 12; }
+        fy += 3;
+      }
+    }
+
+    y += boxH * 2 + 20;
+    if (y < H - 60) {
+      pdf.setFontSize(8); pdf.setFont('helvetica','bold');
+      pdf.setTextColor(100, 116, 139);
+      pdf.text('HOW TO CHOOSE: Read each level. Pick the one that honestly describes where you are TODAY. It\'s okay to move between levels!', M, y);
+    }
+
+    drawFooter('Sentence Frames | Self-Select Your Level | VINCULUM Hub | Drummond Math Solutions', color);
+  }
+
+  // ── TEACHER GUIDE PAGE ──
+  if (document.getElementById('chkTeacher')?.checked) {
+    pdf.addPage();
+    const color = [30, 39, 97];
+    let y = drawHeader('Teacher Facilitation Guide', `${S.topic} | ${protoInfo.name} Protocol`, color);
+
+    // Protocol overview
+    pdf.setFontSize(9); pdf.setFont('helvetica','bold');
+    pdf.setTextColor(color[0], color[1], color[2]);
+    pdf.text('PROTOCOL: ' + protoInfo.name.toUpperCase(), M, y); y += 14;
+    pdf.setFont('helvetica','normal'); pdf.setTextColor(30, 41, 59);
+    const descLines = wrapText(protoInfo.desc, CW - 16);
+    for (const dl of descLines) { pdf.text(dl, M + 8, y); y += 13; }
+    y += 10;
+
+    // Launch protocol
+    pdf.setFont('helvetica','bold'); pdf.setTextColor(color[0], color[1], color[2]);
+    pdf.text('LAUNCH PROTOCOL (2 minutes)', M, y); y += 14;
+    const steps = [
+      '1. Display the problem on the projector or distribute printed cards.',
+      '2. Students form groups and take their dialogue role cards.',
+      '3. Students self-select comfort level from the Sentence Frames page.',
+      '4. Set timer: 8-12 minutes for dialogue, 3 minutes for whole-class share.',
+      '5. Circulate and listen. Note misconceptions for follow-up.'
+    ];
+    pdf.setFont('helvetica','normal'); pdf.setTextColor(30, 41, 59);
+    for (const step of steps) {
+      const slines = wrapText(step, CW - 16);
+      for (const sl of slines) { pdf.text(sl, M + 8, y); y += 13; }
+      y += 3;
+    }
+    y += 10;
+
+    // Role reference
+    pdf.setFont('helvetica','bold'); pdf.setTextColor(color[0], color[1], color[2]);
+    pdf.text('ROLE RESPONSIBILITIES', M, y); y += 14;
+    const usedKeys = roleKeys;
+    for (const key of usedKeys) {
+      const role = ROLES[key];
+      const roleName = protoRoles[key] || role.label;
+      const rc = hexToRgb(role.color);
+      pdf.setFillColor(rc[0], rc[1], rc[2]);
+      pdf.circle(M + 12, y - 3, 5, 'F');
+      pdf.setFontSize(7); pdf.setFont('helvetica','bold');
+      pdf.setTextColor(255, 255, 255);
+      pdf.text(key, M + 10, y - 1);
+      pdf.setFontSize(8.5); pdf.setFont('helvetica','bold');
+      pdf.setTextColor(rc[0], rc[1], rc[2]);
+      pdf.text(roleName + ':', M + 22, y);
+      pdf.setFont('helvetica','normal'); pdf.setTextColor(71, 85, 105);
+      pdf.text(role.job, M + 22 + pdf.getTextWidth(roleName + ':  '), y);
+      y += 14;
+    }
+    y += 10;
+
+    // Socratic stems reference
+    if (y < H - 120) {
+      pdf.setFontSize(9); pdf.setFont('helvetica','bold');
+      pdf.setTextColor(color[0], color[1], color[2]);
+      pdf.text('SOCRATIC QUESTION STEMS', M, y); y += 14;
+      for (const [cat, stems] of Object.entries(SOCRATIC_STEMS)) {
+        pdf.setFont('helvetica','bold'); pdf.setTextColor(59, 130, 246);
+        pdf.text(cat.charAt(0).toUpperCase() + cat.slice(1) + ':', M + 8, y); y += 12;
+        pdf.setFont('helvetica','normal'); pdf.setTextColor(30, 41, 59);
+        for (const s of stems.slice(0, 2)) {
+          pdf.text('* ' + s, M + 16, y); y += 12;
+          if (y > H - 40) break;
+        }
+        y += 2;
+        if (y > H - 40) break;
+      }
+    }
+
+    drawFooter('Teacher Facilitation Guide | ' + protoInfo.name + ' | VINCULUM Hub | Drummond Math Solutions', color);
+  }
+
+  pdf.save('dialogue-cards-' + (S.topic || 'topic').replace(/\s+/g, '-') + '-group' + S.groupSize + '.pdf');
+}
+
+// ═══════════════════════════════════════════════════════════
+//  BOOT
+// ═══════════════════════════════════════════════════════════
+document.addEventListener('DOMContentLoaded', init);
+</script>
+</body>
+</html>
