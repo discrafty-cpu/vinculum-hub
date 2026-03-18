@@ -1,0 +1,885 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Quiz Builder — VINCULUM Hub</title>
+<link href="https://fonts.googleapis.com/css2?family=Fira+Code:wght@400;600&family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+<style>
+:root {
+  --neon:#00f2ff; --bg:#050507; --bg2:rgba(10,10,15,0.98); --card:rgba(10,10,15,0.98);
+  --card-hover:rgba(15,15,25,0.98); --border:rgba(255,255,255,0.1);
+  --text:#e8edf5; --muted:rgba(255,255,255,0.5); --dim:rgba(255,255,255,0.3);
+  --cyan:#00f2ff; --purple:#bc13fe; --green:#10b981; --pink:#ff3b8b;
+  --yellow:#fde047; --orange:#ff9100; --accent:#bc13fe; --emerald:#10b981;
+  --grad:linear-gradient(135deg,#00f2ff,#bc13fe);
+}
+*{margin:0;padding:0;box-sizing:border-box;}
+body{font-family:'Inter',system-ui,sans-serif;background:var(--bg);color:var(--text);min-height:100vh;display:flex;flex-direction:column;}
+
+.header{display:flex;align-items:center;justify-content:space-between;padding:16px 24px;background:var(--bg2);backdrop-filter:blur(20px);border-bottom:1px solid var(--border);position:sticky;top:0;z-index:100;}
+.header a{color:var(--cyan);text-decoration:none;font-size:14px;display:flex;align-items:center;gap:6px;transition:color .2s;}
+.header a:hover{color:var(--purple);}
+.header h1{font-size:20px;font-weight:900;font-style:italic;letter-spacing:-0.02em;}
+
+.container{max-width:1100px;margin:0 auto;padding:24px;flex:1;}
+
+.grade-bar{display:flex;gap:8px;margin-bottom:24px;flex-wrap:wrap;}
+.g-btn{padding:10px 22px;border:1px solid var(--border);border-radius:8px;background:var(--card);color:var(--muted);font-size:14px;font-weight:700;cursor:pointer;font-family:inherit;transition:all .2s;}
+.g-btn:hover{border-color:var(--neon);color:var(--text);}
+.g-btn.active{background:var(--neon);color:#050507;border-color:var(--neon);box-shadow:0 0 15px rgba(0,242,255,0.4);font-weight:900;}
+
+.section-label{font-size:11px;letter-spacing:0.3em;color:var(--neon);font-weight:700;text-transform:uppercase;margin-bottom:12px;font-family:'Fira Code',monospace;}
+
+.topics-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:12px;margin-bottom:24px;}
+.t-card{background:var(--card);border:1px solid var(--border);border-radius:10px;padding:16px;cursor:pointer;transition:all .25s;backdrop-filter:blur(20px);}
+.t-card:hover{border-color:var(--neon);background:var(--card-hover);transform:translateY(-2px);box-shadow:0 0 20px rgba(0,242,255,0.1);}
+.t-card.selected{border-color:var(--neon);box-shadow:0 0 20px rgba(0,242,255,0.3),0 0 0 2px rgba(0,242,255,0.15);}
+.t-name{font-size:15px;font-weight:900;margin-bottom:4px;letter-spacing:-0.02em;}
+.t-meta{font-size:11px;color:var(--muted);display:flex;gap:12px;align-items:center;font-family:'Fira Code',monospace;}
+.dok-d{width:8px;height:8px;border-radius:50%;display:inline-block;box-shadow:0 0 6px currentColor;}
+.d1{background:var(--green);color:var(--green);}
+.d2{background:var(--cyan);color:var(--cyan);}
+.d3{background:var(--pink);color:var(--pink);}
+
+/* Quiz Config Panel */
+.config-panel{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:20px;margin-bottom:20px;display:none;backdrop-filter:blur(20px);}
+.config-panel.open{display:block;animation:fadeIn .3s ease;}
+@keyframes fadeIn{from{opacity:0;transform:translateY(-8px);}to{opacity:1;transform:translateY(0);}}
+.config-panel h3{font-size:15px;font-weight:900;margin-bottom:16px;background:var(--grad);-webkit-background-clip:text;-webkit-text-fill-color:transparent;}
+
+.config-row{display:flex;align-items:center;gap:12px;margin-bottom:14px;flex-wrap:wrap;}
+.config-label{font-size:13px;color:var(--muted);min-width:120px;font-weight:600;}
+.chk-label{display:flex;align-items:center;gap:6px;font-size:13px;color:var(--text);cursor:pointer;}
+.chk-label input{accent-color:var(--neon);}
+
+.num-input{width:60px;padding:6px 10px;border:1px solid var(--border);border-radius:6px;background:rgba(255,255,255,0.05);color:var(--text);font-size:13px;font-family:'Fira Code',monospace;text-align:center;}
+.num-input:focus{outline:none;border-color:var(--neon);box-shadow:0 0 8px rgba(0,242,255,0.2);}
+
+.btn-build{padding:12px 28px;background:var(--grad);color:#050507;border:none;border-radius:10px;font-size:15px;font-weight:900;cursor:pointer;font-family:inherit;transition:all .2s;margin-top:8px;box-shadow:0 0 20px rgba(0,242,255,0.2);}
+.btn-build:hover{transform:translateY(-2px);box-shadow:0 0 30px rgba(0,242,255,0.5);}
+
+/* Preview */
+.quiz-preview{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:20px;margin-bottom:20px;display:none;backdrop-filter:blur(20px);}
+.quiz-preview.open{display:block;animation:fadeIn .3s ease;}
+.quiz-preview h3{font-size:15px;font-weight:900;margin-bottom:16px;background:var(--grad);-webkit-background-clip:text;-webkit-text-fill-color:transparent;}
+
+.q-item{background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.06);border-radius:8px;padding:14px;margin-bottom:12px;}
+.q-num{font-family:'Fira Code',monospace;font-size:10px;color:var(--accent);font-weight:700;margin-bottom:6px;text-transform:uppercase;letter-spacing:0.15em;}
+.q-stem{font-size:14px;line-height:1.6;margin-bottom:10px;}
+.q-choices{display:grid;grid-template-columns:1fr 1fr;gap:6px;}
+.q-choice{font-size:12px;padding:8px 12px;border-radius:6px;background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.06);color:var(--muted);}
+.q-choice.correct{border-color:var(--green);color:var(--green);background:rgba(16,185,129,0.08);}
+.q-dok{display:inline-block;font-size:9px;padding:2px 6px;border-radius:3px;font-weight:700;margin-left:8px;}
+.q-dok.dk1{background:rgba(16,185,129,0.15);color:var(--green);}
+.q-dok.dk2{background:rgba(0,242,255,0.15);color:var(--cyan);}
+.q-dok.dk3{background:rgba(255,59,139,0.15);color:var(--pink);}
+
+/* Export Panel */
+.export-panel{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:20px;margin-bottom:20px;display:none;backdrop-filter:blur(20px);}
+.export-panel.open{display:block;animation:fadeIn .3s ease;}
+.export-panel h3{font-size:15px;font-weight:900;margin-bottom:16px;background:var(--grad);-webkit-background-clip:text;-webkit-text-fill-color:transparent;}
+
+.export-btns{display:flex;gap:10px;margin-bottom:16px;flex-wrap:wrap;}
+.ex-btn{padding:10px 20px;border:1px solid var(--border);border-radius:8px;background:rgba(255,255,255,0.04);color:var(--text);font-size:13px;font-weight:700;cursor:pointer;font-family:inherit;transition:all .2s;display:flex;align-items:center;gap:8px;}
+.ex-btn:hover{border-color:var(--neon);box-shadow:0 0 12px rgba(0,242,255,0.2);}
+.ex-btn.primary{background:var(--grad);color:#050507;border-color:transparent;}
+.ex-btn.primary:hover{box-shadow:0 0 25px rgba(0,242,255,0.5);}
+
+.script-box{position:relative;margin-top:12px;}
+.script-box textarea{width:100%;min-height:300px;padding:16px;border:1px solid var(--border);border-radius:8px;background:rgba(0,0,0,0.5);color:var(--neon);font-family:'Fira Code',monospace;font-size:11px;line-height:1.5;resize:vertical;}
+.script-box textarea:focus{outline:none;border-color:var(--neon);}
+.copy-btn{position:absolute;top:8px;right:8px;padding:6px 14px;background:var(--neon);color:#050507;border:none;border-radius:6px;font-size:11px;font-weight:700;cursor:pointer;font-family:'Fira Code',monospace;transition:all .2s;}
+.copy-btn:hover{box-shadow:0 0 12px rgba(0,242,255,0.5);}
+.copy-btn.copied{background:var(--green);}
+
+.instructions{font-size:12px;color:var(--muted);line-height:1.8;margin-top:14px;padding:14px;border:1px solid rgba(255,255,255,0.06);border-radius:8px;background:rgba(255,255,255,0.02);}
+.instructions ol{padding-left:20px;}
+.instructions li{margin-bottom:4px;}
+.instructions strong{color:var(--neon);}
+
+@keyframes pulse-border{0%{border-color:var(--neon);}50%{border-color:var(--accent);}100%{border-color:var(--neon);}}
+
+@media(max-width:600px){.topics-grid{grid-template-columns:1fr;}.q-choices{grid-template-columns:1fr;}}
+</style>
+</head>
+<body>
+<div class="header">
+  <a href="VINCULUM-Hub.html"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M19 12H5M12 19l-7-7 7-7"/></svg> Back to Hub</a>
+  <h1>VINCULUM<span style="color:var(--neon);-webkit-text-fill-color:var(--neon);"> Quiz</span></h1>
+</div>
+<div class="container">
+  <div class="grade-bar" id="gradeBar"></div>
+  <div class="section-label" id="topicsLabel">SELECT A GRADE</div>
+  <div class="topics-grid" id="topicsGrid"></div>
+
+  <div class="config-panel" id="configPanel">
+    <h3>Quiz Configuration</h3>
+    <div class="config-row">
+      <span class="config-label"># Questions</span>
+      <input type="number" class="num-input" id="numQ" value="10" min="1" max="50">
+    </div>
+    <div class="config-row">
+      <span class="config-label">DOK Levels</span>
+      <label class="chk-label"><input type="checkbox" id="chkD1" checked> <span class="dok-d d1"></span> DOK 1</label>
+      <label class="chk-label"><input type="checkbox" id="chkD2" checked> <span class="dok-d d2"></span> DOK 2</label>
+      <label class="chk-label"><input type="checkbox" id="chkD3" checked> <span class="dok-d d3"></span> DOK 3</label>
+    </div>
+    <div class="config-row">
+      <span class="config-label">Choices per Q</span>
+      <input type="number" class="num-input" id="numChoices" value="4" min="3" max="6">
+    </div>
+    <div class="config-row">
+      <span class="config-label">Quiz Title</span>
+      <input type="text" class="num-input" id="quizTitle" value="" placeholder="Auto-generated" style="width:280px;text-align:left;">
+    </div>
+    <button class="btn-build" onclick="buildQuiz()">Build Quiz</button>
+  </div>
+
+  <div class="quiz-preview" id="quizPreview">
+    <h3 id="previewTitle">Quiz Preview</h3>
+    <div id="previewBody"></div>
+  </div>
+
+  <div class="export-panel" id="exportPanel">
+    <h3>Export Quiz</h3>
+    <div class="export-btns">
+      <button class="ex-btn primary" onclick="showGoogleScript()">Google Forms Script</button>
+      <button class="ex-btn" onclick="exportCSV()">CSV Download</button>
+      <button class="ex-btn" onclick="exportJSON()">JSON Download</button>
+    </div>
+    <div class="script-box" id="scriptBox" style="display:none;">
+      <button class="copy-btn" id="copyBtn" onclick="copyScript()">COPY</button>
+      <textarea id="scriptArea" readonly></textarea>
+    </div>
+    <div class="instructions" id="instructions" style="display:none;">
+      <strong>How to create your Google Form:</strong>
+      <ol>
+        <li>Go to <strong>script.google.com</strong> and click <strong>New Project</strong></li>
+        <li>Delete the default code and <strong>paste the copied script</strong></li>
+        <li>Click <strong>Run</strong> (play button). Authorize when prompted.</li>
+        <li>Your quiz form will appear in Google Drive — ready to share!</li>
+      </ol>
+    </div>
+  </div>
+</div>
+
+<footer style="height:32px;background:var(--bg2);backdrop-filter:blur(20px);border-top:1px solid var(--border);display:flex;align-items:center;padding:0 24px;justify-content:space-between;">
+  <span style="font-family:'Fira Code',monospace;font-size:9px;color:rgba(255,255,255,0.3);letter-spacing:0.4em;text-transform:uppercase;">System: Quiz Engine</span>
+  <span style="font-family:'Fira Code',monospace;font-size:9px;color:var(--neon);font-weight:700;letter-spacing:0.2em;">VINCULUM Quiz Builder | Drummond Math Solutions</span>
+</footer>
+
+<script>
+// ═══════════════════════════════════════════════════════════
+//  DOK PROBLEMS DATABASE (shared with worksheet generator)
+// ═══════════════════════════════════════════════════════════
+// Lazy reference — QUIZ_DB defined in second script block
+function getDB() { return QUIZ_DB; }
+Object.defineProperty(window, 'DOK_PROBLEMS', { get: () => QUIZ_DB });
+
+const BENCHMARK_TOPIC_MAP = {
+  5: {
+    'place value and decimals': ['5.1.1.1','5.1.1.2','5.1.1.3'],
+    'fraction operations': ['5.1.2.1','5.1.2.2','5.1.2.3','5.1.2.4'],
+    'multi-digit operations': ['5.1.3.1','5.1.3.2'],
+    'volume and measurement': ['5.3.1.1','5.3.1.2','5.3.2.1','5.3.2.2']
+  },
+  6: {
+    'ratios and proportions': ['6.1.2.1','6.1.2.2','6.1.2.3'],
+    'rational number operations': ['6.1.1.1','6.1.1.2','6.1.3.1','6.1.3.2'],
+    'percent concepts': ['6.1.1.3','6.1.1.4','6.1.3.3'],
+    'algebraic expressions': ['6.2.1.1','6.2.2.1','6.2.2.2']
+  },
+  7: {
+    'rational numbers': ['7.1.1.1','7.1.1.2','7.1.1.3'],
+    'operations with rational numbers': ['7.1.2.1','7.1.2.2','7.1.2.3'],
+    'proportional relationships': ['7.2.1.1','7.2.1.2','7.2.2.1','7.2.2.2','7.2.2.3'],
+    'expressions and equations': ['7.2.2.4','7.2.3.1','7.2.3.2'],
+    'circumference and area of circles': ['7.3.1.1','7.3.1.2'],
+    'similarity and scaling': ['7.3.2.1','7.3.2.2','7.3.2.3']
+  },
+  8: {
+    'real number system': ['8.1.1.1','8.1.1.2','8.1.1.3'],
+    'linear functions': ['8.2.1.1','8.2.1.2','8.2.1.3','8.2.2.1'],
+    'solving equations': ['8.2.4.1','8.2.4.2','8.2.4.3']
+  },
+  10: {
+    'polynomial operations': [],
+    'geometric proofs and reasoning': [],
+    'right triangle trigonometry': [],
+    'circles and transformations': [],
+    'quadratic functions': []
+  }
+};
+
+// ═══════════════════════════════════════════════════════════
+//  STATE
+// ═══════════════════════════════════════════════════════════
+let S = {
+  grade: null,
+  topic: null,
+  quiz: []  // built quiz questions with choices
+};
+
+// ═══════════════════════════════════════════════════════════
+//  DISTRACTOR GENERATION ENGINE
+// ═══════════════════════════════════════════════════════════
+function generateDistractors(correct, numDistractors, allAnswers) {
+  const distractors = [];
+
+  // Try to extract a number from the answer for numeric distractors
+  const numMatch = correct.match(/^[-]?\d+[\d,]*\.?\d*/);
+  if (numMatch) {
+    const val = parseFloat(numMatch[0].replace(/,/g, ''));
+    if (!isNaN(val)) {
+      const offsets = [
+        val + Math.ceil(val * 0.25) || 1,
+        val - Math.ceil(val * 0.2) || -1,
+        val * 2,
+        val + (Math.random() > 0.5 ? 1 : -1) * Math.ceil(Math.abs(val) * 0.5),
+        -val
+      ].filter(v => v !== val && isFinite(v));
+
+      // Deduplicate and format
+      const seen = new Set([String(val)]);
+      for (const d of offsets) {
+        const s = Number.isInteger(d) ? String(d) : d.toFixed(numMatch[0].includes('.') ? 2 : 0);
+        if (!seen.has(s) && distractors.length < numDistractors) {
+          seen.add(s);
+          distractors.push(s);
+        }
+      }
+    }
+  }
+
+  // Use other answers from the same topic as distractors
+  if (distractors.length < numDistractors && allAnswers.length > 0) {
+    const others = allAnswers.filter(a => a !== correct);
+    shuffle(others);
+    for (const a of others) {
+      const short = a.split('.')[0].split(',')[0].substring(0, 60);
+      if (!distractors.includes(short) && short !== correct.substring(0, 60) && distractors.length < numDistractors) {
+        distractors.push(short);
+      }
+    }
+  }
+
+  // Fallback generic distractors
+  const fallbacks = ['None of these', 'Cannot be determined', 'Not enough information', 'All of the above', 'Both A and B'];
+  while (distractors.length < numDistractors) {
+    const f = fallbacks[distractors.length % fallbacks.length];
+    if (!distractors.includes(f)) distractors.push(f);
+    else distractors.push(f + ' (' + (distractors.length + 1) + ')');
+  }
+
+  return distractors.slice(0, numDistractors);
+}
+
+function shuffle(arr) {
+  for (let i = arr.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [arr[i], arr[j]] = [arr[j], arr[i]];
+  }
+  return arr;
+}
+
+function truncAnswer(ans) {
+  // Shorten answer for multiple choice display
+  const parts = ans.split('.');
+  let short = parts[0];
+  if (short.length > 80) short = short.substring(0, 77) + '...';
+  return short;
+}
+
+// ═══════════════════════════════════════════════════════════
+//  UI RENDERING
+// ═══════════════════════════════════════════════════════════
+function init() {
+  renderGrades();
+}
+
+function renderGrades() {
+  const grades = [5,6,7,8,10];
+  document.getElementById('gradeBar').innerHTML = grades.map(g =>
+    `<button class="g-btn ${S.grade===g?'active':''}" onclick="selectGrade(${g})">Grade ${g}</button>`
+  ).join('');
+}
+
+function selectGrade(g) {
+  S.grade = g;
+  S.topic = null;
+  S.quiz = [];
+  renderGrades();
+  renderTopics();
+  document.getElementById('configPanel').classList.remove('open');
+  document.getElementById('quizPreview').classList.remove('open');
+  document.getElementById('exportPanel').classList.remove('open');
+}
+
+function renderTopics() {
+  const map = BENCHMARK_TOPIC_MAP[S.grade];
+  if (!map) { document.getElementById('topicsGrid').innerHTML = ''; return; }
+  document.getElementById('topicsLabel').textContent = `TOPICS FOR GRADE ${S.grade}`;
+  const grid = document.getElementById('topicsGrid');
+  grid.innerHTML = Object.keys(map).map(topic => {
+    const data = DOK_PROBLEMS[topic];
+    const d1 = data ? (data.dok1||[]).length : 0;
+    const d2 = data ? (data.dok2||[]).length : 0;
+    const d3 = data ? (data.dok3||[]).length : 0;
+    const total = d1 + d2 + d3;
+    const sel = S.topic === topic ? 'selected' : '';
+    return `
+      <div class="t-card ${sel}" onclick="selectTopic('${topic}')">
+        <div class="t-name">${topic.charAt(0).toUpperCase() + topic.slice(1)}</div>
+        <div class="t-meta">
+          <span>${total} problems</span>
+          ${d1?'<span class="dok-d d1"></span>':''}
+          ${d2?'<span class="dok-d d2"></span>':''}
+          ${d3?'<span class="dok-d d3"></span>':''}
+        </div>
+      </div>`;
+  }).join('');
+}
+
+function selectTopic(topic) {
+  S.topic = topic;
+  S.quiz = [];
+  renderTopics();
+  document.getElementById('configPanel').classList.add('open');
+  document.getElementById('quizPreview').classList.remove('open');
+  document.getElementById('exportPanel').classList.remove('open');
+  // Auto-set title
+  const titleInput = document.getElementById('quizTitle');
+  if (!titleInput.value) {
+    titleInput.value = topic.charAt(0).toUpperCase() + topic.slice(1) + ' — Grade ' + S.grade + ' Quiz';
+  }
+  document.getElementById('configPanel').scrollIntoView({behavior:'smooth',block:'start'});
+}
+
+// ═══════════════════════════════════════════════════════════
+//  BUILD QUIZ
+// ═══════════════════════════════════════════════════════════
+function buildQuiz() {
+  const data = DOK_PROBLEMS[S.topic];
+  if (!data) return alert('No problems available for this topic.');
+
+  const numQ = parseInt(document.getElementById('numQ').value) || 10;
+  const numChoices = parseInt(document.getElementById('numChoices').value) || 4;
+  const dokFilter = [];
+  if (document.getElementById('chkD1').checked) dokFilter.push('dok1');
+  if (document.getElementById('chkD2').checked) dokFilter.push('dok2');
+  if (document.getElementById('chkD3').checked) dokFilter.push('dok3');
+
+  // Collect eligible problems
+  let pool = [];
+  dokFilter.forEach(dk => {
+    const level = dk === 'dok1' ? 1 : dk === 'dok2' ? 2 : 3;
+    (data[dk] || []).forEach(p => pool.push({ ...p, dok: level }));
+  });
+
+  if (pool.length === 0) return alert('No problems match selected DOK levels.');
+
+  // Collect all answers for distractor generation
+  const allAnswers = pool.map(p => truncAnswer(p.answer));
+
+  // Shuffle and select
+  shuffle(pool);
+  const selected = pool.slice(0, Math.min(numQ, pool.length));
+
+  // Generate multiple choice for each
+  S.quiz = selected.map((p, i) => {
+    const correctShort = truncAnswer(p.answer);
+    const distractors = generateDistractors(correctShort, numChoices - 1, allAnswers);
+    const choices = shuffle([correctShort, ...distractors]);
+    const correctIdx = choices.indexOf(correctShort);
+    return {
+      num: i + 1,
+      stem: p.stem,
+      choices: choices,
+      correctIdx: correctIdx,
+      correctAnswer: correctShort,
+      fullAnswer: p.answer,
+      dok: p.dok,
+      hint: p.hint
+    };
+  });
+
+  renderPreview();
+  document.getElementById('quizPreview').classList.add('open');
+  document.getElementById('exportPanel').classList.add('open');
+  document.getElementById('quizPreview').scrollIntoView({behavior:'smooth',block:'start'});
+}
+
+function renderPreview() {
+  const title = document.getElementById('quizTitle').value ||
+    (S.topic.charAt(0).toUpperCase() + S.topic.slice(1) + ' — Grade ' + S.grade + ' Quiz');
+  document.getElementById('previewTitle').textContent = 'Quiz Preview: ' + title + ' (' + S.quiz.length + ' questions)';
+
+  const letters = 'ABCDEFGHIJ';
+  document.getElementById('previewBody').innerHTML = S.quiz.map(q => `
+    <div class="q-item">
+      <div class="q-num">Question ${q.num} <span class="q-dok dk${q.dok}">DOK ${q.dok}</span></div>
+      <div class="q-stem">${q.stem}</div>
+      <div class="q-choices">
+        ${q.choices.map((c, i) => `<div class="q-choice ${i === q.correctIdx ? 'correct' : ''}">${letters[i]}. ${c}</div>`).join('')}
+      </div>
+    </div>
+  `).join('');
+}
+
+// ═══════════════════════════════════════════════════════════
+//  EXPORT: GOOGLE APPS SCRIPT
+// ═══════════════════════════════════════════════════════════
+function showGoogleScript() {
+  const title = document.getElementById('quizTitle').value ||
+    (S.topic.charAt(0).toUpperCase() + S.topic.slice(1) + ' — Grade ' + S.grade + ' Quiz');
+  const benchmarks = BENCHMARK_TOPIC_MAP[S.grade]?.[S.topic] || [];
+  const letters = 'ABCDEFGHIJ';
+
+  let script = `// ═══════════════════════════════════════════════════════════
+// VINCULUM Quiz Builder — Google Forms Auto-Generator
+// Grade ${S.grade} | ${S.topic.charAt(0).toUpperCase() + S.topic.slice(1)}
+// Generated: ${new Date().toLocaleDateString()}
+// ═══════════════════════════════════════════════════════════
+
+function createVINCULUMQuiz() {
+  var form = FormApp.create('${title.replace(/'/g, "\\'")}');
+  form.setIsQuiz(true);
+  form.setDescription('VINCULUM Math Solutions — Grade ${S.grade}\\nTopic: ${S.topic.charAt(0).toUpperCase() + S.topic.slice(1)}\\nBenchmarks: ${benchmarks.join(", ")}\\n\\nGenerated by VINCULUM Quiz Builder | Drummond Math Solutions');
+
+`;
+
+  S.quiz.forEach(q => {
+    const escapedStem = q.stem.replace(/'/g, "\\'").replace(/\n/g, '\\n');
+    script += `  // Question ${q.num} (DOK ${q.dok})
+  var q${q.num} = form.addMultipleChoiceItem();
+  q${q.num}.setTitle('${escapedStem}');
+  q${q.num}.setPoints(${q.dok}); // DOK level as point value
+  q${q.num}.setChoices([
+`;
+    q.choices.forEach((c, i) => {
+      const escapedChoice = c.replace(/'/g, "\\'").replace(/\n/g, '\\n');
+      const isCorrect = i === q.correctIdx;
+      script += `    q${q.num}.createChoice('${letters[i]}. ${escapedChoice}', ${isCorrect})${i < q.choices.length - 1 ? ',' : ''}
+`;
+    });
+    script += `  ]);
+
+`;
+  });
+
+  script += `  // Log the form URL
+  Logger.log('Quiz created: ' + form.getEditUrl());
+  Logger.log('Share link: ' + form.getPublishedUrl());
+
+  // Optional: Move to a specific folder
+  // DriveApp.getFileById(form.getId()).moveTo(DriveApp.getFolderById('YOUR_FOLDER_ID'));
+
+  SpreadsheetApp.getUi().alert('Quiz created!\\n\\nEdit: ' + form.getEditUrl() + '\\n\\nShare: ' + form.getPublishedUrl());
+}
+`;
+
+  document.getElementById('scriptArea').value = script;
+  document.getElementById('scriptBox').style.display = 'block';
+  document.getElementById('instructions').style.display = 'block';
+  document.getElementById('copyBtn').textContent = 'COPY';
+  document.getElementById('copyBtn').classList.remove('copied');
+}
+
+function copyScript() {
+  const area = document.getElementById('scriptArea');
+  area.select();
+  navigator.clipboard.writeText(area.value).then(() => {
+    const btn = document.getElementById('copyBtn');
+    btn.textContent = 'COPIED!';
+    btn.classList.add('copied');
+    setTimeout(() => { btn.textContent = 'COPY'; btn.classList.remove('copied'); }, 2000);
+  });
+}
+
+// ═══════════════════════════════════════════════════════════
+//  EXPORT: CSV
+// ═══════════════════════════════════════════════════════════
+function exportCSV() {
+  const letters = 'ABCDEFGHIJ';
+  const title = document.getElementById('quizTitle').value || S.topic + ' Quiz';
+  let csv = 'Question,';
+  const numC = S.quiz[0]?.choices.length || 4;
+  for (let i = 0; i < numC; i++) csv += letters[i] + ',';
+  csv += 'Correct Answer,DOK Level\n';
+
+  S.quiz.forEach(q => {
+    const escapeCsv = s => '"' + String(s).replace(/"/g, '""') + '"';
+    csv += escapeCsv(q.stem) + ',';
+    q.choices.forEach(c => { csv += escapeCsv(c) + ','; });
+    csv += escapeCsv(letters[q.correctIdx]) + ',';
+    csv += q.dok + '\n';
+  });
+
+  downloadFile(csv, title.replace(/\s+/g, '-') + '.csv', 'text/csv');
+}
+
+// ═══════════════════════════════════════════════════════════
+//  EXPORT: JSON
+// ═══════════════════════════════════════════════════════════
+function exportJSON() {
+  const title = document.getElementById('quizTitle').value || S.topic + ' Quiz';
+  const letters = 'ABCDEFGHIJ';
+  const data = {
+    title: title,
+    grade: S.grade,
+    topic: S.topic,
+    benchmarks: BENCHMARK_TOPIC_MAP[S.grade]?.[S.topic] || [],
+    generated: new Date().toISOString(),
+    generator: 'VINCULUM Quiz Builder | Drummond Math Solutions',
+    questions: S.quiz.map(q => ({
+      number: q.num,
+      stem: q.stem,
+      choices: q.choices.map((c, i) => ({ label: letters[i], text: c, correct: i === q.correctIdx })),
+      correctAnswer: q.fullAnswer,
+      dok: q.dok,
+      hint: q.hint
+    }))
+  };
+  downloadFile(JSON.stringify(data, null, 2), title.replace(/\s+/g, '-') + '.json', 'application/json');
+}
+
+function downloadFile(content, filename, type) {
+  const blob = new Blob([content], { type });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url; a.download = filename; a.click();
+  URL.revokeObjectURL(url);
+}
+
+document.addEventListener('DOMContentLoaded', init);
+</script>
+
+<script>
+// ═══════════════════════════════════════════════════════════
+//  INLINE PROBLEM DATABASE
+//  (Subset for quiz generation — DOK 1 & 2 are best for MC)
+// ═══════════════════════════════════════════════════════════
+var QUIZ_DB = {
+  'place value and decimals': {
+    grade: 5,
+    dok1: [
+      { stem: 'What is the value of the 7 in 4.073?', answer: '7 hundredths (0.07)', hint: 'The second digit after the decimal point is the hundredths place.' },
+      { stem: 'Write 0.400 in word form.', answer: 'Four hundred thousandths', hint: 'Count the decimal places to name the place value.' },
+      { stem: 'Round 3.782 to the nearest tenth.', answer: '3.8', hint: 'Look at the hundredths digit to decide.' },
+      { stem: 'Compare using < , >, or =: 0.36 ___ 0.360', answer: '0.36 = 0.360', hint: 'Adding a zero does not change value.' },
+      { stem: 'What is 10 x 0.045?', answer: '0.45', hint: 'Multiplying by 10 moves decimal one place right.' },
+      { stem: 'What is 0.6 / 10?', answer: '0.06', hint: 'Dividing by 10 moves decimal one place left.' }
+    ],
+    dok2: [
+      { stem: 'A gymnast scores 9.375 and 9.380. Which score is higher?', answer: '9.380 is higher', hint: 'Compare digit by digit from left.' },
+      { stem: 'Marcus has $12.50. He multiplies by 10 twice. How much now?', answer: '$1,250.00', hint: 'Each x10 moves decimal right.' },
+      { stem: 'Order from least to greatest: 2.350, 2.035, 2.305', answer: '2.035, 2.305, 2.350', hint: 'Compare tenths place first.' }
+    ],
+    dok3: [
+      { stem: 'Create three decimals that all round to 4.5 when rounded to the nearest tenth.', answer: 'E.g., 4.52, 4.46, 4.531 (any from 4.450 to 4.549)', hint: 'Think about which hundredths digits round to give 4.5.' }
+    ]
+  },
+  'fraction operations': {
+    grade: 5,
+    dok1: [
+      { stem: 'Add: 1/4 + 2/4', answer: '3/4', hint: 'Same denominator — add numerators.' },
+      { stem: 'Subtract: 5/6 - 1/6', answer: '4/6 = 2/3', hint: 'Same denominator — subtract numerators.' },
+      { stem: 'Add: 1/3 + 1/6', answer: '3/6 = 1/2', hint: 'Find common denominator first.' },
+      { stem: 'Multiply: 3 x 2/5', answer: '6/5 = 1 1/5', hint: 'Multiply whole number by numerator.' },
+      { stem: 'Multiply: 1/2 x 1/4', answer: '1/8', hint: 'Multiply numerators and denominators.' },
+      { stem: 'Divide: 6 / (1/2)', answer: '12', hint: 'How many halves fit in 6?' }
+    ],
+    dok2: [
+      { stem: 'A recipe calls for 2/3 cup milk and 1/4 cup cream. Total liquid?', answer: '11/12 cup', hint: 'Find LCD of 3 and 4.' },
+      { stem: 'A garden is 1/2 acre. Tomatoes use 2/3 of it. Fraction of acre for tomatoes?', answer: '1/3 acre', hint: 'Multiply 1/2 x 2/3.' },
+      { stem: 'A dog walker has 3 cups of treats. Each dog gets 1/4 cup. How many dogs?', answer: '12 dogs', hint: 'Divide 3 by 1/4.' }
+    ],
+    dok3: [
+      { stem: 'Tanya says 1/3 + 1/4 = 2/7. Is she correct? Find the right answer.', answer: 'Incorrect. 1/3 + 1/4 = 7/12', hint: 'You cannot add denominators.' }
+    ]
+  },
+  'multi-digit operations': {
+    grade: 5,
+    dok1: [
+      { stem: 'Multiply: 34 x 27', answer: '918', hint: '34x7=238, 34x20=680, add.' },
+      { stem: 'Divide: 575 / 25', answer: '23', hint: '25 x ? = 575.' },
+      { stem: 'Multiply: 250 x 40', answer: '10,000', hint: '25x4=100, add zeros.' },
+      { stem: 'Divide: 936 / 12', answer: '78', hint: 'Use long division.' }
+    ],
+    dok2: [
+      { stem: 'A school orders 28 boxes of 144 pencils. How many total?', answer: '4,032 pencils', hint: 'Multiply 28 x 144.' },
+      { stem: 'A farmer packs 2,340 apples into 36 crates equally. Per crate?', answer: '65 apples', hint: 'Divide 2,340 by 36.' },
+      { stem: 'Estimate then calculate: 387 x 42', answer: 'Estimate ~16,000. Exact: 16,254', hint: 'Round to 400x40 for estimate.' }
+    ],
+    dok3: [
+      { stem: 'Chairs come in packs of 12 for $85 or $9 each. Need 576. Cheapest way?', answer: '48 packs = $4,080 (vs $5,184 individual)', hint: 'Compare bulk vs individual cost.' }
+    ]
+  },
+  'volume and measurement': {
+    grade: 5,
+    dok1: [
+      { stem: 'Volume of rectangular prism: l=5, w=3, h=4?', answer: '60 cubic cm', hint: 'V = l x w x h.' },
+      { stem: 'How many cups in 3 quarts?', answer: '12 cups', hint: '1 quart = 4 cups.' },
+      { stem: 'A cube has sides of 3 cm. Volume?', answer: '27 cubic cm', hint: 'V = s x s x s.' },
+      { stem: 'Convert 7,000 grams to kilograms.', answer: '7 kilograms', hint: '1 kg = 1,000 g.' }
+    ],
+    dok2: [
+      { stem: 'Fish tank: 20 x 10 x 12 inches. Volume?', answer: '2,400 cubic inches', hint: 'V = l x w x h.' },
+      { stem: 'Sandbox 8x6x1.5 ft. Sand costs $3/cubic ft. Total cost?', answer: '$216', hint: 'Find volume, multiply by $3.' },
+      { stem: 'Prism has volume 120 cm³. l=10, w=4. Height?', answer: '3 cm', hint: 'h = V/(l x w).' }
+    ],
+    dok3: [
+      { stem: 'A room is 14x12x9 ft. One can of paint covers 350 sq ft. How many cans for walls + ceiling?', answer: '2 cans (636 sq ft total)', hint: 'Find wall area + ceiling area.' }
+    ]
+  },
+  'ratios and proportions': {
+    grade: 6,
+    dok1: [
+      { stem: 'Write the ratio of 12 boys to 8 girls in simplest form.', answer: '3:2', hint: 'Divide both by GCF (4).' },
+      { stem: 'If 3 apples cost $2.25, what is the unit rate?', answer: '$0.75 per apple', hint: 'Divide total by quantity.' },
+      { stem: 'Are 4/6 and 6/9 equivalent ratios?', answer: 'Yes (both = 2/3)', hint: 'Simplify both fractions.' },
+      { stem: 'If the ratio of cats to dogs is 5:3, and there are 15 cats, how many dogs?', answer: '9 dogs', hint: '5/3 = 15/x. Scale factor is 3.' }
+    ],
+    dok2: [
+      { stem: 'A car travels 240 miles in 4 hours. At the same rate, how far in 7 hours?', answer: '420 miles', hint: 'Find unit rate: 60 mph.' },
+      { stem: 'A recipe for 4 servings uses 6 cups flour. How much for 10 servings?', answer: '15 cups', hint: 'Set up proportion: 6/4 = x/10.' },
+      { stem: 'Store A: 5 notebooks for $8. Store B: 3 notebooks for $5.25. Better deal?', answer: 'Store A ($1.60 each vs $1.75)', hint: 'Find unit price for each.' }
+    ],
+    dok3: [
+      { stem: 'A map scale is 1 inch = 25 miles. Two cities are 3.5 inches apart. A car averages 50 mph. How long is the drive?', answer: '1.75 hours (87.5 miles / 50 mph)', hint: 'Find real distance first, then divide by speed.' }
+    ]
+  },
+  'rational number operations': {
+    grade: 6,
+    dok1: [
+      { stem: 'Add: -5 + 8', answer: '3', hint: 'Different signs: subtract and keep sign of larger.' },
+      { stem: 'Subtract: -3 - 7', answer: '-10', hint: 'Subtracting positive is like adding negative.' },
+      { stem: 'Multiply: -4 x 6', answer: '-24', hint: 'Negative times positive = negative.' },
+      { stem: 'Divide: -36 / -9', answer: '4', hint: 'Negative divided by negative = positive.' },
+      { stem: 'What is the absolute value of -15?', answer: '15', hint: 'Distance from zero on number line.' }
+    ],
+    dok2: [
+      { stem: 'The temperature was -8°F and rose 15°F. New temperature?', answer: '7°F', hint: 'Add: -8 + 15.' },
+      { stem: 'A submarine at -200 ft descends 150 ft more. New depth?', answer: '-350 feet', hint: 'Going deeper means more negative.' },
+      { stem: 'Order from least to greatest: -3, 1/2, -7, 4, -1', answer: '-7, -3, -1, 1/2, 4', hint: 'More negative = less.' }
+    ],
+    dok3: [
+      { stem: 'A bank account has $150. Withdrawals: $45, $80, $60. Deposits: $30. Final balance? Overdrawn?', answer: '-$5 (overdrawn by $5)', hint: '150 - 45 - 80 - 60 + 30.' }
+    ]
+  },
+  'percent concepts': {
+    grade: 6,
+    dok1: [
+      { stem: 'Convert 3/4 to a percent.', answer: '75%', hint: 'Divide 3 by 4, multiply by 100.' },
+      { stem: 'What is 25% of 80?', answer: '20', hint: '0.25 x 80.' },
+      { stem: 'Convert 0.35 to a percent.', answer: '35%', hint: 'Move decimal two places right.' },
+      { stem: 'What percent of 50 is 15?', answer: '30%', hint: '15/50 = 0.30 = 30%.' }
+    ],
+    dok2: [
+      { stem: 'A shirt costs $40 and is 20% off. Sale price?', answer: '$32', hint: 'Discount = 40 x 0.20 = $8.' },
+      { stem: 'A student scored 42 out of 60. What percent?', answer: '70%', hint: '42/60 = 0.70.' },
+      { stem: 'Sales tax is 7%. Item costs $25. Total with tax?', answer: '$26.75', hint: 'Tax = 25 x 0.07 = $1.75.' }
+    ],
+    dok3: [
+      { stem: 'A store marks up items 40% then offers 25% off. Is net change +15%? Explain.', answer: 'No. Net is +5% ($100 -> $140 -> $105)', hint: 'The 25% is taken off the higher marked-up price.' }
+    ]
+  },
+  'algebraic expressions': {
+    grade: 6,
+    dok1: [
+      { stem: 'Evaluate 3x + 2 when x = 5.', answer: '17', hint: '3(5) + 2 = 15 + 2.' },
+      { stem: 'Simplify: 4a + 7a', answer: '11a', hint: 'Add coefficients of like terms.' },
+      { stem: 'Write an expression: "6 more than a number n"', answer: 'n + 6', hint: '"More than" means addition.' },
+      { stem: 'Evaluate 2(x + 3) when x = 4.', answer: '14', hint: '2(4 + 3) = 2(7).' }
+    ],
+    dok2: [
+      { stem: 'Are 3(x + 4) and 3x + 12 equivalent? Explain.', answer: 'Yes, by distributive property', hint: 'Distribute the 3.' },
+      { stem: 'A gym charges $25/month plus $3 per class. Write and evaluate for 8 classes.', answer: '25 + 3(8) = $49', hint: 'Total = 25 + 3c where c = classes.' },
+      { stem: 'Simplify: 5x + 3 - 2x + 7', answer: '3x + 10', hint: 'Combine like terms.' }
+    ],
+    dok3: [
+      { stem: 'Two expressions are equivalent: 2(3x + 1) + 4 and ax + b. Find a and b.', answer: 'a = 6, b = 6', hint: 'Expand: 6x + 2 + 4 = 6x + 6.' }
+    ]
+  },
+  'proportional relationships': {
+    grade: 7,
+    dok1: [
+      { stem: 'In y = 7x, what is the constant of proportionality?', answer: '7', hint: 'In y = kx, k is the constant.' },
+      { stem: 'Is y = 3x + 1 proportional?', answer: 'No (not through origin)', hint: 'Proportional means y = kx with no added constant.' },
+      { stem: 'A car goes 180 miles in 3 hours. Unit rate?', answer: '60 mph', hint: '180 / 3 = 60.' },
+      { stem: 'Solve: 4/5 = x/20', answer: 'x = 16', hint: 'Cross multiply: 4 x 20 = 5x.' }
+    ],
+    dok2: [
+      { stem: 'Table: x=[1,2,3,4], y=[3,6,9,12]. Is it proportional? Equation?', answer: 'Yes, y = 3x', hint: 'Check if y/x is constant.' },
+      { stem: 'A store sells 5 lb of apples for $8.75. How much for 8 lb?', answer: '$14.00', hint: 'Unit rate: $1.75/lb.' },
+      { stem: 'Two runners: A does 3 laps in 12 min, B does 5 laps in 18 min. Who is faster?', answer: 'B (3.6 min/lap vs 4 min/lap)', hint: 'Compare minutes per lap.' },
+      { stem: 'A recipe uses 2 cups sugar for 5 cups flour. How much sugar for 12 cups flour?', answer: '4.8 cups sugar', hint: '2/5 = x/12.' }
+    ],
+    dok3: [
+      { stem: 'Water fills a pool at 3 gallons/min. Pool holds 1,800 gallons. Create equation, graph description, and find fill time.', answer: 'y = 3x; 600 minutes = 10 hours', hint: 'y = gallons, x = minutes.' },
+      { stem: 'Store A: Buy 2 get 1 free at $6 each. Store B: 25% off at $5 each. Which is better for 12 items?', answer: 'Store A: $48 (pay for 8). Store B: $45 (12 x $3.75). Store B is cheaper.', hint: 'Calculate total cost at each store.' }
+    ]
+  },
+  'circumference and area of circles': {
+    grade: 7,
+    dok1: [
+      { stem: 'Find circumference of circle with radius 7.', answer: '14pi or about 43.98', hint: 'C = 2 x pi x r.' },
+      { stem: 'Find area of circle with radius 5.', answer: '25pi or about 78.54', hint: 'A = pi x r^2.' },
+      { stem: 'Circle has diameter 12. Circumference?', answer: '12pi or about 37.70', hint: 'C = pi x d.' },
+      { stem: 'Circle has circumference 20pi. Radius?', answer: '10', hint: '2 x pi x r = 20pi.' }
+    ],
+    dok2: [
+      { stem: 'Circular garden radius 8 m. How much fencing needed?', answer: '16pi or about 50.27 m', hint: 'Fencing = circumference.' },
+      { stem: 'Pizza diameter 16 inches. 45-degree slice area?', answer: '8pi or about 25.13 sq in', hint: 'Sector = (45/360) x pi x r^2.' },
+      { stem: 'Tire diameter 26 in. Distance in 100 rotations?', answer: '2600pi or about 8168 inches', hint: 'Each rotation = circumference.' }
+    ],
+    dok3: [
+      { stem: '100 m of fence: square pen vs circular pen. Which has more area?', answer: 'Circle (about 795.8 vs 625 sq m)', hint: 'Set perimeter = 100 for each shape.' }
+    ]
+  },
+  'similarity and scaling': {
+    grade: 7,
+    dok1: [
+      { stem: 'Scale factor is 3. Small side is 4. Corresponding large side?', answer: '12', hint: 'Multiply by scale factor.' },
+      { stem: 'Rectangle 6x8. Similar rectangle has width 12. Length?', answer: '16', hint: 'Scale factor = 12/6 = 2.' },
+      { stem: 'Are two squares always similar?', answer: 'Yes', hint: 'Same shape, proportional sides.' },
+      { stem: 'AB=5, DE=10 in similar triangles. Scale factor?', answer: '2 (or 1:2)', hint: 'Larger / smaller.' }
+    ],
+    dok2: [
+      { stem: 'Model car at 1:24 scale. Real car is 180 in. Model length?', answer: '7.5 inches', hint: '180 / 24.' },
+      { stem: 'Similar triangles with scale factor 2. Area ratio?', answer: '4:1', hint: 'Area ratio = k^2.' },
+      { stem: 'Map: 1 inch = 5 miles. Cities are 3.5 in apart. Real distance?', answer: '17.5 miles', hint: '3.5 x 5.' }
+    ],
+    dok3: [
+      { stem: 'Statue 6 ft casts 8 ft shadow. Building casts 56 ft shadow. Building height?', answer: '42 feet', hint: 'Similar triangles: 6/8 = h/56.' }
+    ]
+  },
+  'expressions and equations': {
+    grade: 7,
+    dok1: [
+      { stem: 'Solve: 2x + 5 = 17', answer: 'x = 6', hint: 'Subtract 5, then divide by 2.' },
+      { stem: 'Solve: x/3 - 4 = 2', answer: 'x = 18', hint: 'Add 4, then multiply by 3.' },
+      { stem: 'Simplify: 3(2x - 1) + 4x', answer: '10x - 3', hint: 'Distribute then combine like terms.' },
+      { stem: 'Solve: -3x = 24', answer: 'x = -8', hint: 'Divide both sides by -3.' }
+    ],
+    dok2: [
+      { stem: 'A phone plan costs $35/month plus $0.10/text. Bill is $52. How many texts?', answer: '170 texts', hint: '35 + 0.10t = 52.' },
+      { stem: 'Solve: 4(x - 3) = 2(x + 1)', answer: 'x = 7', hint: 'Distribute, collect x terms on one side.' },
+      { stem: 'Three consecutive integers sum to 72. Find them.', answer: '23, 24, 25', hint: 'x + (x+1) + (x+2) = 72.' }
+    ],
+    dok3: [
+      { stem: 'Gym A: $30/month + $2/class. Gym B: $50/month unlimited. When is B cheaper?', answer: 'More than 10 classes/month', hint: '30 + 2c > 50.' }
+    ]
+  },
+  'real number system': {
+    grade: 8,
+    dok1: [
+      { stem: 'Simplify: sqrt(49)', answer: '7', hint: '7 x 7 = 49.' },
+      { stem: 'Is sqrt(10) rational or irrational?', answer: 'Irrational', hint: '10 is not a perfect square.' },
+      { stem: 'Estimate sqrt(50) to the nearest integer.', answer: '7 (since 7^2=49)', hint: '49 < 50 < 64.' },
+      { stem: 'Convert 5/8 to a decimal.', answer: '0.625', hint: 'Divide 5 by 8.' },
+      { stem: 'Write 0.333... as a fraction.', answer: '1/3', hint: 'Repeating decimal pattern.' }
+    ],
+    dok2: [
+      { stem: 'Place sqrt(30) on a number line between two integers.', answer: 'Between 5 and 6 (closer to 5)', hint: '25 < 30 < 36.' },
+      { stem: 'Simplify: sqrt(72)', answer: '6*sqrt(2)', hint: '72 = 36 x 2.' },
+      { stem: 'Is 0.101001000100001... rational or irrational? Explain.', answer: 'Irrational (non-repeating, non-terminating)', hint: 'Pattern exists but never repeats exactly.' }
+    ],
+    dok3: [
+      { stem: 'Prove sqrt(2) is between 1.4 and 1.5. Then narrow to hundredths.', answer: '1.41 (since 1.41^2 = 1.9881 and 1.42^2 = 2.0164)', hint: 'Square 1.4 and 1.5 to verify.' }
+    ]
+  },
+  'linear functions': {
+    grade: 8,
+    dok1: [
+      { stem: 'What is the slope of y = 3x - 7?', answer: '3', hint: 'In y = mx + b, m is slope.' },
+      { stem: 'Find slope between (2,3) and (6,11).', answer: '2', hint: 'Slope = (11-3)/(6-2).' },
+      { stem: 'What is the y-intercept of y = -2x + 5?', answer: '5 or (0,5)', hint: 'In y = mx + b, b is y-intercept.' },
+      { stem: 'Is y = x^2 linear?', answer: 'No (quadratic)', hint: 'Linear means degree 1.' }
+    ],
+    dok2: [
+      { stem: 'Write equation through (0,3) with slope 2.', answer: 'y = 2x + 3', hint: 'Plug into y = mx + b.' },
+      { stem: 'A taxi costs $3 base + $2.50/mile. Write equation and find cost for 8 miles.', answer: 'y = 2.5x + 3; $23', hint: 'base is b, rate is m.' },
+      { stem: 'Line through (1,4) and (3,10). Write equation.', answer: 'y = 3x + 1', hint: 'Find slope first, then use point.' },
+      { stem: 'Do these form a linear function? x=[1,2,3,4], y=[5,8,11,14]', answer: 'Yes, slope = 3, y = 3x + 2', hint: 'Check if differences are constant.' }
+    ],
+    dok3: [
+      { stem: 'Plan A: $40 + $0.10/min. Plan B: $25 + $0.15/min. When are they equal? Which is better for 400 min?', answer: 'Equal at 300 min. Plan B is $85 vs $80 for Plan A at 400 min.', hint: '40 + 0.10m = 25 + 0.15m.' }
+    ]
+  },
+  'solving equations': {
+    grade: 8,
+    dok1: [
+      { stem: 'Solve: 5x - 3 = 22', answer: 'x = 5', hint: 'Add 3, divide by 5.' },
+      { stem: 'Solve: 2(x + 4) = 18', answer: 'x = 5', hint: 'Distribute or divide by 2 first.' },
+      { stem: 'Solve: x/4 + 3 = 7', answer: 'x = 16', hint: 'Subtract 3, multiply by 4.' },
+      { stem: 'Solve: 3x + 2 = 2x + 9', answer: 'x = 7', hint: 'Get x terms on one side.' }
+    ],
+    dok2: [
+      { stem: 'Solve: 3(2x - 1) = 4(x + 2) - 5', answer: 'x = 3', hint: 'Distribute both sides first.' },
+      { stem: 'Solve: 0.5x + 1.5 = 3.5', answer: 'x = 4', hint: 'Subtract 1.5, divide by 0.5.' },
+      { stem: 'Two sides of a triangle are 8 and 12. Perimeter is 32. Third side?', answer: '12', hint: '8 + 12 + x = 32.' },
+      { stem: 'Solve: |x - 3| = 7', answer: 'x = 10 or x = -4', hint: 'Two cases: x-3=7 or x-3=-7.' }
+    ],
+    dok3: [
+      { stem: 'A pool fills at 8 gal/min, drains at 3 gal/min. Starts with 200 gal, goal 500 gal. How long with both running?', answer: '60 minutes (net 5 gal/min)', hint: '200 + (8-3)t = 500.' }
+    ]
+  },
+  'right triangle trigonometry': {
+    grade: 10,
+    dok1: [
+      { stem: 'In a right triangle, opp=5, hyp=13. Find sin(A).', answer: '5/13', hint: 'sin = opposite/hypotenuse.' },
+      { stem: 'Find cos(60 degrees).', answer: '0.5', hint: 'Special angle from 30-60-90.' },
+      { stem: 'Legs 3 and 4. Find tan(theta) for angle opposite 3.', answer: '3/4', hint: 'tan = opposite/adjacent.' },
+      { stem: 'Side ratios in a 45-45-90 triangle?', answer: '1 : 1 : sqrt(2)', hint: 'Isosceles right triangle.' },
+      { stem: 'If tan(theta) = 1, what is theta?', answer: '45 degrees', hint: 'When opposite = adjacent.' }
+    ],
+    dok2: [
+      { stem: 'A 20-ft ladder at 65 degrees to ground. How high does it reach?', answer: 'About 18.13 ft', hint: 'h = 20 x sin(65).' },
+      { stem: 'From 150-ft lighthouse, depression angle to ship is 12 degrees. Ship distance?', answer: 'About 705.7 ft', hint: 'd = 150/tan(12).' },
+      { stem: 'Ramp rises 3 ft over 18 ft horizontal. Find angle.', answer: 'About 9.46 degrees', hint: 'arctan(3/18).' }
+    ],
+    dok3: [
+      { stem: 'ADA ramp max 1:12 slope for 30-inch entrance. Min length? Landing needed (every 30ft)?', answer: '30.1 ft, one landing needed', hint: 'Run = 30x12 = 360 inches.' }
+    ]
+  },
+  'geometric proofs and reasoning': {
+    grade: 10,
+    dok1: [
+      { stem: 'Name the congruence postulate: two sides and included angle match.', answer: 'SAS', hint: 'The angle is between the two sides.' },
+      { stem: 'Sum of interior angles in a triangle?', answer: '180 degrees', hint: 'Triangle Angle Sum Theorem.' },
+      { stem: 'Two supplementary angles: one is 112 degrees. Find the other.', answer: '68 degrees', hint: 'Supplementary = 180.' },
+      { stem: 'Angles A=40, B=75 in triangle ABC. Find C.', answer: '65 degrees', hint: '180 - 40 - 75.' },
+      { stem: 'List four triangle congruence criteria.', answer: 'SSS, SAS, ASA, AAS', hint: 'Combinations of sides and angles.' }
+    ],
+    dok2: [
+      { stem: 'Parallel lines cut by transversal form (3x+10) and (5x-20) corresponding angles. Find x.', answer: 'x = 15', hint: 'Corresponding angles are equal.' },
+      { stem: 'Triangle sides 8, 8, 6. Find its height.', answer: 'sqrt(55) or about 7.42', hint: 'Height bisects base: h^2 + 3^2 = 8^2.' }
+    ],
+    dok3: [
+      { stem: 'Prove: In parallelogram ABCD, opposite sides are equal.', answer: 'Draw diagonal AC, use ASA for congruent triangles, then CPCTC', hint: 'A diagonal creates two congruent triangles.' }
+    ]
+  },
+  'circles and transformations': {
+    grade: 10,
+    dok1: [
+      { stem: 'Circle equation: center (3,-2), radius 5.', answer: '(x-3)^2 + (y+2)^2 = 25', hint: 'Standard form: (x-h)^2 + (y-k)^2 = r^2.' },
+      { stem: 'Center and radius of (x+1)^2 + (y-4)^2 = 36?', answer: 'Center (-1,4), radius 6', hint: 'h=-1, k=4, r=sqrt(36)=6.' },
+      { stem: 'Reflect (4,-3) over x-axis.', answer: '(4, 3)', hint: 'Change sign of y.' },
+      { stem: 'Translate (2,5) by vector <-3,4>.', answer: '(-1, 9)', hint: 'Add vector components.' },
+      { stem: 'Rotate (1,0) by 90 degrees CCW about origin.', answer: '(0, 1)', hint: '(x,y) -> (-y,x).' }
+    ],
+    dok2: [
+      { stem: 'Sprinkler at (5,-3) range 10. Does it reach (13,3)?', answer: 'Yes, exactly on the circle', hint: '(13-5)^2+(3+3)^2 = 100.' },
+      { stem: 'Rewrite x^2+y^2-6x+4y-12=0 in standard form.', answer: '(x-3)^2+(y+2)^2=25', hint: 'Complete the square.' },
+      { stem: 'Reflect triangle A(1,2), B(4,2), C(4,6) over y-axis.', answer: 'A\'(-1,2), B\'(-4,2), C\'(-4,6)', hint: 'Negate x-coordinates.' }
+    ],
+    dok3: [
+      { stem: 'Tower at (2,3) range 8, tower at (10,9) range 6. Do they overlap?', answer: 'Yes (distance=10, sum of radii=14)', hint: 'Compare distance to sum of radii.' }
+    ]
+  }
+};
+</script>
+</body>
+</html>
