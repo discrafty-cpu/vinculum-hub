@@ -6,6 +6,7 @@
 <title>Worksheet Generator — VINCULUM Hub</title>
 <link href="https://fonts.googleapis.com/css2?family=Fira+Code:wght@400;600&family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script src="shared/vinculum-cra.js?v=5"></script>
 <style>
 :root {
   --neon:#00f2ff; --bg:#050507; --bg2:rgba(10,10,15,0.98); --card:rgba(10,10,15,0.98);
@@ -55,7 +56,7 @@ body{font-family:'Inter',system-ui,sans-serif;background:var(--bg);color:var(--t
 .preview-dok.dk1{background:rgba(0,230,118,.15);color:var(--green);}
 .preview-dok.dk2{background:rgba(0,212,255,.15);color:var(--cyan);}
 .preview-dok.dk3{background:rgba(255,59,139,.15);color:var(--pink);}
-.preview-stem{font-size:14px;line-height:1.6;margin-bottom:10px;padding-right:60px;}
+.preview-stem{font-size:14px;line-height:1.6;margin-bottom:10px;padding-right:180px;}
 .preview-hint{font-size:12px;color:var(--yellow);font-style:italic;}
 .preview-answer{font-size:12px;color:var(--green);margin-top:6px;display:none;}
 .preview-answer.show{display:block;}
@@ -160,7 +161,24 @@ body{font-family:'Inter',system-ui,sans-serif;background:var(--bg);color:var(--t
       <label class="chk-label"><input type="checkbox" id="chkD2" checked> <span class="dok-d d2"></span> DOK 2</label>
       <label class="chk-label"><input type="checkbox" id="chkD3" checked> <span class="dok-d d3"></span> DOK 3</label>
     </div>
+    <div class="print-row" style="margin-top:8px;padding-top:12px;border-top:1px solid var(--border);">
+      <span class="print-label" style="color:var(--green);">CRA Mode</span>
+      <label class="chk-label"><input type="checkbox" id="chkCRA" onchange="toggleCRA()"> Enable Prerequisite Bias &amp; CRA Scaffolding</label>
+    </div>
     <button class="btn-generate" onclick="generatePDF()">Generate PDF</button>
+  </div>
+
+  <!-- Diagram Canvas (CRA) -->
+  <div id="diagramSection" style="display:none;margin-bottom:20px;">
+    <div style="background:var(--card);border:1px solid var(--border);border-radius:12px;padding:20px;backdrop-filter:blur(20px);">
+      <div style="font-family:'Fira Code',monospace;font-size:9px;color:var(--neon);font-weight:700;text-transform:uppercase;letter-spacing:0.3em;margin-bottom:12px;">DIAGRAM PREVIEW</div>
+      <canvas id="diagramCanvas" width="400" height="280" style="width:100%;max-width:400px;border:1px solid var(--border);border-radius:8px;background:var(--bg);"></canvas>
+    </div>
+  </div>
+
+  <!-- Teacher Intervention Panel (CRA) -->
+  <div id="teacherPanel" style="display:none;margin-bottom:20px;">
+    <div id="teacherPanelContent" style="background:var(--card);border:1px solid var(--border);border-radius:12px;padding:20px;backdrop-filter:blur(20px);"></div>
   </div>
 </div>
 
@@ -1116,11 +1134,58 @@ function selectTopic(topic) {
 
 function buildProbList() {
   S.allProbs = [];
-  const data = DOK_PROBLEMS[S.topic];
+  // Resolve topic name via alias if direct lookup fails
+  const topicKey = (window.VINCULUMcra?.resolveTopicInDB)
+    ? VINCULUMcra.resolveTopicInDB(S.topic, DOK_PROBLEMS) || S.topic
+    : S.topic;
+  const data = DOK_PROBLEMS[topicKey];
   if (!data) return;
-  (data.dok1||[]).forEach(p => S.allProbs.push({...p, dok:1}));
-  (data.dok2||[]).forEach(p => S.allProbs.push({...p, dok:2}));
-  (data.dok3||[]).forEach(p => S.allProbs.push({...p, dok:3}));
+
+  const craOn = document.getElementById('chkCRA')?.checked;
+  if (craOn && window.VINCULUMcra) {
+    const dokFilter = [1, 2, 3];
+    S.allProbs = VINCULUMcra.selectProblemsWithBias(S.topic, S.grade, 30, dokFilter, DOK_PROBLEMS);
+  } else {
+    (data.dok1||[]).forEach(p => S.allProbs.push({...p, dok:1}));
+    (data.dok2||[]).forEach(p => S.allProbs.push({...p, dok:2}));
+    (data.dok3||[]).forEach(p => S.allProbs.push({...p, dok:3}));
+  }
+}
+
+function toggleCRA() {
+  const on = document.getElementById('chkCRA').checked;
+  document.getElementById('diagramSection').style.display = on ? 'block' : 'none';
+  document.getElementById('teacherPanel').style.display = on ? 'block' : 'none';
+  if (S.topic) {
+    buildProbList();
+    renderPreview();
+    if (on) updateCRAVisuals();
+  }
+}
+
+function updateCRAVisuals() {
+  if (!window.VINCULUMcra || !S.topic) return;
+  // Render teacher panel
+  VINCULUMcra.renderTeacherPanel('teacherPanelContent', S.topic, S.grade, S.allProbs);
+  // Render diagram for current problem
+  renderDiagramForProblem();
+}
+
+function renderDiagramForProblem() {
+  if (!window.VINCULUMcra || !S.allProbs.length) return;
+  const canvas = document.getElementById('diagramCanvas');
+  if (!canvas) return;
+  const p = S.allProbs[S.probIdx];
+  const detected = VINCULUMcra.detectDiagramParams(p, S.topic);
+  if (detected) {
+    VINCULUMcra.Diagram.render(canvas, detected.type, detected.params, 'neon');
+  } else {
+    // Clear canvas with topic-default diagram
+    const manip = VINCULUMcra.MANIPULATIVE_MAP[S.topic];
+    if (manip && manip.diagram) {
+      VINCULUMcra.Diagram.render(canvas, manip.diagram, {}, 'neon');
+    }
+  }
 }
 
 function renderPreview() {
@@ -1130,7 +1195,11 @@ function renderPreview() {
   document.getElementById('prevTitle').textContent = S.topic.charAt(0).toUpperCase() + S.topic.slice(1);
   document.getElementById('prevSub').textContent = 'Grade ' + S.grade + '  |  ' + benchmarks.join(', ');
   const dokEl = document.getElementById('prevDok');
-  dokEl.textContent = 'DOK ' + p.dok;
+  const craOn = document.getElementById('chkCRA')?.checked;
+  let dokText = 'DOK ' + p.dok;
+  if (craOn && p.craStage) dokText += ' | ' + (p.craStage==='C'?'Concrete':p.craStage==='R'?'Repres.':'Abstract');
+  if (craOn && p.source === 'prereq') dokText += ' | PREREQ';
+  dokEl.textContent = dokText;
   dokEl.className = 'preview-dok dk' + p.dok;
   document.getElementById('prevStem').textContent = p.stem;
   document.getElementById('prevHint').textContent = p.hint ? 'Hint: ' + p.hint : '';
@@ -1140,8 +1209,8 @@ function renderPreview() {
   document.getElementById('prevCounter').textContent = `Problem ${S.probIdx + 1} of ${S.allProbs.length}`;
 }
 
-function prevProb() { S.probIdx = (S.probIdx - 1 + S.allProbs.length) % S.allProbs.length; S.showAns = false; renderPreview(); }
-function nextProb() { S.probIdx = (S.probIdx + 1) % S.allProbs.length; S.showAns = false; renderPreview(); }
+function prevProb() { S.probIdx = (S.probIdx - 1 + S.allProbs.length) % S.allProbs.length; S.showAns = false; renderPreview(); if (document.getElementById('chkCRA')?.checked) renderDiagramForProblem(); }
+function nextProb() { S.probIdx = (S.probIdx + 1) % S.allProbs.length; S.showAns = false; renderPreview(); if (document.getElementById('chkCRA')?.checked) renderDiagramForProblem(); }
 function toggleAnswer() { S.showAns = !S.showAns; renderPreview(); }
 function setGrid(n) { S.gridDensity = n; document.querySelectorAll('.grid-btn').forEach(b => b.classList.toggle('active', b.dataset.grid == n)); }
 
@@ -1161,6 +1230,7 @@ function generatePDF() {
   let probs = S.allProbs.filter(p => dokFilter.includes(p.dok));
   if (!probs.length) return alert('No problems match selected DOK levels.');
 
+  const craMode = document.getElementById('chkCRA')?.checked && window.VINCULUMcra;
   const benchmarks = BENCHMARK_TOPIC_MAP[S.grade]?.[S.topic] || [];
   const topicTitle = S.topic.charAt(0).toUpperCase() + S.topic.slice(1);
   const { jsPDF } = window.jspdf;
@@ -1331,6 +1401,26 @@ function generatePDF() {
       pdf.setFont('helvetica','bold');
       pdf.text('DOK '+prob.dok, x+cellW-38, y+13);
 
+      // CRA stage badge (if CRA mode)
+      if (craMode && prob.craStage) {
+        const craC = {C:[16,185,129], R:[0,212,255], A:[188,19,254]};
+        const cc = craC[prob.craStage]||[100,100,100];
+        pdf.setFillColor(cc[0],cc[1],cc[2]);
+        pdf.roundedRect(x+cellW-42, y+20, 38, 14, 3, 3, 'F');
+        pdf.setFontSize(7);
+        pdf.setTextColor(255,255,255);
+        pdf.text(prob.craStage==='C'?'Concrete':prob.craStage==='R'?'Repres.':'Abstract', x+cellW-40, y+29);
+      }
+
+      // Prereq badge
+      if (craMode && prob.source === 'prereq') {
+        pdf.setFillColor(253,224,71);
+        pdf.roundedRect(x+4, y+cellH-20, 44, 12, 3, 3, 'F');
+        pdf.setFontSize(6);
+        pdf.setTextColor(60,50,0);
+        pdf.text('PREREQ', x+8, y+cellH-12);
+      }
+
       // Benchmark badge (first one)
       const bms = BENCHMARK_TOPIC_MAP[S.grade]?.[S.topic]||[];
       if (bms.length) {
@@ -1407,6 +1497,94 @@ function generatePDF() {
     pdf.text('VINCULUM Math Solutions  |  Answer Key', M, H-20);
   }
 
+  // ── Teacher Notes Page (CRA mode) ──
+  if (craMode) {
+    pdf.addPage();
+    pdf.setFillColor(16,185,129);
+    pdf.rect(0,0,W,50,'F');
+    pdf.setFont('helvetica','bold');
+    pdf.setFontSize(14);
+    pdf.setTextColor(255,255,255);
+    pdf.text('Teacher Intervention Notes — CRA Scaffolding', M, 32);
+
+    let y = 75;
+    const manip = VINCULUMcra.MANIPULATIVE_MAP[S.topic] || {};
+    const chain = VINCULUMcra.PREREQUISITE_CHAINS[S.topic];
+
+    // CRA Distribution
+    const craCounts = {C:0, R:0, A:0};
+    const prereqCount = probs.filter(p => p.source==='prereq').length;
+    const dok1Count = probs.filter(p => p.dok===1).length;
+    probs.forEach(p => { if (p.craStage) craCounts[p.craStage]++; });
+
+    pdf.setFont('helvetica','bold'); pdf.setFontSize(12); pdf.setTextColor(30,39,97);
+    pdf.text('CRA DISTRIBUTION', M, y); y += 16;
+    pdf.setFont('helvetica','normal'); pdf.setFontSize(10); pdf.setTextColor(60,60,60);
+    pdf.text('Concrete: ' + craCounts.C + '  |  Representational: ' + craCounts.R + '  |  Abstract: ' + craCounts.A, M, y); y += 14;
+    pdf.text('DOK 1 problems: ' + dok1Count + '/' + probs.length + ' (' + Math.round(dok1Count/probs.length*100) + '%)', M, y); y += 14;
+    pdf.text('Prerequisite problems: ' + prereqCount + '/' + probs.length + ' (' + Math.round(prereqCount/probs.length*100) + '%)', M, y); y += 24;
+
+    // Prerequisite Gap Check
+    if (chain) {
+      pdf.setFont('helvetica','bold'); pdf.setFontSize(12); pdf.setTextColor(30,39,97);
+      pdf.text('PREREQUISITE GAP CHECK', M, y); y += 16;
+      pdf.setFont('helvetica','normal'); pdf.setFontSize(10); pdf.setTextColor(60,60,60);
+      pdf.text('Testing prior knowledge from Grade ' + chain.prereqGrade + ':', M, y); y += 14;
+      chain.prereqTopics.forEach(pt => {
+        pdf.text('\u2022 ' + pt.charAt(0).toUpperCase() + pt.slice(1), M+10, y); y += 13;
+      });
+      pdf.setFont('helvetica','italic'); pdf.setFontSize(9); pdf.setTextColor(120,120,120);
+      pdf.text('If students miss prerequisite problems, revisit these skills before advancing.', M, y); y += 20;
+    }
+
+    // Manipulatives
+    pdf.setFont('helvetica','bold'); pdf.setFontSize(12); pdf.setTextColor(30,39,97);
+    pdf.text('SUGGESTED MANIPULATIVES', M, y); y += 16;
+    pdf.setFont('helvetica','normal'); pdf.setFontSize(10); pdf.setTextColor(60,60,60);
+    if (manip.physical) {
+      pdf.text('Physical: ' + manip.physical.join(', '), M, y); y += 14;
+    }
+
+    // CRA Intervention Strategies
+    y += 10;
+    pdf.setFont('helvetica','bold'); pdf.setFontSize(12); pdf.setTextColor(30,39,97);
+    pdf.text('CRA INTERVENTION STRATEGIES', M, y); y += 16;
+    if (manip.interventions) {
+      const stageNames = {C:'Concrete', R:'Representational', A:'Abstract'};
+      Object.entries(manip.interventions).forEach(([stage, text]) => {
+        pdf.setFont('helvetica','bold'); pdf.setFontSize(10); pdf.setTextColor(30,39,97);
+        pdf.text('[' + stageNames[stage] + ']', M, y);
+        pdf.setFont('helvetica','normal'); pdf.setTextColor(60,60,60);
+        const lines = pdf.splitTextToSize(text, CW - 80);
+        pdf.text(lines, M + 80, y);
+        y += lines.length * 13 + 6;
+      });
+    }
+
+    // Diagram on teacher page
+    y += 20;
+    const diagCanvas = document.createElement('canvas');
+    diagCanvas.width = 400; diagCanvas.height = 280;
+    const detected = VINCULUMcra.detectDiagramParams(probs[0] || {}, S.topic);
+    const diagType = detected ? detected.type : (manip.diagram || null);
+    const diagParams = detected ? detected.params : {};
+    if (diagType) {
+      VINCULUMcra.Diagram.render(diagCanvas, diagType, diagParams, 'print');
+      try {
+        const imgData = diagCanvas.toDataURL('image/png');
+        const imgW = 300, imgH = 210;
+        if (y + imgH > H - 40) { pdf.addPage(); y = 50; }
+        pdf.addImage(imgData, 'PNG', M, y, imgW, imgH);
+        y += imgH + 10;
+        pdf.setFont('helvetica','italic'); pdf.setFontSize(8); pdf.setTextColor(120,120,120);
+        pdf.text('Sample diagram — ' + diagType + ' visualization for this topic', M, y);
+      } catch(e) { /* canvas security */ }
+    }
+
+    pdf.setFontSize(7); pdf.setTextColor(150,150,150);
+    pdf.text('VINCULUM Math Solutions  |  CRA Teacher Notes  |  Drummond Math Solutions', M, H-20);
+  }
+
   pdf.save('worksheet-' + S.topic.replace(/\s+/g,'-') + '-grade' + S.grade + '.pdf');
 }
 
@@ -1441,6 +1619,7 @@ selectTopic = function(topic) {
   _origSelectTopic(topic);
   const scrubber = document.getElementById('stepScrubber');
   if (scrubber) { scrubber.style.display = 'flex'; document.getElementById('explodeSlider').value = 1; explodeStep(1); }
+  if (document.getElementById('chkCRA')?.checked) updateCRAVisuals();
 };
 
 document.addEventListener('DOMContentLoaded', init);

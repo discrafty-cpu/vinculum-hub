@@ -5,6 +5,8 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Quiz Builder — VINCULUM Hub</title>
 <link href="https://fonts.googleapis.com/css2?family=Fira+Code:wght@400;600&family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script src="shared/vinculum-cra.js?v=5"></script>
 <style>
 :root {
   --neon:#00f2ff; --bg:#050507; --bg2:rgba(10,10,15,0.98); --card:rgba(10,10,15,0.98);
@@ -133,7 +135,24 @@ body{font-family:'Inter',system-ui,sans-serif;background:var(--bg);color:var(--t
       <span class="config-label">Quiz Title</span>
       <input type="text" class="num-input" id="quizTitle" value="" placeholder="Auto-generated" style="width:280px;text-align:left;">
     </div>
+    <div class="config-row" style="margin-top:8px;padding-top:12px;border-top:1px solid var(--border);">
+      <span class="config-label" style="color:var(--green);">CRA Mode</span>
+      <label class="chk-label"><input type="checkbox" id="chkCRA"> Prerequisite Bias &amp; CRA Scaffolding</label>
+    </div>
     <button class="btn-build" onclick="buildQuiz()">Build Quiz</button>
+  </div>
+
+  <!-- Diagram Preview (CRA) -->
+  <div id="diagramSection" style="display:none;margin-bottom:20px;">
+    <div style="background:var(--card);border:1px solid var(--border);border-radius:12px;padding:20px;backdrop-filter:blur(20px);">
+      <div style="font-family:'Fira Code',monospace;font-size:9px;color:var(--neon);font-weight:700;text-transform:uppercase;letter-spacing:0.3em;margin-bottom:12px;">VIRTUAL MANIPULATIVE</div>
+      <canvas id="diagramCanvas" width="400" height="280" style="width:100%;max-width:400px;border:1px solid var(--border);border-radius:8px;background:var(--bg);"></canvas>
+    </div>
+  </div>
+
+  <!-- Teacher Panel (CRA) -->
+  <div id="teacherPanel" style="display:none;margin-bottom:20px;">
+    <div id="teacherPanelContent" style="background:var(--card);border:1px solid var(--border);border-radius:12px;padding:20px;backdrop-filter:blur(20px);"></div>
   </div>
 
   <div class="quiz-preview" id="quizPreview">
@@ -145,6 +164,7 @@ body{font-family:'Inter',system-ui,sans-serif;background:var(--bg);color:var(--t
     <h3>Export Quiz</h3>
     <div class="export-btns">
       <button class="ex-btn primary" onclick="showGoogleScript()">Google Forms Script</button>
+      <button class="ex-btn" onclick="exportPDF()">Printable PDF + Key</button>
       <button class="ex-btn" onclick="exportCSV()">CSV Download</button>
       <button class="ex-btn" onclick="exportJSON()">JSON Download</button>
     </div>
@@ -153,12 +173,18 @@ body{font-family:'Inter',system-ui,sans-serif;background:var(--bg);color:var(--t
       <textarea id="scriptArea" readonly></textarea>
     </div>
     <div class="instructions" id="instructions" style="display:none;">
-      <strong>How to create your Google Form:</strong>
+      <strong>How to create your Google Form + Grading Spreadsheet:</strong>
       <ol>
         <li>Go to <strong>script.google.com</strong> and click <strong>New Project</strong></li>
         <li>Delete the default code and <strong>paste the copied script</strong></li>
         <li>Click <strong>Run</strong> (play button). Authorize when prompted.</li>
-        <li>Your quiz form will appear in Google Drive — ready to share!</li>
+        <li>Two items appear in your Google Drive:
+          <ul style="margin-top:4px;font-size:11px;">
+            <li><strong>Quiz Form</strong> — auto-grading, requires student email + name + period</li>
+            <li><strong>Responses Spreadsheet</strong> — live grading dashboard with answer key, DOK analysis, class stats</li>
+          </ul>
+        </li>
+        <li>Share the <strong>form link</strong> with students. Results auto-populate the spreadsheet.</li>
       </ol>
     </div>
   </div>
@@ -360,34 +386,42 @@ function selectTopic(topic) {
 //  BUILD QUIZ
 // ═══════════════════════════════════════════════════════════
 function buildQuiz() {
-  const data = DOK_PROBLEMS[S.topic];
+  const topicKey = (window.VINCULUMcra?.resolveTopicInDB)
+    ? VINCULUMcra.resolveTopicInDB(S.topic, DOK_PROBLEMS) || S.topic
+    : S.topic;
+  const data = DOK_PROBLEMS[topicKey];
   if (!data) return alert('No problems available for this topic.');
 
   const numQ = parseInt(document.getElementById('numQ').value) || 10;
   const numChoices = parseInt(document.getElementById('numChoices').value) || 4;
+  const craOn = document.getElementById('chkCRA')?.checked && window.VINCULUMcra;
   const dokFilter = [];
   if (document.getElementById('chkD1').checked) dokFilter.push('dok1');
   if (document.getElementById('chkD2').checked) dokFilter.push('dok2');
   if (document.getElementById('chkD3').checked) dokFilter.push('dok3');
 
-  // Collect eligible problems
   let pool = [];
-  dokFilter.forEach(dk => {
-    const level = dk === 'dok1' ? 1 : dk === 'dok2' ? 2 : 3;
-    (data[dk] || []).forEach(p => pool.push({ ...p, dok: level }));
-  });
+  if (craOn) {
+    // Use bias algorithm: 50% prereq DOK1 + 50% current DOK1
+    const dokNums = dokFilter.map(dk => dk === 'dok1' ? 1 : dk === 'dok2' ? 2 : 3);
+    pool = VINCULUMcra.selectProblemsWithBias(S.topic, S.grade, numQ, dokNums, DOK_PROBLEMS);
+  } else {
+    dokFilter.forEach(dk => {
+      const level = dk === 'dok1' ? 1 : dk === 'dok2' ? 2 : 3;
+      (data[dk] || []).forEach(p => pool.push({ ...p, dok: level }));
+    });
+  }
 
   if (pool.length === 0) return alert('No problems match selected DOK levels.');
 
   // Collect all answers for distractor generation
   const allAnswers = pool.map(p => truncAnswer(p.answer));
 
-  // Shuffle and select
-  shuffle(pool);
-  const selected = pool.slice(0, Math.min(numQ, pool.length));
+  // Shuffle and select (CRA mode already limits count)
+  if (!craOn) { shuffle(pool); pool = pool.slice(0, Math.min(numQ, pool.length)); }
 
   // Generate multiple choice for each
-  S.quiz = selected.map((p, i) => {
+  S.quiz = pool.map((p, i) => {
     const correctShort = truncAnswer(p.answer);
     const distractors = generateDistractors(correctShort, numChoices - 1, allAnswers);
     const choices = shuffle([correctShort, ...distractors]);
@@ -400,7 +434,11 @@ function buildQuiz() {
       correctAnswer: correctShort,
       fullAnswer: p.answer,
       dok: p.dok,
-      hint: p.hint
+      hint: p.hint,
+      craStage: p.craStage || null,
+      source: p.source || 'current',
+      sourceTopic: p.sourceTopic || S.topic,
+      sourceGrade: p.sourceGrade || S.grade
     };
   });
 
@@ -408,6 +446,23 @@ function buildQuiz() {
   document.getElementById('quizPreview').classList.add('open');
   document.getElementById('exportPanel').classList.add('open');
   document.getElementById('quizPreview').scrollIntoView({behavior:'smooth',block:'start'});
+
+  // Show CRA panels
+  if (craOn) {
+    document.getElementById('diagramSection').style.display = 'block';
+    document.getElementById('teacherPanel').style.display = 'block';
+    VINCULUMcra.renderTeacherPanel('teacherPanelContent', S.topic, S.grade, S.quiz);
+    // Render diagram
+    const canvas = document.getElementById('diagramCanvas');
+    const manip = VINCULUMcra.MANIPULATIVE_MAP[S.topic];
+    if (canvas && manip && manip.diagram) {
+      const detected = VINCULUMcra.detectDiagramParams(S.quiz[0] || {}, S.topic);
+      VINCULUMcra.Diagram.render(canvas, detected ? detected.type : manip.diagram, detected ? detected.params : {}, 'neon');
+    }
+  } else {
+    document.getElementById('diagramSection').style.display = 'none';
+    document.getElementById('teacherPanel').style.display = 'none';
+  }
 }
 
 function renderPreview() {
@@ -416,9 +471,12 @@ function renderPreview() {
   document.getElementById('previewTitle').textContent = 'Quiz Preview: ' + title + ' (' + S.quiz.length + ' questions)';
 
   const letters = 'ABCDEFGHIJ';
+  const craOn = document.getElementById('chkCRA')?.checked;
   document.getElementById('previewBody').innerHTML = S.quiz.map(q => `
     <div class="q-item">
-      <div class="q-num">Question ${q.num} <span class="q-dok dk${q.dok}">DOK ${q.dok}</span></div>
+      <div class="q-num">Question ${q.num} <span class="q-dok dk${q.dok}">DOK ${q.dok}</span>${
+        craOn && q.craStage ? ` <span style="padding:2px 8px;border-radius:4px;font-size:10px;font-weight:700;background:${q.craStage==='C'?'rgba(16,185,129,0.15)':q.craStage==='R'?'rgba(0,212,255,0.15)':'rgba(188,19,254,0.15)'};color:${q.craStage==='C'?'var(--green)':q.craStage==='R'?'var(--cyan)':'var(--accent)'};">${q.craStage==='C'?'Concrete':q.craStage==='R'?'Representational':'Abstract'}</span>` : ''
+      }${craOn && q.source==='prereq' ? ' <span style="padding:2px 8px;border-radius:4px;font-size:10px;font-weight:700;background:rgba(253,224,71,0.15);color:var(--yellow);">PREREQ</span>' : ''}</div>
       <div class="q-stem">${q.stem}</div>
       <div class="q-choices">
         ${q.choices.map((c, i) => `<div class="q-choice ${i === q.correctIdx ? 'correct' : ''}">${letters[i]}. ${c}</div>`).join('')}
@@ -436,25 +494,66 @@ function showGoogleScript() {
   const benchmarks = BENCHMARK_TOPIC_MAP[S.grade]?.[S.topic] || [];
   const letters = 'ABCDEFGHIJ';
 
+  const totalPoints = S.quiz.reduce((sum, q) => sum + q.dok, 0);
+
   let script = `// ═══════════════════════════════════════════════════════════
-// VINCULUM Quiz Builder — Google Forms Auto-Generator
+// VINCULUM Quiz Builder — Google Forms + Spreadsheet Generator
 // Grade ${S.grade} | ${S.topic.charAt(0).toUpperCase() + S.topic.slice(1)}
 // Generated: ${new Date().toLocaleDateString()}
+// Total Points: ${totalPoints} | Questions: ${S.quiz.length}
+// ═══════════════════════════════════════════════════════════
+// INSTRUCTIONS:
+// 1. Go to script.google.com → New Project
+// 2. Paste this script, click Run
+// 3. Authorize when prompted (Google will ask for permissions)
+// 4. A quiz form + linked grading spreadsheet will be created in your Drive
 // ═══════════════════════════════════════════════════════════
 
 function createVINCULUMQuiz() {
+  // ── CREATE FORM ──
   var form = FormApp.create('${title.replace(/'/g, "\\'")}');
   form.setIsQuiz(true);
-  form.setDescription('VINCULUM Math Solutions — Grade ${S.grade}\\nTopic: ${S.topic.charAt(0).toUpperCase() + S.topic.slice(1)}\\nBenchmarks: ${benchmarks.join(", ")}\\n\\nGenerated by VINCULUM Quiz Builder | Drummond Math Solutions');
+  form.setCollectEmail(true);
+  form.setLimitOneResponsePerUser(true);
+  form.setShowLinkToRespondAgain(false);
+  form.setConfirmationMessage('Your quiz has been submitted! Your teacher will review results in VINCULUM Hub.');
+  form.setDescription('VINCULUM Math Solutions — Grade ${S.grade}\\nTopic: ${S.topic.charAt(0).toUpperCase() + S.topic.slice(1)}\\nBenchmarks: ${benchmarks.join(", ")}\\nTotal Points: ${totalPoints}\\n\\nGenerated by VINCULUM Quiz Builder | Drummond Math Solutions');
+
+  // ── ADD NAME FIELD (required) ──
+  var nameItem = form.addTextItem();
+  nameItem.setTitle('Student Name (First Last)');
+  nameItem.setRequired(true);
+  nameItem.setHelpText('Enter your full name as it appears on your class roster.');
+
+  // ── ADD PERIOD/SECTION (optional) ──
+  var periodItem = form.addMultipleChoiceItem();
+  periodItem.setTitle('Class Period');
+  periodItem.setRequired(true);
+  periodItem.setChoices([
+    periodItem.createChoice('Period 1'),
+    periodItem.createChoice('Period 2'),
+    periodItem.createChoice('Period 3'),
+    periodItem.createChoice('Period 4'),
+    periodItem.createChoice('Period 5'),
+    periodItem.createChoice('Period 6'),
+    periodItem.createChoice('Period 7'),
+    periodItem.createChoice('Period 8')
+  ]);
+
+  // ── ADD SECTION BREAK ──
+  form.addPageBreakItem().setTitle('Quiz Questions').setHelpText('Answer all questions. Each question is worth its DOK level in points.');
 
 `;
 
+  const craOn = document.getElementById('chkCRA')?.checked;
   S.quiz.forEach(q => {
     const escapedStem = q.stem.replace(/'/g, "\\'").replace(/\n/g, '\\n');
-    script += `  // Question ${q.num} (DOK ${q.dok})
+    const craInfo = craOn && q.craStage ? ` | CRA: ${q.craStage==='C'?'Concrete':q.craStage==='R'?'Representational':'Abstract'}${q.source==='prereq'?' [PREREQ: '+q.sourceTopic+']':''}` : '';
+    script += `  // Question ${q.num} (DOK ${q.dok}${craInfo})
   var q${q.num} = form.addMultipleChoiceItem();
   q${q.num}.setTitle('${escapedStem}');
-  q${q.num}.setPoints(${q.dok}); // DOK level as point value
+  q${q.num}.setPoints(${q.dok});
+  q${q.num}.setRequired(true);${q.hint ? `\n  q${q.num}.setHelpText('Hint: ${q.hint.replace(/'/g, "\\'")}');` : ''}
   q${q.num}.setChoices([
 `;
     q.choices.forEach((c, i) => {
@@ -464,18 +563,104 @@ function createVINCULUMQuiz() {
 `;
     });
     script += `  ]);
+  q${q.num}.setFeedbackForCorrect(FormApp.createFeedback().setText('Correct!').build());
+  q${q.num}.setFeedbackForIncorrect(FormApp.createFeedback().setText('Review: ${q.hint ? q.hint.replace(/'/g, "\\'") : 'Check your work and try again.'}').build());
 
 `;
   });
 
-  script += `  // Log the form URL
-  Logger.log('Quiz created: ' + form.getEditUrl());
-  Logger.log('Share link: ' + form.getPublishedUrl());
+  script += `  // ── LINK RESPONSE SPREADSHEET ──
+  var ss = SpreadsheetApp.create('${title.replace(/'/g, "\\'")} — Responses');
+  form.setDestination(FormApp.DestinationType.SPREADSHEET, ss.getId());
 
-  // Optional: Move to a specific folder
-  // DriveApp.getFileById(form.getId()).moveTo(DriveApp.getFolderById('YOUR_FOLDER_ID'));
+  // Wait for form responses sheet to be created
+  SpreadsheetApp.flush();
+  Utilities.sleep(2000);
 
-  SpreadsheetApp.getUi().alert('Quiz created!\\n\\nEdit: ' + form.getEditUrl() + '\\n\\nShare: ' + form.getPublishedUrl());
+  // ── BUILD GRADING DASHBOARD ──
+  var dashSheet = ss.insertSheet('Grading Dashboard');
+
+  // Header row
+  dashSheet.getRange('A1').setValue('VINCULUM Quiz Grading Dashboard');
+  dashSheet.getRange('A1').setFontSize(14).setFontWeight('bold').setFontColor('#1e2761');
+  dashSheet.getRange('A2').setValue('${title.replace(/'/g, "\\'")}');
+  dashSheet.getRange('A3').setValue('Grade ${S.grade} | ${S.topic.charAt(0).toUpperCase() + S.topic.slice(1)} | ${benchmarks.join(", ")}');
+  dashSheet.getRange('A4').setValue('Total Points: ${totalPoints} | Questions: ${S.quiz.length}');
+  dashSheet.getRange('A3:A4').setFontColor('#666666').setFontSize(10);
+
+  // Summary stats section
+  dashSheet.getRange('A6').setValue('CLASS SUMMARY').setFontWeight('bold').setFontColor('#1e2761');
+  dashSheet.getRange('A7').setValue('Total Responses:');
+  dashSheet.getRange('B7').setFormula('=COUNTA(\'Form Responses 1\'!B:B)-1');
+  dashSheet.getRange('A8').setValue('Class Average (%):');
+  dashSheet.getRange('B8').setFormula('=IFERROR(ROUND(AVERAGE(\'Form Responses 1\'!C:C)/${totalPoints}*100,1),"No data")');
+  dashSheet.getRange('A9').setValue('Highest Score:');
+  dashSheet.getRange('B9').setFormula('=IFERROR(MAX(\'Form Responses 1\'!C:C),"No data")');
+  dashSheet.getRange('A10').setValue('Lowest Score:');
+  dashSheet.getRange('B10').setFormula('=IFERROR(MIN(\'Form Responses 1\'!C:C),"No data")');
+
+  // DOK breakdown
+  dashSheet.getRange('A12').setValue('DOK ANALYSIS').setFontWeight('bold').setFontColor('#1e2761');
+  dashSheet.getRange('A13').setValue('DOK 1 Questions: ${S.quiz.filter(q=>q.dok===1).length}');
+  dashSheet.getRange('A14').setValue('DOK 2 Questions: ${S.quiz.filter(q=>q.dok===2).length}');
+  dashSheet.getRange('A15').setValue('DOK 3 Questions: ${S.quiz.filter(q=>q.dok===3).length}');
+${craOn ? `
+  // CRA breakdown
+  dashSheet.getRange('A17').setValue('CRA SCAFFOLDING').setFontWeight('bold').setFontColor('#1e2761');
+  dashSheet.getRange('A18').setValue('Prerequisite Problems: ${S.quiz.filter(q=>q.source==='prereq').length}/${S.quiz.length}');
+  dashSheet.getRange('A19').setValue('Prerequisite Topics: ${[...new Set(S.quiz.filter(q=>q.source==='prereq').map(q=>q.sourceTopic))].join(", ")}');
+  dashSheet.getRange('A20').setValue('If students miss prereq items, revisit foundational skills before advancing.');
+  dashSheet.getRange('A20').setFontStyle('italic').setFontColor('#999999');
+` : ''}
+  // Answer key section
+  var keyRow = ${craOn ? 22 : 17};
+  dashSheet.getRange('A' + keyRow).setValue('ANSWER KEY').setFontWeight('bold').setFontColor('#1e2761');
+  keyRow++;
+  dashSheet.getRange('A' + keyRow).setValue('Q#');
+  dashSheet.getRange('B' + keyRow).setValue('Correct');
+  dashSheet.getRange('C' + keyRow).setValue('DOK');
+  dashSheet.getRange('D' + keyRow).setValue('Points');
+${craOn ? `  dashSheet.getRange('E' + keyRow).setValue('CRA');
+  dashSheet.getRange('F' + keyRow).setValue('Source');
+` : ''}  dashSheet.getRange('A' + keyRow + ':${craOn ? 'F' : 'D'}' + keyRow).setFontWeight('bold').setBackground('#e8f0fe');
+  keyRow++;
+`;
+
+  S.quiz.forEach(q => {
+    script += `  dashSheet.getRange('A' + keyRow).setValue(${q.num});
+  dashSheet.getRange('B' + keyRow).setValue('${letters[q.correctIdx]}');
+  dashSheet.getRange('C' + keyRow).setValue(${q.dok});
+  dashSheet.getRange('D' + keyRow).setValue(${q.dok});
+`;
+    if (craOn) {
+      script += `  dashSheet.getRange('E' + keyRow).setValue('${q.craStage || ''}');
+  dashSheet.getRange('F' + keyRow).setValue('${q.source === 'prereq' ? 'PREREQ' : 'Current'}');
+`;
+    }
+    script += `  keyRow++;
+`;
+  });
+
+  script += `
+  // Auto-size columns
+  dashSheet.autoResizeColumns(1, 6);
+
+  // ── OUTPUT LINKS ──
+  var formUrl = form.getPublishedUrl();
+  var editUrl = form.getEditUrl();
+  var ssUrl = ss.getUrl();
+
+  Logger.log('Form (share with students): ' + formUrl);
+  Logger.log('Form (edit): ' + editUrl);
+  Logger.log('Responses spreadsheet: ' + ssUrl);
+
+  SpreadsheetApp.getUi().alert(
+    'VINCULUM Quiz Created!\\n\\n' +
+    'Share with students:\\n' + formUrl + '\\n\\n' +
+    'View responses:\\n' + ssUrl + '\\n\\n' +
+    'Students must sign in with email and enter their name.\\n' +
+    'Responses auto-grade and appear in the linked spreadsheet.'
+  );
 }
 `;
 
@@ -503,17 +688,22 @@ function copyScript() {
 function exportCSV() {
   const letters = 'ABCDEFGHIJ';
   const title = document.getElementById('quizTitle').value || S.topic + ' Quiz';
+  const craOn = document.getElementById('chkCRA')?.checked;
   let csv = 'Question,';
   const numC = S.quiz[0]?.choices.length || 4;
   for (let i = 0; i < numC; i++) csv += letters[i] + ',';
-  csv += 'Correct Answer,DOK Level\n';
+  csv += 'Correct Answer,DOK Level';
+  if (craOn) csv += ',CRA Stage,Source,Source Topic';
+  csv += '\n';
 
   S.quiz.forEach(q => {
     const escapeCsv = s => '"' + String(s).replace(/"/g, '""') + '"';
     csv += escapeCsv(q.stem) + ',';
     q.choices.forEach(c => { csv += escapeCsv(c) + ','; });
     csv += escapeCsv(letters[q.correctIdx]) + ',';
-    csv += q.dok + '\n';
+    csv += q.dok;
+    if (craOn) csv += ',' + (q.craStage||'') + ',' + (q.source||'') + ',' + (q.sourceTopic||'');
+    csv += '\n';
   });
 
   downloadFile(csv, title.replace(/\s+/g, '-') + '.csv', 'text/csv');
@@ -532,16 +722,300 @@ function exportJSON() {
     benchmarks: BENCHMARK_TOPIC_MAP[S.grade]?.[S.topic] || [],
     generated: new Date().toISOString(),
     generator: 'VINCULUM Quiz Builder | Drummond Math Solutions',
+    craMode: !!document.getElementById('chkCRA')?.checked,
     questions: S.quiz.map(q => ({
       number: q.num,
       stem: q.stem,
       choices: q.choices.map((c, i) => ({ label: letters[i], text: c, correct: i === q.correctIdx })),
       correctAnswer: q.fullAnswer,
       dok: q.dok,
-      hint: q.hint
+      hint: q.hint,
+      craStage: q.craStage || null,
+      source: q.source || 'current',
+      sourceTopic: q.sourceTopic || null,
+      sourceGrade: q.sourceGrade || null
     }))
   };
   downloadFile(JSON.stringify(data, null, 2), title.replace(/\s+/g, '-') + '.json', 'application/json');
+}
+
+// ═══════════════════════════════════════════════════════════
+//  EXPORT: PRINTABLE PDF + ANSWER KEY
+// ═══════════════════════════════════════════════════════════
+function exportPDF() {
+  if (!S.quiz.length) return alert('Build a quiz first.');
+  const title = document.getElementById('quizTitle').value ||
+    (S.topic.charAt(0).toUpperCase() + S.topic.slice(1) + ' — Grade ' + S.grade + ' Quiz');
+  const benchmarks = BENCHMARK_TOPIC_MAP[S.grade]?.[S.topic] || [];
+  const letters = 'ABCDEFGHIJ';
+  const craOn = document.getElementById('chkCRA')?.checked;
+  const { jsPDF } = window.jspdf;
+  const pdf = new jsPDF({unit:'pt',format:'letter'});
+  const W=612, H=792, M=45, CW=W-2*M;
+  const dokC = {1:[16,185,129], 2:[0,212,255], 3:[255,59,139]};
+
+  // ── QUIZ PAGES (student version) ──
+  // Header
+  pdf.setFillColor(30,39,97);
+  pdf.rect(0,0,W,65,'F');
+  pdf.setFillColor(0,212,255);
+  pdf.rect(0,63,W,3,'F');
+  pdf.setFont('helvetica','bold');
+  pdf.setFontSize(18);
+  pdf.setTextColor(255,255,255);
+  pdf.text(title, M, 30);
+  pdf.setFontSize(9);
+  pdf.setTextColor(200,220,255);
+  pdf.text('Grade ' + S.grade + '  |  ' + benchmarks.join(', ') + '  |  ' + S.quiz.length + ' questions', M, 48);
+
+  // Name/Period fields
+  let y = 85;
+  pdf.setFontSize(10);
+  pdf.setTextColor(30,30,30);
+  pdf.setFont('helvetica','bold');
+  pdf.text('Name: ________________________________', M, y);
+  pdf.text('Period: _______  Date: __________', W - M - 200, y);
+  y += 10;
+  pdf.setDrawColor(200,210,225);
+  pdf.setLineWidth(0.5);
+  pdf.line(M, y, W-M, y);
+  y += 16;
+
+  // Directions
+  pdf.setFillColor(240,245,255);
+  pdf.roundedRect(M, y, CW, 28, 4, 4, 'F');
+  pdf.setFontSize(9);
+  pdf.setTextColor(30,39,97);
+  pdf.setFont('helvetica','bold');
+  pdf.text('DIRECTIONS:', M+8, y+12);
+  pdf.setFont('helvetica','normal');
+  pdf.setTextColor(50,50,50);
+  pdf.text('Choose the best answer for each question. Circle the letter of your choice.', M+80, y+12);
+  pdf.setTextColor(120,120,120);
+  pdf.setFontSize(8);
+  pdf.text('Each question is worth its DOK level in points. Total: ' + S.quiz.reduce((s,q)=>s+q.dok,0) + ' points', M+8, y+23);
+  y += 40;
+
+  // Questions
+  S.quiz.forEach((q, idx) => {
+    // Estimate height needed
+    const stemLines = pdf.splitTextToSize(q.stem, CW - 40);
+    const choiceHeight = Math.ceil(q.choices.length / 2) * 16;
+    const blockH = 20 + stemLines.length * 13 + choiceHeight + 16;
+
+    if (y + blockH > H - 50) {
+      pdf.addPage();
+      pdf.setFillColor(30,39,97);
+      pdf.rect(0,0,W,36,'F');
+      pdf.setFont('helvetica','bold');
+      pdf.setFontSize(10);
+      pdf.setTextColor(255,255,255);
+      pdf.text(title + ' (continued)', M, 24);
+      y = 52;
+    }
+
+    // Question number circle
+    pdf.setFillColor(30,39,97);
+    pdf.circle(M+10, y+7, 9, 'F');
+    pdf.setFontSize(9);
+    pdf.setTextColor(255,255,255);
+    pdf.setFont('helvetica','bold');
+    const numStr = String(q.num);
+    pdf.text(numStr, M+10-(numStr.length>1?4:2), y+10);
+
+    // DOK badge
+    const dc = dokC[q.dok]||[100,100,100];
+    pdf.setFillColor(dc[0],dc[1],dc[2]);
+    pdf.roundedRect(M+CW-38, y, 38, 14, 3, 3, 'F');
+    pdf.setFontSize(7);
+    pdf.setTextColor(255,255,255);
+    pdf.text('DOK '+q.dok, M+CW-34, y+10);
+
+    // CRA badge
+    if (craOn && q.craStage) {
+      const craC = {C:[16,185,129], R:[0,150,200], A:[140,20,220]};
+      const cc = craC[q.craStage]||[100,100,100];
+      pdf.setFillColor(cc[0],cc[1],cc[2]);
+      pdf.roundedRect(M+CW-80, y, 38, 14, 3, 3, 'F');
+      pdf.setFontSize(6);
+      pdf.setTextColor(255,255,255);
+      pdf.text(q.craStage==='C'?'Concrete':q.craStage==='R'?'Repres.':'Abstract', M+CW-78, y+10);
+    }
+    if (craOn && q.source === 'prereq') {
+      pdf.setFillColor(253,224,71);
+      pdf.roundedRect(M+24, y, 40, 14, 3, 3, 'F');
+      pdf.setFontSize(6);
+      pdf.setTextColor(60,50,0);
+      pdf.text('PREREQ', M+28, y+10);
+    }
+
+    y += 18;
+
+    // Stem
+    pdf.setFont('helvetica','normal');
+    pdf.setFontSize(10);
+    pdf.setTextColor(30,30,30);
+    pdf.text(stemLines, M+24, y);
+    y += stemLines.length * 13 + 6;
+
+    // Choices in 2 columns
+    const colW = (CW - 30) / 2;
+    q.choices.forEach((c, ci) => {
+      const col = ci % 2;
+      const row = Math.floor(ci / 2);
+      const cx = M + 24 + col * colW;
+      const cy = y + row * 16;
+      pdf.setFillColor(248,250,252);
+      pdf.roundedRect(cx, cy-8, colW-8, 14, 3, 3, 'F');
+      pdf.setFontSize(9);
+      pdf.setTextColor(50,50,50);
+      pdf.setFont('helvetica','normal');
+      const choiceText = letters[ci] + '. ' + c;
+      const truncated = choiceText.length > 50 ? choiceText.substring(0,47) + '...' : choiceText;
+      pdf.text(truncated, cx+4, cy+2);
+    });
+    y += Math.ceil(q.choices.length / 2) * 16 + 12;
+  });
+
+  // Footer on last quiz page
+  pdf.setFontSize(7);
+  pdf.setTextColor(150,150,150);
+  pdf.text('VINCULUM Math Solutions  |  Quiz  |  Drummond Math Solutions', M, H-20);
+  pdf.text('Name: ___________________________', W-M-170, H-20);
+
+  // ── ANSWER KEY PAGE ──
+  pdf.addPage();
+  pdf.setFillColor(16,185,129);
+  pdf.rect(0,0,W,55,'F');
+  pdf.setFillColor(0,212,255);
+  pdf.rect(0,53,W,3,'F');
+  pdf.setFont('helvetica','bold');
+  pdf.setFontSize(16);
+  pdf.setTextColor(255,255,255);
+  pdf.text(title + ' — Answer Key', M, 35);
+  pdf.setFontSize(9);
+  pdf.setTextColor(220,255,240);
+  pdf.text('TEACHER COPY — DO NOT DISTRIBUTE', M, 48);
+
+  y = 78;
+
+  // Stats box
+  pdf.setFillColor(240,248,255);
+  pdf.roundedRect(M, y, CW, 40, 6, 6, 'F');
+  pdf.setFontSize(10);
+  pdf.setTextColor(30,39,97);
+  pdf.setFont('helvetica','bold');
+  pdf.text('Total Points: ' + S.quiz.reduce((s,q)=>s+q.dok,0), M+10, y+14);
+  const d1c = S.quiz.filter(q=>q.dok===1).length, d2c = S.quiz.filter(q=>q.dok===2).length, d3c = S.quiz.filter(q=>q.dok===3).length;
+  pdf.setFont('helvetica','normal');
+  pdf.setFontSize(9);
+  pdf.text('DOK 1: ' + d1c + ' questions  |  DOK 2: ' + d2c + '  |  DOK 3: ' + d3c, M+10, y+28);
+  if (craOn) {
+    const pc = S.quiz.filter(q=>q.source==='prereq').length;
+    pdf.text('  |  Prereq: ' + pc + '/' + S.quiz.length + ' (' + Math.round(pc/S.quiz.length*100) + '%)', M+250, y+28);
+  }
+  y += 52;
+
+  // Answer table header
+  pdf.setFillColor(30,39,97);
+  pdf.roundedRect(M, y, CW, 18, 3, 3, 'F');
+  pdf.setFontSize(8);
+  pdf.setTextColor(255,255,255);
+  pdf.setFont('helvetica','bold');
+  pdf.text('Q#', M+8, y+12);
+  pdf.text('Answer', M+40, y+12);
+  pdf.text('DOK', M+90, y+12);
+  pdf.text('Pts', M+120, y+12);
+  pdf.text('Full Answer / Explanation', M+150, y+12);
+  if (craOn) { pdf.text('CRA', M+CW-70, y+12); pdf.text('Source', M+CW-35, y+12); }
+  y += 22;
+
+  // Answer rows
+  S.quiz.forEach((q, i) => {
+    if (y > H - 50) { pdf.addPage(); y = 50; }
+    const stripe = i % 2 === 0;
+    if (stripe) { pdf.setFillColor(248,250,252); pdf.rect(M, y-8, CW, 16, 'F'); }
+
+    pdf.setFont('helvetica','bold');
+    pdf.setFontSize(9);
+    pdf.setTextColor(30,39,97);
+    pdf.text(String(q.num), M+8, y+2);
+
+    // Correct letter in green
+    pdf.setTextColor(16,185,129);
+    pdf.setFont('helvetica','bold');
+    pdf.text(letters[q.correctIdx], M+44, y+2);
+
+    // DOK
+    pdf.setTextColor(80,80,80);
+    pdf.setFont('helvetica','normal');
+    pdf.text(String(q.dok), M+96, y+2);
+    pdf.text(String(q.dok), M+124, y+2);
+
+    // Full answer (truncated)
+    pdf.setFontSize(8);
+    const ansText = q.fullAnswer.length > 55 ? q.fullAnswer.substring(0,52) + '...' : q.fullAnswer;
+    pdf.text(ansText, M+150, y+2);
+
+    if (craOn) {
+      pdf.setFontSize(7);
+      pdf.text(q.craStage || '-', M+CW-66, y+2);
+      pdf.text(q.source === 'prereq' ? 'PRQ' : 'CUR', M+CW-32, y+2);
+    }
+    y += 16;
+  });
+
+  // CRA Teacher Notes on answer key (if enabled)
+  if (craOn && window.VINCULUMcra) {
+    y += 10;
+    if (y > H - 150) { pdf.addPage(); y = 50; }
+    const manip = VINCULUMcra.MANIPULATIVE_MAP[S.topic] || {};
+    const chain = VINCULUMcra.PREREQUISITE_CHAINS[S.topic];
+
+    pdf.setFont('helvetica','bold');
+    pdf.setFontSize(11);
+    pdf.setTextColor(30,39,97);
+    pdf.text('CRA INTERVENTION NOTES', M, y); y += 16;
+
+    if (chain) {
+      pdf.setFont('helvetica','normal');
+      pdf.setFontSize(9);
+      pdf.setTextColor(60,60,60);
+      pdf.text('Prerequisite topics tested (Grade ' + chain.prereqGrade + '):', M, y); y += 12;
+      chain.prereqTopics.forEach(pt => {
+        pdf.text('  \u2022 ' + pt.charAt(0).toUpperCase() + pt.slice(1), M, y); y += 11;
+      });
+      y += 4;
+    }
+
+    if (manip.physical) {
+      pdf.setFont('helvetica','bold');
+      pdf.text('Manipulatives: ', M, y);
+      pdf.setFont('helvetica','normal');
+      pdf.text(manip.physical.join(', '), M+75, y);
+      y += 14;
+    }
+
+    if (manip.interventions) {
+      const stageNames = {C:'Concrete', R:'Representational', A:'Abstract'};
+      Object.entries(manip.interventions).forEach(([stage, text]) => {
+        if (y > H - 40) { pdf.addPage(); y = 50; }
+        pdf.setFont('helvetica','bold'); pdf.setFontSize(9); pdf.setTextColor(30,39,97);
+        pdf.text('[' + stageNames[stage] + ']', M, y);
+        pdf.setFont('helvetica','normal'); pdf.setTextColor(60,60,60);
+        const lines = pdf.splitTextToSize(text, CW - 90);
+        pdf.text(lines, M + 90, y);
+        y += lines.length * 12 + 4;
+      });
+    }
+  }
+
+  // Footer
+  pdf.setFontSize(7);
+  pdf.setTextColor(150,150,150);
+  pdf.text('VINCULUM Math Solutions  |  Answer Key  |  TEACHER COPY  |  Drummond Math Solutions', M, H-20);
+
+  pdf.save('quiz-' + S.topic.replace(/\s+/g,'-') + '-grade' + S.grade + '.pdf');
 }
 
 function downloadFile(content, filename, type) {
