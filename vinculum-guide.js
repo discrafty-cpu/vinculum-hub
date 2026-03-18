@@ -489,13 +489,14 @@
 
       /* Push main content right when panel is open */
       body.guide-panel-open {
-        margin-left: 260px;
-        transition: margin-left 0.3s ease;
+        padding-left: 260px !important;
+        transition: padding-left 0.3s ease;
+        box-sizing: border-box;
       }
 
       body.guide-panel-closed {
-        margin-left: 0;
-        transition: margin-left 0.3s ease;
+        padding-left: 0 !important;
+        transition: padding-left 0.3s ease;
       }
 
       .guide-toggle {
@@ -654,7 +655,7 @@
         }
 
         body.guide-panel-open {
-          margin-left: 0;
+          padding-left: 0 !important;
         }
 
         .guide-toggle {
