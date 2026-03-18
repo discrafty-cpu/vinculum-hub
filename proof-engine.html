@@ -1,0 +1,682 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>VINCULUM Proof Engine — Visual Dissection</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        window.MathJax = {
+            tex: {
+                inlineMath: [['$', '$'], ['\\(', '\\)']],
+                displayMath: [['$$', '$$'], ['\\[', '\\]']],
+                processEscapes: true
+            },
+            options: {
+                enableMenu: false
+            },
+            chtml: {
+                displayAlign: 'left',
+                displayIndent: '0'
+            }
+        };
+    </script>
+    <script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Fira+Code:wght@400;600&family=Inter:wght@400;900&display=swap');
+        
+        :root { 
+            --neon: #00f2ff; 
+            --bg: #050507; 
+            --math: #fde047; 
+            --accent: #bc13fe; 
+            --emerald: #10b981;
+            --grid: rgba(0, 242, 255, 0.15);
+        }
+
+        body { 
+            background: var(--bg); 
+            color: white; 
+            font-family: 'Inter', sans-serif; 
+            overflow: hidden; 
+            height: 100vh; 
+        }
+
+        .ledger-text { font-family: 'Fira Code', monospace; color: var(--neon); }
+        
+        .glass { 
+            background: rgba(10, 10, 15, 0.98); 
+            backdrop-filter: blur(20px); 
+            border: 1px solid rgba(255,255,255,0.1); 
+        }
+
+        .method-btn { 
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            border: 1px solid rgba(255,255,255,0.05); 
+            position: relative;
+            overflow: hidden;
+        }
+
+        .method-btn:hover:not(.method-active) {
+            background: rgba(0, 242, 255, 0.1);
+            border-color: var(--neon);
+            transform: translateX(4px);
+        }
+        
+        .method-active { 
+            background: var(--neon) !important; 
+            color: black !important; 
+            font-weight: 900; 
+            box-shadow: 0 0 20px rgba(0, 242, 255, 0.5);
+            transform: scale(1.02);
+        }
+
+        .vertex-label { 
+            position: absolute;
+            pointer-events: none; 
+            text-shadow: 0 2px 8px black; 
+            font-weight: 800; 
+            background: rgba(5, 5, 10, 0.95); 
+            padding: 4px 10px; 
+            border-radius: 6px; 
+            border: 2px solid var(--neon);
+            color: white;
+            white-space: nowrap;
+            z-index: 50;
+            transform: translate(15px, -15px);
+            box-shadow: 0 4px 15px rgba(0,0,0,0.5);
+        }
+        
+        #calc-column {
+            position: absolute;
+            top: 110px;
+            right: 32px;
+            z-index: 100;
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            width: calc(100% - 400px);
+            max-width: 650px;
+            transition: transform 0.6s cubic-bezier(0.16, 1, 0.3, 1), opacity(0.4s) ease;
+        }
+
+        .calc-hidden {
+            transform: translateX(120%) scale(0.95);
+            opacity: 0;
+            pointer-events: none;
+        }
+
+        #math-overlay { 
+            background: rgba(0,0,0,0.95);
+            padding: 2rem;
+            border-radius: 12px;
+            border: 1px solid var(--neon);
+            box-shadow: 0 20px 50px rgba(0, 0, 0, 0.8), 0 0 30px rgba(0, 242, 255, 0.1);
+            overflow: visible; 
+            position: relative;
+        }
+
+        #math-content {
+            white-space: normal !important;
+            word-wrap: break-word !important;
+            overflow-wrap: break-word !important;
+        }
+
+        mjx-container {
+            display: inline-block !important;
+            margin: 0 !important;
+            max-width: 100% !important;
+            white-space: normal !important;
+        }
+
+        mjx-container[display="true"] {
+            display: block !important;
+            text-align: left !important;
+            margin: 0.5em 0 !important;
+            overflow-x: visible !important;
+            overflow-y: visible !important;
+        }
+
+        #engine-status {
+            background: rgba(188, 19, 254, 0.1);
+            border: 1px solid rgba(188, 19, 254, 0.4);
+            padding: 10px 14px;
+            border-radius: 8px;
+            backdrop-filter: blur(10px);
+            align-self: flex-end;
+            width: 320px;
+        }
+
+        input[type=range] {
+            -webkit-appearance: none;
+            background: rgba(255,255,255,0.1);
+            height: 4px;
+            border-radius: 2px;
+        }
+
+        input[type=range]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            height: 18px;
+            width: 18px;
+            border-radius: 50%;
+            background: var(--neon);
+            cursor: pointer;
+            border: 2px solid white;
+        }
+
+        .panel-card {
+            background: rgba(255,255,255,0.03);
+            border: 1px solid rgba(255,255,255,0.08);
+            padding: 16px;
+            border-radius: 10px;
+        }
+
+        .anim-active {
+            animation: pulse-border 2s infinite;
+        }
+
+        @keyframes pulse-border {
+            0% { border-color: var(--neon); }
+            50% { border-color: var(--accent); }
+            100% { border-color: var(--neon); }
+        }
+
+        .close-trigger {
+            position: absolute;
+            top: 15px;
+            right: 15px;
+            color: rgba(255,255,255,0.4);
+            cursor: pointer;
+            transition: all 0.2s;
+            z-index: 10;
+        }
+        .close-trigger:hover { 
+            color: var(--neon);
+            transform: rotate(90deg);
+        }
+    </style>
+</head>
+<body class="flex flex-col">
+
+    <div id="calc-column" class="calc-hidden">
+        <div id="math-overlay" class="text-left">
+            <div class="close-trigger" onclick="toggleProofWindow(false)">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+            </div>
+            <div id="step-indicator" class="text-[10px] uppercase tracking-[0.4em] text-cyan-400 mb-4 font-black border-b border-cyan-400/20 pb-2">Geometric Assertion</div>
+            <div id="math-content" class="text-lg md:text-xl font-bold text-yellow-300 py-2 leading-relaxed">
+                \[ ... \]
+            </div>
+        </div>
+
+        <div id="engine-status">
+            <div class="flex items-center justify-between">
+                <div class="flex flex-col">
+                    <div class="text-[8px] uppercase tracking-[0.2em] text-purple-400 font-black">Dissection & Reconstruction Engine</div>
+                    <div id="active-engine-name" class="text-[11px] font-bold text-white uppercase tracking-tighter">Initial Load...</div>
+                </div>
+                <div id="engine-bulb" class="w-2 h-2 rounded-full bg-purple-500 shadow-[0_0_8px_#bc13fe]"></div>
+            </div>
+        </div>
+    </div>
+
+    <header class="h-24 glass flex items-center justify-between px-8 border-b border-white/10 z-50">
+        <a href="VINCULUM-Hub.html" style="position:absolute;top:8px;left:12px;color:rgba(0,242,255,0.6);text-decoration:none;font-size:11px;font-weight:600;letter-spacing:0.05em;display:flex;align-items:center;gap:4px;z-index:200;transition:color 0.2s;" onmouseenter="this.style.color='#00f2ff'" onmouseleave="this.style.color='rgba(0,242,255,0.6)'"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>HUB</a>
+        <div class="flex flex-col">
+            <h1 class="text-2xl font-black italic tracking-tighter uppercase leading-none">VINCULUM<span class="text-cyan-400"> Proof</span></h1>
+            <span class="text-[9px] uppercase tracking-[0.5em] opacity-50 mt-1">Visual Dissection Engine</span>
+        </div>
+        
+        <div class="flex gap-12 items-center">
+            <div class="flex flex-col items-end border-r border-white/10 pr-8">
+                <span id="formula-readout" class="text-[11px] font-mono text-cyan-200 opacity-80 mb-1">A = b Ã h</span>
+                <div class="flex gap-12">
+                    <div class="flex flex-col">
+                        <span class="text-[9px] opacity-40 uppercase tracking-widest text-right">Area</span>
+                        <span id="area-val" class="text-3xl font-black text-emerald-400 leading-none">0.00</span>
+                    </div>
+                    <div class="flex flex-col">
+                        <span class="text-[9px] opacity-40 uppercase tracking-widest text-right">Perimeter</span>
+                        <span id="perim-val" class="text-3xl font-black text-purple-400 leading-none">0.00</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <main class="flex-1 flex overflow-hidden">
+        <aside class="w-[340px] glass p-5 flex flex-col gap-5 overflow-y-auto z-40 shadow-2xl shrink-0">
+            <section>
+                <h3 class="text-[9px] font-black opacity-40 uppercase mb-3 tracking-[0.3em]">Shape Matrix</h3>
+                <div class="grid grid-cols-2 gap-2">
+                    <button onclick="changeShape('parallelogram')" id="btn-parallelogram" class="shape-btn p-3 rounded-lg bg-white/5 text-[10px] font-black uppercase border border-white/5">Parallelogram</button>
+                    <button onclick="changeShape('rectangle')" id="btn-rectangle" class="shape-btn p-3 rounded-lg bg-white/5 text-[10px] font-black uppercase border border-white/5">Rectangle</button>
+                    <button onclick="changeShape('triangle')" id="btn-triangle" class="shape-btn p-3 rounded-lg bg-white/5 text-[10px] font-black uppercase border border-white/5">Triangle</button>
+                    <button onclick="changeShape('trapezoid')" id="btn-trapezoid" class="shape-btn p-3 rounded-lg bg-white/5 text-[10px] font-black uppercase border border-white/5">Trapezoid</button>
+                </div>
+            </section>
+
+            <section class="panel-card border-l-4 border-cyan-500">
+                <div class="flex justify-between items-center mb-3">
+                    <h3 class="text-[9px] font-black text-cyan-400 uppercase tracking-[0.3em]">Available Engines</h3>
+                    <div class="h-1 w-12 bg-cyan-400/20 rounded-full"></div>
+                </div>
+                <div id="dissection-picker" class="flex flex-col gap-2"></div>
+            </section>
+
+            <section class="panel-card" id="scrubber-card">
+                <div class="flex justify-between mb-3 cursor-pointer group" onclick="toggleAutoCycle()">
+                    <h3 class="text-[9px] font-black text-cyan-400 uppercase tracking-[0.3em] group-hover:text-white transition-colors">Step Scrubber <span id="auto-label" class="ml-2 text-white/20">[Auto: Off]</span></h3>
+                    <span id="progress-val" class="text-[10px] font-mono text-white/40">0%</span>
+                </div>
+                <input type="range" id="anim-scrubber" class="w-full mb-3" min="0" max="100" step="0.1" value="0" oninput="updateManualProgress(this.value)">
+                <div class="flex justify-between gap-1">
+                    <button onclick="setStep(0)" class="flex-1 bg-white/5 hover:bg-white/10 py-1.5 rounded text-[9px] font-bold uppercase transition-colors">Initial</button>
+                    <button onclick="toggleAutoCycle()" id="btn-cycle" class="flex-1 bg-cyan-500/10 hover:bg-cyan-500/20 py-1.5 rounded text-[9px] font-bold uppercase text-cyan-400 border border-cyan-500/20 transition-colors">Cycle Engine</button>
+                    <button onclick="setStep(100)" class="flex-1 bg-white/5 hover:bg-white/10 py-1.5 rounded text-[9px] font-bold uppercase transition-colors">Solve</button>
+                </div>
+            </section>
+
+            <section class="panel-card bg-cyan-400/5">
+                <div class="flex justify-between mb-3">
+                    <h3 class="text-[9px] font-black text-cyan-400 uppercase tracking-[0.3em]">Grid Magnification</h3>
+                    <span id="zoom-val" class="text-[10px] font-mono text-white/40">1.0x</span>
+                </div>
+                <input type="range" id="zoom-slider" class="w-full mb-4" min="0.25" max="4.0" step="0.05" value="1.0" oninput="state.zoom = parseFloat(this.value); document.getElementById('zoom-val').innerText=this.value&#43;'x';">
+                
+                <div class="flex justify-between mb-3">
+                    <h3 class="text-[9px] font-black text-cyan-400 uppercase tracking-[0.3em]">Coordinate Readout Size</h3>
+                    <span id="coord-val" class="text-[10px] font-mono text-white/40">1.0x</span>
+                </div>
+                <input type="range" id="coord-slider" class="w-full" min="0.5" max="3.0" step="0.1" value="1.0" oninput="state.coordScale = parseFloat(this.value); document.getElementById('coord-val').innerText=this.value&#43;'x';">
+            </section>
+
+            <section>
+                <h3 class="text-[9px] font-black opacity-40 uppercase mb-4 tracking-[0.3em]">Geometry Sliders</h3>
+                <div id="sliders" class="space-y-5"></div>
+            </section>
+        </aside>
+
+        <section class="flex-1 relative bg-[#010102]" id="canvas-container">
+            <canvas id="mainCanvas"></canvas>
+            <div id="labels-layer" class="absolute inset-0 pointer-events-none z-20"></div>
+        </section>
+    </main>
+
+    <footer class="h-8 glass border-t border-white/10 flex items-center px-8 text-[9px] justify-between opacity-50 uppercase tracking-[0.4em] z-50">
+        <div id="origin-indicator">System: Cartesian Core (Y-Up)</div>
+        <div id="anim-status" class="text-cyan-400 font-bold">VINCULUM Proof Engine v5.1 | Drummond Math Solutions</div>
+    </footer>
+
+<script>
+    const canvas = document.getElementById('mainCanvas');
+    const ctx = canvas.getContext('2d');
+    const labelLayer = document.getElementById('labels-layer');
+    const mathContent = document.getElementById('math-content');
+    const stepIndicator = document.getElementById('step-indicator');
+    const scrubber = document.getElementById('anim-scrubber');
+    const engineNameDisplay = document.getElementById('active-engine-name');
+    const calcColumn = document.getElementById('calc-column');
+    
+    let state = {
+        shape: 'rectangle',
+        model: 'grid',
+        v1: 14, v2: 8, v3: 8, skew: 0, scale: 40,
+        zoom: 0.4, coordScale: 1.0, manualProgress: 0, isCycling: false, cycleStep: 0, pauseTimer: 0
+    };
+
+    const fmtNum = (n) => Number.isInteger(n) ? Math.round(n) : n.toFixed(1);
+
+    const config = {
+        parallelogram: {
+            vars: ['Base (b)', 'Height (h)', 'Skew (s)'],
+            models: {
+                slice: {
+                    name: 'Translation Reconstruction',
+                    getReadout: (s, t) => ["Altitude Dissection", `\\[ A = b \\times h \\] \\[ A = ${fmtNum(s.v1)} \\times ${fmtNum(s.v2)} = ${fmtNum(s.v1*s.v2)} \\] Lateral segments are translated to rectify the bounding area into an orthogonal quadrilateral.` ]
+                },
+                shear: {
+                    name: 'Shear Flow Engine',
+                    getReadout: (s, t) => ["Cavalieri Principle", `\\[ A = b \\times h \\] Shear mapping preserves planar area. Since the vertical distance $h$ and base $b$ remain constant throughout the transform, total area is invariant.` ]
+                }
+            },
+            getVertices: (s) => [[0,0], [s.v1,0], [s.v1 + s.skew, s.v2], [s.skew, s.v2]],
+            calcArea: (s) => Math.abs(s.v1 * s.v2),
+            calcPerim: (s) => 2 * (Math.abs(s.v1) + Math.sqrt(s.skew**2 + s.v2**2)),
+            formula: "A = b Ã h"
+        },
+        rectangle: {
+            vars: ['Width (w)', 'Height (h)'],
+            models: {
+                grid: {
+                    name: 'Orthogonal Base',
+                    getReadout: (s, t) => {
+                        const count = Math.floor(t * (s.v1 * s.v2));
+                        return ["Area Postulate", `\\[ A = w \\times h \\] \\[ A = ${fmtNum(s.v1)} \\times ${fmtNum(s.v2)} = ${fmtNum(s.v1*s.v2)} \\] Area is defined as the total count of unit squares that tessellate the plane interior.`];
+                    }
+                },
+                scan: {
+                    name: 'Linear Integration',
+                    getReadout: (s, t) => {
+                        const currentWidth = fmtNum(s.v1 * t);
+                        return ["Sweep Analysis", `\\[ A = w \\times h \\] \\[ A = ${fmtNum(s.v1)} \\times ${fmtNum(s.v2)} = ${fmtNum(s.v1*s.v2)} \\] Sweeping area differential across the x-axis: $\\int_{0}^{x} h \\, dx$. Current sweep: ${currentWidth}.`];
+                    }
+                }
+            },
+            getVertices: (s) => [[0,0], [s.v1,0], [s.v1,s.v2], [0,s.v2]],
+            calcArea: (s) => s.v1 * s.v2,
+            calcPerim: (s) => 2 * (s.v1 + s.v2),
+            formula: "A = w Ã h"
+        },
+        triangle: {
+            vars: ['Base (b)', 'Height (h)', 'Peak Offset'],
+            models: {
+                rotate: {
+                    name: 'Altitude Bisection',
+                    getReadout: (s, t) => ["Rotational Proof", `\\[ A = \\frac{1}{2}bh \\] Bisecting the altitude at $h/2$ allows the apex segment to rotate and align, forming a rectangle of equivalent area.` ]
+                },
+                double: {
+                    name: 'Parallelogram Bridge',
+                    getReadout: (s, t) => ["Compositional Analysis", `\\[ A = \\frac{1}{2}bh \\] Constructing a congruent triangle and joining them side-by-side proves that any triangle is exactly half of a related parallelogram.` ]
+                }
+            },
+            getVertices: (s) => [[0,0], [s.v1,0], [s.v3 + s.skew, s.v2]],
+            calcArea: (s) => 0.5 * s.v1 * s.v2,
+            calcPerim: (s) => s.v1 + Math.sqrt((s.v3+s.skew)**2 + s.v2**2) + Math.sqrt((s.v1-(s.v3+s.skew))**2 + s.v2**2),
+            formula: "A = Â½(b Ã h)"
+        },
+        trapezoid: {
+            vars: ['Base 1 (b1)', 'Height (h)', 'Base 2 (b2)'],
+            models: {
+                midline: {
+                    name: 'Mid-Segment Parity',
+                    getReadout: (s, t) => ["Midline Theorem", `\\[ A = \\frac{b_1 + b_2}{2} \\times h \\] The mid-segment represents the average width. Rotating the lateral components about the mid-segment endpoints creates a rectangle.` ]
+                },
+                split: {
+                    name: 'Bigenic Dissection',
+                    getReadout: (s, t) => ["Partition Proof", `\\[ A = \\frac{h}{2}(b_1 + b_2) \\] Splitting the trapezoid via a diagonal yields two triangles. Summing their individual areas: $A_1 + A_2 = \\frac{1}{2}b_1h + \\frac{1}{2}b_2h$.` ]
+                }
+            },
+            getVertices: (s) => [[0, 0], [s.v1, 0], [s.v3 + s.skew, s.v2], [s.skew, s.v2]],
+            calcArea: (s) => 0.5 * (s.v1 + s.v3) * s.v2,
+            calcPerim: (s) => s.v1 + s.v3 + Math.sqrt(s.skew**2 + s.v2**2) + Math.sqrt((s.v1 - (s.v3+s.skew))**2 + s.v2**2),
+            formula: "A = Â½(b1 + b2) Ã h"
+        }
+    };
+
+    function toggleProofWindow(show) {
+        if (show) calcColumn.classList.remove('calc-hidden');
+        else calcColumn.classList.add('calc-hidden');
+    }
+
+    function toggleAutoCycle() {
+        state.isCycling = !state.isCycling;
+        document.getElementById('auto-label').innerText = state.isCycling ? '[Auto: ON]' : '[Auto: OFF]';
+        document.getElementById('scrubber-card').classList.toggle('anim-active', state.isCycling);
+        document.getElementById('engine-bulb').classList.toggle('bg-cyan-400', state.isCycling);
+        if (state.isCycling) {
+            state.cycleStep = state.manualProgress * 100;
+            state.pauseTimer = 0;
+            toggleProofWindow(true);
+        }
+    }
+
+    function render() {
+        if (!canvas.parentElement) return;
+        canvas.width = canvas.parentElement.clientWidth;
+        canvas.height = canvas.parentElement.clientHeight;
+        
+        if (state.isCycling) {
+            if (state.pauseTimer > 0) {
+                state.pauseTimer -= 16;
+                if (state.pauseTimer <= 0) state.cycleStep = 0;
+            } else {
+                state.cycleStep += 0.4;
+                if (state.cycleStep >= 100) { state.cycleStep = 100; state.pauseTimer = 2000; }
+            }
+            updateManualProgress(state.cycleStep);
+            scrubber.value = state.cycleStep;
+        }
+
+        const pts = config[state.shape].getVertices(state);
+        const ox = canvas.width * 0.35;
+        const oy = canvas.height * 0.70;
+        const t = state.manualProgress;
+        const currentScale = state.scale * state.zoom;
+
+        ctx.clearRect(0,0,canvas.width, canvas.height);
+        labelLayer.innerHTML = ''; 
+        
+        ctx.save();
+        ctx.translate(ox, oy);
+        ctx.scale(1, -1);
+        
+        renderGrid(ox, oy, currentScale);
+        executeDissection(pts, t, currentScale);
+
+        if (t === 0) {
+            pts.forEach((p, i) => {
+                const screenX = ox + p[0] * currentScale;
+                const screenY = oy - p[1] * currentScale;
+                createLabel(`${String.fromCharCode(65 + i)}: (${fmtNum(p[0])}, ${fmtNum(p[1])})`, screenX, screenY);
+            });
+        }
+
+        const [stepText, formula] = config[state.shape].models[state.model].getReadout(state, t);
+        stepIndicator.innerText = stepText;
+        engineNameDisplay.innerText = config[state.shape].models[state.model].name;
+
+        if (mathContent.dataset.last !== formula) {
+            mathContent.innerHTML = formula;
+            mathContent.dataset.last = formula;
+            if (window.MathJax) MathJax.typesetPromise([mathContent]);
+        }
+
+        document.getElementById('formula-readout').innerText = config[state.shape].formula;
+        document.getElementById('area-val').innerText = fmtNum(config[state.shape].calcArea(state));
+        document.getElementById('perim-val').innerText = fmtNum(config[state.shape].calcPerim(state));
+        
+        ctx.restore();
+        requestAnimationFrame(render);
+    }
+
+    function renderGrid(ox, oy, s) {
+        ctx.strokeStyle = 'rgba(0, 242, 255, 0.08)';
+        ctx.lineWidth = 1;
+        const startX = -Math.ceil(ox/s)*s;
+        const startY = -Math.ceil((canvas.height-oy)/s)*s;
+        const fontSize = Math.max(7, Math.min(10, 9 / state.zoom));
+
+        for(let x = startX; x < canvas.width; x += s) {
+            ctx.beginPath(); ctx.moveTo(x, -oy); ctx.lineTo(x, canvas.height); ctx.stroke();
+            ctx.save(); ctx.scale(1, -1); ctx.fillStyle = "rgba(0, 242, 255, 0.3)"; ctx.font = `${fontSize}px 'Fira Code'`;
+            ctx.fillText(Math.round(x/s), x + 2, 12); ctx.restore();
+        }
+        for(let y = startY; y < canvas.height; y += s) {
+            ctx.beginPath(); ctx.moveTo(-ox, y); ctx.lineTo(canvas.width, y); ctx.stroke();
+            ctx.save(); ctx.scale(1, -1); ctx.fillStyle = "rgba(0, 242, 255, 0.3)"; ctx.font = `${fontSize}px 'Fira Code'`;
+            ctx.fillText(Math.round(y/s), 4, -y - 4); ctx.restore();
+        }
+        ctx.strokeStyle = 'rgba(0, 242, 255, 0.4)';
+        ctx.lineWidth = 2;
+        ctx.beginPath(); ctx.moveTo(-ox, 0); ctx.lineTo(canvas.width, 0); ctx.stroke();
+        ctx.beginPath(); ctx.moveTo(0, -oy); ctx.lineTo(0, canvas.height); ctx.stroke();
+    }
+
+    
+    function drawShape(pts, color, sc, fill=false) {
+        if (!pts || pts.length < 2) return;
+        ctx.beginPath();
+        
+        ctx.lineWidth = 6;
+        ctx.strokeStyle = color;
+        ctx.lineJoin = 'round';
+        ctx.moveTo(pts[0][0]*sc, pts[0][1]*sc);
+        for(let i = 1; i < pts.length; i++) ctx.lineTo(pts[i][0]*sc, pts[i][1]*sc);
+        ctx.closePath();
+        ctx.stroke();
+        if(fill) {
+            ctx.fillStyle = color.includes('rgba') ? color : color.replace(')', ', 0.23)').replace('rgb', 'rgba').replace('var(--neon)', 'rgba(0, 242, 255, 0.23)');
+            ctx.fill();
+        }
+    }
+
+    function createLabel(text, x, y) {
+        const div = document.createElement('div');
+        div.className = 'vertex-label ledger-text';
+        
+        div.style.left = x + 'px'; 
+        div.style.top = y + 'px';
+        div.style.fontSize = (10 * state.coordScale) + 'px';
+        div.style.padding = (4 * state.coordScale) + 'px ' + (10 * state.coordScale) + 'px';
+        div.innerText = text; labelLayer.appendChild(div);
+    }
+
+    function executeDissection(pts, t, sc) {
+        const s = state;
+        if (s.shape === 'rectangle') {
+            if (s.model === 'grid') {
+                drawShape(pts, 'var(--neon)', sc, false);
+                const total = s.v1 * s.v2;
+                const currentTotal = Math.floor(t * total);
+                let count = 0;
+                for(let j = 0; j < s.v2; j++) {
+                    for(let i = 0; i < s.v1; i++) {
+                        if (count < currentTotal) {
+                            ctx.fillStyle = 'rgba(0, 242, 255, 0.5)';
+                            ctx.fillRect(i*sc + 1, j*sc + 1, sc - 2, sc - 2);
+                        } else if (count === currentTotal && t > 0) {
+                            const subT = (t * total) % 1;
+                            ctx.fillStyle = `rgba(0, 242, 255, ${0.5 * subT})`;
+                            ctx.fillRect(i*sc + 1, j*sc + 1, (sc - 2) * subT, sc - 2);
+                        }
+                        count++;
+                    }
+                }
+            } else {
+                drawShape(pts, 'rgba(255,255,255,0.05)', sc, false);
+                ctx.fillStyle = 'rgba(0, 242, 255, 0.3)';
+                ctx.fillRect(0, 0, (s.v1 * t) * sc, s.v2 * sc);
+                ctx.strokeStyle = 'var(--neon)';
+                ctx.lineWidth = 6;
+                ctx.beginPath(); ctx.moveTo((s.v1 * t) * sc, 0); ctx.lineTo((s.v1 * t) * sc, s.v2 * sc); ctx.stroke();
+                drawShape([[0,0], [s.v1*t, 0], [s.v1*t, s.v2], [0, s.v2]], 'var(--neon)', sc, false);
+            }
+        }
+        else if (s.shape === 'trapezoid') {
+            const [A, B, C, D] = pts;
+            if (s.model === 'midline') {
+                const midY = s.v2 / 2;
+                const E = [(A[0]+D[0])/2, midY];
+                const F = [(B[0]+C[0])/2, midY];
+                drawShape([A, B, F, E], 'var(--neon)', sc, true);
+                ctx.save(); ctx.translate(F[0]*sc, F[1]*sc); ctx.rotate(t * Math.PI); ctx.translate(-F[0]*sc, -F[1]*sc);
+                drawShape([E, F, C, D], 'var(--accent)', sc, true); ctx.restore();
+            } else {
+                const drift = t * 3;
+                ctx.save(); ctx.translate(-drift*0.5*sc, -drift*0.2*sc); drawShape([A, B, C], 'var(--neon)', sc, true); ctx.restore();
+                ctx.save(); ctx.translate(drift*0.5*sc, drift*0.2*sc); drawShape([A, C, D], 'var(--accent)', sc, true); ctx.restore();
+            }
+        }
+        else if (s.shape === 'triangle') {
+            const [A, B, C] = pts;
+            if (s.model === 'double') {
+                drawShape(pts, 'var(--neon)', sc, true);
+                const mBC = [(B[0]+C[0])/2, (B[1]+C[1])/2];
+                ctx.save(); ctx.translate(mBC[0]*sc, mBC[1]*sc); ctx.rotate(t * Math.PI); ctx.translate(-mBC[0]*sc, -mBC[1]*sc);
+                drawShape(pts, 'var(--accent)', sc, true); ctx.restore();
+            } else {
+                const mAC = [(A[0]+C[0])/2, (A[1]+C[1])/2];
+                const mBC = [(B[0]+C[0])/2, (B[1]+C[1])/2];
+                drawShape([A, B, mBC, mAC], 'var(--neon)', sc, true);
+                ctx.save(); ctx.translate(mBC[0]*sc, mBC[1]*sc); ctx.rotate(t * Math.PI); ctx.translate(-mBC[0]*sc, -mBC[1]*sc);
+                drawShape([mAC, mBC, C], 'var(--accent)', sc, true); ctx.restore();
+            }
+        }
+        else if (s.shape === 'parallelogram') {
+            const [A, B, C, D] = pts;
+            if (s.model === 'slice') {
+                const sliceX = s.skew;
+                drawShape([[sliceX, 0], B, C, D], 'var(--neon)', sc, true);
+                ctx.save(); ctx.translate(t * s.v1 * sc, 0); drawShape([A, [sliceX, 0], D], 'var(--accent)', sc, true); ctx.restore();
+            } else {
+                const curSkew = s.skew * (1-t);
+                drawShape([[0,0], [s.v1,0], [s.v1+curSkew, s.v2], [curSkew, s.v2]], 'var(--neon)', sc, true);
+            }
+        }
+    }
+
+    function updateManualProgress(val) {
+        state.manualProgress = val / 100;
+        document.getElementById('progress-val').innerText = Math.round(val) + '%';
+        if (!state.isCycling) scrubber.value = val;
+    }
+
+    function setStep(val) { 
+        state.isCycling = false;
+        document.getElementById('auto-label').innerText = '[Auto: OFF]';
+        document.getElementById('scrubber-card').classList.remove('anim-active');
+        scrubber.value = val; 
+        updateManualProgress(val); 
+    }
+
+    function changeShape(s) { 
+        state.shape = s; 
+        state.model = Object.keys(config[s].models)[0];
+        
+        if (s === 'parallelogram' || s === 'triangle') {
+            state.skew = 2.0;
+        } else if (s === 'rectangle') {
+            state.skew = 0.0;
+        }
+
+        setStep(0);
+        document.querySelectorAll('.shape-btn').forEach(b => b.classList.toggle('method-active', b.id === 'btn-'+s));
+        updateDissectionPicker();
+        initUI(); 
+        toggleProofWindow(true);
+    }
+
+    function updateDissectionPicker() {
+        const container = document.getElementById('dissection-picker');
+        container.innerHTML = '';
+        const models = config[state.shape].models;
+        Object.keys(models).forEach(k => {
+            const btn = document.createElement('button');
+            const isActive = state.model === k;
+            btn.className = `method-btn p-3 rounded-lg text-[10px] uppercase font-bold text-left px-4 ${isActive ? 'method-active' : 'bg-white/5'}`;
+            btn.innerHTML = `<span class="inline-block w-1 h-1 rounded-full mr-2 ${isActive ? 'bg-black' : 'bg-cyan-400'}"></span> ${models[k].name}`;
+            btn.onclick = () => { state.model = k; setStep(0); updateDissectionPicker(); toggleProofWindow(true); };
+            container.appendChild(btn);
+        });
+    }
+
+    function initUI() {
+        const container = document.getElementById('sliders');
+        container.innerHTML = config[state.shape].vars.map((v, i) => {
+            const val = state['v'+(i+1)];
+            return `
+            <div class="group">
+                <div class="flex justify-between text-[10px] font-black uppercase mb-2 opacity-40">
+                    <span>${v}</span><span class="text-cyan-400 font-mono">${fmtNum(val)}</span>
+                </div>
+                <input type="range" class="w-full" min="2" max="24" step="0.5" value="${val}" 
+                    oninput="state.v${i+1}=parseFloat(this.value); this.previousElementSibling.querySelector('.font-mono').innerText=fmtNum(parseFloat(this.value));">
+            </div>`}).join('') + `
+            <div class="group">
+                <div class="flex justify-between text-[10px] font-black uppercase mb-2 opacity-40">
+                    <span>Vertex Skew</span><span class="text-cyan-400 font-mono">${fmtNum(state.skew)}</span>
+                </div>
+                <input type="range" class="w-full" min="-10" max="10" step="0.5" value="${state.skew}" 
+                    oninput="state.skew=parseFloat(this.value); this.previousElementSibling.querySelector('.font-mono').innerText=fmtNum(parseFloat(this.value));">
+            </div>`;
+    }
+
+    window.onload = () => { 
+        changeShape('rectangle'); 
+        toggleProofWindow(false); 
+        requestAnimationFrame(render);
+    };
+</script>
+</body>
+</html>
