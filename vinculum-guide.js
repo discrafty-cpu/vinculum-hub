@@ -6,7 +6,7 @@
  *   <script src="vinculum-guide.js"></script>
  *
  * The module auto-detects the tool, loads instruction data, and creates
- * a floating side panel with "How to Use", "Standards", and "Key Concept" tabs.
+ * a floating TEACHER GUIDE panel with CRA level, teaching notes, misconceptions, and developmental stage.
  */
 
 (function() {
@@ -419,6 +419,79 @@
   }
 
   // ============================================================================
+  // CRA & PIAGET HELPERS
+  // ============================================================================
+
+  function detectGradeFromURL() {
+    const path = window.location.pathname;
+    const match = path.match(/\/tools\/([^/]+)\//);
+    if (match) return match[1];
+    // Try body attribute
+    const gradeAttr = document.body.getAttribute('data-grade');
+    if (gradeAttr) return gradeAttr;
+    return null;
+  }
+
+  function getCRAInfo(grade) {
+    const map = {
+      'K':    { primary: 'concrete', description: 'Concrete-dominant. Students learn through direct manipulation of objects. Use physical/virtual manipulatives before any symbols.' },
+      '1':    { primary: 'concrete', description: 'Concrete primary. Bridge to representational with paired visuals. Keep manipulatives available at all times.' },
+      '2':    { primary: 'concrete', description: 'Concrete to representational transition. Students ready for visual models (drawings, diagrams) alongside objects.' },
+      '3':    { primary: 'representational', description: 'Representational emerging. Visual models (bar diagrams, arrays, number lines) become primary. Concrete fallback for struggling learners.' },
+      '4':    { primary: 'representational', description: 'Representational primary. Students work with diagrams and visual models. Introduce symbolic notation alongside.' },
+      '5':    { primary: 'representational', description: 'Representational to abstract. Visual models support symbolic work. Begin concreteness fading.' },
+      '6':    { primary: 'representational', description: 'Representational with abstract. Visual models for insight, symbolic for practice. CRA-I (integrated) recommended.' },
+      '7':    { primary: 'representational', description: 'Representational-abstract balance. Students reason with both visual and symbolic. Proportional reasoning emerging.' },
+      '8':    { primary: 'representational', description: 'Abstract emerging. Visual models for new concepts, symbolic for familiar ones. Formal reasoning developing.' },
+      'ALG1': { primary: 'abstract', description: 'Abstract primary. Symbolic manipulation is default. Use representational models (graphs, tables) for building intuition.' },
+      'GEOM': { primary: 'representational', description: 'Representational primary. Spatial reasoning through constructions, coordinate geometry, and visual proofs.' },
+      'ALG2': { primary: 'abstract', description: 'Abstract primary. Complex symbolic work with graphical support for understanding.' },
+      'PREC': { primary: 'abstract', description: 'Abstract primary. Advanced symbolic reasoning with graphical/geometric visualization for insight.' },
+      'games':{ primary: 'concrete', description: 'Game-based learning. CRA level varies by game difficulty tier.' }
+    };
+    return map[grade] || { primary: 'representational', description: 'Adapt CRA level to student needs.' };
+  }
+
+  function getPiagetInfo(grade) {
+    const map = {
+      'K':    { label: 'Preoperational', description: 'Students learn by doing. They need to physically touch/move objects to count. No conservation yet — rearranging objects may seem to change quantity.' },
+      '1':    { label: 'Pre → Concrete', description: 'Transitioning to concrete operational. 1-to-1 correspondence developing. Still needs physical manipulation but beginning to work with images.' },
+      '2':    { label: 'Concrete Operational', description: 'Conservation emerging. Students understand that quantity doesn’t change with rearrangement. Reversibility developing (7+3=10, so 10-3=7).' },
+      '3':    { label: 'Concrete Operational', description: 'Conservation secure. Classification and seriation strong. Can mentally reverse operations. Ready for systematic visual models.' },
+      '4':    { label: 'Concrete Operational', description: 'Logical thinking with concrete referents. Can classify, seriate, and conserve. Multiplicative reasoning emerging.' },
+      '5':    { label: 'Concrete Operational', description: 'Strong concrete reasoning. Beginning to handle multiple variables. Proportional reasoning developing but needs concrete support.' },
+      '6':    { label: 'Transitional Formal', description: 'Transitioning to formal operational. Can handle some abstract reasoning but needs representational grounding. Proportional reasoning strengthening.' },
+      '7':    { label: 'Transitional Formal', description: 'Proportional and probabilistic reasoning developing. Can work with hypotheticals when grounded in familiar contexts.' },
+      '8':    { label: 'Early Formal', description: 'Hypothetical-deductive reasoning emerging. Can manipulate variables abstractly in familiar domains. Transfer to new domains still needs support.' },
+      'ALG1': { label: 'Formal Operational', description: 'Abstract symbolic reasoning. Can work with hypotheticals and formal logic. Not all students reach this for all domains.' },
+      'GEOM': { label: 'Formal Operational', description: 'Spatial formal reasoning. Deductive proof and abstract geometric relationships.' },
+      'ALG2': { label: 'Formal Operational', description: 'Advanced abstract reasoning across mathematical domains.' },
+      'PREC': { label: 'Formal Operational', description: 'Mature mathematical reasoning. Can coordinate multiple representations fluently.' },
+      'games':{ label: 'Varies', description: 'Adapt to the student’s developmental level based on grade band of the game.' }
+    };
+    return map[grade] || { label: 'Developing', description: 'Assess student’s reasoning level and adapt accordingly.' };
+  }
+
+  function detectMisconceptions() {
+    // Try to read misconceptions from the page's tool data
+    // Method 1: Look for a global misconceptions variable
+    if (window.MISCONCEPTIONS && Array.isArray(window.MISCONCEPTIONS)) {
+      return window.MISCONCEPTIONS;
+    }
+    // Method 2: Look for data attribute on body
+    const miscAttr = document.body.getAttribute('data-misconceptions');
+    if (miscAttr) {
+      try { return JSON.parse(miscAttr); } catch(e) {}
+    }
+    // Method 3: Search for misconceptions in any visible element
+    const miscEl = document.querySelector('[data-misconceptions]');
+    if (miscEl) {
+      try { return JSON.parse(miscEl.getAttribute('data-misconceptions')); } catch(e) {}
+    }
+    return [];
+  }
+
+  // ============================================================================
   // PANEL CREATION & INJECTION
   // ============================================================================
 
@@ -426,29 +499,55 @@
    * Create the guide panel HTML
    */
   function createGuidePanel(data, mode = 'explore') {
+    const grade = detectGradeFromURL();
+    const craInfo = getCRAInfo(grade);
+    const piagetInfo = getPiagetInfo(grade);
+    const misconceptions = detectMisconceptions();
+
     const panelHTML = `
       <div class="vinculum-guide-panel" id="vinculumGuidePanel">
-        <button class="guide-toggle" id="guideToggle" title="Toggle guide panel" aria-label="Toggle guide panel">&#9776;</button>
+        <button class="guide-toggle" id="guideToggle" title="Toggle teacher guide" aria-label="Toggle teacher guide">&#9776;</button>
         <div class="guide-header">
-          <span class="guide-header-title">Guide</span>
+          <span class="guide-header-title">Teacher Guide</span>
         </div>
         <div class="guide-content">
           <div class="panel-section">
-            <div class="panel-title">How to Use</div>
-            <div class="panel-text guide-instructions" id="guideInstructions">
-              ${data.instructions[mode] || data.instructions.explore}
+            <div class="panel-title">CRA Level</div>
+            <div class="panel-text" id="guideCRA">
+              <div class="cra-bar">
+                <span class="cra-dot ${craInfo.primary === 'concrete' ? 'active' : ''}">C</span>
+                <span class="cra-connector"></span>
+                <span class="cra-dot ${craInfo.primary === 'representational' ? 'active' : ''}">R</span>
+                <span class="cra-connector"></span>
+                <span class="cra-dot ${craInfo.primary === 'abstract' ? 'active' : ''}">A</span>
+              </div>
+              <p style="margin:6px 0 0;font-size:12px;color:var(--text2)">${craInfo.description}</p>
             </div>
           </div>
           <div class="panel-section">
-            <div class="panel-title">Standards</div>
+            <div class="panel-title">Teaching Notes</div>
+            <div class="panel-text guide-instructions" id="guideInstructions">
+              ${data.teachingNotes ? (data.teachingNotes[mode] || data.teachingNotes.explore) : (data.instructions[mode] || data.instructions.explore)}
+            </div>
+          </div>
+          ${misconceptions.length > 0 ? `
+          <div class="panel-section">
+            <div class="panel-title">Watch For</div>
+            <div class="panel-text guide-misconceptions" id="guideMisconceptions">
+              ${misconceptions.map(m => `<div class="misconception-item">${escapeHTML(m)}</div>`).join('')}
+            </div>
+          </div>` : ''}
+          <div class="panel-section">
+            <div class="panel-title">Developmental Stage</div>
+            <div class="panel-text" id="guidePiaget">
+              <div class="piaget-badge">${piagetInfo.label}</div>
+              <p style="margin:6px 0 0;font-size:12px;color:var(--text2)">${piagetInfo.description}</p>
+            </div>
+          </div>
+          <div class="panel-section">
+            <div class="panel-title">Standards Addressed</div>
             <div class="panel-text guide-standards" id="guideStandards">
               ${buildStandardsHTML(data.standards)}
-            </div>
-          </div>
-          <div class="panel-section">
-            <div class="panel-title">Key Concept</div>
-            <div class="panel-text guide-concept" id="guideConcept">
-              ${data.keyConcept}
             </div>
           </div>
         </div>
@@ -675,6 +774,68 @@
         }
       }
 
+      /* CRA Level Bar */
+      .cra-bar {
+        display: flex;
+        align-items: center;
+        gap: 0;
+        margin: 4px 0;
+      }
+      .cra-dot {
+        width: 32px;
+        height: 32px;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 13px;
+        font-weight: 800;
+        border: 2px solid var(--border);
+        color: var(--muted);
+        background: transparent;
+        transition: all 0.2s;
+      }
+      .cra-dot.active {
+        border-color: var(--cyan);
+        color: var(--cyan);
+        background: rgba(0,212,255,0.1);
+        box-shadow: 0 0 8px rgba(0,212,255,0.3);
+      }
+      .cra-connector {
+        width: 16px;
+        height: 2px;
+        background: var(--border);
+      }
+
+      /* Piaget Stage Badge */
+      .piaget-badge {
+        display: inline-block;
+        padding: 3px 10px;
+        border-radius: 12px;
+        font-size: 11px;
+        font-weight: 700;
+        letter-spacing: 0.3px;
+        border: 1.5px solid var(--green, #00e676);
+        color: var(--green, #00e676);
+        background: transparent;
+      }
+
+      /* Misconception Items */
+      .misconception-item {
+        padding: 6px 0;
+        border-bottom: 1px solid var(--border);
+        font-size: 12px;
+        line-height: 1.5;
+        color: var(--text2);
+      }
+      .misconception-item:last-child {
+        border-bottom: none;
+      }
+      .misconception-item::before {
+        content: '⚠ ';
+        color: var(--yellow, #ffc107);
+      }
+
       /* Prevent layout shift when scrollbar appears */
       body {
         overflow-y: scroll;
@@ -800,8 +961,11 @@
    */
   function updateInstructions(guideData, mode) {
     const instructionsEl = document.getElementById('guideInstructions');
-    if (instructionsEl && guideData.instructions[mode]) {
-      instructionsEl.innerHTML = guideData.instructions[mode];
+    if (instructionsEl) {
+      const notes = guideData.teachingNotes || guideData.instructions;
+      if (notes[mode]) {
+        instructionsEl.innerHTML = notes[mode];
+      }
     }
   }
 
