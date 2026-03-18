@@ -92,6 +92,11 @@ const CRA_TOPIC_STAGES = {
   'equivalent fractions':        { 1:'C', 2:'R', 3:'A' },
   'adding and subtracting fractions': { 1:'C', 2:'R', 3:'A' },
   'angles and lines of symmetry':{ 1:'C', 2:'R', 3:'A' },
+  // Grade 5 (new topics)
+  'multiplication and division': { 1:'R', 2:'R', 3:'A' },
+  'patterns and algebraic thinking': { 1:'R', 2:'A', 3:'A' },
+  'geometry and measurement':    { 1:'C', 2:'R', 3:'A' },
+  'data analysis':               { 1:'R', 2:'R', 3:'A' },
   // Grade 5+
   'place value and decimals':    { 1:'C', 2:'R', 3:'A' },
   'fraction operations':         { 1:'C', 2:'R', 3:'A' },
@@ -130,7 +135,12 @@ const CRA_TOPIC_STAGES = {
   'expressions and equations':   { 1:'R', 2:'A', 3:'A' },
   'real number system':          { 1:'R', 2:'R', 3:'A' },
   'linear functions':            { 1:'R', 2:'R', 3:'A' },
-  'solving equations':           { 1:'R', 2:'A', 3:'A' }
+  'solving equations':           { 1:'R', 2:'A', 3:'A' },
+  // Grade 8 (new topics)
+  'linear equations and functions': { 1:'R', 2:'R', 3:'A' },
+  'geometry and transformations':   { 1:'R', 2:'R', 3:'A' },
+  'data and statistics':            { 1:'R', 2:'R', 3:'A' },
+  'exponents and scientific notation': { 1:'R', 2:'A', 3:'A' }
 };
 
 // ── MANIPULATIVE DATABASE ────────────────────────────────
@@ -420,7 +430,48 @@ const MANIPULATIVE_MAP = {
       A: 'Calculate missing angles using angle relationships (sum to 180°, 360°)'
     }
   },
-  // ── GRADE 5+ ──
+  // ── GRADE 5 (new topics) ──
+  'multiplication and division': {
+    physical: ['Base-10 blocks','Area model grid paper','Multiplication chart'],
+    virtual: 'areaModel',
+    diagram: 'areaModel',
+    interventions: {
+      C: 'Use base-10 blocks to show partial products physically',
+      R: 'Draw area model with labeled dimensions for multi-digit multiplication',
+      A: 'Apply standard algorithm with place value alignment'
+    }
+  },
+  'patterns and algebraic thinking': {
+    physical: ['Algebra tiles','Function machines','Pattern blocks','Input-output tables'],
+    virtual: 'numberLine',
+    diagram: 'numberLine',
+    interventions: {
+      C: 'Use physical function machine — drop in input, see output',
+      R: 'Draw input-output tables and graph pattern relationships',
+      A: 'Write expressions with variables and apply order of operations'
+    }
+  },
+  'geometry and measurement': {
+    physical: ['Protractors','Rulers','Shape cut-outs','Nets templates','Grid paper'],
+    virtual: 'rectPrism',
+    diagram: 'rectPrism',
+    interventions: {
+      C: 'Handle and classify physical shapes; measure with rulers and protractors',
+      R: 'Draw shapes with labeled attributes; draw nets for 3D shapes',
+      A: 'Apply formulas for perimeter, area, and unit conversions'
+    }
+  },
+  'data analysis': {
+    physical: ['Linking cubes','Graph paper','Number cards','Tally chart templates'],
+    virtual: 'numberLine',
+    diagram: 'numberLine',
+    interventions: {
+      C: 'Stack cubes to represent data points; level to find mean',
+      R: 'Draw line plots, bar graphs; mark mean/median on number line',
+      A: 'Calculate mean, median, mode, and range from data sets'
+    }
+  },
+  // ── GRADE 5+ (existing) ──
   'place value and decimals': {
     physical: ['Base-10 blocks','Place value mat','Decimal number lines'],
     virtual: 'base10',
@@ -701,6 +752,47 @@ const MANIPULATIVE_MAP = {
       A: 'Solve algebraically showing inverse operation steps'
     }
   },
+  // ── GRADE 8 (new topics) ──
+  'linear equations and functions': {
+    physical: ['Graph paper','Slope triangles','Rate cards','Algebra tiles'],
+    virtual: 'coordPlane',
+    diagram: 'coordPlane',
+    interventions: {
+      C: 'Build rise/run with physical slope triangles; plot points on poster grid',
+      R: 'Plot table of values on coordinate plane and draw line',
+      A: 'Write equations in y = mx + b form and solve systems algebraically'
+    }
+  },
+  'geometry and transformations': {
+    physical: ['Tracing paper','Coordinate grid mats','MIRA/mirrors','Rulers'],
+    virtual: 'coordPlane',
+    diagram: 'coordPlane',
+    interventions: {
+      C: 'Use tracing paper to physically reflect, rotate, and translate shapes',
+      R: 'Plot original and image on coordinate plane; label transformation',
+      A: 'Apply coordinate rules: (x,y)→(−x,y) for reflection, (x,y)→(−y,x) for rotation'
+    }
+  },
+  'data and statistics': {
+    physical: ['Graph paper','Rulers (for line of best fit)','Data cards'],
+    virtual: 'coordPlane',
+    diagram: 'coordPlane',
+    interventions: {
+      C: 'Plot physical data points and use a ruler to estimate line of best fit',
+      R: 'Draw scatter plots and two-way tables; sketch trend lines',
+      A: 'Calculate slope of line of best fit; interpret residuals and correlation'
+    }
+  },
+  'exponents and scientific notation': {
+    physical: ['Calculator','Powers-of-10 charts','Folding paper (for exponential growth)'],
+    virtual: 'numberLine',
+    diagram: 'numberLine',
+    interventions: {
+      C: 'Fold paper to demonstrate doubling; use calculator to explore patterns',
+      R: 'Draw powers-of-10 number line showing place value jumps',
+      A: 'Apply exponent rules and convert between standard and scientific notation'
+    }
+  },
   'right triangle trigonometry': {
     physical: ['Protractor','Clinometer','Right triangle cut-outs'],
     virtual: 'rightTriangle',
@@ -776,7 +868,12 @@ const TOPIC_ALIASES = {
   'solving equations': 'solve equations inequalities and systems',
   'expressions and equations': 'expressions and patterns',
   'linear functions': 'proportional relationships',
-  'locate and compare numbers': 'place value and decimals'
+  'locate and compare numbers': 'place value and decimals',
+  // Grade 5 cross-aliases
+  'multiplication and division': 'multi-digit operations',
+  'patterns and algebraic thinking': 'expressions and patterns',
+  'geometry and measurement': 'volume and measurement',
+  'data analysis': 'data and graphing'
 };
 
 // Resolve a topic name against a problem DB — try exact first, then alias
