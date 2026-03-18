@@ -59,6 +59,40 @@ function getCRAStage(dok, topicName) {
 
 // Topic-specific CRA bias
 const CRA_TOPIC_STAGES = {
+  // Kindergarten
+  'counting and cardinality':    { 1:'C', 2:'C', 3:'R' },
+  'addition and subtraction within 10': { 1:'C', 2:'C', 3:'R' },
+  'numbers and base ten':        { 1:'C', 2:'R', 3:'A' },
+  'measurement and comparison':  { 1:'C', 2:'C', 3:'R' },
+  'geometry and shapes':         { 1:'C', 2:'R', 3:'A' },
+  'sorting and classifying':     { 1:'C', 2:'R', 3:'A' },
+  // Grade 1
+  'addition and subtraction within 20': { 1:'C', 2:'C', 3:'R' },
+  'place value within 120':      { 1:'C', 2:'R', 3:'A' },
+  'measurement and length':      { 1:'C', 2:'C', 3:'R' },
+  'time and data':               { 1:'C', 2:'R', 3:'A' },
+  'shapes and geometry':         { 1:'C', 2:'R', 3:'A' },
+  // Grade 2
+  'addition and subtraction within 100': { 1:'C', 2:'R', 3:'A' },
+  'place value and three-digit numbers': { 1:'C', 2:'R', 3:'A' },
+  'money and time':              { 1:'C', 2:'R', 3:'A' },
+  'data and graphing':           { 1:'C', 2:'R', 3:'A' },
+  'shapes and fractions':        { 1:'C', 2:'R', 3:'A' },
+  // Grade 3
+  'multiplication and division facts': { 1:'C', 2:'R', 3:'A' },
+  'rounding and estimation':     { 1:'R', 2:'R', 3:'A' },
+  'understanding fractions':     { 1:'C', 2:'R', 3:'A' },
+  'area and perimeter':          { 1:'C', 2:'R', 3:'A' },
+  'time and measurement':        { 1:'C', 2:'R', 3:'A' },
+  'shapes and attributes':       { 1:'C', 2:'R', 3:'A' },
+  // Grade 4
+  'multi-step word problems':    { 1:'R', 2:'R', 3:'A' },
+  'place value and rounding':    { 1:'C', 2:'R', 3:'A' },
+  'multi-digit arithmetic':      { 1:'C', 2:'R', 3:'A' },
+  'equivalent fractions':        { 1:'C', 2:'R', 3:'A' },
+  'adding and subtracting fractions': { 1:'C', 2:'R', 3:'A' },
+  'angles and lines of symmetry':{ 1:'C', 2:'R', 3:'A' },
+  // Grade 5+
   'place value and decimals':    { 1:'C', 2:'R', 3:'A' },
   'fraction operations':         { 1:'C', 2:'R', 3:'A' },
   'multi-digit operations':      { 1:'R', 2:'R', 3:'A' },
@@ -101,6 +135,292 @@ const CRA_TOPIC_STAGES = {
 
 // ── MANIPULATIVE DATABASE ────────────────────────────────
 const MANIPULATIVE_MAP = {
+  // ── KINDERGARTEN ──
+  'counting and cardinality': {
+    physical: ['Counting bears','Ten frames','Number cards','Rekenrek'],
+    virtual: 'numberLine',
+    diagram: 'numberLine',
+    interventions: {
+      C: 'Use counting bears — touch and move each object as you count',
+      R: 'Draw dots on a ten frame to show the number',
+      A: 'Write the numeral and number word'
+    }
+  },
+  'addition and subtraction within 10': {
+    physical: ['Two-color counters','Ten frames','Linking cubes','Part-part-whole mats'],
+    virtual: 'numberLine',
+    diagram: 'numberLine',
+    interventions: {
+      C: 'Snap linking cubes together to add, break apart to subtract',
+      R: 'Draw counters on a ten frame or part-part-whole mat',
+      A: 'Write the number sentence: ___ + ___ = ___'
+    }
+  },
+  'numbers and base ten': {
+    physical: ['Bundling sticks','Ten frames','Base-10 blocks (units and rods)'],
+    virtual: 'base10',
+    diagram: 'base10',
+    interventions: {
+      C: 'Bundle 10 sticks together to make a ten, count leftover ones',
+      R: 'Draw a tens-and-ones chart and fill in the values',
+      A: 'Write the number as 10 + ones'
+    }
+  },
+  'measurement and comparison': {
+    physical: ['Unifix cubes','Balance scale','Non-standard units (paper clips, hands)'],
+    virtual: 'numberLine',
+    diagram: 'numberLine',
+    interventions: {
+      C: 'Line up cubes end to end next to the object and count',
+      R: 'Draw two objects side by side and label which is longer/shorter',
+      A: 'Use comparison words: longer, shorter, heavier, lighter'
+    }
+  },
+  'geometry and shapes': {
+    physical: ['Pattern blocks','Geoboards','Shape sorting trays','Solid shape models'],
+    virtual: 'numberLine',
+    diagram: 'numberLine',
+    interventions: {
+      C: 'Handle and sort real 2D and 3D shapes by attributes',
+      R: 'Draw shapes and label sides, corners',
+      A: 'Name shapes and describe their attributes using math words'
+    }
+  },
+  'sorting and classifying': {
+    physical: ['Attribute blocks','Sorting mats','Venn diagram hoops','Button collections'],
+    virtual: 'numberLine',
+    diagram: 'numberLine',
+    interventions: {
+      C: 'Sort real objects into groups on sorting mats',
+      R: 'Draw groups and label the sorting rule',
+      A: 'Describe the rule and count how many in each group'
+    }
+  },
+  // ── GRADE 1 ──
+  'addition and subtraction within 20': {
+    physical: ['Linking cubes','Ten frames','Number line','Two-color counters'],
+    virtual: 'numberLine',
+    diagram: 'numberLine',
+    interventions: {
+      C: 'Snap cubes together to add, break apart to subtract; use ten frames for make-10 strategy',
+      R: 'Draw hops on a number line showing counting on/back',
+      A: 'Write number sentences and use fact families'
+    }
+  },
+  'place value within 120': {
+    physical: ['Base-10 blocks (units and rods)','Bundling sticks','Hundred chart'],
+    virtual: 'base10',
+    diagram: 'base10',
+    interventions: {
+      C: 'Build numbers with rods (tens) and units (ones)',
+      R: 'Draw tens and ones in a place-value chart',
+      A: 'Write numbers in expanded form: 47 = 40 + 7'
+    }
+  },
+  'measurement and length': {
+    physical: ['Unifix cubes','Paper clips','Rulers','String'],
+    virtual: 'numberLine',
+    diagram: 'numberLine',
+    interventions: {
+      C: 'Line up cubes end-to-end beside the object and count',
+      R: 'Draw objects with labeled lengths on a number line',
+      A: 'Compare measurements using subtraction'
+    }
+  },
+  'time and data': {
+    physical: ['Demonstration clock','Tally chart paper','Sorting mats'],
+    virtual: 'numberLine',
+    diagram: 'numberLine',
+    interventions: {
+      C: 'Move hands on a demonstration clock to show times',
+      R: 'Draw clock faces and tally charts',
+      A: 'Read times and interpret data to answer questions'
+    }
+  },
+  'shapes and geometry': {
+    physical: ['Pattern blocks','Geoboards','3D shape models','Fraction circles'],
+    virtual: 'numberLine',
+    diagram: 'numberLine',
+    interventions: {
+      C: 'Sort and build shapes with pattern blocks and geoboards',
+      R: 'Draw shapes, label sides and vertices, show partitions',
+      A: 'Name shapes by attributes and identify fractions of shapes'
+    }
+  },
+  // ── GRADE 2 ──
+  'addition and subtraction within 100': {
+    physical: ['Base-10 blocks','Open number line','Hundred chart'],
+    virtual: 'base10',
+    diagram: 'base10',
+    interventions: {
+      C: 'Use base-10 blocks to add and subtract with regrouping',
+      R: 'Draw jumps on open number line showing place-value strategy',
+      A: 'Use standard algorithm or mental math strategies'
+    }
+  },
+  'place value and three-digit numbers': {
+    physical: ['Base-10 blocks (flats, rods, units)','Place value mat','Number cards'],
+    virtual: 'base10',
+    diagram: 'base10',
+    interventions: {
+      C: 'Build three-digit numbers with flats, rods, and units',
+      R: 'Draw place-value chart with H-T-O columns',
+      A: 'Write expanded form and compare using >, <, ='
+    }
+  },
+  'money and time': {
+    physical: ['Play coins','Demonstration clock','Price tags'],
+    virtual: 'numberLine',
+    diagram: 'numberLine',
+    interventions: {
+      C: 'Sort and count play coins; move clock hands to show times',
+      R: 'Draw coin combinations and clock faces',
+      A: 'Calculate totals, make change, and solve elapsed time problems'
+    }
+  },
+  'data and graphing': {
+    physical: ['Graph paper','Linking cubes for bar graphs','Tally chart templates'],
+    virtual: 'numberLine',
+    diagram: 'numberLine',
+    interventions: {
+      C: 'Stack cubes to build physical bar graphs',
+      R: 'Draw bar graphs and picture graphs from tally data',
+      A: 'Read graphs to answer comparison and sum questions'
+    }
+  },
+  'shapes and fractions': {
+    physical: ['Pattern blocks','Fraction circles','Geoboards','Grid paper'],
+    virtual: 'fractionBar',
+    diagram: 'fractionBar',
+    interventions: {
+      C: 'Fold and cut paper shapes to show halves, thirds, fourths',
+      R: 'Draw shapes partitioned into equal parts and shade fractions',
+      A: 'Write fraction notation and compare unit fractions'
+    }
+  },
+  // ── GRADE 3 ──
+  'multiplication and division facts': {
+    physical: ['Array cards','Multiplication chart','Linking cubes','Equal group mats'],
+    virtual: 'areaModel',
+    diagram: 'areaModel',
+    interventions: {
+      C: 'Build arrays with cubes or counters to show multiplication as rows × columns',
+      R: 'Draw arrays or area models and label dimensions',
+      A: 'Use fact families and the distributive property'
+    }
+  },
+  'rounding and estimation': {
+    physical: ['Number line','Hundred chart','Place value cards'],
+    virtual: 'numberLine',
+    diagram: 'numberLine',
+    interventions: {
+      C: 'Place numbers on a physical number line to see which ten/hundred is closer',
+      R: 'Draw number line with endpoints and mark the number\'s position',
+      A: 'Apply rounding rules: look at the digit to the right'
+    }
+  },
+  'understanding fractions': {
+    physical: ['Fraction bars/tiles','Fraction circles','Pattern blocks','Number line strips'],
+    virtual: 'fractionBar',
+    diagram: 'fractionBar',
+    interventions: {
+      C: 'Build fractions with fraction bars — compare by placing side by side',
+      R: 'Draw fraction bars and plot fractions on a number line',
+      A: 'Write equivalent fractions using multiplication/division'
+    }
+  },
+  'area and perimeter': {
+    physical: ['Unit square tiles','Grid paper','Geoboards','Rulers'],
+    virtual: 'areaModel',
+    diagram: 'areaModel',
+    interventions: {
+      C: 'Cover shapes with unit squares to count area; use string for perimeter',
+      R: 'Draw shapes on grid paper, label dimensions, write formulas',
+      A: 'Apply A = l × w and P = 2(l + w) formulas'
+    }
+  },
+  'time and measurement': {
+    physical: ['Demonstration clock','Graduated cylinders','Balance scale','Rulers'],
+    virtual: 'numberLine',
+    diagram: 'numberLine',
+    interventions: {
+      C: 'Use clocks and measuring tools hands-on to measure and tell time',
+      R: 'Draw clock faces and number lines for elapsed time',
+      A: 'Calculate elapsed time and convert between units'
+    }
+  },
+  'shapes and attributes': {
+    physical: ['Pattern blocks','Geoboards','Protractors','Shape sorting cards'],
+    virtual: 'numberLine',
+    diagram: 'numberLine',
+    interventions: {
+      C: 'Sort physical shapes by attributes (sides, angles, symmetry)',
+      R: 'Draw shapes, mark right angles, and show lines of symmetry',
+      A: 'Classify shapes using hierarchy (quadrilateral → rectangle → square)'
+    }
+  },
+  // ── GRADE 4 ──
+  'multi-step word problems': {
+    physical: ['Base-10 blocks','Counters','Tape diagram templates'],
+    virtual: 'numberLine',
+    diagram: 'numberLine',
+    interventions: {
+      C: 'Use manipulatives to act out each step of the problem',
+      R: 'Draw tape diagrams or bar models to represent relationships',
+      A: 'Write equations with variables and solve step by step'
+    }
+  },
+  'place value and rounding': {
+    physical: ['Place value disks','Expanded form cards','Number line'],
+    virtual: 'base10',
+    diagram: 'base10',
+    interventions: {
+      C: 'Use place value disks to build and compare large numbers',
+      R: 'Draw place value charts and number lines for rounding',
+      A: 'Apply rounding rules and compare using >, <, ='
+    }
+  },
+  'multi-digit arithmetic': {
+    physical: ['Base-10 blocks','Area model grid paper','Place value mats'],
+    virtual: 'areaModel',
+    diagram: 'areaModel',
+    interventions: {
+      C: 'Use base-10 blocks to show regrouping in addition/subtraction',
+      R: 'Draw area models for multiplication and partial quotients for division',
+      A: 'Use standard algorithms with place value alignment'
+    }
+  },
+  'equivalent fractions': {
+    physical: ['Fraction bars/tiles','Fraction circles','Number line strips'],
+    virtual: 'fractionBar',
+    diagram: 'fractionBar',
+    interventions: {
+      C: 'Stack fraction bars to find pieces that are the same length',
+      R: 'Draw fraction models side by side and shade equivalent amounts',
+      A: 'Multiply/divide numerator and denominator by the same number'
+    }
+  },
+  'adding and subtracting fractions': {
+    physical: ['Fraction bars/tiles','Number line','Pattern blocks'],
+    virtual: 'fractionBar',
+    diagram: 'fractionBar',
+    interventions: {
+      C: 'Combine fraction tiles end-to-end to add; remove to subtract',
+      R: 'Draw fraction bars showing the operation step by step',
+      A: 'Find common denominators and compute symbolically'
+    }
+  },
+  'angles and lines of symmetry': {
+    physical: ['Protractors','Angle rulers','Patty paper','MIRA/mirrors'],
+    virtual: 'numberLine',
+    diagram: 'numberLine',
+    interventions: {
+      C: 'Measure angles with a protractor; fold paper to find symmetry lines',
+      R: 'Draw angles with labels and mark lines of symmetry on diagrams',
+      A: 'Calculate missing angles using angle relationships (sum to 180°, 360°)'
+    }
+  },
+  // ── GRADE 5+ ──
   'place value and decimals': {
     physical: ['Base-10 blocks','Place value mat','Decimal number lines'],
     virtual: 'base10',
