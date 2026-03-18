@@ -1,0 +1,115 @@
+name: Sync NODE to Hub and Digester
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'engines/**'
+      - 'data/**'
+      - 'css/**'
+      - 'vinculum-tools-api.json'
+
+jobs:
+  sync-to-hub:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout NODE
+        uses: actions/checkout@v4
+        with:
+          path: node
+
+      - name: Checkout Hub
+        uses: actions/checkout@v4
+        with:
+          repository: discrafty-cpu/vinculum-hub
+          token: ${{ secrets.SYNC_TOKEN }}
+          path: hub
+
+      - name: Sync shared assets to Hub
+        run: |
+          # Create shared directory in Hub if it doesn't exist
+          mkdir -p hub/shared/engines hub/shared/data hub/shared/css
+
+          # Sync engines
+          cp -R node/engines/* hub/shared/engines/
+
+          # Sync data
+          cp -R node/data/* hub/shared/data/
+
+          # Sync CSS
+          cp -R node/css/* hub/shared/css/
+
+          # Sync tool catalog
+          cp node/vinculum-tools-api.json hub/shared/
+
+      - name: Create PR to Hub
+        uses: peter-evans/create-pull-request@v6
+        with:
+          path: hub
+          token: ${{ secrets.SYNC_TOKEN }}
+          commit-message: "Sync shared assets from vinculum-node"
+          title: "Sync: Update shared engines and data from NODE"
+          body: |
+            Automated sync from [vinculum-node](https://github.com/discrafty-cpu/vinculum-node).
+
+            **Changed files synced:**
+            - `shared/engines/` — JS engines
+            - `shared/data/` — Curriculum data files
+            - `shared/css/` — Shared stylesheets
+            - `shared/vinculum-tools-api.json` — Tool catalog
+
+            Review and merge when ready. This will not affect Hub until merged.
+          branch: sync/node-update
+          delete-branch: true
+
+  sync-to-digester:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout NODE
+        uses: actions/checkout@v4
+        with:
+          path: node
+
+      - name: Checkout Digester
+        uses: actions/checkout@v4
+        with:
+          repository: discrafty-cpu/lesson-digester
+          token: ${{ secrets.SYNC_TOKEN }}
+          path: digester
+
+      - name: Sync shared assets to Digester
+        run: |
+          # Create shared directory in Digester if it doesn't exist
+          mkdir -p digester/shared/engines digester/shared/data digester/shared/css
+
+          # Sync engines
+          cp -R node/engines/* digester/shared/engines/
+
+          # Sync data
+          cp -R node/data/* digester/shared/data/
+
+          # Sync CSS
+          cp -R node/css/* digester/shared/css/
+
+          # Sync tool catalog
+          cp node/vinculum-tools-api.json digester/shared/
+
+      - name: Create PR to Digester
+        uses: peter-evans/create-pull-request@v6
+        with:
+          path: digester
+          token: ${{ secrets.SYNC_TOKEN }}
+          commit-message: "Sync shared assets from vinculum-node"
+          title: "Sync: Update shared engines and data from NODE"
+          body: |
+            Automated sync from [vinculum-node](https://github.com/discrafty-cpu/vinculum-node).
+
+            **Changed files synced:**
+            - `shared/engines/` — JS engines
+            - `shared/data/` — Curriculum data files
+            - `shared/css/` — Shared stylesheets
+            - `shared/vinculum-tools-api.json` — Tool catalog
+
+            Review and merge when ready. This will not affect Digester until merged.
+          branch: sync/node-update
+          delete-branch: true
