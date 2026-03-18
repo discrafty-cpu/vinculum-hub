@@ -1,0 +1,937 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>VINCULUM — Length Comparisons</title>
+<link rel="stylesheet" href="../../vinculum-core.css">
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;600&display=swap');
+.vinculum-rtm-btn .rtm-icon{font-size:14px;}
+
+/* === FOCUS VISIBLE === */
+*:focus-visible {
+  outline:2px solid var(--cyan);outline-offset:2px;border-radius:4px;
+}
+.sr-only {
+  position:absolute;width:1px;height:1px;padding:0;margin:-1px;
+  overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0;
+}
+*{margin:0;padding:0;box-sizing:border-box;}
+body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);height:100vh;display:flex;flex-direction:column;overflow:hidden;user-select:none;}
+
+.main{flex:1;display:flex;overflow:hidden;}
+.workspace{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:24px;gap:16px;overflow-y:auto;}
+.side-panel{width:280px;background:var(--bg2);border-left:1px solid var(--border);padding:20px;overflow-y:auto;flex-shrink:0;}
+.panel-section{margin-bottom:20px;}
+.panel-title{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:1.5px;color:var(--muted);margin-bottom:8px;}
+.panel-text{font-size:13px;color:var(--text2);line-height:1.6;}
+
+/* === Object Display === */
+.object-pair{display:flex;flex-direction:column;gap:20px;width:100%;max-width:560px;}
+.object-row{display:flex;align-items:flex-start;gap:12px;}
+.object-emoji{font-size:28px;min-width:40px;text-align:center;padding-top:2px;}
+.object-info{display:flex;flex-direction:column;gap:2px;min-width:72px;}
+.object-name{font-size:13px;font-weight:700;color:var(--text2);text-transform:capitalize;}
+.object-length-label{font-size:11px;font-weight:600;color:var(--muted);font-family:'JetBrains Mono',monospace;}
+.bar-with-units{display:flex;flex-direction:column;gap:6px;flex:1;}
+
+/* === SVG Bars === */
+.bar-svg-wrap{position:relative;}
+.bar-svg-wrap svg{display:block;}
+
+/* === Unit Blocks === */
+.unit-blocks-row{display:flex;flex-direction:row;gap:2px;padding-left:0;}
+.unit-block{width:30px;height:22px;border-radius:4px;border:1.5px solid rgba(255,255,255,0.18);display:flex;align-items:center;justify-content:center;font-size:9px;font-weight:700;color:rgba(255,255,255,0.6);font-family:'JetBrains Mono',monospace;transition:all 0.2s;cursor:default;}
+.unit-block.placed{border-color:var(--yellow);background:rgba(255,193,7,0.18);animation:blockPop 0.25s ease-out;}
+.unit-block.ghost{opacity:0.3;border-style:dashed;}
+
+@keyframes blockPop{0%{transform:scale(0.7);opacity:0;}100%{transform:scale(1);opacity:1;}}
+
+/* === Alignment Guide === */
+.alignment-guide{position:absolute;left:0;top:-4px;bottom:-4px;width:2px;background:var(--cyan);opacity:0.45;border-radius:1px;z-index:2;}
+
+/* === Drag Zone (Explore) === */
+.drag-zone{display:flex;flex-direction:column;gap:12px;width:100%;max-width:560px;padding:16px;background:var(--card);border:1px dashed var(--border);border-radius:14px;position:relative;}
+.drag-zone-label{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:1px;color:var(--muted);text-align:center;margin-bottom:4px;}
+.block-tray{display:flex;gap:6px;flex-wrap:wrap;justify-content:center;}
+.tray-block{width:32px;height:26px;border-radius:6px;border:2px solid var(--yellow);background:rgba(255,193,7,0.12);color:var(--yellow);font-size:10px;font-weight:700;font-family:'JetBrains Mono',monospace;display:flex;align-items:center;justify-content:center;cursor:pointer;transition:all 0.15s;}
+.tray-block:hover{transform:scale(1.12);background:rgba(255,193,7,0.25);}
+.tray-block.used{opacity:0.3;pointer-events:none;border-style:dashed;}
+
+/* === Drop Targets === */
+.drop-row{display:flex;gap:2px;min-height:26px;align-items:center;padding:4px 0;}
+.drop-slot{width:30px;height:22px;border-radius:4px;border:1.5px dashed var(--border);display:flex;align-items:center;justify-content:center;font-size:9px;font-weight:700;color:var(--muted);font-family:'JetBrains Mono',monospace;transition:all 0.15s;cursor:pointer;}
+.drop-slot.filled{border-style:solid;border-color:var(--yellow);background:rgba(255,193,7,0.18);color:var(--yellow);}
+.drop-slot:hover:not(.filled){border-color:var(--cyan);background:rgba(0,212,255,0.08);}
+
+/* === Instruction Box === */
+.instruction-box{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:14px 20px;text-align:center;font-size:15px;color:var(--text2);font-weight:500;max-width:600px;transition:all 0.3s;}
+.instruction-box.highlight-cyan{border-color:var(--cyan);color:var(--cyan);}
+.instruction-box.highlight-pink{border-color:var(--pink);color:var(--pink);}
+.instruction-box.highlight-green{border-color:var(--green);color:var(--green);}
+
+/* === Controls === */
+.controls{display:flex;gap:8px;flex-wrap:wrap;justify-content:center;}
+.ctrl-btn{padding:10px 20px;border-radius:10px;border:1px solid var(--border);background:var(--card);color:var(--text2);font-size:13px;font-weight:600;font-family:inherit;cursor:pointer;transition:all 0.2s;display:flex;align-items:center;gap:6px;}
+.ctrl-btn:hover{background:var(--card2);color:var(--text);}
+.ctrl-btn.primary{background:var(--grad);color:var(--bg);border-color:transparent;}
+
+/* === MC Grid === */
+.mc-grid{display:flex;gap:10px;flex-wrap:wrap;justify-content:center;max-width:500px;}
+.mc-btn{min-width:140px;padding:12px 16px;border-radius:12px;border:2px solid var(--border);background:var(--card);color:var(--text);font-size:14px;font-weight:600;font-family:'JetBrains Mono',monospace;cursor:pointer;transition:all 0.15s;display:flex;align-items:center;justify-content:center;text-align:center;}
+.mc-btn:hover{border-color:var(--cyan);transform:scale(1.04);}
+.mc-btn.correct-flash{border-color:var(--green);background:rgba(0,230,118,0.2);color:var(--green);animation:correctFlash 0.4s ease-out;}
+.mc-btn.incorrect-flash{border-color:var(--pink);background:rgba(255,59,139,0.2);color:var(--pink);animation:shake 0.3s ease-in-out;}
+
+@keyframes correctFlash{0%{transform:scale(1.1);}100%{transform:scale(1);}}
+@keyframes shake{0%,100%{transform:translateX(0);}25%{transform:translateX(-4px);}75%{transform:translateX(4px);}}
+
+/* === Score === */
+.score-display{text-align:center;padding:16px;background:var(--card);border-radius:12px;margin-bottom:12px;}
+.score-value{font-size:36px;font-weight:900;font-family:'JetBrains Mono',monospace;background:var(--grad);-webkit-background-clip:text;-webkit-text-fill-color:transparent;}
+.score-label{font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:1px;}
+.streak-bar{height:6px;background:var(--card);border-radius:3px;overflow:hidden;margin-top:8px;}
+.streak-fill{height:100%;background:var(--grad);border-radius:3px;transition:width 0.3s;}
+
+/* === Feedback Overlay === */
+.feedback{position:fixed;top:50%;left:50%;transform:translate(-50%,-50%) scale(0);padding:24px 48px;border-radius:20px;font-size:28px;font-weight:800;z-index:200;pointer-events:none;transition:transform 0.3s cubic-bezier(0.175,0.885,0.32,1.275),opacity 0.3s;opacity:0;max-width:90vw;text-align:center;}
+.feedback.show{transform:translate(-50%,-50%) scale(1);opacity:1;}
+.feedback.correct{background:rgba(0,230,118,0.15);color:var(--green);border:2px solid var(--green);}
+.feedback.incorrect{background:rgba(255,59,139,0.15);color:var(--pink);border:2px solid var(--pink);}
+.feedback.try-again{background:rgba(255,193,7,0.15);color:var(--yellow);border:2px solid var(--yellow);}
+
+/* === Comparison Symbol === */
+.compare-symbol{font-size:32px;font-weight:900;font-family:'JetBrains Mono',monospace;color:var(--purple);text-align:center;margin:2px 0;}
+
+::-webkit-scrollbar{width:6px;}::-webkit-scrollbar-track{background:transparent;}::-webkit-scrollbar-thumb{background:var(--border);border-radius:3px;}
+</style>
+</head>
+<body>
+
+<div class="vinculum-header">
+  <div class="vinculum-header-left">
+    <a class="vinculum-back-btn" href="../../VINCULUM-Hub.html" style="text-decoration:none;">◀ Hub</a>
+    <div class="vinculum-header-title"><span>VINCULUM</span> Length Comparisons</div>
+    <span class="vinculum-header-badge">1.MD</span>
+  </div>
+  <div class="vinculum-header-right">
+    <div class="vinculum-std-tags">
+      <span class="vinculum-std-tag">1.MD.1</span>
+      <span class="vinculum-std-tag">1.MD.2</span>
+      <span class="vinculum-std-tag mn">MN 1.3.2.1</span>
+    </div>
+    <button class="vinculum-back-btn" id="readAloudBtn" onclick="toggleReadAloud()" aria-label="Read Aloud" title="Read instructions aloud" style="margin-left:8px;white-space:nowrap;">🔊 Read to Me</button>
+  </div>
+</div>
+
+<div class="vinculum-mode-tabs">
+  <button class="vinculum-mode-tab active-explore" data-mode="explore" id="tabExplore" onclick="setMode('explore')"><svg width="18" height="18" viewBox="0 0 48 48" fill="none"><path d="M4 24C4 24 12 12 24 12C36 12 44 24 44 24C44 24 36 36 24 36C12 36 4 24 4 24Z" stroke="currentColor" stroke-width="3" fill="none"/><circle cx="24" cy="24" r="7" stroke="currentColor" stroke-width="3" fill="none"/><circle cx="24" cy="24" r="3" fill="currentColor"/><line x1="24" y1="4" x2="24" y2="9" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" opacity="0.5"/><line x1="10" y1="8" x2="13" y2="12" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" opacity="0.5"/><line x1="38" y1="8" x2="35" y2="12" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" opacity="0.5"/></svg> Explore</button>
+  <button class="vinculum-mode-tab" id="tabPractice" data-mode="practice" onclick="setMode('practice')"><svg width="18" height="18" viewBox="0 0 48 48" fill="none"><circle cx="24" cy="24" r="20" stroke="currentColor" stroke-width="3" fill="none" opacity="0.3"/><circle cx="24" cy="24" r="20" stroke="currentColor" stroke-width="3" fill="none" stroke-dasharray="126" stroke-dashoffset="32" stroke-linecap="round"/><polyline points="16,24 22,32 34,16" stroke="currentColor" stroke-width="4" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg> Practice</button>
+  <button class="vinculum-mode-tab" id="tabPlay" data-mode="play" onclick="setMode('play')"><svg width="18" height="18" viewBox="0 0 48 48" fill="none"><polygon points="28,4 12,28 22,28 18,44 36,18 26,18" fill="none" stroke="currentColor" stroke-width="3" stroke-linejoin="round"/><polygon points="27,8 15,27 23,27 20,40 34,19 26,19" fill="currentColor" opacity="0.15"/></svg> Play</button>
+  <div class="vinculum-diff-selector">
+    <span class="vinculum-diff-label">Level</span>
+    <button class="vinculum-diff-btn active" id="diffE" data-diff="emergent" onclick="setDiff('emergent')">Compare</button>
+    <button class="vinculum-diff-btn" id="diffP" data-diff="proficient" onclick="setDiff('proficient')">Measure</button>
+    <button class="vinculum-diff-btn" id="diffA" data-diff="advanced" onclick="setDiff('advanced')">Units</button>
+  </div>
+</div>
+
+<div class="main">
+  <div class="workspace" role="main" id="workspace"></div>
+  <div class="side-panel" id="sidePanel"></div>
+</div>
+<div class="feedback" id="feedback"></div>
+
+<script src="../../vinculum-input.js"></script>
+<script>
+/* ═══════════════════════════════════════════
+   DATA & CONSTANTS
+   ═══════════════════════════════════════════ */
+const ITEMS = [
+  { name:'pencil',     emoji:'✏️',  length:4, color:'#ffc107', shape:'pencil' },
+  { name:'crayon',     emoji:'🖍️', length:3, color:'#ff3b8b', shape:'crayon' },
+  { name:'book',       emoji:'📕', length:6, color:'#b388ff', shape:'book' },
+  { name:'eraser',     emoji:'🧽', length:2, color:'#00e676', shape:'eraser' },
+  { name:'ruler',      emoji:'📏', length:8, color:'#00d4ff', shape:'ruler' },
+  { name:'shoe',       emoji:'👟', length:5, color:'#ff9100', shape:'shoe' },
+  { name:'paper clip', emoji:'📎', length:1, color:'#9e9e9e', shape:'clip' },
+  { name:'marker',     emoji:'🖊️', length:4, color:'#e040fb', shape:'marker' },
+  { name:'glue stick', emoji:'🧴', length:3, color:'#76ff03', shape:'glue' },
+  { name:'scissors',   emoji:'✂️',  length:5, color:'#ff6e40', shape:'scissors' }
+];
+
+const UNIT_PX = 36;
+const BAR_H = 28;
+const BAR_R = 6;
+
+let S = {
+  mode: 'explore', diff: 'emergent',
+  objA: 0, objB: 1,
+  // Explore drag state
+  placedA: 0, placedB: 0,
+  // Practice
+  pObjA: 0, pObjB: 0, pTarget: 0, pType: 'compare',
+  pQuestion: '', pAnswer: '', pChoices: [], pEqual: false,
+  // Play
+  round: 0, total: 10, score: 0, streak: 0, best: 0,
+  playObjA: 0, playObjB: 0, playTarget: 0, playType: 'compare',
+  playQuestion: '', playAnswer: '', playChoices: [], playEqual: false
+};
+
+/* ═══════════════════════════════════════════
+   MISCONCEPTIONS (6 types)
+   ═══════════════════════════════════════════ */
+const MISCONCEPTIONS = {
+  alignment:    { id:'alignment',    msg: ()           => 'Make sure both objects start at the same point! Line them up on the left before comparing.' },
+  inconsistent: { id:'inconsistent', msg: ()           => 'Use the same size unit block for both objects. Each block must be the same length!' },
+  offByOne:     { id:'off-by-one',   msg: (ans, got)   => `Close! You said ${got} but it is ${ans}. Count each unit block carefully from the start.` },
+  gapOverlap:   { id:'gap-overlap',  msg: ()           => 'Place blocks end-to-end with NO gaps and NO overlaps. Each block touches the next!' },
+  randomGuess:  { id:'random',       msg: ()           => 'Look at the bars and count the unit blocks. Which bar stretches further?' },
+  doubleCount:  { id:'double-count', msg: (ans)        => `You may have counted some blocks twice. The correct count is ${ans}. Try again!` }
+};
+
+/* ── Utilities ── */
+function rand(a, b) { return Math.floor(Math.random() * (b - a + 1)) + a; }
+
+function shuffle(arr) {
+  for (let i = arr.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [arr[i], arr[j]] = [arr[j], arr[i]];
+  }
+  return arr;
+}
+
+function pickTwo() {
+  const a = rand(0, ITEMS.length - 1);
+  let b = rand(0, ITEMS.length - 2);
+  if (b >= a) b++;
+  return [a, b];
+}
+
+function showFB(msg, type) {
+  const fb = document.getElementById('feedback');
+  fb.className = 'feedback ' + type;
+  fb.textContent = msg;
+  fb.classList.add('show');
+  setTimeout(() => { fb.classList.remove('show'); }, 2200);
+}
+
+/* ── Read-Aloud ── */
+function toggleReadAloud() {
+  if (window.VinculumStories && VinculumStories.isReading()) {
+    VinculumStories.stopReading();
+    document.getElementById('readAloudBtn').textContent = '🔊 Read to Me';
+  } else {
+    const storyEl = document.getElementById('storyBanner');
+    const instEl = document.querySelector('.instruction-box');
+    const text = storyEl ? storyEl.textContent : (instEl ? instEl.textContent : 'Welcome to Length Comparisons!');
+    if (window.VinculumStories) {
+      VinculumStories.readAloud(text, { rate: 0.85, onComplete: () => {
+        document.getElementById('readAloudBtn').textContent = '🔊 Read to Me';
+      }});
+      document.getElementById('readAloudBtn').textContent = '⏹ Stop';
+    }
+  }
+}
+
+/* ═══════════════════════════════════════════
+   MODE & DIFFICULTY
+   ═══════════════════════════════════════════ */
+function setMode(m) {
+  S.mode = m;
+  document.querySelectorAll('.vinculum-mode-tab').forEach(t => t.classList.remove('active-explore', 'active-practice', 'active-play'));
+  document.getElementById('tab' + m.charAt(0).toUpperCase() + m.slice(1)).classList.add('active-' + m);
+  S.round = 0; S.score = 0; S.streak = 0;
+  S.placedA = 0; S.placedB = 0;
+  if (m === 'practice') newPractice();
+  render();
+}
+
+function setDiff(d) {
+  S.diff = d;
+  document.querySelectorAll('.vinculum-diff-btn').forEach(b => b.classList.remove('active'));
+  document.getElementById('diff' + d.charAt(0).toUpperCase()).classList.add('active');
+  S.placedA = 0; S.placedB = 0;
+  if (S.mode === 'practice') newPractice();
+  if (S.mode === 'play') S.round = 0;
+  render();
+}
+
+function render() {
+  const ws = document.getElementById('workspace');
+  const sp = document.getElementById('sidePanel');
+  if (S.mode === 'explore') renderExplore(ws, sp);
+  else if (S.mode === 'practice') renderPractice(ws, sp);
+  else renderPlay(ws, sp);
+}
+
+/* ═══════════════════════════════════════════
+   SVG BAR BUILDER — colored rectangle with
+   rounded ends, proportional width, optional
+   pattern texture, and object-shaped details
+   ═══════════════════════════════════════════ */
+function buildBarSVG(item, showLength) {
+  const w = item.length * UNIT_PX;
+  const svgW = w + (showLength ? 36 : 4);
+  const svgH = BAR_H + 6;
+  const patId = 'pat_' + item.shape + '_' + Math.random().toString(36).slice(2,6);
+  const gradId = 'grd_' + item.shape + '_' + Math.random().toString(36).slice(2,6);
+
+  let svg = `<div class="bar-svg-wrap"><svg width="${svgW}" height="${svgH}" viewBox="0 0 ${svgW} ${svgH}">`;
+
+  // Gradient definition for the bar
+  svg += `<defs>`;
+  svg += `<linearGradient id="${gradId}" x1="0%" y1="0%" x2="100%" y2="0%">`;
+  svg += `<stop offset="0%" style="stop-color:${item.color};stop-opacity:1"/>`;
+  svg += `<stop offset="100%" style="stop-color:${item.color};stop-opacity:0.7"/>`;
+  svg += `</linearGradient>`;
+  // Subtle stripe pattern
+  svg += `<pattern id="${patId}" patternUnits="userSpaceOnUse" width="8" height="8" patternTransform="rotate(45)">`;
+  svg += `<line x1="0" y1="0" x2="0" y2="8" stroke="rgba(255,255,255,0.08)" stroke-width="3"/>`;
+  svg += `</pattern></defs>`;
+
+  // Bar shadow
+  svg += `<rect x="3" y="4" width="${w}" height="${BAR_H}" rx="${BAR_R}" fill="rgba(0,0,0,0.25)"/>`;
+  // Main bar with gradient
+  svg += `<rect x="2" y="2" width="${w}" height="${BAR_H}" rx="${BAR_R}" fill="url(#${gradId})"/>`;
+  // Pattern overlay
+  svg += `<rect x="2" y="2" width="${w}" height="${BAR_H}" rx="${BAR_R}" fill="url(#${patId})"/>`;
+  // Shine highlight on upper portion
+  svg += `<rect x="2" y="2" width="${w}" height="${Math.round(BAR_H * 0.4)}" rx="${BAR_R}" fill="rgba(255,255,255,0.12)"/>`;
+
+  // Shape-specific detail on bar
+  if (item.shape === 'pencil') {
+    // Pencil tip triangle on right end
+    const tipX = w - 2;
+    svg += `<polygon points="${tipX},${2} ${tipX + 8},${BAR_H / 2 + 2} ${tipX},${BAR_H + 2}" fill="${item.color}" opacity="0.6"/>`;
+    svg += `<polygon points="${tipX},${6} ${tipX + 5},${BAR_H / 2 + 2} ${tipX},${BAR_H - 2}" fill="#333" opacity="0.4"/>`;
+  } else if (item.shape === 'ruler') {
+    // Tick marks along the ruler
+    for (let i = 1; i < item.length; i++) {
+      const tx = 2 + i * UNIT_PX;
+      svg += `<line x1="${tx}" y1="${2}" x2="${tx}" y2="${10}" stroke="rgba(0,0,0,0.25)" stroke-width="1"/>`;
+    }
+  } else if (item.shape === 'crayon') {
+    // Rounded crayon tip
+    const tipX = w - 4;
+    svg += `<ellipse cx="${tipX + 6}" cy="${BAR_H / 2 + 2}" rx="4" ry="${BAR_H / 2 - 2}" fill="${item.color}" opacity="0.5"/>`;
+  } else if (item.shape === 'marker') {
+    // Marker cap on left end
+    svg += `<rect x="2" y="2" width="10" height="${BAR_H}" rx="3" fill="rgba(0,0,0,0.2)"/>`;
+  }
+
+  // End cap circle
+  svg += `<circle cx="${w}" cy="${BAR_H / 2 + 2}" r="3" fill="rgba(255,255,255,0.2)"/>`;
+
+  if (showLength) {
+    svg += `<text x="${w + 8}" y="${BAR_H / 2 + 3}" dominant-baseline="central" fill="${item.color}" font-size="12" font-weight="800" font-family="JetBrains Mono, monospace" opacity="0.85">${item.length}</text>`;
+  }
+  svg += `</svg></div>`;
+  return svg;
+}
+
+/* ── Unit blocks row ── */
+function buildUnitBlocks(item, count, showNumbers) {
+  let h = `<div class="unit-blocks-row">`;
+  for (let i = 0; i < count; i++) {
+    const cls = i < count ? 'placed' : 'ghost';
+    const label = showNumbers ? (i + 1) : '';
+    h += `<div class="unit-block ${cls}" style="background:${item.color}22;border-color:${item.color}88;">${label}</div>`;
+  }
+  h += `</div>`;
+  return h;
+}
+
+/* ── Full object row with bar + optional units ── */
+function buildObjectRow(item, opts) {
+  opts = opts || {};
+  let h = `<div class="object-row">`;
+  h += `<div class="object-emoji">${item.emoji}</div>`;
+  h += `<div class="object-info"><div class="object-name">${item.name}</div>`;
+  if (opts.showLengthLabel) h += `<div class="object-length-label">${item.length} unit${item.length !== 1 ? 's' : ''}</div>`;
+  h += `</div>`;
+  h += `<div class="bar-with-units">`;
+  h += buildBarSVG(item, opts.showLength || false);
+  if (opts.showUnits) h += buildUnitBlocks(item, item.length, opts.showNumbers !== false);
+  h += `</div></div>`;
+  return h;
+}
+
+/* ── Pair display with alignment guide ── */
+function buildPairDisplay(a, b, opts) {
+  opts = opts || {};
+  let h = `<div class="object-pair" style="position:relative;">`;
+  if (opts.showAlignment) h += `<div class="alignment-guide"></div>`;
+  h += buildObjectRow(ITEMS[a], opts);
+  h += buildObjectRow(ITEMS[b], opts);
+  h += `</div>`;
+  return h;
+}
+
+/* ═══════════════════════════════════════════
+   EXPLORE MODE — drag unit blocks to measure
+   ═══════════════════════════════════════════ */
+function renderExplore(ws, sp) {
+  const a = S.objA, b = S.objB;
+  const itemA = ITEMS[a], itemB = ITEMS[b];
+  let h = '';
+
+  // Story banner
+  if (window.VinculumStories) {
+    const toolName = window.location.pathname.split('/').pop().replace('.html','');
+    const storyData = VinculumStories.getStory(toolName, {a: itemA.name, b: itemB.name, n: itemA.length});
+    if (storyData && storyData.story) {
+      if (window.Vinculum3Reads) {
+        h += Vinculum3Reads.getBannerHTML(storyData);
+      } else {
+        h += '<div id="storyBanner" style="background:var(--card2,#1a1f2e);border:1px solid var(--border);border-radius:12px;padding:16px 20px;margin-bottom:8px;font-size:15px;line-height:1.6;color:var(--text);position:relative;max-width:600px;"><span style="font-size:12px;color:var(--cyan);font-weight:700;text-transform:uppercase;letter-spacing:1px;">📖 Story</span><br>' + storyData.story + '<br><em style="color:var(--yellow);font-weight:600;">' + storyData.question + '</em><button onclick="toggleReadAloud()" style="position:absolute;top:12px;right:12px;background:none;border:1px solid var(--border);border-radius:8px;padding:4px 10px;color:var(--cyan);cursor:pointer;font-size:14px;" title="Read story aloud">🔊</button></div>';
+      }
+    }
+  }
+
+  if (S.diff === 'emergent') {
+    /* ── Emergent: direct visual comparison ── */
+    h += `<div class="instruction-box">Compare the lengths. Which object is longer?</div>`;
+    h += buildPairDisplay(a, b, { showUnits: false, showLength: false, showAlignment: true });
+
+    const cmp = itemA.length > itemB.length ? 'longer than' : (itemA.length < itemB.length ? 'shorter than' : 'the same length as');
+    h += `<div style="text-align:center;margin:4px 0;font-size:15px;color:var(--text2);">`;
+    h += `The <strong style="color:${itemA.color};">${itemA.emoji} ${itemA.name}</strong> is <strong style="color:var(--purple);">${cmp}</strong> the <strong style="color:${itemB.color};">${itemB.emoji} ${itemB.name}</strong>.`;
+    h += `</div>`;
+
+    if (itemA.length !== itemB.length) {
+      const longer = itemA.length > itemB.length ? itemA : itemB;
+      const shorter = itemA.length > itemB.length ? itemB : itemA;
+      h += `<div class="compare-symbol">${itemA.length > itemB.length ? '>' : '<'}</div>`;
+      h += `<div style="text-align:center;font-size:12px;color:var(--muted);">The <strong style="color:${longer.color};">${longer.name}</strong> stretches further to the right.</div>`;
+
+      // Order display: show items sorted by length
+      const sorted = [itemA, itemB].sort((x, y) => x.length - y.length);
+      h += `<div style="text-align:center;margin-top:6px;font-size:12px;color:var(--text2);">`;
+      h += `Order: <strong style="color:${sorted[0].color};">${sorted[0].emoji} ${sorted[0].name}</strong>`;
+      h += ` &lt; <strong style="color:${sorted[1].color};">${sorted[1].emoji} ${sorted[1].name}</strong>`;
+      h += `</div>`;
+    } else {
+      h += `<div class="compare-symbol">=</div>`;
+      h += `<div style="text-align:center;font-size:12px;color:var(--muted);">Both objects end at the same point — they are equal in length!</div>`;
+    }
+
+  } else if (S.diff === 'proficient') {
+    /* ── Proficient: tap to place unit blocks ── */
+    h += `<div class="instruction-box highlight-cyan">Tap the blocks below to measure each object. Place them end-to-end!</div>`;
+
+    // Object A bar + drop slots
+    h += `<div class="object-pair" style="position:relative;">`;
+    h += `<div class="alignment-guide"></div>`;
+    h += buildExploreRow(itemA, S.placedA, 'A');
+    h += buildExploreRow(itemB, S.placedB, 'B');
+    h += `</div>`;
+
+    // Block tray
+    h += `<div class="drag-zone">`;
+    h += `<div class="drag-zone-label">Tap a slot below each bar to place a unit block</div>`;
+    h += `</div>`;
+
+    // Results
+    const doneA = S.placedA === itemA.length, doneB = S.placedB === itemB.length;
+    if (doneA && doneB) {
+      const cmp = itemA.length > itemB.length ? 'longer than' : (itemA.length < itemB.length ? 'shorter than' : 'the same length as');
+      const diff = Math.abs(itemA.length - itemB.length);
+      h += `<div style="text-align:center;font-size:15px;color:var(--green);font-weight:600;margin-top:4px;">`;
+      h += `${itemA.emoji} ${itemA.name} = <strong>${itemA.length}</strong> units &nbsp;|&nbsp; ${itemB.emoji} ${itemB.name} = <strong>${itemB.length}</strong> units`;
+      h += `</div>`;
+      h += `<div style="text-align:center;font-size:13px;color:var(--text2);">`;
+      h += `The ${itemA.name} is <strong style="color:var(--purple);">${cmp}</strong> the ${itemB.name}.`;
+      if (diff > 0) {
+        h += ` Difference: <strong style="color:var(--yellow);">${diff}</strong> unit${diff !== 1 ? 's' : ''}.`;
+      }
+      h += `</div>`;
+
+      // Visual difference bar
+      if (diff > 0) {
+        const longer = itemA.length > itemB.length ? itemA : itemB;
+        h += `<div style="text-align:center;margin-top:6px;font-size:11px;color:var(--muted);">`;
+        h += `The <strong style="color:${longer.color};">${longer.name}</strong> is <strong style="color:var(--yellow);">${diff} block${diff !== 1 ? 's' : ''}</strong> longer:`;
+        h += `</div>`;
+        h += `<div style="display:flex;gap:2px;justify-content:center;margin-top:4px;">`;
+        for (let i = 0; i < diff; i++) {
+          h += `<div style="width:30px;height:22px;border-radius:4px;border:1.5px solid var(--yellow);background:rgba(255,193,7,0.18);display:flex;align-items:center;justify-content:center;font-size:9px;font-weight:700;color:var(--yellow);font-family:'JetBrains Mono',monospace;">+${i + 1}</div>`;
+        }
+        h += `</div>`;
+      }
+    } else if (doneA || doneB) {
+      const done = doneA ? itemA : itemB;
+      const remaining = doneA ? itemB : itemA;
+      const remainLabel = doneA ? 'B' : 'A';
+      h += `<div style="text-align:center;font-size:13px;color:var(--cyan);margin-top:4px;">`;
+      h += `${done.emoji} ${done.name} measured! Now tap the slots under the ${remaining.emoji} ${remaining.name} to measure it.`;
+      h += `</div>`;
+    }
+
+  } else {
+    /* ── Advanced: unit iterations concept ── */
+    h += `<div class="instruction-box highlight-green">Each unit block is exactly 1 unit long. The number of blocks = the length. The total length equals the number of iterations of the unit.</div>`;
+    h += buildPairDisplay(a, b, { showUnits: true, showLength: true, showLengthLabel: true, showAlignment: true, showNumbers: true });
+
+    // Iteration explanation
+    h += `<div style="margin-top:8px;text-align:center;font-size:13px;color:var(--text2);max-width:520px;line-height:1.7;">`;
+    h += `The <strong style="color:${itemA.color};">${itemA.name}</strong> is <strong>${itemA.length} units</strong> long — that means <strong>${itemA.length} unit blocks</strong> fit end-to-end, no gaps, no overlaps.<br>`;
+    h += `The <strong style="color:${itemB.color};">${itemB.name}</strong> is <strong>${itemB.length} units</strong> long — <strong>${itemB.length} iterations</strong> of the unit block.`;
+    h += `</div>`;
+
+    // Show double-unit thought experiment
+    const halfA = Math.ceil(itemA.length / 2);
+    const halfB = Math.ceil(itemB.length / 2);
+    h += `<div style="margin-top:8px;padding:12px 16px;background:var(--card);border:1px solid var(--border);border-radius:10px;max-width:520px;text-align:center;font-size:12px;color:var(--muted);">`;
+    h += `<strong style="color:var(--yellow);">Think:</strong> If each block were 2 units long, you would need only <strong>${halfA}</strong> blocks to cover the ${itemA.name} and <strong>${halfB}</strong> to cover the ${itemB.name}. Fewer big blocks or more small blocks cover the same object!`;
+    h += `</div>`;
+
+    // Comparison summary table
+    h += `<div style="margin-top:8px;display:flex;gap:12px;justify-content:center;flex-wrap:wrap;">`;
+    h += `<div style="padding:10px 16px;background:${itemA.color}15;border:1px solid ${itemA.color}44;border-radius:10px;text-align:center;">`;
+    h += `<div style="font-size:20px;">${itemA.emoji}</div>`;
+    h += `<div style="font-size:11px;font-weight:700;color:${itemA.color};">${itemA.name}</div>`;
+    h += `<div style="font-size:22px;font-weight:900;font-family:'JetBrains Mono',monospace;color:${itemA.color};">${itemA.length}</div>`;
+    h += `<div style="font-size:10px;color:var(--muted);">units</div>`;
+    h += `</div>`;
+    const cmpSymbol = itemA.length > itemB.length ? '>' : (itemA.length < itemB.length ? '<' : '=');
+    h += `<div style="display:flex;align-items:center;font-size:28px;font-weight:900;color:var(--purple);font-family:'JetBrains Mono',monospace;">${cmpSymbol}</div>`;
+    h += `<div style="padding:10px 16px;background:${itemB.color}15;border:1px solid ${itemB.color}44;border-radius:10px;text-align:center;">`;
+    h += `<div style="font-size:20px;">${itemB.emoji}</div>`;
+    h += `<div style="font-size:11px;font-weight:700;color:${itemB.color};">${itemB.name}</div>`;
+    h += `<div style="font-size:22px;font-weight:900;font-family:'JetBrains Mono',monospace;color:${itemB.color};">${itemB.length}</div>`;
+    h += `<div style="font-size:10px;color:var(--muted);">units</div>`;
+    h += `</div></div>`;
+  }
+
+  // Controls
+  h += '<div class="controls" style="margin-top:12px;">';
+  h += `<button class="ctrl-btn primary" onclick="randomExploreObjects()">🎲 New Pair</button>`;
+  h += `<button class="ctrl-btn" onclick="swapExploreObjects()">🔄 Swap</button>`;
+  if (S.diff === 'proficient') h += `<button class="ctrl-btn" onclick="S.placedA=0;S.placedB=0;render();">↺ Reset Blocks</button>`;
+  h += '</div>';
+
+  // Object picker
+  h += '<div style="display:flex;gap:6px;flex-wrap:wrap;justify-content:center;margin-top:8px;">';
+  ITEMS.forEach((item, idx) => {
+    const isA = idx === a, isB = idx === b;
+    const border = isA ? item.color : (isB ? item.color : 'var(--border)');
+    const opacity = (isA || isB) ? '1' : '0.5';
+    h += `<button style="padding:6px 10px;border-radius:8px;border:2px solid ${border};background:var(--card);cursor:pointer;font-size:18px;opacity:${opacity};transition:all 0.15s;" onclick="pickExploreObj(${idx})" title="${item.name}">${item.emoji}</button>`;
+  });
+  h += '</div>';
+
+  ws.innerHTML = h;
+
+  // Side panel
+  let sp_h = `<div class="panel-section"><div class="panel-title">What is Length?</div>
+    <div class="panel-text">
+      <strong style="color:var(--purple);">Length</strong> tells how long something is from one end to the other.<br><br>
+      To compare, <strong style="color:var(--cyan);">line up the starting points</strong> and see which stretches further.
+    </div></div>`;
+
+  if (S.diff !== 'emergent') {
+    sp_h += `<div class="panel-section"><div class="panel-title">Measuring with Units</div>
+      <div class="panel-text">
+        Place <strong style="color:var(--yellow);">unit blocks</strong> end-to-end along the object.<br><br>
+        <strong style="color:var(--pink);">No gaps!</strong> Each block touches the next.<br>
+        <strong style="color:var(--pink);">No overlaps!</strong> Blocks do not stack.
+      </div></div>`;
+  }
+
+  if (S.diff === 'advanced') {
+    sp_h += `<div class="panel-section"><div class="panel-title">Unit Iteration</div>
+      <div class="panel-text">
+        The length = how many times the unit <strong>repeats</strong>.<br><br>
+        Bigger units → fewer iterations.<br>
+        Smaller units → more iterations.<br>
+        The object stays the same length!
+      </div></div>`;
+  }
+
+  sp_h += `<div class="panel-section"><div class="panel-title">Key Rule</div>
+    <div class="panel-text">
+      <strong style="color:var(--green);">Always start at the same point!</strong><br>
+      If the starting points differ, the comparison is not fair.
+    </div></div>`;
+
+  sp_h += `<div class="panel-section"><div class="panel-title">Objects</div><div class="panel-text">`;
+  ITEMS.forEach(item => {
+    sp_h += `<span style="color:${item.color};">${item.emoji}</span> ${item.name} — <strong>${item.length}</strong> unit${item.length !== 1 ? 's' : ''}<br>`;
+  });
+  sp_h += `</div></div>`;
+
+  sp.innerHTML = sp_h;
+}
+
+/* ── Explore row with clickable drop slots ── */
+function buildExploreRow(item, placed, label) {
+  let h = `<div class="object-row">`;
+  h += `<div class="object-emoji">${item.emoji}</div>`;
+  h += `<div class="object-info"><div class="object-name">${item.name}</div>`;
+  if (placed === item.length) h += `<div class="object-length-label" style="color:var(--green);">${item.length} units ✓</div>`;
+  else h += `<div class="object-length-label">${placed} / ?</div>`;
+  h += `</div>`;
+  h += `<div class="bar-with-units">`;
+  h += buildBarSVG(item, false);
+  // Drop slots
+  h += `<div class="drop-row">`;
+  for (let i = 0; i < item.length; i++) {
+    const filled = i < placed;
+    const cls = filled ? 'drop-slot filled' : 'drop-slot';
+    const onclick = filled ? '' : `onclick="placeBlock('${label}')"`;
+    h += `<div class="${cls}" ${onclick} style="${filled ? 'background:' + item.color + '22;border-color:' + item.color + '88;color:' + item.color : ''}">${filled ? (i + 1) : ''}</div>`;
+  }
+  h += `</div></div></div>`;
+  return h;
+}
+
+function placeBlock(label) {
+  const itemKey = label === 'A' ? S.objA : S.objB;
+  const item = ITEMS[itemKey];
+  if (label === 'A') {
+    if (S.placedA < item.length) S.placedA++;
+  } else {
+    if (S.placedB < item.length) S.placedB++;
+  }
+  render();
+}
+
+function swapExploreObjects() {
+  const tmp = S.objA; S.objA = S.objB; S.objB = tmp;
+  S.placedA = 0; S.placedB = 0;
+  render();
+}
+
+function randomExploreObjects() {
+  const [a, b] = pickTwo();
+  S.objA = a; S.objB = b;
+  S.placedA = 0; S.placedB = 0;
+  render();
+}
+
+let _lastPicked = 'B';
+function pickExploreObj(idx) {
+  if (_lastPicked === 'B') { S.objA = idx; _lastPicked = 'A'; }
+  else { S.objB = idx; _lastPicked = 'B'; }
+  if (S.objA === S.objB) S.objB = (S.objB + 1) % ITEMS.length;
+  S.placedA = 0; S.placedB = 0;
+  render();
+}
+
+/* ═══════════════════════════════════════════
+   PRACTICE MODE
+   ═══════════════════════════════════════════ */
+function newPractice() {
+  const [a, b] = pickTwo();
+  S.pObjA = a; S.pObjB = b;
+  const itemA = ITEMS[a], itemB = ITEMS[b];
+
+  if (S.diff === 'emergent') {
+    S.pType = 'compare';
+    const askLonger = Math.random() < 0.5;
+    const question = askLonger ? 'longer' : 'shorter';
+    S.pQuestion = `Which is ${question}?`;
+    const correctIdx = askLonger
+      ? (itemA.length >= itemB.length ? a : b)
+      : (itemA.length <= itemB.length ? a : b);
+    S.pAnswer = ITEMS[correctIdx].name;
+    S.pEqual = itemA.length === itemB.length;
+    S.pChoices = shuffle([
+      { text: `${itemA.emoji} ${itemA.name}`, value: itemA.name },
+      { text: `${itemB.emoji} ${itemB.name}`, value: itemB.name },
+      { text: 'They are equal', value: S.pEqual ? S.pAnswer : '__equal__' }
+    ]);
+
+  } else if (S.diff === 'proficient') {
+    S.pType = 'measure';
+    const target = Math.random() < 0.5 ? a : b;
+    S.pTarget = target;
+    const item = ITEMS[target];
+    S.pQuestion = `How many units long is the ${item.emoji} ${item.name}?`;
+    S.pAnswer = String(item.length);
+    const choices = new Set([item.length]);
+    choices.add(item.length + 1);
+    choices.add(Math.max(1, item.length - 1));
+    while (choices.size < 4) choices.add(rand(1, 8));
+    S.pChoices = shuffle(Array.from(choices)).map(v => ({ text: `${v} unit${v !== 1 ? 's' : ''}`, value: String(v) }));
+
+  } else {
+    S.pType = 'units';
+    const target = Math.random() < 0.5 ? a : b;
+    S.pTarget = target;
+    const item = ITEMS[target];
+    S.pQuestion = `If each unit block is 1 unit long, how many blocks fit along the ${item.emoji} ${item.name}?`;
+    S.pAnswer = String(item.length);
+    const choices = new Set([item.length]);
+    choices.add(item.length + 1);
+    choices.add(Math.max(1, item.length - 1));
+    choices.add(item.length * 2);
+    while (choices.size < 4) choices.add(rand(1, 10));
+    S.pChoices = shuffle(Array.from(choices)).map(v => ({ text: `${v} block${v !== 1 ? 's' : ''}`, value: String(v) }));
+  }
+}
+
+function renderPractice(ws, sp) {
+  if (!S.pQuestion) newPractice();
+  let h = '';
+
+  h += `<div class="instruction-box highlight-green">${S.pQuestion}</div>`;
+
+  if (S.pType === 'compare') {
+    h += buildPairDisplay(S.pObjA, S.pObjB, { showUnits: false, showLength: false, showAlignment: true });
+  } else if (S.pType === 'measure') {
+    h += buildPairDisplay(S.pObjA, S.pObjB, { showUnits: true, showLength: false, showAlignment: true, showNumbers: false });
+  } else {
+    const item = ITEMS[S.pTarget];
+    h += `<div class="object-pair" style="position:relative;"><div class="alignment-guide"></div>`;
+    h += buildObjectRow(item, { showUnits: true, showLength: false, showNumbers: false });
+    h += `</div>`;
+  }
+
+  h += '<div class="mc-grid">';
+  S.pChoices.forEach((c, i) => {
+    h += `<button class="mc-btn" id="mc${i}" onclick="checkPractice('${c.value}', ${i})">${c.text}</button>`;
+  });
+  h += '</div>';
+
+  h += '<div class="controls" style="margin-top:8px;">';
+  h += `<button class="ctrl-btn" onclick="newPractice();render();">Skip →</button>`;
+  h += '</div>';
+
+  ws.innerHTML = h;
+
+  // Side panel
+  let sp_h = `<div class="panel-section"><div class="panel-title">Steps</div>
+    <div class="panel-text" style="background:var(--card);padding:12px;border-radius:8px;">
+      <div style="margin-bottom:8px;">
+        <strong style="color:var(--purple);">① Look</strong><br>
+        <span style="font-size:12px;">See where both bars start — at the left edge</span>
+      </div>
+      <div style="margin-bottom:8px;">
+        <strong style="color:var(--cyan);">② ${S.diff === 'emergent' ? 'Compare' : 'Count'}</strong><br>
+        <span style="font-size:12px;">${S.diff === 'emergent' ? 'Which stretches further to the right?' : 'Count each unit block carefully'}</span>
+      </div>
+      <div>
+        <strong style="color:var(--green);">③ Tap</strong><br>
+        <span style="font-size:12px;">Pick your answer</span>
+      </div>
+    </div></div>`;
+
+  sp_h += `<div class="panel-section"><div class="panel-title">Watch Out!</div>
+    <div class="panel-text">
+      <strong style="color:var(--pink);">Common mistakes:</strong><br>
+      • Not lining up starting points<br>
+      • Skipping a block when counting<br>
+      • Leaving gaps between blocks<br>
+      • Counting the same block twice<br>
+      • Mixing different size units
+    </div></div>`;
+
+  sp.innerHTML = sp_h;
+}
+
+function checkPractice(clicked, idx) {
+  const btn = document.getElementById('mc' + idx);
+
+  if (S.pType === 'compare' && S.pEqual && clicked !== '__equal__') {
+    btn.classList.add('correct-flash');
+    showFB('✓ They are actually equal length! Both answers work.', 'correct');
+    setTimeout(() => { newPractice(); render(); }, 1500);
+    return;
+  }
+
+  if (clicked === S.pAnswer) {
+    btn.classList.add('correct-flash');
+    showFB('✓ Correct!', 'correct');
+    setTimeout(() => { newPractice(); render(); }, 1500);
+  } else {
+    btn.classList.add('incorrect-flash');
+    const msg = diagnoseMisconception(S.pType, S.pAnswer, clicked);
+    showFB(msg, 'try-again');
+    setTimeout(() => { btn.classList.remove('incorrect-flash'); }, 400);
+  }
+}
+
+function diagnoseMisconception(type, answer, clicked) {
+  if (type === 'compare') {
+    return MISCONCEPTIONS.alignment.msg();
+  }
+  const ans = parseInt(answer);
+  const got = parseInt(clicked);
+  if (Math.abs(ans - got) === 1) return MISCONCEPTIONS.offByOne.msg(ans, got);
+  if (got === ans * 2) return MISCONCEPTIONS.doubleCount.msg(ans);
+  if (got === Math.floor(ans / 2)) return MISCONCEPTIONS.inconsistent.msg();
+  if (got > ans + 1) return MISCONCEPTIONS.gapOverlap.msg();
+  return MISCONCEPTIONS.randomGuess.msg();
+}
+
+/* ═══════════════════════════════════════════
+   PLAY MODE — 10 rounds, 10pts + streak×2
+   ═══════════════════════════════════════════ */
+function startGame() {
+  S.round = 1; S.score = 0; S.streak = 0;
+  newPlayRound();
+}
+
+function newPlayRound() {
+  const [a, b] = pickTwo();
+  S.playObjA = a; S.playObjB = b;
+  const itemA = ITEMS[a], itemB = ITEMS[b];
+
+  if (S.diff === 'emergent') {
+    S.playType = 'compare';
+  } else if (S.diff === 'proficient') {
+    S.playType = Math.random() < 0.5 ? 'compare' : 'measure';
+  } else {
+    const r = Math.random();
+    S.playType = r < 0.33 ? 'compare' : (r < 0.66 ? 'measure' : 'units');
+  }
+
+  if (S.playType === 'compare') {
+    const askLonger = Math.random() < 0.5;
+    S.playQuestion = `Which is ${askLonger ? 'longer' : 'shorter'}?`;
+    const correctIdx = askLonger
+      ? (itemA.length >= itemB.length ? a : b)
+      : (itemA.length <= itemB.length ? a : b);
+    S.playAnswer = ITEMS[correctIdx].name;
+    S.playEqual = itemA.length === itemB.length;
+    S.playChoices = shuffle([
+      { text: `${itemA.emoji} ${itemA.name}`, value: itemA.name },
+      { text: `${itemB.emoji} ${itemB.name}`, value: itemB.name },
+      { text: 'They are equal', value: S.playEqual ? S.playAnswer : '__equal__' }
+    ]);
+
+  } else if (S.playType === 'measure') {
+    const target = Math.random() < 0.5 ? a : b;
+    S.playTarget = target;
+    const item = ITEMS[target];
+    S.playQuestion = `How many units long is the ${item.emoji} ${item.name}?`;
+    S.playAnswer = String(item.length);
+    const choices = new Set([item.length]);
+    choices.add(item.length + 1);
+    choices.add(Math.max(1, item.length - 1));
+    while (choices.size < 4) choices.add(rand(1, 8));
+    S.playChoices = shuffle(Array.from(choices)).map(v => ({ text: `${v} unit${v !== 1 ? 's' : ''}`, value: String(v) }));
+
+  } else {
+    const target = Math.random() < 0.5 ? a : b;
+    S.playTarget = target;
+    const item = ITEMS[target];
+    S.playQuestion = `How many unit blocks fit along the ${item.emoji} ${item.name}?`;
+    S.playAnswer = String(item.length);
+    const choices = new Set([item.length]);
+    choices.add(item.length + 1);
+    choices.add(Math.max(1, item.length - 1));
+    choices.add(item.length * 2);
+    while (choices.size < 4) choices.add(rand(1, 10));
+    S.playChoices = shuffle(Array.from(choices)).map(v => ({ text: `${v} block${v !== 1 ? 's' : ''}`, value: String(v) }));
+  }
+}
+
+function renderPlay(ws, sp) {
+  if (S.round === 0) startGame();
+
+  let h = '';
+  h += `<div style="font-size:13px;color:var(--muted);margin-bottom:8px;">Round ${S.round} of ${S.total}</div>`;
+  h += `<div class="instruction-box highlight-cyan">${S.playQuestion}</div>`;
+
+  if (S.playType === 'compare') {
+    h += buildPairDisplay(S.playObjA, S.playObjB, { showUnits: S.diff !== 'emergent', showLength: false, showAlignment: true, showNumbers: false });
+  } else if (S.playType === 'measure') {
+    h += buildPairDisplay(S.playObjA, S.playObjB, { showUnits: true, showLength: false, showAlignment: true, showNumbers: false });
+  } else {
+    const item = ITEMS[S.playTarget];
+    h += `<div class="object-pair" style="position:relative;"><div class="alignment-guide"></div>`;
+    h += buildObjectRow(item, { showUnits: true, showLength: false, showNumbers: false });
+    h += `</div>`;
+  }
+
+  h += '<div class="mc-grid">';
+  S.playChoices.forEach((c, i) => {
+    h += `<button class="mc-btn" id="play${i}" onclick="playPick('${c.value}', ${i})">${c.text}</button>`;
+  });
+  h += '</div>';
+
+  ws.innerHTML = h;
+
+  // Side panel with score
+  sp.innerHTML = `
+    <div class="score-display"><div class="score-value">${S.score}</div><div class="score-label">Score</div></div>
+    <div class="score-display" style="background:transparent;padding:8px;">
+      <div style="font-size:18px;font-weight:700;color:var(--yellow);"><svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor" style="vertical-align:-2px;"><path d="M12 23c-4.97 0-8-3.58-8-7.5 0-3.07 2.17-5.84 4.5-7.5-.28 2.5 1.5 4.5 1.5 4.5s2-2.5 2-5.5c0-1.5-.5-3-1-4 3 1.5 5 4 5 7 0 .5-.08 1-.08 1s1.08-1.18 1.58-2.5C19.78 11.72 20 14.5 20 15.5c0 3.92-3.03 7.5-8 7.5z"/></svg> ${S.streak}</div>
+      <div class="score-label">Streak</div>
+      <div class="streak-bar"><div class="streak-fill" style="width:${Math.min(S.streak * 20, 100)}%;"></div></div>
+    </div>
+    <div class="panel-section"><div class="panel-title">Best Streak</div>
+    <div class="panel-text" style="font-size:24px;font-weight:800;color:var(--purple);"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="vertical-align:-2px;"><path d="M6 4h12v2a6 6 0 01-12 0V4z" fill="currentColor" opacity="0.2"/><path d="M6 4h12v2a6 6 0 01-12 0V4z"/><path d="M6 6H3v2a3 3 0 003 3"/><path d="M18 6h3v2a3 3 0 01-3 3"/><line x1="12" y1="14" x2="12" y2="18"/><line x1="8" y1="18" x2="16" y2="18" stroke-linecap="round"/></svg> ${S.best}</div></div>
+    <div class="panel-section"><div class="panel-title">Scoring</div>
+    <div class="panel-text">
+      <strong style="color:var(--green);">+10</strong> per correct answer<br>
+      <strong style="color:var(--yellow);">+streak x2</strong> bonus points<br>
+      Build your streak for more points!
+    </div></div>
+    <div class="panel-section"><div class="panel-title">Tip</div>
+    <div class="panel-text">Line up the starting points and count carefully. No gaps, no overlaps!</div></div>`;
+}
+
+function playPick(clicked, idx) {
+  const btn = document.getElementById('play' + idx);
+
+  if (S.playType === 'compare' && S.playEqual && clicked !== '__equal__') {
+    btn.classList.add('correct-flash');
+    S.score += 10 + S.streak * 2;
+    S.streak++;
+    if (S.streak > S.best) S.best = S.streak;
+    showFB('✓ Equal lengths — both work!', 'correct');
+    advancePlay();
+    return;
+  }
+
+  if (clicked === S.playAnswer) {
+    btn.classList.add('correct-flash');
+    S.score += 10 + S.streak * 2;
+    S.streak++;
+    if (S.streak > S.best) S.best = S.streak;
+    showFB('✓ Correct!', 'correct');
+  } else {
+    btn.classList.add('incorrect-flash');
+    S.streak = 0;
+    const msg = diagnoseMisconception(S.playType, S.playAnswer, clicked);
+    showFB(msg, 'incorrect');
+  }
+
+  advancePlay();
+}
+
+function advancePlay() {
+  setTimeout(() => {
+    if (S.round >= S.total) {
+      showFB(`Game Over! Score: ${S.score}`, 'correct');
+      setTimeout(() => { S.round = 0; render(); }, 2000);
+      return;
+    }
+    S.round++;
+    newPlayRound();
+    render();
+  }, 1200);
+}
+
+/* ── Init ── */
+render();
+</script>
+<script src="../../vinculum-core.js"></script>
+<script src="../../vinculum-data.js"></script>
+<script src="../../vinculum-adaptive-hook.js"></script>
+<script src="../../vinculum-3reads.js"></script>
+<script src="../../vinculum-stories.js"></script>
+<script src="../../vinculum-feedback.js"></script>
+<script src="../../vinculum-guide.js"></script>
+<script src="../../vinculum-identity.js"></script>
+<script src="../../vinculum-indigenous.js"></script>
+<script src="../../vinculum-dashboard.js"></script>
+<script src="../../vinculum-hyperfocus.js"></script>
+<script src="../../vinculum-layout.js"></script>
+</body>
+</html>

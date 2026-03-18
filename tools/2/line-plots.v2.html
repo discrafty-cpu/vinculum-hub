@@ -1,0 +1,1228 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>VINCULUM — Line Plots</title>
+<link rel="stylesheet" href="../../vinculum-core.css">
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;600&display=swap');
+
+/* Theme system loaded from vinculum-core.css */
+.vinculum-rtm-btn .rtm-icon{font-size:14px;}
+
+/* ═══ FOCUS VISIBLE (Keyboard Navigation) ═══ */
+*:focus-visible {
+  outline:2px solid var(--cyan);outline-offset:2px;border-radius:4px;
+}
+.sr-only {
+  position:absolute;width:1px;height:1px;padding:0;margin:-1px;
+  overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0;
+}
+
+* { margin:0; padding:0; box-sizing:border-box; }
+body {
+  font-family: 'Inter', sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  height: 100vh;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  user-select: none;
+}
+
+/* ── MAIN AREA ── */
+.main {
+  flex: 1;
+  display: flex;
+  overflow: hidden;
+}
+
+/* ── WORKSPACE ── */
+.workspace {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: flex-start;
+  padding: 20px 24px;
+  position: relative;
+  overflow-y: auto;
+}
+
+/* ── LINE PLOT ── */
+.line-plot-wrap {
+  width: 100%;
+  max-width: 680px;
+  margin: 12px auto;
+  overflow-x: auto;
+  overflow-y: visible;
+  -webkit-overflow-scrolling: touch;
+}
+.line-plot-wrap svg {
+  display: block;
+  margin: 0 auto;
+}
+.lp-tick-label {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 13px;
+  font-weight: 600;
+  fill: var(--text2);
+}
+.lp-tick-label.active {
+  fill: var(--cyan);
+  font-weight: 800;
+}
+.lp-x-mark {
+  font-family: 'Inter', sans-serif;
+  font-size: 16px;
+  font-weight: 900;
+  fill: var(--cyan);
+  cursor: default;
+}
+.lp-x-mark.new-mark {
+  animation: popMark 0.3s ease-out;
+}
+@keyframes popMark {
+  0% { opacity: 0; transform: scale(0); }
+  60% { transform: scale(1.3); }
+  100% { opacity: 1; transform: scale(1); }
+}
+.lp-hit-zone {
+  cursor: pointer;
+  fill: transparent;
+}
+.lp-hit-zone:hover {
+  fill: rgba(0,212,255,0.08);
+}
+.lp-axis-label {
+  font-family: 'Inter', sans-serif;
+  font-size: 11px;
+  font-weight: 600;
+  fill: var(--muted);
+}
+.lp-title-label {
+  font-family: 'Inter', sans-serif;
+  font-size: 13px;
+  font-weight: 700;
+  fill: var(--text);
+}
+
+/* ── PROMPT ── */
+.prompt-label {
+  font-size: 18px;
+  font-weight: 800;
+  color: var(--text);
+  text-align: center;
+  margin-bottom: 4px;
+}
+.prompt-sublabel {
+  font-size: 13px;
+  color: var(--text2);
+  text-align: center;
+  margin-bottom: 12px;
+}
+
+/* ── DATA TABLE ── */
+.data-table {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  justify-content: center;
+  margin: 10px auto;
+  max-width: 600px;
+}
+.data-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 6px 14px;
+  border-radius: 20px;
+  background: var(--card);
+  border: 1px solid var(--border);
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text2);
+  transition: all 0.2s;
+}
+.data-chip.placed {
+  opacity: 0.4;
+  border-color: var(--green);
+  color: var(--muted);
+}
+.data-chip .chip-val {
+  font-family: 'JetBrains Mono', monospace;
+  font-weight: 800;
+  color: var(--cyan);
+}
+
+/* ── CONTROLS ── */
+.controls {
+  display: flex;
+  gap: 10px;
+  justify-content: center;
+  flex-wrap: wrap;
+  margin: 12px 0;
+}
+.ctrl-btn {
+  padding: 8px 20px;
+  border-radius: 10px;
+  border: 1px solid var(--border);
+  background: var(--card);
+  color: var(--text2);
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+.ctrl-btn:hover { border-color: var(--cyan); color: var(--cyan); }
+.ctrl-btn.primary { background: rgba(0,212,255,0.12); border-color: var(--cyan); color: var(--cyan); }
+.ctrl-btn.danger { border-color: var(--pink); color: var(--pink); }
+.ctrl-btn.danger:hover { background: rgba(255,59,139,0.1); }
+
+/* ── ANSWER GRID ── */
+.answer-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 10px;
+  max-width: 500px;
+  margin: 14px auto;
+}
+.answer-btn {
+  padding: 14px 10px;
+  border-radius: 12px;
+  border: 2px solid var(--border);
+  background: var(--card);
+  color: var(--text);
+  font-size: 18px;
+  font-weight: 800;
+  font-family: 'JetBrains Mono', monospace;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+.answer-btn:hover { border-color: var(--cyan); background: rgba(0,212,255,0.08); }
+.answer-btn.correct-flash {
+  border-color: var(--green);
+  background: rgba(0,230,118,0.15);
+  color: var(--green);
+  animation: pop 0.3s ease-out;
+}
+.answer-btn.incorrect-flash {
+  border-color: var(--pink);
+  background: rgba(255,59,139,0.15);
+  color: var(--pink);
+  animation: shake 0.3s ease-in-out;
+}
+
+/* ── ROUND INDICATOR ── */
+.round-indicator {
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 1.5px;
+  color: var(--muted);
+  text-align: center;
+  margin-bottom: 8px;
+}
+
+/* ── SIDE PANEL ── */
+.side-panel {
+  width: 280px;
+  background: var(--bg2);
+  border-left: 1px solid var(--border);
+  padding: 20px;
+  overflow-y: auto;
+  flex-shrink: 0;
+}
+.panel-section {
+  margin-bottom: 20px;
+}
+.panel-title {
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 1.5px;
+  color: var(--muted);
+  margin-bottom: 8px;
+}
+.panel-text {
+  font-size: 13px;
+  color: var(--text2);
+  line-height: 1.6;
+}
+.pattern-card {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 10px 14px;
+  margin-bottom: 8px;
+  font-size: 12px;
+  color: var(--text2);
+  line-height: 1.5;
+}
+.pattern-card .pattern-label {
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 1.2px;
+  color: var(--cyan);
+  margin-bottom: 4px;
+  display: block;
+}
+.score-display {
+  text-align: center;
+  padding: 16px;
+  background: var(--card);
+  border-radius: 12px;
+  margin-bottom: 12px;
+}
+.score-value {
+  font-size: 36px;
+  font-weight: 900;
+  font-family: 'JetBrains Mono', monospace;
+  background: var(--grad);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+.score-label {
+  font-size: 11px;
+  color: var(--muted);
+  text-transform: uppercase;
+  letter-spacing: 1px;
+}
+.streak-bar {
+  height: 6px;
+  background: var(--card);
+  border-radius: 3px;
+  overflow: hidden;
+  margin-top: 8px;
+}
+.streak-fill {
+  height: 100%;
+  background: var(--grad);
+  border-radius: 3px;
+  transition: width 0.4s;
+}
+
+/* ── FEEDBACK ── */
+.feedback {
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%) scale(0);
+  padding: 24px 48px;
+  border-radius: 20px;
+  font-size: 22px;
+  font-weight: 800;
+  z-index: 200;
+  pointer-events: none;
+  transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275), opacity 0.3s;
+  opacity: 0;
+  max-width: 90vw;
+  text-align: center;
+  line-height: 1.4;
+}
+.feedback.show {
+  transform: translate(-50%, -50%) scale(1);
+  opacity: 1;
+}
+.feedback.correct {
+  background: rgba(0,230,118,0.15);
+  color: var(--green);
+  border: 2px solid var(--green);
+}
+.feedback.incorrect {
+  background: rgba(255,59,139,0.15);
+  color: var(--pink);
+  border: 2px solid var(--pink);
+}
+.feedback.try-again {
+  background: rgba(255,193,7,0.15);
+  color: var(--yellow);
+  border: 2px solid var(--yellow);
+}
+
+/* ── ANIMATIONS ── */
+@keyframes pop {
+  0% { transform: scale(0); }
+  70% { transform: scale(1.2); }
+  100% { transform: scale(1); }
+}
+@keyframes shake {
+  0%, 100% { transform: translateX(0); }
+  25% { transform: translateX(-8px); }
+  75% { transform: translateX(8px); }
+}
+.pop-in { animation: pop 0.3s ease-out forwards; }
+.shake { animation: shake 0.3s ease-in-out; }
+
+/* scrollbar */
+::-webkit-scrollbar { width: 6px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+</style>
+</head>
+<body>
+
+<!-- ═══ HEADER ═══ -->
+<div class="vinculum-header">
+  <div class="vinculum-header-left">
+    <a class="vinculum-back-btn" href="../../VINCULUM-Hub.html" style="text-decoration:none;">◀ Hub</a>
+    <div class="vinculum-header-title"><span>VINCULUM</span> Line Plots</div>
+    <span class="vinculum-header-badge">2.MD</span>
+  </div>
+  <div class="vinculum-header-right">
+    <div class="vinculum-std-tags">
+      <span class="vinculum-std-tag">2.MD.9</span>
+      <span class="vinculum-std-tag">2.MD.10</span>
+      <span class="vinculum-std-tag mn">MN 2.3.3.1</span>
+    </div>
+    <button class="vinculum-back-btn" id="readAloudBtn" onclick="toggleReadAloud()" aria-label="Read Aloud" title="Read instructions aloud" style="margin-left:8px;white-space:nowrap;">🔊 Read to Me</button>
+  </div>
+</div>
+
+<!-- ═══ MODE TABS ═══ -->
+<div class="vinculum-mode-tabs">
+  <button class="vinculum-mode-tab active-explore" id="tabExplore" data-mode="explore">
+    <svg width="18" height="18" viewBox="0 0 48 48" fill="none"><path d="M4 24C4 24 12 12 24 12C36 12 44 24 44 24C44 24 36 36 24 36C12 36 4 24 4 24Z" stroke="currentColor" stroke-width="3" fill="none"/><circle cx="24" cy="24" r="7" stroke="currentColor" stroke-width="3" fill="none"/><circle cx="24" cy="24" r="3" fill="currentColor"/><line x1="24" y1="4" x2="24" y2="9" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" opacity="0.5"/><line x1="10" y1="8" x2="13" y2="12" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" opacity="0.5"/><line x1="38" y1="8" x2="35" y2="12" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" opacity="0.5"/></svg> Explore
+  </button>
+  <button class="vinculum-mode-tab" id="tabPractice" data-mode="practice">
+    <svg width="18" height="18" viewBox="0 0 48 48" fill="none"><circle cx="24" cy="24" r="20" stroke="currentColor" stroke-width="3" fill="none" opacity="0.3"/><circle cx="24" cy="24" r="20" stroke="currentColor" stroke-width="3" fill="none" stroke-dasharray="126" stroke-dashoffset="32" stroke-linecap="round"/><polyline points="16,24 22,32 34,16" stroke="currentColor" stroke-width="4" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg> Practice
+  </button>
+  <button class="vinculum-mode-tab" id="tabPlay" data-mode="play">
+    <svg width="18" height="18" viewBox="0 0 48 48" fill="none"><polygon points="28,4 12,28 22,28 18,44 36,18 26,18" fill="none" stroke="currentColor" stroke-width="3" stroke-linejoin="round"/><polygon points="27,8 15,27 23,27 20,40 34,19 26,19" fill="currentColor" opacity="0.15"/></svg> Play
+  </button>
+  <div class="vinculum-diff-selector">
+    <span class="vinculum-diff-label">Level</span>
+    <button class="vinculum-diff-btn active" id="diffE" data-diff="emergent">Guided</button>
+    <button class="vinculum-diff-btn" id="diffP" data-diff="proficient">Standard</button>
+    <button class="vinculum-diff-btn" id="diffA" data-diff="advanced">Challenge</button>
+  </div>
+</div>
+
+<!-- ═══ MAIN ═══ -->
+<div class="main">
+  <div class="workspace" role="main" id="workspace"></div>
+  <div class="side-panel" id="sidePanel"></div>
+</div>
+
+<!-- ═══ FEEDBACK POPUP ═══ -->
+<div class="feedback" id="feedback"></div>
+
+<script src="../../vinculum-input.js"></script>
+<script>
+// ════════════════════════════════════════
+// STATE
+// ════════════════════════════════════════
+var S = {
+  mode: 'explore',
+  diff: 'emergent',
+  // Explore
+  expDataset: null,
+  expPlotData: {},   // { value: count }
+  expPlaced: [],     // indices of placed data items
+  // Practice
+  pDataset: null,
+  pQuestion: '',
+  pAnswer: 0,
+  pChoices: [],
+  // Play
+  score: 0,
+  streak: 0,
+  best: 0,
+  round: 0,
+  total: 10,
+  playDataset: null,
+  playQuestion: '',
+  playAnswer: 0,
+  playChoices: []
+};
+
+// ════════════════════════════════════════
+// READ-ALOUD
+// ════════════════════════════════════════
+function toggleReadAloud() {
+  if (window.VinculumStories && VinculumStories.isReading()) {
+    VinculumStories.stopReading();
+    document.getElementById('readAloudBtn').textContent = '🔊 Read to Me';
+  } else {
+    var storyEl = document.getElementById('storyBanner');
+    var text = storyEl ? storyEl.textContent : 'Welcome to Line Plots! Place X marks on a number line to show data, then read and answer questions about the plot.';
+    if (window.VinculumStories) {
+      VinculumStories.readAloud(text, { rate: 0.85, onComplete: function() {
+        document.getElementById('readAloudBtn').textContent = '🔊 Read to Me';
+      }});
+      document.getElementById('readAloudBtn').textContent = '⏹ Stop';
+    }
+  }
+}
+
+// ════════════════════════════════════════
+// MISCONCEPTIONS DATABASE
+// ════════════════════════════════════════
+var MISCONCEPTIONS = {
+  misalignX: {
+    id: 'misalign-x',
+    msg: function(val) { return 'Make sure each X lines up exactly above the number ' + val + ' on the number line. Each X should sit directly above its value.'; }
+  },
+  misreadScale: {
+    id: 'misread-scale',
+    msg: function() { return 'Check the numbers along the bottom carefully. Each mark on the number line has a specific value.'; }
+  },
+  countXWrong: {
+    id: 'count-x-wrong',
+    msg: function(val) { return 'Count the Xs above ' + val + ' again. Touch each X as you count to be sure!'; }
+  },
+  confusesValueCount: {
+    id: 'confuses-value-count',
+    msg: function(val, count) { return 'The number ' + val + ' is the measurement. The Xs tell how many items measured ' + val + '. There are ' + count + ' Xs above ' + val + '.'; }
+  },
+  offByOne: {
+    id: 'off-by-one',
+    msg: function(correct) { return 'So close! Count one more time. The answer is ' + correct + '.'; }
+  },
+  comparisonError: {
+    id: 'comparison-error',
+    msg: function() { return 'To compare, count the Xs above each value and then find the difference. Which stack has more?'; }
+  }
+};
+
+// ════════════════════════════════════════
+// MEASUREMENT DATA SETS
+// ════════════════════════════════════════
+var DATASETS = [
+  {
+    title: 'Shoe Lengths (inches)',
+    axis: 'Length (inches)',
+    values: [5, 6, 6, 7, 7, 7, 8, 8, 6, 7],
+    range: [5, 9],
+    unit: 'inches'
+  },
+  {
+    title: 'Plant Heights (inches)',
+    axis: 'Height (inches)',
+    values: [2, 3, 3, 4, 4, 4, 5, 5, 3, 4],
+    range: [1, 6],
+    unit: 'inches'
+  },
+  {
+    title: 'Pencil Lengths (inches)',
+    axis: 'Length (inches)',
+    values: [3, 4, 4, 5, 5, 5, 6, 6, 5, 4],
+    range: [3, 7],
+    unit: 'inches'
+  },
+  {
+    title: 'Hand Spans (inches)',
+    axis: 'Span (inches)',
+    values: [4, 5, 5, 6, 6, 6, 7, 7, 5, 6],
+    range: [4, 8],
+    unit: 'inches'
+  },
+  {
+    title: 'Crayon Lengths (inches)',
+    axis: 'Length (inches)',
+    values: [1, 2, 2, 3, 3, 3, 4, 4, 2, 3],
+    range: [1, 5],
+    unit: 'inches'
+  },
+  {
+    title: 'Book Widths (inches)',
+    axis: 'Width (inches)',
+    values: [6, 7, 7, 8, 8, 8, 9, 9, 7, 8, 8, 9],
+    range: [5, 10],
+    unit: 'inches'
+  },
+  {
+    title: 'Ribbon Lengths (inches)',
+    axis: 'Length (inches)',
+    values: [3, 3, 4, 4, 4, 5, 5, 5, 5, 6, 6, 4],
+    range: [2, 7],
+    unit: 'inches'
+  },
+  {
+    title: 'Leaf Lengths (inches)',
+    axis: 'Length (inches)',
+    values: [1, 1, 2, 2, 2, 3, 3, 3, 3, 4, 2, 3],
+    range: [1, 5],
+    unit: 'inches'
+  }
+];
+
+// ════════════════════════════════════════
+// HELPERS
+// ════════════════════════════════════════
+function randInt(min, max) {
+  return Math.floor(Math.random() * (max - min + 1)) + min;
+}
+
+function showFB(text, type) {
+  var fb = document.getElementById('feedback');
+  fb.textContent = text;
+  fb.className = 'feedback ' + type + ' show';
+  setTimeout(function() { fb.classList.remove('show'); }, 2200);
+}
+
+function shuffleArray(arr) {
+  var a = arr.slice();
+  for (var i = a.length - 1; i > 0; i--) {
+    var j = randInt(0, i);
+    var tmp = a[i]; a[i] = a[j]; a[j] = tmp;
+  }
+  return a;
+}
+
+function pickRandom(arr) {
+  return arr[randInt(0, arr.length - 1)];
+}
+
+function tallyData(values) {
+  var tally = {};
+  for (var i = 0; i < values.length; i++) {
+    var v = values[i];
+    tally[v] = (tally[v] || 0) + 1;
+  }
+  return tally;
+}
+
+function getRandomDataset() {
+  return JSON.parse(JSON.stringify(DATASETS[randInt(0, DATASETS.length - 1)]));
+}
+
+// Generate a fresh random dataset variation
+function generateDataset() {
+  var base = getRandomDataset();
+  // Slightly randomize the values to get variety
+  var vals = [];
+  var lo = base.range[0];
+  var hi = base.range[1];
+  var count = randInt(8, 12);
+  for (var i = 0; i < count; i++) {
+    vals.push(randInt(lo, hi - 1));
+  }
+  base.values = vals;
+  return base;
+}
+
+// ════════════════════════════════════════
+// SVG LINE PLOT BUILDER
+// ════════════════════════════════════════
+function buildLinePlotSVG(dataset, plotData, opts) {
+  opts = opts || {};
+  var lo = dataset.range[0];
+  var hi = dataset.range[1];
+  var numTicks = hi - lo + 1;
+
+  var padL = 40, padR = 40, padT = 30, padB = 50;
+  var tickSpacing = 70;
+  var w = padL + numTicks * tickSpacing + padR;
+  var axisY = 240;
+  var maxStack = 0;
+
+  // Find max stack height
+  for (var v = lo; v <= hi; v++) {
+    var c = plotData[v] || 0;
+    if (c > maxStack) maxStack = c;
+  }
+  if (maxStack < 4) maxStack = 4;
+  var xSize = 22;
+  var plotH = maxStack * xSize + 20;
+  var svgH = plotH + padT + padB + 20;
+  axisY = padT + plotH;
+
+  var svg = '<svg width="' + w + '" height="' + svgH + '" viewBox="0 0 ' + w + ' ' + svgH + '" xmlns="http://www.w3.org/2000/svg">';
+
+  // Title
+  if (dataset.title && !opts.compact) {
+    svg += '<text x="' + (w / 2) + '" y="18" text-anchor="middle" class="lp-title-label">' + dataset.title + '</text>';
+  }
+
+  // Axis line
+  var x1 = padL;
+  var x2 = padL + (numTicks - 1) * tickSpacing;
+  svg += '<line x1="' + (x1 - 15) + '" y1="' + axisY + '" x2="' + (x2 + 15) + '" y2="' + axisY + '" stroke="var(--text2)" stroke-width="2"/>';
+
+  // Ticks and labels, hit zones, X marks
+  for (var v = lo; v <= hi; v++) {
+    var idx = v - lo;
+    var cx = padL + idx * tickSpacing;
+
+    // Tick mark
+    svg += '<line x1="' + cx + '" y1="' + axisY + '" x2="' + cx + '" y2="' + (axisY + 8) + '" stroke="var(--text2)" stroke-width="2"/>';
+
+    // Label
+    var isActive = (plotData[v] || 0) > 0;
+    svg += '<text x="' + cx + '" y="' + (axisY + 24) + '" text-anchor="middle" class="lp-tick-label' + (isActive ? ' active' : '') + '">' + v + '</text>';
+
+    // Hit zone for interactivity
+    if (opts.interactive) {
+      svg += '<rect x="' + (cx - tickSpacing / 2 + 2) + '" y="' + padT + '" width="' + (tickSpacing - 4) + '" height="' + (axisY - padT) + '" class="lp-hit-zone" onclick="plotTap(' + v + ')"/>';
+    }
+
+    // Stack X marks
+    var count = plotData[v] || 0;
+    for (var s = 0; s < count; s++) {
+      var markY = axisY - 16 - s * xSize;
+      svg += '<text x="' + cx + '" y="' + markY + '" text-anchor="middle" dominant-baseline="middle" class="lp-x-mark">X</text>';
+    }
+  }
+
+  // Axis label
+  if (dataset.axis && !opts.compact) {
+    svg += '<text x="' + (w / 2) + '" y="' + (axisY + 44) + '" text-anchor="middle" class="lp-axis-label">' + dataset.axis + '</text>';
+  }
+
+  // Highlight a specific value if requested
+  if (opts.highlightVal !== undefined) {
+    var hIdx = opts.highlightVal - lo;
+    if (hIdx >= 0 && hIdx < numTicks) {
+      var hx = padL + hIdx * tickSpacing;
+      svg += '<rect x="' + (hx - tickSpacing / 2 + 4) + '" y="' + padT + '" width="' + (tickSpacing - 8) + '" height="' + (axisY - padT) + '" rx="6" fill="rgba(0,212,255,0.08)" stroke="var(--cyan)" stroke-width="1" stroke-dasharray="4,3"/>';
+    }
+  }
+
+  svg += '</svg>';
+  return svg;
+}
+
+// ════════════════════════════════════════
+// MODE / DIFF SWITCHING
+// ════════════════════════════════════════
+function setMode(mode) {
+  S.mode = mode;
+  S.round = 0;
+  S.expDataset = null;
+  S.expPlotData = {};
+  S.expPlaced = [];
+  S.pDataset = null;
+  S.playDataset = null;
+
+  document.querySelectorAll('.vinculum-mode-tab').forEach(function(t) {
+    t.classList.remove('active-explore', 'active-practice', 'active-play');
+  });
+  var tabEl = document.querySelector('[data-mode="' + mode + '"]');
+  if (tabEl) tabEl.classList.add('active-' + mode);
+
+  render();
+}
+
+function setDiff(diff) {
+  S.diff = diff;
+  S.expDataset = null;
+  S.expPlotData = {};
+  S.expPlaced = [];
+  S.pDataset = null;
+  S.playDataset = null;
+  S.round = 0;
+
+  document.querySelectorAll('.vinculum-diff-btn').forEach(function(b) {
+    b.classList.remove('active');
+  });
+  var btnEl = document.querySelector('[data-diff="' + diff + '"]');
+  if (btnEl) btnEl.classList.add('active');
+
+  render();
+}
+
+// ════════════════════════════════════════
+// EXPLORE MODE
+// ════════════════════════════════════════
+function initExplore() {
+  S.expDataset = generateDataset();
+  S.expPlotData = {};
+  S.expPlaced = [];
+}
+
+function plotTap(val) {
+  if (S.mode !== 'explore') return;
+  if (!S.expDataset) return;
+
+  var ds = S.expDataset;
+  var remaining = [];
+  for (var i = 0; i < ds.values.length; i++) {
+    if (S.expPlaced.indexOf(i) === -1 && ds.values[i] === val) {
+      remaining.push(i);
+    }
+  }
+
+  if (remaining.length > 0) {
+    var idx = remaining[0];
+    S.expPlaced.push(idx);
+    S.expPlotData[val] = (S.expPlotData[val] || 0) + 1;
+    showFB('X placed at ' + val + '!', 'correct');
+  } else {
+    // Check if there are unplaced items at all
+    var anyLeft = false;
+    for (var i = 0; i < ds.values.length; i++) {
+      if (S.expPlaced.indexOf(i) === -1) { anyLeft = true; break; }
+    }
+    if (!anyLeft) {
+      showFB('All data is plotted! Great job!', 'correct');
+    } else {
+      showFB(MISCONCEPTIONS.misalignX.msg(val), 'try-again');
+    }
+  }
+  render();
+}
+
+function resetExplore() {
+  S.expPlotData = {};
+  S.expPlaced = [];
+  render();
+}
+
+function autoPlaceAll() {
+  if (!S.expDataset) return;
+  S.expPlotData = tallyData(S.expDataset.values);
+  S.expPlaced = [];
+  for (var i = 0; i < S.expDataset.values.length; i++) {
+    S.expPlaced.push(i);
+  }
+  showFB('All data placed!', 'correct');
+  render();
+}
+
+function renderExplore(ws, sp) {
+  if (!S.expDataset) initExplore();
+  var ds = S.expDataset;
+  var html = '';
+
+  // Support scaffold for emergent
+  if (S.diff === 'emergent') {
+    html += '<div class="prompt-label">Build a Line Plot</div>';
+    html += '<div class="prompt-sublabel">Tap the number line where each measurement goes. Each tap places one X above that number.</div>';
+  } else if (S.diff === 'proficient') {
+    html += '<div class="prompt-label">Create a Line Plot</div>';
+    html += '<div class="prompt-sublabel">Read the data below and tap the number line to place each X mark.</div>';
+  } else {
+    html += '<div class="prompt-label">Build and Interpret</div>';
+    html += '<div class="prompt-sublabel">Create the line plot, then think about what the data tells us.</div>';
+  }
+
+  // Data chips
+  html += '<div class="data-table">';
+  for (var i = 0; i < ds.values.length; i++) {
+    var placed = S.expPlaced.indexOf(i) !== -1;
+    html += '<div class="data-chip' + (placed ? ' placed' : '') + '">';
+    if (S.diff === 'emergent' && !placed) {
+      html += '<span class="chip-val">' + ds.values[i] + '</span> ' + ds.unit;
+    } else {
+      html += '<span class="chip-val">' + ds.values[i] + '</span>';
+    }
+    html += '</div>';
+  }
+  html += '</div>';
+
+  // Line plot
+  html += '<div class="line-plot-wrap">';
+  html += buildLinePlotSVG(ds, S.expPlotData, { interactive: true });
+  html += '</div>';
+
+  // Controls
+  html += '<div class="controls">';
+  html += '<button class="ctrl-btn danger" onclick="resetExplore()">✕ Reset</button>';
+  html += '<button class="ctrl-btn" onclick="autoPlaceAll()">Auto-Place All</button>';
+  html += '<button class="ctrl-btn primary" onclick="initExplore();render();">New Data</button>';
+  html += '</div>';
+
+  // Summary when all placed
+  if (S.expPlaced.length === ds.values.length) {
+    var tally = S.expPlotData;
+    var mostVal = 0, mostCount = 0, leastVal = 0, leastCount = 999;
+    for (var v = ds.range[0]; v <= ds.range[1]; v++) {
+      var c = tally[v] || 0;
+      if (c > mostCount) { mostCount = c; mostVal = v; }
+      if (c < leastCount) { leastCount = c; leastVal = v; }
+    }
+    html += '<div style="text-align:center;margin-top:12px;padding:12px 18px;background:var(--card);border-radius:12px;border:1px solid var(--border);max-width:500px;">';
+    html += '<div style="font-size:13px;font-weight:700;color:var(--cyan);margin-bottom:6px;">DATA SUMMARY</div>';
+    html += '<div style="font-size:13px;color:var(--text2);line-height:1.7;">';
+    html += 'Most common: <strong>' + mostVal + ' ' + ds.unit + '</strong> (' + mostCount + ' items)<br>';
+    html += 'Least common: <strong>' + leastVal + ' ' + ds.unit + '</strong> (' + leastCount + ' items)<br>';
+    html += 'Total measurements: <strong>' + ds.values.length + '</strong>';
+    html += '</div></div>';
+  }
+
+  ws.innerHTML = html;
+
+  // Side panel
+  sp.innerHTML = '<div class="panel-section">' +
+    '<div class="panel-title">How to Explore</div>' +
+    '<div class="panel-text">' +
+    '1. Look at the <strong>data chips</strong> above — each shows a measurement<br><br>' +
+    '2. <strong>Tap the number line</strong> at the matching value to place an X<br><br>' +
+    '3. Each X stacks up above its number<br><br>' +
+    '4. When all data is placed, read the summary!' +
+    '</div></div>' +
+    '<div class="panel-section">' +
+    '<div class="panel-title">What is a Line Plot?</div>' +
+    '<div class="panel-text">' +
+    'A <strong>line plot</strong> uses Xs above a number line to show data. ' +
+    'The more Xs above a number, the more items have that measurement.' +
+    '</div></div>' +
+    '<div class="panel-section">' +
+    '<div class="panel-title">Tips</div>' +
+    '<div class="pattern-card"><span class="pattern-label">Stack Carefully</span>' +
+    'Each X must line up directly above its number. Do not put an X between two numbers.</div>' +
+    '<div class="pattern-card"><span class="pattern-label">Count the Xs</span>' +
+    'The height of the stack tells you how many items share that measurement.</div>' +
+    '</div>' +
+    '<div class="panel-section">' +
+    '<div class="panel-title">Standards</div>' +
+    '<div class="panel-text">' +
+    '<strong>2.MD.9</strong> — Generate measurement data and show on a line plot<br><br>' +
+    '<strong>2.MD.10</strong> — Draw a picture graph and bar graph to represent data<br><br>' +
+    '<strong>MN 2.3.3.1</strong> — Collect, organize, display, and interpret data' +
+    '</div></div>';
+}
+
+// ════════════════════════════════════════
+// QUESTION GENERATORS
+// ════════════════════════════════════════
+function generateQuestion(dataset, diff) {
+  var tally = tallyData(dataset.values);
+  var lo = dataset.range[0];
+  var hi = dataset.range[1];
+  var vals = [];
+  for (var v = lo; v <= hi; v++) {
+    if (tally[v]) vals.push(v);
+  }
+
+  var qTypes = [];
+  if (diff === 'emergent') {
+    qTypes = ['howMany'];
+  } else if (diff === 'proficient') {
+    qTypes = ['howMany', 'most', 'least', 'total'];
+  } else {
+    qTypes = ['howMany', 'most', 'least', 'total', 'difference', 'moreThan', 'fewerThan'];
+  }
+
+  var qType = pickRandom(qTypes);
+  var question = '';
+  var answer = 0;
+
+  if (qType === 'howMany') {
+    var v = pickRandom(vals);
+    question = 'How many items measure ' + v + ' ' + dataset.unit + '?';
+    answer = tally[v] || 0;
+  } else if (qType === 'most') {
+    var maxC = 0, maxV = 0;
+    for (var i = 0; i < vals.length; i++) {
+      if (tally[vals[i]] > maxC) { maxC = tally[vals[i]]; maxV = vals[i]; }
+    }
+    question = 'Which measurement is the most common?';
+    answer = maxV;
+  } else if (qType === 'least') {
+    var minC = 999, minV = 0;
+    for (var i = 0; i < vals.length; i++) {
+      if (tally[vals[i]] < minC) { minC = tally[vals[i]]; minV = vals[i]; }
+    }
+    question = 'Which measurement is the least common?';
+    answer = minV;
+  } else if (qType === 'total') {
+    question = 'How many items were measured in all?';
+    answer = dataset.values.length;
+  } else if (qType === 'difference') {
+    var v1 = pickRandom(vals);
+    var v2 = pickRandom(vals);
+    while (v2 === v1 && vals.length > 1) v2 = pickRandom(vals);
+    question = 'How many more items measure ' + Math.max(v1, v2) + ' than ' + Math.min(v1, v2) + ' ' + dataset.unit + '?';
+    answer = Math.abs((tally[v1] || 0) - (tally[v2] || 0));
+  } else if (qType === 'moreThan') {
+    var threshold = randInt(1, 3);
+    var countAbove = 0;
+    for (var i = 0; i < vals.length; i++) {
+      if (tally[vals[i]] > threshold) countAbove += tally[vals[i]];
+    }
+    question = 'How many items have a measurement that appears more than ' + threshold + ' time' + (threshold > 1 ? 's' : '') + '?';
+    answer = countAbove;
+  } else if (qType === 'fewerThan') {
+    var threshold = randInt(2, 3);
+    var countBelow = 0;
+    for (var i = 0; i < vals.length; i++) {
+      if (tally[vals[i]] < threshold) countBelow += tally[vals[i]];
+    }
+    question = 'How many items have a measurement that appears fewer than ' + threshold + ' times?';
+    answer = countBelow;
+  }
+
+  // Generate MC choices
+  var choices = new Set([answer]);
+  var tries = 0;
+  while (choices.size < 4 && tries < 50) {
+    var offset = randInt(-3, 3);
+    if (offset === 0) offset = randInt(1, 3);
+    var c = answer + offset;
+    if (c >= 0) choices.add(c);
+    tries++;
+  }
+  while (choices.size < 4) choices.add(answer + choices.size);
+
+  return {
+    question: question,
+    answer: answer,
+    choices: Array.from(choices).sort(function(a, b) { return a - b; }),
+    qType: qType
+  };
+}
+
+// ════════════════════════════════════════
+// PRACTICE MODE
+// ════════════════════════════════════════
+function generatePractice() {
+  S.pDataset = generateDataset();
+  var q = generateQuestion(S.pDataset, S.diff);
+  S.pQuestion = q.question;
+  S.pAnswer = q.answer;
+  S.pChoices = q.choices;
+  S.pQType = q.qType;
+}
+
+function practiceAnswer(val) {
+  if (val === S.pAnswer) {
+    showFB('Correct!', 'correct');
+    setTimeout(function() { generatePractice(); render(); }, 1400);
+  } else {
+    // Misconception feedback
+    var diff = Math.abs(val - S.pAnswer);
+    if (diff === 1) {
+      showFB(MISCONCEPTIONS.offByOne.msg(S.pAnswer), 'try-again');
+    } else if (S.pQType === 'howMany') {
+      var tally = tallyData(S.pDataset.values);
+      // Check if they picked the value instead of the count
+      var possibleVal = false;
+      for (var v in tally) {
+        if (parseInt(v) === val) { possibleVal = true; break; }
+      }
+      if (possibleVal && tally[val] !== undefined) {
+        showFB(MISCONCEPTIONS.confusesValueCount.msg(val, tally[val]), 'try-again');
+      } else {
+        showFB(MISCONCEPTIONS.countXWrong.msg(S.pAnswer), 'try-again');
+      }
+    } else if (S.pQType === 'difference' || S.pQType === 'moreThan' || S.pQType === 'fewerThan') {
+      showFB(MISCONCEPTIONS.comparisonError.msg(), 'try-again');
+    } else {
+      showFB(MISCONCEPTIONS.misreadScale.msg(), 'try-again');
+    }
+  }
+}
+
+function renderPractice(ws, sp) {
+  if (!S.pDataset) generatePractice();
+
+  var ds = S.pDataset;
+  var tally = tallyData(ds.values);
+  var html = '';
+
+  html += '<div class="prompt-label">' + S.pQuestion + '</div>';
+  html += '<div class="prompt-sublabel">Look at the line plot below and choose the correct answer.</div>';
+
+  // Line plot (pre-filled)
+  html += '<div class="line-plot-wrap">';
+  html += buildLinePlotSVG(ds, tally, { compact: false });
+  html += '</div>';
+
+  // MC choices
+  html += '<div class="answer-grid">';
+  S.pChoices.forEach(function(c) {
+    html += '<button class="answer-btn" onclick="practiceAnswer(' + c + ')">' + c + '</button>';
+  });
+  html += '</div>';
+
+  // New question
+  html += '<div class="controls">';
+  html += '<button class="ctrl-btn" onclick="generatePractice();render();">↻ New Question</button>';
+  html += '</div>';
+
+  ws.innerHTML = html;
+
+  // Side panel
+  var diffDesc = {
+    emergent: 'Read the line plot and count the Xs above a given value.',
+    proficient: 'Answer questions about the most/least common measurement and totals.',
+    advanced: 'Compare data, find differences, and answer multi-step questions.'
+  };
+  sp.innerHTML = '<div class="panel-section">' +
+    '<div class="panel-title">Instructions</div>' +
+    '<div class="panel-text">' + diffDesc[S.diff] + '<br><br>Count the <strong>X marks</strong> carefully to find your answer.</div>' +
+    '</div>' +
+    '<div class="panel-section">' +
+    '<div class="panel-title">Reading a Line Plot</div>' +
+    '<div class="pattern-card"><span class="pattern-label">Count Xs</span>' +
+    'Each X above a number means one item with that measurement.</div>' +
+    '<div class="pattern-card"><span class="pattern-label">Tallest Stack</span>' +
+    'The number with the most Xs above it is the most common measurement.</div>' +
+    '<div class="pattern-card"><span class="pattern-label">Compare Stacks</span>' +
+    'To find how many more, subtract the shorter stack from the taller stack.</div>' +
+    '</div>' +
+    '<div class="panel-section">' +
+    '<div class="panel-title">Difficulty: ' + S.diff.charAt(0).toUpperCase() + S.diff.slice(1) + '</div>' +
+    '<div class="panel-text">' + diffDesc[S.diff] + '</div>' +
+    '</div>';
+}
+
+// ════════════════════════════════════════
+// PLAY MODE — 10 Rounds, MC, Scored
+// ════════════════════════════════════════
+function generatePlayRound() {
+  S.round++;
+  // New dataset every 3 rounds for variety
+  if (!S.playDataset || S.round % 3 === 1) {
+    S.playDataset = generateDataset();
+  }
+  var q = generateQuestion(S.playDataset, S.diff);
+  S.playQuestion = q.question;
+  S.playAnswer = q.answer;
+  S.playChoices = q.choices;
+  S.playQType = q.qType;
+}
+
+function playAnswer(val) {
+  var btn = document.getElementById('playAns' + val);
+
+  if (val === S.playAnswer) {
+    if (btn) btn.classList.add('correct-flash');
+    var pts = 10 + S.streak * 2;
+    S.score += pts;
+    S.streak++;
+    if (S.streak > S.best) S.best = S.streak;
+    showFB('Correct! +' + pts, 'correct');
+  } else {
+    if (btn) btn.classList.add('incorrect-flash');
+    S.streak = 0;
+
+    var diff = Math.abs(val - S.playAnswer);
+    if (diff === 1) {
+      showFB(MISCONCEPTIONS.offByOne.msg(S.playAnswer), 'incorrect');
+    } else if (S.playQType === 'howMany') {
+      showFB(MISCONCEPTIONS.countXWrong.msg(S.playAnswer), 'incorrect');
+    } else if (S.playQType === 'difference' || S.playQType === 'moreThan' || S.playQType === 'fewerThan') {
+      showFB(MISCONCEPTIONS.comparisonError.msg(), 'incorrect');
+    } else if (S.playQType === 'most' || S.playQType === 'least') {
+      showFB(MISCONCEPTIONS.misreadScale.msg(), 'incorrect');
+    } else {
+      showFB('The answer is ' + S.playAnswer + '. Count the Xs carefully!', 'incorrect');
+    }
+  }
+
+  setTimeout(function() {
+    if (S.round >= S.total) {
+      showFB('Game Over! Score: ' + S.score, 'correct');
+      setTimeout(function() { S.round = 0; S.score = 0; S.streak = 0; S.playDataset = null; render(); }, 2500);
+      return;
+    }
+    generatePlayRound();
+    render();
+  }, 1400);
+}
+
+function renderPlay(ws, sp) {
+  if (S.round === 0) {
+    S.score = 0;
+    S.streak = 0;
+    S.playDataset = null;
+    generatePlayRound();
+  }
+
+  var ds = S.playDataset;
+  var tally = tallyData(ds.values);
+  var html = '';
+
+  // Round indicator
+  html += '<div class="round-indicator">Round ' + S.round + ' of ' + S.total + '</div>';
+  html += '<div class="prompt-label">' + S.playQuestion + '</div>';
+
+  // Line plot
+  html += '<div class="line-plot-wrap">';
+  var opts = { compact: true };
+  // Highlight relevant value for howMany questions
+  if (S.playQType === 'howMany') {
+    var match = S.playQuestion.match(/measure (\d+)/);
+    if (match) opts.highlightVal = parseInt(match[1]);
+  }
+  html += buildLinePlotSVG(ds, tally, opts);
+  html += '</div>';
+
+  // MC choices
+  html += '<div class="answer-grid">';
+  S.playChoices.forEach(function(c) {
+    html += '<button class="answer-btn" id="playAns' + c + '" onclick="playAnswer(' + c + ')">' + c + '</button>';
+  });
+  html += '</div>';
+
+  ws.innerHTML = html;
+
+  // Side panel — score
+  sp.innerHTML = '<div class="score-display">' +
+    '<div class="score-value">' + S.score + '</div>' +
+    '<div class="score-label">Score</div>' +
+    '</div>' +
+    '<div class="score-display" style="background:transparent;padding:8px;">' +
+    '<div style="font-size:18px;font-weight:700;color:var(--yellow);">🔥 ' + S.streak + '</div>' +
+    '<div class="score-label">Streak</div>' +
+    '<div class="streak-bar"><div class="streak-fill" style="width:' + Math.min(S.streak * 20, 100) + '%;"></div></div>' +
+    '</div>' +
+    '<div class="panel-section">' +
+    '<div class="panel-title">How to Play</div>' +
+    '<div class="panel-text">' +
+    'Read the line plot and answer the question.<br><br>' +
+    '<strong>10 points</strong> per correct answer + <strong>streak bonus</strong> (+2 per streak).<br><br>' +
+    '10 rounds total. Build a streak for the highest score!' +
+    '</div></div>' +
+    '<div class="panel-section">' +
+    '<div class="panel-title">Best Streak</div>' +
+    '<div class="panel-text" style="font-size:24px;font-weight:800;color:var(--purple);">🏆 ' + S.best + '</div>' +
+    '</div>' +
+    '<div class="panel-section">' +
+    '<div class="panel-title">Difficulty</div>' +
+    '<div class="panel-text">' +
+    (S.diff === 'emergent' ? '<strong>Guided:</strong> Count Xs above a value' :
+     S.diff === 'proficient' ? '<strong>Standard:</strong> Most/least, totals, and counting' :
+     '<strong>Challenge:</strong> Comparisons and multi-step problems') +
+    '</div></div>';
+}
+
+// ════════════════════════════════════════
+// RENDER DISPATCH
+// ════════════════════════════════════════
+function render() {
+  var ws = document.getElementById('workspace');
+  var sp = document.getElementById('sidePanel');
+
+  if (S.mode === 'explore') renderExplore(ws, sp);
+  else if (S.mode === 'practice') renderPractice(ws, sp);
+  else renderPlay(ws, sp);
+}
+
+// ════════════════════════════════════════
+// INIT
+// ════════════════════════════════════════
+document.querySelectorAll('.vinculum-mode-tab').forEach(function(tab) {
+  tab.addEventListener('click', function() {
+    setMode(this.dataset.mode);
+  });
+});
+
+document.querySelectorAll('.vinculum-diff-btn').forEach(function(btn) {
+  btn.addEventListener('click', function() {
+    setDiff(this.dataset.diff);
+  });
+});
+
+render();
+</script>
+<script src="../../vinculum-core.js"></script>
+<script src="../../vinculum-data.js"></script>
+<script src="../../vinculum-adaptive-hook.js"></script>
+<script src="../../vinculum-3reads.js"></script>
+<script src="../../vinculum-stories.js"></script>
+<script src="../../vinculum-feedback.js"></script>
+<script src="../../vinculum-guide.js"></script>
+<script src="../../vinculum-identity.js"></script>
+<script src="../../vinculum-indigenous.js"></script>
+<script src="../../vinculum-dashboard.js"></script>
+<script src="../../vinculum-hyperfocus.js"></script>
+<script src="../../vinculum-layout.js"></script>
+</body>
+</html>

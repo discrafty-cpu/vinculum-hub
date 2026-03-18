@@ -1,0 +1,1192 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>VINCULUM — Teen Number Factory</title>
+<link rel="stylesheet" href="../../vinculum-core.css">
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;600&display=swap');
+
+/* Theme system loaded from vinculum-core.css */
+.vinculum-rtm-btn .rtm-icon{font-size:14px;}
+
+/* ═══ FOCUS VISIBLE (Keyboard Navigation) ═══ */
+*:focus-visible {
+  outline:2px solid var(--cyan);outline-offset:2px;border-radius:4px;
+}
+.sr-only {
+  position:absolute;width:1px;height:1px;padding:0;margin:-1px;
+  overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0;
+}
+
+* { margin:0; padding:0; box-sizing:border-box; }
+body {
+  font-family: 'Inter', sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  height: 100vh;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  user-select: none;
+}
+
+/* ── HEADER ── */
+/* ── MODE TABS ── */
+/* Difficulty selector */
+.vinculum-diff-btn:hover { color: var(--text2); }
+/* ── MAIN AREA ── */
+.main {
+  flex: 1;
+  display: flex;
+  overflow: hidden;
+}
+
+/* ── WORKSPACE ── */
+.workspace {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+  position: relative;
+  overflow-y: auto;
+}
+
+/* ── CONVEYOR BELT ── */
+.conveyor {
+  display: flex;
+  flex-direction: row;
+  gap: 4px;
+  padding: 16px;
+  background: var(--card);
+  border-radius: 16px;
+  min-height: 80px;
+  align-items: flex-end;
+  flex-wrap: wrap;
+  max-width: 500px;
+  width: 100%;
+  border: 2px dashed var(--border);
+  position: relative;
+  transition: border-color 0.2s;
+}
+.conveyor-label {
+  position: absolute;
+  top: -10px;
+  left: 16px;
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 1.5px;
+  color: var(--muted);
+  background: var(--bg);
+  padding: 0 6px;
+}
+
+/* ── CUBE ── */
+.cube {
+  width: 32px;
+  height: 32px;
+  border-radius: 6px;
+  border: 2px solid rgba(0,212,255,0.5);
+  background: rgba(0,212,255,0.15);
+  transition: all 0.2s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 11px;
+  font-weight: 700;
+  font-family: 'JetBrains Mono', monospace;
+  color: var(--cyan);
+}
+.cube.bundling {
+  animation: shrinkToRod 0.4s ease-in forwards;
+}
+@keyframes shrinkToRod {
+  0% { opacity: 1; transform: scale(1); }
+  100% { opacity: 0; transform: scale(0) translateY(-20px); }
+}
+
+/* ── TENS ROD ── */
+.tens-rod {
+  width: 32px;
+  height: 140px;
+  border-radius: 8px;
+  background: var(--purple);
+  border: 2px solid rgba(179,136,255,0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 12px;
+  font-weight: 800;
+  color: #fff;
+  flex-shrink: 0;
+  position: relative;
+}
+.tens-rod-label {
+  writing-mode: vertical-rl;
+  text-orientation: mixed;
+  letter-spacing: 1px;
+}
+
+/* ── ONES CUBES ── */
+.ones-cubes {
+  display: flex;
+  flex-direction: row;
+  gap: 4px;
+  flex-wrap: wrap;
+  align-items: flex-end;
+}
+
+/* ── DECOMPOSE DISPLAY ── */
+.decompose-display {
+  text-align: center;
+  padding: 20px;
+  background: var(--card);
+  border-radius: 16px;
+  border: 1px solid var(--border);
+  max-width: 500px;
+  width: 100%;
+}
+.decompose-equation {
+  font-size: 36px;
+  font-weight: 900;
+  font-family: 'JetBrains Mono', monospace;
+  margin-top: 8px;
+}
+.decompose-equation .num-highlight {
+  background: var(--grad);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+.decompose-equation .tens-highlight {
+  color: var(--purple);
+}
+.decompose-equation .ones-highlight {
+  color: var(--cyan);
+}
+
+/* ── INSTRUCTION BOX ── */
+.instruction-box {
+  text-align: center;
+  padding: 16px 24px;
+  background: var(--card);
+  border-radius: 12px;
+  border: 1px solid var(--border);
+  margin-bottom: 16px;
+  max-width: 500px;
+  width: 100%;
+}
+.instruction-box .prompt {
+  font-size: 18px;
+  font-weight: 700;
+  color: var(--text);
+  line-height: 1.4;
+}
+.instruction-box .sub-prompt {
+  font-size: 13px;
+  color: var(--text2);
+  margin-top: 4px;
+}
+
+/* ── TARGET NUMBER ── */
+.target-display {
+  text-align: center;
+  margin-bottom: 12px;
+}
+.target-number {
+  font-size: 64px;
+  font-weight: 900;
+  font-family: 'JetBrains Mono', monospace;
+  background: var(--grad);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  line-height: 1;
+}
+.target-label {
+  font-size: 13px;
+  color: var(--muted);
+  margin-top: 4px;
+}
+
+/* ── MC GRID ── */
+.mc-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+  max-width: 360px;
+  width: 100%;
+  margin-top: 16px;
+}
+.mc-btn {
+  padding: 16px;
+  border-radius: 12px;
+  border: 2px solid var(--border);
+  background: var(--card);
+  color: var(--text);
+  font-size: 22px;
+  font-weight: 700;
+  font-family: 'JetBrains Mono', monospace;
+  cursor: pointer;
+  transition: all 0.15s;
+  text-align: center;
+}
+.mc-btn:hover {
+  border-color: var(--cyan);
+  background: rgba(0,212,255,0.05);
+  transform: scale(1.03);
+}
+.mc-btn.correct-flash {
+  border-color: var(--green);
+  background: rgba(0,230,118,0.15);
+  color: var(--green);
+}
+.mc-btn.incorrect-flash {
+  border-color: var(--pink);
+  background: rgba(255,59,139,0.15);
+  color: var(--pink);
+}
+
+/* ── CONTROLS ── */
+.controls {
+  display: flex;
+  gap: 8px;
+  margin-top: 16px;
+  flex-wrap: wrap;
+  justify-content: center;
+}
+.ctrl-btn {
+  padding: 10px 20px;
+  border-radius: 10px;
+  border: 1px solid var(--border);
+  background: var(--card);
+  color: var(--text2);
+  font-size: 13px;
+  font-weight: 600;
+  font-family: inherit;
+  cursor: pointer;
+  transition: all 0.2s;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.ctrl-btn:hover { background: var(--card-hover); color: var(--text); }
+.ctrl-btn.primary {
+  background: var(--grad);
+  color: var(--bg);
+  border-color: transparent;
+}
+.ctrl-btn.primary:hover { opacity: 0.9; }
+.ctrl-btn.danger { color: var(--pink); }
+.ctrl-btn.danger:hover { background: rgba(255,59,139,0.1); }
+.ctrl-btn.bundle {
+  background: rgba(179,136,255,0.15);
+  color: var(--purple);
+  border-color: rgba(179,136,255,0.4);
+  font-weight: 700;
+  animation: pulse 1.5s ease-in-out infinite;
+}
+.ctrl-btn.bundle:hover {
+  background: rgba(179,136,255,0.25);
+}
+
+/* ── SCORE DISPLAY ── */
+.score-display {
+  text-align: center;
+  padding: 16px;
+  background: var(--card);
+  border-radius: 12px;
+  margin-bottom: 12px;
+}
+.score-value {
+  font-size: 36px;
+  font-weight: 900;
+  font-family: 'JetBrains Mono', monospace;
+  background: var(--grad);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+.score-label {
+  font-size: 11px;
+  color: var(--muted);
+  text-transform: uppercase;
+  letter-spacing: 1px;
+}
+.streak-bar {
+  height: 6px;
+  background: var(--card);
+  border-radius: 3px;
+  overflow: hidden;
+  margin-top: 8px;
+}
+.streak-fill {
+  height: 100%;
+  background: var(--grad);
+  border-radius: 3px;
+  transition: width 0.3s;
+}
+
+/* ── FEEDBACK ── */
+.feedback {
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%) scale(0);
+  padding: 24px 48px;
+  border-radius: 20px;
+  font-size: 28px;
+  font-weight: 800;
+  z-index: 200;
+  pointer-events: none;
+  transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275), opacity 0.3s;
+  opacity: 0;
+  max-width: 90vw;
+  text-align: center;
+}
+.feedback.show {
+  transform: translate(-50%, -50%) scale(1);
+  opacity: 1;
+}
+.feedback.correct {
+  background: rgba(0,230,118,0.15);
+  color: var(--green);
+  border: 2px solid var(--green);
+}
+.feedback.incorrect {
+  background: rgba(255,59,139,0.15);
+  color: var(--pink);
+  border: 2px solid var(--pink);
+}
+.feedback.try-again {
+  background: rgba(255,193,7,0.15);
+  color: var(--yellow);
+  border: 2px solid var(--yellow);
+}
+.feedback.info {
+  background: rgba(179,136,255,0.15);
+  color: var(--purple);
+  border: 2px solid var(--purple);
+  font-size: 18px;
+}
+
+/* ── SIDE PANEL ── */
+.side-panel {
+  width: 280px;
+  background: var(--bg2);
+  border-left: 1px solid var(--border);
+  padding: 20px;
+  overflow-y: auto;
+  flex-shrink: 0;
+}
+.panel-section {
+  margin-bottom: 20px;
+}
+.panel-title {
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 1.5px;
+  color: var(--muted);
+  margin-bottom: 8px;
+}
+.panel-text {
+  font-size: 13px;
+  color: var(--text2);
+  line-height: 1.6;
+}
+
+/* ── NUMBER SELECTOR ── */
+.num-selector {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+  justify-content: center;
+  margin-top: 12px;
+}
+.num-sel-btn {
+  width: 40px;
+  height: 40px;
+  border-radius: 10px;
+  border: 2px solid var(--border);
+  background: var(--card);
+  color: var(--text2);
+  font-size: 16px;
+  font-weight: 700;
+  font-family: 'JetBrains Mono', monospace;
+  cursor: pointer;
+  transition: all 0.15s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.num-sel-btn:hover { border-color: var(--cyan); transform: scale(1.08); }
+.num-sel-btn.selected {
+  border-color: var(--cyan);
+  background: rgba(0,212,255,0.12);
+  color: var(--cyan);
+  box-shadow: 0 0 10px rgba(0,212,255,0.2);
+}
+
+/* ── ANIMATIONS ── */
+@keyframes pop {
+  0% { transform: scale(0); }
+  70% { transform: scale(1.2); }
+  100% { transform: scale(1); }
+}
+@keyframes shake {
+  0%, 100% { transform: translateX(0); }
+  25% { transform: translateX(-8px); }
+  75% { transform: translateX(8px); }
+}
+@keyframes pulse {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(179,136,255,0.4); }
+  50% { box-shadow: 0 0 0 8px rgba(179,136,255,0); }
+}
+@keyframes slideInRod {
+  0% { opacity: 0; transform: scaleY(0); }
+  60% { transform: scaleY(1.1); }
+  100% { opacity: 1; transform: scaleY(1); }
+}
+.pop-in { animation: pop 0.3s ease-out forwards; }
+.shake { animation: shake 0.3s ease-in-out; }
+.rod-in { animation: slideInRod 0.4s ease-out forwards; }
+
+/* scrollbar */
+::-webkit-scrollbar { width: 6px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+</style>
+</head>
+<body>
+
+<!-- ═══ HEADER ═══ -->
+<div class="vinculum-header">
+  <div class="vinculum-header-left">
+    <a class="vinculum-back-btn" href="../../VINCULUM-Hub.html" style="text-decoration:none;">◀ Hub</a>
+    <div class="vinculum-header-title"><span>VINCULUM</span> Teen Number Factory</div>
+    <span class="vinculum-header-badge">K.NBT</span>
+  </div>
+    <div class="vinculum-header-right">
+      <div class="vinculum-std-tags">
+    <span class="vinculum-std-tag">K.NBT.1</span>
+    <span class="vinculum-std-tag mn">MN K.1.1.3</span>
+  </div>
+  <button class="vinculum-back-btn" id="readAloudBtn" onclick="toggleReadAloud()" aria-label="Read Aloud" title="Read instructions aloud" style="margin-left:8px;white-space:nowrap;">🔊 Read to Me</button>
+</div>
+
+<!-- ═══ MODE TABS ═══ -->
+</div>
+
+  <div class="vinculum-mode-tabs">
+  <button class="vinculum-mode-tab active-explore" id="tabExplore" data-mode="explore">
+    <svg width="18" height="18" viewBox="0 0 48 48" fill="none"><path d="M4 24C4 24 12 12 24 12C36 12 44 24 44 24C44 24 36 36 24 36C12 36 4 24 4 24Z" stroke="currentColor" stroke-width="3" fill="none"/><circle cx="24" cy="24" r="7" stroke="currentColor" stroke-width="3" fill="none"/><circle cx="24" cy="24" r="3" fill="currentColor"/><line x1="24" y1="4" x2="24" y2="9" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" opacity="0.5"/><line x1="10" y1="8" x2="13" y2="12" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" opacity="0.5"/><line x1="38" y1="8" x2="35" y2="12" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" opacity="0.5"/></svg> Explore
+  </button>
+  <button class="vinculum-mode-tab" id="tabPractice" data-mode="practice">
+    <svg width="18" height="18" viewBox="0 0 48 48" fill="none"><circle cx="24" cy="24" r="20" stroke="currentColor" stroke-width="3" fill="none" opacity="0.3"/><circle cx="24" cy="24" r="20" stroke="currentColor" stroke-width="3" fill="none" stroke-dasharray="126" stroke-dashoffset="32" stroke-linecap="round"/><polyline points="16,24 22,32 34,16" stroke="currentColor" stroke-width="4" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg> Practice
+  </button>
+  <button class="vinculum-mode-tab" id="tabPlay" data-mode="play">
+    <svg width="18" height="18" viewBox="0 0 48 48" fill="none"><polygon points="28,4 12,28 22,28 18,44 36,18 26,18" fill="none" stroke="currentColor" stroke-width="3" stroke-linejoin="round"/><polygon points="27,8 15,27 23,27 20,40 34,19 26,19" fill="currentColor" opacity="0.15"/></svg> Play
+  </button>
+  <div class="vinculum-diff-selector">
+    <span class="vinculum-diff-label">Level</span>
+    <button class="vinculum-diff-btn active" id="diffE" data-diff="emergent">11–15</button>
+    <button class="vinculum-diff-btn" id="diffP" data-diff="proficient">11–19</button>
+    <button class="vinculum-diff-btn" id="diffA" data-diff="advanced">Decompose</button>
+  </div>
+</div>
+
+<!-- ═══ MAIN ═══ -->
+<div class="main">
+  <div class="workspace" role="main" id="workspace"></div>
+  <div class="side-panel" id="sidePanel"></div>
+</div>
+
+<!-- ═══ FEEDBACK POPUP ═══ -->
+<div class="feedback" id="feedback"></div>
+
+  <script src="../../vinculum-input.js"></script>
+<script>
+// ════════════════════════════════════════
+// STATE
+// ════════════════════════════════════════
+let S = {
+  mode: 'explore',       // explore | practice | play
+  diff: 'emergent',      // emergent | proficient | advanced
+  minN: 11,
+  maxN: 15,
+  targetNum: 13,
+  cubesPlaced: 0,
+  bundled: false,
+  // Practice
+  pNum: 0,
+  pType: 'compose',      // compose | decompose
+  pAnswer: 0,
+  pChoices: [],
+  // Score
+  score: 0,
+  streak: 0,
+  best: 0,
+  round: 0,
+  total: 10,
+  // Play
+  playNum: 0,
+  playType: 'compose',
+  playAnswer: 0,
+  playChoices: []
+};
+
+// ════════════════════════════════════════
+// READ-ALOUD
+// ════════════════════════════════════════
+function toggleReadAloud() {
+  if (window.VinculumStories && VinculumStories.isReading()) {
+    VinculumStories.stopReading();
+    document.getElementById('readAloudBtn').textContent = '🔊 Read to Me';
+  } else {
+    var fb = document.getElementById('feedback');
+    var storyEl = document.getElementById('storyBanner');
+    var text = storyEl ? storyEl.textContent : (fb ? fb.textContent : 'Welcome to Teen Number Factory!');
+    if (window.VinculumStories) {
+      VinculumStories.readAloud(text, { rate: 0.85, onComplete: function() {
+        document.getElementById('readAloudBtn').textContent = '🔊 Read to Me';
+      }});
+      document.getElementById('readAloudBtn').textContent = '⏹ Stop';
+    }
+  }
+}
+
+// ════════════════════════════════════════
+// MISCONCEPTIONS DATABASE
+// ════════════════════════════════════════
+const MISCONCEPTIONS = {
+  noGroupOfTen: {
+    id: 'no-ten',
+    msg: function(n) { return n + ' cubes: first bundle 10 into a tens rod. You have ' + (n - 10) + ' leftover cubes!'; }
+  },
+  digitMeaning: {
+    id: 'digit-meaning',
+    msg: function(n) { return 'In ' + n + ', the "' + Math.floor(n / 10) + '" means ' + Math.floor(n / 10) + ' ten(s), and the "' + (n % 10) + '" means ' + (n % 10) + ' ones.'; }
+  },
+  offByOne: {
+    id: 'off-by-one',
+    msg: function(ans, got) { return 'Almost! ' + got + ' is close, but count the loose cubes — it\'s ' + ans + '.'; }
+  },
+  randomGuess: {
+    id: 'random',
+    msg: function() { return 'Bundle 10 cubes into a rod first. Then count the extras!'; }
+  }
+};
+
+// ════════════════════════════════════════
+// HELPERS
+// ════════════════════════════════════════
+function randInt(min, max) {
+  return Math.floor(Math.random() * (max - min + 1)) + min;
+}
+
+function showFeedback(text, type) {
+  var fb = document.getElementById('feedback');
+  fb.textContent = text;
+  fb.className = 'feedback ' + type + ' show';
+  setTimeout(function() { fb.classList.remove('show'); }, 2000);
+}
+
+function getDiffRange() {
+  if (S.diff === 'emergent') return { min: 11, max: 15 };
+  return { min: 11, max: 19 };
+}
+
+function generateChoices(answer, min, max, count) {
+  var choices = new Set([answer]);
+  // Add off-by-one distractor
+  if (answer + 1 <= max) choices.add(answer + 1);
+  if (answer - 1 >= min) choices.add(answer - 1);
+  while (choices.size < count) {
+    choices.add(randInt(min, max));
+  }
+  return Array.from(choices).sort(function(a, b) { return a - b; });
+}
+
+function generateOnesChoices(answer) {
+  var choices = new Set([answer]);
+  if (answer + 1 <= 9) choices.add(answer + 1);
+  if (answer - 1 >= 0) choices.add(answer - 1);
+  while (choices.size < 4) {
+    choices.add(randInt(0, 9));
+  }
+  return Array.from(choices).sort(function(a, b) { return a - b; });
+}
+
+// ════════════════════════════════════════
+// MODE / DIFF SWITCHING
+// ════════════════════════════════════════
+function setMode(mode) {
+  S.mode = mode;
+  S.cubesPlaced = 0;
+  S.bundled = false;
+  S.round = 0;
+  S.score = 0;
+  S.streak = 0;
+
+  document.querySelectorAll('.vinculum-mode-tab').forEach(function(t) {
+    t.classList.remove('active-explore', 'active-practice', 'active-play');
+  });
+  var tabEl = document.getElementById('tab' + mode.charAt(0).toUpperCase() + mode.slice(1));
+  if (tabEl) tabEl.classList.add('active-' + mode);
+
+  if (mode === 'practice') setupPractice();
+  if (mode === 'play') setupPlay();
+  render();
+}
+
+function setDiff(diff) {
+  S.diff = diff;
+  var range = getDiffRange();
+  S.minN = range.min;
+  S.maxN = range.max;
+  S.targetNum = randInt(S.minN, S.maxN);
+
+  document.querySelectorAll('.vinculum-diff-btn').forEach(function(b) {
+    b.classList.remove('active');
+  });
+  document.getElementById('diff' + diff.charAt(0).toUpperCase()).classList.add('active');
+
+  setMode(S.mode);
+}
+
+// ════════════════════════════════════════
+// EXPLORE MODE
+// ════════════════════════════════════════
+function renderExplore(ws, sp) {
+  var html = '';
+
+  // Story banner
+  if (window.VinculumStories) {
+    var toolName = window.location.pathname.split('/').pop().replace('.html', '');
+    var storyData = VinculumStories.getStory(toolName, {
+      a: S.targetNum, b: S.targetNum - 10, total: S.targetNum,
+      n: S.targetNum, ones: S.targetNum % 10
+    });
+    if (storyData && storyData.story) {
+      if (window.Vinculum3Reads) {
+        html += Vinculum3Reads.getBannerHTML(storyData);
+      } else {
+        html += '<div id="storyBanner" style="background:var(--card2,#1a1f2e);border:1px solid var(--border);border-radius:12px;padding:16px 20px;margin-bottom:16px;font-size:15px;line-height:1.6;color:var(--text);position:relative;max-width:500px;width:100%;"><span style="font-size:12px;color:var(--cyan);font-weight:700;text-transform:uppercase;letter-spacing:1px;">📖 Story</span><br>' + storyData.story + '<br><em style="color:var(--yellow);font-weight:600;">' + storyData.question + '</em><button onclick="toggleReadAloud()" style="position:absolute;top:12px;right:12px;background:none;border:1px solid var(--border);border-radius:8px;padding:4px 10px;color:var(--cyan);cursor:pointer;font-size:14px;" title="Read story aloud">🔊</button></div>';
+      }
+    }
+  }
+
+  // Target number selector
+  html += '<div class="target-display">';
+  html += '<div class="target-label">Target Number</div>';
+  html += '<div class="target-number">' + S.targetNum + '</div>';
+  html += '</div>';
+
+  // Number selector buttons
+  html += '<div class="num-selector">';
+  for (var n = S.minN; n <= S.maxN; n++) {
+    html += '<button class="num-sel-btn ' + (n === S.targetNum ? 'selected' : '') + '" onclick="selectTarget(' + n + ')">' + n + '</button>';
+  }
+  html += '</div>';
+
+  html += '<div style="height:16px;"></div>';
+
+  // Conveyor belt area
+  html += '<div class="conveyor" id="conveyor">';
+  html += '<div class="conveyor-label">Conveyor Belt</div>';
+
+  if (S.bundled) {
+    // Show tens rod + remaining ones
+    html += '<div class="tens-rod rod-in"><div class="tens-rod-label">10</div></div>';
+    html += '<div class="ones-cubes">';
+    var ones = S.targetNum - 10;
+    for (var i = 0; i < ones; i++) {
+      html += '<div class="cube pop-in" style="animation-delay:' + (i * 0.06) + 's;">' + (i + 1) + '</div>';
+    }
+    html += '</div>';
+  } else {
+    // Show individual cubes
+    for (var i = 0; i < S.cubesPlaced; i++) {
+      var isTenGroup = i < 10 && S.cubesPlaced >= 10;
+      html += '<div class="cube pop-in" style="animation-delay:' + (i * 0.03) + 's;' + (isTenGroup ? 'border-color:rgba(179,136,255,0.5);background:rgba(179,136,255,0.12);color:var(--purple);' : '') + '">' + (i + 1) + '</div>';
+    }
+  }
+  html += '</div>';
+
+  // Decompose equation display
+  if (S.bundled) {
+    html += '<div class="decompose-display">';
+    html += '<div style="font-size:14px;color:var(--muted);margin-bottom:4px;">Decomposition</div>';
+    html += '<div class="decompose-equation">';
+    html += '<span class="num-highlight">' + S.targetNum + '</span>';
+    html += ' <span style="color:var(--muted);">=</span> ';
+    html += '<span class="tens-highlight">1 ten</span>';
+    html += ' <span style="color:var(--muted);">+</span> ';
+    html += '<span class="ones-highlight">' + (S.targetNum - 10) + ' one' + (S.targetNum - 10 !== 1 ? 's' : '') + '</span>';
+    html += '</div>';
+    html += '<div style="font-size:15px;color:var(--text2);margin-top:8px;">' + S.targetNum + ' = 10 + ' + (S.targetNum - 10) + '</div>';
+    html += '</div>';
+  }
+
+  // Controls
+  html += '<div class="controls">';
+  if (!S.bundled) {
+    html += '<button class="ctrl-btn primary" onclick="addCube()">+ Add Cube</button>';
+    if (S.cubesPlaced >= 10) {
+      html += '<button class="ctrl-btn bundle" onclick="bundleTen()">Bundle 10!</button>';
+    }
+    if (S.cubesPlaced > 0) {
+      html += '<button class="ctrl-btn danger" onclick="resetExplore()">✕ Reset</button>';
+    }
+  } else {
+    html += '<button class="ctrl-btn primary" onclick="resetExplore()">Try Another Number</button>';
+  }
+  html += '</div>';
+
+  ws.innerHTML = html;
+
+  // Side panel
+  sp.innerHTML =
+    '<div class="panel-section">' +
+      '<div class="panel-title">Factory Instructions</div>' +
+      '<div class="panel-text">' +
+        '1. Pick a teen number above<br><br>' +
+        '2. Click <strong>+ Add Cube</strong> to place cubes on the conveyor belt<br><br>' +
+        '3. When you have 10 cubes, the <strong>Bundle 10!</strong> button appears<br><br>' +
+        '4. Bundle them into a <strong style="color:var(--purple);">tens rod</strong><br><br>' +
+        '5. See the leftover <strong style="color:var(--cyan);">ones cubes</strong>' +
+      '</div>' +
+    '</div>' +
+    '<div class="panel-section">' +
+      '<div class="panel-title">Key Concept</div>' +
+      '<div class="panel-text">' +
+        'Every teen number is made of <strong style="color:var(--purple);">one group of 10</strong> ' +
+        'and some <strong style="color:var(--cyan);">extra ones</strong>.<br><br>' +
+        'For example, 13 is not "1 and 3" — it is <strong>10 + 3</strong>!' +
+      '</div>' +
+    '</div>' +
+    '<div class="panel-section">' +
+      '<div class="panel-title">Standards</div>' +
+      '<div class="panel-text">' +
+        '<strong>K.NBT.1</strong> — Compose and decompose numbers from 11 to 19 into ten ones and some further ones<br><br>' +
+        '<strong>MN K.1.1.3</strong> — Find a number that is 1 more or 1 less than a given number' +
+      '</div>' +
+    '</div>';
+}
+
+function selectTarget(n) {
+  S.targetNum = n;
+  S.cubesPlaced = 0;
+  S.bundled = false;
+  render();
+}
+
+function addCube() {
+  if (S.cubesPlaced >= S.targetNum) {
+    showFeedback('You already have ' + S.targetNum + ' cubes!', 'try-again');
+    return;
+  }
+  S.cubesPlaced++;
+
+  if (S.cubesPlaced === 10 && S.targetNum > 10) {
+    showFeedback('You have 10! Bundle them into a tens rod!', 'info');
+  }
+  render();
+}
+
+function bundleTen() {
+  if (S.cubesPlaced < 10) return;
+  S.bundled = true;
+  showFeedback(S.targetNum + ' = 10 + ' + (S.targetNum - 10), 'correct');
+  render();
+}
+
+function resetExplore() {
+  S.cubesPlaced = 0;
+  S.bundled = false;
+  S.targetNum = randInt(S.minN, S.maxN);
+  render();
+}
+
+// ════════════════════════════════════════
+// PRACTICE MODE
+// ════════════════════════════════════════
+function setupPractice() {
+  var range = getDiffRange();
+  S.pNum = randInt(range.min, range.max);
+  var ones = S.pNum - 10;
+
+  if (S.diff === 'advanced') {
+    // Mix of decompose question types
+    var types = ['onesFromNum', 'numFromOnes', 'tensAndOnes'];
+    S.pType = types[randInt(0, types.length - 1)];
+  } else if (S.diff === 'proficient') {
+    // "What number is 1 ten and X ones?"
+    S.pType = 'numFromOnes';
+  } else {
+    // "How many ones after bundling 10?"
+    S.pType = 'onesFromNum';
+  }
+
+  if (S.pType === 'onesFromNum') {
+    S.pAnswer = ones;
+    S.pChoices = generateOnesChoices(ones);
+  } else if (S.pType === 'numFromOnes') {
+    S.pAnswer = S.pNum;
+    S.pChoices = generateChoices(S.pNum, 11, 19, 4);
+  } else {
+    // tensAndOnes: "? tens and ? ones = N" -> answer is the ones
+    S.pAnswer = ones;
+    S.pChoices = generateOnesChoices(ones);
+  }
+}
+
+function renderPractice(ws, sp) {
+  if (S.pNum === 0) setupPractice();
+
+  var html = '';
+  var ones = S.pNum - 10;
+
+  // Visual: show the tens rod + ones for context
+  html += '<div style="display:flex;align-items:flex-end;gap:12px;margin-bottom:20px;">';
+  html += '<div class="tens-rod" style="height:100px;"><div class="tens-rod-label">10</div></div>';
+  html += '<div class="ones-cubes">';
+  for (var i = 0; i < ones; i++) {
+    html += '<div class="cube">' + (i + 1) + '</div>';
+  }
+  html += '</div>';
+  html += '</div>';
+
+  // Question prompt
+  html += '<div class="instruction-box">';
+  if (S.pType === 'onesFromNum') {
+    html += '<div class="prompt">Make ' + S.pNum + '!</div>';
+    html += '<div class="sub-prompt">How many ones are left after bundling 10?</div>';
+  } else if (S.pType === 'numFromOnes') {
+    html += '<div class="prompt">What number is 1 ten and ' + ones + ' one' + (ones !== 1 ? 's' : '') + '?</div>';
+    html += '<div class="sub-prompt">Look at the tens rod and the loose cubes.</div>';
+  } else {
+    html += '<div class="prompt">' + S.pNum + ' = 10 + ?</div>';
+    html += '<div class="sub-prompt">How many ones does ' + S.pNum + ' have?</div>';
+  }
+  html += '</div>';
+
+  // MC grid
+  html += '<div class="mc-grid">';
+  S.pChoices.forEach(function(c) {
+    html += '<button class="mc-btn" id="pmc' + c + '" onclick="practiceAnswer(' + c + ')">' + c + '</button>';
+  });
+  html += '</div>';
+
+  // Skip button
+  html += '<div class="controls">';
+  html += '<button class="ctrl-btn" onclick="setupPractice();render();">Skip →</button>';
+  html += '</div>';
+
+  ws.innerHTML = html;
+
+  // Side panel
+  sp.innerHTML =
+    '<div class="panel-section">' +
+      '<div class="panel-title">Instructions</div>' +
+      '<div class="panel-text">' +
+        'Look at the cubes and the tens rod.<br><br>' +
+        'Answer the question by tapping the correct number.<br><br>' +
+        'Remember: every teen number = <strong>10 + some ones</strong>!' +
+      '</div>' +
+    '</div>' +
+    '<div class="panel-section">' +
+      '<div class="panel-title">Difficulty: ' + S.diff + '</div>' +
+      '<div class="panel-text" style="background:var(--card);padding:12px;border-radius:8px;">' +
+        (S.diff === 'emergent' ? 'Numbers <strong>11–15</strong>. Count the ones left over after making a group of 10.' :
+         S.diff === 'proficient' ? 'Numbers <strong>11–19</strong>. Figure out the teen number from tens and ones.' :
+         '<strong>Decompose</strong> teen numbers. Find the tens and ones in any teen number.') +
+      '</div>' +
+    '</div>' +
+    '<div class="panel-section">' +
+      '<div class="panel-title">Key Concept</div>' +
+      '<div class="panel-text">' +
+        'Teen numbers are made of <strong style="color:var(--purple);">1 ten</strong> ' +
+        'and some <strong style="color:var(--cyan);">ones</strong>.<br><br>' +
+        'The digit in the ones place tells you how many extra cubes there are beyond 10.' +
+      '</div>' +
+    '</div>';
+}
+
+function practiceAnswer(choice) {
+  var btn = document.getElementById('pmc' + choice);
+  if (choice === S.pAnswer) {
+    btn.classList.add('correct-flash');
+    showFeedback('Correct! ' + S.pNum + ' = 10 + ' + (S.pNum - 10), 'correct');
+    setTimeout(function() {
+      setupPractice();
+      render();
+    }, 1500);
+  } else {
+    btn.classList.add('incorrect-flash');
+    // Determine misconception feedback
+    var diff = Math.abs(choice - S.pAnswer);
+    var msg;
+    if (diff === 1) {
+      msg = MISCONCEPTIONS.offByOne.msg(S.pAnswer, choice);
+    } else if (choice === Math.floor(S.pNum / 10) || choice === S.pNum % 10 + S.pNum / 10) {
+      msg = MISCONCEPTIONS.digitMeaning.msg(S.pNum);
+    } else if (diff >= 5) {
+      msg = MISCONCEPTIONS.randomGuess.msg();
+    } else {
+      msg = MISCONCEPTIONS.noGroupOfTen.msg(S.pNum);
+    }
+    showFeedback(msg, 'try-again');
+    setTimeout(function() {
+      if (btn) btn.classList.remove('incorrect-flash');
+    }, 600);
+  }
+}
+
+// ════════════════════════════════════════
+// PLAY MODE
+// ════════════════════════════════════════
+function setupPlay() {
+  S.round = 1;
+  S.score = 0;
+  S.streak = 0;
+  nextPlayRound();
+}
+
+function nextPlayRound() {
+  var range = getDiffRange();
+  S.playNum = randInt(range.min, range.max);
+  var ones = S.playNum - 10;
+
+  // Mix of compose / decompose
+  var types;
+  if (S.diff === 'advanced') {
+    types = ['onesFromNum', 'numFromOnes', 'tensAndOnes'];
+  } else {
+    types = ['onesFromNum', 'numFromOnes'];
+  }
+  S.playType = types[randInt(0, types.length - 1)];
+
+  if (S.playType === 'onesFromNum' || S.playType === 'tensAndOnes') {
+    S.playAnswer = ones;
+    S.playChoices = generateOnesChoices(ones);
+  } else {
+    S.playAnswer = S.playNum;
+    S.playChoices = generateChoices(S.playNum, 11, 19, 4);
+  }
+  // Ensure exactly 4 choices, shuffle-safe
+  while (S.playChoices.length < 4) {
+    S.playChoices.push(randInt(0, 19));
+    S.playChoices = Array.from(new Set(S.playChoices)).sort(function(a, b) { return a - b; });
+  }
+  if (S.playChoices.length > 4) {
+    // Keep the answer and trim
+    var filtered = S.playChoices.filter(function(c) { return c !== S.playAnswer; });
+    filtered = filtered.slice(0, 3);
+    filtered.push(S.playAnswer);
+    S.playChoices = filtered.sort(function(a, b) { return a - b; });
+  }
+}
+
+function renderPlay(ws, sp) {
+  if (S.round === 0) setupPlay();
+
+  // Check game over
+  if (S.round > S.total) {
+    renderGameOver(ws, sp);
+    return;
+  }
+
+  var html = '';
+  var ones = S.playNum - 10;
+
+  // Round indicator
+  html += '<div style="text-align:center;margin-bottom:8px;">';
+  html += '<div style="font-size:14px;color:var(--muted);">Round ' + S.round + ' of ' + S.total + '</div>';
+  html += '</div>';
+
+  // Visual display
+  html += '<div style="display:flex;align-items:flex-end;gap:12px;margin-bottom:16px;justify-content:center;">';
+  if (S.playType === 'numFromOnes') {
+    // Show rod + ones, ask for the number
+    html += '<div class="tens-rod rod-in" style="height:100px;"><div class="tens-rod-label">10</div></div>';
+    html += '<div class="ones-cubes">';
+    for (var i = 0; i < ones; i++) {
+      html += '<div class="cube pop-in" style="animation-delay:' + (i * 0.05) + 's;">' + (i + 1) + '</div>';
+    }
+    html += '</div>';
+  } else {
+    // Show unbundled cubes for onesFromNum / tensAndOnes
+    html += '<div style="display:flex;flex-wrap:wrap;gap:4px;max-width:400px;justify-content:center;">';
+    for (var i = 0; i < S.playNum; i++) {
+      var isFirstTen = i < 10;
+      html += '<div class="cube pop-in" style="animation-delay:' + (i * 0.03) + 's;' +
+        (isFirstTen ? 'border-color:rgba(179,136,255,0.5);background:rgba(179,136,255,0.12);color:var(--purple);' : '') +
+        '">' + (i + 1) + '</div>';
+    }
+    html += '</div>';
+  }
+  html += '</div>';
+
+  // Question
+  html += '<div class="instruction-box">';
+  if (S.playType === 'onesFromNum') {
+    html += '<div class="prompt">Bundle 10 from ' + S.playNum + ' cubes. How many ones left?</div>';
+  } else if (S.playType === 'numFromOnes') {
+    html += '<div class="prompt">1 ten + ' + ones + ' one' + (ones !== 1 ? 's' : '') + ' = ?</div>';
+  } else {
+    html += '<div class="prompt">' + S.playNum + ' = 10 + ?</div>';
+  }
+  html += '</div>';
+
+  // MC answers (2x2)
+  html += '<div class="mc-grid">';
+  S.playChoices.forEach(function(c) {
+    html += '<button class="mc-btn" id="play' + c + '" onclick="playAnswer(' + c + ')">' + c + '</button>';
+  });
+  html += '</div>';
+
+  ws.innerHTML = html;
+
+  // Side panel
+  sp.innerHTML =
+    '<div class="score-display">' +
+      '<div class="score-value">' + S.score + '</div>' +
+      '<div class="score-label">Score</div>' +
+    '</div>' +
+    '<div class="score-display" style="background:transparent;padding:8px;">' +
+      '<div style="font-size:18px;font-weight:700;color:var(--yellow);">🔥 ' + S.streak + '</div>' +
+      '<div class="score-label">Streak</div>' +
+      '<div class="streak-bar"><div class="streak-fill" style="width:' + Math.min(S.streak * 20, 100) + '%;"></div></div>' +
+    '</div>' +
+    '<div class="panel-section">' +
+      '<div class="panel-title">How to Play</div>' +
+      '<div class="panel-text">' +
+        'Answer 10 questions about teen numbers.<br><br>' +
+        '<strong>+10 points</strong> per correct answer.<br>' +
+        '<strong>+2 bonus</strong> per streak level!<br><br>' +
+        'Build your streak for a high score!' +
+      '</div>' +
+    '</div>' +
+    '<div class="panel-section">' +
+      '<div class="panel-title">Best Streak</div>' +
+      '<div class="panel-text" style="font-size:24px;font-weight:800;color:var(--purple);">🏆 ' + S.best + '</div>' +
+    '</div>';
+}
+
+function playAnswer(choice) {
+  var btn = document.getElementById('play' + choice);
+  if (!btn) return;
+
+  if (choice === S.playAnswer) {
+    btn.classList.add('correct-flash');
+    S.score += 10 + (S.streak * 2);
+    S.streak++;
+    if (S.streak > S.best) S.best = S.streak;
+    showFeedback('Correct! +' + (10 + ((S.streak - 1) * 2)), 'correct');
+  } else {
+    btn.classList.add('incorrect-flash');
+    S.streak = 0;
+
+    var diff = Math.abs(choice - S.playAnswer);
+    var msg;
+    if (diff === 1) {
+      msg = MISCONCEPTIONS.offByOne.msg(S.playAnswer, choice);
+    } else if (diff >= 5) {
+      msg = MISCONCEPTIONS.randomGuess.msg();
+    } else {
+      msg = MISCONCEPTIONS.noGroupOfTen.msg(S.playNum);
+    }
+    showFeedback(msg, 'incorrect');
+  }
+
+  // Disable all buttons
+  document.querySelectorAll('.mc-btn').forEach(function(b) { b.style.pointerEvents = 'none'; });
+
+  setTimeout(function() {
+    S.round++;
+    if (S.round > S.total) {
+      render();
+    } else {
+      nextPlayRound();
+      render();
+    }
+  }, 1200);
+}
+
+function renderGameOver(ws, sp) {
+  var html = '';
+  html += '<div style="text-align:center;">';
+  html += '<div style="font-size:48px;margin-bottom:8px;">🏭</div>';
+  html += '<div style="font-size:28px;font-weight:900;background:var(--grad);-webkit-background-clip:text;-webkit-text-fill-color:transparent;">Factory Complete!</div>';
+  html += '<div style="font-size:18px;color:var(--text2);margin-top:8px;">Final Score</div>';
+  html += '<div style="font-size:64px;font-weight:900;font-family:\'JetBrains Mono\',monospace;background:var(--grad);-webkit-background-clip:text;-webkit-text-fill-color:transparent;">' + S.score + '</div>';
+  html += '<div style="font-size:14px;color:var(--muted);margin-top:4px;">Best Streak: ' + S.best + '</div>';
+  html += '<div class="controls" style="margin-top:24px;">';
+  html += '<button class="ctrl-btn primary" onclick="setupPlay();render();">Play Again</button>';
+  html += '<button class="ctrl-btn" onclick="setMode(\'explore\')">Back to Explore</button>';
+  html += '</div>';
+  html += '</div>';
+
+  ws.innerHTML = html;
+
+  sp.innerHTML =
+    '<div class="score-display">' +
+      '<div class="score-value">' + S.score + '</div>' +
+      '<div class="score-label">Final Score</div>' +
+    '</div>' +
+    '<div class="panel-section">' +
+      '<div class="panel-title">Great Work!</div>' +
+      '<div class="panel-text">' +
+        'You completed all ' + S.total + ' rounds!<br><br>' +
+        'Best streak: <strong style="color:var(--yellow);">' + S.best + '</strong><br><br>' +
+        'Try a harder difficulty or explore more teen numbers!' +
+      '</div>' +
+    '</div>';
+}
+
+// ════════════════════════════════════════
+// RENDER ROUTER
+// ════════════════════════════════════════
+function render() {
+  var ws = document.getElementById('workspace');
+  var sp = document.getElementById('sidePanel');
+
+  if (S.mode === 'explore') renderExplore(ws, sp);
+  else if (S.mode === 'practice') renderPractice(ws, sp);
+  else renderPlay(ws, sp);
+}
+
+// ════════════════════════════════════════
+// INIT
+// ════════════════════════════════════════
+document.querySelectorAll('.vinculum-mode-tab').forEach(function(tab) {
+  tab.addEventListener('click', function() {
+    setMode(this.dataset.mode);
+  });
+});
+
+document.querySelectorAll('.vinculum-diff-btn').forEach(function(btn) {
+  btn.addEventListener('click', function() {
+    setDiff(this.dataset.diff);
+  });
+});
+
+render();
+</script>
+<script src="../../vinculum-core.js"></script>
+<script src="../../vinculum-data.js"></script>
+    <script src="../../vinculum-adaptive-hook.js"></script>
+<script src="../../vinculum-3reads.js"></script>
+<script src="../../vinculum-stories.js"></script>
+<script src="../../vinculum-feedback.js"></script>
+  <script src="../../vinculum-guide.js"></script>
+<script src="../../vinculum-identity.js"></script>
+<script src="../../vinculum-indigenous.js"></script>
+<script src="../../vinculum-dashboard.js"></script>
+<script src="../../vinculum-hyperfocus.js"></script>
+<script src="../../vinculum-layout.js"></script>
+</body>
+</html>

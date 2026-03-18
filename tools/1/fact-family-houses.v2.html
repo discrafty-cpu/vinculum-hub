@@ -1,0 +1,821 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>VINCULUM — Fact Family Houses</title>
+<link rel="stylesheet" href="../../vinculum-core.css">
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;600&display=swap');
+/* Theme system loaded from vinculum-core.css */
+.vinculum-rtm-btn .rtm-icon{font-size:14px;}
+
+/* ═══ FOCUS VISIBLE (Keyboard Navigation) ═══ */
+*:focus-visible {
+  outline:2px solid var(--cyan);outline-offset:2px;border-radius:4px;
+}
+.sr-only {
+  position:absolute;width:1px;height:1px;padding:0;margin:-1px;
+  overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0;
+}
+*{margin:0;padding:0;box-sizing:border-box;}
+body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);height:100vh;display:flex;flex-direction:column;overflow:hidden;user-select:none;}
+
+.main{flex:1;display:flex;overflow:hidden;}
+.workspace{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:24px;gap:16px;overflow-y:auto;}
+.side-panel{width:280px;background:var(--bg2);border-left:1px solid var(--border);padding:20px;overflow-y:auto;flex-shrink:0;}
+.panel-section{margin-bottom:20px;}
+.panel-title{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:1.5px;color:var(--muted);margin-bottom:8px;}
+.panel-text{font-size:13px;color:var(--text2);line-height:1.6;}
+
+/* ── House SVG ── */
+.house-svg-wrap{width:100%;max-width:320px;margin:0 auto;}
+.house-svg-wrap svg{width:100%;height:auto;display:block;}
+
+/* ── Fact Rows ── */
+.fact-row{padding:8px;font-size:16px;font-family:'JetBrains Mono',monospace;text-align:center;border-radius:8px;margin:4px 0;background:var(--card);border:1px solid var(--border);transition:all 0.3s;}
+.fact-row.missing{border:2px dashed var(--yellow);animation:pulse-glow 1.2s infinite;}
+.fact-row.revealed{background:rgba(0,230,118,0.1);border-color:var(--green);}
+
+/* ── Counter Dots ── */
+.counter-row{display:flex;gap:6px;justify-content:center;align-items:center;flex-wrap:wrap;margin:4px 0;}
+.counter-dot{width:8px;height:8px;border-radius:50%;display:inline-block;}
+
+/* ── Equation Display ── */
+.equation-display{font-size:32px;font-weight:900;font-family:'JetBrains Mono',monospace;text-align:center;margin:12px 0;letter-spacing:4px;display:flex;align-items:center;justify-content:center;gap:8px;flex-wrap:wrap;}
+
+@keyframes pulse-glow{0%{box-shadow:0 0 8px rgba(255,193,7,0.4);} 50%{box-shadow:0 0 16px rgba(255,193,7,0.8);} 100%{box-shadow:0 0 8px rgba(255,193,7,0.4);}}
+
+/* ── Controls ── */
+.instruction-box{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:14px 20px;text-align:center;font-size:15px;color:var(--text2);font-weight:500;max-width:600px;transition:all 0.3s;}
+.instruction-box.highlight-cyan{border-color:var(--cyan);color:var(--cyan);}
+.instruction-box.highlight-pink{border-color:var(--pink);color:var(--pink);}
+.instruction-box.highlight-green{border-color:var(--green);color:var(--green);}
+
+.controls{display:flex;gap:8px;flex-wrap:wrap;justify-content:center;}
+.ctrl-btn{padding:10px 20px;border-radius:10px;border:1px solid var(--border);background:var(--card);color:var(--text2);font-size:13px;font-weight:600;font-family:inherit;cursor:pointer;transition:all 0.2s;display:flex;align-items:center;gap:6px;}
+.ctrl-btn:hover{background:var(--card2);color:var(--text);}
+.ctrl-btn.primary{background:var(--grad);color:var(--bg);border-color:transparent;}
+
+/* ── Whole number selector ── */
+.whole-selector{display:flex;gap:8px;justify-content:center;flex-wrap:wrap;}
+.whole-btn{width:56px;height:56px;border-radius:14px;border:2px solid var(--border);background:var(--card);color:var(--text);font-size:24px;font-weight:800;font-family:'JetBrains Mono',monospace;cursor:pointer;transition:all 0.15s;display:flex;align-items:center;justify-content:center;}
+.whole-btn:hover{border-color:var(--purple);transform:scale(1.08);}
+.whole-btn.active{border-color:var(--purple);background:rgba(179,136,255,0.12);color:var(--purple);}
+
+/* ── Part Pair Selector ── */
+.pair-list{display:flex;gap:6px;flex-wrap:wrap;justify-content:center;margin:6px 0;max-width:600px;}
+.pair-item{padding:6px 12px;border-radius:8px;border:2px solid var(--border);background:var(--card);color:var(--text2);font-size:12px;font-family:'JetBrains Mono',monospace;cursor:pointer;transition:all 0.15s;text-align:center;white-space:nowrap;}
+.pair-item:hover{border-color:var(--cyan);background:rgba(0,212,255,0.08);}
+.pair-item.active{border-color:var(--cyan);background:rgba(0,212,255,0.15);color:var(--cyan);font-weight:700;}
+
+/* ── MC Grid ── */
+.mc-grid{display:flex;gap:10px;flex-wrap:wrap;justify-content:center;max-width:500px;}
+.mc-btn{min-width:140px;padding:12px 16px;border-radius:12px;border:2px solid var(--border);background:var(--card);color:var(--text);font-size:14px;font-weight:600;font-family:'JetBrains Mono',monospace;cursor:pointer;transition:all 0.15s;display:flex;align-items:center;justify-content:center;text-align:center;}
+.mc-btn:hover{border-color:var(--cyan);transform:scale(1.04);}
+.mc-btn.correct-flash{border-color:var(--green);background:rgba(0,230,118,0.2);color:var(--green);animation:correctFlash 0.4s ease-out;}
+.mc-btn.incorrect-flash{border-color:var(--pink);background:rgba(255,59,139,0.2);color:var(--pink);animation:shake 0.3s ease-in-out;}
+
+@keyframes correctFlash{0%{transform:scale(1.1);} 100%{transform:scale(1);}}
+@keyframes shake{0%,100%{transform:translateX(0);} 25%{transform:translateX(-4px);} 75%{transform:translateX(4px);}}
+
+.score-display{text-align:center;padding:16px;background:var(--card);border-radius:12px;margin-bottom:12px;}
+.score-value{font-size:36px;font-weight:900;font-family:'JetBrains Mono',monospace;background:var(--grad);-webkit-background-clip:text;-webkit-text-fill-color:transparent;}
+.score-label{font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:1px;}
+.streak-bar{height:6px;background:var(--card);border-radius:3px;overflow:hidden;margin-top:8px;}
+.streak-fill{height:100%;background:var(--grad);border-radius:3px;transition:width 0.3s;}
+
+.feedback{position:fixed;top:50%;left:50%;transform:translate(-50%,-50%) scale(0);padding:24px 48px;border-radius:20px;font-size:28px;font-weight:800;z-index:200;pointer-events:none;transition:transform 0.3s cubic-bezier(0.175,0.885,0.32,1.275),opacity 0.3s;opacity:0;max-width:90vw;text-align:center;}
+.feedback.show{transform:translate(-50%,-50%) scale(1);opacity:1;}
+.feedback.correct{background:rgba(0,230,118,0.15);color:var(--green);border:2px solid var(--green);}
+.feedback.incorrect{background:rgba(255,59,139,0.15);color:var(--pink);border:2px solid var(--pink);}
+.feedback.try-again{background:rgba(255,193,7,0.15);color:var(--yellow);border:2px solid var(--yellow);}
+
+::-webkit-scrollbar{width:6px;}::-webkit-scrollbar-track{background:transparent;}::-webkit-scrollbar-thumb{background:var(--border);border-radius:3px;}
+</style>
+</head>
+<body>
+
+<div class="vinculum-header">
+  <div class="vinculum-header-left">
+    <a class="vinculum-back-btn" href="../../VINCULUM-Hub.html" style="text-decoration:none;">◀ Hub</a>
+    <div class="vinculum-header-title"><span>VINCULUM</span> Fact Family Houses</div>
+    <span class="vinculum-header-badge">1.OA</span>
+  </div>
+  <div class="vinculum-header-right">
+    <div class="vinculum-std-tags">
+      <span class="vinculum-std-tag">1.OA.3</span>
+      <span class="vinculum-std-tag">1.OA.4</span>
+      <span class="vinculum-std-tag mn">MN 1.2.2.2</span>
+    </div>
+    <button class="vinculum-back-btn" id="readAloudBtn" onclick="toggleReadAloud()" aria-label="Read Aloud" title="Read instructions aloud" style="margin-left:8px;white-space:nowrap;">🔊 Read to Me</button>
+  </div>
+</div>
+
+<div class="vinculum-mode-tabs">
+  <button class="vinculum-mode-tab active-explore" data-mode="explore" id="tabExplore" onclick="setMode('explore')"><svg width="18" height="18" viewBox="0 0 48 48" fill="none"><path d="M4 24C4 24 12 12 24 12C36 12 44 24 44 24C44 24 36 36 24 36C12 36 4 24 4 24Z" stroke="currentColor" stroke-width="3" fill="none"/><circle cx="24" cy="24" r="7" stroke="currentColor" stroke-width="3" fill="none"/><circle cx="24" cy="24" r="3" fill="currentColor"/><line x1="24" y1="4" x2="24" y2="9" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" opacity="0.5"/><line x1="10" y1="8" x2="13" y2="12" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" opacity="0.5"/><line x1="38" y1="8" x2="35" y2="12" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" opacity="0.5"/></svg> Explore</button>
+  <button class="vinculum-mode-tab" id="tabPractice" data-mode="practice" onclick="setMode('practice')"><svg width="18" height="18" viewBox="0 0 48 48" fill="none"><circle cx="24" cy="24" r="20" stroke="currentColor" stroke-width="3" fill="none" opacity="0.3"/><circle cx="24" cy="24" r="20" stroke="currentColor" stroke-width="3" fill="none" stroke-dasharray="126" stroke-dashoffset="32" stroke-linecap="round"/><polyline points="16,24 22,32 34,16" stroke="currentColor" stroke-width="4" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg> Practice</button>
+  <button class="vinculum-mode-tab" id="tabPlay" data-mode="play" onclick="setMode('play')"><svg width="18" height="18" viewBox="0 0 48 48" fill="none"><polygon points="28,4 12,28 22,28 18,44 36,18 26,18" fill="none" stroke="currentColor" stroke-width="3" stroke-linejoin="round"/><polygon points="27,8 15,27 23,27 20,40 34,19 26,19" fill="currentColor" opacity="0.15"/></svg> Play</button>
+  <div class="vinculum-diff-selector">
+    <span class="vinculum-diff-label">Level</span>
+    <button class="vinculum-diff-btn active" id="diffE" data-diff="emergent" onclick="setDiff('emergent')">Within 10</button>
+    <button class="vinculum-diff-btn" id="diffP" data-diff="proficient" onclick="setDiff('proficient')">Complete</button>
+    <button class="vinculum-diff-btn" id="diffA" data-diff="advanced" onclick="setDiff('advanced')">Generate</button>
+  </div>
+</div>
+
+<div class="main">
+  <div class="workspace" role="main" id="workspace"></div>
+  <div class="side-panel" id="sidePanel"></div>
+</div>
+<div class="feedback" id="feedback"></div>
+
+<script src="../../vinculum-input.js"></script>
+<script>
+let S = {
+  mode: 'explore', diff: 'emergent', maxN: 10,
+  whole: 7, partA: 3, partB: 4,
+  selectedPair: 0,
+  pWhole: 0, pPartA: 0, pPartB: 0, pMissing: 'fact1', pAnswer: 0, pChoices: [],
+  pMissing2: '', pAnswer2: 0, pChoices2: [], pSolved1: false,
+  score: 0, streak: 0, best: 0, round: 0, total: 10,
+  playWhole: 0, playPartA: 0, playPartB: 0, playMissing: 'fact1', playAnswer: 0, playChoices: []
+};
+
+const MISCONCEPTIONS = {
+  noInverse: { id: 'no-inverse', msg: (w, a, b) => `If ${a} + ${b} = ${w}, then ${w} − ${b} = ${a}! Addition and subtraction are opposites.` },
+  memorizeOnly: { id: 'memorize', msg: (w, a, b) => `Don't just guess — use the HOUSE. The roof is ${w}, the parts are ${a} and ${b}. Build all 4 facts!` },
+  offByOne: { id: 'off-by-one', msg: (ans, got) => `Close! You said ${got} but it's ${ans}. Check the numbers in the house.` },
+  randomGuess: { id: 'random', msg: () => `Look at the 3 numbers in the house. They make 4 related facts!` }
+};
+
+/* ── Read-Aloud ── */
+function toggleReadAloud() {
+  if (window.VinculumStories && VinculumStories.isReading()) {
+    VinculumStories.stopReading();
+    document.getElementById('readAloudBtn').textContent = '🔊 Read to Me';
+  } else {
+    const fb = document.getElementById('feedback');
+    const storyEl = document.getElementById('storyBanner');
+    const text = storyEl ? storyEl.textContent : (fb ? fb.textContent : 'Welcome to Fact Family Houses!');
+    if (window.VinculumStories) {
+      VinculumStories.readAloud(text, { rate: 0.85, onComplete: () => {
+        document.getElementById('readAloudBtn').textContent = '🔊 Read to Me';
+      }});
+      document.getElementById('readAloudBtn').textContent = '⏹ Stop';
+    }
+  }
+}
+
+function rand(a, b) {
+  return Math.floor(Math.random() * (b - a + 1)) + a;
+}
+
+function showFB(msg, type) {
+  const fb = document.getElementById('feedback');
+  fb.className = 'feedback ' + type;
+  fb.textContent = msg;
+  fb.classList.add('show');
+  setTimeout(() => { fb.classList.remove('show'); }, 1800);
+}
+
+/* ── Mode & Difficulty ── */
+function setMode(m) {
+  S.mode = m;
+  S.selectedPair = 0;
+  document.querySelectorAll('.vinculum-mode-tab').forEach(t => t.classList.remove('active-explore', 'active-practice', 'active-play'));
+  document.getElementById('tab' + m.charAt(0).toUpperCase() + m.slice(1)).classList.add('active-' + m);
+  S.round = 0;
+  S.score = 0;
+  S.streak = 0;
+  if (m === 'practice') newPractice();
+  if (m === 'play') S.round = 0;
+  render();
+}
+
+function setDiff(d) {
+  S.diff = d;
+  S.maxN = d === 'emergent' ? 10 : (d === 'proficient' ? 10 : 10);
+  document.querySelectorAll('.vinculum-diff-btn').forEach(b => b.classList.remove('active'));
+  document.getElementById('diff' + d.charAt(0).toUpperCase()).classList.add('active');
+  S.selectedPair = 0;
+  if (S.mode === 'practice') newPractice();
+  if (S.mode === 'play') S.round = 0;
+  render();
+}
+
+function render() {
+  const ws = document.getElementById('workspace');
+  const sp = document.getElementById('sidePanel');
+  if (S.mode === 'explore') renderExplore(ws, sp);
+  else if (S.mode === 'practice') renderPractice(ws, sp);
+  else renderPlay(ws, sp);
+}
+
+/* ═══════════════════════════════════════════
+   HOUSE SVG — triangular roof + body with 4 facts
+   ═══════════════════════════════════════════ */
+
+function buildHouseSVG(whole, partA, partB, facts, options) {
+  options = options || {};
+  const W = 300;
+  const H = 340;
+  const roofPeak = 30;
+  const roofBase = 100;
+  const bodyTop = roofBase;
+  const bodyBot = H - 20;
+  const bodyLeft = 50;
+  const bodyRight = W - 50;
+  const bodyMid = W / 2;
+
+  let svg = `<div class="house-svg-wrap"><svg viewBox="0 0 ${W} ${H}" style="overflow:visible;">`;
+
+  // Roof triangle
+  svg += `<polygon points="${bodyMid},${roofPeak} ${bodyLeft},${roofBase} ${bodyRight},${roofBase}" fill="rgba(179,136,255,0.12)" stroke="#b388ff" stroke-width="2.5" stroke-linejoin="round"/>`;
+
+  // Whole number in roof
+  svg += `<text x="${bodyMid}" y="${roofBase - 22}" text-anchor="middle" fill="#b388ff" font-size="28" font-weight="900" font-family="JetBrains Mono, monospace">${whole}</text>`;
+
+  // Body rectangle
+  svg += `<rect x="${bodyLeft}" y="${bodyTop}" width="${bodyRight - bodyLeft}" height="${bodyBot - bodyTop}" rx="6" fill="var(--card,#1a1f2e)" stroke="var(--border,#2a3654)" stroke-width="2"/>`;
+
+  // 4 fact rows inside body
+  const rowH = (bodyBot - bodyTop - 20) / 4;
+  const startY = bodyTop + 14;
+
+  for (let i = 0; i < 4; i++) {
+    const y = startY + i * rowH;
+    const fact = facts[i];
+    const isMissing = fact.missing;
+    const isRevealed = fact.revealed;
+
+    // Row background
+    if (isMissing) {
+      svg += `<rect x="${bodyLeft + 10}" y="${y}" width="${bodyRight - bodyLeft - 20}" height="${rowH - 4}" rx="6" fill="none" stroke="#ffc107" stroke-width="2" stroke-dasharray="6,3">`;
+      svg += `<animate attributeName="opacity" values="0.5;1;0.5" dur="1.2s" repeatCount="indefinite"/>`;
+      svg += `</rect>`;
+    } else if (isRevealed) {
+      svg += `<rect x="${bodyLeft + 10}" y="${y}" width="${bodyRight - bodyLeft - 20}" height="${rowH - 4}" rx="6" fill="rgba(0,230,118,0.08)" stroke="#00e676" stroke-width="1.5"/>`;
+    }
+
+    // Fact text
+    const textY = y + rowH / 2;
+    const color = isMissing ? '#ffc107' : (isRevealed ? '#00e676' : 'var(--text2,#8892b0)');
+    const text = isMissing ? '? ? ? = ?' : fact.text;
+    svg += `<text x="${bodyMid}" y="${textY}" text-anchor="middle" dominant-baseline="middle" fill="${color}" font-size="16" font-weight="700" font-family="JetBrains Mono, monospace">${text}</text>`;
+  }
+
+  // Part numbers at base
+  const baseY = bodyBot + 16;
+  svg += `<circle cx="${bodyLeft + 40}" cy="${baseY}" r="18" fill="rgba(0,212,255,0.15)" stroke="#00d4ff" stroke-width="2"/>`;
+  svg += `<text x="${bodyLeft + 40}" y="${baseY + 1}" text-anchor="middle" dominant-baseline="middle" fill="#00d4ff" font-size="18" font-weight="900" font-family="JetBrains Mono, monospace">${options.hideA ? '?' : partA}</text>`;
+
+  svg += `<circle cx="${bodyRight - 40}" cy="${baseY}" r="18" fill="rgba(255,59,139,0.15)" stroke="#ff3b8b" stroke-width="2"/>`;
+  svg += `<text x="${bodyRight - 40}" y="${baseY + 1}" text-anchor="middle" dominant-baseline="middle" fill="#ff3b8b" font-size="18" font-weight="900" font-family="JetBrains Mono, monospace">${options.hideB ? '?' : partB}</text>`;
+
+  // Counter dots under parts
+  if (!options.hideA && partA > 0) {
+    svg += `<g transform="translate(${bodyLeft + 40},${baseY + 24})">`;
+    svg += buildCounterDots(partA, '#00d4ff');
+    svg += '</g>';
+  }
+  if (!options.hideB && partB > 0) {
+    svg += `<g transform="translate(${bodyRight - 40},${baseY + 24})">`;
+    svg += buildCounterDots(partB, '#ff3b8b');
+    svg += '</g>';
+  }
+
+  svg += '</svg></div>';
+  return svg;
+}
+
+function buildCounterDots(count, color) {
+  let svg = '';
+  const r = 3;
+  const gap = 8;
+  const totalW = count * r * 2 + (count - 1) * gap;
+  const startX = -totalW / 2;
+  for (let i = 0; i < count; i++) {
+    const x = startX + i * (r * 2 + gap) + r;
+    svg += `<circle cx="${x}" cy="0" r="${r}" fill="${color}" opacity="0.8"/>`;
+  }
+  return svg;
+}
+
+function makeFacts(w, a, b) {
+  return [
+    { text: `${a} + ${b} = ${w}`, id: 'fact1' },
+    { text: `${b} + ${a} = ${w}`, id: 'fact2' },
+    { text: `${w} − ${a} = ${b}`, id: 'fact3' },
+    { text: `${w} − ${b} = ${a}`, id: 'fact4' }
+  ];
+}
+
+/* ═══════════════════════════════════════════
+   EXPLORE MODE
+   ═══════════════════════════════════════════ */
+
+function renderExplore(ws, sp) {
+  const w = S.whole;
+  const max = S.maxN;
+  let h = '';
+
+  // Story banner
+  if (window.VinculumStories) {
+    const toolName = window.location.pathname.split('/').pop().replace('.html','');
+    const storyData = VinculumStories.getStory(toolName, {a: S.partA, b: S.partB, total: S.whole, n: S.whole});
+    if (storyData && storyData.story) {
+      if (window.Vinculum3Reads) {
+        h += Vinculum3Reads.getBannerHTML(storyData);
+      } else {
+        h += '<div id="storyBanner" style="background:var(--card2,#1a1f2e);border:1px solid var(--border);border-radius:12px;padding:16px 20px;margin-bottom:16px;font-size:15px;line-height:1.6;color:var(--text);position:relative;"><span style="font-size:12px;color:var(--cyan);font-weight:700;text-transform:uppercase;letter-spacing:1px;">📖 Story</span><br>' + storyData.story + '<br><em style="color:var(--yellow);font-weight:600;">' + storyData.question + '</em><button onclick="toggleReadAloud()" style="position:absolute;top:12px;right:12px;background:none;border:1px solid var(--border);border-radius:8px;padding:4px 10px;color:var(--cyan);cursor:pointer;font-size:14px;" title="Read story aloud">🔊</button></div>';
+      }
+    }
+  }
+
+  h += `<div class="instruction-box">Pick a number, then choose two parts to see the fact family house</div>`;
+
+  // Whole number selector (2 to maxN)
+  h += '<div class="whole-selector">';
+  for (let n = 2; n <= max; n++) {
+    h += `<button class="whole-btn ${n === w ? 'active' : ''}" onclick="S.whole=${n};S.selectedPair=0;S.partA=1;S.partB=${n}-1;render();">${n}</button>`;
+  }
+  h += '</div>';
+
+  // Part pairs
+  const pairs = [];
+  for (let i = 1; i < w; i++) {
+    pairs.push({ a: i, b: w - i });
+  }
+  // Only unique pairs (1+6 and 6+1 are same family)
+  const uniquePairs = [];
+  for (let i = 0; i < pairs.length; i++) {
+    if (pairs[i].a <= pairs[i].b) uniquePairs.push(pairs[i]);
+  }
+
+  const selIdx = Math.min(S.selectedPair, uniquePairs.length - 1);
+  const sel = uniquePairs[selIdx] || { a: 1, b: w - 1 };
+  S.partA = sel.a;
+  S.partB = sel.b;
+
+  h += '<div class="pair-list">';
+  for (let idx = 0; idx < uniquePairs.length; idx++) {
+    const p = uniquePairs[idx];
+    h += `<button class="pair-item ${idx === selIdx ? 'active' : ''}" onclick="S.selectedPair=${idx};render();">${p.a} and ${p.b}</button>`;
+  }
+  h += '</div>';
+
+  // House SVG with all 4 facts shown
+  const facts = makeFacts(w, S.partA, S.partB);
+  h += buildHouseSVG(w, S.partA, S.partB, facts);
+
+  // Counter dots section
+  h += '<div class="counter-row">';
+  for (let i = 0; i < S.partA; i++) h += '<span class="counter-dot" style="background:#00d4ff;"></span>';
+  for (let i = 0; i < S.partB; i++) h += '<span class="counter-dot" style="background:#ff3b8b;"></span>';
+  h += '</div>';
+
+  // Controls
+  h += '<div class="controls">';
+  h += `<button class="ctrl-btn primary" onclick="animateShowFacts()">Show All Facts</button>`;
+  h += `<button class="ctrl-btn" onclick="S.selectedPair=0;render();">↺ Reset</button>`;
+  h += '</div>';
+
+  ws.innerHTML = h;
+
+  // Side panel
+  let sp_h = `<div class="panel-section"><div class="panel-title">What is a Fact Family?</div>
+    <div class="panel-text">
+      A <strong style="color:var(--purple);">fact family</strong> is a set of related addition and subtraction facts using the same 3 numbers.<br><br>
+      The <strong style="color:var(--purple);">roof</strong> holds the whole.<br>
+      The <strong style="color:var(--cyan);">two parts</strong> sit at the base.<br>
+      Inside are <strong>4 related facts</strong>: 2 addition + 2 subtraction.
+    </div></div>`;
+
+  sp_h += `<div class="panel-section"><div class="panel-title">Key Idea</div>
+    <div class="panel-text">Addition and subtraction are <strong style="color:var(--green);">opposites</strong>! If you know ${S.partA} + ${S.partB} = ${w}, you also know ${w} − ${S.partB} = ${S.partA}.</div></div>`;
+
+  sp_h += `<div class="panel-section"><div class="panel-title">How to Use</div>
+    <div class="panel-text">
+      <strong style="color:var(--cyan);">1.</strong> Pick a whole number<br>
+      <strong style="color:var(--cyan);">2.</strong> Choose a pair of parts<br>
+      <strong style="color:var(--cyan);">3.</strong> Read all 4 facts in the house
+    </div></div>`;
+
+  sp.innerHTML = sp_h;
+}
+
+function animateShowFacts() {
+  // Brief animation that highlights each fact row
+  const rows = document.querySelectorAll('.house-svg-wrap text');
+  let i = 0;
+  const interval = setInterval(() => {
+    if (i >= rows.length) { clearInterval(interval); return; }
+    rows[i].style.fontSize = '20px';
+    rows[i].style.fill = '#00e676';
+    const idx = i;
+    setTimeout(() => {
+      if (rows[idx]) {
+        rows[idx].style.fontSize = '16px';
+        rows[idx].style.fill = '';
+      }
+    }, 500);
+    i++;
+  }, 400);
+}
+
+/* ═══════════════════════════════════════════
+   PRACTICE MODE
+   ═══════════════════════════════════════════ */
+
+function newPractice() {
+  const max = S.maxN;
+  S.pWhole = rand(3, max);
+  S.pPartA = rand(1, S.pWhole - 1);
+  S.pPartB = S.pWhole - S.pPartA;
+  S.pSolved1 = false;
+
+  const allFacts = makeFacts(S.pWhole, S.pPartA, S.pPartB);
+
+  if (S.diff === 'emergent') {
+    // Show 3 facts, 1 missing — MC answer
+    const missingIdx = rand(0, 3);
+    S.pMissing = allFacts[missingIdx].id;
+    S.pAnswer = getFactAnswer(S.pMissing, S.pWhole, S.pPartA, S.pPartB);
+    S.pChoices = makeChoices(S.pAnswer, max);
+    S.pMissing2 = '';
+  } else if (S.diff === 'proficient') {
+    // Show whole + parts, 2 facts missing
+    const indices = [0, 1, 2, 3];
+    shuffle(indices);
+    S.pMissing = allFacts[indices[0]].id;
+    S.pMissing2 = allFacts[indices[1]].id;
+    S.pAnswer = getFactAnswer(S.pMissing, S.pWhole, S.pPartA, S.pPartB);
+    S.pAnswer2 = getFactAnswer(S.pMissing2, S.pWhole, S.pPartA, S.pPartB);
+    S.pChoices = makeFactChoices(S.pMissing, S.pWhole, S.pPartA, S.pPartB);
+    S.pChoices2 = makeFactChoices(S.pMissing2, S.pWhole, S.pPartA, S.pPartB);
+    S.pSolved1 = false;
+  } else {
+    // Advanced: show just the whole, generate parts and all 4 facts
+    S.pMissing = 'all';
+    // For advanced, student picks the correct pair
+    const correctPair = `${S.pPartA} and ${S.pPartB}`;
+    const choices = new Set([correctPair]);
+    while (choices.size < 4) {
+      const a = rand(1, S.pWhole - 1);
+      const b = S.pWhole - a;
+      if (a !== S.pPartA || b !== S.pPartB) {
+        choices.add(`${a} and ${b}`);
+      }
+      // Also add wrong totals
+      if (choices.size < 4) {
+        const wa = rand(1, max - 1);
+        const wb = rand(1, max - wa);
+        if (wa + wb !== S.pWhole) choices.add(`${wa} and ${wb}`);
+      }
+    }
+    S.pChoices = Array.from(choices).sort(() => Math.random() - 0.5);
+    S.pAnswer = correctPair;
+  }
+}
+
+function getFactAnswer(factId, w, a, b) {
+  // Return the text of the complete fact
+  switch (factId) {
+    case 'fact1': return `${a} + ${b} = ${w}`;
+    case 'fact2': return `${b} + ${a} = ${w}`;
+    case 'fact3': return `${w} − ${a} = ${b}`;
+    case 'fact4': return `${w} − ${b} = ${a}`;
+  }
+  return '';
+}
+
+function makeFactChoices(factId, w, a, b) {
+  const correct = getFactAnswer(factId, w, a, b);
+  const choices = new Set([correct]);
+
+  // Generate plausible wrong answers
+  const wrongFacts = [];
+  // Swap the result
+  wrongFacts.push(`${a} + ${b} = ${w + 1}`);
+  wrongFacts.push(`${a} + ${b} = ${w - 1}`);
+  wrongFacts.push(`${w} − ${a} = ${a}`);
+  wrongFacts.push(`${w} − ${b} = ${b}`);
+  wrongFacts.push(`${a} + ${a} = ${w}`);
+  wrongFacts.push(`${b} − ${a} = ${w}`);
+  wrongFacts.push(`${w} + ${a} = ${b}`);
+
+  shuffle(wrongFacts);
+  for (const wf of wrongFacts) {
+    if (wf !== correct && choices.size < 4) choices.add(wf);
+  }
+  // Pad if needed
+  while (choices.size < 4) {
+    choices.add(`${rand(1,9)} + ${rand(1,9)} = ${rand(2,10)}`);
+  }
+  return Array.from(choices).sort(() => Math.random() - 0.5);
+}
+
+function makeChoices(correctText, max) {
+  return makeFactChoices(
+    S.pMissing, S.pWhole, S.pPartA, S.pPartB
+  );
+}
+
+function shuffle(arr) {
+  for (let i = arr.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [arr[i], arr[j]] = [arr[j], arr[i]];
+  }
+}
+
+function renderPractice(ws, sp) {
+  if (!S.pWhole) newPractice();
+
+  let h = '';
+  const w = S.pWhole, a = S.pPartA, b = S.pPartB;
+  const allFacts = makeFacts(w, a, b);
+
+  if (S.diff === 'emergent') {
+    h += `<div class="instruction-box highlight-green">Find the missing fact in the house!</div>`;
+
+    const facts = allFacts.map(f => ({
+      text: f.text,
+      missing: f.id === S.pMissing,
+      revealed: false
+    }));
+    h += buildHouseSVG(w, a, b, facts);
+
+    h += '<div class="mc-grid">';
+    S.pChoices.forEach((c, i) => {
+      h += `<button class="mc-btn" id="mc${i}" onclick="checkPractice('${c.replace(/'/g, "\\'")}', ${i})">${c}</button>`;
+    });
+    h += '</div>';
+
+  } else if (S.diff === 'proficient') {
+    const currentMissing = S.pSolved1 ? S.pMissing2 : S.pMissing;
+    const currentChoices = S.pSolved1 ? S.pChoices2 : S.pChoices;
+    h += `<div class="instruction-box highlight-green">Complete the missing fact${S.pSolved1 ? ' (2 of 2)' : ' (1 of 2)'}!</div>`;
+
+    const facts = allFacts.map(f => ({
+      text: f.text,
+      missing: f.id === currentMissing || (!S.pSolved1 && f.id === S.pMissing2),
+      revealed: S.pSolved1 && f.id === S.pMissing
+    }));
+    h += buildHouseSVG(w, a, b, facts);
+
+    h += '<div class="mc-grid">';
+    currentChoices.forEach((c, i) => {
+      h += `<button class="mc-btn" id="mc${i}" onclick="checkPractice('${c.replace(/'/g, "\\'")}', ${i})">${c}</button>`;
+    });
+    h += '</div>';
+
+  } else {
+    // Advanced: show just the whole, pick the parts
+    h += `<div class="instruction-box highlight-green">This house has ${w} in the roof. What are the two parts?</div>`;
+
+    const facts = allFacts.map(f => ({ text: f.text, missing: true, revealed: false }));
+    h += buildHouseSVG(w, a, b, facts, { hideA: true, hideB: true });
+
+    h += '<div class="mc-grid">';
+    S.pChoices.forEach((c, i) => {
+      h += `<button class="mc-btn" id="mc${i}" onclick="checkPracticeAdv('${c.replace(/'/g, "\\'")}', ${i})">${c}</button>`;
+    });
+    h += '</div>';
+  }
+
+  // Skip
+  h += '<div class="controls" style="margin-top:8px;">';
+  h += `<button class="ctrl-btn" onclick="newPractice();render();">Skip →</button>`;
+  h += '</div>';
+
+  ws.innerHTML = h;
+
+  // Side panel
+  let sp_h = `<div class="panel-section"><div class="panel-title">Steps</div>
+    <div class="panel-text" style="background:var(--card);padding:12px;border-radius:8px;">
+      <div style="margin-bottom:8px;">
+        <strong style="color:var(--purple);">① Look</strong><br>
+        <span style="font-size:12px;">Read the roof number and parts</span>
+      </div>
+      <div style="margin-bottom:8px;">
+        <strong style="color:var(--cyan);">② Think</strong><br>
+        <span style="font-size:12px;">What fact uses these 3 numbers?</span>
+      </div>
+      <div>
+        <strong style="color:var(--green);">③ Tap</strong><br>
+        <span style="font-size:12px;">Pick the correct equation</span>
+      </div>
+    </div></div>`;
+
+  sp_h += `<div class="panel-section"><div class="panel-title">Remember</div>
+    <div class="panel-text">Every fact family has <strong>4 facts</strong>: 2 addition and 2 subtraction. Addition and subtraction are <strong style="color:var(--green);">inverse operations</strong>!</div></div>`;
+
+  sp.innerHTML = sp_h;
+}
+
+function checkPractice(clicked, idx) {
+  const btn = document.getElementById('mc' + idx);
+  let correct;
+
+  if (S.diff === 'proficient' && S.pSolved1) {
+    correct = S.pAnswer2;
+  } else {
+    correct = S.pAnswer;
+  }
+
+  if (clicked === correct) {
+    btn.classList.add('correct-flash');
+
+    if (S.diff === 'proficient' && !S.pSolved1) {
+      showFB('✓ Got it! Now find the other missing fact.', 'correct');
+      S.pSolved1 = true;
+      setTimeout(() => render(), 1200);
+    } else {
+      showFB('✓ Perfect!', 'correct');
+      setTimeout(() => { newPractice(); render(); }, 1500);
+    }
+  } else {
+    btn.classList.add('incorrect-flash');
+    const w = S.pWhole, a = S.pPartA, b = S.pPartB;
+    let msg;
+
+    // Check for subtraction-related wrong answer (no inverse understanding)
+    if (clicked.includes('−') && correct.includes('+') || clicked.includes('+') && correct.includes('−')) {
+      msg = MISCONCEPTIONS.noInverse.msg(w, a, b);
+    } else if (clicked.includes(String(w + 1)) || clicked.includes(String(w - 1))) {
+      msg = MISCONCEPTIONS.offByOne.msg(correct, clicked);
+    } else {
+      msg = MISCONCEPTIONS.memorizeOnly.msg(w, a, b);
+    }
+
+    showFB(msg, 'try-again');
+    setTimeout(() => { btn.classList.remove('incorrect-flash'); }, 400);
+  }
+}
+
+function checkPracticeAdv(clicked, idx) {
+  const btn = document.getElementById('mc' + idx);
+  const correct = S.pAnswer;
+
+  if (clicked === correct) {
+    btn.classList.add('correct-flash');
+    showFB(`✓ Yes! ${S.pPartA} and ${S.pPartB} make the family for ${S.pWhole}!`, 'correct');
+    setTimeout(() => { newPractice(); render(); }, 1800);
+  } else {
+    btn.classList.add('incorrect-flash');
+    // Parse the clicked pair
+    const parts = clicked.split(' and ').map(Number);
+    const sum = parts[0] + parts[1];
+    if (sum !== S.pWhole) {
+      showFB(`${parts[0]} + ${parts[1]} = ${sum}, not ${S.pWhole}. The parts must add to the roof!`, 'try-again');
+    } else {
+      showFB(MISCONCEPTIONS.randomGuess.msg(), 'try-again');
+    }
+    setTimeout(() => { btn.classList.remove('incorrect-flash'); }, 400);
+  }
+}
+
+/* ═══════════════════════════════════════════
+   PLAY MODE — 10 rounds, missing fact, 5 MC
+   ═══════════════════════════════════════════ */
+
+function startGame() {
+  S.round = 1;
+  S.score = 0;
+  S.streak = 0;
+  newPlayRound();
+}
+
+function newPlayRound() {
+  const max = S.maxN;
+  S.playWhole = rand(3, max);
+  S.playPartA = rand(1, S.playWhole - 1);
+  S.playPartB = S.playWhole - S.playPartA;
+
+  const factIds = ['fact1', 'fact2', 'fact3', 'fact4'];
+  S.playMissing = factIds[rand(0, 3)];
+  S.playAnswer = getFactAnswer(S.playMissing, S.playWhole, S.playPartA, S.playPartB);
+
+  // 5 MC choices
+  const choices = new Set([S.playAnswer]);
+  const w = S.playWhole, a = S.playPartA, b = S.playPartB;
+
+  // Generate plausible distractors
+  const distractors = [
+    `${a} + ${b} = ${w + 1}`,
+    `${a} + ${b} = ${w - 1}`,
+    `${b} + ${a} = ${w + 1}`,
+    `${w} − ${a} = ${a}`,
+    `${w} − ${b} = ${b}`,
+    `${a} − ${b} = ${w}`,
+    `${w} + ${a} = ${b}`,
+    `${a} + ${a} = ${w}`,
+    `${w} − ${a} = ${b + 1}`,
+    `${w} − ${b} = ${a + 1}`
+  ];
+  shuffle(distractors);
+  for (const d of distractors) {
+    if (d !== S.playAnswer && choices.size < 5) choices.add(d);
+  }
+  while (choices.size < 5) {
+    const ra = rand(1, 9), rb = rand(1, 9);
+    choices.add(`${ra} + ${rb} = ${ra + rb}`);
+  }
+  S.playChoices = Array.from(choices).sort(() => Math.random() - 0.5);
+}
+
+function renderPlay(ws, sp) {
+  if (S.round === 0) startGame();
+
+  const w = S.playWhole, a = S.playPartA, b = S.playPartB;
+  const allFacts = makeFacts(w, a, b);
+
+  let h = '';
+  h += `<div style="font-size:13px;color:var(--muted);margin-bottom:8px;">Round ${S.round} of ${S.total}</div>`;
+
+  const facts = allFacts.map(f => ({
+    text: f.text,
+    missing: f.id === S.playMissing,
+    revealed: false
+  }));
+  h += buildHouseSVG(w, a, b, facts);
+
+  h += '<div class="mc-grid">';
+  S.playChoices.forEach((c, i) => {
+    h += `<button class="mc-btn" id="play${i}" onclick="playPick('${c.replace(/'/g, "\\'")}', ${i})">${c}</button>`;
+  });
+  h += '</div>';
+
+  ws.innerHTML = h;
+
+  // Side panel with score
+  sp.innerHTML = `
+    <div class="score-display"><div class="score-value">${S.score}</div><div class="score-label">Score</div></div>
+    <div class="score-display" style="background:transparent;padding:8px;">
+      <div style="font-size:18px;font-weight:700;color:var(--yellow);"><svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor" style="vertical-align:-2px;"><path d="M12 23c-4.97 0-8-3.58-8-7.5 0-3.07 2.17-5.84 4.5-7.5-.28 2.5 1.5 4.5 1.5 4.5s2-2.5 2-5.5c0-1.5-.5-3-1-4 3 1.5 5 4 5 7 0 .5-.08 1-.08 1s1.08-1.18 1.58-2.5C19.78 11.72 20 14.5 20 15.5c0 3.92-3.03 7.5-8 7.5z"/></svg> ${S.streak}</div>
+      <div class="score-label">Streak</div>
+      <div class="streak-bar"><div class="streak-fill" style="width:${Math.min(S.streak * 20, 100)}%;"></div></div>
+    </div>
+    <div class="panel-section"><div class="panel-title">Best Streak</div>
+    <div class="panel-text" style="font-size:24px;font-weight:800;color:var(--purple);"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="vertical-align:-2px;"><path d="M6 4h12v2a6 6 0 01-12 0V4z" fill="currentColor" opacity="0.2"/><path d="M6 4h12v2a6 6 0 01-12 0V4z"/><path d="M6 6H3v2a3 3 0 003 3"/><path d="M18 6h3v2a3 3 0 01-3 3"/><line x1="12" y1="14" x2="12" y2="18"/><line x1="8" y1="18" x2="16" y2="18" stroke-linecap="round"/></svg> ${S.best}</div></div>
+    <div class="panel-section"><div class="panel-title">Tip</div>
+    <div class="panel-text">Every house has 4 facts. Use the 3 numbers — the roof and the two parts — to figure out the missing equation!</div></div>`;
+}
+
+function playPick(clicked, idx) {
+  const btn = document.getElementById('play' + idx);
+
+  if (clicked === S.playAnswer) {
+    btn.classList.add('correct-flash');
+    S.score += 10 + S.streak * 2;
+    S.streak++;
+    if (S.streak > S.best) S.best = S.streak;
+    showFB('✓ Correct!', 'correct');
+  } else {
+    btn.classList.add('incorrect-flash');
+    S.streak = 0;
+
+    const w = S.playWhole, a = S.playPartA, b = S.playPartB;
+    let msg;
+
+    if (clicked.includes('+') && S.playAnswer.includes('−')) {
+      msg = MISCONCEPTIONS.noInverse.msg(w, a, b);
+    } else if (clicked.includes('−') && S.playAnswer.includes('+')) {
+      msg = MISCONCEPTIONS.noInverse.msg(w, a, b);
+    } else {
+      msg = MISCONCEPTIONS.memorizeOnly.msg(w, a, b);
+    }
+
+    showFB(msg, 'incorrect');
+  }
+
+  setTimeout(() => {
+    if (S.round >= S.total) {
+      showFB(`Game Over! Score: ${S.score}`, 'correct');
+      setTimeout(() => { S.round = 0; render(); }, 2000);
+      return;
+    }
+    S.round++;
+    newPlayRound();
+    render();
+  }, 1200);
+}
+
+/* ── Init ── */
+render();
+</script>
+<script src="../../vinculum-core.js"></script>
+<script src="../../vinculum-data.js"></script>
+<script src="../../vinculum-adaptive-hook.js"></script>
+<script src="../../vinculum-3reads.js"></script>
+<script src="../../vinculum-stories.js"></script>
+<script src="../../vinculum-feedback.js"></script>
+<script src="../../vinculum-guide.js"></script>
+<script src="../../vinculum-identity.js"></script>
+<script src="../../vinculum-indigenous.js"></script>
+<script src="../../vinculum-dashboard.js"></script>
+<script src="../../vinculum-hyperfocus.js"></script>
+<script src="../../vinculum-layout.js"></script>
+</body>
+</html>

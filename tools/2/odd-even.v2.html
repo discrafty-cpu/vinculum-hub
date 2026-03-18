@@ -1,0 +1,1439 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>VINCULUM — Odd & Even</title>
+<link rel="stylesheet" href="../../vinculum-core.css">
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;600&display=swap');
+
+/* Theme system loaded from vinculum-core.css */
+.vinculum-rtm-btn .rtm-icon{font-size:14px;}
+
+/* ═══ FOCUS VISIBLE (Keyboard Navigation) ═══ */
+*:focus-visible {
+  outline:2px solid var(--cyan);outline-offset:2px;border-radius:4px;
+}
+.sr-only {
+  position:absolute;width:1px;height:1px;padding:0;margin:-1px;
+  overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0;
+}
+
+* { margin:0; padding:0; box-sizing:border-box; }
+body {
+  font-family: 'Inter', sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  height: 100vh;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  user-select: none;
+}
+
+/* ── HEADER ── */
+.vinculum-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 24px;
+  background: var(--bg2);
+  border-bottom: 1px solid var(--border);
+  flex-shrink: 0;
+}
+.vinculum-header-left {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+.vinculum-back-btn {
+  padding: 6px 12px;
+  border-radius: 8px;
+  border: 1px solid var(--border);
+  background: transparent;
+  color: var(--text2);
+  font-size: 13px;
+  font-family: inherit;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+.vinculum-back-btn:hover { background: var(--card); color: var(--cyan); }
+.vinculum-header-title {
+  font-size: 18px;
+  font-weight: 800;
+}
+.vinculum-header-title span {
+  background: var(--grad);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+.vinculum-header-badge {
+  font-size: 10px;
+  font-weight: 700;
+  padding: 3px 10px;
+  border-radius: 6px;
+  background: rgba(0,212,255,0.1);
+  color: var(--cyan);
+  border: 1px solid rgba(0,212,255,0.2);
+  letter-spacing: 1px;
+}
+.vinculum-std-tags {
+  display: flex;
+  gap: 6px;
+}
+.vinculum-std-tag {
+  font-size: 10px;
+  font-family: 'JetBrains Mono', monospace;
+  font-weight: 600;
+  padding: 3px 8px;
+  border-radius: 5px;
+  background: rgba(0,212,255,0.08);
+  color: var(--cyan);
+}
+.vinculum-std-tag.mn { background: rgba(255,145,0,0.08); color: var(--orange); }
+
+/* ── MODE TABS ── */
+.vinculum-mode-tabs {
+  display: flex;
+  gap: 4px;
+  padding: 8px 24px;
+  background: var(--bg2);
+  border-bottom: 1px solid var(--border);
+  flex-shrink: 0;
+}
+.vinculum-mode-tab {
+  padding: 8px 20px;
+  border-radius: 8px;
+  border: 1px solid transparent;
+  background: transparent;
+  color: var(--muted);
+  font-size: 13px;
+  font-weight: 600;
+  font-family: inherit;
+  cursor: pointer;
+  transition: all 0.2s;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.vinculum-mode-tab:hover { color: var(--text2); background: var(--card); }
+.vinculum-mode-tab.active-explore { background: rgba(0,212,255,0.1); color: var(--cyan); border-color: rgba(0,212,255,0.3); }
+.vinculum-mode-tab.active-practice { background: rgba(0,230,118,0.1); color: var(--green); border-color: rgba(0,230,118,0.3); }
+.vinculum-mode-tab.active-play { background: rgba(255,59,139,0.1); color: var(--pink); border-color: rgba(255,59,139,0.3); }
+
+/* Difficulty selector */
+.vinculum-diff-selector {
+  margin-left: auto;
+  display: flex;
+  gap: 4px;
+  align-items: center;
+}
+.vinculum-diff-label {
+  font-size: 11px;
+  color: var(--muted);
+  margin-right: 8px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+}
+.vinculum-diff-btn {
+  padding: 5px 12px;
+  border-radius: 6px;
+  border: 1px solid var(--border);
+  background: transparent;
+  color: var(--muted);
+  font-size: 11px;
+  font-weight: 600;
+  font-family: inherit;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+.vinculum-diff-btn:hover { color: var(--text2); }
+.vinculum-diff-btn.active { background: rgba(0,212,255,0.1); color: var(--cyan); border-color: rgba(0,212,255,0.3); }
+
+/* ── MAIN AREA ── */
+.main {
+  flex: 1;
+  display: flex;
+  overflow: hidden;
+}
+
+/* ── WORKSPACE ── */
+.workspace {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+  position: relative;
+  overflow-y: auto;
+}
+
+/* ── PAIR PARADE CONTAINER ── */
+.pair-parade {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 20px;
+  width: 100%;
+  max-width: 560px;
+}
+
+/* Large number display */
+.number-display {
+  font-size: 72px;
+  font-weight: 900;
+  font-family: 'JetBrains Mono', monospace;
+  background: var(--grad);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  line-height: 1;
+  text-align: center;
+}
+
+.number-label {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--muted);
+  text-transform: uppercase;
+  letter-spacing: 1.5px;
+  margin-top: -8px;
+}
+
+/* SVG pairing area */
+.pair-svg-container {
+  width: 100%;
+  max-width: 440px;
+  min-height: 180px;
+  background: var(--card);
+  border-radius: 16px;
+  border: 2px solid var(--border);
+  padding: 20px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+  overflow: hidden;
+}
+
+.pair-svg-container svg {
+  overflow: visible;
+}
+
+/* Result badge */
+.result-badge {
+  font-size: 20px;
+  font-weight: 800;
+  padding: 10px 28px;
+  border-radius: 12px;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  transition: all 0.3s;
+}
+.result-badge.even-badge {
+  background: rgba(0,212,255,0.12);
+  color: var(--cyan);
+  border: 2px solid rgba(0,212,255,0.3);
+}
+.result-badge.odd-badge {
+  background: rgba(255,145,0,0.12);
+  color: var(--orange);
+  border: 2px solid rgba(255,145,0,0.3);
+}
+
+/* ── CHOICE BUTTONS (ODD / EVEN) ── */
+.choice-buttons {
+  display: flex;
+  gap: 16px;
+  justify-content: center;
+  margin-top: 8px;
+}
+.choice-btn {
+  padding: 16px 48px;
+  border-radius: 14px;
+  border: 3px solid var(--border);
+  background: var(--card);
+  color: var(--text);
+  font-size: 20px;
+  font-weight: 800;
+  font-family: inherit;
+  cursor: pointer;
+  transition: all 0.2s;
+  min-width: 140px;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+}
+.choice-btn:hover {
+  transform: scale(1.05);
+}
+.choice-btn.btn-even:hover {
+  border-color: var(--cyan);
+  color: var(--cyan);
+  background: rgba(0,212,255,0.08);
+}
+.choice-btn.btn-odd:hover {
+  border-color: var(--orange);
+  color: var(--orange);
+  background: rgba(255,145,0,0.08);
+}
+.choice-btn.correct {
+  border-color: var(--green);
+  background: rgba(0,230,118,0.15);
+  color: var(--green);
+  animation: pop 0.3s ease-out;
+}
+.choice-btn.wrong {
+  border-color: var(--pink);
+  background: rgba(255,59,139,0.1);
+  color: var(--pink);
+  animation: shake 0.3s ease-in-out;
+  opacity: 0.5;
+}
+.choice-btn:disabled {
+  cursor: default;
+  pointer-events: none;
+}
+
+/* ── EXPLORE CONTROLS ── */
+.explore-controls {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 14px 20px;
+  background: var(--card);
+  border-radius: 12px;
+  border: 1px solid var(--border);
+}
+.explore-controls label {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text2);
+}
+.number-slider {
+  width: 200px;
+  height: 6px;
+  -webkit-appearance: none;
+  appearance: none;
+  background: var(--border);
+  border-radius: 3px;
+  outline: none;
+  cursor: pointer;
+}
+.number-slider::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  background: var(--cyan);
+  cursor: pointer;
+  transition: all 0.2s;
+}
+.number-slider::-moz-range-thumb {
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  background: var(--cyan);
+  cursor: pointer;
+  border: none;
+}
+
+/* ── NUMBER GRID (Explore advanced) ── */
+.number-grid {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 8px;
+  max-width: 320px;
+}
+.number-grid-btn {
+  padding: 10px;
+  border-radius: 10px;
+  border: 2px solid var(--border);
+  background: var(--bg2);
+  color: var(--text);
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 16px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.15s;
+  min-width: 50px;
+}
+.number-grid-btn:hover {
+  border-color: var(--cyan);
+  transform: scale(1.05);
+}
+.number-grid-btn.selected-even {
+  border-color: var(--cyan);
+  background: rgba(0,212,255,0.12);
+  color: var(--cyan);
+}
+.number-grid-btn.selected-odd {
+  border-color: var(--orange);
+  background: rgba(255,145,0,0.12);
+  color: var(--orange);
+}
+
+/* ── PRACTICE QUESTION ── */
+.practice-question {
+  text-align: center;
+  padding: 20px;
+  background: var(--card);
+  border-radius: 12px;
+  border: 1px solid var(--border);
+  width: 100%;
+  max-width: 500px;
+}
+.question-text {
+  font-size: 16px;
+  color: var(--text2);
+  margin-bottom: 12px;
+  font-weight: 600;
+}
+.question-highlight {
+  font-size: 28px;
+  font-weight: 800;
+  font-family: 'JetBrains Mono', monospace;
+  color: var(--green);
+  margin: 12px 0;
+}
+
+/* ── GAME INFO (Play) ── */
+.game-info {
+  display: flex;
+  gap: 20px;
+  justify-content: center;
+  align-items: center;
+  font-size: 14px;
+  color: var(--text2);
+  margin-bottom: 12px;
+}
+.info-item {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.info-label {
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+}
+
+.play-btn {
+  padding: 12px 24px;
+  border-radius: 10px;
+  border: 1px solid var(--border);
+  background: var(--card);
+  color: var(--text2);
+  font-size: 14px;
+  font-weight: 600;
+  font-family: inherit;
+  cursor: pointer;
+  transition: all 0.2s;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.play-btn:hover { background: rgba(0,212,255,0.1); color: var(--cyan); }
+.play-btn.primary {
+  background: var(--grad);
+  color: var(--bg);
+  border-color: transparent;
+  font-weight: 700;
+}
+.play-btn.primary:hover { opacity: 0.9; }
+
+/* ── GAME OVER ── */
+.game-over {
+  text-align: center;
+  padding: 32px;
+  background: var(--card);
+  border-radius: 16px;
+  border: 2px solid var(--border);
+}
+.game-over-title {
+  font-size: 28px;
+  font-weight: 900;
+  background: var(--grad);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  margin-bottom: 12px;
+}
+.game-over-score {
+  font-size: 48px;
+  font-weight: 900;
+  font-family: 'JetBrains Mono', monospace;
+  color: var(--cyan);
+}
+.game-over-label {
+  font-size: 12px;
+  color: var(--muted);
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  margin-bottom: 20px;
+}
+
+/* ── FEEDBACK ── */
+.feedback {
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%) scale(0);
+  padding: 24px 48px;
+  border-radius: 20px;
+  font-size: 28px;
+  font-weight: 800;
+  z-index: 200;
+  pointer-events: none;
+  transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275), opacity 0.3s;
+  opacity: 0;
+}
+.feedback.show {
+  transform: translate(-50%, -50%) scale(1);
+  opacity: 1;
+}
+.feedback.correct {
+  background: rgba(0,230,118,0.15);
+  color: var(--green);
+  border: 2px solid var(--green);
+}
+.feedback.incorrect {
+  background: rgba(255,59,139,0.15);
+  color: var(--pink);
+  border: 2px solid var(--pink);
+}
+.feedback.try-again {
+  background: rgba(255,193,7,0.15);
+  color: var(--yellow);
+  border: 2px solid var(--yellow);
+}
+
+/* ── SIDE PANEL ── */
+.side-panel {
+  width: 280px;
+  background: var(--bg2);
+  border-left: 1px solid var(--border);
+  padding: 20px;
+  overflow-y: auto;
+  flex-shrink: 0;
+}
+.panel-section {
+  margin-bottom: 20px;
+}
+.panel-title {
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 1.5px;
+  color: var(--muted);
+  margin-bottom: 8px;
+}
+.panel-text {
+  font-size: 13px;
+  color: var(--text2);
+  line-height: 1.6;
+}
+.score-display {
+  text-align: center;
+  padding: 16px;
+  background: var(--card);
+  border-radius: 12px;
+  margin-bottom: 12px;
+}
+.score-value {
+  font-size: 36px;
+  font-weight: 900;
+  font-family: 'JetBrains Mono', monospace;
+  background: var(--grad);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+.score-label {
+  font-size: 11px;
+  color: var(--muted);
+  text-transform: uppercase;
+  letter-spacing: 1px;
+}
+.streak-bar {
+  height: 6px;
+  background: var(--card);
+  border-radius: 3px;
+  overflow: hidden;
+  margin-top: 8px;
+}
+.streak-fill {
+  height: 100%;
+  background: var(--grad);
+  border-radius: 3px;
+  transition: width 0.3s;
+}
+
+/* ── PATTERN TABLE ── */
+.pattern-table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-top: 8px;
+}
+.pattern-table th, .pattern-table td {
+  padding: 6px 8px;
+  font-size: 12px;
+  border-bottom: 1px solid var(--border);
+  text-align: center;
+}
+.pattern-table th {
+  font-weight: 700;
+  color: var(--muted);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  font-size: 10px;
+}
+.pattern-table .even-cell { color: var(--cyan); font-weight: 700; }
+.pattern-table .odd-cell { color: var(--orange); font-weight: 700; }
+
+/* ── ANIMATIONS ── */
+@keyframes pop {
+  0% { transform: scale(0); opacity: 0; }
+  70% { transform: scale(1.2); }
+  100% { transform: scale(1); opacity: 1; }
+}
+@keyframes shake {
+  0%, 100% { transform: translateX(0); }
+  25% { transform: translateX(-8px); }
+  75% { transform: translateX(8px); }
+}
+@keyframes hop {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-12px); }
+}
+@keyframes slideInPair {
+  0% { transform: translateX(0); opacity: 0.5; }
+  100% { transform: translateX(0); opacity: 1; }
+}
+@keyframes leftoverBounce {
+  0%, 100% { transform: translateY(0); }
+  40% { transform: translateY(-10px); }
+  60% { transform: translateY(-6px); }
+}
+
+.pop-in { animation: pop 0.3s ease-out forwards; }
+.shake { animation: shake 0.3s ease-in-out; }
+.hop { animation: hop 0.4s ease-in-out; }
+
+/* Scrollbar */
+::-webkit-scrollbar { width: 6px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+
+/* ── RESPONSIVE ── */
+@media (max-width: 768px) {
+  .side-panel { width: 220px; }
+  .number-display { font-size: 56px; }
+  .choice-btn { padding: 14px 32px; font-size: 16px; min-width: 110px; }
+  .pair-svg-container { min-height: 140px; padding: 12px; }
+}
+</style>
+</head>
+<body>
+
+<!-- ═══ HEADER ═══ -->
+<div class="vinculum-header">
+  <div class="vinculum-header-left">
+    <a class="vinculum-back-btn" href="../../VINCULUM-Hub.html" style="text-decoration:none;">&#9664; Hub</a>
+    <div class="vinculum-header-title"><span>VINCULUM</span> Odd &amp; Even</div>
+    <span class="vinculum-header-badge">2 &middot; OA</span>
+  </div>
+  <div class="vinculum-std-tags" style="display:flex;align-items:center;gap:8px;">
+    <button class="vinculum-back-btn" id="readAloudBtn" onclick="toggleReadAloud()" aria-label="Read Aloud" title="Read instructions aloud">&#128266; Read to Me</button>
+    <span class="vinculum-std-tag">2.OA.3</span>
+    <span class="vinculum-std-tag mn">MN 2.2.2.1</span>
+  </div>
+</div>
+
+<!-- ═══ MODE TABS ═══ -->
+<div class="vinculum-mode-tabs">
+  <button class="vinculum-mode-tab active-explore" id="tabExplore" onclick="setMode('explore')">
+    <svg width="18" height="18" viewBox="0 0 48 48" fill="none"><path d="M4 24C4 24 12 12 24 12C36 12 44 24 44 24C44 24 36 36 24 36C12 36 4 24 4 24Z" stroke="currentColor" stroke-width="3" fill="none"/><circle cx="24" cy="24" r="7" stroke="currentColor" stroke-width="3" fill="none"/><circle cx="24" cy="24" r="3" fill="currentColor"/><line x1="24" y1="4" x2="24" y2="9" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" opacity="0.5"/><line x1="10" y1="8" x2="13" y2="12" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" opacity="0.5"/><line x1="38" y1="8" x2="35" y2="12" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" opacity="0.5"/></svg> Explore
+  </button>
+  <button class="vinculum-mode-tab" id="tabPractice" onclick="setMode('practice')">
+    <svg width="18" height="18" viewBox="0 0 48 48" fill="none"><circle cx="24" cy="24" r="20" stroke="currentColor" stroke-width="3" fill="none" opacity="0.3"/><circle cx="24" cy="24" r="20" stroke="currentColor" stroke-width="3" fill="none" stroke-dasharray="126" stroke-dashoffset="32" stroke-linecap="round"/><polyline points="16,24 22,32 34,16" stroke="currentColor" stroke-width="4" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg> Practice
+  </button>
+  <button class="vinculum-mode-tab" id="tabPlay" onclick="setMode('play')">
+    <svg width="18" height="18" viewBox="0 0 48 48" fill="none"><polygon points="28,4 12,28 22,28 18,44 36,18 26,18" fill="none" stroke="currentColor" stroke-width="3" stroke-linejoin="round"/><polygon points="27,8 15,27 23,27 20,40 34,19 26,19" fill="currentColor" opacity="0.15"/></svg> Play
+  </button>
+  <div class="vinculum-diff-selector">
+    <span class="vinculum-diff-label">Level</span>
+    <button class="vinculum-diff-btn active" id="diffE" onclick="setDiff('emergent')" data-diff="emergent">Emergent</button>
+    <button class="vinculum-diff-btn" id="diffP" onclick="setDiff('proficient')" data-diff="proficient">Proficient</button>
+    <button class="vinculum-diff-btn" id="diffA" onclick="setDiff('advanced')" data-diff="advanced">Advanced</button>
+  </div>
+</div>
+
+<!-- ═══ MAIN ═══ -->
+<div class="main">
+  <div class="workspace" role="main" id="workspace"></div>
+  <div class="side-panel" id="sidePanel"></div>
+</div>
+
+<!-- ═══ FEEDBACK POPUP ═══ -->
+<div class="feedback" id="feedback"></div>
+
+<script src="../../vinculum-input.js"></script>
+<script>
+
+// ════════════════════════════════════════
+// MISCONCEPTIONS DATABASE
+// ════════════════════════════════════════
+var MISCONCEPTIONS = {
+  digitSize: {
+    id: 'digit-size',
+    msg: function(n) { return n + ' looks big, but big or small doesn\'t tell us odd or even. Try pairing the objects!'; }
+  },
+  noPattern: {
+    id: 'no-pattern',
+    msg: function() { return 'Look at the last digit. Even numbers always end in 0, 2, 4, 6, or 8.'; }
+  },
+  confuseZero: {
+    id: 'confuse-zero',
+    msg: function() { return 'Zero is even! Zero objects can be split into two equal groups of zero.'; }
+  },
+  onlySmall: {
+    id: 'only-small',
+    msg: function(n) { return 'Odd and even works for ALL numbers, not just small ones. ' + n + ' follows the same rule!'; }
+  },
+  confuseOddDigit: {
+    id: 'odd-digit-look',
+    msg: function(n) { return 'The number ' + n + ' might look odd because of its digits, but check the last digit to be sure.'; }
+  },
+  randomGuess: {
+    id: 'random-guess',
+    msg: function() { return 'Try pairing the circles. If every circle has a partner, the number is even. If one is left over, it is odd.'; }
+  }
+};
+
+// ════════════════════════════════════════
+// STATE
+// ════════════════════════════════════════
+var S = {
+  mode: 'explore',
+  diff: 'emergent',
+
+  // Explore
+  exploreNum: 6,
+
+  // Practice
+  practiceNum: 0,
+  practiceAnswered: false,
+  practiceCorrect: false,
+  score: 0,
+  total: 0,
+
+  // Play
+  playScore: 0,
+  playStreak: 0,
+  playRound: 0,
+  playBest: 0,
+  gameEnded: false,
+  playNum: 0,
+  playAnswered: false,
+  timerStart: 0
+};
+
+// ════════════════════════════════════════
+// READ-ALOUD
+// ════════════════════════════════════════
+function toggleReadAloud() {
+  if (window.VinculumStories && VinculumStories.isReading()) {
+    VinculumStories.stopReading();
+    document.getElementById('readAloudBtn').innerHTML = '&#128266; Read to Me';
+  } else {
+    var text = document.getElementById('sidePanel').textContent || 'Even numbers can be split into two equal groups. Odd numbers always have one left over.';
+    if (window.VinculumStories) {
+      VinculumStories.readAloud(text, { rate: 0.85, onComplete: function() {
+        document.getElementById('readAloudBtn').innerHTML = '&#128266; Read to Me';
+      }});
+      document.getElementById('readAloudBtn').innerHTML = '&#9209; Stop';
+    }
+  }
+}
+
+// ════════════════════════════════════════
+// HELPERS
+// ════════════════════════════════════════
+function getMaxNumber() {
+  return { emergent: 20, proficient: 50, advanced: 120 }[S.diff];
+}
+
+function randInt(min, max) {
+  return Math.floor(Math.random() * (max - min + 1)) + min;
+}
+
+function isEven(n) {
+  return n % 2 === 0;
+}
+
+function shuffle(arr) {
+  var a = arr.slice();
+  for (var i = a.length - 1; i > 0; i--) {
+    var j = randInt(0, i);
+    var tmp = a[i]; a[i] = a[j]; a[j] = tmp;
+  }
+  return a;
+}
+
+// ════════════════════════════════════════
+// SVG PAIR PARADE BUILDER
+// ════════════════════════════════════════
+function buildPairSVG(n, animated) {
+  if (n === 0) {
+    return '<svg width="200" height="60" viewBox="0 0 200 60">' +
+      '<text x="100" y="35" text-anchor="middle" fill="var(--muted)" font-size="14" font-family="Inter" font-weight="600">No objects to pair</text>' +
+      '</svg>';
+  }
+
+  var pairs = Math.floor(n / 2);
+  var leftover = n % 2;
+  var circleR = n <= 10 ? 18 : (n <= 20 ? 14 : 10);
+  var gap = circleR * 2 + 8;
+  var pairGap = gap + 12;
+  var cols = Math.min(pairs + leftover, 5);
+  var rows = Math.ceil((pairs + leftover) / cols);
+
+  var svgW = cols * pairGap + 40;
+  var svgH = rows * (gap + 16) + 40;
+
+  var svg = '<svg width="' + svgW + '" height="' + svgH + '" viewBox="0 0 ' + svgW + ' ' + svgH + '">';
+
+  var idx = 0;
+  for (var p = 0; p < pairs; p++) {
+    var col = p % cols;
+    var row = Math.floor(p / cols);
+    var cx = 30 + col * pairGap;
+    var cy = 30 + row * (gap + 16);
+    var delay1 = animated ? (idx * 0.06) : 0;
+    var delay2 = animated ? ((idx + 1) * 0.06) : 0;
+
+    // Top circle
+    svg += '<circle cx="' + cx + '" cy="' + (cy - circleR - 2) + '" r="' + circleR + '" ' +
+      'fill="var(--cyan)" opacity="0.85" ' +
+      'style="animation: pop 0.3s ease-out ' + delay1 + 's both;" />';
+    // Bottom circle
+    svg += '<circle cx="' + cx + '" cy="' + (cy + circleR + 2) + '" r="' + circleR + '" ' +
+      'fill="var(--cyan)" opacity="0.85" ' +
+      'style="animation: pop 0.3s ease-out ' + delay2 + 's both;" />';
+    // Pair bracket
+    svg += '<line x1="' + (cx + circleR + 3) + '" y1="' + (cy - circleR - 2) + '" ' +
+      'x2="' + (cx + circleR + 3) + '" y2="' + (cy + circleR + 2) + '" ' +
+      'stroke="var(--border)" stroke-width="2" stroke-linecap="round" ' +
+      'opacity="0.4" style="animation: pop 0.2s ease-out ' + (delay2 + 0.1) + 's both;" />';
+
+    idx += 2;
+  }
+
+  // Leftover circle
+  if (leftover) {
+    var lCol = pairs % cols;
+    var lRow = Math.floor(pairs / cols);
+    var lx = 30 + lCol * pairGap;
+    var ly = 30 + lRow * (gap + 16);
+    var lDelay = animated ? (idx * 0.06) : 0;
+
+    svg += '<circle cx="' + lx + '" cy="' + ly + '" r="' + circleR + '" ' +
+      'fill="var(--orange)" opacity="0.9" ' +
+      'style="animation: pop 0.3s ease-out ' + lDelay + 's both, leftoverBounce 0.8s ease-in-out ' + (lDelay + 0.3) + 's 2;" />';
+    // Question mark on leftover
+    svg += '<text x="' + lx + '" y="' + (ly + 4) + '" text-anchor="middle" fill="var(--bg)" ' +
+      'font-size="' + (circleR * 0.8) + '" font-weight="800" font-family="Inter" ' +
+      'style="animation: pop 0.3s ease-out ' + (lDelay + 0.15) + 's both;">?</text>';
+  }
+
+  svg += '</svg>';
+  return svg;
+}
+
+// ════════════════════════════════════════
+// FEEDBACK
+// ════════════════════════════════════════
+function showFB(text, type) {
+  var fb = document.getElementById('feedback');
+  fb.textContent = text;
+  fb.className = 'feedback ' + type + ' show';
+  setTimeout(function() { fb.classList.remove('show'); }, 1800);
+}
+
+// ════════════════════════════════════════
+// MODE / DIFF SWITCHING
+// ════════════════════════════════════════
+function setMode(mode) {
+  S.mode = mode;
+
+  if (mode === 'practice' && S.total === 0) {
+    S.score = 0;
+    S.total = 0;
+    newPracticeQuestion();
+  }
+
+  if (mode === 'play' && S.playRound === 0) {
+    S.playScore = 0;
+    S.playStreak = 0;
+    S.playRound = 1;
+    S.playBest = 0;
+    S.gameEnded = false;
+    newPlayNumber();
+  }
+
+  document.querySelectorAll('.vinculum-mode-tab').forEach(function(t) {
+    t.classList.remove('active-explore', 'active-practice', 'active-play');
+  });
+  var tabEl = document.getElementById('tab' + mode.charAt(0).toUpperCase() + mode.slice(1));
+  tabEl.classList.add('active-' + mode);
+
+  render();
+}
+
+function setDiff(diff) {
+  S.diff = diff;
+  S.exploreNum = 6;
+  S.score = 0;
+  S.total = 0;
+  S.playScore = 0;
+  S.playStreak = 0;
+  S.playRound = 0;
+  S.playBest = 0;
+  S.practiceAnswered = false;
+
+  document.querySelectorAll('.vinculum-diff-btn').forEach(function(b) {
+    b.classList.remove('active');
+  });
+  document.getElementById('diff' + diff.charAt(0).toUpperCase()).classList.add('active');
+
+  setMode(S.mode);
+}
+
+// ════════════════════════════════════════
+// RENDER MAIN
+// ════════════════════════════════════════
+function render() {
+  var ws = document.getElementById('workspace');
+  var sp = document.getElementById('sidePanel');
+
+  if (S.mode === 'explore') renderExplore(ws, sp);
+  else if (S.mode === 'practice') renderPractice(ws, sp);
+  else renderPlay(ws, sp);
+}
+
+// ════════════════════════════════════════
+// EXPLORE MODE
+// ════════════════════════════════════════
+function renderExplore(ws, sp) {
+  var n = S.exploreNum;
+  var even = isEven(n);
+  var maxN = getMaxNumber();
+
+  var html = '<div class="pair-parade">';
+
+  // Number display
+  html += '<div class="number-display">' + n + '</div>';
+  html += '<div class="number-label">Pair Parade</div>';
+
+  // SVG pairing visual
+  html += '<div class="pair-svg-container" id="pairArea">';
+  html += buildPairSVG(n, true);
+  html += '</div>';
+
+  // Result badge
+  html += '<div class="result-badge ' + (even ? 'even-badge' : 'odd-badge') + '">';
+  html += even ? 'EVEN' : 'ODD';
+  html += '</div>';
+
+  // Explanation
+  html += '<div style="text-align:center;font-size:14px;color:var(--text2);max-width:380px;">';
+  if (n === 0) {
+    html += '0 is <strong>even</strong>. Zero objects split into two groups of zero.';
+  } else if (even) {
+    html += n + ' circles make <strong>' + (n / 2) + ' pairs</strong> with none left over. That makes ' + n + ' <strong>even</strong>.';
+  } else {
+    html += n + ' circles make <strong>' + Math.floor(n / 2) + ' pair' + (Math.floor(n / 2) !== 1 ? 's' : '') + '</strong> with <strong>1 left over</strong>. That makes ' + n + ' <strong>odd</strong>.';
+  }
+  html += '</div>';
+
+  // Controls
+  if (S.diff === 'emergent') {
+    html += '<div class="explore-controls">';
+    html += '<label for="numSlider">Pick a number:</label>';
+    html += '<input type="range" id="numSlider" class="number-slider" min="0" max="' + maxN + '" value="' + n + '" oninput="S.exploreNum=+this.value;render()">';
+    html += '<span style="font-family:\'JetBrains Mono\',monospace;font-weight:700;font-size:18px;color:var(--cyan);min-width:36px;text-align:center;">' + n + '</span>';
+    html += '</div>';
+  } else if (S.diff === 'proficient') {
+    html += '<div class="explore-controls" style="flex-direction:column;gap:12px;">';
+    html += '<label>Tap a number to see its Pair Parade:</label>';
+    html += '<div class="number-grid">';
+    for (var i = 0; i <= 20; i++) {
+      var cls = i === n ? (isEven(i) ? ' selected-even' : ' selected-odd') : '';
+      html += '<button class="number-grid-btn' + cls + '" onclick="S.exploreNum=' + i + ';render()">' + i + '</button>';
+    }
+    html += '</div></div>';
+  } else {
+    // Advanced: number grid + pattern table
+    html += '<div class="explore-controls" style="flex-direction:column;gap:12px;">';
+    html += '<label for="numSlider">Pick any number (0 - ' + maxN + '):</label>';
+    html += '<input type="range" id="numSlider" class="number-slider" min="0" max="' + maxN + '" value="' + n + '" oninput="S.exploreNum=+this.value;render()" style="width:300px;">';
+    html += '<span style="font-family:\'JetBrains Mono\',monospace;font-weight:700;font-size:18px;color:var(--cyan);">' + n + '</span>';
+    html += '</div>';
+
+    // Pattern insight
+    html += '<div style="text-align:center;font-size:13px;color:var(--muted);max-width:400px;margin-top:4px;">';
+    html += '<strong>Pattern:</strong> Even + Even = Even, Odd + Odd = Even, Even + Odd = Odd';
+    html += '</div>';
+  }
+
+  html += '</div>';
+  ws.innerHTML = html;
+
+  // Side panel
+  var spHtml = '<div class="panel-section">';
+  spHtml += '<div class="panel-title">How it Works</div>';
+  spHtml += '<div class="panel-text">Line up circles in pairs. If every circle has a partner, the number is <strong>even</strong>. If one circle is left alone, the number is <strong>odd</strong>.</div>';
+  spHtml += '</div>';
+
+  spHtml += '<div class="panel-section">';
+  spHtml += '<div class="panel-title">Key Idea</div>';
+  spHtml += '<div class="panel-text">Even numbers end in <strong>0, 2, 4, 6, 8</strong>.<br>Odd numbers end in <strong>1, 3, 5, 7, 9</strong>.</div>';
+  spHtml += '</div>';
+
+  spHtml += '<div class="panel-section">';
+  spHtml += '<div class="panel-title">Pattern Table</div>';
+  spHtml += '<table class="pattern-table">';
+  spHtml += '<tr><th>Number</th><th>Pairs</th><th>Left Over</th><th>Type</th></tr>';
+  var start = Math.max(0, n - 3);
+  for (var j = start; j <= Math.min(start + 6, maxN); j++) {
+    var je = isEven(j);
+    spHtml += '<tr>';
+    spHtml += '<td style="font-weight:700;font-family:\'JetBrains Mono\',monospace;">' + j + '</td>';
+    spHtml += '<td>' + Math.floor(j / 2) + '</td>';
+    spHtml += '<td>' + (j % 2) + '</td>';
+    spHtml += '<td class="' + (je ? 'even-cell' : 'odd-cell') + '">' + (je ? 'Even' : 'Odd') + '</td>';
+    spHtml += '</tr>';
+  }
+  spHtml += '</table></div>';
+
+  spHtml += '<div class="panel-section">';
+  spHtml += '<div class="panel-title">Standards</div>';
+  spHtml += '<div class="panel-text" style="font-family:\'JetBrains Mono\',monospace;font-size:11px;">CCSS 2.OA.3<br>MN 2.2.2.1</div>';
+  spHtml += '</div>';
+
+  sp.innerHTML = spHtml;
+}
+
+// ════════════════════════════════════════
+// PRACTICE MODE
+// ════════════════════════════════════════
+function newPracticeQuestion() {
+  var maxN = getMaxNumber();
+
+  if (S.diff === 'emergent') {
+    S.practiceNum = randInt(1, 20);
+  } else if (S.diff === 'proficient') {
+    S.practiceNum = randInt(0, maxN);
+  } else {
+    // Advanced: expressions
+    var a = randInt(1, 30);
+    var b = randInt(1, 30);
+    S.practiceA = a;
+    S.practiceB = b;
+    S.practiceOp = Math.random() < 0.5 ? '+' : '-';
+    if (S.practiceOp === '-' && b > a) { var t = a; a = b; b = t; S.practiceA = a; S.practiceB = b; }
+    S.practiceNum = S.practiceOp === '+' ? a + b : a - b;
+  }
+
+  S.practiceAnswered = false;
+  S.practiceCorrect = false;
+}
+
+function renderPractice(ws, sp) {
+  var n = S.practiceNum;
+  var even = isEven(n);
+  var showVisual = S.diff !== 'advanced' || S.practiceAnswered;
+  var visualNum = Math.min(n, 40); // Cap visual at 40 for display
+
+  var html = '<div class="pair-parade">';
+
+  // Question
+  html += '<div class="practice-question">';
+  html += '<div class="question-text">';
+  if (S.diff === 'advanced') {
+    html += 'Is the result odd or even?';
+    html += '</div>';
+    html += '<div class="question-highlight">' + S.practiceA + ' ' + S.practiceOp + ' ' + S.practiceB + ' = ?</div>';
+  } else {
+    html += 'Is this number odd or even?';
+    html += '</div>';
+    html += '<div class="question-highlight">' + n + '</div>';
+  }
+  html += '</div>';
+
+  // Pairing visual
+  if (showVisual && n <= 40) {
+    html += '<div class="pair-svg-container">';
+    html += buildPairSVG(visualNum, !S.practiceAnswered);
+    html += '</div>';
+  } else if (showVisual && n > 40) {
+    html += '<div style="text-align:center;padding:16px;color:var(--text2);font-size:14px;">';
+    html += n + ' = ' + Math.floor(n / 2) + ' pairs' + (n % 2 ? ' + 1 left over' : '') + ' (too many to show!)';
+    html += '</div>';
+  }
+
+  // Answer buttons or result
+  if (!S.practiceAnswered) {
+    html += '<div class="choice-buttons">';
+    html += '<button class="choice-btn btn-even" onclick="checkPractice(\'even\')" aria-label="Even">EVEN</button>';
+    html += '<button class="choice-btn btn-odd" onclick="checkPractice(\'odd\')" aria-label="Odd">ODD</button>';
+    html += '</div>';
+  } else {
+    // Show result
+    html += '<div class="result-badge ' + (even ? 'even-badge' : 'odd-badge') + '" style="animation:pop 0.3s ease-out;">';
+    html += even ? 'EVEN' : 'ODD';
+    html += '</div>';
+
+    if (S.diff === 'advanced') {
+      html += '<div style="text-align:center;font-size:14px;color:var(--text2);">';
+      html += S.practiceA + ' ' + S.practiceOp + ' ' + S.practiceB + ' = <strong>' + n + '</strong>';
+      html += '</div>';
+    }
+
+    // Explanation
+    html += '<div style="text-align:center;font-size:13px;color:var(--muted);max-width:380px;">';
+    if (even) {
+      html += n + ' ends in ' + (n % 10) + ', which is even. It makes ' + (n / 2) + ' pairs with none left over.';
+    } else {
+      html += n + ' ends in ' + (n % 10) + ', which is odd. It makes ' + Math.floor(n / 2) + ' pair' + (Math.floor(n / 2) !== 1 ? 's' : '') + ' with 1 left over.';
+    }
+    html += '</div>';
+
+    html += '<button class="play-btn primary" onclick="newPracticeQuestion();S.total++;render();" style="margin-top:8px;">Next Question &#8594;</button>';
+  }
+
+  html += '</div>';
+  ws.innerHTML = html;
+
+  // Side panel
+  var spHtml = '<div class="panel-section">';
+  spHtml += '<div class="panel-title">Score</div>';
+  spHtml += '<div class="score-display">';
+  spHtml += '<div class="score-value">' + S.score + '</div>';
+  spHtml += '<div class="score-label">out of ' + S.total + '</div>';
+  spHtml += '</div></div>';
+
+  spHtml += '<div class="panel-section">';
+  spHtml += '<div class="panel-title">Instructions</div>';
+  spHtml += '<div class="panel-text">';
+  if (S.diff === 'emergent') {
+    spHtml += 'Look at the number and the circles. Can every circle find a partner? Tap <strong>EVEN</strong> if yes, <strong>ODD</strong> if one is left over.';
+  } else if (S.diff === 'proficient') {
+    spHtml += 'Determine if the number is odd or even and explain your thinking. Check the last digit for a quick clue!';
+  } else {
+    spHtml += 'Figure out if the result of the expression is odd or even. Use the odd/even properties: even+even=even, odd+odd=even, even+odd=odd.';
+  }
+  spHtml += '</div></div>';
+
+  spHtml += '<div class="panel-section">';
+  spHtml += '<div class="panel-title">Tip</div>';
+  spHtml += '<div class="panel-text">Even numbers can always be split into 2 equal groups. Odd numbers always have a remainder of 1.</div>';
+  spHtml += '</div>';
+
+  sp.innerHTML = spHtml;
+}
+
+function checkPractice(answer) {
+  if (S.practiceAnswered) return;
+
+  var n = S.practiceNum;
+  var correct = (answer === 'even' && isEven(n)) || (answer === 'odd' && !isEven(n));
+
+  S.practiceAnswered = true;
+  S.practiceCorrect = correct;
+  S.total++;
+
+  if (correct) {
+    S.score++;
+    showFB('\u2713 Correct!', 'correct');
+  } else {
+    // Pick misconception-based feedback
+    var msg = getMisconceptionMsg(n, answer);
+    showFB('\u2717 ' + (isEven(n) ? 'Even' : 'Odd'), 'incorrect');
+
+    // Show misconception detail in side panel after render
+    setTimeout(function() {
+      var tip = document.querySelector('.panel-section:last-child .panel-text');
+      if (tip) tip.innerHTML = '<span style="color:var(--pink);font-weight:600;">' + msg + '</span>';
+    }, 100);
+  }
+
+  render();
+
+  // Highlight chosen button
+  setTimeout(function() {
+    var btns = document.querySelectorAll('.choice-btn');
+    btns.forEach(function(b) {
+      if (b.textContent.trim().toLowerCase() === answer) {
+        b.classList.add(correct ? 'correct' : 'wrong');
+      }
+    });
+  }, 50);
+}
+
+function getMisconceptionMsg(n, answer) {
+  if (n === 0) return MISCONCEPTIONS.confuseZero.msg();
+  if (n > 20 && S.diff === 'emergent') return MISCONCEPTIONS.onlySmall.msg(n);
+  if ((n >= 10 && n % 10 !== n) && answer !== (isEven(n) ? 'even' : 'odd')) {
+    return MISCONCEPTIONS.confuseOddDigit.msg(n);
+  }
+  if (n > 10) return MISCONCEPTIONS.digitSize.msg(n);
+  return MISCONCEPTIONS.noPattern.msg();
+}
+
+// ════════════════════════════════════════
+// PLAY MODE
+// ════════════════════════════════════════
+function newPlayNumber() {
+  var maxN = getMaxNumber();
+
+  if (S.diff === 'emergent') {
+    S.playNum = randInt(1, 20);
+  } else if (S.diff === 'proficient') {
+    S.playNum = randInt(0, maxN);
+  } else {
+    S.playNum = randInt(0, maxN);
+  }
+
+  S.playAnswered = false;
+  S.timerStart = Date.now();
+}
+
+function renderPlay(ws, sp) {
+  if (S.gameEnded) {
+    renderGameOver(ws, sp);
+    return;
+  }
+
+  var n = S.playNum;
+  var visualNum = Math.min(n, 30);
+
+  var html = '<div class="pair-parade">';
+
+  // Game info bar
+  html += '<div class="game-info">';
+  html += '<div class="info-item"><span class="info-label">Round</span> ' + S.playRound + '/10</div>';
+  html += '<div class="info-item"><span class="info-label">Score</span> ' + S.playScore + '</div>';
+  html += '<div class="info-item"><span class="info-label">Streak</span> ' + S.playStreak + '</div>';
+  html += '</div>';
+
+  // Big number
+  html += '<div class="number-display" style="font-size:84px;">' + n + '</div>';
+
+  // Pairing visual (only for emergent)
+  if (S.diff === 'emergent' && n <= 30) {
+    html += '<div class="pair-svg-container">';
+    html += buildPairSVG(visualNum, true);
+    html += '</div>';
+  }
+
+  // Two choice buttons
+  if (!S.playAnswered) {
+    html += '<div class="choice-buttons">';
+    html += '<button class="choice-btn btn-even" id="btnPlayEven" onclick="checkPlay(\'even\')" aria-label="Even">EVEN</button>';
+    html += '<button class="choice-btn btn-odd" id="btnPlayOdd" onclick="checkPlay(\'odd\')" aria-label="Odd">ODD</button>';
+    html += '</div>';
+  }
+
+  html += '</div>';
+  ws.innerHTML = html;
+
+  // Side panel
+  var spHtml = '<div class="panel-section">';
+  spHtml += '<div class="panel-title">Score</div>';
+  spHtml += '<div class="score-display">';
+  spHtml += '<div class="score-value">' + S.playScore + '</div>';
+  spHtml += '<div class="score-label">Points</div>';
+  spHtml += '</div>';
+
+  spHtml += '<div class="score-display">';
+  spHtml += '<div class="score-value" style="font-size:24px;">' + S.playStreak + '</div>';
+  spHtml += '<div class="score-label">Streak</div>';
+  spHtml += '<div class="streak-bar"><div class="streak-fill" style="width:' + Math.min(S.playStreak * 10, 100) + '%;"></div></div>';
+  spHtml += '</div></div>';
+
+  spHtml += '<div class="panel-section">';
+  spHtml += '<div class="panel-title">Scoring</div>';
+  spHtml += '<div class="panel-text">Each correct answer: <strong>10 pts</strong> + streak bonus (<strong>streak x 2</strong>). Build your streak for maximum points!</div>';
+  spHtml += '</div>';
+
+  spHtml += '<div class="panel-section">';
+  spHtml += '<div class="panel-title">Quick Tip</div>';
+  spHtml += '<div class="panel-text">';
+  if (S.diff === 'emergent') {
+    spHtml += 'Watch the circles pair up. Leftover = Odd!';
+  } else {
+    spHtml += 'Check the last digit: 0, 2, 4, 6, 8 = Even. 1, 3, 5, 7, 9 = Odd.';
+  }
+  spHtml += '</div></div>';
+
+  if (S.playBest > 0) {
+    spHtml += '<div class="panel-section">';
+    spHtml += '<div class="panel-title">Best Streak</div>';
+    spHtml += '<div class="panel-text" style="font-family:\'JetBrains Mono\',monospace;font-size:18px;font-weight:700;color:var(--cyan);">' + S.playBest + '</div>';
+    spHtml += '</div>';
+  }
+
+  sp.innerHTML = spHtml;
+}
+
+function checkPlay(answer) {
+  if (S.playAnswered) return;
+
+  var n = S.playNum;
+  var correct = (answer === 'even' && isEven(n)) || (answer === 'odd' && !isEven(n));
+
+  S.playAnswered = true;
+
+  var btnEven = document.getElementById('btnPlayEven');
+  var btnOdd = document.getElementById('btnPlayOdd');
+
+  if (correct) {
+    showFB('\u2713 Yes!', 'correct');
+    S.playScore += 10 + (S.playStreak * 2);
+    S.playStreak++;
+    S.playRound++;
+
+    var chosenBtn = answer === 'even' ? btnEven : btnOdd;
+    if (chosenBtn) chosenBtn.classList.add('correct');
+    if (btnEven) btnEven.disabled = true;
+    if (btnOdd) btnOdd.disabled = true;
+
+    if (S.playRound > 10) {
+      S.playBest = Math.max(S.playBest, S.playStreak);
+      setTimeout(function() {
+        S.gameEnded = true;
+        render();
+      }, 900);
+    } else {
+      setTimeout(function() {
+        newPlayNumber();
+        render();
+      }, 700);
+    }
+  } else {
+    var wrongBtn = answer === 'even' ? btnEven : btnOdd;
+    var rightBtn = answer === 'even' ? btnOdd : btnEven;
+    if (wrongBtn) wrongBtn.classList.add('wrong');
+
+    var msg = getMisconceptionMsg(n, answer);
+    showFB('\u2717 ' + (isEven(n) ? 'Even' : 'Odd'), 'try-again');
+    S.playStreak = 0;
+    S.playRound++;
+
+    // Flash correct answer
+    setTimeout(function() {
+      if (rightBtn) {
+        rightBtn.style.borderColor = 'var(--green)';
+        rightBtn.style.color = 'var(--green)';
+      }
+    }, 400);
+
+    if (S.playRound > 10) {
+      S.playBest = Math.max(S.playBest, S.playStreak);
+      setTimeout(function() {
+        S.gameEnded = true;
+        render();
+      }, 1200);
+    } else {
+      setTimeout(function() {
+        newPlayNumber();
+        render();
+      }, 1200);
+    }
+  }
+}
+
+function renderGameOver(ws, sp) {
+  var html = '<div class="pair-parade">';
+  html += '<div class="game-over">';
+  html += '<div class="game-over-title">Pair Parade Complete!</div>';
+  html += '<div class="game-over-score">' + S.playScore + '</div>';
+  html += '<div class="game-over-label">Total Points</div>';
+
+  // Stars based on score
+  var stars = S.playScore >= 80 ? 3 : (S.playScore >= 50 ? 2 : 1);
+  html += '<div style="font-size:32px;margin-bottom:16px;">';
+  for (var i = 0; i < 3; i++) {
+    html += '<span style="opacity:' + (i < stars ? '1' : '0.2') + ';">\u2B50</span>';
+  }
+  html += '</div>';
+
+  html += '<div style="font-size:14px;color:var(--text2);margin-bottom:20px;">';
+  html += 'Best Streak: <strong>' + S.playBest + '</strong>';
+  html += '</div>';
+
+  html += '<button class="play-btn primary" onclick="playAgain()">Play Again</button>';
+  html += '</div></div>';
+
+  ws.innerHTML = html;
+
+  // Side panel
+  var spHtml = '<div class="panel-section">';
+  spHtml += '<div class="panel-title">Final Score</div>';
+  spHtml += '<div class="score-display">';
+  spHtml += '<div class="score-value">' + S.playScore + '</div>';
+  spHtml += '<div class="score-label">Points</div>';
+  spHtml += '</div></div>';
+
+  spHtml += '<div class="panel-section">';
+  spHtml += '<div class="panel-title">Performance</div>';
+  spHtml += '<div class="panel-text">';
+  if (S.playScore >= 100) {
+    spHtml += 'Outstanding! You are an odd/even expert!';
+  } else if (S.playScore >= 70) {
+    spHtml += 'Great job! You really understand odd and even numbers.';
+  } else if (S.playScore >= 40) {
+    spHtml += 'Good effort! Keep practicing to build speed.';
+  } else {
+    spHtml += 'Keep trying! Remember: pair the objects. Leftover = odd, no leftover = even.';
+  }
+  spHtml += '</div></div>';
+
+  sp.innerHTML = spHtml;
+}
+
+function playAgain() {
+  S.playScore = 0;
+  S.playStreak = 0;
+  S.playRound = 1;
+  S.gameEnded = false;
+  S.playAnswered = false;
+  newPlayNumber();
+  render();
+}
+
+// ════════════════════════════════════════
+// INIT
+// ════════════════════════════════════════
+newPracticeQuestion();
+newPlayNumber();
+render();
+</script>
+<script src="../../vinculum-core.js"></script>
+<script src="../../vinculum-data.js"></script>
+<script src="../../vinculum-adaptive-hook.js"></script>
+<script src="../../vinculum-3reads.js"></script>
+<script src="../../vinculum-stories.js"></script>
+<script src="../../vinculum-feedback.js"></script>
+<script src="../../vinculum-guide.js"></script>
+<script src="../../vinculum-identity.js"></script>
+<script src="../../vinculum-indigenous.js"></script>
+<script src="../../vinculum-dashboard.js"></script>
+<script src="../../vinculum-hyperfocus.js"></script>
+<script src="../../vinculum-layout.js"></script>
+</body>
+</html>

@@ -1,0 +1,1187 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>VINCULUM — Measurement Lab</title>
+<link rel="stylesheet" href="../../vinculum-core.css">
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;600&display=swap');
+
+/* Theme system loaded from vinculum-core.css */
+.vinculum-rtm-btn .rtm-icon{font-size:14px;}
+
+/* ═══ FOCUS VISIBLE (Keyboard Navigation) ═══ */
+*:focus-visible {
+  outline:2px solid var(--cyan);outline-offset:2px;border-radius:4px;
+}
+.sr-only {
+  position:absolute;width:1px;height:1px;padding:0;margin:-1px;
+  overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0;
+}
+
+* { margin:0; padding:0; box-sizing:border-box; }
+body {
+  font-family: 'Inter', sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  height: 100vh;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  user-select: none;
+}
+
+/* ── MAIN AREA ── */
+.main {
+  flex: 1;
+  display: flex;
+  overflow: hidden;
+}
+
+/* ── WORKSPACE ── */
+.workspace {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: flex-start;
+  padding: 20px 24px;
+  position: relative;
+  overflow-y: auto;
+}
+
+/* ── MEASUREMENT SCENE ── */
+.measure-scene {
+  width: 100%;
+  max-width: 680px;
+  margin: 8px auto;
+  position: relative;
+}
+.measure-scene svg {
+  display: block;
+  width: 100%;
+  height: auto;
+}
+
+/* ── OBJECT DISPLAY ── */
+.object-label {
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--text);
+  text-align: center;
+  margin-bottom: 4px;
+}
+.object-sublabel {
+  font-size: 12px;
+  color: var(--muted);
+  text-align: center;
+  margin-bottom: 10px;
+}
+
+/* ── RULER CONTROLS ── */
+.ruler-controls {
+  display: flex;
+  gap: 8px;
+  justify-content: center;
+  margin: 10px 0;
+  flex-wrap: wrap;
+}
+.ruler-btn {
+  padding: 6px 14px;
+  border-radius: 8px;
+  border: 1.5px solid var(--border);
+  background: var(--card);
+  color: var(--text2);
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+.ruler-btn:hover { border-color: var(--cyan); }
+.ruler-btn.active {
+  border-color: var(--cyan);
+  background: rgba(0,212,255,0.12);
+  color: var(--cyan);
+}
+
+/* ── ANSWER GRID ── */
+.answer-grid {
+  display: flex;
+  gap: 10px;
+  justify-content: center;
+  flex-wrap: wrap;
+  max-width: 500px;
+}
+.answer-btn {
+  padding: 12px 24px;
+  border-radius: 10px;
+  border: 2px solid var(--border);
+  background: var(--card);
+  color: var(--text);
+  font-size: 18px;
+  font-weight: 700;
+  font-family: 'JetBrains Mono', monospace;
+  cursor: pointer;
+  transition: all 0.2s;
+  min-width: 80px;
+}
+.answer-btn:hover {
+  border-color: var(--cyan);
+  background: rgba(0,212,255,0.08);
+  transform: translateY(-2px);
+}
+.answer-btn.correct-flash {
+  border-color: var(--green);
+  background: rgba(0,255,100,0.15);
+  animation: pop 0.3s ease-out;
+}
+.answer-btn.incorrect-flash {
+  border-color: var(--red);
+  background: rgba(255,50,50,0.1);
+  animation: shake 0.3s ease-in-out;
+}
+
+/* ── CONTROLS ── */
+.controls {
+  display: flex;
+  gap: 8px;
+  justify-content: center;
+  margin: 12px 0;
+  flex-wrap: wrap;
+}
+.ctrl-btn {
+  padding: 8px 16px;
+  border-radius: 8px;
+  border: 1.5px solid var(--border);
+  background: var(--card);
+  color: var(--text2);
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+.ctrl-btn:hover { border-color: var(--cyan); }
+.ctrl-btn.primary {
+  border-color: var(--cyan);
+  background: rgba(0,212,255,0.12);
+  color: var(--cyan);
+}
+.ctrl-btn.danger {
+  border-color: var(--red);
+  color: var(--red);
+}
+
+/* ── SCORE DISPLAY ── */
+.score-display {
+  background: var(--card);
+  border-radius: 12px;
+  padding: 16px;
+  text-align: center;
+  margin-bottom: 12px;
+}
+.score-value {
+  font-size: 36px;
+  font-weight: 900;
+  font-family: 'JetBrains Mono', monospace;
+  background: var(--grad);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+.score-label {
+  font-size: 11px;
+  color: var(--muted);
+  text-transform: uppercase;
+  letter-spacing: 1px;
+}
+.streak-bar {
+  height: 6px;
+  background: var(--card);
+  border-radius: 3px;
+  overflow: hidden;
+  margin-top: 8px;
+}
+.streak-fill {
+  height: 100%;
+  background: var(--grad);
+  border-radius: 3px;
+  transition: width 0.3s;
+}
+
+/* ── PROMPT LABEL ── */
+.prompt-label {
+  font-size: 18px;
+  font-weight: 700;
+  color: var(--text);
+  text-align: center;
+  margin-bottom: 12px;
+}
+.prompt-sublabel {
+  font-size: 14px;
+  color: var(--text2);
+  text-align: center;
+  margin-bottom: 8px;
+}
+.round-indicator {
+  font-size: 13px;
+  color: var(--muted);
+  text-align: center;
+  margin-bottom: 8px;
+}
+
+/* ── UNIT SELECTOR ── */
+.unit-selector {
+  display: flex;
+  gap: 6px;
+  justify-content: center;
+  margin-bottom: 12px;
+}
+.unit-btn {
+  padding: 8px 16px;
+  border-radius: 8px;
+  border: 1.5px solid var(--border);
+  background: var(--card);
+  color: var(--text2);
+  font-size: 14px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+.unit-btn:hover { border-color: var(--cyan); }
+.unit-btn.active {
+  border-color: var(--cyan);
+  background: rgba(0,212,255,0.12);
+  color: var(--cyan);
+}
+
+/* ── MEASUREMENT RESULT ── */
+.measure-result {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 22px;
+  font-weight: 800;
+  color: var(--cyan);
+  text-align: center;
+  margin: 8px 0;
+  min-height: 30px;
+}
+
+/* ── PANEL HELPERS ── */
+.panel-section { margin-bottom: 16px; }
+.panel-title {
+  font-size: 12px;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  color: var(--muted);
+  margin-bottom: 8px;
+}
+.panel-text {
+  font-size: 13px;
+  color: var(--text2);
+  line-height: 1.6;
+}
+.pattern-card {
+  background: var(--card);
+  border-radius: 8px;
+  padding: 10px 12px;
+  margin-bottom: 8px;
+  font-size: 13px;
+  color: var(--text2);
+  line-height: 1.5;
+}
+.pattern-label {
+  display: inline-block;
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--cyan);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  margin-bottom: 4px;
+}
+
+/* ── ANIMATIONS ── */
+@keyframes pop {
+  0% { transform: scale(0); }
+  70% { transform: scale(1.2); }
+  100% { transform: scale(1); }
+}
+@keyframes shake {
+  0%, 100% { transform: translateX(0); }
+  25% { transform: translateX(-8px); }
+  75% { transform: translateX(8px); }
+}
+.pop-in { animation: pop 0.3s ease-out forwards; }
+.shake { animation: shake 0.3s ease-in-out; }
+
+/* ── DRAG HINT ── */
+.drag-hint {
+  font-size: 12px;
+  color: var(--muted);
+  text-align: center;
+  margin-top: 4px;
+  font-style: italic;
+}
+
+/* scrollbar */
+::-webkit-scrollbar { width: 6px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+</style>
+</head>
+<body>
+
+<!-- ═══ HEADER ═══ -->
+<div class="vinculum-header">
+  <div class="vinculum-header-left">
+    <a class="vinculum-back-btn" href="../../VINCULUM-Hub.html" style="text-decoration:none;">◀ Hub</a>
+    <div class="vinculum-header-title"><span>VINCULUM</span> Measurement Lab</div>
+    <span class="vinculum-header-badge">2.MD</span>
+  </div>
+  <div class="vinculum-header-right">
+    <div class="vinculum-std-tags">
+      <span class="vinculum-std-tag">2.MD.1</span>
+      <span class="vinculum-std-tag">2.MD.2</span>
+      <span class="vinculum-std-tag">2.MD.3</span>
+      <span class="vinculum-std-tag">2.MD.4</span>
+      <span class="vinculum-std-tag mn">MN 2.3.2.1</span>
+    </div>
+    <button class="vinculum-back-btn" id="readAloudBtn" onclick="toggleReadAloud()" aria-label="Read Aloud" title="Read instructions aloud" style="margin-left:8px;white-space:nowrap;">🔊 Read to Me</button>
+  </div>
+</div>
+
+<!-- ═══ MODE TABS ═══ -->
+<div class="vinculum-mode-tabs">
+  <button class="vinculum-mode-tab active-explore" id="tabExplore" data-mode="explore">
+    <svg width="18" height="18" viewBox="0 0 48 48" fill="none"><path d="M4 24C4 24 12 12 24 12C36 12 44 24 44 24C44 24 36 36 24 36C12 36 4 24 4 24Z" stroke="currentColor" stroke-width="3" fill="none"/><circle cx="24" cy="24" r="7" stroke="currentColor" stroke-width="3" fill="none"/><circle cx="24" cy="24" r="3" fill="currentColor"/><line x1="24" y1="4" x2="24" y2="9" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" opacity="0.5"/><line x1="10" y1="8" x2="13" y2="12" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" opacity="0.5"/><line x1="38" y1="8" x2="35" y2="12" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" opacity="0.5"/></svg> Explore
+  </button>
+  <button class="vinculum-mode-tab" id="tabPractice" data-mode="practice">
+    <svg width="18" height="18" viewBox="0 0 48 48" fill="none"><circle cx="24" cy="24" r="20" stroke="currentColor" stroke-width="3" fill="none" opacity="0.3"/><circle cx="24" cy="24" r="20" stroke="currentColor" stroke-width="3" fill="none" stroke-dasharray="126" stroke-dashoffset="32" stroke-linecap="round"/><polyline points="16,24 22,32 34,16" stroke="currentColor" stroke-width="4" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg> Practice
+  </button>
+  <button class="vinculum-mode-tab" id="tabPlay" data-mode="play">
+    <svg width="18" height="18" viewBox="0 0 48 48" fill="none"><polygon points="28,4 12,28 22,28 18,44 36,18 26,18" fill="none" stroke="currentColor" stroke-width="3" stroke-linejoin="round"/><polygon points="27,8 15,27 23,27 20,40 34,19 26,19" fill="currentColor" opacity="0.15"/></svg> Play
+  </button>
+  <div class="vinculum-diff-selector">
+    <span class="vinculum-diff-label">Level</span>
+    <button class="vinculum-diff-btn active" id="diffE" data-diff="emergent">Non-Std</button>
+    <button class="vinculum-diff-btn" id="diffP" data-diff="proficient">Standard</button>
+    <button class="vinculum-diff-btn" id="diffA" data-diff="advanced">Choose Unit</button>
+  </div>
+</div>
+
+<!-- ═══ MAIN ═══ -->
+<div class="main">
+  <div class="workspace" role="main" id="workspace"></div>
+  <div class="side-panel" id="sidePanel"></div>
+</div>
+
+<!-- ═══ FEEDBACK POPUP ═══ -->
+<div class="feedback" id="feedback"></div>
+
+<script src="../../vinculum-input.js"></script>
+<script>
+// ════════════════════════════════════════
+// STATE
+// ════════════════════════════════════════
+var S = {
+  mode: 'explore',
+  diff: 'emergent',
+  // Explore
+  currentObject: null,
+  currentUnit: 'clips',
+  rulerPos: 0,
+  showResult: false,
+  // Practice
+  pObject: null,
+  pUnit: '',
+  pAnswer: 0,
+  pChoices: [],
+  pAnswered: false,
+  // Play
+  score: 0,
+  streak: 0,
+  best: 0,
+  round: 0,
+  total: 10,
+  playObject: null,
+  playUnit: '',
+  playAnswer: 0,
+  playChoices: [],
+  playAnswered: false
+};
+
+// ════════════════════════════════════════
+// READ-ALOUD
+// ════════════════════════════════════════
+function toggleReadAloud() {
+  if (window.VinculumStories && VinculumStories.isReading()) {
+    VinculumStories.stopReading();
+    document.getElementById('readAloudBtn').textContent = '🔊 Read to Me';
+  } else {
+    var storyEl = document.getElementById('storyBanner');
+    var text = storyEl ? storyEl.textContent : 'Welcome to the Measurement Lab! Measure objects using rulers and different units.';
+    if (window.VinculumStories) {
+      VinculumStories.readAloud(text, { rate: 0.85, onComplete: function() {
+        document.getElementById('readAloudBtn').textContent = '🔊 Read to Me';
+      }});
+      document.getElementById('readAloudBtn').textContent = '⏹ Stop';
+    }
+  }
+}
+
+// ════════════════════════════════════════
+// MISCONCEPTIONS DATABASE
+// ════════════════════════════════════════
+var MISCONCEPTIONS = {
+  startsFrom1: {
+    id: 'startsFrom1',
+    label: 'Starts from 1 instead of 0',
+    msg: function(unit, correct, chosen) {
+      return 'Careful! Always start measuring from <strong>0</strong>, not 1. The object is ' + correct + ' ' + unit + ' long, not ' + chosen + '.';
+    }
+  },
+  confusesUnits: {
+    id: 'confusesUnits',
+    label: 'Confuses different units',
+    msg: function(unitA, unitB) {
+      return 'Remember, ' + unitA + ' and ' + unitB + ' are <strong>different sizes</strong>. Smaller units give bigger numbers!';
+    }
+  },
+  gapsBetweenUnits: {
+    id: 'gapsBetweenUnits',
+    label: 'Leaves gaps between units',
+    msg: function(unit) {
+      return 'Make sure there are <strong>no gaps</strong> between the ' + unit + '. Line them up end to end!';
+    }
+  },
+  overlapsUnits: {
+    id: 'overlapsUnits',
+    label: 'Overlaps units when measuring',
+    msg: function(unit, correct) {
+      return 'Don\'t let the ' + unit + ' overlap. Each one should touch the next — the answer is <strong>' + correct + '</strong>.';
+    }
+  },
+  wrongEndpoint: {
+    id: 'wrongEndpoint',
+    label: 'Reads wrong endpoint on ruler',
+    msg: function(correct, chosen) {
+      return 'Look at where the <strong>end</strong> of the object lines up on the ruler. It ends at ' + correct + ', not ' + chosen + '.';
+    }
+  },
+  randomGuess: {
+    id: 'randomGuess',
+    label: 'Random guess',
+    msg: function(unit) {
+      return 'Try counting the ' + unit + ' carefully from <strong>0</strong> to the end of the object.';
+    }
+  }
+};
+
+// ════════════════════════════════════════
+// OBJECTS TO MEASURE
+// ════════════════════════════════════════
+var OBJECTS = [
+  { name: 'Pencil', color: '#FFD93D', accent: '#E8B800', lengthIn: 6, shape: 'pencil' },
+  { name: 'Crayon', color: '#FF6B6B', accent: '#CC4444', lengthIn: 4, shape: 'crayon' },
+  { name: 'Eraser', color: '#FFB3D9', accent: '#E889B8', lengthIn: 2, shape: 'eraser' },
+  { name: 'Paper Clip Chain', color: '#C0C0C0', accent: '#888888', lengthIn: 3, shape: 'chain' },
+  { name: 'Ribbon', color: '#A78BFA', accent: '#7C5BC4', lengthIn: 8, shape: 'ribbon' },
+  { name: 'Stick', color: '#8B6914', accent: '#6B4F10', lengthIn: 7, shape: 'stick' },
+  { name: 'Leaf', color: '#4ADE80', accent: '#22C55E', lengthIn: 5, shape: 'leaf' },
+  { name: 'Book', color: '#60A5FA', accent: '#3B82F6', lengthIn: 9, shape: 'book' },
+  { name: 'Marker', color: '#F472B6', accent: '#DB2777', lengthIn: 5, shape: 'marker' },
+  { name: 'Straw', color: '#FBBF24', accent: '#D97706', lengthIn: 7, shape: 'straw' }
+];
+
+// Unit definitions: how many pixels per unit on the SVG, and display label
+var UNITS = {
+  clips: { label: 'paper clips', abbr: 'clips', pxPer: 30, icon: '📎', type: 'nonstandard' },
+  cubes: { label: 'cubes', abbr: 'cubes', pxPer: 24, icon: '🟦', type: 'nonstandard' },
+  inches: { label: 'inches', abbr: 'in', pxPer: 48, icon: '📏', type: 'standard' },
+  cm: { label: 'centimeters', abbr: 'cm', pxPer: 19, icon: '📐', type: 'standard' }
+};
+
+// ════════════════════════════════════════
+// HELPERS
+// ════════════════════════════════════════
+function rand(min, max) { return Math.floor(Math.random() * (max - min + 1)) + min; }
+
+function pickRandom(arr) { return arr[rand(0, arr.length - 1)]; }
+
+function getUnitsForDiff() {
+  if (S.diff === 'emergent') return ['clips', 'cubes'];
+  if (S.diff === 'proficient') return ['inches', 'cm'];
+  return ['clips', 'cubes', 'inches', 'cm'];
+}
+
+function getObjectLength(obj, unitKey) {
+  // inches is the base unit. Convert for others
+  var lengthIn = obj.lengthIn;
+  if (unitKey === 'inches') return lengthIn;
+  if (unitKey === 'cm') return Math.round(lengthIn * 2.54);
+  if (unitKey === 'clips') return lengthIn; // 1 clip ≈ 1 inch
+  if (unitKey === 'cubes') return Math.round(lengthIn * 1.5); // cubes are smaller
+  return lengthIn;
+}
+
+function unitLabel(unitKey, count) {
+  var u = UNITS[unitKey];
+  if (count === 1) {
+    if (unitKey === 'clips') return 'paper clip';
+    if (unitKey === 'cubes') return 'cube';
+    if (unitKey === 'inches') return 'inch';
+    if (unitKey === 'cm') return 'centimeter';
+  }
+  return u.label;
+}
+
+// ════════════════════════════════════════
+// SVG DRAWING
+// ════════════════════════════════════════
+function drawObject(obj, svgW, yPos, pxLength) {
+  var svg = '';
+  var x = 40;
+  var h = 32;
+  var y = yPos;
+
+  if (obj.shape === 'pencil') {
+    // Pencil body
+    svg += '<rect x="' + x + '" y="' + y + '" width="' + pxLength + '" height="' + h + '" rx="3" fill="' + obj.color + '" stroke="' + obj.accent + '" stroke-width="1.5"/>';
+    // Tip
+    svg += '<polygon points="' + (x + pxLength) + ',' + y + ' ' + (x + pxLength + 18) + ',' + (y + h / 2) + ' ' + (x + pxLength) + ',' + (y + h) + '" fill="#FFE4A0" stroke="' + obj.accent + '" stroke-width="1"/>';
+    svg += '<polygon points="' + (x + pxLength + 10) + ',' + (y + h / 2 - 4) + ' ' + (x + pxLength + 18) + ',' + (y + h / 2) + ' ' + (x + pxLength + 10) + ',' + (y + h / 2 + 4) + '" fill="#333"/>';
+    // Eraser end
+    svg += '<rect x="' + (x - 12) + '" y="' + y + '" width="14" height="' + h + '" rx="3" fill="#FFB3D9" stroke="' + obj.accent + '" stroke-width="1"/>';
+  } else if (obj.shape === 'crayon') {
+    svg += '<rect x="' + x + '" y="' + y + '" width="' + pxLength + '" height="' + h + '" rx="4" fill="' + obj.color + '" stroke="' + obj.accent + '" stroke-width="1.5"/>';
+    svg += '<polygon points="' + (x + pxLength) + ',' + y + ' ' + (x + pxLength + 14) + ',' + (y + h / 2) + ' ' + (x + pxLength) + ',' + (y + h) + '" fill="' + obj.accent + '"/>';
+    // Paper wrapper
+    svg += '<rect x="' + (x + 10) + '" y="' + (y + 2) + '" width="' + (pxLength - 20) + '" height="' + (h - 4) + '" rx="2" fill="none" stroke="rgba(255,255,255,0.4)" stroke-width="1" stroke-dasharray="4,3"/>';
+  } else if (obj.shape === 'eraser') {
+    svg += '<rect x="' + x + '" y="' + y + '" width="' + pxLength + '" height="' + h + '" rx="6" fill="' + obj.color + '" stroke="' + obj.accent + '" stroke-width="1.5"/>';
+    svg += '<rect x="' + (x + 4) + '" y="' + (y + 4) + '" width="' + (pxLength - 8) + '" height="' + (h - 8) + '" rx="4" fill="rgba(255,255,255,0.3)"/>';
+  } else if (obj.shape === 'chain') {
+    var linkW = pxLength / 4;
+    for (var i = 0; i < 4; i++) {
+      var lx = x + i * linkW;
+      svg += '<ellipse cx="' + (lx + linkW / 2) + '" cy="' + (y + h / 2) + '" rx="' + (linkW / 2 - 2) + '" ry="' + (h / 2 - 3) + '" fill="none" stroke="' + obj.color + '" stroke-width="2.5"/>';
+    }
+  } else if (obj.shape === 'ribbon') {
+    svg += '<rect x="' + x + '" y="' + (y + 8) + '" width="' + pxLength + '" height="' + (h - 16) + '" rx="2" fill="' + obj.color + '" stroke="' + obj.accent + '" stroke-width="1"/>';
+    // Wavy top/bottom edge
+    var wavePath = 'M ' + x + ' ' + (y + 6);
+    for (var w = 0; w < pxLength; w += 20) {
+      wavePath += ' q 10,-6 20,0';
+    }
+    svg += '<path d="' + wavePath + '" fill="none" stroke="' + obj.accent + '" stroke-width="1" opacity="0.5"/>';
+  } else if (obj.shape === 'stick') {
+    svg += '<rect x="' + x + '" y="' + (y + 10) + '" width="' + pxLength + '" height="' + (h - 20) + '" rx="4" fill="' + obj.color + '" stroke="' + obj.accent + '" stroke-width="1.5"/>';
+    // Wood grain lines
+    for (var g = 0; g < pxLength; g += 25) {
+      svg += '<line x1="' + (x + g) + '" y1="' + (y + 12) + '" x2="' + (x + g + 10) + '" y2="' + (y + h - 12) + '" stroke="' + obj.accent + '" stroke-width="0.5" opacity="0.4"/>';
+    }
+  } else if (obj.shape === 'leaf') {
+    var cx = x + pxLength / 2;
+    var cy = y + h / 2;
+    svg += '<ellipse cx="' + cx + '" cy="' + cy + '" rx="' + (pxLength / 2) + '" ry="' + (h / 2) + '" fill="' + obj.color + '" stroke="' + obj.accent + '" stroke-width="1.5"/>';
+    // Center vein
+    svg += '<line x1="' + x + '" y1="' + cy + '" x2="' + (x + pxLength) + '" y2="' + cy + '" stroke="' + obj.accent + '" stroke-width="1.5" opacity="0.5"/>';
+    // Side veins
+    for (var v = 1; v <= 3; v++) {
+      var vx = x + (pxLength / 4) * v;
+      svg += '<line x1="' + vx + '" y1="' + cy + '" x2="' + (vx - 8) + '" y2="' + (cy - 8) + '" stroke="' + obj.accent + '" stroke-width="1" opacity="0.4"/>';
+      svg += '<line x1="' + vx + '" y1="' + cy + '" x2="' + (vx - 8) + '" y2="' + (cy + 8) + '" stroke="' + obj.accent + '" stroke-width="1" opacity="0.4"/>';
+    }
+  } else if (obj.shape === 'book') {
+    svg += '<rect x="' + x + '" y="' + y + '" width="' + pxLength + '" height="' + h + '" rx="2" fill="' + obj.color + '" stroke="' + obj.accent + '" stroke-width="1.5"/>';
+    // Spine
+    svg += '<rect x="' + x + '" y="' + y + '" width="8" height="' + h + '" rx="1" fill="' + obj.accent + '"/>';
+    // Pages
+    svg += '<rect x="' + (x + 10) + '" y="' + (y + 3) + '" width="' + (pxLength - 14) + '" height="' + (h - 6) + '" rx="1" fill="rgba(255,255,255,0.3)"/>';
+  } else if (obj.shape === 'marker') {
+    svg += '<rect x="' + x + '" y="' + y + '" width="' + pxLength + '" height="' + h + '" rx="5" fill="' + obj.color + '" stroke="' + obj.accent + '" stroke-width="1.5"/>';
+    // Cap
+    svg += '<rect x="' + (x + pxLength - 2) + '" y="' + (y - 2) + '" width="20" height="' + (h + 4) + '" rx="4" fill="' + obj.accent + '"/>';
+    // Tip
+    svg += '<rect x="' + (x - 10) + '" y="' + (y + 8) + '" width="12" height="' + (h - 16) + '" rx="2" fill="' + obj.accent + '"/>';
+  } else if (obj.shape === 'straw') {
+    svg += '<rect x="' + x + '" y="' + (y + 10) + '" width="' + pxLength + '" height="' + (h - 20) + '" rx="5" fill="' + obj.color + '" stroke="' + obj.accent + '" stroke-width="1"/>';
+    // Stripes
+    for (var s = 0; s < pxLength; s += 18) {
+      svg += '<rect x="' + (x + s) + '" y="' + (y + 10) + '" width="9" height="' + (h - 20) + '" fill="rgba(255,255,255,0.25)" rx="2"/>';
+    }
+  } else {
+    // Default rectangle
+    svg += '<rect x="' + x + '" y="' + y + '" width="' + pxLength + '" height="' + h + '" rx="4" fill="' + obj.color + '" stroke="' + obj.accent + '" stroke-width="1.5"/>';
+  }
+
+  // Object name label
+  svg += '<text x="' + (x + pxLength / 2) + '" y="' + (y - 8) + '" text-anchor="middle" font-size="13" font-weight="700" fill="var(--text)" font-family="Inter, sans-serif">' + obj.name + '</text>';
+
+  return svg;
+}
+
+function drawRuler(unitKey, maxUnits, svgW, yPos, highlightEnd) {
+  var svg = '';
+  var u = UNITS[unitKey];
+  var x = 40;
+  var y = yPos;
+  var rulerH = 40;
+  var totalPx = maxUnits * u.pxPer;
+
+  // Ruler body
+  svg += '<rect x="' + (x - 4) + '" y="' + y + '" width="' + (totalPx + 8) + '" height="' + rulerH + '" rx="4" fill="var(--card)" stroke="var(--border)" stroke-width="1.5"/>';
+
+  // Tick marks and numbers
+  for (var i = 0; i <= maxUnits; i++) {
+    var tx = x + i * u.pxPer;
+    var tickH = 14;
+
+    // Major tick
+    svg += '<line x1="' + tx + '" y1="' + y + '" x2="' + tx + '" y2="' + (y + tickH) + '" stroke="var(--text2)" stroke-width="1.5"/>';
+
+    // Number label
+    var isHighlight = (highlightEnd !== undefined && i === highlightEnd);
+    var labelColor = isHighlight ? 'var(--cyan)' : 'var(--text2)';
+    var labelWeight = isHighlight ? '800' : '600';
+    var labelSize = isHighlight ? '13' : '11';
+    svg += '<text x="' + tx + '" y="' + (y + tickH + 14) + '" text-anchor="middle" font-size="' + labelSize + '" font-weight="' + labelWeight + '" fill="' + labelColor + '" font-family="JetBrains Mono, monospace">' + i + '</text>';
+
+    // Half-tick for inches
+    if (unitKey === 'inches' && i < maxUnits) {
+      var halfX = tx + u.pxPer / 2;
+      svg += '<line x1="' + halfX + '" y1="' + y + '" x2="' + halfX + '" y2="' + (y + 8) + '" stroke="var(--text2)" stroke-width="0.8" opacity="0.5"/>';
+    }
+
+    // Quarter-ticks for cm
+    if (unitKey === 'cm' && i < maxUnits) {
+      for (var q = 1; q < 5; q++) {
+        var qx = tx + (u.pxPer / 5) * q;
+        var qh = q === 2 || q === 3 ? 6 : 4;
+        svg += '<line x1="' + qx + '" y1="' + y + '" x2="' + qx + '" y2="' + (y + qh) + '" stroke="var(--text2)" stroke-width="0.5" opacity="0.4"/>';
+      }
+    }
+  }
+
+  // Non-standard unit icons along ruler
+  if (unitKey === 'clips' || unitKey === 'cubes') {
+    for (var n = 0; n < maxUnits; n++) {
+      var nx = x + n * u.pxPer;
+      if (unitKey === 'clips') {
+        // Paper clip shape
+        svg += '<rect x="' + (nx + 2) + '" y="' + (y + rulerH - 14) + '" width="' + (u.pxPer - 4) + '" height="10" rx="5" fill="none" stroke="var(--muted)" stroke-width="1.2" opacity="0.5"/>';
+      } else {
+        // Cube shape
+        svg += '<rect x="' + (nx + 2) + '" y="' + (y + rulerH - 14) + '" width="' + (u.pxPer - 4) + '" height="10" rx="2" fill="rgba(96,165,250,0.2)" stroke="var(--muted)" stroke-width="1" opacity="0.5"/>';
+      }
+    }
+  }
+
+  // Unit label at end
+  svg += '<text x="' + (x + totalPx + 18) + '" y="' + (y + rulerH / 2 + 4) + '" font-size="11" font-weight="700" fill="var(--muted)" font-family="Inter, sans-serif">' + u.abbr + '</text>';
+
+  return svg;
+}
+
+function drawNonStandardUnits(unitKey, count, svgW, yPos, pxLength) {
+  var svg = '';
+  var u = UNITS[unitKey];
+  var x = 40;
+  var y = yPos;
+  var unitH = 20;
+
+  for (var i = 0; i < count; i++) {
+    var ux = x + i * u.pxPer;
+    if (unitKey === 'clips') {
+      svg += '<rect x="' + ux + '" y="' + y + '" width="' + (u.pxPer - 2) + '" height="' + unitH + '" rx="10" fill="none" stroke="#999" stroke-width="2"/>';
+      svg += '<text x="' + (ux + u.pxPer / 2) + '" y="' + (y + unitH + 14) + '" text-anchor="middle" font-size="10" font-weight="600" fill="var(--text2)" font-family="JetBrains Mono, monospace">' + (i + 1) + '</text>';
+    } else {
+      svg += '<rect x="' + ux + '" y="' + y + '" width="' + (u.pxPer - 2) + '" height="' + unitH + '" rx="3" fill="rgba(96,165,250,0.25)" stroke="#60A5FA" stroke-width="1.5"/>';
+      svg += '<text x="' + (ux + u.pxPer / 2) + '" y="' + (y + unitH + 14) + '" text-anchor="middle" font-size="10" font-weight="600" fill="var(--text2)" font-family="JetBrains Mono, monospace">' + (i + 1) + '</text>';
+    }
+  }
+
+  return svg;
+}
+
+function buildMeasureSVG(obj, unitKey, opts) {
+  opts = opts || {};
+  var u = UNITS[unitKey];
+  var objLen = getObjectLength(obj, unitKey);
+  var pxLength = objLen * u.pxPer;
+  var maxUnits = objLen + 3;
+  var totalPx = maxUnits * u.pxPer;
+  var svgW = totalPx + 100;
+  var svgH = opts.compact ? 140 : 170;
+
+  var svg = '<svg width="' + svgW + '" height="' + svgH + '" viewBox="0 0 ' + svgW + ' ' + svgH + '" xmlns="http://www.w3.org/2000/svg">';
+
+  // Object
+  svg += drawObject(obj, svgW, 20, pxLength);
+
+  // Alignment line from object end to ruler
+  if (opts.showAlignment) {
+    svg += '<line x1="' + (40 + pxLength) + '" y1="52" x2="' + (40 + pxLength) + '" y2="' + (svgH - 30) + '" stroke="var(--cyan)" stroke-width="1.5" stroke-dasharray="4,3" opacity="0.7"/>';
+    // Zero line
+    svg += '<line x1="40" y1="52" x2="40" y2="' + (svgH - 30) + '" stroke="var(--green)" stroke-width="1.5" stroke-dasharray="4,3" opacity="0.5"/>';
+    svg += '<text x="40" y="' + (svgH - 18) + '" text-anchor="middle" font-size="10" font-weight="700" fill="var(--green)" font-family="Inter, sans-serif">Start at 0</text>';
+  }
+
+  // Ruler or non-standard units
+  var rulerY = opts.compact ? 80 : 90;
+  if (u.type === 'nonstandard' && !opts.showRuler) {
+    svg += drawNonStandardUnits(unitKey, objLen, svgW, rulerY, pxLength);
+  } else {
+    svg += drawRuler(unitKey, maxUnits, svgW, rulerY, opts.highlightEnd !== undefined ? opts.highlightEnd : undefined);
+  }
+
+  svg += '</svg>';
+  return svg;
+}
+
+// ════════════════════════════════════════
+// MODE & DIFF SETTERS
+// ════════════════════════════════════════
+function setMode(m) {
+  S.mode = m;
+  S.pAnswered = false;
+  S.playAnswered = false;
+
+  document.querySelectorAll('.vinculum-mode-tab').forEach(function(t) {
+    t.className = 'vinculum-mode-tab';
+  });
+  var tabId = m === 'explore' ? 'tabExplore' : m === 'practice' ? 'tabPractice' : 'tabPlay';
+  var cls = m === 'explore' ? 'active-explore' : m === 'practice' ? 'active-practice' : 'active-play';
+  document.getElementById(tabId).classList.add(cls);
+
+  if (m === 'practice') { generatePractice(); }
+  if (m === 'play') { S.round = 0; S.score = 0; S.streak = 0; }
+  render();
+}
+
+function setDiff(d) {
+  S.diff = d;
+  document.querySelectorAll('.vinculum-diff-btn').forEach(function(b) { b.classList.remove('active'); });
+  var id = d === 'emergent' ? 'diffE' : d === 'proficient' ? 'diffP' : 'diffA';
+  document.getElementById(id).classList.add('active');
+
+  // Reset unit for explore
+  var units = getUnitsForDiff();
+  if (units.indexOf(S.currentUnit) === -1) S.currentUnit = units[0];
+
+  if (S.mode === 'practice') generatePractice();
+  if (S.mode === 'play') { S.round = 0; S.score = 0; S.streak = 0; }
+  render();
+}
+
+function showFB(msg, type) {
+  var fb = document.getElementById('feedback');
+  fb.innerHTML = msg;
+  fb.className = 'feedback ' + type + ' show';
+  setTimeout(function() { fb.className = 'feedback'; }, 2500);
+}
+
+// ════════════════════════════════════════
+// EXPLORE MODE
+// ════════════════════════════════════════
+function pickExploreObject() {
+  S.currentObject = pickRandom(OBJECTS);
+  S.showResult = false;
+  render();
+}
+
+function setExploreUnit(unitKey) {
+  S.currentUnit = unitKey;
+  S.showResult = false;
+  render();
+}
+
+function measureObject() {
+  S.showResult = true;
+  render();
+}
+
+function renderExplore(ws, sp) {
+  if (!S.currentObject) S.currentObject = pickRandom(OBJECTS);
+  var obj = S.currentObject;
+  var unitKey = S.currentUnit;
+  var u = UNITS[unitKey];
+  var objLen = getObjectLength(obj, unitKey);
+  var units = getUnitsForDiff();
+
+  var html = '';
+
+  html += '<div class="prompt-label">Measure the ' + obj.name + '</div>';
+  html += '<div class="prompt-sublabel">Use ' + u.label + ' to find how long it is</div>';
+
+  // Unit selector
+  html += '<div class="unit-selector">';
+  units.forEach(function(uk) {
+    var active = uk === unitKey ? ' active' : '';
+    html += '<button class="unit-btn' + active + '" onclick="setExploreUnit(\'' + uk + '\')">' + UNITS[uk].icon + ' ' + UNITS[uk].label + '</button>';
+  });
+  html += '</div>';
+
+  // Measurement SVG
+  html += '<div class="measure-scene">';
+  html += buildMeasureSVG(obj, unitKey, { showAlignment: S.showResult, highlightEnd: S.showResult ? objLen : undefined, showRuler: u.type === 'standard' });
+  html += '</div>';
+
+  // Result display
+  if (S.showResult) {
+    html += '<div class="measure-result pop-in">' + objLen + ' ' + unitLabel(unitKey, objLen) + '</div>';
+  }
+
+  // Controls
+  html += '<div class="controls">';
+  html += '<button class="ctrl-btn primary" onclick="measureObject()">📏 Measure</button>';
+  html += '<button class="ctrl-btn" onclick="pickExploreObject()">↻ New Object</button>';
+  html += '</div>';
+
+  // Comparison: show same object in different units
+  if (S.showResult && S.diff === 'advanced') {
+    html += '<div style="margin-top:12px;text-align:center;">';
+    html += '<div style="font-size:13px;font-weight:700;color:var(--muted);margin-bottom:6px;">SAME OBJECT, DIFFERENT UNITS</div>';
+    html += '<div style="display:flex;gap:12px;justify-content:center;flex-wrap:wrap;">';
+    ['clips', 'cubes', 'inches', 'cm'].forEach(function(uk) {
+      var len = getObjectLength(obj, uk);
+      var isCurr = uk === unitKey;
+      html += '<div style="background:var(--card);border-radius:8px;padding:8px 14px;border:1.5px solid ' + (isCurr ? 'var(--cyan)' : 'var(--border)') + ';">';
+      html += '<div style="font-size:11px;color:var(--muted);">' + UNITS[uk].icon + ' ' + UNITS[uk].label + '</div>';
+      html += '<div style="font-family:JetBrains Mono,monospace;font-size:18px;font-weight:800;color:' + (isCurr ? 'var(--cyan)' : 'var(--text)') + ';">' + len + '</div>';
+      html += '</div>';
+    });
+    html += '</div></div>';
+  }
+
+  ws.innerHTML = html;
+
+  // Side panel
+  sp.innerHTML = '<div class="panel-section">' +
+    '<div class="panel-title">How to Explore</div>' +
+    '<div class="panel-text">' +
+    '1. Choose a <strong>unit</strong> to measure with<br><br>' +
+    '2. Press <strong>📏 Measure</strong> to see the ruler align<br><br>' +
+    '3. Count the units from <strong>0</strong> to the end<br><br>' +
+    '4. Try <strong>↻ New Object</strong> for a different item' +
+    '</div></div>' +
+    '<div class="panel-section">' +
+    '<div class="panel-title">Key Ideas</div>' +
+    '<div class="pattern-card"><span class="pattern-label">Start at Zero</span>' +
+    'Always line up the <strong>0 mark</strong> with one end of the object.' +
+    '</div>' +
+    '<div class="pattern-card"><span class="pattern-label">No Gaps or Overlaps</span>' +
+    'Units must be placed <strong>end to end</strong> with no spaces between them.' +
+    '</div>' +
+    '<div class="pattern-card"><span class="pattern-label">Smaller Unit = Bigger Number</span>' +
+    'Centimeters are smaller than inches, so you need <strong>more</strong> of them!' +
+    '</div>' +
+    '</div>' +
+    '<div class="panel-section">' +
+    '<div class="panel-title">Standards</div>' +
+    '<div class="panel-text">' +
+    '<strong>2.MD.1</strong> — Measure the length of an object by selecting and using appropriate tools<br><br>' +
+    '<strong>2.MD.2</strong> — Measure the length of an object twice, using length units of different sizes<br><br>' +
+    '<strong>2.MD.3</strong> — Estimate lengths using inches, feet, centimeters, and meters<br><br>' +
+    '<strong>2.MD.4</strong> — Measure to determine how much longer one object is than another<br><br>' +
+    '<strong>MN 2.3.2.1</strong> — Understand the relationship between the size of the unit and the number of units needed' +
+    '</div></div>';
+}
+
+// ════════════════════════════════════════
+// PRACTICE MODE
+// ════════════════════════════════════════
+function generatePractice() {
+  var units = getUnitsForDiff();
+  S.pUnit = pickRandom(units);
+  S.pObject = pickRandom(OBJECTS);
+  S.pAnswer = getObjectLength(S.pObject, S.pUnit);
+  S.pAnswered = false;
+
+  // Generate MC choices
+  var choices = new Set([S.pAnswer]);
+  var tries = 0;
+
+  // Add "start from 1" misconception distractor
+  choices.add(S.pAnswer + 1);
+
+  // Add off-by-one and off-by-two
+  if (S.pAnswer > 1) choices.add(S.pAnswer - 1);
+  if (S.pAnswer > 2) choices.add(S.pAnswer - 2);
+  choices.add(S.pAnswer + 2);
+
+  // Fill remaining
+  while (choices.size < 4 && tries < 30) {
+    var off = rand(-3, 4);
+    if (off === 0) off = rand(2, 5);
+    var c = S.pAnswer + off;
+    if (c > 0) choices.add(c);
+    tries++;
+  }
+
+  S.pChoices = Array.from(choices).slice(0, 4).sort(function(a, b) { return a - b; });
+}
+
+function practiceAnswer(val) {
+  if (S.pAnswered) return;
+  var unitKey = S.pUnit;
+  var u = UNITS[unitKey];
+
+  if (val === S.pAnswer) {
+    S.pAnswered = true;
+    showFB('Correct! The ' + S.pObject.name.toLowerCase() + ' is ' + S.pAnswer + ' ' + unitLabel(unitKey, S.pAnswer) + ' long.', 'correct');
+    setTimeout(function() { generatePractice(); render(); }, 1800);
+  } else {
+    var diff = val - S.pAnswer;
+    if (diff === 1) {
+      showFB(MISCONCEPTIONS.startsFrom1.msg(unitLabel(unitKey, S.pAnswer), S.pAnswer, val), 'try-again');
+    } else if (diff === -1 || diff === -2) {
+      showFB(MISCONCEPTIONS.gapsBetweenUnits.msg(unitLabel(unitKey, S.pAnswer)), 'try-again');
+    } else if (diff === 2) {
+      showFB(MISCONCEPTIONS.overlapsUnits.msg(unitLabel(unitKey, S.pAnswer), S.pAnswer), 'try-again');
+    } else if (Math.abs(diff) >= 4) {
+      showFB(MISCONCEPTIONS.randomGuess.msg(unitLabel(unitKey, S.pAnswer)), 'try-again');
+    } else {
+      showFB(MISCONCEPTIONS.wrongEndpoint.msg(S.pAnswer, val), 'try-again');
+    }
+  }
+}
+
+function renderPractice(ws, sp) {
+  if (!S.pObject) generatePractice();
+  var obj = S.pObject;
+  var unitKey = S.pUnit;
+  var u = UNITS[unitKey];
+  var objLen = S.pAnswer;
+
+  var html = '';
+  html += '<div class="prompt-label">How long is the ' + obj.name.toLowerCase() + '?</div>';
+  html += '<div class="prompt-sublabel">Measure in ' + u.label + '. Count carefully from 0!</div>';
+
+  // Measurement SVG
+  html += '<div class="measure-scene">';
+  html += buildMeasureSVG(obj, unitKey, { showRuler: true, compact: true });
+  html += '</div>';
+
+  // MC answers
+  html += '<div class="answer-grid" style="margin:16px auto;">';
+  S.pChoices.forEach(function(c) {
+    html += '<button class="answer-btn" id="pAns' + c + '" onclick="practiceAnswer(' + c + ')">' + c + ' ' + u.abbr + '</button>';
+  });
+  html += '</div>';
+
+  // New question button
+  html += '<div class="controls" style="margin-top:12px;">';
+  html += '<button class="ctrl-btn" onclick="generatePractice();render();">↻ New Question</button>';
+  html += '</div>';
+
+  ws.innerHTML = html;
+
+  // Side panel
+  var diffDesc = {
+    emergent: 'Estimate and measure with non-standard units like paper clips and cubes.',
+    proficient: 'Measure with standard units (inches and centimeters) and compare lengths.',
+    advanced: 'Select appropriate units and solve measurement problems with all unit types.'
+  };
+  sp.innerHTML = '<div class="panel-section">' +
+    '<div class="panel-title">Instructions</div>' +
+    '<div class="panel-text">' + diffDesc[S.diff] + '<br><br>Look at the ruler below the object. Count how many ' + u.label + ' fit from one end to the other.</div>' +
+    '</div>' +
+    '<div class="panel-section">' +
+    '<div class="panel-title">Common Mistakes</div>' +
+    '<div class="pattern-card"><span class="pattern-label">Starting from 1</span>' +
+    'The ruler starts at <strong>0</strong>, not 1. If you start from 1, your answer will be 1 too many!' +
+    '</div>' +
+    '<div class="pattern-card"><span class="pattern-label">Gaps or Overlaps</span>' +
+    'Place units <strong>end to end</strong>. Gaps make the measurement too small, overlaps make it too big.' +
+    '</div>' +
+    '<div class="pattern-card"><span class="pattern-label">Wrong Unit</span>' +
+    'Check the unit! A pencil is 6 <strong>inches</strong> but about 15 <strong>centimeters</strong>.' +
+    '</div>' +
+    '</div>' +
+    '<div class="panel-section">' +
+    '<div class="panel-title">Difficulty: ' + S.diff.charAt(0).toUpperCase() + S.diff.slice(1) + '</div>' +
+    '<div class="panel-text">' + diffDesc[S.diff] + '</div>' +
+    '</div>';
+}
+
+// ════════════════════════════════════════
+// PLAY MODE — 10 Rounds, MC, Scored
+// ════════════════════════════════════════
+function generatePlayRound() {
+  S.round++;
+  var units = getUnitsForDiff();
+  S.playUnit = pickRandom(units);
+  S.playObject = pickRandom(OBJECTS);
+  S.playAnswer = getObjectLength(S.playObject, S.playUnit);
+  S.playAnswered = false;
+
+  // Generate 5 MC choices
+  var choices = new Set([S.playAnswer]);
+  var tries = 0;
+
+  // Misconception distractors
+  choices.add(S.playAnswer + 1); // start-from-1 error
+
+  while (choices.size < 5 && tries < 40) {
+    var off = rand(-3, 4);
+    if (off === 0) off = rand(1, 5);
+    var c = S.playAnswer + off;
+    if (c > 0) choices.add(c);
+    tries++;
+  }
+
+  S.playChoices = Array.from(choices).slice(0, 5).sort(function(a, b) { return a - b; });
+}
+
+function playAnswer(val) {
+  if (S.playAnswered) return;
+  S.playAnswered = true;
+
+  var btn = document.getElementById('playAns' + val);
+  var unitKey = S.playUnit;
+  var u = UNITS[unitKey];
+
+  if (val === S.playAnswer) {
+    if (btn) btn.classList.add('correct-flash');
+    var pts = 10 + S.streak * 2;
+    S.score += pts;
+    S.streak++;
+    if (S.streak > S.best) S.best = S.streak;
+    showFB('Correct! +' + pts + ' points', 'correct');
+  } else {
+    if (btn) btn.classList.add('incorrect-flash');
+    S.streak = 0;
+
+    var diff = val - S.playAnswer;
+    if (diff === 1) {
+      showFB(MISCONCEPTIONS.startsFrom1.msg(unitLabel(unitKey, S.playAnswer), S.playAnswer, val), 'incorrect');
+    } else if (diff === -1) {
+      showFB(MISCONCEPTIONS.gapsBetweenUnits.msg(unitLabel(unitKey, S.playAnswer)), 'incorrect');
+    } else if (Math.abs(diff) >= 4) {
+      showFB(MISCONCEPTIONS.randomGuess.msg(unitLabel(unitKey, S.playAnswer)), 'incorrect');
+    } else {
+      showFB(MISCONCEPTIONS.wrongEndpoint.msg(S.playAnswer, val), 'incorrect');
+    }
+  }
+
+  setTimeout(function() {
+    if (S.round >= S.total) {
+      showFB('Game Over! Score: ' + S.score, 'correct');
+      setTimeout(function() { S.round = 0; S.score = 0; S.streak = 0; render(); }, 2500);
+      return;
+    }
+    generatePlayRound();
+    render();
+  }, 1400);
+}
+
+function renderPlay(ws, sp) {
+  if (S.round === 0) {
+    S.score = 0;
+    S.streak = 0;
+    generatePlayRound();
+  }
+
+  var obj = S.playObject;
+  var unitKey = S.playUnit;
+  var u = UNITS[unitKey];
+  var objLen = S.playAnswer;
+
+  var html = '';
+
+  // Round indicator
+  html += '<div class="round-indicator">Round ' + S.round + ' of ' + S.total + '</div>';
+  html += '<div class="prompt-label">How long is the ' + obj.name.toLowerCase() + '?</div>';
+  html += '<div class="prompt-sublabel">Measure in ' + u.label + '</div>';
+
+  // Measurement SVG
+  html += '<div class="measure-scene">';
+  html += buildMeasureSVG(obj, unitKey, { showRuler: true, compact: true });
+  html += '</div>';
+
+  // MC choices
+  html += '<div class="answer-grid" style="margin:16px auto;">';
+  S.playChoices.forEach(function(c) {
+    html += '<button class="answer-btn" id="playAns' + c + '" onclick="playAnswer(' + c + ')">' + c + ' ' + u.abbr + '</button>';
+  });
+  html += '</div>';
+
+  ws.innerHTML = html;
+
+  // Side panel — score
+  sp.innerHTML = '<div class="score-display">' +
+    '<div class="score-value">' + S.score + '</div>' +
+    '<div class="score-label">Score</div>' +
+    '</div>' +
+    '<div class="score-display" style="background:transparent;padding:8px;">' +
+    '<div style="font-size:18px;font-weight:700;color:var(--yellow);">🔥 ' + S.streak + '</div>' +
+    '<div class="score-label">Streak</div>' +
+    '<div class="streak-bar"><div class="streak-fill" style="width:' + Math.min(S.streak * 20, 100) + '%;"></div></div>' +
+    '</div>' +
+    '<div class="panel-section">' +
+    '<div class="panel-title">How to Play</div>' +
+    '<div class="panel-text">' +
+    'Measure each object and pick the correct length.<br><br>' +
+    '<strong>10 points</strong> per correct answer + <strong>streak bonus</strong> (+2 per streak).<br><br>' +
+    '10 rounds total. Build a streak for the highest score!' +
+    '</div></div>' +
+    '<div class="panel-section">' +
+    '<div class="panel-title">Best Streak</div>' +
+    '<div class="panel-text" style="font-size:24px;font-weight:800;color:var(--purple);">🏆 ' + S.best + '</div>' +
+    '</div>' +
+    '<div class="panel-section">' +
+    '<div class="panel-title">Tip</div>' +
+    '<div class="panel-text">Start at <strong>0</strong> on the ruler and count to where the object ends. Don\'t start from 1!</div>' +
+    '</div>' +
+    '<div class="panel-section">' +
+    '<div class="panel-title">Difficulty</div>' +
+    '<div class="panel-text">' +
+    (S.diff === 'emergent' ? '<strong>Non-Standard:</strong> Paper clips &amp; cubes' :
+     S.diff === 'proficient' ? '<strong>Standard:</strong> Inches &amp; centimeters' :
+     '<strong>Choose Unit:</strong> All unit types mixed') +
+    '</div></div>';
+}
+
+// ════════════════════════════════════════
+// RENDER DISPATCH
+// ════════════════════════════════════════
+function render() {
+  var ws = document.getElementById('workspace');
+  var sp = document.getElementById('sidePanel');
+
+  if (S.mode === 'explore') renderExplore(ws, sp);
+  else if (S.mode === 'practice') renderPractice(ws, sp);
+  else renderPlay(ws, sp);
+}
+
+// ════════════════════════════════════════
+// INIT
+// ════════════════════════════════════════
+document.querySelectorAll('.vinculum-mode-tab').forEach(function(tab) {
+  tab.addEventListener('click', function() {
+    setMode(this.dataset.mode);
+  });
+});
+
+document.querySelectorAll('.vinculum-diff-btn').forEach(function(btn) {
+  btn.addEventListener('click', function() {
+    setDiff(this.dataset.diff);
+  });
+});
+
+render();
+</script>
+<script src="../../vinculum-core.js"></script>
+<script src="../../vinculum-data.js"></script>
+<script src="../../vinculum-adaptive-hook.js"></script>
+<script src="../../vinculum-3reads.js"></script>
+<script src="../../vinculum-stories.js"></script>
+<script src="../../vinculum-feedback.js"></script>
+<script src="../../vinculum-guide.js"></script>
+<script src="../../vinculum-identity.js"></script>
+<script src="../../vinculum-indigenous.js"></script>
+<script src="../../vinculum-dashboard.js"></script>
+<script src="../../vinculum-hyperfocus.js"></script>
+<script src="../../vinculum-layout.js"></script>
+</body>
+</html>

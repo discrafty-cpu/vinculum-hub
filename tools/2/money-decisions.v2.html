@@ -1,0 +1,964 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>VINCULUM — Money Decisions</title>
+<link rel="stylesheet" href="../../vinculum-core.css">
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;600&display=swap');
+
+/* Theme system loaded from vinculum-core.css */
+.vinculum-rtm-btn .rtm-icon { font-size: 14px; }
+
+/* ═══ FOCUS VISIBLE ═══ */
+*:focus-visible {
+  outline: 2px solid var(--cyan);
+  outline-offset: 2px;
+  border-radius: 4px;
+}
+.sr-only {
+  position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px;
+  overflow: hidden; clip: rect(0,0,0,0); white-space: nowrap; border: 0;
+}
+
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body {
+  font-family: 'Inter', sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  height: 100vh;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  user-select: none;
+}
+
+/* ── MAIN AREA ── */
+.main { flex: 1; display: flex; overflow: hidden; }
+.workspace {
+  flex: 1; display: flex; flex-direction: column;
+  align-items: center; justify-content: flex-start;
+  padding: 20px 24px; position: relative; overflow-y: auto;
+}
+
+/* ── COIN STYLES ── */
+.coin-row {
+  display: flex; gap: 12px; flex-wrap: wrap;
+  justify-content: center; margin: 12px 0;
+}
+.coin {
+  border-radius: 50%;
+  display: flex; flex-direction: column;
+  align-items: center; justify-content: center;
+  cursor: pointer; transition: all 0.2s;
+  font-weight: 700; font-family: 'JetBrains Mono', monospace;
+  border: 3px solid; position: relative;
+  -webkit-tap-highlight-color: transparent;
+  width: 64px; height: 64px;
+}
+.coin:hover { transform: scale(1.12); box-shadow: 0 4px 16px rgba(0,0,0,0.3); }
+.coin:active { transform: scale(0.95); }
+.coin .coin-name {
+  font-size: 9px; font-weight: 800;
+  text-transform: uppercase; letter-spacing: 0.5px; opacity: 0.85;
+}
+.coin .coin-val { font-size: 16px; font-weight: 900; line-height: 1; }
+
+.coin.penny {
+  background: radial-gradient(circle at 35% 35%, #d4874e, #8b5e3c);
+  border-color: #6d4930; color: #fff;
+  box-shadow: inset 0 -2px 4px rgba(0,0,0,0.25), 0 2px 8px rgba(139,94,60,0.3);
+}
+.coin.nickel {
+  background: radial-gradient(circle at 35% 35%, #b0b0b0, #787878);
+  border-color: #606060; color: #fff;
+  box-shadow: inset 0 -2px 4px rgba(0,0,0,0.2), 0 2px 8px rgba(120,120,120,0.3);
+  width: 68px; height: 68px;
+}
+.coin.dime {
+  background: radial-gradient(circle at 35% 35%, #d4d4d4, #a8a8a8);
+  border-color: #909090; color: #333;
+  box-shadow: inset 0 -2px 4px rgba(0,0,0,0.15), 0 2px 8px rgba(168,168,168,0.3);
+  width: 56px; height: 56px;
+}
+.coin.quarter {
+  background: radial-gradient(circle at 35% 35%, #e0e0e0, #b0b0b0);
+  border-color: #888; color: #333;
+  box-shadow: inset 0 -2px 4px rgba(0,0,0,0.15), 0 2px 8px rgba(176,176,176,0.3);
+  width: 76px; height: 76px;
+}
+.coin.quarter .coin-val { font-size: 18px; }
+.coin.quarter .coin-name { font-size: 10px; }
+.coin.selected {
+  box-shadow: 0 0 0 4px var(--cyan), 0 4px 16px rgba(0,212,255,0.3);
+  transform: scale(1.08);
+}
+.coin.bounce { animation: coinBounce 0.35s ease-out; }
+@keyframes coinBounce {
+  0% { transform: scale(1); }
+  30% { transform: scale(0.85); }
+  60% { transform: scale(1.15); }
+  100% { transform: scale(1); }
+}
+
+/* ── COLLECTION TRAY ── */
+.collection-tray {
+  display: flex; gap: 6px; flex-wrap: wrap;
+  justify-content: center; align-items: center;
+  min-height: 56px; padding: 12px 16px; margin: 10px 0;
+  border-radius: 14px; border: 2px dashed var(--border);
+  background: var(--card); max-width: 520px; width: 100%;
+}
+.collection-tray.has-coins {
+  border-color: var(--cyan); border-style: solid;
+  background: rgba(0,212,255,0.04);
+}
+.mini-coin {
+  border-radius: 50%; display: flex;
+  align-items: center; justify-content: center;
+  font-size: 11px; font-weight: 800;
+  font-family: 'JetBrains Mono', monospace;
+  cursor: pointer; transition: all 0.15s;
+  border: 2px solid; width: 40px; height: 40px;
+}
+.mini-coin:hover { transform: scale(1.1); opacity: 0.8; }
+.mini-coin.penny { background: linear-gradient(135deg,#d4874e,#8b5e3c); border-color: #6d4930; color: #fff; }
+.mini-coin.nickel { background: linear-gradient(135deg,#b0b0b0,#787878); border-color: #606060; color: #fff; width: 44px; height: 44px; }
+.mini-coin.dime { background: linear-gradient(135deg,#d4d4d4,#a8a8a8); border-color: #909090; color: #333; width: 36px; height: 36px; }
+.mini-coin.quarter { background: linear-gradient(135deg,#e0e0e0,#b0b0b0); border-color: #888; color: #333; width: 48px; height: 48px; }
+
+/* ── TOTAL / PRICE / ITEMS ── */
+.total-display {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 36px; font-weight: 900; color: var(--cyan);
+  text-align: center; margin: 8px 0; padding: 8px 24px;
+  border-radius: 12px; background: rgba(0,212,255,0.06);
+  border: 2px solid rgba(0,212,255,0.2); min-width: 120px;
+}
+.price-tag {
+  display: inline-flex; align-items: center; gap: 6px;
+  padding: 8px 18px; border-radius: 10px;
+  background: linear-gradient(135deg, var(--yellow), #ff9800);
+  color: #1a1a2e; font-family: 'JetBrains Mono', monospace;
+  font-size: 22px; font-weight: 900;
+  box-shadow: 0 3px 12px rgba(255,193,7,0.3);
+}
+.price-tag::before { content: '🏷️'; font-size: 18px; }
+.item-card {
+  display: flex; flex-direction: column; align-items: center;
+  gap: 8px; padding: 16px; border-radius: 14px;
+  background: var(--card); border: 2px solid var(--border);
+}
+.item-card .item-emoji { font-size: 40px; }
+.item-card .item-name { font-size: 13px; font-weight: 700; color: var(--text2); }
+
+/* ── PROMPT / CONTROLS ── */
+.prompt-label { font-size: 20px; font-weight: 800; text-align: center; margin-bottom: 4px; }
+.prompt-sublabel { font-size: 13px; color: var(--muted); text-align: center; margin-bottom: 12px; }
+.controls { display: flex; gap: 8px; flex-wrap: wrap; justify-content: center; margin: 12px 0; }
+.ctrl-btn {
+  padding: 8px 16px; border-radius: 10px;
+  border: 1px solid var(--border); background: var(--bg2);
+  color: var(--text2); font-size: 13px; font-weight: 600;
+  cursor: pointer; transition: all 0.2s;
+  -webkit-tap-highlight-color: transparent;
+}
+.ctrl-btn:hover { background: var(--card-hover); color: var(--text); }
+.ctrl-btn.primary { background: var(--grad); color: var(--bg); border-color: transparent; }
+.ctrl-btn.danger { color: var(--pink); }
+.ctrl-btn.danger:hover { background: rgba(255,59,139,0.1); }
+
+/* ── ANSWER GRID ── */
+.answer-grid { display: grid; grid-template-columns: repeat(4,1fr); gap: 8px; margin-top: 16px; max-width: 400px; width: 100%; }
+.answer-btn {
+  padding: 14px; border-radius: 12px;
+  border: 2px solid var(--border); background: var(--card);
+  color: var(--text); font-size: 16px; font-weight: 700;
+  font-family: 'JetBrains Mono', monospace;
+  cursor: pointer; transition: all 0.15s;
+}
+.answer-btn:hover { border-color: var(--cyan); background: rgba(0,212,255,0.05); transform: scale(1.05); }
+.answer-btn.correct-flash { border-color: var(--green); background: rgba(0,230,118,0.15); color: var(--green); }
+.answer-btn.incorrect-flash { border-color: var(--pink); background: rgba(255,59,139,0.15); color: var(--pink); }
+
+/* ── MISC ── */
+.compare-row { display: flex; gap: 16px; align-items: center; justify-content: center; flex-wrap: wrap; margin: 12px 0; }
+.round-indicator { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 1.5px; color: var(--muted); margin-bottom: 8px; }
+.enough-badge { padding: 6px 14px; border-radius: 8px; font-size: 13px; font-weight: 700; margin-top: 6px; }
+.enough-badge.yes { background: rgba(0,230,118,0.12); color: var(--green); }
+.enough-badge.no { background: rgba(255,59,139,0.12); color: var(--pink); }
+
+/* ── FEEDBACK ── */
+.feedback {
+  position: fixed; top: 50%; left: 50%;
+  transform: translate(-50%,-50%) scale(0);
+  padding: 24px 48px; border-radius: 20px;
+  font-size: 22px; font-weight: 800; z-index: 200;
+  pointer-events: none; opacity: 0;
+  transition: transform 0.3s cubic-bezier(0.175,0.885,0.32,1.275), opacity 0.3s;
+  max-width: 90vw; text-align: center; line-height: 1.4;
+}
+.feedback.show { transform: translate(-50%,-50%) scale(1); opacity: 1; }
+.feedback.correct { background: rgba(0,230,118,0.15); color: var(--green); border: 2px solid var(--green); }
+.feedback.incorrect { background: rgba(255,59,139,0.15); color: var(--pink); border: 2px solid var(--pink); }
+.feedback.try-again { background: rgba(255,193,7,0.15); color: var(--yellow); border: 2px solid var(--yellow); }
+
+/* ── SIDE PANEL ── */
+.side-panel {
+  width: 280px; background: var(--bg2);
+  border-left: 1px solid var(--border);
+  padding: 20px; overflow-y: auto; flex-shrink: 0;
+}
+.panel-section { margin-bottom: 20px; }
+.panel-title {
+  font-size: 10px; font-weight: 700; text-transform: uppercase;
+  letter-spacing: 1.5px; color: var(--muted); margin-bottom: 8px;
+}
+.panel-text { font-size: 13px; color: var(--text2); line-height: 1.6; }
+.score-display { text-align: center; padding: 16px; background: var(--card); border-radius: 12px; margin-bottom: 12px; }
+.score-value { font-size: 36px; font-weight: 900; font-family: 'JetBrains Mono', monospace; color: var(--cyan); }
+.score-label { font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 1.5px; color: var(--muted); margin-top: 4px; }
+.streak-bar { height: 6px; background: var(--bg); border-radius: 3px; margin-top: 8px; overflow: hidden; }
+.streak-fill { height: 100%; background: var(--grad); border-radius: 3px; transition: width 0.4s; }
+.pattern-card {
+  background: var(--card); border: 1px solid var(--border);
+  border-radius: 10px; padding: 12px 14px; margin-bottom: 10px;
+  font-size: 13px; color: var(--text2); line-height: 1.6;
+}
+.pattern-card strong { color: var(--text); }
+.pattern-card .pattern-label {
+  font-size: 10px; font-weight: 700; text-transform: uppercase;
+  letter-spacing: 1.2px; color: var(--cyan); margin-bottom: 4px; display: block;
+}
+
+/* ── COIN REFERENCE ── */
+.coin-ref { display: grid; grid-template-columns: repeat(4,1fr); gap: 6px; margin: 8px 0; }
+.coin-ref-item {
+  display: flex; flex-direction: column; align-items: center;
+  gap: 3px; padding: 8px 4px; border-radius: 8px;
+  background: var(--card); border: 1px solid var(--border);
+}
+.ref-circle {
+  width: 28px; height: 28px; border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 8px; font-weight: 900; font-family: 'JetBrains Mono', monospace;
+}
+.ref-circle.penny { background: linear-gradient(135deg,#d4874e,#8b5e3c); color: #fff; }
+.ref-circle.nickel { background: linear-gradient(135deg,#b0b0b0,#787878); color: #fff; width: 30px; height: 30px; }
+.ref-circle.dime { background: linear-gradient(135deg,#d4d4d4,#a8a8a8); color: #333; width: 24px; height: 24px; }
+.ref-circle.quarter { background: linear-gradient(135deg,#e0e0e0,#b0b0b0); color: #333; width: 34px; height: 34px; }
+.ref-name { font-size: 9px; font-weight: 700; color: var(--muted); text-transform: uppercase; }
+.ref-val { font-size: 11px; font-weight: 800; color: var(--text); font-family: 'JetBrains Mono', monospace; }
+
+::-webkit-scrollbar { width: 6px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+</style>
+</head>
+<body>
+
+<!-- ═══ HEADER ═══ -->
+<div class="vinculum-header">
+  <div class="vinculum-header-left">
+    <a class="vinculum-back-btn" href="../../VINCULUM-Hub.html" style="text-decoration:none;">◀ Hub</a>
+    <div class="vinculum-header-title"><span>VINCULUM</span> Money Decisions</div>
+    <span class="vinculum-header-badge">2.MD</span>
+  </div>
+  <div class="vinculum-header-right">
+    <div class="vinculum-std-tags"><span class="vinculum-std-tag">2.MD.8</span></div>
+    <button class="vinculum-back-btn" id="readAloudBtn" onclick="toggleReadAloud()" aria-label="Read Aloud" title="Read instructions aloud" style="margin-left:8px;white-space:nowrap;">🔊 Read to Me</button>
+  </div>
+</div>
+
+<!-- ═══ MODE TABS ═══ -->
+<div class="vinculum-mode-tabs">
+  <button class="vinculum-mode-tab active-explore" id="tabExplore" data-mode="explore">
+    <svg width="18" height="18" viewBox="0 0 48 48" fill="none"><path d="M4 24C4 24 12 12 24 12C36 12 44 24 44 24C44 24 36 36 24 36C12 36 4 24 4 24Z" stroke="currentColor" stroke-width="3" fill="none"/><circle cx="24" cy="24" r="7" stroke="currentColor" stroke-width="3" fill="none"/><circle cx="24" cy="24" r="3" fill="currentColor"/><line x1="24" y1="4" x2="24" y2="9" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" opacity="0.5"/><line x1="10" y1="8" x2="13" y2="12" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" opacity="0.5"/><line x1="38" y1="8" x2="35" y2="12" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" opacity="0.5"/></svg> Explore
+  </button>
+  <button class="vinculum-mode-tab" id="tabPractice" data-mode="practice">
+    <svg width="18" height="18" viewBox="0 0 48 48" fill="none"><circle cx="24" cy="24" r="20" stroke="currentColor" stroke-width="3" fill="none" opacity="0.3"/><circle cx="24" cy="24" r="20" stroke="currentColor" stroke-width="3" fill="none" stroke-dasharray="126" stroke-dashoffset="32" stroke-linecap="round"/><polyline points="16,24 22,32 34,16" stroke="currentColor" stroke-width="4" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg> Practice
+  </button>
+  <button class="vinculum-mode-tab" id="tabPlay" data-mode="play">
+    <svg width="18" height="18" viewBox="0 0 48 48" fill="none"><polygon points="28,4 12,28 22,28 18,44 36,18 26,18" fill="none" stroke="currentColor" stroke-width="3" stroke-linejoin="round"/><polygon points="27,8 15,27 23,27 20,40 34,19 26,19" fill="currentColor" opacity="0.15"/></svg> Play
+  </button>
+  <div class="vinculum-diff-selector">
+    <span class="vinculum-diff-label">Level</span>
+    <button class="vinculum-diff-btn active" id="diffE" data-diff="emergent">Coins</button>
+    <button class="vinculum-diff-btn" id="diffP" data-diff="proficient">Prices</button>
+    <button class="vinculum-diff-btn" id="diffA" data-diff="advanced">Change</button>
+  </div>
+</div>
+
+<!-- ═══ MAIN ═══ -->
+<div class="main">
+  <div class="workspace" role="main" id="workspace"></div>
+  <div class="side-panel" id="sidePanel"></div>
+</div>
+
+<!-- ═══ FEEDBACK POPUP ═══ -->
+<div class="feedback" id="feedback"></div>
+
+<script src="../../vinculum-input.js"></script>
+<script>
+// ════════════════════════════════════════
+// STATE
+// ════════════════════════════════════════
+var S = {
+  mode: 'explore',
+  diff: 'emergent',
+  // Explore
+  collection: [],
+  targetAmount: 0,
+  // Practice
+  pQuestion: null,
+  // Play
+  score: 0,
+  streak: 0,
+  best: 0,
+  round: 0,
+  total: 10,
+  playQuestion: null
+};
+
+// ════════════════════════════════════════
+// COIN & ITEM DATA
+// ════════════════════════════════════════
+var COINS = [
+  { name: 'penny',   value: 1,  label: '1¢',  css: 'penny' },
+  { name: 'nickel',  value: 5,  label: '5¢',  css: 'nickel' },
+  { name: 'dime',    value: 10, label: '10¢', css: 'dime' },
+  { name: 'quarter', value: 25, label: '25¢', css: 'quarter' }
+];
+
+var ITEMS = [
+  { emoji: '🍎', name: 'Apple',       prices: [5, 10, 25] },
+  { emoji: '🖍️', name: 'Crayon',      prices: [8, 15, 30] },
+  { emoji: '📎', name: 'Paper Clip',  prices: [3, 7, 12] },
+  { emoji: '🧸', name: 'Toy Bear',    prices: [20, 35, 50] },
+  { emoji: '📏', name: 'Ruler',       prices: [10, 22, 40] },
+  { emoji: '🍪', name: 'Cookie',      prices: [15, 27, 45] },
+  { emoji: '✏️', name: 'Pencil',      prices: [6, 12, 28] },
+  { emoji: '📓', name: 'Notebook',    prices: [18, 33, 55] },
+  { emoji: '🧃', name: 'Juice Box',   prices: [12, 25, 48] },
+  { emoji: '⭐', name: 'Sticker',     prices: [2, 8, 16] },
+  { emoji: '🏀', name: 'Ball',        prices: [25, 40, 65] },
+  { emoji: '🎨', name: 'Paint Set',   prices: [20, 45, 75] }
+];
+
+// ════════════════════════════════════════
+// READ-ALOUD
+// ════════════════════════════════════════
+function toggleReadAloud() {
+  if (window.VinculumStories && VinculumStories.isReading()) {
+    VinculumStories.stopReading();
+    document.getElementById('readAloudBtn').textContent = '🔊 Read to Me';
+  } else if (window.VinculumStories) {
+    VinculumStories.readAloud('Welcome to Money Decisions! Tap coins to build amounts. Learn to count coins, compare prices, and make change.', {
+      rate: 0.85,
+      onComplete: function() { document.getElementById('readAloudBtn').textContent = '🔊 Read to Me'; }
+    });
+    document.getElementById('readAloudBtn').textContent = '⏹ Stop';
+  }
+}
+
+// ════════════════════════════════════════
+// MISCONCEPTIONS (6)
+// ════════════════════════════════════════
+var MISCONCEPTIONS = {
+  coinValueConfusion: {
+    id: 'coin-value-confusion',
+    msg: function(n, w, r) { return 'A ' + n + ' is worth ' + r + '¢, not ' + w + '¢. Size doesn\'t always tell value — a dime is small but worth more than a nickel!'; }
+  },
+  skipCountError: {
+    id: 'skip-count-error',
+    msg: function(n, v) { return 'When counting ' + n + 's, count by ' + v + 's. Try pointing to each coin and say the next number.'; }
+  },
+  makeChangeError: {
+    id: 'make-change-error',
+    msg: function(p, pd) { return 'To make change, start at ' + p + '¢ and count up to ' + pd + '¢. The amount you count up is your change!'; }
+  },
+  notEnoughCoins: {
+    id: 'not-enough',
+    msg: function(h, n) { return 'You have ' + h + '¢ but the item costs ' + n + '¢. You need ' + (n - h) + '¢ more!'; }
+  },
+  sizeValueMix: {
+    id: 'size-value-mix',
+    msg: function() { return 'Careful! A dime is smaller than a nickel, but a dime is worth MORE (10¢ vs 5¢). Size and value are different!'; }
+  },
+  forgetsToAdd: {
+    id: 'forgets-to-add',
+    msg: function(t) { return 'Remember to add ALL the coins. Start with the biggest first, then add smaller ones. The total is ' + t + '¢.'; }
+  }
+};
+
+// ════════════════════════════════════════
+// UTILITIES
+// ════════════════════════════════════════
+function randInt(a, b) { return Math.floor(Math.random() * (b - a + 1)) + a; }
+
+function shuffle(arr) {
+  for (var i = arr.length - 1; i > 0; i--) {
+    var j = randInt(0, i);
+    var t = arr[i]; arr[i] = arr[j]; arr[j] = t;
+  }
+  return arr;
+}
+
+function fmt(c) { return c + '¢'; }
+
+function sumArr(a) {
+  var s = 0;
+  for (var i = 0; i < a.length; i++) s += a[i];
+  return s;
+}
+
+function getDI() { return S.diff === 'emergent' ? 0 : S.diff === 'proficient' ? 1 : 2; }
+
+function getItem(d) {
+  var it = ITEMS[randInt(0, ITEMS.length - 1)];
+  return { emoji: it.emoji, name: it.name, price: it.prices[d] };
+}
+
+function showFB(msg, type) {
+  var el = document.getElementById('feedback');
+  el.textContent = msg;
+  el.className = 'feedback ' + type + ' show';
+  clearTimeout(window._fbT);
+  window._fbT = setTimeout(function() { el.className = 'feedback'; }, 2200);
+}
+
+function distractors(ans, n, lo, hi) {
+  var s = new Set([ans]), t = 0;
+  var offsets = [1, -1, 5, -5, 10, -10, 25, -25, 2, -2, 15, -15];
+  while (s.size < n && t < 80) {
+    var c = ans + offsets[randInt(0, offsets.length - 1)];
+    if (c >= lo && c <= hi) s.add(c);
+    t++;
+  }
+  while (s.size < n) s.add(ans + s.size);
+  return shuffle(Array.from(s));
+}
+
+function coinHTML(c, oc, ex) {
+  return '<div class="coin ' + c.css + (ex ? ' ' + ex : '') + '" onclick="' + oc + '" role="button" tabindex="0" aria-label="' + c.name + ' ' + c.label + '">' +
+    '<span class="coin-name">' + c.name + '</span><span class="coin-val">' + c.label + '</span></div>';
+}
+
+function miniCoinHTML(v, oc) {
+  var c = COINS[0];
+  for (var i = 0; i < COINS.length; i++) if (COINS[i].value === v) { c = COINS[i]; break; }
+  return '<div class="mini-coin ' + c.css + '" onclick="' + oc + '" role="button" tabindex="0" title="Remove ' + c.name + '">' + c.label + '</div>';
+}
+
+function coinRefHTML() {
+  var h = '<div class="coin-ref">';
+  for (var i = 0; i < COINS.length; i++) {
+    var c = COINS[i];
+    h += '<div class="coin-ref-item"><div class="ref-circle ' + c.css + '">' + c.label + '</div>' +
+         '<div class="ref-name">' + c.name + '</div><div class="ref-val">' + c.value + '¢</div></div>';
+  }
+  return h + '</div>';
+}
+
+function coinSetHTML(cs, small) {
+  var h = '<div class="coin-row" style="margin:12px 0;">';
+  for (var i = 0; i < cs.length; i++) {
+    var co = COINS[0];
+    for (var j = 0; j < COINS.length; j++) if (COINS[j].value === cs[i]) { co = COINS[j]; break; }
+    if (small) {
+      h += '<div class="coin ' + co.css + '" style="cursor:default;width:48px;height:48px;">' +
+        '<span class="coin-name" style="font-size:7px;">' + co.name + '</span>' +
+        '<span class="coin-val" style="font-size:12px;">' + co.label + '</span></div>';
+    } else {
+      h += coinHTML(co, '', '');
+    }
+  }
+  return h + '</div>';
+}
+
+// ════════════════════════════════════════
+// MODE / DIFF SWITCHING
+// ════════════════════════════════════════
+function setMode(m) {
+  S.mode = m;
+  document.querySelectorAll('.vinculum-mode-tab').forEach(function(t) {
+    t.className = 'vinculum-mode-tab' + (t.dataset.mode === m ? ' active-' + m : '');
+  });
+  if (m === 'practice') S.pQuestion = null;
+  if (m === 'play') { S.round = 0; S.score = 0; S.streak = 0; }
+  if (m === 'explore') S.collection = [];
+  render();
+}
+
+function setDiff(d) {
+  S.diff = d;
+  document.querySelectorAll('.vinculum-diff-btn').forEach(function(b) {
+    b.className = 'vinculum-diff-btn' + (b.dataset.diff === d ? ' active' : '');
+  });
+  S.pQuestion = null;
+  S.collection = [];
+  S.targetAmount = 0;
+  if (S.mode === 'play') { S.round = 0; S.score = 0; S.streak = 0; }
+  render();
+}
+
+// ════════════════════════════════════════
+// EXPLORE MODE
+// ════════════════════════════════════════
+function addCoin(v) { S.collection.push(v); render(); }
+function removeCoin(i) { S.collection.splice(i, 1); render(); }
+function clearCoins() { S.collection = []; render(); }
+
+function renderExplore(ws, sp) {
+  var di = getDI(), total = sumArr(S.collection), h = '';
+
+  // Prompt varies by difficulty
+  if (di === 0) {
+    h += '<div class="prompt-label">Tap Coins to Build an Amount</div>';
+    h += '<div class="prompt-sublabel">Learn each coin\'s value — tap to add coins to your collection</div>';
+  } else if (di === 1) {
+    if (!S.targetAmount) S.targetAmount = randInt(15, 50);
+    h += '<div class="prompt-label">Build ' + fmt(S.targetAmount) + ' with Coins</div>';
+    h += '<div class="prompt-sublabel">Use any combination of coins to reach the target</div>';
+  } else {
+    if (!S.targetAmount) S.targetAmount = randInt(30, 75);
+    h += '<div class="prompt-label">Explore Making Change</div>';
+    h += '<div class="prompt-sublabel">Build amounts, then see how much change you\'d get</div>';
+  }
+
+  // Coin selectors
+  h += '<div class="coin-row">';
+  for (var i = 0; i < COINS.length; i++) h += coinHTML(COINS[i], 'addCoin(' + COINS[i].value + ')');
+  h += '</div>';
+
+  // Collection tray
+  h += '<div class="collection-tray' + (S.collection.length > 0 ? ' has-coins' : '') + '">';
+  if (S.collection.length === 0) {
+    h += '<span style="color:var(--muted);font-size:13px;">Tap a coin above to add it here</span>';
+  } else {
+    for (var j = 0; j < S.collection.length; j++) {
+      h += miniCoinHTML(S.collection[j], 'removeCoin(' + j + ')');
+    }
+  }
+  h += '</div>';
+
+  // Running total
+  h += '<div class="total-display">' + fmt(total) + '</div>';
+
+  // Target comparison for proficient/advanced
+  if (di >= 1 && S.targetAmount > 0) {
+    var diff = total - S.targetAmount;
+    h += '<div style="text-align:center;margin-top:8px;">';
+    h += '<div class="price-tag">' + fmt(S.targetAmount) + '</div>';
+    if (total > 0) {
+      if (diff === 0) h += '<div class="enough-badge yes" style="margin-top:8px;">Exact amount!</div>';
+      else if (diff > 0) h += '<div class="enough-badge yes" style="margin-top:8px;">' + fmt(diff) + ' extra (change)</div>';
+      else h += '<div class="enough-badge no" style="margin-top:8px;">Need ' + fmt(Math.abs(diff)) + ' more</div>';
+    }
+    h += '</div>';
+  }
+
+  // Controls
+  h += '<div class="controls">';
+  h += '<button class="ctrl-btn danger" onclick="clearCoins()">✕ Clear</button>';
+  if (di >= 1) h += '<button class="ctrl-btn" onclick="S.targetAmount=randInt(10,99);render();">🎲 New Target</button>';
+  h += '</div>';
+
+  // Running count breakdown
+  if (S.collection.length > 0) {
+    var sorted = S.collection.slice().sort(function(a, b) { return b - a; });
+    var run = 0, parts = [];
+    for (var k = 0; k < sorted.length; k++) {
+      run += sorted[k];
+      parts.push('<span style="font-family:JetBrains Mono,monospace;font-weight:600;">' + run + '¢</span>');
+    }
+    h += '<div style="margin-top:12px;text-align:center;font-size:13px;color:var(--text2);">Count: ' + parts.join(' → ') + '</div>';
+  }
+
+  ws.innerHTML = h;
+
+  // Side panel
+  sp.innerHTML =
+    '<div class="panel-section"><div class="panel-title">Coin Values</div>' + coinRefHTML() + '</div>' +
+    '<div class="panel-section"><div class="panel-title">How to Explore</div><div class="panel-text">' +
+    '1. <strong>Tap coins</strong> to add them to your collection<br><br>' +
+    '2. <strong>Tap a coin in the tray</strong> to remove it<br><br>' +
+    '3. Watch the <strong>running total</strong> update<br><br>' +
+    '4. Try making the <strong>same amount</strong> with different coins!' +
+    '</div></div>' +
+    '<div class="panel-section"><div class="panel-title">Counting Strategy</div>' +
+    '<div class="pattern-card"><span class="pattern-label">Start Big</span>' +
+    'Count <strong>quarters</strong> first, then dimes, nickels, pennies.</div>' +
+    '<div class="pattern-card"><span class="pattern-label">Skip Count</span>' +
+    'Quarters by <strong>25s</strong>, dimes by <strong>10s</strong>, nickels by <strong>5s</strong>, pennies by <strong>1s</strong>.</div></div>' +
+    '<div class="panel-section"><div class="panel-title">Standards</div><div class="panel-text">' +
+    '<strong>2.MD.8</strong> — Solve word problems involving dollar bills, quarters, dimes, nickels, and pennies</div></div>';
+}
+
+// ════════════════════════════════════════
+// PRACTICE MODE
+// ════════════════════════════════════════
+function generatePractice() {
+  var di = getDI(), q = {};
+
+  if (di === 0) {
+    // Emergent: Identify coin values
+    var coin = COINS[randInt(0, 3)];
+    if (randInt(0, 1) === 0) {
+      q.text = 'How much is a ' + coin.name + ' worth?';
+      q.subtext = 'Choose the correct value';
+      q.answer = coin.value;
+      q.answerLabel = fmt(coin.value);
+      q.coinShow = coin;
+      q.type = 'identify';
+      q.choices = shuffle([
+        { label: '1¢', value: 1 }, { label: '5¢', value: 5 },
+        { label: '10¢', value: 10 }, { label: '25¢', value: 25 }
+      ]);
+    } else {
+      q.text = 'Which coin is worth ' + fmt(coin.value) + '?';
+      q.subtext = 'Tap the correct coin';
+      q.answer = coin.value;
+      q.answerLabel = coin.name;
+      q.type = 'pick-coin';
+      q.choices = shuffle(COINS.map(function(c) {
+        return { label: c.name, value: c.value, css: c.css, coinLabel: c.label };
+      }));
+    }
+
+  } else if (di === 1) {
+    // Proficient: Count coins / enough?
+    if (randInt(0, 1) === 0) {
+      var cs = [], nc = randInt(3, 6);
+      for (var i = 0; i < nc; i++) cs.push(COINS[randInt(0, 3)].value);
+      var tot = sumArr(cs);
+      q = { text: 'How much money is this?', subtext: 'Count all the coins',
+        answer: tot, answerLabel: fmt(tot), coinSet: cs, type: 'count',
+        choices: distractors(tot, 4, 1, 99).map(function(v) { return { label: fmt(v), value: v }; })
+      };
+    } else {
+      var it = getItem(1), cs2 = [], nc2 = randInt(3, 5);
+      for (var j = 0; j < nc2; j++) cs2.push(COINS[randInt(0, 3)].value);
+      var hv = sumArr(cs2);
+      if (randInt(0, 1) === 0 && hv < it.price) {
+        while (hv < it.price) { var av = COINS[randInt(0, 3)].value; cs2.push(av); hv += av; }
+      }
+      q = { text: 'Do you have enough for the ' + it.name + '?',
+        subtext: it.emoji + ' costs ' + fmt(it.price),
+        answer: hv >= it.price ? 1 : 0, answerLabel: hv >= it.price ? 'Yes' : 'No',
+        coinSet: cs2, itemPrice: it.price, itemEmoji: it.emoji, itemName: it.name, have: hv,
+        type: 'enough',
+        choices: [{ label: 'Yes — I have enough!', value: 1 }, { label: 'No — I need more', value: 0 }]
+      };
+    }
+
+  } else {
+    // Advanced: Make change / multi-step
+    var it2 = getItem(2);
+    if (randInt(0, 1) === 0) {
+      var pd = [50, 75, 100], paid = pd[0];
+      for (var p = 0; p < pd.length; p++) if (pd[p] >= it2.price) { paid = pd[p]; break; }
+      var ch = paid - it2.price;
+      q = { text: 'You pay ' + fmt(paid) + ' for a ' + it2.name + ' (' + fmt(it2.price) + '). Change?',
+        subtext: it2.emoji + ' Change = paid − price',
+        answer: ch, answerLabel: fmt(ch), type: 'change', paid: paid, price: it2.price,
+        itemEmoji: it2.emoji, itemName: it2.name,
+        choices: distractors(ch, 4, 0, 99).map(function(v) { return { label: fmt(v), value: v }; })
+      };
+    } else {
+      var iA = getItem(2), iB = getItem(2);
+      while (iB.name === iA.name) iB = getItem(2);
+      var tc = iA.price + iB.price;
+      var paid2 = tc <= 100 ? 100 : 150;
+      if (randInt(0, 1) === 0) {
+        q = { text: 'Buy ' + iA.name + ' (' + fmt(iA.price) + ') and ' + iB.name + ' (' + fmt(iB.price) + '). Total?',
+          subtext: iA.emoji + ' + ' + iB.emoji,
+          answer: tc, answerLabel: fmt(tc), type: 'multi',
+          choices: distractors(tc, 4, 10, 200).map(function(v) { return { label: fmt(v), value: v }; })
+        };
+      } else {
+        var cm = paid2 - tc;
+        q = { text: 'Buy ' + iA.name + ' + ' + iB.name + ' = ' + fmt(tc) + '. Pay ' + fmt(paid2) + '. Change?',
+          subtext: iA.emoji + ' + ' + iB.emoji,
+          answer: cm, answerLabel: fmt(cm), type: 'multi',
+          choices: distractors(cm, 4, 0, 150).map(function(v) { return { label: fmt(v), value: v }; })
+        };
+      }
+    }
+  }
+
+  S.pQuestion = q;
+}
+
+function practiceAnswer(val) {
+  var q = S.pQuestion;
+  if (val === q.answer) {
+    showFB('Correct! ' + q.answerLabel, 'correct');
+    setTimeout(function() { generatePractice(); render(); }, 1500);
+  } else {
+    var di = getDI();
+    if (di === 0) {
+      if (q.type === 'identify') {
+        showFB(MISCONCEPTIONS.coinValueConfusion.msg(q.coinShow ? q.coinShow.name : 'coin', val, q.answer), 'try-again');
+      } else {
+        showFB(MISCONCEPTIONS.sizeValueMix.msg(), 'try-again');
+      }
+    } else if (di === 1) {
+      if (q.type === 'count') showFB(MISCONCEPTIONS.forgetsToAdd.msg(q.answer), 'try-again');
+      else showFB(MISCONCEPTIONS.notEnoughCoins.msg(q.have, q.itemPrice), 'try-again');
+    } else {
+      if (q.type === 'change') showFB(MISCONCEPTIONS.makeChangeError.msg(q.price, q.paid), 'try-again');
+      else showFB('Add the prices first, then subtract from what you paid.', 'try-again');
+    }
+  }
+}
+
+function renderPractice(ws, sp) {
+  if (!S.pQuestion) generatePractice();
+  var q = S.pQuestion, h = '';
+
+  h += '<div class="prompt-label">' + q.text + '</div>';
+  h += '<div class="prompt-sublabel">' + q.subtext + '</div>';
+
+  // Show featured coin
+  if (q.coinShow) h += '<div class="coin-row" style="margin:16px 0;">' + coinHTML(q.coinShow, '', 'selected') + '</div>';
+
+  // Show coin set
+  if (q.coinSet) h += coinSetHTML(q.coinSet, false);
+
+  // Show item for enough/change questions
+  if (q.itemEmoji && q.itemPrice) {
+    h += '<div class="compare-row"><div class="item-card">';
+    h += '<div class="item-emoji">' + q.itemEmoji + '</div>';
+    h += '<div class="item-name">' + q.itemName + '</div>';
+    h += '<div class="price-tag" style="font-size:16px;padding:5px 12px;">' + fmt(q.itemPrice) + '</div>';
+    h += '</div></div>';
+  }
+
+  // MC choices
+  if (q.type === 'pick-coin') {
+    h += '<div class="coin-row" style="margin:16px 0;">';
+    for (var i = 0; i < q.choices.length; i++) {
+      var c = q.choices[i];
+      h += '<div class="coin ' + c.css + '" onclick="practiceAnswer(' + c.value + ')" role="button" tabindex="0">' +
+        '<span class="coin-name">' + c.label + '</span><span class="coin-val">' + c.coinLabel + '</span></div>';
+    }
+    h += '</div>';
+  } else {
+    var cols = Math.min(q.choices.length, 4);
+    h += '<div class="answer-grid" style="margin:16px auto;grid-template-columns:repeat(' + cols + ',1fr);">';
+    for (var a = 0; a < q.choices.length; a++) {
+      h += '<button class="answer-btn" onclick="practiceAnswer(' + q.choices[a].value + ')">' + q.choices[a].label + '</button>';
+    }
+    h += '</div>';
+  }
+
+  h += '<div class="controls" style="margin-top:12px;">';
+  h += '<button class="ctrl-btn" onclick="generatePractice();render();">↻ New Question</button></div>';
+  ws.innerHTML = h;
+
+  // Side panel
+  var dd = {
+    emergent: 'Identify each coin and its value. Penny=1¢, nickel=5¢, dime=10¢, quarter=25¢.',
+    proficient: 'Count groups of coins and decide if you have enough to buy items.',
+    advanced: 'Calculate change after a purchase and solve two-step money problems.'
+  };
+  sp.innerHTML =
+    '<div class="panel-section"><div class="panel-title">Coin Values</div>' + coinRefHTML() + '</div>' +
+    '<div class="panel-section"><div class="panel-title">Instructions</div><div class="panel-text">' + dd[S.diff] + '</div></div>' +
+    '<div class="panel-section"><div class="panel-title">Tips</div>' +
+    '<div class="pattern-card"><span class="pattern-label">Count Big First</span>Start from the <strong>biggest</strong> coin value and work down.</div>' +
+    '<div class="pattern-card"><span class="pattern-label">Compare Carefully</span><strong>Count your total</strong> first, then compare to the price.</div>' +
+    (getDI() >= 2 ? '<div class="pattern-card"><span class="pattern-label">Count Up for Change</span>Start at the <strong>price</strong> and count up to what you paid.</div>' : '') +
+    '</div>';
+}
+
+// ════════════════════════════════════════
+// PLAY MODE — 10 Rounds, 10pts + streak×2
+// ════════════════════════════════════════
+function generatePlayRound() {
+  S.round++;
+  var di = getDI(), q = {};
+
+  if (di === 0) {
+    // Emergent: quick coin ID
+    var roll = randInt(0, 2);
+    if (roll === 0) {
+      var cn = COINS[randInt(0, 3)];
+      q = { text: 'How much is a ' + cn.name + ' worth?', answer: cn.value,
+        answerLabel: fmt(cn.value), coinShow: cn, type: 'quick-id',
+        choices: shuffle(COINS.map(function(c) { return { label: fmt(c.value), value: c.value }; }))
+      };
+    } else if (roll === 1) {
+      var pairs = [
+        { q: 'How many pennies equal one nickel?', a: 5 },
+        { q: 'How many pennies equal one dime?', a: 10 },
+        { q: 'How many nickels equal one quarter?', a: 5 },
+        { q: 'How many dimes and 1 nickel make a quarter?', a: 2 }
+      ];
+      var pr = pairs[randInt(0, 3)];
+      q = { text: pr.q, answer: pr.a, answerLabel: String(pr.a), type: 'quick-id',
+        choices: distractors(pr.a, 4, 1, 25).map(function(v) { return { label: String(v), value: v }; })
+      };
+    } else {
+      var c1 = COINS[randInt(0, 3)], c2 = COINS[randInt(0, 3)], t = c1.value + c2.value;
+      q = { text: c1.name + ' + ' + c2.name + ' = ?', answer: t,
+        answerLabel: fmt(t), type: 'quick-id',
+        choices: distractors(t, 4, 2, 50).map(function(v) { return { label: fmt(v), value: v }; })
+      };
+    }
+
+  } else if (di === 1) {
+    // Proficient: count coins / enough
+    if (randInt(0, 1) === 0) {
+      var cs = [], nc = randInt(3, 5);
+      for (var i = 0; i < nc; i++) cs.push(COINS[randInt(0, 3)].value);
+      var tot = sumArr(cs);
+      q = { text: 'Count these coins!', answer: tot, answerLabel: fmt(tot),
+        coinSet: cs, type: 'count',
+        choices: distractors(tot, 4, 1, 99).map(function(v) { return { label: fmt(v), value: v }; })
+      };
+    } else {
+      var it = getItem(1), cs2 = [], nc2 = randInt(3, 5);
+      for (var j = 0; j < nc2; j++) cs2.push(COINS[randInt(0, 3)].value);
+      var hv = sumArr(cs2);
+      if (randInt(0, 1) === 0 && hv < it.price) {
+        while (hv < it.price) { var av = COINS[randInt(0, 3)].value; cs2.push(av); hv += av; }
+      }
+      q = { text: it.emoji + ' ' + it.name + ' costs ' + fmt(it.price) + '. Enough?',
+        answer: hv >= it.price ? 1 : 0, answerLabel: hv >= it.price ? 'Yes' : 'No',
+        coinSet: cs2, have: hv, itemPrice: it.price, type: 'enough',
+        choices: [{ label: 'Yes!', value: 1 }, { label: 'No', value: 0 }]
+      };
+    }
+
+  } else {
+    // Advanced: change / multi-step
+    if (randInt(0, 2) <= 1) {
+      var it2 = getItem(2), pd = [50, 75, 100], paid = pd[0];
+      for (var p = 0; p < pd.length; p++) if (pd[p] >= it2.price) { paid = pd[p]; break; }
+      var ch = paid - it2.price;
+      q = { text: it2.emoji + ' costs ' + fmt(it2.price) + '. Pay ' + fmt(paid) + '. Change?',
+        answer: ch, answerLabel: fmt(ch), type: 'change', paid: paid, price: it2.price,
+        choices: distractors(ch, 4, 0, 99).map(function(v) { return { label: fmt(v), value: v }; })
+      };
+    } else {
+      var iA = getItem(2), iB = getItem(2);
+      while (iB.name === iA.name) iB = getItem(2);
+      var tc = iA.price + iB.price;
+      q = { text: iA.emoji + ' ' + fmt(iA.price) + ' + ' + iB.emoji + ' ' + fmt(iB.price) + ' = Total?',
+        answer: tc, answerLabel: fmt(tc), type: 'multi',
+        choices: distractors(tc, 4, 10, 200).map(function(v) { return { label: fmt(v), value: v }; })
+      };
+    }
+  }
+
+  S.playQuestion = q;
+}
+
+function playAnswer(val) {
+  var q = S.playQuestion;
+  var btn = document.querySelector('.answer-btn[data-val="' + val + '"]');
+
+  if (val === q.answer) {
+    if (btn) btn.classList.add('correct-flash');
+    var pts = 10 + S.streak * 2;
+    S.score += pts;
+    S.streak++;
+    if (S.streak > S.best) S.best = S.streak;
+    showFB('Correct! +' + pts, 'correct');
+  } else {
+    if (btn) btn.classList.add('incorrect-flash');
+    S.streak = 0;
+    var di = getDI();
+    if (di === 0) showFB(MISCONCEPTIONS.coinValueConfusion.msg('coin', val, q.answer), 'incorrect');
+    else if (q.type === 'count') showFB(MISCONCEPTIONS.skipCountError.msg('coins', q.answer), 'incorrect');
+    else if (q.type === 'enough') showFB(MISCONCEPTIONS.notEnoughCoins.msg(q.have || 0, q.itemPrice || 0), 'incorrect');
+    else if (q.type === 'change') showFB(MISCONCEPTIONS.makeChangeError.msg(q.price, q.paid), 'incorrect');
+    else showFB('The answer is ' + q.answerLabel + '. Add prices, then find change.', 'incorrect');
+  }
+
+  setTimeout(function() {
+    if (S.round >= S.total) {
+      showFB('Game Over! Score: ' + S.score, 'correct');
+      setTimeout(function() { S.round = 0; S.score = 0; S.streak = 0; render(); }, 2500);
+      return;
+    }
+    generatePlayRound();
+    render();
+  }, 1500);
+}
+
+function renderPlay(ws, sp) {
+  if (S.round === 0) { S.score = 0; S.streak = 0; generatePlayRound(); }
+  var q = S.playQuestion, h = '';
+
+  h += '<div class="round-indicator">Round ' + S.round + ' of ' + S.total + '</div>';
+  h += '<div class="prompt-label">' + q.text + '</div>';
+
+  if (q.coinShow) h += '<div class="coin-row" style="margin:12px 0;">' + coinHTML(q.coinShow, '', 'selected') + '</div>';
+  if (q.coinSet) h += coinSetHTML(q.coinSet, true);
+
+  // MC choices
+  var cols = Math.min(q.choices.length, 4);
+  h += '<div class="answer-grid" style="margin:16px auto;grid-template-columns:repeat(' + cols + ',1fr);">';
+  for (var a = 0; a < q.choices.length; a++) {
+    h += '<button class="answer-btn" data-val="' + q.choices[a].value + '" onclick="playAnswer(' + q.choices[a].value + ')">' + q.choices[a].label + '</button>';
+  }
+  h += '</div>';
+  ws.innerHTML = h;
+
+  // Side panel — score
+  sp.innerHTML =
+    '<div class="score-display"><div class="score-value">' + S.score + '</div><div class="score-label">Score</div></div>' +
+    '<div class="score-display" style="background:transparent;padding:8px;">' +
+    '<div style="font-size:18px;font-weight:700;color:var(--yellow);">🔥 ' + S.streak + '</div>' +
+    '<div class="score-label">Streak</div>' +
+    '<div class="streak-bar"><div class="streak-fill" style="width:' + Math.min(S.streak * 20, 100) + '%;"></div></div></div>' +
+    '<div class="panel-section"><div class="panel-title">How to Play</div><div class="panel-text">' +
+    'Answer money questions fast!<br><br>' +
+    '<strong>10 pts</strong> per correct + <strong>streak bonus</strong> (+2 per streak).<br><br>' +
+    '10 rounds total. Build a streak!</div></div>' +
+    '<div class="panel-section"><div class="panel-title">Coin Values</div>' + coinRefHTML() + '</div>' +
+    '<div class="panel-section"><div class="panel-title">Best Streak</div>' +
+    '<div class="panel-text" style="font-size:24px;font-weight:800;color:var(--purple);">🏆 ' + S.best + '</div></div>';
+}
+
+// ════════════════════════════════════════
+// RENDER DISPATCH
+// ════════════════════════════════════════
+function render() {
+  var ws = document.getElementById('workspace');
+  var sp = document.getElementById('sidePanel');
+  if (S.mode === 'explore') renderExplore(ws, sp);
+  else if (S.mode === 'practice') renderPractice(ws, sp);
+  else renderPlay(ws, sp);
+}
+
+// ════════════════════════════════════════
+// INIT
+// ════════════════════════════════════════
+document.querySelectorAll('.vinculum-mode-tab').forEach(function(tab) {
+  tab.addEventListener('click', function() { setMode(this.dataset.mode); });
+});
+document.querySelectorAll('.vinculum-diff-btn').forEach(function(btn) {
+  btn.addEventListener('click', function() { setDiff(this.dataset.diff); });
+});
+
+render();
+</script>
+<script src="../../vinculum-core.js"></script>
+<script src="../../vinculum-data.js"></script>
+<script src="../../vinculum-adaptive-hook.js"></script>
+<script src="../../vinculum-3reads.js"></script>
+<script src="../../vinculum-stories.js"></script>
+<script src="../../vinculum-feedback.js"></script>
+<script src="../../vinculum-guide.js"></script>
+<script src="../../vinculum-identity.js"></script>
+<script src="../../vinculum-indigenous.js"></script>
+<script src="../../vinculum-dashboard.js"></script>
+<script src="../../vinculum-hyperfocus.js"></script>
+<script src="../../vinculum-layout.js"></script>
+</body>
+</html>

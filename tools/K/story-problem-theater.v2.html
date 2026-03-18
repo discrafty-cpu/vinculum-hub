@@ -1,0 +1,1023 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>VINCULUM — Story Problem Theater</title>
+<link rel="stylesheet" href="../../vinculum-core.css">
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;600&display=swap');
+
+/* Theme system loaded from vinculum-core.css */
+.vinculum-rtm-btn .rtm-icon{font-size:14px;}
+
+/* FOCUS VISIBLE (Keyboard Navigation) */
+*:focus-visible {
+  outline:2px solid var(--cyan);outline-offset:2px;border-radius:4px;
+}
+.sr-only {
+  position:absolute;width:1px;height:1px;padding:0;margin:-1px;
+  overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0;
+}
+
+* { margin:0; padding:0; box-sizing:border-box; }
+body {
+  font-family: 'Inter', sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  height: 100vh;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  user-select: none;
+}
+
+/* ── HEADER ── */
+/* ── MODE TABS ── */
+/* Difficulty selector */
+.vinculum-diff-btn:hover { color: var(--text2); }
+/* ── MAIN AREA ── */
+.main {
+  flex: 1;
+  display: flex;
+  overflow: hidden;
+}
+
+/* ── WORKSPACE ── */
+.workspace {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 24px;
+  position: relative;
+  overflow-y: auto;
+}
+
+/* ── STORY CARD ── */
+.story-card {
+  background: var(--card);
+  border-radius: 16px;
+  padding: 20px;
+  font-size: 16px;
+  line-height: 1.7;
+  width: 100%;
+  max-width: 600px;
+  position: relative;
+  border: 1px solid var(--border);
+}
+.story-card .story-label {
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 1.5px;
+  color: var(--cyan);
+  margin-bottom: 8px;
+}
+.story-card .story-text {
+  color: var(--text);
+  margin-bottom: 8px;
+}
+.story-question {
+  font-weight: 700;
+  color: var(--yellow);
+}
+
+/* ── SCENE AREA ── */
+.scene-area {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 16px;
+  width: 100%;
+  max-width: 600px;
+  min-height: 100px;
+  padding: 16px;
+  margin-top: 12px;
+  background: var(--card);
+  border-radius: 16px;
+  border: 2px dashed var(--border);
+  flex-wrap: wrap;
+}
+.scene-group {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  justify-content: center;
+  align-items: center;
+}
+.scene-group .scene-obj {
+  font-size: 36px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 52px;
+  height: 52px;
+  border-radius: 14px;
+  transition: transform 0.2s;
+}
+.scene-group.group-a .scene-obj {
+  background: rgba(0,212,255,0.12);
+  box-shadow: 0 0 8px rgba(0,212,255,0.2);
+}
+.scene-group.group-b .scene-obj {
+  background: rgba(255,193,7,0.12);
+  box-shadow: 0 0 8px rgba(255,193,7,0.2);
+}
+.scene-arrow {
+  font-size: 32px;
+  font-weight: 900;
+  color: var(--muted);
+  animation: arrowPulse 1.2s ease-in-out infinite;
+}
+@keyframes arrowPulse {
+  0%, 100% { opacity: 0.5; transform: translateX(0); }
+  50% { opacity: 1; transform: translateX(4px); }
+}
+.scene-arrow.left {
+  animation: arrowPulseLeft 1.2s ease-in-out infinite;
+}
+@keyframes arrowPulseLeft {
+  0%, 100% { opacity: 0.5; transform: translateX(0); }
+  50% { opacity: 1; transform: translateX(-4px); }
+}
+
+/* ── EQUATION DISPLAY ── */
+.equation-display {
+  text-align: center;
+  margin-top: 12px;
+  font-size: 32px;
+  font-weight: 900;
+  font-family: 'JetBrains Mono', monospace;
+  background: var(--grad);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+/* ── MC GRID ── */
+.mc-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 10px;
+  margin-top: 16px;
+  max-width: 340px;
+  width: 100%;
+}
+.mc-btn {
+  padding: 16px;
+  border-radius: 14px;
+  border: 2px solid var(--border);
+  background: var(--card);
+  color: var(--text);
+  font-size: 24px;
+  font-weight: 700;
+  font-family: 'JetBrains Mono', monospace;
+  cursor: pointer;
+  transition: all 0.15s;
+  text-align: center;
+}
+.mc-btn:hover {
+  border-color: var(--cyan);
+  background: rgba(0,212,255,0.05);
+  transform: scale(1.05);
+}
+.mc-btn.correct-flash {
+  border-color: var(--green);
+  background: rgba(0,230,118,0.15);
+  color: var(--green);
+}
+.mc-btn.incorrect-flash {
+  border-color: var(--pink);
+  background: rgba(255,59,139,0.15);
+  color: var(--pink);
+}
+
+/* ── INSTRUCTION BOX ── */
+.instruction-box {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 14px 16px;
+  font-size: 13px;
+  color: var(--text2);
+  line-height: 1.6;
+  margin-top: 12px;
+  max-width: 600px;
+  width: 100%;
+}
+
+/* ── CONTROLS ── */
+.controls {
+  display: flex;
+  gap: 8px;
+  margin-top: 16px;
+  flex-wrap: wrap;
+  justify-content: center;
+}
+.ctrl-btn {
+  padding: 10px 20px;
+  border-radius: 10px;
+  border: 1px solid var(--border);
+  background: var(--card);
+  color: var(--text2);
+  font-size: 13px;
+  font-weight: 600;
+  font-family: inherit;
+  cursor: pointer;
+  transition: all 0.2s;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.ctrl-btn:hover { background: var(--card-hover); color: var(--text); }
+.ctrl-btn.primary {
+  background: var(--grad);
+  color: var(--bg);
+  border-color: transparent;
+}
+.ctrl-btn.primary:hover { opacity: 0.9; }
+.ctrl-btn.danger { color: var(--pink); }
+.ctrl-btn.danger:hover { background: rgba(255,59,139,0.1); }
+.ctrl-btn.active-toggle {
+  border-color: var(--cyan);
+  background: rgba(0,212,255,0.1);
+  color: var(--cyan);
+}
+
+/* ── NUMBER SELECTOR ── */
+.num-selector {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  margin-top: 12px;
+}
+.num-selector label {
+  font-size: 13px;
+  color: var(--text2);
+  font-weight: 600;
+}
+.num-selector .num-btn {
+  width: 40px;
+  height: 40px;
+  border-radius: 10px;
+  border: 2px solid var(--border);
+  background: var(--card);
+  color: var(--text);
+  font-size: 18px;
+  font-weight: 700;
+  font-family: 'JetBrains Mono', monospace;
+  cursor: pointer;
+  transition: all 0.15s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.num-selector .num-btn:hover { border-color: var(--cyan); transform: scale(1.1); }
+.num-selector .num-btn.selected { border-color: var(--cyan); background: rgba(0,212,255,0.1); color: var(--cyan); }
+
+/* ── SCORE DISPLAY ── */
+.score-display {
+  text-align: center;
+  padding: 16px;
+  background: var(--card);
+  border-radius: 12px;
+  margin-bottom: 12px;
+}
+.score-value {
+  font-size: 36px;
+  font-weight: 900;
+  font-family: 'JetBrains Mono', monospace;
+  background: var(--grad);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+.score-label {
+  font-size: 11px;
+  color: var(--muted);
+  text-transform: uppercase;
+  letter-spacing: 1px;
+}
+.streak-bar {
+  height: 6px;
+  background: var(--card);
+  border-radius: 3px;
+  overflow: hidden;
+  margin-top: 8px;
+}
+.streak-fill {
+  height: 100%;
+  background: var(--grad);
+  border-radius: 3px;
+  transition: width 0.3s;
+}
+
+/* ── FEEDBACK ── */
+.feedback {
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%) scale(0);
+  padding: 24px 48px;
+  border-radius: 20px;
+  font-size: 28px;
+  font-weight: 800;
+  z-index: 200;
+  pointer-events: none;
+  transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275), opacity 0.3s;
+  opacity: 0;
+  max-width: 90vw;
+  text-align: center;
+}
+.feedback.show {
+  transform: translate(-50%, -50%) scale(1);
+  opacity: 1;
+}
+.feedback.correct {
+  background: rgba(0,230,118,0.15);
+  color: var(--green);
+  border: 2px solid var(--green);
+}
+.feedback.incorrect {
+  background: rgba(255,59,139,0.15);
+  color: var(--pink);
+  border: 2px solid var(--pink);
+}
+.feedback.try-again {
+  background: rgba(255,193,7,0.15);
+  color: var(--yellow);
+  border: 2px solid var(--yellow);
+  font-size: 18px;
+}
+
+/* ── SIDE PANEL ── */
+.side-panel {
+  width: 280px;
+  background: var(--bg2);
+  border-left: 1px solid var(--border);
+  padding: 20px;
+  overflow-y: auto;
+  flex-shrink: 0;
+}
+.panel-section {
+  margin-bottom: 20px;
+}
+.panel-title {
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 1.5px;
+  color: var(--muted);
+  margin-bottom: 8px;
+}
+.panel-text {
+  font-size: 13px;
+  color: var(--text2);
+  line-height: 1.6;
+}
+
+/* ── ANIMATIONS ── */
+@keyframes pop {
+  0% { transform: scale(0); }
+  70% { transform: scale(1.2); }
+  100% { transform: scale(1); }
+}
+@keyframes shake {
+  0%, 100% { transform: translateX(0); }
+  25% { transform: translateX(-8px); }
+  75% { transform: translateX(8px); }
+}
+.pop-in { animation: pop 0.3s ease-out forwards; }
+.shake { animation: shake 0.3s ease-in-out; }
+
+/* scrollbar */
+::-webkit-scrollbar { width: 6px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+</style>
+</head>
+<body>
+
+<!-- HEADER -->
+<div class="vinculum-header">
+  <div class="vinculum-header-left">
+    <a class="vinculum-back-btn" href="../../VINCULUM-Hub.html" style="text-decoration:none;">◀ Hub</a>
+    <div class="vinculum-header-title"><span>VINCULUM</span> Story Problem Theater</div>
+    <span class="vinculum-header-badge">K.OA</span>
+  </div>
+    <div class="vinculum-header-right">
+      <div class="vinculum-std-tags">
+    <span class="vinculum-std-tag">K.OA.1</span>
+    <span class="vinculum-std-tag">K.OA.2</span>
+    <span class="vinculum-std-tag mn">MN K.1.2.1</span>
+  </div>
+  <button class="vinculum-back-btn" id="readAloudBtn" onclick="toggleReadAloud()" aria-label="Read Aloud" title="Read instructions aloud" style="margin-left:8px;white-space:nowrap;">🔊 Read to Me</button>
+</div>
+
+<!-- MODE TABS -->
+</div>
+
+  <div class="vinculum-mode-tabs">
+  <button class="vinculum-mode-tab active-explore" id="tabExplore" data-mode="explore">
+    <svg width="18" height="18" viewBox="0 0 48 48" fill="none"><path d="M4 24C4 24 12 12 24 12C36 12 44 24 44 24C44 24 36 36 24 36C12 36 4 24 4 24Z" stroke="currentColor" stroke-width="3" fill="none"/><circle cx="24" cy="24" r="7" stroke="currentColor" stroke-width="3" fill="none"/><circle cx="24" cy="24" r="3" fill="currentColor"/><line x1="24" y1="4" x2="24" y2="9" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" opacity="0.5"/><line x1="10" y1="8" x2="13" y2="12" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" opacity="0.5"/><line x1="38" y1="8" x2="35" y2="12" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" opacity="0.5"/></svg> Explore
+  </button>
+  <button class="vinculum-mode-tab" id="tabPractice" data-mode="practice">
+    <svg width="18" height="18" viewBox="0 0 48 48" fill="none"><circle cx="24" cy="24" r="20" stroke="currentColor" stroke-width="3" fill="none" opacity="0.3"/><circle cx="24" cy="24" r="20" stroke="currentColor" stroke-width="3" fill="none" stroke-dasharray="126" stroke-dashoffset="32" stroke-linecap="round"/><polyline points="16,24 22,32 34,16" stroke="currentColor" stroke-width="4" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg> Practice
+  </button>
+  <button class="vinculum-mode-tab" id="tabPlay" data-mode="play">
+    <svg width="18" height="18" viewBox="0 0 48 48" fill="none"><polygon points="28,4 12,28 22,28 18,44 36,18 26,18" fill="none" stroke="currentColor" stroke-width="3" stroke-linejoin="round"/><polygon points="27,8 15,27 23,27 20,40 34,19 26,19" fill="currentColor" opacity="0.15"/></svg> Play
+  </button>
+  <div class="vinculum-diff-selector">
+    <span class="vinculum-diff-label">Level</span>
+    <button class="vinculum-diff-btn active" id="diffE" data-diff="emergent">Add To (1-5)</button>
+    <button class="vinculum-diff-btn" id="diffP" data-diff="proficient">Take From (1-5)</button>
+    <button class="vinculum-diff-btn" id="diffA" data-diff="advanced">Mixed (1-10)</button>
+  </div>
+</div>
+
+<!-- MAIN -->
+<div class="main">
+  <div class="workspace" role="main" id="workspace"></div>
+  <div class="side-panel" id="sidePanel"></div>
+</div>
+
+<!-- FEEDBACK POPUP -->
+<div class="feedback" id="feedback"></div>
+
+  <script src="../../vinculum-input.js"></script>
+<script>
+// ════════════════════════════════════════
+// STORY TEMPLATES
+// ════════════════════════════════════════
+const STORIES = {
+  addTo: [
+    { scene:'\u{1F986}', text:(a,b)=>`${a} ducks are swimming in the pond. ${b} more ducks join them.`, q:'How many ducks now?', op:'add' },
+    { scene:'\u{1F34E}', text:(a,b)=>`You have ${a} apples. Mom gives you ${b} more apples.`, q:'How many apples do you have?', op:'add' },
+    { scene:'\u{1F436}', text:(a,b)=>`${a} dogs are in the yard. ${b} more dogs run in.`, q:'How many dogs in the yard?', op:'add' },
+    { scene:'\u{1F338}', text:(a,b)=>`You picked ${a} flowers. Then you picked ${b} more.`, q:'How many flowers total?', op:'add' },
+    { scene:'\u{1F388}', text:(a,b)=>`You have ${a} balloons. Your friend gives you ${b} more.`, q:'How many balloons now?', op:'add' },
+  ],
+  takeFrom: [
+    { scene:'\u{1F41F}', text:(a,b)=>`${a} fish are in the tank. ${b} fish swim away.`, q:'How many fish are left?', op:'subtract' },
+    { scene:'\u{1F36A}', text:(a,b)=>`You had ${a} cookies. You ate ${b} of them.`, q:'How many cookies left?', op:'subtract' },
+    { scene:'\u{1F431}', text:(a,b)=>`${a} kittens are playing. ${b} go to sleep.`, q:'How many kittens still playing?', op:'subtract' },
+    { scene:'\u{2B50}', text:(a,b)=>`There are ${a} stars. ${b} stars fade away.`, q:'How many stars are left?', op:'subtract' },
+    { scene:'\u{1F98B}', text:(a,b)=>`${a} butterflies are on the bush. ${b} fly away.`, q:'How many butterflies left?', op:'subtract' },
+  ]
+};
+
+// ════════════════════════════════════════
+// STATE
+// ════════════════════════════════════════
+let S = {
+  mode: 'explore',
+  diff: 'emergent',
+  maxN: 5,
+  // Explore
+  storyType: 'addTo',
+  currentStory: null,
+  a: 3,
+  b: 2,
+  // Practice
+  pStory: null,
+  pA: 0,
+  pB: 0,
+  pAnswer: 0,
+  pChoices: [],
+  // Play
+  score: 0,
+  streak: 0,
+  best: 0,
+  round: 0,
+  total: 10,
+  playStory: null,
+  playA: 0,
+  playB: 0,
+  playAnswer: 0,
+  playChoices: []
+};
+
+// ════════════════════════════════════════
+// READ-ALOUD
+// ════════════════════════════════════════
+function toggleReadAloud() {
+  if (window.VinculumStories && VinculumStories.isReading()) {
+    VinculumStories.stopReading();
+    document.getElementById('readAloudBtn').textContent = '\u{1F50A} Read to Me';
+  } else {
+    const fb = document.getElementById('feedback');
+    const storyEl = document.getElementById('storyBanner');
+    const text = storyEl ? storyEl.textContent : (fb ? fb.textContent : 'Welcome to Story Problem Theater!');
+    if (window.VinculumStories) {
+      VinculumStories.readAloud(text, { rate: 0.85, onComplete: () => {
+        document.getElementById('readAloudBtn').textContent = '\u{1F50A} Read to Me';
+      }});
+      document.getElementById('readAloudBtn').textContent = '\u23F9 Stop';
+    }
+  }
+}
+
+// ════════════════════════════════════════
+// MISCONCEPTIONS DATABASE
+// ════════════════════════════════════════
+const MISCONCEPTIONS = {
+  noConnection: { id:'no-connect', msg:() => 'Listen to the story again. Is the group getting BIGGER or SMALLER?' },
+  sceneCount: { id:'scene-count', msg:(a,b,op) => 'Don\u2019t count objects in the picture \u2014 use the NUMBERS in the story. ' + a + ' ' + (op==='add'?'+':'\u2212') + ' ' + b + ' = ?' },
+  offByOne: { id:'off-by-one', msg:(ans,got) => 'Almost! You said ' + got + ' but it\u2019s ' + ans + '. Count one more time!' },
+  opConfusion: { id:'op-confusion', msg:(a,b,op) => op==='add' ? 'The story says MORE are coming \u2014 that means ADD!' : 'The story says some LEFT \u2014 that means SUBTRACT!' }
+};
+
+// ════════════════════════════════════════
+// HELPERS
+// ════════════════════════════════════════
+function randInt(min, max) {
+  return Math.floor(Math.random() * (max - min + 1)) + min;
+}
+
+function shuffle(arr) {
+  const a = arr.slice();
+  for (let i = a.length - 1; i > 0; i--) {
+    const j = randInt(0, i);
+    [a[i], a[j]] = [a[j], a[i]];
+  }
+  return a;
+}
+
+function pickStory(type) {
+  const pool = STORIES[type];
+  return pool[randInt(0, pool.length - 1)];
+}
+
+function generateNumbers(op, maxN) {
+  if (op === 'add') {
+    const a = randInt(1, maxN - 1);
+    const b = randInt(1, maxN - a);
+    return { a, b, answer: a + b };
+  } else {
+    const a = randInt(2, maxN);
+    const b = randInt(1, a - 1);
+    return { a, b, answer: a - b };
+  }
+}
+
+function makeMCChoices(answer, count, maxN) {
+  const choices = new Set([answer]);
+  // Common misconception answers
+  if (answer + 1 <= maxN) choices.add(answer + 1);
+  if (answer - 1 >= 0) choices.add(answer - 1);
+  while (choices.size < count) {
+    choices.add(randInt(0, maxN));
+  }
+  return shuffle(Array.from(choices).slice(0, count));
+}
+
+function showFeedback(text, type) {
+  const fb = document.getElementById('feedback');
+  fb.textContent = text;
+  fb.className = 'feedback ' + type + ' show';
+  setTimeout(() => { fb.classList.remove('show'); }, type === 'try-again' ? 2500 : 1200);
+}
+
+function getStoryPool() {
+  if (S.diff === 'emergent') return 'addTo';
+  if (S.diff === 'proficient') return 'takeFrom';
+  return Math.random() < 0.5 ? 'addTo' : 'takeFrom';
+}
+
+function getMaxN() {
+  return S.diff === 'advanced' ? 10 : 5;
+}
+
+// ════════════════════════════════════════
+// BUILD SCENE HTML
+// ════════════════════════════════════════
+function buildSceneHTML(story, a, b) {
+  let html = '<div class="scene-area">';
+  // Group A
+  html += '<div class="scene-group group-a">';
+  for (let i = 0; i < a; i++) {
+    html += '<div class="scene-obj pop-in" style="animation-delay:' + (i * 0.06) + 's;">' + story.scene + '</div>';
+  }
+  html += '</div>';
+
+  // Arrow
+  if (story.op === 'add') {
+    html += '<div class="scene-arrow">\u2192</div>';
+  } else {
+    html += '<div class="scene-arrow left">\u2190</div>';
+  }
+
+  // Group B
+  html += '<div class="scene-group group-b">';
+  for (let i = 0; i < b; i++) {
+    html += '<div class="scene-obj pop-in" style="animation-delay:' + ((a + i) * 0.06) + 's;">' + story.scene + '</div>';
+  }
+  html += '</div>';
+
+  html += '</div>';
+  return html;
+}
+
+// ════════════════════════════════════════
+// MODE SWITCHING
+// ════════════════════════════════════════
+function setMode(mode) {
+  S.mode = mode;
+  // Reset mode-specific state
+  if (mode === 'practice') {
+    S.pStory = null;
+  }
+  if (mode === 'play') {
+    S.round = 0;
+    S.score = 0;
+    S.streak = 0;
+  }
+  // Update tabs
+  document.querySelectorAll('.vinculum-mode-tab').forEach(t => t.classList.remove('active-explore', 'active-practice', 'active-play'));
+  const tabEl = document.querySelector('[data-mode="' + mode + '"]');
+  if (tabEl) tabEl.classList.add('active-' + mode);
+  render();
+}
+
+function setDiff(diff) {
+  S.diff = diff;
+  S.maxN = getMaxN();
+  document.querySelectorAll('.vinculum-diff-btn').forEach(b => b.classList.remove('active'));
+  document.getElementById('diff' + diff.charAt(0).toUpperCase()).classList.add('active');
+  // Reset explore numbers to fit new range
+  if (S.diff === 'emergent') { S.storyType = 'addTo'; }
+  else if (S.diff === 'proficient') { S.storyType = 'takeFrom'; }
+  S.a = Math.min(S.a, S.maxN - 1);
+  S.b = Math.min(S.b, S.maxN - S.a);
+  if (S.b < 1) S.b = 1;
+  if (S.a < 1) S.a = 1;
+  // Reset practice/play
+  S.pStory = null;
+  S.round = 0;
+  setMode(S.mode);
+}
+
+// ════════════════════════════════════════
+// RENDER
+// ════════════════════════════════════════
+function render() {
+  const ws = document.getElementById('workspace');
+  const sp = document.getElementById('sidePanel');
+
+  if (S.mode === 'explore') renderExplore(ws, sp);
+  else if (S.mode === 'practice') renderPractice(ws, sp);
+  else renderPlay(ws, sp);
+}
+
+// ─── EXPLORE MODE ───
+function renderExplore(ws, sp) {
+  if (!S.currentStory) {
+    S.currentStory = pickStory(S.storyType);
+  }
+  const story = S.currentStory;
+  const a = S.a;
+  const b = S.b;
+  const total = story.op === 'add' ? a + b : a - b;
+
+  let html = '';
+
+  // Story card
+  html += '<div class="story-card" id="storyBanner">';
+  html += '<div class="story-label">\u{1F4D6} Story</div>';
+  html += '<div class="story-text">' + story.text(a, b) + '</div>';
+  html += '<div class="story-question">' + story.q + '</div>';
+  html += '</div>';
+
+  // Scene
+  html += buildSceneHTML(story, a, story.op === 'add' ? b : b);
+
+  // Equation
+  if (story.op === 'add') {
+    html += '<div class="equation-display">' + a + ' + ' + b + ' = ' + total + '</div>';
+  } else {
+    html += '<div class="equation-display">' + a + ' \u2212 ' + b + ' = ' + total + '</div>';
+  }
+
+  // Story type toggles
+  html += '<div class="controls" style="margin-top:16px;">';
+  html += '<button class="ctrl-btn ' + (S.storyType === 'addTo' ? 'active-toggle' : '') + '" onclick="setStoryType(\'addTo\')">Add To</button>';
+  html += '<button class="ctrl-btn ' + (S.storyType === 'takeFrom' ? 'active-toggle' : '') + '" onclick="setStoryType(\'takeFrom\')">Take From</button>';
+  html += '</div>';
+
+  // Number selectors
+  html += '<div class="num-selector">';
+  html += '<label>A =</label>';
+  for (let i = 1; i <= S.maxN; i++) {
+    html += '<button class="num-btn ' + (S.a === i ? 'selected' : '') + '" onclick="setA(' + i + ')">' + i + '</button>';
+  }
+  html += '</div>';
+  html += '<div class="num-selector">';
+  html += '<label>B =</label>';
+  const maxB = story.op === 'add' ? S.maxN - S.a : S.a - 1;
+  for (let i = 1; i <= Math.max(1, maxB); i++) {
+    html += '<button class="num-btn ' + (S.b === i ? 'selected' : '') + '" onclick="setB(' + i + ')">' + i + '</button>';
+  }
+  html += '</div>';
+
+  // New Story button
+  html += '<div class="controls">';
+  html += '<button class="ctrl-btn primary" onclick="newExploreStory()">\u{1F3B2} New Story</button>';
+  html += '</div>';
+
+  ws.innerHTML = html;
+
+  // Side panel
+  sp.innerHTML = '<div class="panel-section">' +
+    '<div class="panel-title">How to Use</div>' +
+    '<div class="panel-text">' +
+      '1. Read the story aloud (or tap <strong>Read to Me</strong>)<br><br>' +
+      '2. Look at the emoji scene \u2014 the first group is blue, the joining/leaving group is yellow<br><br>' +
+      '3. Change the numbers with the A and B selectors<br><br>' +
+      '4. Switch between <strong>Add To</strong> and <strong>Take From</strong> stories<br><br>' +
+      '5. Tap <strong>New Story</strong> for a different scenario' +
+    '</div>' +
+  '</div>' +
+  '<div class="panel-section">' +
+    '<div class="panel-title">Standards</div>' +
+    '<div class="panel-text">' +
+      '<strong>K.OA.1</strong> \u2014 Represent addition and subtraction with objects, fingers, drawings, acting out, verbal explanation, or equations<br><br>' +
+      '<strong>K.OA.2</strong> \u2014 Solve addition and subtraction word problems within 10<br><br>' +
+      '<strong>MN K.1.2.1</strong> \u2014 Use objects and pictures to represent addition and subtraction within 10' +
+    '</div>' +
+  '</div>' +
+  '<div class="panel-section">' +
+    '<div class="panel-title">Key Concept</div>' +
+    '<div class="panel-text">' +
+      'Stories describe real situations. <strong>Add To</strong> means the group gets BIGGER. <strong>Take From</strong> means the group gets SMALLER. Match the story to the math!' +
+    '</div>' +
+  '</div>';
+}
+
+function setStoryType(type) {
+  S.storyType = type;
+  S.currentStory = pickStory(type);
+  if (type === 'takeFrom' && S.b >= S.a) {
+    S.b = Math.max(1, S.a - 1);
+  }
+  render();
+}
+
+function setA(val) {
+  S.a = val;
+  const story = S.currentStory;
+  if (story && story.op === 'add') {
+    if (S.a + S.b > S.maxN) S.b = Math.max(1, S.maxN - S.a);
+  } else {
+    if (S.b >= S.a) S.b = Math.max(1, S.a - 1);
+  }
+  render();
+}
+
+function setB(val) {
+  S.b = val;
+  render();
+}
+
+function newExploreStory() {
+  S.currentStory = pickStory(S.storyType);
+  render();
+}
+
+// ─── PRACTICE MODE ───
+function renderPractice(ws, sp) {
+  if (!S.pStory) {
+    initPracticeRound();
+  }
+
+  const story = S.pStory;
+  let html = '';
+
+  // Story card
+  html += '<div class="story-card" id="storyBanner">';
+  html += '<div class="story-label">\u{1F4D6} Story Problem</div>';
+  html += '<div class="story-text">' + story.text(S.pA, S.pB) + '</div>';
+  html += '<div class="story-question">' + story.q + '</div>';
+  html += '</div>';
+
+  // Scene
+  html += buildSceneHTML(story, S.pA, S.pB);
+
+  // MC grid (4 choices, 2x2)
+  html += '<div class="mc-grid">';
+  S.pChoices.forEach(function(c) {
+    html += '<button class="mc-btn" id="mc' + c + '" onclick="practiceAnswer(' + c + ')">' + c + '</button>';
+  });
+  html += '</div>';
+
+  // Skip
+  html += '<div class="controls">';
+  html += '<button class="ctrl-btn" onclick="skipPractice()">\u23ED Skip</button>';
+  html += '</div>';
+
+  ws.innerHTML = html;
+
+  // Side panel
+  sp.innerHTML = '<div class="panel-section">' +
+    '<div class="panel-title">Instructions</div>' +
+    '<div class="panel-text">' +
+      'Read the story carefully.<br><br>' +
+      'Look at the scene \u2014 blue objects are the <strong>starting group</strong>, yellow are <strong>joining or leaving</strong>.<br><br>' +
+      'Choose the correct answer from the four choices below.' +
+    '</div>' +
+  '</div>' +
+  '<div class="panel-section">' +
+    '<div class="panel-title">Tips</div>' +
+    '<div class="panel-text" style="background:var(--card);padding:12px;border-radius:8px;">' +
+      'Ask yourself:<br>' +
+      '\u2022 Is the group getting <strong style="color:var(--green);">bigger</strong> or <strong style="color:var(--pink);">smaller</strong>?<br>' +
+      '\u2022 What numbers does the story tell me?<br>' +
+      '\u2022 Should I <strong>add</strong> or <strong>subtract</strong>?' +
+    '</div>' +
+  '</div>';
+}
+
+function initPracticeRound() {
+  const type = getStoryPool();
+  S.pStory = pickStory(type);
+  const nums = generateNumbers(S.pStory.op, S.maxN);
+  S.pA = nums.a;
+  S.pB = nums.b;
+  S.pAnswer = nums.answer;
+  S.pChoices = makeMCChoices(S.pAnswer, 4, S.maxN);
+}
+
+function practiceAnswer(choice) {
+  var btn = document.getElementById('mc' + choice);
+  if (choice === S.pAnswer) {
+    btn.classList.add('correct-flash');
+    showFeedback('\u2713 Correct! ' + S.pA + (S.pStory.op === 'add' ? ' + ' : ' \u2212 ') + S.pB + ' = ' + S.pAnswer, 'correct');
+    setTimeout(function() {
+      S.pStory = null;
+      render();
+    }, 1500);
+  } else {
+    btn.classList.add('incorrect-flash');
+    // Determine misconception
+    var diff = Math.abs(choice - S.pAnswer);
+    var feedbackMsg;
+    if (diff === 1) {
+      feedbackMsg = MISCONCEPTIONS.offByOne.msg(S.pAnswer, choice);
+    } else if ((S.pStory.op === 'add' && choice === S.pA - S.pB) || (S.pStory.op === 'subtract' && choice === S.pA + S.pB)) {
+      feedbackMsg = MISCONCEPTIONS.opConfusion.msg(S.pA, S.pB, S.pStory.op);
+    } else if (choice === S.pA || choice === S.pB) {
+      feedbackMsg = MISCONCEPTIONS.sceneCount.msg(S.pA, S.pB, S.pStory.op);
+    } else {
+      feedbackMsg = MISCONCEPTIONS.noConnection.msg();
+    }
+    showFeedback(feedbackMsg, 'try-again');
+  }
+}
+
+function skipPractice() {
+  S.pStory = null;
+  render();
+}
+
+// ─── PLAY MODE ───
+function renderPlay(ws, sp) {
+  if (S.round === 0) startPlayGame();
+
+  var story = S.playStory;
+  var html = '';
+
+  // Round info
+  html += '<div style="text-align:center;margin-bottom:8px;">';
+  html += '<div style="font-size:14px;color:var(--muted);">Round ' + S.round + ' of ' + S.total + '</div>';
+  html += '</div>';
+
+  // Story card
+  html += '<div class="story-card" id="storyBanner">';
+  html += '<div class="story-label">\u{1F3AD} Story Problem</div>';
+  html += '<div class="story-text">' + story.text(S.playA, S.playB) + '</div>';
+  html += '<div class="story-question">' + story.q + '</div>';
+  html += '</div>';
+
+  // Scene
+  html += buildSceneHTML(story, S.playA, S.playB);
+
+  // MC grid (5 choices in a row)
+  html += '<div class="mc-grid" style="grid-template-columns:repeat(5,1fr);max-width:440px;">';
+  S.playChoices.forEach(function(c) {
+    html += '<button class="mc-btn" id="play' + c + '" onclick="playAnswer(' + c + ')">' + c + '</button>';
+  });
+  html += '</div>';
+
+  ws.innerHTML = html;
+
+  // Side panel score
+  sp.innerHTML = '<div class="score-display">' +
+    '<div class="score-value">' + S.score + '</div>' +
+    '<div class="score-label">Score</div>' +
+  '</div>' +
+  '<div class="score-display" style="background:transparent;padding:8px;">' +
+    '<div style="font-size:18px;font-weight:700;color:var(--yellow);">\u{1F525} ' + S.streak + '</div>' +
+    '<div class="score-label">Streak</div>' +
+    '<div class="streak-bar"><div class="streak-fill" style="width:' + Math.min(S.streak * 20, 100) + '%;"></div></div>' +
+  '</div>' +
+  '<div class="panel-section">' +
+    '<div class="panel-title">How to Play</div>' +
+    '<div class="panel-text">' +
+      'Read each story and tap the correct answer.<br><br>' +
+      '<strong>Quick answers</strong> earn bonus points!<br><br>' +
+      'Build a streak for even more!' +
+    '</div>' +
+  '</div>' +
+  '<div class="panel-section">' +
+    '<div class="panel-title">Best Streak</div>' +
+    '<div class="panel-text" style="font-size:24px;font-weight:800;color:var(--purple);">\u{1F3C6} ' + S.best + '</div>' +
+  '</div>';
+}
+
+function startPlayGame() {
+  S.score = 0;
+  S.streak = 0;
+  S.round = 1;
+  initPlayRound();
+}
+
+function initPlayRound() {
+  var type = getStoryPool();
+  S.playStory = pickStory(type);
+  var nums = generateNumbers(S.playStory.op, S.maxN);
+  S.playA = nums.a;
+  S.playB = nums.b;
+  S.playAnswer = nums.answer;
+  S.playChoices = makeMCChoices(S.playAnswer, 5, S.maxN);
+}
+
+function playAnswer(choice) {
+  var btn = document.getElementById('play' + choice);
+  if (choice === S.playAnswer) {
+    btn.classList.add('correct-flash');
+    S.score += 10 + (S.streak * 2);
+    S.streak++;
+    if (S.streak > S.best) S.best = S.streak;
+    showFeedback('\u2713 ' + S.playA + (S.playStory.op === 'add' ? ' + ' : ' \u2212 ') + S.playB + ' = ' + S.playAnswer, 'correct');
+  } else {
+    btn.classList.add('incorrect-flash');
+    S.streak = 0;
+    // Misconception feedback
+    var diff = Math.abs(choice - S.playAnswer);
+    var feedbackMsg;
+    if (diff === 1) {
+      feedbackMsg = MISCONCEPTIONS.offByOne.msg(S.playAnswer, choice);
+    } else if ((S.playStory.op === 'add' && choice === S.playA - S.playB) || (S.playStory.op === 'subtract' && choice === S.playA + S.playB)) {
+      feedbackMsg = MISCONCEPTIONS.opConfusion.msg(S.playA, S.playB, S.playStory.op);
+    } else {
+      feedbackMsg = MISCONCEPTIONS.noConnection.msg();
+    }
+    showFeedback(feedbackMsg, 'try-again');
+  }
+
+  setTimeout(function() {
+    if (S.round >= S.total) {
+      showFeedback('Game Over! Score: ' + S.score, 'correct');
+      setTimeout(function() {
+        S.round = 0;
+        render();
+      }, 2000);
+      return;
+    }
+    S.round++;
+    initPlayRound();
+    render();
+  }, 1500);
+}
+
+// ════════════════════════════════════════
+// INIT
+// ════════════════════════════════════════
+// Initialize tab event listeners
+document.querySelectorAll('.vinculum-mode-tab').forEach(function(tab) {
+  tab.addEventListener('click', function() {
+    setMode(this.dataset.mode);
+  });
+});
+
+// Initialize difficulty button event listeners
+document.querySelectorAll('.vinculum-diff-btn').forEach(function(btn) {
+  btn.addEventListener('click', function() {
+    setDiff(this.dataset.diff);
+  });
+});
+
+render();
+</script>
+<script src="../../vinculum-core.js"></script>
+<script src="../../vinculum-data.js"></script>
+    <script src="../../vinculum-adaptive-hook.js"></script>
+<script src="../../vinculum-3reads.js"></script>
+<script src="../../vinculum-stories.js"></script>
+<script src="../../vinculum-feedback.js"></script>
+  <script src="../../vinculum-guide.js"></script>
+<script src="../../vinculum-identity.js"></script>
+<script src="../../vinculum-indigenous.js"></script>
+<script src="../../vinculum-dashboard.js"></script>
+<script src="../../vinculum-hyperfocus.js"></script>
+<script src="../../vinculum-layout.js"></script>
+</body>
+</html>

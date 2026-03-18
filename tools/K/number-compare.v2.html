@@ -1,0 +1,1110 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>VINCULUM — Number Compare</title>
+<link rel="stylesheet" href="../../vinculum-core.css">
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;600&display=swap');
+
+/* Theme system loaded from vinculum-core.css */
+.vinculum-rtm-btn .rtm-icon{font-size:14px;}
+
+/* ═══ FOCUS VISIBLE (Keyboard Navigation) ═══ */
+*:focus-visible {
+  outline:2px solid var(--cyan);outline-offset:2px;border-radius:4px;
+}
+.sr-only {
+  position:absolute;width:1px;height:1px;padding:0;margin:-1px;
+  overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0;
+}
+
+* { margin:0; padding:0; box-sizing:border-box; }
+body {
+  font-family: 'Inter', sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  height: 100vh;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  user-select: none;
+}
+
+/* ── HEADER ── */
+/* ── MODE TABS ── */
+/* Difficulty selector */
+.vinculum-diff-btn:hover { color: var(--text2); }
+/* ── MAIN AREA ── */
+.main {
+  flex: 1;
+  display: flex;
+  overflow: hidden;
+}
+
+/* ── WORKSPACE ── */
+.workspace {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+  position: relative;
+  overflow-y: auto;
+}
+
+/* ── COMPARE ARENA ── */
+.compare-arena {
+  display: flex;
+  flex-direction: row;
+  gap: 20px;
+  align-items: center;
+  justify-content: center;
+  max-width: 600px;
+  width: 100%;
+  margin: 16px auto;
+}
+.compare-group {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+  flex: 1;
+  min-width: 0;
+}
+.compare-objects {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  justify-content: center;
+  min-height: 56px;
+  padding: 12px;
+  background: var(--card);
+  border: 2px solid var(--border);
+  border-radius: 16px;
+  width: 100%;
+}
+.compare-dot {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 24px;
+  transition: transform 0.15s;
+}
+.compare-dot:hover {
+  transform: scale(1.1);
+}
+.compare-numeral {
+  font-size: 36px;
+  font-weight: 800;
+  font-family: 'JetBrains Mono', monospace;
+  text-align: center;
+  color: var(--text);
+}
+.compare-symbol {
+  font-size: 64px;
+  font-weight: 900;
+  color: var(--yellow);
+  text-align: center;
+  min-width: 80px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: 'JetBrains Mono', monospace;
+}
+
+/* ── NUMBER SELECTOR ── */
+.number-selector {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  justify-content: center;
+  margin-top: 8px;
+}
+.number-selector button {
+  width: 44px;
+  height: 44px;
+  border-radius: 10px;
+  border: 2px solid var(--border);
+  background: var(--card);
+  color: var(--text);
+  font-size: 18px;
+  font-weight: 700;
+  font-family: 'JetBrains Mono', monospace;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+.number-selector button:hover {
+  border-color: var(--cyan);
+  background: rgba(0,212,255,0.05);
+  transform: scale(1.08);
+}
+.number-selector button.selected {
+  border-color: var(--cyan);
+  background: rgba(0,212,255,0.15);
+  box-shadow: 0 0 12px rgba(0,212,255,0.2);
+  color: var(--cyan);
+}
+
+/* ── SYMBOL BUTTONS (Practice/Play) ── */
+.symbol-btn-row {
+  display: flex;
+  gap: 12px;
+  justify-content: center;
+  margin-top: 16px;
+}
+.symbol-btn {
+  min-width: 80px;
+  height: 60px;
+  border-radius: 14px;
+  border: 2px solid var(--border);
+  background: var(--card);
+  color: var(--text);
+  font-size: 28px;
+  font-weight: 800;
+  font-family: 'JetBrains Mono', monospace;
+  cursor: pointer;
+  transition: all 0.15s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.symbol-btn:hover {
+  border-color: var(--cyan);
+  background: rgba(0,212,255,0.05);
+  transform: scale(1.05);
+}
+.symbol-btn.correct-flash {
+  border-color: var(--green);
+  background: rgba(0,230,118,0.15);
+  color: var(--green);
+}
+.symbol-btn.incorrect-flash {
+  border-color: var(--pink);
+  background: rgba(255,59,139,0.15);
+  color: var(--pink);
+}
+
+/* ── INSTRUCTION BOX ── */
+.instruction-box {
+  text-align: center;
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--text2);
+  margin-bottom: 12px;
+  padding: 10px 16px;
+  background: var(--card);
+  border-radius: 12px;
+  border: 1px solid var(--border);
+}
+
+/* ── CONTROLS ── */
+.controls {
+  display: flex;
+  gap: 8px;
+  margin-top: 16px;
+  flex-wrap: wrap;
+  justify-content: center;
+}
+.ctrl-btn {
+  padding: 10px 20px;
+  border-radius: 10px;
+  border: 1px solid var(--border);
+  background: var(--card);
+  color: var(--text2);
+  font-size: 13px;
+  font-weight: 600;
+  font-family: inherit;
+  cursor: pointer;
+  transition: all 0.2s;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.ctrl-btn:hover { background: var(--card-hover); color: var(--text); }
+.ctrl-btn.primary {
+  background: var(--grad);
+  color: var(--bg);
+  border-color: transparent;
+}
+.ctrl-btn.primary:hover { opacity: 0.9; }
+.ctrl-btn.danger { color: var(--pink); }
+.ctrl-btn.danger:hover { background: rgba(255,59,139,0.1); }
+
+/* ── ANSWER GRID ── */
+.answer-grid {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 8px;
+  margin-top: 16px;
+  max-width: 400px;
+}
+.answer-btn {
+  padding: 14px;
+  border-radius: 12px;
+  border: 2px solid var(--border);
+  background: var(--card);
+  color: var(--text);
+  font-size: 20px;
+  font-weight: 700;
+  font-family: 'JetBrains Mono', monospace;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+.answer-btn:hover {
+  border-color: var(--cyan);
+  background: rgba(0,212,255,0.05);
+  transform: scale(1.05);
+}
+.answer-btn.correct-flash {
+  border-color: var(--green);
+  background: rgba(0,230,118,0.15);
+  color: var(--green);
+}
+.answer-btn.incorrect-flash {
+  border-color: var(--pink);
+  background: rgba(255,59,139,0.15);
+  color: var(--pink);
+}
+
+/* ── FEEDBACK ── */
+.feedback {
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%) scale(0);
+  padding: 24px 48px;
+  border-radius: 20px;
+  font-size: 28px;
+  font-weight: 800;
+  z-index: 200;
+  pointer-events: none;
+  transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275), opacity 0.3s;
+  opacity: 0;
+}
+.feedback.show {
+  transform: translate(-50%, -50%) scale(1);
+  opacity: 1;
+}
+.feedback.correct {
+  background: rgba(0,230,118,0.15);
+  color: var(--green);
+  border: 2px solid var(--green);
+}
+.feedback.incorrect {
+  background: rgba(255,59,139,0.15);
+  color: var(--pink);
+  border: 2px solid var(--pink);
+}
+.feedback.try-again {
+  background: rgba(255,193,7,0.15);
+  color: var(--yellow);
+  border: 2px solid var(--yellow);
+}
+
+/* ── SIDE PANEL ── */
+.side-panel {
+  width: 280px;
+  background: var(--bg2);
+  border-left: 1px solid var(--border);
+  padding: 20px;
+  overflow-y: auto;
+  flex-shrink: 0;
+}
+.panel-section {
+  margin-bottom: 20px;
+}
+.panel-title {
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 1.5px;
+  color: var(--muted);
+  margin-bottom: 8px;
+}
+.panel-text {
+  font-size: 13px;
+  color: var(--text2);
+  line-height: 1.6;
+}
+.score-display {
+  text-align: center;
+  padding: 16px;
+  background: var(--card);
+  border-radius: 12px;
+  margin-bottom: 12px;
+}
+.score-value {
+  font-size: 36px;
+  font-weight: 900;
+  font-family: 'JetBrains Mono', monospace;
+  background: var(--grad);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+.score-label {
+  font-size: 11px;
+  color: var(--muted);
+  text-transform: uppercase;
+  letter-spacing: 1px;
+}
+.streak-bar {
+  height: 6px;
+  background: var(--card);
+  border-radius: 3px;
+  overflow: hidden;
+  margin-top: 8px;
+}
+.streak-fill {
+  height: 100%;
+  background: var(--grad);
+  border-radius: 3px;
+  transition: width 0.3s;
+}
+
+/* ── ANIMATIONS ── */
+@keyframes pop {
+  0% { transform: scale(0); }
+  70% { transform: scale(1.2); }
+  100% { transform: scale(1); }
+}
+@keyframes shake {
+  0%, 100% { transform: translateX(0); }
+  25% { transform: translateX(-8px); }
+  75% { transform: translateX(8px); }
+}
+@keyframes correctFlash {
+  0% { background: rgba(0,230,118,0.3); }
+  100% { background: transparent; }
+}
+.pop-in { animation: pop 0.3s ease-out forwards; }
+.shake { animation: shake 0.3s ease-in-out; }
+
+/* scrollbar */
+::-webkit-scrollbar { width: 6px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+</style>
+</head>
+<body>
+
+<!-- ═══ HEADER ═══ -->
+<div class="vinculum-header">
+  <div class="vinculum-header-left">
+    <a class="vinculum-back-btn" href="../../VINCULUM-Hub.html" style="text-decoration:none;">◀ Hub</a>
+    <div class="vinculum-header-title"><span>VINCULUM</span> Number Compare</div>
+    <span class="vinculum-header-badge">K.CC</span>
+  </div>
+    <div class="vinculum-header-right">
+      <div class="vinculum-std-tags">
+    <span class="vinculum-std-tag">K.CC.6</span>
+    <span class="vinculum-std-tag">K.CC.7</span>
+    <span class="vinculum-std-tag mn">MN K.1.1.2</span>
+  </div>
+  <button class="vinculum-back-btn" id="readAloudBtn" onclick="toggleReadAloud()" aria-label="Read Aloud" title="Read instructions aloud" style="margin-left:8px;white-space:nowrap;">🔊 Read to Me</button>
+</div>
+
+<!-- ═══ MODE TABS ═══ -->
+</div>
+
+  <div class="vinculum-mode-tabs">
+  <button class="vinculum-mode-tab active-explore" id="tabExplore" data-mode="explore">
+    <svg width="18" height="18" viewBox="0 0 48 48" fill="none"><path d="M4 24C4 24 12 12 24 12C36 12 44 24 44 24C44 24 36 36 24 36C12 36 4 24 4 24Z" stroke="currentColor" stroke-width="3" fill="none"/><circle cx="24" cy="24" r="7" stroke="currentColor" stroke-width="3" fill="none"/><circle cx="24" cy="24" r="3" fill="currentColor"/><line x1="24" y1="4" x2="24" y2="9" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" opacity="0.5"/><line x1="10" y1="8" x2="13" y2="12" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" opacity="0.5"/><line x1="38" y1="8" x2="35" y2="12" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" opacity="0.5"/></svg> Explore
+  </button>
+  <button class="vinculum-mode-tab" id="tabPractice" data-mode="practice">
+    <svg width="18" height="18" viewBox="0 0 48 48" fill="none"><circle cx="24" cy="24" r="20" stroke="currentColor" stroke-width="3" fill="none" opacity="0.3"/><circle cx="24" cy="24" r="20" stroke="currentColor" stroke-width="3" fill="none" stroke-dasharray="126" stroke-dashoffset="32" stroke-linecap="round"/><polyline points="16,24 22,32 34,16" stroke="currentColor" stroke-width="4" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg> Practice
+  </button>
+  <button class="vinculum-mode-tab" id="tabPlay" data-mode="play">
+    <svg width="18" height="18" viewBox="0 0 48 48" fill="none"><polygon points="28,4 12,28 22,28 18,44 36,18 26,18" fill="none" stroke="currentColor" stroke-width="3" stroke-linejoin="round"/><polygon points="27,8 15,27 23,27 20,40 34,19 26,19" fill="currentColor" opacity="0.15"/></svg> Play
+  </button>
+  <div class="vinculum-diff-selector">
+    <span class="vinculum-diff-label">Level</span>
+    <button class="vinculum-diff-btn active" id="diffE" data-diff="emergent">1–5</button>
+    <button class="vinculum-diff-btn" id="diffP" data-diff="proficient">1–10</button>
+    <button class="vinculum-diff-btn" id="diffA" data-diff="advanced">Symbols</button>
+  </div>
+</div>
+
+<!-- ═══ MAIN ═══ -->
+<div class="main">
+  <div class="workspace" role="main" id="workspace"></div>
+  <div class="side-panel" id="sidePanel"></div>
+</div>
+
+<!-- ═══ FEEDBACK POPUP ═══ -->
+<div class="feedback" id="feedback"></div>
+
+  <script src="../../vinculum-input.js"></script>
+<script>
+// ════════════════════════════════════════
+// STATE
+// ════════════════════════════════════════
+let S = {
+  mode: 'explore', diff: 'emergent', maxN: 5,
+  // Explore
+  leftNum: 3, rightNum: 5,
+  // Practice
+  pLeft: 0, pRight: 0, pType: 'compare', // compare | symbol
+  answered: false,
+  // Play
+  score: 0, streak: 0, best: 0, round: 0, total: 10,
+  playLeft: 0, playRight: 0, playType: 'compare',
+  playAnswered: false
+};
+
+// ════════════════════════════════════════
+// READ-ALOUD + STORY BANNER
+// ════════════════════════════════════════
+function toggleReadAloud() {
+  if (window.VinculumStories && VinculumStories.isReading()) {
+    VinculumStories.stopReading();
+    document.getElementById('readAloudBtn').textContent = '🔊 Read to Me';
+  } else {
+    const fb = document.getElementById('feedback');
+    const storyEl = document.getElementById('storyBanner');
+    const text = storyEl ? storyEl.textContent : (fb ? fb.textContent : 'Welcome to Number Compare!');
+    if (window.VinculumStories) {
+      VinculumStories.readAloud(text, { rate: 0.85, onComplete: function() {
+        document.getElementById('readAloudBtn').textContent = '🔊 Read to Me';
+      }});
+      document.getElementById('readAloudBtn').textContent = '⏹ Stop';
+    }
+  }
+}
+
+// ════════════════════════════════════════
+// MISCONCEPTIONS DATABASE
+// ════════════════════════════════════════
+const MISCONCEPTIONS = {
+  symbolConfusion: {
+    id: 'symbol-mix',
+    msg: function(l, r) { return 'The "mouth" of > or < always faces the BIGGER number. ' + Math.max(l, r) + ' is bigger!'; }
+  },
+  spreadConfusion: {
+    id: 'spread',
+    msg: function() { return "Don't look at how spread out they are — COUNT how many in each group!"; }
+  },
+  offByOne: {
+    id: 'off-by-one',
+    msg: function(l, r) { return 'So close! Count again — left has ' + l + ' and right has ' + r + '.'; }
+  },
+  randomGuess: {
+    id: 'random',
+    msg: function() { return 'Count the objects in each group, then decide which has more.'; }
+  }
+};
+
+// ════════════════════════════════════════
+// HELPERS
+// ════════════════════════════════════════
+function randInt(min, max) {
+  return Math.floor(Math.random() * (max - min + 1)) + min;
+}
+
+function showFeedback(text, type) {
+  var fb = document.getElementById('feedback');
+  fb.textContent = text;
+  fb.className = 'feedback ' + type + ' show';
+  setTimeout(function() { fb.classList.remove('show'); }, 1200);
+}
+
+function getSymbol(l, r) {
+  if (l > r) return '>';
+  if (l < r) return '<';
+  return '=';
+}
+
+function buildDotGroup(count, color, size) {
+  var html = '';
+  var sz = size || 40;
+  var emoji = color === 'blue' ? '🔵' : '🔴';
+  for (var i = 0; i < count; i++) {
+    html += '<div class="compare-dot pop-in" style="width:' + sz + 'px;height:' + sz + 'px;background:' + (color === 'blue' ? 'rgba(0,212,255,0.15)' : 'rgba(255,59,139,0.15)') + ';animation-delay:' + (i * 0.04) + 's;">' + emoji + '</div>';
+  }
+  return html;
+}
+
+function generatePracticePair() {
+  S.pLeft = randInt(0, S.maxN);
+  S.pRight = randInt(0, S.maxN);
+  // Ensure not always equal
+  if (Math.random() > 0.2 && S.pLeft === S.pRight) {
+    S.pRight = randInt(0, S.maxN);
+  }
+  // Ensure at least one is > 0
+  if (S.pLeft === 0 && S.pRight === 0) {
+    S.pRight = randInt(1, S.maxN);
+  }
+  S.answered = false;
+  // Advanced mode: sometimes show symbol-fill (show symbol + one number, pick missing number)
+  if (S.diff === 'advanced' && Math.random() > 0.5) {
+    S.pType = 'symbol';
+  } else {
+    S.pType = 'compare';
+  }
+}
+
+function generatePlayPair() {
+  S.playLeft = randInt(1, S.maxN);
+  S.playRight = randInt(0, S.maxN);
+  if (Math.random() > 0.2 && S.playLeft === S.playRight) {
+    S.playRight = randInt(0, S.maxN);
+  }
+  if (S.playLeft === 0 && S.playRight === 0) {
+    S.playRight = randInt(1, S.maxN);
+  }
+  S.playAnswered = false;
+  S.playType = 'compare';
+}
+
+// ════════════════════════════════════════
+// MODE SWITCHING
+// ════════════════════════════════════════
+function setMode(mode) {
+  S.mode = mode;
+  S.answered = false;
+  S.playAnswered = false;
+
+  if (mode === 'practice') {
+    generatePracticePair();
+  }
+  if (mode === 'play') {
+    S.score = 0;
+    S.streak = 0;
+    S.round = 0;
+  }
+
+  // Update tabs
+  document.querySelectorAll('.vinculum-mode-tab').forEach(function(t) {
+    t.classList.remove('active-explore', 'active-practice', 'active-play');
+  });
+  var tabEl = document.querySelector('[data-mode="' + mode + '"]');
+  if (tabEl) tabEl.classList.add('active-' + mode);
+
+  render();
+}
+
+function setDiff(diff) {
+  S.diff = diff;
+  S.maxN = { emergent: 5, proficient: 10, advanced: 10 }[diff];
+  document.querySelectorAll('.vinculum-diff-btn').forEach(function(b) { b.classList.remove('active'); });
+  document.getElementById('diff' + diff.charAt(0).toUpperCase()).classList.add('active');
+  // Clamp explore numbers
+  if (S.leftNum > S.maxN) S.leftNum = S.maxN;
+  if (S.rightNum > S.maxN) S.rightNum = S.maxN;
+  setMode(S.mode);
+}
+
+// ════════════════════════════════════════
+// RENDER
+// ════════════════════════════════════════
+function render() {
+  var ws = document.getElementById('workspace');
+  var sp = document.getElementById('sidePanel');
+
+  if (S.mode === 'explore') renderExplore(ws, sp);
+  else if (S.mode === 'practice') renderPractice(ws, sp);
+  else renderPlay(ws, sp);
+}
+
+// ─── EXPLORE MODE ───
+function renderExplore(ws, sp) {
+  var html = '';
+
+  // Story banner for Explore mode
+  if (window.VinculumStories) {
+    var toolName = window.location.pathname.split('/').pop().replace('.html','');
+    var storyData = VinculumStories.getStory(toolName, {a: S.leftNum, b: S.rightNum, total: S.leftNum + S.rightNum, n: Math.max(S.leftNum, S.rightNum), ones: S.leftNum});
+    if (storyData && storyData.story) {
+      if (window.Vinculum3Reads) {
+        html += Vinculum3Reads.getBannerHTML(storyData);
+      } else {
+        html += '<div id="storyBanner" style="background:var(--card2,#1a1f2e);border:1px solid var(--border);border-radius:12px;padding:16px 20px;margin-bottom:16px;font-size:15px;line-height:1.6;color:var(--text);position:relative;width:100%;max-width:620px;"><span style="font-size:12px;color:var(--cyan);font-weight:700;text-transform:uppercase;letter-spacing:1px;">📖 Story</span><br>' + storyData.story + '<br><em style="color:var(--yellow);font-weight:600;">' + storyData.question + '</em><button onclick="toggleReadAloud()" style="position:absolute;top:12px;right:12px;background:none;border:1px solid var(--border);border-radius:8px;padding:4px 10px;color:var(--cyan);cursor:pointer;font-size:14px;" title="Read story aloud">🔊</button></div>';
+      }
+    }
+  }
+
+  var sym = getSymbol(S.leftNum, S.rightNum);
+  var showObjects = (S.diff !== 'advanced');
+
+  html += '<div class="instruction-box">Choose numbers for each group and see how they compare!</div>';
+
+  // Compare arena
+  html += '<div class="compare-arena">';
+
+  // Left group
+  html += '<div class="compare-group">';
+  if (showObjects) {
+    html += '<div class="compare-objects">';
+    html += buildDotGroup(S.leftNum, 'blue', 40);
+    if (S.leftNum === 0) html += '<span style="color:var(--muted);font-size:13px;">empty</span>';
+    html += '</div>';
+  }
+  html += '<div class="compare-numeral" style="color:var(--cyan);">' + S.leftNum + '</div>';
+  html += '</div>';
+
+  // Symbol
+  html += '<div class="compare-symbol">' + sym + '</div>';
+
+  // Right group
+  html += '<div class="compare-group">';
+  if (showObjects) {
+    html += '<div class="compare-objects">';
+    html += buildDotGroup(S.rightNum, 'red', 40);
+    if (S.rightNum === 0) html += '<span style="color:var(--muted);font-size:13px;">empty</span>';
+    html += '</div>';
+  }
+  html += '<div class="compare-numeral" style="color:var(--pink);">' + S.rightNum + '</div>';
+  html += '</div>';
+
+  html += '</div>'; // end compare-arena
+
+  // Number selectors
+  html += '<div style="display:flex;gap:40px;justify-content:center;margin-top:20px;flex-wrap:wrap;">';
+
+  // Left selector
+  html += '<div style="text-align:center;"><div style="font-size:12px;color:var(--muted);margin-bottom:6px;font-weight:600;text-transform:uppercase;letter-spacing:1px;">Left Number</div>';
+  html += '<div class="number-selector">';
+  for (var i = 0; i <= S.maxN; i++) {
+    html += '<button class="' + (i === S.leftNum ? 'selected' : '') + '" onclick="setLeftNum(' + i + ')">' + i + '</button>';
+  }
+  html += '</div></div>';
+
+  // Right selector
+  html += '<div style="text-align:center;"><div style="font-size:12px;color:var(--muted);margin-bottom:6px;font-weight:600;text-transform:uppercase;letter-spacing:1px;">Right Number</div>';
+  html += '<div class="number-selector">';
+  for (var j = 0; j <= S.maxN; j++) {
+    html += '<button class="' + (j === S.rightNum ? 'selected' : '') + '" onclick="setRightNum(' + j + ')">' + j + '</button>';
+  }
+  html += '</div></div>';
+
+  html += '</div>';
+
+  // Controls
+  html += '<div class="controls">';
+  html += '<button class="ctrl-btn primary" onclick="randomExplore()">↻ Random Pair</button>';
+  html += '</div>';
+
+  ws.innerHTML = html;
+
+  // Side panel
+  sp.innerHTML = '<div class="panel-section">' +
+    '<div class="panel-title">How to Use</div>' +
+    '<div class="panel-text">' +
+      '1. Choose a number for each side using the buttons below<br><br>' +
+      '2. Watch the <strong style="color:var(--yellow);">symbol</strong> update automatically<br><br>' +
+      '3. Compare the groups — which has more?' +
+    '</div>' +
+  '</div>' +
+  '<div class="panel-section">' +
+    '<div class="panel-title">Symbols</div>' +
+    '<div class="panel-text">' +
+      '<strong style="font-size:24px;color:var(--yellow);">&gt;</strong> means <strong>greater than</strong> (left is more)<br><br>' +
+      '<strong style="font-size:24px;color:var(--yellow);">&lt;</strong> means <strong>less than</strong> (left is fewer)<br><br>' +
+      '<strong style="font-size:24px;color:var(--yellow);">=</strong> means <strong>equal to</strong> (same amount)<br><br>' +
+      '<em style="color:var(--muted);">Tip: The "mouth" always opens toward the bigger number!</em>' +
+    '</div>' +
+  '</div>' +
+  '<div class="panel-section">' +
+    '<div class="panel-title">Standards</div>' +
+    '<div class="panel-text">' +
+      '<strong>K.CC.6</strong> — Identify whether the number of objects in one group is greater than, less than, or equal to the number of objects in another group<br><br>' +
+      '<strong>K.CC.7</strong> — Compare two numbers between 1 and 10 presented as written numerals' +
+    '</div>' +
+  '</div>';
+}
+
+function setLeftNum(n) {
+  S.leftNum = n;
+  render();
+}
+
+function setRightNum(n) {
+  S.rightNum = n;
+  render();
+}
+
+function randomExplore() {
+  S.leftNum = randInt(0, S.maxN);
+  S.rightNum = randInt(0, S.maxN);
+  render();
+}
+
+// ─── PRACTICE MODE ───
+function renderPractice(ws, sp) {
+  if (S.pLeft === 0 && S.pRight === 0 && !S.answered) {
+    generatePracticePair();
+  }
+
+  var html = '';
+  var showObjects = (S.diff === 'emergent');
+  var showNumerals = true;
+  var correctSym = getSymbol(S.pLeft, S.pRight);
+
+  if (S.pType === 'symbol' && S.diff === 'advanced') {
+    // Show symbol and one number, pick the missing number
+    var missSide = Math.random() > 0.5 ? 'left' : 'right';
+    // Store which side is missing for answer checking
+    if (!S._missSide) S._missSide = missSide;
+    missSide = S._missSide;
+    var knownNum = missSide === 'left' ? S.pRight : S.pLeft;
+    var missingNum = missSide === 'left' ? S.pLeft : S.pRight;
+    var sym = getSymbol(S.pLeft, S.pRight);
+
+    html += '<div class="instruction-box">What number goes in the blank?</div>';
+
+    html += '<div class="compare-arena">';
+    // Left
+    html += '<div class="compare-group">';
+    if (missSide === 'left') {
+      html += '<div class="compare-numeral" style="color:var(--cyan);font-size:48px;">?</div>';
+    } else {
+      html += '<div class="compare-numeral" style="color:var(--cyan);">' + S.pLeft + '</div>';
+    }
+    html += '</div>';
+    // Symbol
+    html += '<div class="compare-symbol">' + sym + '</div>';
+    // Right
+    html += '<div class="compare-group">';
+    if (missSide === 'right') {
+      html += '<div class="compare-numeral" style="color:var(--pink);font-size:48px;">?</div>';
+    } else {
+      html += '<div class="compare-numeral" style="color:var(--pink);">' + S.pRight + '</div>';
+    }
+    html += '</div>';
+    html += '</div>';
+
+    // Number answer buttons
+    html += '<div class="answer-grid" style="margin:16px auto;max-width:360px;grid-template-columns:repeat(' + Math.min(S.maxN + 1, 6) + ', 1fr);">';
+    for (var n = 0; n <= S.maxN; n++) {
+      html += '<button class="answer-btn" id="numAns' + n + '" onclick="practicePickNumber(' + n + ')">' + n + '</button>';
+    }
+    html += '</div>';
+
+  } else {
+    // Standard compare mode
+    html += '<div class="instruction-box">Which symbol goes between these numbers?</div>';
+
+    html += '<div class="compare-arena">';
+
+    // Left group
+    html += '<div class="compare-group">';
+    if (showObjects) {
+      html += '<div class="compare-objects">';
+      html += buildDotGroup(S.pLeft, 'blue', 40);
+      if (S.pLeft === 0) html += '<span style="color:var(--muted);font-size:13px;">empty</span>';
+      html += '</div>';
+    }
+    if (showNumerals) {
+      html += '<div class="compare-numeral" style="color:var(--cyan);">' + S.pLeft + '</div>';
+    }
+    html += '</div>';
+
+    // Symbol placeholder
+    html += '<div class="compare-symbol" style="color:var(--muted);border:3px dashed var(--border);border-radius:16px;width:80px;height:80px;">?</div>';
+
+    // Right group
+    html += '<div class="compare-group">';
+    if (showObjects) {
+      html += '<div class="compare-objects">';
+      html += buildDotGroup(S.pRight, 'red', 40);
+      if (S.pRight === 0) html += '<span style="color:var(--muted);font-size:13px;">empty</span>';
+      html += '</div>';
+    }
+    if (showNumerals) {
+      html += '<div class="compare-numeral" style="color:var(--pink);">' + S.pRight + '</div>';
+    }
+    html += '</div>';
+
+    html += '</div>';
+
+    // Symbol choice buttons
+    html += '<div class="symbol-btn-row">';
+    html += '<button class="symbol-btn" id="symLt" onclick="practiceAnswer(\'<\')">&lt;</button>';
+    html += '<button class="symbol-btn" id="symEq" onclick="practiceAnswer(\'=\')">=</button>';
+    html += '<button class="symbol-btn" id="symGt" onclick="practiceAnswer(\'>\')\">&gt;</button>';
+    html += '</div>';
+  }
+
+  // Skip button
+  html += '<div class="controls">';
+  html += '<button class="ctrl-btn" onclick="practiceSkip()">Skip →</button>';
+  html += '</div>';
+
+  ws.innerHTML = html;
+
+  // Side panel
+  sp.innerHTML = '<div class="panel-section">' +
+    '<div class="panel-title">Instructions</div>' +
+    '<div class="panel-text">' +
+      (S.pType === 'symbol' && S.diff === 'advanced' ?
+        'Look at the symbol and the known number.<br><br>Pick the number that makes the comparison <strong>true</strong>.' :
+        'Look at the two numbers' + (showObjects ? ' and their objects' : '') + '.<br><br>Tap the correct symbol: <strong>&lt;</strong>, <strong>=</strong>, or <strong>&gt;</strong>.'
+      ) +
+    '</div>' +
+  '</div>' +
+  '<div class="panel-section">' +
+    '<div class="panel-title">Remember</div>' +
+    '<div class="panel-text" style="background:var(--card);padding:12px;border-radius:8px;">' +
+      'The <strong>"mouth"</strong> of &gt; or &lt; always opens toward the <strong style="color:var(--yellow);">bigger</strong> number.<br><br>' +
+      '<span style="font-size:20px;font-family:JetBrains Mono,monospace;font-weight:800;">5 &gt; 3</span> — five is greater than three<br>' +
+      '<span style="font-size:20px;font-family:JetBrains Mono,monospace;font-weight:800;">2 &lt; 7</span> — two is less than seven<br>' +
+      '<span style="font-size:20px;font-family:JetBrains Mono,monospace;font-weight:800;">4 = 4</span> — four equals four' +
+    '</div>' +
+  '</div>' +
+  '<div class="panel-section">' +
+    '<div class="panel-title">Key Concept</div>' +
+    '<div class="panel-text">Compare by <strong>counting</strong>, not by how things look. A spread-out group of 3 is still less than a bunched-up group of 5!</div>' +
+  '</div>';
+}
+
+function practiceAnswer(sym) {
+  if (S.answered) return;
+  S.answered = true;
+  var correct = getSymbol(S.pLeft, S.pRight);
+  var btnMap = { '<': 'symLt', '=': 'symEq', '>': 'symGt' };
+  var btn = document.getElementById(btnMap[sym]);
+  var correctBtn = document.getElementById(btnMap[correct]);
+
+  if (sym === correct) {
+    if (btn) btn.classList.add('correct-flash');
+    showFeedback('Correct! ' + S.pLeft + ' ' + correct + ' ' + S.pRight, 'correct');
+    setTimeout(function() {
+      generatePracticePair();
+      render();
+    }, 1500);
+  } else {
+    if (btn) btn.classList.add('incorrect-flash');
+    // Determine misconception
+    var feedbackMsg;
+    if ((sym === '>' && correct === '<') || (sym === '<' && correct === '>')) {
+      feedbackMsg = MISCONCEPTIONS.symbolConfusion.msg(S.pLeft, S.pRight);
+    } else if (Math.abs(S.pLeft - S.pRight) === 1) {
+      feedbackMsg = MISCONCEPTIONS.offByOne.msg(S.pLeft, S.pRight);
+    } else {
+      feedbackMsg = MISCONCEPTIONS.randomGuess.msg();
+    }
+    showFeedback(feedbackMsg, 'incorrect');
+    // Show correct after delay
+    setTimeout(function() {
+      if (correctBtn) correctBtn.classList.add('correct-flash');
+    }, 800);
+    setTimeout(function() {
+      generatePracticePair();
+      render();
+    }, 2500);
+  }
+}
+
+function practicePickNumber(n) {
+  if (S.answered) return;
+  S.answered = true;
+  var missSide = S._missSide;
+  var correctNum = missSide === 'left' ? S.pLeft : S.pRight;
+  var btn = document.getElementById('numAns' + n);
+
+  // For symbol-fill, check if the chosen number makes the comparison true
+  // The exact answer is the original number
+  if (n === correctNum) {
+    if (btn) btn.classList.add('correct-flash');
+    showFeedback('Correct! ' + (missSide === 'left' ? n : S.pLeft) + ' ' + getSymbol(S.pLeft, S.pRight) + ' ' + (missSide === 'right' ? n : S.pRight), 'correct');
+    setTimeout(function() {
+      S._missSide = null;
+      generatePracticePair();
+      render();
+    }, 1500);
+  } else {
+    if (btn) btn.classList.add('incorrect-flash');
+    var correctBtn = document.getElementById('numAns' + correctNum);
+    showFeedback('Not quite! The answer is ' + correctNum + '.', 'incorrect');
+    setTimeout(function() {
+      if (correctBtn) correctBtn.classList.add('correct-flash');
+    }, 800);
+    setTimeout(function() {
+      S._missSide = null;
+      generatePracticePair();
+      render();
+    }, 2500);
+  }
+}
+
+function practiceSkip() {
+  S._missSide = null;
+  generatePracticePair();
+  render();
+}
+
+// ─── PLAY MODE ───
+function renderPlay(ws, sp) {
+  if (S.round === 0) startNewGame();
+
+  var html = '';
+
+  if (S.round > S.total) {
+    // Game over screen
+    html += '<div style="text-align:center;">';
+    html += '<div style="font-size:48px;font-weight:900;background:var(--grad);-webkit-background-clip:text;-webkit-text-fill-color:transparent;margin-bottom:12px;">Game Over!</div>';
+    html += '<div style="font-size:24px;color:var(--text2);margin-bottom:8px;">Final Score: <strong style="color:var(--green);">' + S.score + '</strong></div>';
+    html += '<div style="font-size:18px;color:var(--muted);margin-bottom:24px;">Best Streak: <strong style="color:var(--yellow);">' + S.best + '</strong></div>';
+    html += '<div class="controls"><button class="ctrl-btn primary" onclick="startNewGame();render();">Play Again</button></div>';
+    html += '</div>';
+    ws.innerHTML = html;
+    renderPlayPanel(sp);
+    return;
+  }
+
+  var showObjects = (S.diff === 'emergent');
+
+  html += '<div style="text-align:center;margin-bottom:8px;">';
+  html += '<div style="font-size:14px;color:var(--muted);">Round ' + S.round + ' of ' + S.total + '</div>';
+  html += '</div>';
+
+  html += '<div class="instruction-box">Which symbol compares these numbers?</div>';
+
+  html += '<div class="compare-arena">';
+
+  // Left group
+  html += '<div class="compare-group">';
+  if (showObjects) {
+    html += '<div class="compare-objects">';
+    html += buildDotGroup(S.playLeft, 'blue', 36);
+    if (S.playLeft === 0) html += '<span style="color:var(--muted);font-size:13px;">empty</span>';
+    html += '</div>';
+  }
+  html += '<div class="compare-numeral" style="color:var(--cyan);">' + S.playLeft + '</div>';
+  html += '</div>';
+
+  // Symbol placeholder
+  html += '<div class="compare-symbol" style="color:var(--muted);border:3px dashed var(--border);border-radius:16px;width:80px;height:80px;">?</div>';
+
+  // Right group
+  html += '<div class="compare-group">';
+  if (showObjects) {
+    html += '<div class="compare-objects">';
+    html += buildDotGroup(S.playRight, 'red', 36);
+    if (S.playRight === 0) html += '<span style="color:var(--muted);font-size:13px;">empty</span>';
+    html += '</div>';
+  }
+  html += '<div class="compare-numeral" style="color:var(--pink);">' + S.playRight + '</div>';
+  html += '</div>';
+
+  html += '</div>';
+
+  // Symbol choice buttons
+  html += '<div class="symbol-btn-row">';
+  html += '<button class="symbol-btn" id="playSymLt" onclick="playAnswer(\'<\')">&lt;</button>';
+  html += '<button class="symbol-btn" id="playSymEq" onclick="playAnswer(\'=\')">=</button>';
+  html += '<button class="symbol-btn" id="playSymGt" onclick="playAnswer(\'>\')\">&gt;</button>';
+  html += '</div>';
+
+  ws.innerHTML = html;
+  renderPlayPanel(sp);
+}
+
+function renderPlayPanel(sp) {
+  sp.innerHTML = '<div class="score-display">' +
+    '<div class="score-value">' + S.score + '</div>' +
+    '<div class="score-label">Score</div>' +
+  '</div>' +
+  '<div class="score-display" style="background:transparent;padding:8px;">' +
+    '<div style="font-size:18px;font-weight:700;color:var(--yellow);">🔥 ' + S.streak + '</div>' +
+    '<div class="score-label">Streak</div>' +
+    '<div class="streak-bar"><div class="streak-fill" style="width:' + Math.min(S.streak * 20, 100) + '%;"></div></div>' +
+  '</div>' +
+  '<div class="panel-section">' +
+    '<div class="panel-title">How to Play</div>' +
+    '<div class="panel-text">' +
+      'Compare the two numbers and tap the correct symbol.<br><br>' +
+      '<strong>10 rounds</strong> — build a streak for bonus points!' +
+    '</div>' +
+  '</div>' +
+  '<div class="panel-section">' +
+    '<div class="panel-title">Best Streak</div>' +
+    '<div class="panel-text" style="font-size:24px;font-weight:800;color:var(--purple);">🏆 ' + S.best + '</div>' +
+  '</div>';
+}
+
+function startNewGame() {
+  S.score = 0;
+  S.streak = 0;
+  S.round = 1;
+  generatePlayPair();
+}
+
+function playAnswer(sym) {
+  if (S.playAnswered) return;
+  S.playAnswered = true;
+  var correct = getSymbol(S.playLeft, S.playRight);
+  var btnMap = { '<': 'playSymLt', '=': 'playSymEq', '>': 'playSymGt' };
+  var btn = document.getElementById(btnMap[sym]);
+  var correctBtn = document.getElementById(btnMap[correct]);
+
+  if (sym === correct) {
+    if (btn) btn.classList.add('correct-flash');
+    S.score += 10 + (S.streak * 2);
+    S.streak++;
+    if (S.streak > S.best) S.best = S.streak;
+    showFeedback('Correct! ' + S.playLeft + ' ' + correct + ' ' + S.playRight, 'correct');
+  } else {
+    if (btn) btn.classList.add('incorrect-flash');
+    S.streak = 0;
+    // Misconception feedback
+    var feedbackMsg;
+    if ((sym === '>' && correct === '<') || (sym === '<' && correct === '>')) {
+      feedbackMsg = MISCONCEPTIONS.symbolConfusion.msg(S.playLeft, S.playRight);
+    } else {
+      feedbackMsg = MISCONCEPTIONS.randomGuess.msg();
+    }
+    showFeedback(feedbackMsg, 'incorrect');
+    setTimeout(function() {
+      if (correctBtn) correctBtn.classList.add('correct-flash');
+    }, 600);
+  }
+
+  setTimeout(function() {
+    S.round++;
+    if (S.round <= S.total) {
+      generatePlayPair();
+    }
+    render();
+  }, 1500);
+}
+
+// ════════════════════════════════════════
+// INIT
+// ════════════════════════════════════════
+// Initialize tab event listeners
+document.querySelectorAll('.vinculum-mode-tab').forEach(function(tab) {
+  tab.addEventListener('click', function() {
+    setMode(this.dataset.mode);
+  });
+});
+
+// Initialize difficulty button event listeners
+document.querySelectorAll('.vinculum-diff-btn').forEach(function(btn) {
+  btn.addEventListener('click', function() {
+    setDiff(this.dataset.diff);
+  });
+});
+
+render();
+</script>
+<script src="../../vinculum-core.js"></script>
+<script src="../../vinculum-data.js"></script>
+<script src="../../vinculum-adaptive-hook.js"></script>
+<script src="../../vinculum-3reads.js"></script>
+<script src="../../vinculum-stories.js"></script>
+<script src="../../vinculum-feedback.js"></script>
+<script src="../../vinculum-guide.js"></script>
+<script src="../../vinculum-identity.js"></script>
+<script src="../../vinculum-indigenous.js"></script>
+<script src="../../vinculum-dashboard.js"></script>
+<script src="../../vinculum-hyperfocus.js"></script>
+<script src="../../vinculum-layout.js"></script>
+</body>
+</html>
