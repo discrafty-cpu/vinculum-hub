@@ -1,0 +1,949 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>VINCULUM — Clock Reader</title>
+<link rel="stylesheet" href="../../vinculum-core.css">
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;600&display=swap');
+
+/* Theme system loaded from vinculum-core.css */
+.vinculum-rtm-btn .rtm-icon{font-size:14px;}
+
+/* ═══ FOCUS VISIBLE (Keyboard Navigation) ═══ */
+*:focus-visible {
+  outline:2px solid var(--cyan);outline-offset:2px;border-radius:4px;
+}
+.sr-only {
+  position:absolute;width:1px;height:1px;padding:0;margin:-1px;
+  overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0;
+}
+*{margin:0;padding:0;box-sizing:border-box;}
+body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);height:100vh;display:flex;flex-direction:column;overflow:hidden;user-select:none;}
+
+.main{flex:1;display:flex;overflow:hidden;}
+.workspace{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:24px;gap:16px;overflow-y:auto;}
+.side-panel{width:280px;background:var(--bg2);border-left:1px solid var(--border);padding:20px;overflow-y:auto;flex-shrink:0;}
+.panel-section{margin-bottom:20px;}
+.panel-title{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:1.5px;color:var(--muted);margin-bottom:8px;}
+.panel-text{font-size:13px;color:var(--text2);line-height:1.6;}
+
+/* ── Clock SVG ── */
+.clock-wrap{display:flex;justify-content:center;align-items:center;margin:0 auto;}
+.clock-wrap svg{display:block;}
+
+/* ── Digital Time Display ── */
+.time-display{font-size:36px;font-weight:900;font-family:'JetBrains Mono',monospace;text-align:center;padding:12px 24px;background:var(--card);border:2px solid var(--border);border-radius:14px;letter-spacing:4px;min-width:160px;transition:all 0.3s;}
+
+/* ── Hour Selector Button Grid (4x3) ── */
+.hour-selector{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;max-width:280px;margin:0 auto;}
+.hour-btn{width:56px;height:56px;border-radius:14px;border:2px solid var(--border);background:var(--card);color:var(--text);font-size:22px;font-weight:800;font-family:'JetBrains Mono',monospace;cursor:pointer;transition:all 0.15s;display:flex;align-items:center;justify-content:center;}
+.hour-btn:hover{border-color:var(--purple);transform:scale(1.08);}
+.hour-btn.active{border-color:var(--purple);background:rgba(179,136,255,0.12);color:var(--purple);}
+
+/* ── Half Toggle ── */
+.half-toggle{display:flex;gap:8px;justify-content:center;}
+.half-btn{padding:10px 24px;border-radius:10px;border:2px solid var(--border);background:var(--card);color:var(--text2);font-size:14px;font-weight:600;font-family:inherit;cursor:pointer;transition:all 0.15s;}
+.half-btn:hover{border-color:var(--cyan);color:var(--text);}
+.half-btn.active{border-color:var(--cyan);background:rgba(0,212,255,0.12);color:var(--cyan);}
+
+/* ── Hand Labels Toggle ── */
+.label-toggle{display:flex;align-items:center;gap:8px;font-size:13px;color:var(--text2);cursor:pointer;justify-content:center;}
+.label-toggle input{display:none;}
+.label-toggle .toggle-track{width:36px;height:20px;background:var(--border);border-radius:10px;position:relative;transition:background 0.2s;}
+.label-toggle .toggle-track::after{content:'';position:absolute;width:16px;height:16px;border-radius:50%;background:var(--text2);top:2px;left:2px;transition:all 0.2s;}
+.label-toggle input:checked + .toggle-track{background:var(--cyan);}
+.label-toggle input:checked + .toggle-track::after{left:18px;background:#fff;}
+
+/* ── Instruction Box ── */
+.instruction-box{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:14px 20px;text-align:center;font-size:15px;color:var(--text2);font-weight:500;max-width:600px;transition:all 0.3s;}
+.instruction-box.highlight-cyan{border-color:var(--cyan);color:var(--cyan);}
+.instruction-box.highlight-green{border-color:var(--green);color:var(--green);}
+.instruction-box.highlight-pink{border-color:var(--pink);color:var(--pink);}
+
+/* ── Controls ── */
+.controls{display:flex;gap:8px;flex-wrap:wrap;justify-content:center;}
+.ctrl-btn{padding:10px 20px;border-radius:10px;border:1px solid var(--border);background:var(--card);color:var(--text2);font-size:13px;font-weight:600;font-family:inherit;cursor:pointer;transition:all 0.2s;display:flex;align-items:center;gap:6px;}
+.ctrl-btn:hover{background:var(--card2);color:var(--text);}
+.ctrl-btn.primary{background:var(--grad);color:var(--bg);border-color:transparent;}
+
+/* ── MC Grid ── */
+.mc-grid{display:flex;gap:10px;flex-wrap:wrap;justify-content:center;max-width:520px;}
+.mc-btn{min-width:120px;padding:14px 20px;border-radius:12px;border:2px solid var(--border);background:var(--card);color:var(--text);font-size:18px;font-weight:700;font-family:'JetBrains Mono',monospace;cursor:pointer;transition:all 0.15s;display:flex;align-items:center;justify-content:center;text-align:center;}
+.mc-btn:hover{border-color:var(--cyan);transform:scale(1.04);}
+.mc-btn.correct-flash{border-color:var(--green);background:rgba(0,230,118,0.2);color:var(--green);animation:correctFlash 0.4s ease-out;}
+.mc-btn.incorrect-flash{border-color:var(--pink);background:rgba(255,59,139,0.2);color:var(--pink);animation:shake 0.3s ease-in-out;}
+
+@keyframes correctFlash{0%{transform:scale(1.1);} 100%{transform:scale(1);}}
+@keyframes shake{0%,100%{transform:translateX(0);} 25%{transform:translateX(-4px);} 75%{transform:translateX(4px);}}
+
+/* ── Score Display ── */
+.score-display{text-align:center;padding:16px;background:var(--card);border-radius:12px;margin-bottom:12px;}
+.score-value{font-size:36px;font-weight:900;font-family:'JetBrains Mono',monospace;background:var(--grad);-webkit-background-clip:text;-webkit-text-fill-color:transparent;}
+.score-label{font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:1px;}
+.streak-bar{height:6px;background:var(--card);border-radius:3px;overflow:hidden;margin-top:8px;}
+.streak-fill{height:100%;background:var(--grad);border-radius:3px;transition:width 0.3s;}
+
+/* ── Progress Dots ── */
+.progress-dots{display:flex;gap:6px;justify-content:center;margin-bottom:8px;}
+.progress-dot{width:10px;height:10px;border-radius:50%;background:var(--border);transition:all 0.3s;}
+.progress-dot.correct{background:var(--green);}
+.progress-dot.incorrect{background:var(--pink);}
+.progress-dot.current{background:var(--cyan);box-shadow:0 0 8px rgba(0,212,255,0.5);}
+
+/* ── Feedback ── */
+.feedback{position:fixed;top:50%;left:50%;transform:translate(-50%,-50%) scale(0);padding:24px 48px;border-radius:20px;font-size:28px;font-weight:800;z-index:200;pointer-events:none;transition:transform 0.3s cubic-bezier(0.175,0.885,0.32,1.275),opacity 0.3s;opacity:0;max-width:90vw;text-align:center;}
+.feedback.show{transform:translate(-50%,-50%) scale(1);opacity:1;}
+.feedback.correct{background:rgba(0,230,118,0.15);color:var(--green);border:2px solid var(--green);}
+.feedback.incorrect{background:rgba(255,59,139,0.15);color:var(--pink);border:2px solid var(--pink);}
+.feedback.try-again{background:rgba(255,193,7,0.15);color:var(--yellow);border:2px solid var(--yellow);}
+
+/* ── Game Over Overlay ── */
+.game-over{position:fixed;inset:0;background:rgba(0,0,0,0.7);display:flex;align-items:center;justify-content:center;z-index:250;}
+.game-over-card{background:var(--bg2);border:2px solid var(--border);border-radius:20px;padding:40px;text-align:center;max-width:360px;width:90%;}
+.game-over-score{font-size:56px;font-weight:900;font-family:'JetBrains Mono',monospace;background:var(--grad);-webkit-background-clip:text;-webkit-text-fill-color:transparent;}
+
+/* ── Clock hand animation ── */
+.clock-wrap svg line{transition:x2 0.4s ease-out, y2 0.4s ease-out;}
+
+::-webkit-scrollbar{width:6px;}::-webkit-scrollbar-track{background:transparent;}::-webkit-scrollbar-thumb{background:var(--border);border-radius:3px;}
+</style>
+</head>
+<body>
+
+<div class="vinculum-header">
+  <div class="vinculum-header-left">
+    <a class="vinculum-back-btn" href="../../VINCULUM-Hub.html" style="text-decoration:none;">&#9664; Hub</a>
+    <div class="vinculum-header-title"><span>VINCULUM</span> Clock Reader</div>
+    <span class="vinculum-header-badge">1.MD</span>
+  </div>
+  <div class="vinculum-header-right">
+    <div class="vinculum-std-tags">
+      <span class="vinculum-std-tag">1.MD.3</span>
+      <span class="vinculum-std-tag mn">MN 1.3.1.1</span>
+    </div>
+    <button class="vinculum-back-btn" id="readAloudBtn" onclick="toggleReadAloud()" aria-label="Read Aloud" title="Read instructions aloud" style="margin-left:8px;white-space:nowrap;">&#128266; Read to Me</button>
+  </div>
+</div>
+
+<div class="vinculum-mode-tabs">
+  <button class="vinculum-mode-tab active-explore" data-mode="explore" id="tabExplore" onclick="setMode('explore')"><svg width="18" height="18" viewBox="0 0 48 48" fill="none"><path d="M4 24C4 24 12 12 24 12C36 12 44 24 44 24C44 24 36 36 24 36C12 36 4 24 4 24Z" stroke="currentColor" stroke-width="3" fill="none"/><circle cx="24" cy="24" r="7" stroke="currentColor" stroke-width="3" fill="none"/><circle cx="24" cy="24" r="3" fill="currentColor"/><line x1="24" y1="4" x2="24" y2="9" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" opacity="0.5"/><line x1="10" y1="8" x2="13" y2="12" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" opacity="0.5"/><line x1="38" y1="8" x2="35" y2="12" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" opacity="0.5"/></svg> Explore</button>
+  <button class="vinculum-mode-tab" id="tabPractice" data-mode="practice" onclick="setMode('practice')"><svg width="18" height="18" viewBox="0 0 48 48" fill="none"><circle cx="24" cy="24" r="20" stroke="currentColor" stroke-width="3" fill="none" opacity="0.3"/><circle cx="24" cy="24" r="20" stroke="currentColor" stroke-width="3" fill="none" stroke-dasharray="126" stroke-dashoffset="32" stroke-linecap="round"/><polyline points="16,24 22,32 34,16" stroke="currentColor" stroke-width="4" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg> Practice</button>
+  <button class="vinculum-mode-tab" id="tabPlay" data-mode="play" onclick="setMode('play')"><svg width="18" height="18" viewBox="0 0 48 48" fill="none"><polygon points="28,4 12,28 22,28 18,44 36,18 26,18" fill="none" stroke="currentColor" stroke-width="3" stroke-linejoin="round"/><polygon points="27,8 15,27 23,27 20,40 34,19 26,19" fill="currentColor" opacity="0.15"/></svg> Play</button>
+  <div class="vinculum-diff-selector">
+    <span class="vinculum-diff-label">Level</span>
+    <button class="vinculum-diff-btn active" id="diffE" data-diff="emergent" onclick="setDiff('emergent')">Hours</button>
+    <button class="vinculum-diff-btn" id="diffP" data-diff="proficient" onclick="setDiff('proficient')">Half Hours</button>
+    <button class="vinculum-diff-btn" id="diffA" data-diff="advanced" onclick="setDiff('advanced')">Digital</button>
+  </div>
+</div>
+
+<div class="main">
+  <div class="workspace" role="main" id="workspace"></div>
+  <div class="side-panel" id="sidePanel"></div>
+</div>
+<div class="feedback" id="feedback"></div>
+
+<script src="../../vinculum-input.js"></script>
+<script>
+/* ═══════════════════════════════════════════
+   STATE
+   ═══════════════════════════════════════════ */
+let S = {
+  mode: 'explore', diff: 'emergent',
+  hour: 3, minutes: 0,
+  showLabels: true,
+  // Practice state
+  pHour: 0, pMinutes: 0, pType: 'read', pAnswer: '', pChoices: [],
+  // Play state
+  score: 0, streak: 0, best: 0, round: 0, total: 10,
+  playHour: 0, playMinutes: 0, playAnswer: '', playChoices: [],
+  roundResults: [], locked: false
+};
+
+/* ═══════════════════════════════════════════
+   MISCONCEPTIONS (6 types)
+   ═══════════════════════════════════════════ */
+const MISCONCEPTIONS = {
+  handConfusion: {
+    id: 'hands',
+    msg: (h, m) => `The SHORT hand is the HOUR (${h}). The LONG hand shows minutes!`
+  },
+  hourMovement: {
+    id: 'hour-moves',
+    msg: () => `The hour hand moves slowly — at half past, it sits BETWEEN two numbers!`
+  },
+  offByOne: {
+    id: 'off-by-one',
+    msg: (ans, got) => `Close! Look carefully — the hour hand points to ${ans}, not ${got}.`
+  },
+  randomGuess: {
+    id: 'random',
+    msg: () => `Find the short hand first — that tells the hour. Then check the long hand.`
+  },
+  minuteHandAt6: {
+    id: 'min-at-6',
+    msg: () => `When the long hand points to 6, that means "half past" — 30 minutes, not 6 o'clock!`
+  },
+  digitalConfusion: {
+    id: 'digital',
+    msg: (h, m) => `The number before the colon is the hour (${h}). After the colon is minutes (${m < 10 ? '0' + m : m}).`
+  }
+};
+
+/* ── Read-Aloud ── */
+function toggleReadAloud() {
+  if (window.VinculumStories && VinculumStories.isReading()) {
+    VinculumStories.stopReading();
+    document.getElementById('readAloudBtn').innerHTML = '&#128266; Read to Me';
+  } else {
+    const storyEl = document.getElementById('storyBanner');
+    const instrEl = document.querySelector('.instruction-box');
+    const text = storyEl ? storyEl.textContent
+      : instrEl ? instrEl.textContent
+      : 'Welcome to Clock Reader!';
+    if (window.VinculumStories) {
+      VinculumStories.readAloud(text, { rate: 0.85, onComplete: () => {
+        document.getElementById('readAloudBtn').innerHTML = '&#128266; Read to Me';
+      }});
+      document.getElementById('readAloudBtn').innerHTML = '&#9209; Stop';
+    }
+  }
+}
+
+/* ── Helpers ── */
+function rand(a, b) {
+  return Math.floor(Math.random() * (b - a + 1)) + a;
+}
+
+function shuffle(arr) {
+  for (let i = arr.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [arr[i], arr[j]] = [arr[j], arr[i]];
+  }
+  return arr;
+}
+
+function showFB(msg, type) {
+  const fb = document.getElementById('feedback');
+  fb.className = 'feedback ' + type;
+  fb.textContent = msg;
+  fb.classList.add('show');
+  setTimeout(() => { fb.classList.remove('show'); }, 2200);
+}
+
+function formatTime(h, m) {
+  return h + ':' + (m < 10 ? '0' : '') + m;
+}
+
+function spokenTime(h, m) {
+  if (m === 0) return h + " o'clock";
+  if (m === 30) return 'half past ' + h;
+  return formatTime(h, m);
+}
+
+/* ═══════════════════════════════════════════
+   CLOCK SVG BUILDER
+   ═══════════════════════════════════════════ */
+function buildClock(hour, minutes, size, showLabels) {
+  const cx = size / 2;
+  const cy = size / 2;
+  const r = size / 2 - 12;
+
+  let svg = `<div class="clock-wrap"><svg width="${size}" height="${size}" viewBox="0 0 ${size} ${size}" role="img" aria-label="Analog clock showing ${formatTime(hour, minutes)}">`;
+
+  // Clock face
+  svg += `<circle cx="${cx}" cy="${cy}" r="${r}" fill="var(--card,#1a1f2e)" stroke="var(--border,#2a3654)" stroke-width="3"/>`;
+
+  // Outer ring glow
+  svg += `<circle cx="${cx}" cy="${cy}" r="${r}" fill="none" stroke="rgba(179,136,255,0.15)" stroke-width="6"/>`;
+
+  // Minute tick marks (small ones at non-hour positions)
+  for (let i = 0; i < 60; i++) {
+    if (i % 5 === 0) continue;
+    const angle = (i * 6 - 90) * Math.PI / 180;
+    const tickOuter = r - 4;
+    const tickInner = r - 8;
+    const x1 = cx + tickOuter * Math.cos(angle);
+    const y1 = cy + tickOuter * Math.sin(angle);
+    const x2 = cx + tickInner * Math.cos(angle);
+    const y2 = cy + tickInner * Math.sin(angle);
+    svg += `<line x1="${x1}" y1="${y1}" x2="${x2}" y2="${y2}" stroke="var(--border,#2a3654)" stroke-width="1" stroke-linecap="round"/>`;
+  }
+
+  // Hour markers (ticks) and numbers 1-12
+  for (let i = 1; i <= 12; i++) {
+    const angle = (i * 30 - 90) * Math.PI / 180;
+    // Tick marks at hour positions
+    const tickOuter = r - 4;
+    const tickInner = r - 14;
+    const x1 = cx + tickOuter * Math.cos(angle);
+    const y1 = cy + tickOuter * Math.sin(angle);
+    const x2 = cx + tickInner * Math.cos(angle);
+    const y2 = cy + tickInner * Math.sin(angle);
+    svg += `<line x1="${x1}" y1="${y1}" x2="${x2}" y2="${y2}" stroke="var(--text2,#8892b0)" stroke-width="2" stroke-linecap="round"/>`;
+
+    // Numbers
+    const numR = r - 28;
+    const nx = cx + numR * Math.cos(angle);
+    const ny = cy + numR * Math.sin(angle);
+    const fontSize = Math.round(size * 0.08);
+    svg += `<text x="${nx}" y="${ny}" text-anchor="middle" dominant-baseline="central" fill="var(--text,#ccd6f6)" font-size="${fontSize}" font-weight="700" font-family="JetBrains Mono, monospace">${i}</text>`;
+  }
+
+  // Hour hand — short thick purple
+  // Adjusts for minutes: each minute moves hour hand 0.5 degrees
+  const hourAngle = ((hour % 12) * 30 + minutes * 0.5 - 90) * Math.PI / 180;
+  const hourLen = r * 0.5;
+  const hx = cx + hourLen * Math.cos(hourAngle);
+  const hy = cy + hourLen * Math.sin(hourAngle);
+  svg += `<line x1="${cx}" y1="${cy}" x2="${hx}" y2="${hy}" stroke="#b388ff" stroke-width="6" stroke-linecap="round"/>`;
+
+  // Minute hand — long thin cyan
+  const minAngle = (minutes * 6 - 90) * Math.PI / 180;
+  const minLen = r * 0.75;
+  const mx = cx + minLen * Math.cos(minAngle);
+  const my = cy + minLen * Math.sin(minAngle);
+  svg += `<line x1="${cx}" y1="${cy}" x2="${mx}" y2="${my}" stroke="#00d4ff" stroke-width="3" stroke-linecap="round"/>`;
+
+  // Center dot
+  svg += `<circle cx="${cx}" cy="${cy}" r="6" fill="#b388ff" stroke="#00d4ff" stroke-width="2"/>`;
+
+  // Labels if enabled
+  if (showLabels) {
+    // Hour hand label
+    const hlx = cx + (hourLen + 22) * Math.cos(hourAngle);
+    const hly = cy + (hourLen + 22) * Math.sin(hourAngle);
+    svg += `<text x="${hlx}" y="${hly}" text-anchor="middle" dominant-baseline="central" fill="#b388ff" font-size="${Math.round(size * 0.045)}" font-weight="700" font-family="Inter, sans-serif">HOUR</text>`;
+
+    // Minute hand label
+    const mlx = cx + (minLen + 22) * Math.cos(minAngle);
+    const mly = cy + (minLen + 22) * Math.sin(minAngle);
+    svg += `<text x="${mlx}" y="${mly}" text-anchor="middle" dominant-baseline="central" fill="#00d4ff" font-size="${Math.round(size * 0.045)}" font-weight="700" font-family="Inter, sans-serif">MINUTE</text>`;
+  }
+
+  svg += '</svg></div>';
+  return svg;
+}
+
+/* ═══════════════════════════════════════════
+   MODE & DIFFICULTY
+   ═══════════════════════════════════════════ */
+function setMode(m) {
+  S.mode = m;
+  S.locked = false;
+  document.querySelectorAll('.vinculum-mode-tab').forEach(t => t.classList.remove('active-explore', 'active-practice', 'active-play'));
+  document.getElementById('tab' + m.charAt(0).toUpperCase() + m.slice(1)).classList.add('active-' + m);
+  S.round = 0;
+  S.score = 0;
+  S.streak = 0;
+  S.roundResults = [];
+  if (m === 'practice') newPractice();
+  if (m === 'play') S.round = 0;
+  render();
+}
+
+function setDiff(d) {
+  S.diff = d;
+  S.locked = false;
+  document.querySelectorAll('.vinculum-diff-btn').forEach(b => b.classList.remove('active'));
+  document.getElementById('diff' + d.charAt(0).toUpperCase()).classList.add('active');
+  if (S.mode === 'explore') {
+    if (d === 'emergent') S.minutes = 0;
+  }
+  if (S.mode === 'practice') newPractice();
+  if (S.mode === 'play') { S.round = 0; S.score = 0; S.streak = 0; S.roundResults = []; }
+  render();
+}
+
+function render() {
+  const ws = document.getElementById('workspace');
+  const sp = document.getElementById('sidePanel');
+  if (S.mode === 'explore') renderExplore(ws, sp);
+  else if (S.mode === 'practice') renderPractice(ws, sp);
+  else renderPlay(ws, sp);
+}
+
+/* ═══════════════════════════════════════════
+   EXPLORE MODE
+   ═══════════════════════════════════════════ */
+function renderExplore(ws, sp) {
+  let h = '';
+
+  // Story banner integration
+  if (window.VinculumStories) {
+    const toolName = window.location.pathname.split('/').pop().replace('.html', '');
+    const storyData = VinculumStories.getStory(toolName, { hour: S.hour, minutes: S.minutes });
+    if (storyData && storyData.story) {
+      if (window.Vinculum3Reads) {
+        h += Vinculum3Reads.getBannerHTML(storyData);
+      } else {
+        h += `<div id="storyBanner" style="background:var(--card);border:1px solid var(--border);border-radius:12px;padding:14px 20px;text-align:center;font-size:14px;color:var(--text2);max-width:600px;">${storyData.story}</div>`;
+      }
+    }
+  }
+
+  // Large SVG clock (260px)
+  h += buildClock(S.hour, S.minutes, 260, S.showLabels);
+
+  // Digital time display
+  h += `<div class="time-display" aria-live="polite">${formatTime(S.hour, S.minutes)}</div>`;
+  h += `<div style="font-size:14px;color:var(--text2);font-weight:600;text-align:center;">${spokenTime(S.hour, S.minutes)}</div>`;
+
+  // Hour selector (4x3 grid)
+  h += '<div style="margin-top:8px;">';
+  h += '<div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:1px;color:var(--muted);text-align:center;margin-bottom:6px;">Tap a Number to Set the Hour</div>';
+  h += '<div class="hour-selector">';
+  for (let i = 1; i <= 12; i++) {
+    h += `<button class="hour-btn${S.hour === i ? ' active' : ''}" onclick="S.hour=${i};render();" aria-label="Set hour to ${i}">${i}</button>`;
+  }
+  h += '</div></div>';
+
+  // O'clock / Half Past toggle (proficient+ only shows half, emergent shows only o'clock)
+  h += '<div class="half-toggle">';
+  h += `<button class="half-btn${S.minutes === 0 ? ' active' : ''}" onclick="S.minutes=0;render();">O'clock</button>`;
+  if (S.diff !== 'emergent') {
+    h += `<button class="half-btn${S.minutes === 30 ? ' active' : ''}" onclick="S.minutes=30;render();">Half Past</button>`;
+  }
+  h += '</div>';
+
+  // Hand labels toggle
+  h += `<label class="label-toggle" onclick="S.showLabels=!S.showLabels;render();">
+    <span>Hand Labels</span>
+    <input type="checkbox" ${S.showLabels ? 'checked' : ''}>
+    <span class="toggle-track"></span>
+  </label>`;
+
+  ws.innerHTML = h;
+
+  // Side panel — clock parts, tips, and observations
+  let sp_h = '';
+  sp_h += `<div class="panel-section"><div class="panel-title">Clock Parts</div>
+    <div class="panel-text" style="background:var(--card);padding:12px;border-radius:8px;">
+      <div style="margin-bottom:10px;">
+        <strong style="color:#b388ff;">Hour Hand</strong> (short, purple)<br>
+        <span style="font-size:12px;">Points to the <strong>hour</strong>. It moves slowly as minutes pass.</span>
+      </div>
+      <div style="margin-bottom:10px;">
+        <strong style="color:#00d4ff;">Minute Hand</strong> (long, cyan)<br>
+        <span style="font-size:12px;">Points to <strong>12</strong> at o'clock or <strong>6</strong> at half past.</span>
+      </div>
+      <div>
+        <strong style="color:var(--text2);">Center Dot</strong><br>
+        <span style="font-size:12px;">Where both hands connect and pivot.</span>
+      </div>
+    </div></div>`;
+
+  sp_h += `<div class="panel-section"><div class="panel-title">Reading Steps</div>
+    <div class="panel-text">
+      <div style="margin-bottom:6px;"><strong style="color:var(--purple);">Step 1:</strong> Find the <strong>short</strong> hand &mdash; that's the hour.</div>
+      <div style="margin-bottom:6px;"><strong style="color:var(--cyan);">Step 2:</strong> Check where the <strong>long</strong> hand points.</div>
+      <div><strong style="color:var(--green);">Step 3:</strong> If the long hand is on 12 &rarr; o'clock. On 6 &rarr; half past.</div>
+    </div></div>`;
+
+  // Contextual observation for half past
+  if (S.minutes === 30) {
+    const nextH = S.hour === 12 ? 1 : S.hour + 1;
+    sp_h += `<div class="panel-section"><div class="panel-title">Notice!</div>
+      <div class="panel-text" style="color:var(--yellow);">At half past, the hour hand is <strong>between</strong> ${S.hour} and ${nextH}. It has moved halfway to the next number!</div></div>`;
+  }
+
+  // Digital connection for advanced
+  if (S.diff === 'advanced') {
+    sp_h += `<div class="panel-section"><div class="panel-title">Analog &harr; Digital</div>
+      <div class="panel-text">The digital display <strong style="color:var(--cyan)">${formatTime(S.hour, S.minutes)}</strong> matches the clock above. The number before the colon is the <strong style="color:#b388ff;">hour</strong>. After the colon is <strong style="color:#00d4ff;">minutes</strong>.</div></div>`;
+  }
+
+  sp.innerHTML = sp_h;
+}
+
+/* ═══════════════════════════════════════════
+   PRACTICE MODE
+   ═══════════════════════════════════════════ */
+function generateRandomTime() {
+  const h = rand(1, 12);
+  let m = 0;
+  if (S.diff === 'proficient' || S.diff === 'advanced') {
+    m = [0, 30][rand(0, 1)];
+  }
+  return { hour: h, minutes: m };
+}
+
+function generateChoices(correctAnswer) {
+  const choices = new Set([correctAnswer]);
+  const parts = correctAnswer.split(':');
+  const ch = parseInt(parts[0]);
+  const cm = parseInt(parts[1]);
+
+  // Diagnostic distractors based on common misconceptions
+  const distractors = [];
+
+  if (cm === 0) {
+    // Hand confusion: student reads minute hand at 12 as "12:00"
+    distractors.push(formatTime(12, 0));
+    // Off by one in both directions
+    const prevH = ch === 1 ? 12 : ch - 1;
+    const nextH = ch === 12 ? 1 : ch + 1;
+    distractors.push(formatTime(prevH, cm));
+    distractors.push(formatTime(nextH, cm));
+    // Thinks it's half past because they're unsure
+    distractors.push(formatTime(ch, 30));
+  } else if (cm === 30) {
+    // At half past, student picks next hour (hour hand between numbers)
+    const nextH = ch === 12 ? 1 : ch + 1;
+    const prevH = ch === 1 ? 12 : ch - 1;
+    distractors.push(formatTime(nextH, 30));
+    distractors.push(formatTime(prevH, 30));
+    // Says o'clock instead of half past
+    distractors.push(formatTime(ch, 0));
+    distractors.push(formatTime(nextH, 0));
+    // Minute hand on 6 confusion — reads as 6:00
+    distractors.push(formatTime(6, 0));
+    // Reads minute hand position as the hour
+    distractors.push(formatTime(6, 30));
+  }
+
+  // Add random times for variety
+  for (let i = 0; i < 3; i++) {
+    const rh = rand(1, 12);
+    const rm = [0, 30][rand(0, 1)];
+    distractors.push(formatTime(rh, rm));
+  }
+
+  shuffle(distractors);
+  for (const d of distractors) {
+    if (d !== correctAnswer && choices.size < 4) choices.add(d);
+  }
+  // Pad if needed
+  while (choices.size < 4) {
+    const rh = rand(1, 12);
+    const rm = [0, 30][rand(0, 1)];
+    const t = formatTime(rh, rm);
+    if (t !== correctAnswer) choices.add(t);
+  }
+  return shuffle(Array.from(choices));
+}
+
+function newPractice() {
+  S.locked = false;
+  const time = generateRandomTime();
+  S.pHour = time.hour;
+  S.pMinutes = time.minutes;
+
+  if (S.diff === 'advanced') {
+    // Advanced: show digital, pick the spoken description
+    const correct = S.pMinutes === 0
+      ? S.pHour + " o'clock"
+      : 'Half past ' + S.pHour;
+    S.pAnswer = correct;
+    const wrongDescs = [];
+    for (let i = 1; i <= 12; i++) {
+      if (i !== S.pHour) {
+        wrongDescs.push(i + " o'clock");
+        wrongDescs.push('Half past ' + i);
+      }
+    }
+    shuffle(wrongDescs);
+    const descChoices = [correct];
+    for (const w of wrongDescs) {
+      if (descChoices.length < 4 && w !== correct) descChoices.push(w);
+    }
+    S.pChoices = shuffle(descChoices);
+    S.pType = 'digital';
+  } else {
+    // Emergent & Proficient: show clock, ask "What time?"
+    S.pAnswer = formatTime(S.pHour, S.pMinutes);
+    S.pChoices = generateChoices(S.pAnswer);
+    S.pType = 'read';
+  }
+}
+
+function renderPractice(ws, sp) {
+  if (!S.pHour) newPractice();
+  let h = '';
+
+  if (S.pType === 'digital') {
+    h += `<div class="instruction-box highlight-green">What does this digital time look like on a clock?</div>`;
+    h += `<div class="time-display" style="font-size:48px;margin:8px 0;">${formatTime(S.pHour, S.pMinutes)}</div>`;
+    h += buildClock(S.pHour, S.pMinutes, 180, false);
+    h += '<div class="mc-grid">';
+    S.pChoices.forEach((c, i) => {
+      h += `<button class="mc-btn" id="mc${i}" onclick="checkPractice(${i})" style="font-size:15px;min-width:150px;">${c}</button>`;
+    });
+    h += '</div>';
+  } else {
+    // Show clock, ask what time it is
+    const prompt = S.diff === 'emergent'
+      ? 'What hour does the clock show?'
+      : 'What time is it?';
+    h += `<div class="instruction-box highlight-cyan">${prompt}</div>`;
+    h += buildClock(S.pHour, S.pMinutes, 240, false);
+    h += '<div class="mc-grid">';
+    S.pChoices.forEach((c, i) => {
+      h += `<button class="mc-btn" id="mc${i}" onclick="checkPractice(${i})">${c}</button>`;
+    });
+    h += '</div>';
+  }
+
+  // Skip and new question buttons
+  h += '<div class="controls" style="margin-top:8px;">';
+  h += `<button class="ctrl-btn" onclick="newPractice();render();">Skip &rarr;</button>`;
+  h += '</div>';
+
+  ws.innerHTML = h;
+
+  // Side panel — steps + remember
+  let sp_h = `<div class="panel-section"><div class="panel-title">Steps</div>
+    <div class="panel-text" style="background:var(--card);padding:12px;border-radius:8px;">
+      <div style="margin-bottom:8px;">
+        <strong style="color:var(--purple);">&#9312; Look</strong><br>
+        <span style="font-size:12px;">Find the short (hour) hand</span>
+      </div>
+      <div style="margin-bottom:8px;">
+        <strong style="color:var(--cyan);">&#9313; Check</strong><br>
+        <span style="font-size:12px;">Where does the long (minute) hand point?</span>
+      </div>
+      <div>
+        <strong style="color:var(--green);">&#9314; Say</strong><br>
+        <span style="font-size:12px;">Read the time: hour first, then minutes</span>
+      </div>
+    </div></div>`;
+
+  sp_h += `<div class="panel-section"><div class="panel-title">Remember</div>
+    <div class="panel-text">The <strong style="color:#b388ff;">short hand</strong> = hour. The <strong style="color:#00d4ff;">long hand</strong> = minutes.<br><br>At <strong>half past</strong>, the hour hand sits <em>between</em> two numbers!</div></div>`;
+
+  if (S.diff === 'advanced') {
+    sp_h += `<div class="panel-section"><div class="panel-title">Digital Tip</div>
+      <div class="panel-text">A digital clock shows <strong style="color:var(--cyan);">hour : minutes</strong>. 3:00 means 3 o'clock. 3:30 means half past 3.</div></div>`;
+  }
+
+  sp.innerHTML = sp_h;
+}
+
+function checkPractice(idx) {
+  if (S.locked) return;
+  const btn = document.getElementById('mc' + idx);
+  const clicked = S.pChoices[idx];
+
+  if (clicked === S.pAnswer) {
+    S.locked = true;
+    btn.classList.add('correct-flash');
+    showFB('\u2713 ' + spokenTime(S.pHour, S.pMinutes) + '!', 'correct');
+    setTimeout(() => { newPractice(); render(); }, 1500);
+  } else {
+    btn.classList.add('incorrect-flash');
+    const msg = detectMisconception(S.pHour, S.pMinutes, clicked);
+    showFB(msg, 'try-again');
+    setTimeout(() => { btn.classList.remove('incorrect-flash'); }, 400);
+  }
+}
+
+/* ═══════════════════════════════════════════
+   MISCONCEPTION DETECTION
+   ═══════════════════════════════════════════ */
+function detectMisconception(correctH, correctM, clicked) {
+  let clickedH, clickedM;
+
+  // Parse the clicked answer (could be time string or spoken description)
+  if (clicked.includes(':')) {
+    const p = clicked.split(':');
+    clickedH = parseInt(p[0]);
+    clickedM = parseInt(p[1]);
+  } else if (clicked.includes("o'clock")) {
+    clickedH = parseInt(clicked);
+    clickedM = 0;
+  } else if (clicked.includes('Half past')) {
+    clickedH = parseInt(clicked.replace('Half past ', ''));
+    clickedM = 30;
+  } else {
+    return MISCONCEPTIONS.randomGuess.msg();
+  }
+
+  const nextH = correctH === 12 ? 1 : correctH + 1;
+  const prevH = correctH === 1 ? 12 : correctH - 1;
+
+  // Hand confusion: student reads minute hand position as the hour
+  if (correctM === 0 && clickedH === 12 && clickedM === 0) {
+    return MISCONCEPTIONS.handConfusion.msg(correctH, correctM);
+  }
+
+  // Minute hand at 6 confusion: reads "6" instead of "half past"
+  if (correctM === 30 && clickedH === 6 && clickedM === 0) {
+    return MISCONCEPTIONS.minuteHandAt6.msg();
+  }
+  if (correctM === 30 && clickedH === 6 && clickedM === 30) {
+    return MISCONCEPTIONS.minuteHandAt6.msg();
+  }
+
+  // Hour movement: at half past, student picks the next hour
+  if (correctM === 30 && clickedH === nextH && clickedM === 30) {
+    return MISCONCEPTIONS.hourMovement.msg();
+  }
+
+  // Off by one (adjacent hour)
+  if (clickedH === nextH || clickedH === prevH) {
+    return MISCONCEPTIONS.offByOne.msg(correctH, clickedH);
+  }
+
+  // Confused o'clock vs half past (right hour, wrong minutes)
+  if (clickedH === correctH && clickedM !== correctM) {
+    if (correctM === 30) {
+      return MISCONCEPTIONS.hourMovement.msg();
+    }
+    return MISCONCEPTIONS.handConfusion.msg(correctH, correctM);
+  }
+
+  // Digital confusion for advanced mode
+  if (S.diff === 'advanced') {
+    return MISCONCEPTIONS.digitalConfusion.msg(correctH, correctM);
+  }
+
+  return MISCONCEPTIONS.randomGuess.msg();
+}
+
+/* ═══════════════════════════════════════════
+   PLAY MODE — 10 rounds, MC, 10pts + streak*2
+   ═══════════════════════════════════════════ */
+function startGame() {
+  S.round = 1;
+  S.score = 0;
+  S.streak = 0;
+  S.roundResults = [];
+  S.locked = false;
+  newPlayRound();
+}
+
+function newPlayRound() {
+  S.locked = false;
+  const time = generateRandomTime();
+  S.playHour = time.hour;
+  S.playMinutes = time.minutes;
+  S.playAnswer = formatTime(S.playHour, S.playMinutes);
+  S.playChoices = generatePlayChoices(S.playAnswer);
+}
+
+function generatePlayChoices(correctAnswer) {
+  const choices = new Set([correctAnswer]);
+  const parts = correctAnswer.split(':');
+  const ch = parseInt(parts[0]);
+  const cm = parseInt(parts[1]);
+
+  const distractors = [];
+  const prevH = ch === 1 ? 12 : ch - 1;
+  const nextH = ch === 12 ? 1 : ch + 1;
+
+  // Hand confusion distractor
+  if (cm === 0) distractors.push(formatTime(12, 0));
+  if (cm === 30) distractors.push(formatTime(6, 0));
+
+  // Off by one
+  distractors.push(formatTime(prevH, cm));
+  distractors.push(formatTime(nextH, cm));
+
+  // O'clock/half-past swap
+  distractors.push(formatTime(ch, cm === 0 ? 30 : 0));
+  distractors.push(formatTime(nextH, cm === 0 ? 30 : 0));
+
+  // Random filler
+  for (let i = 0; i < 4; i++) {
+    const rh = rand(1, 12);
+    const rm = [0, 30][rand(0, 1)];
+    distractors.push(formatTime(rh, rm));
+  }
+
+  shuffle(distractors);
+  for (const d of distractors) {
+    if (d !== correctAnswer && choices.size < 4) choices.add(d);
+  }
+  while (choices.size < 4) {
+    const rh = rand(1, 12);
+    const rm = [0, 30][rand(0, 1)];
+    const t = formatTime(rh, rm);
+    if (t !== correctAnswer) choices.add(t);
+  }
+  return shuffle(Array.from(choices));
+}
+
+function renderPlay(ws, sp) {
+  if (S.round === 0) startGame();
+
+  let h = '';
+
+  // Progress dots
+  h += '<div class="progress-dots">';
+  for (let i = 0; i < S.total; i++) {
+    let cls = 'progress-dot';
+    if (i < S.roundResults.length) {
+      cls += S.roundResults[i] ? ' correct' : ' incorrect';
+    } else if (i === S.round - 1) {
+      cls += ' current';
+    }
+    h += `<div class="${cls}"></div>`;
+  }
+  h += '</div>';
+
+  h += `<div style="font-size:13px;color:var(--muted);margin-bottom:4px;">Round ${S.round} of ${S.total}</div>`;
+  h += `<div class="instruction-box highlight-cyan" style="margin-bottom:8px;">What time is it?</div>`;
+  h += buildClock(S.playHour, S.playMinutes, 210, false);
+
+  h += '<div class="mc-grid">';
+  S.playChoices.forEach((c, i) => {
+    h += `<button class="mc-btn" id="play${i}" onclick="playPick(${i})">${c}</button>`;
+  });
+  h += '</div>';
+
+  ws.innerHTML = h;
+
+  // Side panel with score and streak
+  sp.innerHTML = `
+    <div class="score-display">
+      <div class="score-value">${S.score}</div>
+      <div class="score-label">Score</div>
+    </div>
+    <div class="score-display" style="background:transparent;padding:8px;">
+      <div style="font-size:18px;font-weight:700;color:var(--yellow);">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor" style="vertical-align:-2px;">
+          <path d="M12 23c-4.97 0-8-3.58-8-7.5 0-3.07 2.17-5.84 4.5-7.5-.28 2.5 1.5 4.5 1.5 4.5s2-2.5 2-5.5c0-1.5-.5-3-1-4 3 1.5 5 4 5 7 0 .5-.08 1-.08 1s1.08-1.18 1.58-2.5C19.78 11.72 20 14.5 20 15.5c0 3.92-3.03 7.5-8 7.5z"/>
+        </svg> ${S.streak}
+      </div>
+      <div class="score-label">Streak</div>
+      <div class="streak-bar"><div class="streak-fill" style="width:${Math.min(S.streak * 20, 100)}%;"></div></div>
+    </div>
+    <div class="panel-section">
+      <div class="panel-title">Best Streak</div>
+      <div class="panel-text" style="font-size:24px;font-weight:800;color:var(--purple);">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="vertical-align:-2px;">
+          <path d="M6 4h12v2a6 6 0 01-12 0V4z" fill="currentColor" opacity="0.2"/>
+          <path d="M6 4h12v2a6 6 0 01-12 0V4z"/>
+          <path d="M6 6H3v2a3 3 0 003 3"/>
+          <path d="M18 6h3v2a3 3 0 01-3 3"/>
+          <line x1="12" y1="14" x2="12" y2="18"/>
+          <line x1="8" y1="18" x2="16" y2="18" stroke-linecap="round"/>
+        </svg> ${S.best}
+      </div>
+    </div>
+    <div class="panel-section">
+      <div class="panel-title">Scoring</div>
+      <div class="panel-text">
+        <strong style="color:var(--green);">+10</strong> pts per correct answer<br>
+        <strong style="color:var(--yellow);">+streak &times; 2</strong> bonus pts<br><br>
+        Build your streak for higher scores!
+      </div>
+    </div>
+    <div class="panel-section">
+      <div class="panel-title">Tip</div>
+      <div class="panel-text">Short hand = hour, long hand = minutes. At half past, the hour hand is <strong>between</strong> two numbers!</div>
+    </div>`;
+}
+
+function playPick(idx) {
+  if (S.locked) return;
+  S.locked = true;
+  const btn = document.getElementById('play' + idx);
+  const clicked = S.playChoices[idx];
+
+  if (clicked === S.playAnswer) {
+    btn.classList.add('correct-flash');
+    const pts = 10 + S.streak * 2;
+    S.score += pts;
+    S.streak++;
+    if (S.streak > S.best) S.best = S.streak;
+    S.roundResults.push(true);
+    showFB('\u2713 ' + spokenTime(S.playHour, S.playMinutes) + '! +' + pts, 'correct');
+  } else {
+    btn.classList.add('incorrect-flash');
+    S.streak = 0;
+    S.roundResults.push(false);
+    const msg = detectMisconception(S.playHour, S.playMinutes, clicked);
+    showFB(msg, 'incorrect');
+
+    // Highlight the correct answer after a wrong pick
+    setTimeout(() => {
+      S.playChoices.forEach((c, i) => {
+        if (c === S.playAnswer) {
+          const correctBtn = document.getElementById('play' + i);
+          if (correctBtn) correctBtn.classList.add('correct-flash');
+        }
+      });
+    }, 600);
+  }
+
+  setTimeout(() => {
+    if (S.round >= S.total) {
+      renderGameOver();
+      return;
+    }
+    S.round++;
+    newPlayRound();
+    render();
+  }, 1800);
+}
+
+function renderGameOver() {
+  const correct = S.roundResults.filter(r => r).length;
+  const pct = Math.round((correct / S.total) * 100);
+  let grade, gradeColor;
+  if (pct >= 90) { grade = 'Amazing!'; gradeColor = 'var(--green)'; }
+  else if (pct >= 70) { grade = 'Great Job!'; gradeColor = 'var(--cyan)'; }
+  else if (pct >= 50) { grade = 'Keep Practicing!'; gradeColor = 'var(--yellow)'; }
+  else { grade = 'Try Again!'; gradeColor = 'var(--pink)'; }
+
+  const ws = document.getElementById('workspace');
+  ws.innerHTML = `
+    <div style="text-align:center;max-width:360px;">
+      <div style="font-size:14px;color:var(--muted);text-transform:uppercase;letter-spacing:2px;margin-bottom:8px;">Game Over</div>
+      <div class="game-over-score">${S.score}</div>
+      <div style="font-size:12px;color:var(--muted);margin-bottom:16px;">POINTS</div>
+      <div style="font-size:28px;font-weight:800;color:${gradeColor};margin-bottom:8px;">${grade}</div>
+      <div style="font-size:15px;color:var(--text2);margin-bottom:16px;">${correct} of ${S.total} correct (${pct}%)</div>
+      <div class="progress-dots" style="margin-bottom:20px;">
+        ${S.roundResults.map(r => `<div class="progress-dot ${r ? 'correct' : 'incorrect'}"></div>`).join('')}
+      </div>
+      <div style="font-size:14px;color:var(--text2);margin-bottom:20px;">Best Streak: <strong style="color:var(--purple);">${S.best}</strong></div>
+      <div class="controls" style="justify-content:center;">
+        <button class="ctrl-btn primary" onclick="S.round=0;render();" style="font-size:15px;padding:14px 32px;">Play Again</button>
+        <button class="ctrl-btn" onclick="setMode('explore');">Explore</button>
+      </div>
+    </div>`;
+
+  // Update side panel
+  const sp = document.getElementById('sidePanel');
+  let sp_h = `<div class="panel-section"><div class="panel-title">Final Score</div>
+    <div class="score-display"><div class="score-value">${S.score}</div><div class="score-label">Points</div></div></div>`;
+
+  sp_h += `<div class="panel-section"><div class="panel-title">Results</div>
+    <div class="panel-text">
+      <div style="margin-bottom:6px;">Correct: <strong style="color:var(--green);">${correct}</strong></div>
+      <div style="margin-bottom:6px;">Incorrect: <strong style="color:var(--pink);">${S.total - correct}</strong></div>
+      <div>Accuracy: <strong>${pct}%</strong></div>
+    </div></div>`;
+
+  if (correct < S.total) {
+    sp_h += `<div class="panel-section"><div class="panel-title">Next Steps</div>
+      <div class="panel-text">Try <strong>Explore</strong> mode to study the clock hands, then come back to <strong>Play</strong> when you feel ready!</div></div>`;
+  } else {
+    sp_h += `<div class="panel-section"><div class="panel-title">Challenge</div>
+      <div class="panel-text">Perfect score! Try the next difficulty level for a bigger challenge.</div></div>`;
+  }
+
+  sp.innerHTML = sp_h;
+}
+
+/* ── Init ── */
+render();
+</script>
+<script src="../../vinculum-core.js"></script>
+<script src="../../vinculum-data.js"></script>
+<script src="../../vinculum-adaptive-hook.js"></script>
+<script src="../../vinculum-3reads.js"></script>
+<script src="../../vinculum-stories.js"></script>
+<script src="../../vinculum-feedback.js"></script>
+<script src="../../vinculum-guide.js"></script>
+<script src="../../vinculum-identity.js"></script>
+<script src="../../vinculum-indigenous.js"></script>
+<script src="../../vinculum-dashboard.js"></script>
+<script src="../../vinculum-hyperfocus.js"></script>
+<script src="../../vinculum-layout.js"></script>
+</body>
+</html>

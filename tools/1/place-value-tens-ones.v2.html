@@ -1,0 +1,903 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>VINCULUM — Place Value: Tens &amp; Ones</title>
+<link rel="stylesheet" href="../../vinculum-core.css">
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;600&display=swap');
+/* Theme system loaded from vinculum-core.css */
+.vinculum-rtm-btn .rtm-icon{font-size:14px;}
+
+/* ═══ FOCUS VISIBLE (Keyboard Navigation) ═══ */
+*:focus-visible {
+  outline:2px solid var(--cyan);outline-offset:2px;border-radius:4px;
+}
+.sr-only {
+  position:absolute;width:1px;height:1px;padding:0;margin:-1px;
+  overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0;
+}
+*{margin:0;padding:0;box-sizing:border-box;}
+body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);height:100vh;display:flex;flex-direction:column;overflow:hidden;user-select:none;}
+
+.main{flex:1;display:flex;overflow:hidden;}
+.workspace{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:24px;gap:14px;overflow-y:auto;}
+.side-panel{width:280px;background:var(--bg2);border-left:1px solid var(--border);padding:20px;overflow-y:auto;flex-shrink:0;}
+.panel-section{margin-bottom:20px;}
+.panel-title{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:1.5px;color:var(--muted);margin-bottom:8px;}
+.panel-text{font-size:13px;color:var(--text2);line-height:1.6;}
+
+/* ── Place Value Chart ── */
+.pv-chart{display:flex;gap:4px;justify-content:center;margin:10px auto;max-width:480px;width:100%;}
+.pv-column{flex:1;display:flex;flex-direction:column;align-items:center;border:2px solid var(--border);border-radius:12px;padding:12px 8px;min-height:180px;background:var(--card);transition:border-color 0.3s;position:relative;}
+.pv-column.tens-col{border-color:rgba(179,136,255,0.4);}
+.pv-column.ones-col{border-color:rgba(0,212,255,0.4);}
+.pv-col-label{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:1.5px;margin-bottom:8px;}
+.pv-col-label.tens-label{color:#b388ff;}
+.pv-col-label.ones-label{color:#00d4ff;}
+.pv-blocks{display:flex;flex-wrap:wrap;gap:6px;justify-content:center;align-items:flex-end;flex:1;}
+.pv-count{font-size:22px;font-weight:900;font-family:'JetBrains Mono',monospace;margin-top:8px;}
+.pv-count.tens-count{color:#b388ff;}
+.pv-count.ones-count{color:#00d4ff;}
+
+/* ── SVG Tens Rod (clickable) ── */
+.tens-rod-wrap{cursor:pointer;transition:transform 0.2s;position:relative;}
+.tens-rod-wrap:hover{transform:scale(1.08);}
+.tens-rod-wrap:active{transform:scale(0.95);}
+.tens-rod-wrap.appearing{animation:rodAppear 0.4s ease-out;}
+
+/* ── SVG Ones Cube (clickable) ── */
+.ones-cube-wrap{cursor:pointer;transition:transform 0.2s;}
+.ones-cube-wrap:hover{transform:scale(1.15);}
+.ones-cube-wrap:active{transform:scale(0.9);}
+.ones-cube-wrap.pop-in{animation:pop 0.3s ease-out;}
+
+/* ── Bundle animation ── */
+.ones-cube-wrap.bundling{animation:bundleShrink 0.5s ease-in forwards;}
+@keyframes bundleShrink{0%{transform:scale(1);opacity:1;} 100%{transform:scale(0);opacity:0;}}
+@keyframes rodAppear{0%{transform:scaleY(0);opacity:0;} 100%{transform:scaleY(1);opacity:1;}}
+@keyframes pop{0%{transform:scale(0);}70%{transform:scale(1.2);}100%{transform:scale(1);}}
+
+/* ── Numeral Display ── */
+.numeral-display{text-align:center;margin:6px 0;}
+.numeral-big{font-size:52px;font-weight:900;font-family:'JetBrains Mono',monospace;background:var(--grad);-webkit-background-clip:text;-webkit-text-fill-color:transparent;letter-spacing:4px;}
+.expanded-form{font-size:15px;font-weight:600;font-family:'JetBrains Mono',monospace;color:var(--text2);margin-top:2px;}
+.expanded-form .tens-part{color:#b388ff;}
+.expanded-form .ones-part{color:#00d4ff;}
+
+/* ── Instruction Box ── */
+.instruction-box{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:14px 20px;text-align:center;font-size:15px;color:var(--text2);font-weight:500;max-width:600px;transition:all 0.3s;}
+.instruction-box.highlight-cyan{border-color:var(--cyan);color:var(--cyan);}
+.instruction-box.highlight-pink{border-color:var(--pink);color:var(--pink);}
+.instruction-box.highlight-green{border-color:var(--green);color:var(--green);}
+
+/* ── Controls ── */
+.controls{display:flex;gap:8px;flex-wrap:wrap;justify-content:center;}
+.ctrl-btn{padding:10px 20px;border-radius:10px;border:1px solid var(--border);background:var(--card);color:var(--text2);font-size:13px;font-weight:600;font-family:inherit;cursor:pointer;transition:all 0.2s;display:flex;align-items:center;gap:6px;}
+.ctrl-btn:hover{background:var(--card2);color:var(--text);}
+.ctrl-btn.primary{background:var(--grad);color:var(--bg);border-color:transparent;}
+.ctrl-btn.add-ten{border-color:rgba(179,136,255,0.4);color:#b388ff;}
+.ctrl-btn.add-ten:hover{background:rgba(179,136,255,0.1);}
+.ctrl-btn.add-one{border-color:rgba(0,212,255,0.4);color:#00d4ff;}
+.ctrl-btn.add-one:hover{background:rgba(0,212,255,0.1);}
+.ctrl-btn.bundle{border-color:var(--green);color:var(--green);animation:pulse-glow 1.2s infinite;}
+.ctrl-btn:disabled{opacity:0.3;cursor:not-allowed;pointer-events:none;}
+@keyframes pulse-glow{0%{box-shadow:0 0 8px rgba(0,230,118,0.3);}50%{box-shadow:0 0 16px rgba(0,230,118,0.6);}100%{box-shadow:0 0 8px rgba(0,230,118,0.3);}}
+
+/* ── MC Grid ── */
+.mc-grid{display:flex;gap:10px;flex-wrap:wrap;justify-content:center;max-width:500px;}
+.mc-btn{min-width:110px;padding:12px 16px;border-radius:12px;border:2px solid var(--border);background:var(--card);color:var(--text);font-size:14px;font-weight:600;font-family:'JetBrains Mono',monospace;cursor:pointer;transition:all 0.15s;display:flex;align-items:center;justify-content:center;text-align:center;}
+.mc-btn:hover{border-color:var(--cyan);transform:scale(1.04);}
+.mc-btn.correct-flash{border-color:var(--green);background:rgba(0,230,118,0.2);color:var(--green);animation:correctFlash 0.4s ease-out;}
+.mc-btn.incorrect-flash{border-color:var(--pink);background:rgba(255,59,139,0.2);color:var(--pink);animation:shake 0.3s ease-in-out;}
+@keyframes correctFlash{0%{transform:scale(1.1);}100%{transform:scale(1);}}
+@keyframes shake{0%,100%{transform:translateX(0);}25%{transform:translateX(-4px);}75%{transform:translateX(4px);}}
+
+/* ── Score Display ── */
+.score-display{text-align:center;padding:16px;background:var(--card);border-radius:12px;margin-bottom:12px;}
+.score-value{font-size:36px;font-weight:900;font-family:'JetBrains Mono',monospace;background:var(--grad);-webkit-background-clip:text;-webkit-text-fill-color:transparent;}
+.score-label{font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:1px;}
+.streak-bar{height:6px;background:var(--card);border-radius:3px;overflow:hidden;margin-top:8px;}
+.streak-fill{height:100%;background:var(--grad);border-radius:3px;transition:width 0.3s;}
+
+/* ── Feedback ── */
+.feedback{position:fixed;top:50%;left:50%;transform:translate(-50%,-50%) scale(0);padding:24px 48px;border-radius:20px;font-size:24px;font-weight:800;z-index:200;pointer-events:none;transition:transform 0.3s cubic-bezier(0.175,0.885,0.32,1.275),opacity 0.3s;opacity:0;max-width:90vw;text-align:center;line-height:1.4;}
+.feedback.show{transform:translate(-50%,-50%) scale(1);opacity:1;}
+.feedback.correct{background:rgba(0,230,118,0.15);color:var(--green);border:2px solid var(--green);}
+.feedback.incorrect{background:rgba(255,59,139,0.15);color:var(--pink);border:2px solid var(--pink);}
+.feedback.try-again{background:rgba(255,193,7,0.15);color:var(--yellow);border:2px solid var(--yellow);}
+
+/* ── Game Over ── */
+.game-over{text-align:center;padding:32px;}
+.game-over .big-score{font-size:64px;font-weight:900;font-family:'JetBrains Mono',monospace;background:var(--grad);-webkit-background-clip:text;-webkit-text-fill-color:transparent;margin-bottom:12px;}
+
+::-webkit-scrollbar{width:6px;}::-webkit-scrollbar-track{background:transparent;}::-webkit-scrollbar-thumb{background:var(--border);border-radius:3px;}
+</style>
+</head>
+<body>
+
+<div class="vinculum-header">
+  <div class="vinculum-header-left">
+    <a class="vinculum-back-btn" href="../../VINCULUM-Hub.html" style="text-decoration:none;">&#9664; Hub</a>
+    <div class="vinculum-header-title"><span>VINCULUM</span> Place Value: Tens &amp; Ones</div>
+    <span class="vinculum-header-badge">1.NBT</span>
+  </div>
+  <div class="vinculum-header-right">
+    <div class="vinculum-std-tags">
+      <span class="vinculum-std-tag">1.NBT.2</span>
+      <span class="vinculum-std-tag">1.NBT.4</span>
+      <span class="vinculum-std-tag mn">MN 1.1.2.1</span>
+    </div>
+    <button class="vinculum-back-btn" id="readAloudBtn" onclick="toggleReadAloud()" aria-label="Read Aloud" title="Read instructions aloud" style="margin-left:8px;white-space:nowrap;">&#128264; Read to Me</button>
+  </div>
+</div>
+
+<div class="vinculum-mode-tabs">
+  <button class="vinculum-mode-tab active-explore" data-mode="explore" id="tabExplore" onclick="setMode('explore')"><svg width="18" height="18" viewBox="0 0 48 48" fill="none"><path d="M4 24C4 24 12 12 24 12C36 12 44 24 44 24C44 24 36 36 24 36C12 36 4 24 4 24Z" stroke="currentColor" stroke-width="3" fill="none"/><circle cx="24" cy="24" r="7" stroke="currentColor" stroke-width="3" fill="none"/><circle cx="24" cy="24" r="3" fill="currentColor"/><line x1="24" y1="4" x2="24" y2="9" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" opacity="0.5"/><line x1="10" y1="8" x2="13" y2="12" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" opacity="0.5"/><line x1="38" y1="8" x2="35" y2="12" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" opacity="0.5"/></svg> Explore</button>
+  <button class="vinculum-mode-tab" id="tabPractice" data-mode="practice" onclick="setMode('practice')"><svg width="18" height="18" viewBox="0 0 48 48" fill="none"><circle cx="24" cy="24" r="20" stroke="currentColor" stroke-width="3" fill="none" opacity="0.3"/><circle cx="24" cy="24" r="20" stroke="currentColor" stroke-width="3" fill="none" stroke-dasharray="126" stroke-dashoffset="32" stroke-linecap="round"/><polyline points="16,24 22,32 34,16" stroke="currentColor" stroke-width="4" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg> Practice</button>
+  <button class="vinculum-mode-tab" id="tabPlay" data-mode="play" onclick="setMode('play')"><svg width="18" height="18" viewBox="0 0 48 48" fill="none"><polygon points="28,4 12,28 22,28 18,44 36,18 26,18" fill="none" stroke="currentColor" stroke-width="3" stroke-linejoin="round"/><polygon points="27,8 15,27 23,27 20,40 34,19 26,19" fill="currentColor" opacity="0.15"/></svg> Play</button>
+  <div class="vinculum-diff-selector">
+    <span class="vinculum-diff-label">Level</span>
+    <button class="vinculum-diff-btn active" id="diffE" data-diff="emergent" onclick="setDiff('emergent')">11-19</button>
+    <button class="vinculum-diff-btn" id="diffP" data-diff="proficient" onclick="setDiff('proficient')">To 99</button>
+    <button class="vinculum-diff-btn" id="diffA" data-diff="advanced" onclick="setDiff('advanced')">Regroup</button>
+  </div>
+</div>
+
+<div class="main">
+  <div class="workspace" role="main" id="workspace"></div>
+  <div class="side-panel" id="sidePanel"></div>
+</div>
+<div class="feedback" id="feedback"></div>
+
+<script src="../../vinculum-input.js"></script>
+<script>
+/* ════════════════════════════════════════
+   STATE
+   ════════════════════════════════════════ */
+let S = {
+  mode: 'explore', diff: 'emergent', maxN: 19,
+  tens: 1, ones: 4, targetNum: 14,
+  // Practice
+  pNum: 0, pType: 'identify', pAnswer: 0, pChoices: [],
+  pTens: 0, pOnes: 0, pA: 0, pB: 0,
+  // Play
+  playNum: 0, playType: 'identify', playAnswer: 0, playChoices: [],
+  playTens: 0, playOnes: 0, playA: 0, playB: 0, playQuestion: '',
+  // Scoring
+  score: 0, streak: 0, best: 0, round: 0, total: 10
+};
+
+/* ════════════════════════════════════════
+   MISCONCEPTIONS DATABASE (6 types)
+   ════════════════════════════════════════ */
+const MISCONCEPTIONS = {
+  digitMeaning: {
+    id: 'digit-meaning',
+    msg: function(n) {
+      var t = Math.floor(n / 10), o = n % 10;
+      return 'In ' + n + ', the digit ' + t + ' means ' + t + ' tens (' + (t * 10) + '), and ' + o + ' means ' + o + ' ones!';
+    }
+  },
+  regroup: {
+    id: 'regroup',
+    msg: function() { return 'When you have 10 or more ones, bundle them into a new ten! 10 ones = 1 ten.'; }
+  },
+  offByOne: {
+    id: 'off-by-one',
+    msg: function(ans, got) { return 'Close! ' + got + ' is not quite right. The answer is ' + ans + '.'; }
+  },
+  offByTen: {
+    id: 'off-by-ten',
+    msg: function(ans, got) { return 'Check the tens place! ' + got + ' is off by a ten. The answer is ' + ans + '.'; }
+  },
+  swappedDigits: {
+    id: 'swapped-digits',
+    msg: function(n) { return 'Careful! The tens digit and ones digit have different jobs. In ' + n + ', the left digit counts tens.'; }
+  },
+  randomGuess: {
+    id: 'random',
+    msg: function() { return 'Count the tens rods and the ones cubes separately, then combine!'; }
+  }
+};
+
+/* ════════════════════════════════════════
+   HELPERS
+   ════════════════════════════════════════ */
+function rand(a, b) { return Math.floor(Math.random() * (b - a + 1)) + a; }
+
+function shuffle(arr) {
+  for (var i = arr.length - 1; i > 0; i--) {
+    var j = Math.floor(Math.random() * (i + 1));
+    var tmp = arr[i]; arr[i] = arr[j]; arr[j] = tmp;
+  }
+}
+
+function showFB(msg, type) {
+  var fb = document.getElementById('feedback');
+  fb.className = 'feedback ' + type;
+  fb.textContent = msg;
+  fb.classList.add('show');
+  setTimeout(function() { fb.classList.remove('show'); }, 2400);
+}
+
+function toggleReadAloud() {
+  if (window.VinculumStories && VinculumStories.isReading()) {
+    VinculumStories.stopReading();
+    document.getElementById('readAloudBtn').textContent = '\u{1F50A} Read to Me';
+  } else {
+    var storyEl = document.getElementById('storyBanner');
+    var fb = document.getElementById('feedback');
+    var text = storyEl ? storyEl.textContent : (fb ? fb.textContent : 'Welcome to Place Value: Tens and Ones!');
+    if (window.VinculumStories) {
+      VinculumStories.readAloud(text, { rate: 0.85, onComplete: function() {
+        document.getElementById('readAloudBtn').textContent = '\u{1F50A} Read to Me';
+      }});
+      document.getElementById('readAloudBtn').textContent = '\u23F9 Stop';
+    }
+  }
+}
+
+/* ════════════════════════════════════════
+   MODE & DIFFICULTY SWITCHING
+   ════════════════════════════════════════ */
+function setMode(m) {
+  S.mode = m;
+  document.querySelectorAll('.vinculum-mode-tab').forEach(function(t) {
+    t.classList.remove('active-explore', 'active-practice', 'active-play');
+  });
+  document.getElementById('tab' + m.charAt(0).toUpperCase() + m.slice(1)).classList.add('active-' + m);
+  S.round = 0; S.score = 0; S.streak = 0;
+  if (m === 'practice') newPractice();
+  render();
+}
+
+function setDiff(d) {
+  S.diff = d;
+  if (d === 'emergent') { S.maxN = 19; S.tens = 1; S.ones = 4; }
+  else if (d === 'proficient') { S.maxN = 99; S.tens = 3; S.ones = 7; }
+  else { S.maxN = 99; S.tens = 2; S.ones = 5; }
+  document.querySelectorAll('.vinculum-diff-btn').forEach(function(b) { b.classList.remove('active'); });
+  document.getElementById('diff' + d.charAt(0).toUpperCase()).classList.add('active');
+  if (S.mode === 'practice') newPractice();
+  if (S.mode === 'play') S.round = 0;
+  render();
+}
+
+function render() {
+  var ws = document.getElementById('workspace');
+  var sp = document.getElementById('sidePanel');
+  if (S.mode === 'explore') renderExplore(ws, sp);
+  else if (S.mode === 'practice') renderPractice(ws, sp);
+  else renderPlay(ws, sp);
+}
+
+/* ════════════════════════════════════════
+   SVG BLOCK BUILDERS
+   ════════════════════════════════════════ */
+
+/** Tens rod: tall rod made of 10 stacked unit cubes */
+function svgTensRod(idx) {
+  var w = 22, cubeH = 8, gap = 1, h = cubeH * 10 + gap * 9;
+  var svg = '<div class="tens-rod-wrap appearing" onclick="tapTensRod(' + idx + ')" title="Tap to remove">';
+  svg += '<svg width="' + w + '" height="' + h + '" viewBox="0 0 ' + w + ' ' + h + '">';
+  svg += '<defs><linearGradient id="tg" x1="0" y1="0" x2="1" y2="1">';
+  svg += '<stop offset="0%" stop-color="#b388ff"/><stop offset="100%" stop-color="#7c4dff"/>';
+  svg += '</linearGradient></defs>';
+  for (var i = 0; i < 10; i++) {
+    var y = i * (cubeH + gap);
+    svg += '<rect x="1" y="' + y + '" width="' + (w - 2) + '" height="' + cubeH + '" rx="2" fill="url(#tg)" stroke="#b388ff" stroke-width="0.8"/>';
+  }
+  svg += '</svg></div>';
+  return svg;
+}
+
+/** Ones cube: small square */
+function svgOnesCube(idx) {
+  var s = 26;
+  var svg = '<div class="ones-cube-wrap pop-in" onclick="tapOnesCube(' + idx + ')" title="Tap to remove">';
+  svg += '<svg width="' + s + '" height="' + s + '" viewBox="0 0 ' + s + ' ' + s + '">';
+  svg += '<defs><linearGradient id="og" x1="0" y1="0" x2="1" y2="1">';
+  svg += '<stop offset="0%" stop-color="#00d4ff"/><stop offset="100%" stop-color="#0091ea"/>';
+  svg += '</linearGradient></defs>';
+  svg += '<rect x="1" y="1" width="' + (s - 2) + '" height="' + (s - 2) + '" rx="4" fill="url(#og)" stroke="#00d4ff" stroke-width="1"/>';
+  svg += '<text x="' + (s / 2) + '" y="' + (s / 2 + 4) + '" text-anchor="middle" font-size="10" font-weight="800" font-family="JetBrains Mono,monospace" fill="rgba(255,255,255,0.7)">1</text>';
+  svg += '</svg></div>';
+  return svg;
+}
+
+/** Static tens rod for display (not clickable) */
+function svgTensRodStatic() {
+  var w = 22, cubeH = 8, gap = 1, h = cubeH * 10 + gap * 9;
+  var svg = '<div style="display:inline-block;">';
+  svg += '<svg width="' + w + '" height="' + h + '" viewBox="0 0 ' + w + ' ' + h + '">';
+  svg += '<defs><linearGradient id="tgs" x1="0" y1="0" x2="1" y2="1">';
+  svg += '<stop offset="0%" stop-color="#b388ff"/><stop offset="100%" stop-color="#7c4dff"/>';
+  svg += '</linearGradient></defs>';
+  for (var i = 0; i < 10; i++) {
+    var y = i * (cubeH + gap);
+    svg += '<rect x="1" y="' + y + '" width="' + (w - 2) + '" height="' + cubeH + '" rx="2" fill="url(#tgs)" stroke="#b388ff" stroke-width="0.8"/>';
+  }
+  svg += '</svg></div>';
+  return svg;
+}
+
+/** Static ones cube for display */
+function svgOnesCubeStatic() {
+  var s = 26;
+  var svg = '<div style="display:inline-block;">';
+  svg += '<svg width="' + s + '" height="' + s + '" viewBox="0 0 ' + s + ' ' + s + '">';
+  svg += '<defs><linearGradient id="ogs" x1="0" y1="0" x2="1" y2="1">';
+  svg += '<stop offset="0%" stop-color="#00d4ff"/><stop offset="100%" stop-color="#0091ea"/>';
+  svg += '</linearGradient></defs>';
+  svg += '<rect x="1" y="1" width="' + (s - 2) + '" height="' + (s - 2) + '" rx="4" fill="url(#ogs)" stroke="#00d4ff" stroke-width="1"/>';
+  svg += '<text x="' + (s / 2) + '" y="' + (s / 2 + 4) + '" text-anchor="middle" font-size="10" font-weight="800" font-family="JetBrains Mono,monospace" fill="rgba(255,255,255,0.7)">1</text>';
+  svg += '</svg></div>';
+  return svg;
+}
+
+/* ════════════════════════════════════════
+   BUILD PV CHART
+   ════════════════════════════════════════ */
+function buildPVChart(tens, ones, interactive) {
+  var h = '<div class="pv-chart">';
+
+  // Tens column
+  h += '<div class="pv-column tens-col">';
+  h += '<div class="pv-col-label tens-label">Tens</div>';
+  h += '<div class="pv-blocks">';
+  for (var i = 0; i < tens; i++) {
+    h += interactive ? svgTensRod(i) : svgTensRodStatic();
+  }
+  if (tens === 0) h += '<span style="color:var(--muted);font-size:12px;font-style:italic;">none</span>';
+  h += '</div>';
+  h += '<div class="pv-count tens-count">' + tens + '</div>';
+  h += '</div>';
+
+  // Ones column
+  h += '<div class="pv-column ones-col">';
+  h += '<div class="pv-col-label ones-label">Ones</div>';
+  h += '<div class="pv-blocks">';
+  for (var j = 0; j < ones; j++) {
+    h += interactive ? svgOnesCube(j) : svgOnesCubeStatic();
+  }
+  if (ones === 0) h += '<span style="color:var(--muted);font-size:12px;font-style:italic;">none</span>';
+  h += '</div>';
+  h += '<div class="pv-count ones-count">' + ones + '</div>';
+  h += '</div>';
+
+  h += '</div>';
+  return h;
+}
+
+function buildNumeralDisplay(tens, ones) {
+  var num = tens * 10 + ones;
+  var h = '<div class="numeral-display">';
+  h += '<div class="numeral-big">' + num + '</div>';
+  h += '<div class="expanded-form">';
+  if (tens > 0 && ones > 0) {
+    h += '<span class="tens-part">' + (tens * 10) + '</span> + <span class="ones-part">' + ones + '</span> = ' + num;
+  } else if (tens > 0) {
+    h += '<span class="tens-part">' + (tens * 10) + '</span> = ' + num;
+  } else {
+    h += '<span class="ones-part">' + ones + '</span>';
+  }
+  h += '</div></div>';
+  return h;
+}
+
+/* ════════════════════════════════════════
+   EXPLORE MODE
+   ════════════════════════════════════════ */
+function renderExplore(ws, sp) {
+  var h = '';
+
+  // Story banner
+  if (window.VinculumStories) {
+    var toolName = window.location.pathname.split('/').pop().replace('.html', '');
+    var num = S.tens * 10 + S.ones;
+    var storyData = VinculumStories.getStory(toolName, {a: S.tens, b: S.ones, total: num, n: num});
+    if (storyData && storyData.story) {
+      if (window.Vinculum3Reads) {
+        h += Vinculum3Reads.getBannerHTML(storyData);
+      } else {
+        h += '<div id="storyBanner" style="background:var(--card2,#1a1f2e);border:1px solid var(--border);border-radius:12px;padding:16px 20px;margin-bottom:16px;font-size:15px;line-height:1.6;color:var(--text);position:relative;"><span style="font-size:12px;color:var(--cyan);font-weight:700;text-transform:uppercase;letter-spacing:1px;">Story</span><br>' + storyData.story + '<br><em style="color:var(--yellow);font-weight:600;">' + storyData.question + '</em><button onclick="toggleReadAloud()" style="position:absolute;top:12px;right:12px;background:none;border:1px solid var(--border);border-radius:8px;padding:4px 10px;color:var(--cyan);cursor:pointer;font-size:14px;" title="Read story aloud">&#128264;</button></div>';
+      }
+    }
+  }
+
+  var num = S.tens * 10 + S.ones;
+  h += '<div class="instruction-box">Tap buttons to add blocks. Tap a block to remove it. Bundle 10 ones into a ten!</div>';
+
+  // Numeral display
+  h += buildNumeralDisplay(S.tens, S.ones);
+
+  // Interactive PV chart
+  h += buildPVChart(S.tens, S.ones, true);
+
+  // Controls
+  h += '<div class="controls">';
+  var maxTens = S.diff === 'emergent' ? 1 : 9;
+  h += '<button class="ctrl-btn add-ten" onclick="addTen()"' + (S.tens >= maxTens ? ' disabled' : '') + '>+ Ten</button>';
+  h += '<button class="ctrl-btn add-one" onclick="addOne()"' + (num >= S.maxN && S.ones < 10 ? ' disabled' : '') + '>+ One</button>';
+  if (S.ones >= 10) {
+    h += '<button class="ctrl-btn bundle" onclick="bundleOnes()">Bundle 10 Ones &#8594; 1 Ten</button>';
+  }
+  h += '<button class="ctrl-btn" onclick="S.tens=0;S.ones=0;render();">&#8634; Reset</button>';
+  h += '</div>';
+
+  ws.innerHTML = h;
+
+  // Side panel
+  var sp_h = '<div class="panel-section"><div class="panel-title">What is Place Value?</div>';
+  sp_h += '<div class="panel-text">';
+  sp_h += 'Each digit in a number has a <strong style="color:var(--purple);">place</strong> that tells its value.<br><br>';
+  sp_h += '<strong style="color:#b388ff;">Tens place</strong>: each rod is worth <strong>10</strong>.<br>';
+  sp_h += '<strong style="color:#00d4ff;">Ones place</strong>: each cube is worth <strong>1</strong>.<br><br>';
+  sp_h += 'The number ' + num + ' = <strong style="color:#b388ff;">' + S.tens + ' ten' + (S.tens !== 1 ? 's' : '') + '</strong> and <strong style="color:#00d4ff;">' + S.ones + ' one' + (S.ones !== 1 ? 's' : '') + '</strong>.';
+  sp_h += '</div></div>';
+
+  sp_h += '<div class="panel-section"><div class="panel-title">Key Idea</div>';
+  sp_h += '<div class="panel-text">';
+  sp_h += '<strong style="color:var(--green);">10 ones = 1 ten!</strong><br><br>';
+  sp_h += 'When you collect 10 ones cubes, you can <em>bundle</em> them into 1 tens rod. This is called <strong>regrouping</strong>.';
+  sp_h += '</div></div>';
+
+  sp_h += '<div class="panel-section"><div class="panel-title">How to Use</div>';
+  sp_h += '<div class="panel-text">';
+  sp_h += '<strong style="color:var(--cyan);">1.</strong> Tap <em>+ Ten</em> or <em>+ One</em> to add blocks<br>';
+  sp_h += '<strong style="color:var(--cyan);">2.</strong> Tap any block to remove it<br>';
+  sp_h += '<strong style="color:var(--cyan);">3.</strong> Watch the expanded form update<br>';
+  sp_h += '<strong style="color:var(--cyan);">4.</strong> Bundle 10 ones into a ten when you can';
+  sp_h += '</div></div>';
+
+  sp.innerHTML = sp_h;
+}
+
+/* ── Explore interactions ── */
+function addTen() {
+  var maxTens = S.diff === 'emergent' ? 1 : 9;
+  if (S.tens < maxTens) { S.tens++; render(); }
+}
+
+function addOne() { S.ones++; render(); }
+
+function tapTensRod(idx) {
+  if (S.mode !== 'explore') return;
+  if (S.tens > 0) { S.tens--; render(); }
+}
+
+function tapOnesCube(idx) {
+  if (S.mode !== 'explore') return;
+  if (S.ones > 0) { S.ones--; render(); }
+}
+
+function bundleOnes() {
+  if (S.ones >= 10) {
+    var maxTens = S.diff === 'emergent' ? 1 : 9;
+    if (S.tens >= maxTens) {
+      showFB('Cannot add another ten at this level!', 'try-again');
+      return;
+    }
+    S.ones -= 10;
+    S.tens += 1;
+    showFB('10 ones = 1 ten!', 'correct');
+    render();
+  }
+}
+
+/* ════════════════════════════════════════
+   PRACTICE MODE
+   ════════════════════════════════════════ */
+function newPractice() {
+  if (S.diff === 'emergent') {
+    // "How many tens and ones in [n]?" for 11-19
+    S.pNum = rand(11, 19);
+    S.pType = 'identify';
+    var ct = Math.floor(S.pNum / 10);
+    var co = S.pNum % 10;
+    S.pAnswer = ct + ' ten, ' + co + ' ones';
+    var choices = new Set([S.pAnswer]);
+    // Misconception: swapped digits
+    choices.add(co + ' tens, ' + ct + ' one' + (ct !== 1 ? 's' : ''));
+    while (choices.size < 4) {
+      var wt = rand(0, 2);
+      var wo = rand(0, 9);
+      var label = wt + ' ten' + (wt !== 1 ? 's' : '') + ', ' + wo + ' one' + (wo !== 1 ? 's' : '');
+      if (label !== S.pAnswer) choices.add(label);
+    }
+    S.pChoices = Array.from(choices);
+    shuffle(S.pChoices);
+    S.pTens = ct;
+    S.pOnes = co;
+  } else if (S.diff === 'proficient') {
+    // "Build this number" -> "What number is [t] tens [o] ones?"
+    var t = rand(1, 9);
+    var o = rand(0, 9);
+    S.pNum = t * 10 + o;
+    S.pType = 'compose';
+    S.pAnswer = S.pNum;
+    var choices = new Set([S.pNum]);
+    // Swap digits distractor
+    if (o > 0 && o !== t) choices.add(o * 10 + t);
+    // Off-by-ten
+    if (S.pNum + 10 <= 99) choices.add(S.pNum + 10);
+    else choices.add(S.pNum - 10);
+    // Off-by-one
+    if (S.pNum + 1 <= 99) choices.add(S.pNum + 1);
+    else choices.add(S.pNum - 1);
+    while (choices.size < 4) { choices.add(rand(10, 99)); }
+    S.pChoices = Array.from(choices);
+    shuffle(S.pChoices);
+    S.pTens = t;
+    S.pOnes = o;
+  } else {
+    // Advanced: "Add [a] + [b] with regrouping"
+    var a, b;
+    do {
+      a = rand(12, 49);
+      b = rand(12, 49);
+    } while ((a % 10) + (b % 10) < 10 || a + b > 99);
+    S.pNum = a + b;
+    S.pType = 'regroup';
+    S.pAnswer = a + b;
+    S.pA = a;
+    S.pB = b;
+    var choices = new Set([S.pAnswer]);
+    // No-regroup distractor
+    var noR = (Math.floor(a / 10) + Math.floor(b / 10)) * 10 + ((a % 10) + (b % 10));
+    if (noR !== S.pAnswer && noR > 0 && noR <= 99) choices.add(noR);
+    // Off by ten
+    choices.add(S.pAnswer - 10 > 0 ? S.pAnswer - 10 : S.pAnswer + 10);
+    // Off by one
+    choices.add(S.pAnswer + 1 <= 99 ? S.pAnswer + 1 : S.pAnswer - 1);
+    while (choices.size < 4) { choices.add(rand(20, 99)); }
+    S.pChoices = Array.from(choices);
+    shuffle(S.pChoices);
+    S.pTens = Math.floor(a / 10);
+    S.pOnes = a % 10;
+  }
+}
+
+function renderPractice(ws, sp) {
+  if (!S.pNum) newPractice();
+  var h = '';
+
+  if (S.pType === 'identify') {
+    h += '<div class="instruction-box highlight-green">How many tens and ones are in <strong>' + S.pNum + '</strong>?</div>';
+    h += buildPVChart(Math.floor(S.pNum / 10), S.pNum % 10, false);
+  } else if (S.pType === 'compose') {
+    h += '<div class="instruction-box highlight-green">What number is <strong style="color:#b388ff;">' + S.pTens + ' ten' + (S.pTens !== 1 ? 's' : '') + '</strong> and <strong style="color:#00d4ff;">' + S.pOnes + ' one' + (S.pOnes !== 1 ? 's' : '') + '</strong>?</div>';
+    h += buildPVChart(S.pTens, S.pOnes, false);
+  } else {
+    h += '<div class="instruction-box highlight-green">Add <strong>' + S.pA + ' + ' + S.pB + '</strong> &#8212; use place value to regroup!</div>';
+    h += '<div style="display:flex;gap:20px;justify-content:center;align-items:center;flex-wrap:wrap;">';
+    h += '<div style="text-align:center;"><div style="font-size:13px;color:var(--muted);margin-bottom:4px;">' + S.pA + '</div>';
+    h += buildPVChart(Math.floor(S.pA / 10), S.pA % 10, false);
+    h += '</div>';
+    h += '<div style="font-size:28px;font-weight:900;color:var(--text2);">+</div>';
+    h += '<div style="text-align:center;"><div style="font-size:13px;color:var(--muted);margin-bottom:4px;">' + S.pB + '</div>';
+    h += buildPVChart(Math.floor(S.pB / 10), S.pB % 10, false);
+    h += '</div></div>';
+  }
+
+  // MC buttons
+  h += '<div class="mc-grid">';
+  S.pChoices.forEach(function(c, i) {
+    h += '<button class="mc-btn" id="mc' + i + '" onclick="checkPractice(' + JSON.stringify(c) + ', ' + i + ')">' + c + '</button>';
+  });
+  h += '</div>';
+
+  h += '<div class="controls" style="margin-top:8px;">';
+  h += '<button class="ctrl-btn" onclick="newPractice();render();">Skip &#8594;</button>';
+  h += '</div>';
+
+  ws.innerHTML = h;
+
+  // Side panel
+  var sp_h = '<div class="panel-section"><div class="panel-title">Strategy Steps</div>';
+  sp_h += '<div class="panel-text" style="background:var(--card);padding:12px;border-radius:8px;">';
+  sp_h += '<div style="margin-bottom:8px;"><strong style="color:#b388ff;">Step 1: Look</strong><br><span style="font-size:12px;">Count the purple tens rods</span></div>';
+  sp_h += '<div style="margin-bottom:8px;"><strong style="color:#00d4ff;">Step 2: Count</strong><br><span style="font-size:12px;">Count the cyan ones cubes</span></div>';
+  sp_h += '<div><strong style="color:var(--green);">Step 3: Combine</strong><br><span style="font-size:12px;">Tens value + ones value = number</span></div>';
+  sp_h += '</div></div>';
+
+  sp_h += '<div class="panel-section"><div class="panel-title">Remember</div>';
+  sp_h += '<div class="panel-text">The <strong style="color:#b388ff;">tens digit</strong> tells how many groups of ten. The <strong style="color:#00d4ff;">ones digit</strong> tells how many extras.';
+  if (S.pType === 'regroup') {
+    sp_h += '<br><br><strong style="color:var(--green);">When ones add up to 10 or more, regroup into a new ten!</strong>';
+  }
+  sp_h += '</div></div>';
+
+  sp_h += '<div class="panel-section"><div class="panel-title">Common Mistakes</div>';
+  sp_h += '<div class="panel-text" style="font-size:12px;">';
+  sp_h += '&#x26A0; Seeing 14 as "1 and 4" instead of 1 ten and 4 ones<br>';
+  sp_h += '&#x26A0; Forgetting to regroup when ones reach 10';
+  sp_h += '</div></div>';
+
+  sp.innerHTML = sp_h;
+}
+
+function checkPractice(clicked, idx) {
+  var btn = document.getElementById('mc' + idx);
+  var correct = S.pAnswer;
+  var isCorrect = (typeof correct === 'number') ? (Number(clicked) === correct) : (clicked === correct);
+
+  if (isCorrect) {
+    btn.classList.add('correct-flash');
+    S.score += 10 + S.streak * 2;
+    S.streak++;
+    if (S.streak > S.best) S.best = S.streak;
+    showFB('Correct!', 'correct');
+    setTimeout(function() { newPractice(); render(); }, 1500);
+  } else {
+    btn.classList.add('incorrect-flash');
+    S.streak = 0;
+    var msg = diagnoseMisconception(S.pType, clicked, correct);
+    showFB(msg, 'try-again');
+    setTimeout(function() { btn.classList.remove('incorrect-flash'); }, 400);
+  }
+}
+
+/** Analyze incorrect answer to give targeted feedback */
+function diagnoseMisconception(type, clicked, correct) {
+  if (type === 'identify') {
+    var num = S.pNum;
+    var onesDigit = num % 10;
+    var tensDigit = Math.floor(num / 10);
+    var clickedStr = String(clicked);
+    // Check if student swapped tens/ones
+    if (clickedStr.indexOf(onesDigit + ' ten') !== -1) {
+      return MISCONCEPTIONS.swappedDigits.msg(num);
+    }
+    return MISCONCEPTIONS.digitMeaning.msg(num);
+  } else if (type === 'compose') {
+    var got = Number(clicked);
+    if (Math.abs(got - correct) === 1) {
+      return MISCONCEPTIONS.offByOne.msg(correct, got);
+    }
+    if (Math.abs(got - correct) === 10) {
+      return MISCONCEPTIONS.offByTen.msg(correct, got);
+    }
+    if (S.pOnes > 0 && got === S.pOnes * 10 + S.pTens) {
+      return MISCONCEPTIONS.swappedDigits.msg(correct);
+    }
+    return MISCONCEPTIONS.randomGuess.msg();
+  } else {
+    // Regroup type
+    var got = Number(clicked);
+    var noRegroup = (Math.floor(S.pA / 10) + Math.floor(S.pB / 10)) * 10 + ((S.pA % 10) + (S.pB % 10));
+    if (got === noRegroup && noRegroup !== correct) {
+      return MISCONCEPTIONS.regroup.msg();
+    }
+    if (Math.abs(got - correct) === 1) {
+      return MISCONCEPTIONS.offByOne.msg(correct, got);
+    }
+    if (Math.abs(got - correct) === 10) {
+      return MISCONCEPTIONS.offByTen.msg(correct, got);
+    }
+    return MISCONCEPTIONS.randomGuess.msg();
+  }
+}
+
+/* ════════════════════════════════════════
+   PLAY MODE — 10 rounds, mixed PV questions
+   ════════════════════════════════════════ */
+function startGame() {
+  S.round = 1;
+  S.score = 0;
+  S.streak = 0;
+  newPlayRound();
+}
+
+function newPlayRound() {
+  var types = S.diff === 'emergent' ? ['howManyTens', 'howManyOnes', 'composeTeen']
+    : S.diff === 'proficient' ? ['howManyTens', 'howManyOnes', 'compose', 'tensValue']
+    : ['howManyTens', 'compose', 'regroup', 'tensValue'];
+  S.playType = types[rand(0, types.length - 1)];
+
+  if (S.playType === 'howManyTens' || S.playType === 'howManyOnes') {
+    S.playNum = S.diff === 'emergent' ? rand(11, 19) : rand(11, 99);
+    var t = Math.floor(S.playNum / 10);
+    var o = S.playNum % 10;
+    if (S.playType === 'howManyTens') {
+      S.playQuestion = 'How many <strong style="color:#b388ff;">tens</strong> in ' + S.playNum + '?';
+      S.playAnswer = t;
+    } else {
+      S.playQuestion = 'How many <strong style="color:#00d4ff;">ones</strong> in ' + S.playNum + '?';
+      S.playAnswer = o;
+    }
+    S.playTens = t;
+    S.playOnes = o;
+  } else if (S.playType === 'composeTeen') {
+    var t = 1;
+    var o = rand(1, 9);
+    S.playNum = 10 + o;
+    S.playAnswer = S.playNum;
+    S.playQuestion = '1 ten and ' + o + ' ones = ?';
+    S.playTens = t;
+    S.playOnes = o;
+  } else if (S.playType === 'compose') {
+    var t = rand(1, 9);
+    var o = rand(0, 9);
+    S.playNum = t * 10 + o;
+    S.playAnswer = S.playNum;
+    S.playQuestion = t + ' tens and ' + o + ' ones = ?';
+    S.playTens = t;
+    S.playOnes = o;
+  } else if (S.playType === 'tensValue') {
+    S.playNum = rand(20, 99);
+    var t = Math.floor(S.playNum / 10);
+    S.playAnswer = t * 10;
+    S.playQuestion = 'In ' + S.playNum + ', what is the <strong style="color:#b388ff;">value</strong> of the tens digit?';
+    S.playTens = t;
+    S.playOnes = S.playNum % 10;
+  } else {
+    // regroup
+    var a, b;
+    do {
+      a = rand(12, 49);
+      b = rand(12, 49);
+    } while ((a % 10) + (b % 10) < 10 || a + b > 99);
+    S.playNum = a + b;
+    S.playAnswer = a + b;
+    S.playA = a;
+    S.playB = b;
+    S.playQuestion = a + ' + ' + b + ' = ?';
+    S.playTens = Math.floor(a / 10);
+    S.playOnes = a % 10;
+  }
+
+  // Generate 5 MC choices
+  var choices = new Set([S.playAnswer]);
+  while (choices.size < 5) {
+    var dist;
+    if (S.playAnswer < 10) {
+      dist = rand(0, 9);
+    } else {
+      dist = S.playAnswer + rand(-12, 12);
+      if (dist < 0) dist = rand(10, 99);
+      if (dist > 99) dist = rand(10, 99);
+    }
+    if (dist !== S.playAnswer) choices.add(dist);
+  }
+  S.playChoices = Array.from(choices);
+  shuffle(S.playChoices);
+}
+
+function renderPlay(ws, sp) {
+  // Game over
+  if (S.round > S.total && S.round > 0) {
+    ws.innerHTML = '<div class="game-over">' +
+      '<div style="font-size:18px;color:var(--muted);margin-bottom:8px;">Game Over!</div>' +
+      '<div class="big-score">' + S.score + '</div>' +
+      '<div style="font-size:16px;color:var(--text2);margin-bottom:4px;">Best Streak: <strong style="color:var(--purple);">' + S.best + '</strong></div>' +
+      '<div style="margin-top:20px;"><button class="ctrl-btn primary" onclick="S.round=0;render();" style="font-size:15px;padding:14px 32px;">Play Again</button></div>' +
+      '</div>';
+    sp.innerHTML = '';
+    return;
+  }
+
+  if (S.round === 0) startGame();
+
+  var h = '';
+  h += '<div style="font-size:13px;color:var(--muted);margin-bottom:6px;">Round ' + S.round + ' of ' + S.total + '</div>';
+  h += '<div class="instruction-box highlight-green">' + S.playQuestion + '</div>';
+
+  // Show relevant PV chart
+  if (S.playType === 'regroup') {
+    h += '<div style="display:flex;gap:16px;justify-content:center;align-items:center;flex-wrap:wrap;">';
+    h += '<div style="text-align:center;"><div style="font-size:12px;color:var(--muted);">' + S.playA + '</div>';
+    h += buildPVChart(Math.floor(S.playA / 10), S.playA % 10, false);
+    h += '</div>';
+    h += '<div style="font-size:24px;font-weight:900;color:var(--text2);">+</div>';
+    h += '<div style="text-align:center;"><div style="font-size:12px;color:var(--muted);">' + S.playB + '</div>';
+    h += buildPVChart(Math.floor(S.playB / 10), S.playB % 10, false);
+    h += '</div></div>';
+  } else if (S.playType === 'compose' || S.playType === 'composeTeen') {
+    h += buildPVChart(S.playTens, S.playOnes, false);
+  } else {
+    h += buildPVChart(Math.floor(S.playNum / 10), S.playNum % 10, false);
+  }
+
+  // MC buttons
+  h += '<div class="mc-grid">';
+  S.playChoices.forEach(function(c, i) {
+    h += '<button class="mc-btn" id="play' + i + '" onclick="playPick(' + c + ', ' + i + ')">' + c + '</button>';
+  });
+  h += '</div>';
+
+  ws.innerHTML = h;
+
+  // Side panel with score
+  sp.innerHTML =
+    '<div class="score-display"><div class="score-value">' + S.score + '</div><div class="score-label">Score</div></div>' +
+    '<div class="score-display" style="background:transparent;padding:8px;">' +
+      '<div style="font-size:18px;font-weight:700;color:var(--yellow);"><svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor" style="vertical-align:-2px;"><path d="M12 23c-4.97 0-8-3.58-8-7.5 0-3.07 2.17-5.84 4.5-7.5-.28 2.5 1.5 4.5 1.5 4.5s2-2.5 2-5.5c0-1.5-.5-3-1-4 3 1.5 5 4 5 7 0 .5-.08 1-.08 1s1.08-1.18 1.58-2.5C19.78 11.72 20 14.5 20 15.5c0 3.92-3.03 7.5-8 7.5z"/></svg> ' + S.streak + '</div>' +
+      '<div class="score-label">Streak</div>' +
+      '<div class="streak-bar"><div class="streak-fill" style="width:' + Math.min(S.streak * 20, 100) + '%;"></div></div>' +
+    '</div>' +
+    '<div class="panel-section"><div class="panel-title">Best Streak</div>' +
+      '<div class="panel-text" style="font-size:24px;font-weight:800;color:var(--purple);"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="vertical-align:-2px;"><path d="M6 4h12v2a6 6 0 01-12 0V4z" fill="currentColor" opacity="0.2"/><path d="M6 4h12v2a6 6 0 01-12 0V4z"/><path d="M6 6H3v2a3 3 0 003 3"/><path d="M18 6h3v2a3 3 0 01-3 3"/><line x1="12" y1="14" x2="12" y2="18"/><line x1="8" y1="18" x2="16" y2="18" stroke-linecap="round"/></svg> ' + S.best + '</div></div>' +
+    '<div class="panel-section"><div class="panel-title">Scoring</div>' +
+      '<div class="panel-text">Base: <strong>10 pts</strong><br>Streak bonus: <strong>+2 per streak</strong><br><br>Keep your streak alive for big points!</div></div>' +
+    '<div class="panel-section"><div class="panel-title">Tip</div>' +
+      '<div class="panel-text">Count the purple tens rods first, then the cyan ones cubes. Each rod = 10, each cube = 1!</div></div>';
+}
+
+function playPick(clicked, idx) {
+  var btn = document.getElementById('play' + idx);
+
+  if (clicked === S.playAnswer) {
+    btn.classList.add('correct-flash');
+    S.score += 10 + S.streak * 2;
+    S.streak++;
+    if (S.streak > S.best) S.best = S.streak;
+    showFB('Correct!', 'correct');
+  } else {
+    btn.classList.add('incorrect-flash');
+    S.streak = 0;
+
+    var msg;
+    if (S.playType === 'regroup') {
+      var noR = (Math.floor(S.playA / 10) + Math.floor(S.playB / 10)) * 10 + ((S.playA % 10) + (S.playB % 10));
+      if (clicked === noR && noR !== S.playAnswer) {
+        msg = MISCONCEPTIONS.regroup.msg();
+      } else if (Math.abs(clicked - S.playAnswer) === 10) {
+        msg = MISCONCEPTIONS.offByTen.msg(S.playAnswer, clicked);
+      } else if (Math.abs(clicked - S.playAnswer) <= 1) {
+        msg = MISCONCEPTIONS.offByOne.msg(S.playAnswer, clicked);
+      } else {
+        msg = MISCONCEPTIONS.randomGuess.msg();
+      }
+    } else if (S.playType === 'tensValue') {
+      if (clicked === S.playOnes) {
+        msg = MISCONCEPTIONS.swappedDigits.msg(S.playNum);
+      } else if (clicked === Math.floor(S.playNum / 10)) {
+        msg = 'That is the tens digit, but its VALUE is ' + S.playAnswer + ' (the digit times 10).';
+      } else {
+        msg = MISCONCEPTIONS.digitMeaning.msg(S.playNum);
+      }
+    } else {
+      if (Math.abs(clicked - S.playAnswer) === 1) {
+        msg = MISCONCEPTIONS.offByOne.msg(S.playAnswer, clicked);
+      } else if (Math.abs(clicked - S.playAnswer) === 10) {
+        msg = MISCONCEPTIONS.offByTen.msg(S.playAnswer, clicked);
+      } else {
+        msg = MISCONCEPTIONS.digitMeaning.msg(S.playNum);
+      }
+    }
+
+    showFB(msg, 'incorrect');
+  }
+
+  setTimeout(function() {
+    if (S.round >= S.total) {
+      S.round = S.total + 1;
+      render();
+      return;
+    }
+    S.round++;
+    newPlayRound();
+    render();
+  }, 1300);
+}
+
+/* ── Init ── */
+render();
+</script>
+<script src="../../vinculum-core.js"></script>
+<script src="../../vinculum-data.js"></script>
+<script src="../../vinculum-adaptive-hook.js"></script>
+<script src="../../vinculum-3reads.js"></script>
+<script src="../../vinculum-stories.js"></script>
+<script src="../../vinculum-feedback.js"></script>
+<script src="../../vinculum-guide.js"></script>
+<script src="../../vinculum-identity.js"></script>
+<script src="../../vinculum-indigenous.js"></script>
+<script src="../../vinculum-dashboard.js"></script>
+<script src="../../vinculum-hyperfocus.js"></script>
+<script src="../../vinculum-layout.js"></script>
+</body>
+</html>

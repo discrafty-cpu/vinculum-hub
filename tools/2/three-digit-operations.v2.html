@@ -1,0 +1,1261 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>VINCULUM — Three-Digit Operations</title>
+<link rel="stylesheet" href="../../vinculum-core.css">
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;600&display=swap');
+
+.vinculum-rtm-btn .rtm-icon{font-size:14px;}
+
+/* ═══ FOCUS VISIBLE ═══ */
+*:focus-visible {
+  outline:2px solid var(--cyan);outline-offset:2px;border-radius:4px;
+}
+.sr-only {
+  position:absolute;width:1px;height:1px;padding:0;margin:-1px;
+  overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0;
+}
+*{margin:0;padding:0;box-sizing:border-box;}
+body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);height:100vh;display:flex;flex-direction:column;overflow:hidden;user-select:none;}
+
+.main{flex:1;display:flex;overflow:hidden;}
+.workspace{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:24px;gap:12px;overflow-y:auto;}
+.side-panel{width:280px;background:var(--bg2);border-left:1px solid var(--border);padding:20px;overflow-y:auto;flex-shrink:0;}
+.panel-section{margin-bottom:20px;}
+.panel-title{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:1.5px;color:var(--muted);margin-bottom:8px;}
+.panel-text{font-size:13px;color:var(--text2);line-height:1.6;}
+
+/* ═══ PLACE VALUE CHART ═══ */
+.pv-chart {
+  display:flex;gap:2px;justify-content:center;margin:12px auto;max-width:560px;width:100%;
+}
+.pv-column {
+  flex:1;display:flex;flex-direction:column;align-items:center;
+  border:2px solid var(--border);border-radius:12px;padding:12px 8px;
+  min-height:160px;background:var(--card);transition:border-color 0.3s;
+}
+.pv-column.hundreds-col{border-color:rgba(255,152,0,0.4);}
+.pv-column.tens-col{border-color:rgba(179,136,255,0.4);}
+.pv-column.ones-col{border-color:rgba(0,212,255,0.4);}
+.pv-col-label{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:1.5px;margin-bottom:10px;}
+.pv-col-label.hundreds-label{color:#ff9800;}
+.pv-col-label.tens-label{color:#b388ff;}
+.pv-col-label.ones-label{color:#00d4ff;}
+.pv-blocks{display:flex;flex-wrap:wrap;gap:6px;justify-content:center;align-items:flex-end;flex:1;}
+.pv-digit{font-size:28px;font-weight:900;font-family:'JetBrains Mono',monospace;margin-top:6px;}
+.pv-digit.h-d{color:#ff9800;}
+.pv-digit.t-d{color:#b388ff;}
+.pv-digit.o-d{color:#00d4ff;}
+
+/* ── Hundreds Flat (10x10 grid) ── */
+.hundreds-flat {
+  width:44px;height:44px;border-radius:6px;
+  background:linear-gradient(135deg,#ff9800 0%,#f57c00 100%);
+  border:2px solid #ff9800;box-shadow:0 2px 8px rgba(255,152,0,0.3);
+  transition:transform 0.2s, opacity 0.3s;position:relative;
+  display:flex;align-items:center;justify-content:center;
+  font-size:9px;font-weight:800;color:rgba(255,255,255,0.8);
+  font-family:'JetBrains Mono',monospace;
+}
+.hundreds-flat::before {
+  content:'';position:absolute;inset:3px;
+  background:repeating-linear-gradient(0deg,rgba(255,255,255,0.12) 0px,rgba(255,255,255,0.12) 1px,transparent 1px,transparent 4px),
+             repeating-linear-gradient(90deg,rgba(255,255,255,0.12) 0px,rgba(255,255,255,0.12) 1px,transparent 1px,transparent 4px);
+  border-radius:3px;
+}
+
+/* ── Tens Rod ── */
+.tens-rod {
+  width:18px;height:70px;border-radius:5px;
+  background:linear-gradient(180deg,#b388ff 0%,#7c4dff 100%);
+  border:2px solid #b388ff;box-shadow:0 2px 8px rgba(179,136,255,0.3);
+  transition:transform 0.2s, opacity 0.3s;position:relative;
+}
+.tens-rod::after {
+  content:'10';position:absolute;top:50%;left:50%;
+  transform:translate(-50%,-50%) rotate(-90deg);
+  font-size:8px;font-weight:800;color:rgba(255,255,255,0.7);
+  font-family:'JetBrains Mono',monospace;
+}
+
+/* ── Ones Cube ── */
+.ones-cube {
+  width:20px;height:20px;border-radius:4px;
+  background:linear-gradient(135deg,#00d4ff 0%,#0091ea 100%);
+  border:2px solid #00d4ff;box-shadow:0 2px 6px rgba(0,212,255,0.3);
+  transition:transform 0.2s, opacity 0.3s;
+  display:flex;align-items:center;justify-content:center;
+  font-size:7px;font-weight:800;color:rgba(255,255,255,0.7);
+  font-family:'JetBrains Mono',monospace;
+}
+
+/* ── Regroup animations ── */
+.regroup-anim{animation:regroup-pulse 0.6s ease-in-out;}
+@keyframes regroup-pulse{0%{transform:scale(1);}50%{transform:scale(1.15);filter:brightness(1.3);}100%{transform:scale(1);}}
+.carry-indicator {
+  position:absolute;top:-20px;font-size:14px;font-weight:900;color:var(--yellow);
+  font-family:'JetBrains Mono',monospace;animation:carry-drop 0.5s ease-out;
+}
+@keyframes carry-drop{0%{opacity:0;transform:translateY(-10px);}100%{opacity:1;transform:translateY(0);}}
+.borrow-indicator {
+  position:absolute;top:-18px;font-size:12px;font-weight:700;color:var(--pink);
+  font-family:'JetBrains Mono',monospace;animation:carry-drop 0.5s ease-out;
+}
+
+/* ═══ VERTICAL ALGORITHM ═══ */
+.vert-algo {
+  display:flex;flex-direction:column;align-items:flex-end;
+  font-family:'JetBrains Mono',monospace;font-size:30px;font-weight:800;
+  background:var(--card);border:1px solid var(--border);border-radius:14px;
+  padding:18px 24px;min-width:200px;position:relative;
+}
+.vert-row {
+  display:flex;align-items:center;gap:2px;min-height:40px;
+}
+.vert-op {
+  color:var(--yellow);font-size:26px;margin-right:6px;
+}
+.vert-digit {
+  width:32px;text-align:center;display:inline-block;
+}
+.vert-digit.hundreds-d{color:#ff9800;}
+.vert-digit.tens-d{color:#b388ff;}
+.vert-digit.ones-d{color:#00d4ff;}
+.vert-digit.result-d{color:var(--green);}
+.vert-digit.carry-d{
+  font-size:14px;color:var(--yellow);position:absolute;top:4px;
+}
+.vert-digit.borrow-d{
+  font-size:13px;color:var(--pink);text-decoration:line-through;
+}
+.vert-line {
+  width:100%;height:3px;background:var(--border);border-radius:2px;margin:4px 0;
+}
+
+/* ═══ BLOCKS DISPLAY ═══ */
+.blocks-display {
+  display:flex;gap:20px;align-items:flex-end;justify-content:center;padding:12px;min-height:120px;flex-wrap:wrap;
+}
+.blocks-group {
+  display:flex;flex-direction:column;align-items:center;gap:4px;
+}
+.blocks-group-label {
+  font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:1px;color:var(--muted);
+}
+.blocks-row {
+  display:flex;gap:3px;align-items:flex-end;flex-wrap:wrap;justify-content:center;max-width:220px;
+}
+
+/* ═══ INSTRUCTION BOX ═══ */
+.instruction-box {
+  background:var(--card);border:1px solid var(--border);border-radius:12px;
+  padding:14px 20px;text-align:center;font-size:15px;color:var(--text2);
+  font-weight:500;max-width:600px;line-height:1.6;
+}
+.instruction-box.highlight-cyan{border-color:var(--cyan);color:var(--cyan);}
+.instruction-box.highlight-green{border-color:var(--green);color:var(--green);}
+.instruction-box.highlight-orange{border-color:#ff9800;color:#ff9800;}
+
+/* ═══ CONTROLS ═══ */
+.controls {
+  display:flex;gap:8px;flex-wrap:wrap;justify-content:center;margin-top:8px;
+}
+.ctrl-btn {
+  padding:10px 20px;border-radius:10px;border:1px solid var(--border);
+  background:var(--card);color:var(--text2);font-size:13px;font-weight:600;
+  font-family:inherit;cursor:pointer;transition:all 0.2s;
+  display:flex;align-items:center;gap:6px;
+}
+.ctrl-btn:hover{background:var(--card-hover,var(--card));color:var(--text);}
+.ctrl-btn.primary{background:var(--grad);color:var(--bg);border-color:transparent;}
+.ctrl-btn.primary:hover{opacity:0.9;}
+.ctrl-btn.add-hundred{border-color:rgba(255,152,0,0.4);color:#ff9800;}
+.ctrl-btn.add-hundred:hover{background:rgba(255,152,0,0.1);}
+.ctrl-btn.add-ten{border-color:rgba(179,136,255,0.4);color:#b388ff;}
+.ctrl-btn.add-ten:hover{background:rgba(179,136,255,0.1);}
+.ctrl-btn.add-one{border-color:rgba(0,212,255,0.4);color:#00d4ff;}
+.ctrl-btn.add-one:hover{background:rgba(0,212,255,0.1);}
+.ctrl-btn:disabled{opacity:0.3;cursor:not-allowed;pointer-events:none;}
+
+/* ═══ MC GRID ═══ */
+.mc-grid{display:flex;gap:10px;flex-wrap:wrap;justify-content:center;max-width:500px;}
+.mc-btn {
+  min-width:120px;padding:14px 20px;border-radius:12px;border:2px solid var(--border);
+  background:var(--card);color:var(--text);font-size:18px;font-weight:700;
+  font-family:'JetBrains Mono',monospace;cursor:pointer;transition:all 0.15s;
+  display:flex;align-items:center;justify-content:center;text-align:center;
+}
+.mc-btn:hover{border-color:var(--cyan);transform:scale(1.04);}
+.mc-btn.correct-flash{border-color:var(--green);background:rgba(0,230,118,0.2);color:var(--green);animation:correctFlash 0.4s ease-out;}
+.mc-btn.incorrect-flash{border-color:var(--pink);background:rgba(255,59,139,0.2);color:var(--pink);animation:shake 0.3s ease-in-out;}
+@keyframes correctFlash{0%{box-shadow:0 0 0 0 rgba(0,230,118,0.6);}100%{box-shadow:0 0 20px 6px rgba(0,230,118,0);}}
+@keyframes shake{0%,100%{transform:translateX(0);}25%{transform:translateX(-4px);}75%{transform:translateX(4px);}}
+
+/* ═══ SCORE DISPLAY ═══ */
+.score-display{text-align:center;padding:16px;background:var(--card);border-radius:12px;margin-bottom:12px;}
+.score-value{font-size:36px;font-weight:900;font-family:'JetBrains Mono',monospace;background:var(--grad);-webkit-background-clip:text;-webkit-text-fill-color:transparent;}
+.score-label{font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:1px;}
+.streak-bar{height:6px;background:var(--card);border-radius:3px;overflow:hidden;margin-top:8px;}
+.streak-fill{height:100%;background:var(--grad);border-radius:3px;transition:width 0.3s;}
+
+/* ═══ EXPLORE BUILD AREA ═══ */
+.explore-build {
+  display:flex;gap:20px;align-items:flex-start;justify-content:center;flex-wrap:wrap;
+}
+.build-number {
+  display:flex;flex-direction:column;align-items:center;gap:6px;
+  background:var(--card);border:1px solid var(--border);border-radius:14px;padding:14px;min-width:160px;
+}
+.build-label {
+  font-size:12px;font-weight:700;color:var(--text2);text-transform:uppercase;letter-spacing:1px;
+}
+.build-value {
+  font-size:36px;font-weight:900;font-family:'JetBrains Mono',monospace;
+  background:var(--grad);-webkit-background-clip:text;-webkit-text-fill-color:transparent;
+}
+.build-controls {
+  display:flex;gap:4px;flex-wrap:wrap;justify-content:center;
+}
+.build-controls .ctrl-btn{padding:6px 12px;font-size:11px;}
+
+/* ═══ STRATEGY CARD ═══ */
+.strategy-card {
+  background:var(--card);border:1px solid var(--border);border-radius:12px;
+  padding:14px;margin-top:8px;
+}
+.strategy-title {
+  font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:1px;
+  color:var(--yellow);margin-bottom:8px;
+}
+.strategy-step {
+  font-size:13px;color:var(--text2);line-height:1.7;padding-left:16px;
+  position:relative;margin:2px 0;
+}
+.strategy-step::before{content:'\25B8';position:absolute;left:0;color:var(--cyan);}
+
+/* ═══ GAME OVER ═══ */
+.game-over {
+  text-align:center;padding:24px;
+}
+.game-over-title {
+  font-size:32px;font-weight:900;background:var(--grad);
+  -webkit-background-clip:text;-webkit-text-fill-color:transparent;margin-bottom:8px;
+}
+.game-over-stat {
+  font-size:15px;color:var(--text2);margin:4px 0;
+}
+.game-over-stat span{font-weight:800;color:var(--text);font-family:'JetBrains Mono',monospace;}
+
+::-webkit-scrollbar{width:6px;}::-webkit-scrollbar-track{background:transparent;}::-webkit-scrollbar-thumb{background:var(--border);border-radius:3px;}
+</style>
+</head>
+<body>
+
+<!-- ═══ HEADER ═══ -->
+<div class="vinculum-header">
+  <div class="vinculum-header-left">
+    <a class="vinculum-back-btn" href="../../VINCULUM-Hub.html" style="text-decoration:none;">&#9664; Hub</a>
+    <div class="vinculum-header-title"><span>VINCULUM</span> Three-Digit Operations</div>
+    <span class="vinculum-header-badge">2.NBT</span>
+  </div>
+  <div class="vinculum-header-right">
+    <div class="vinculum-std-tags">
+      <span class="vinculum-std-tag">2.NBT.7</span>
+      <span class="vinculum-std-tag">2.NBT.8</span>
+      <span class="vinculum-std-tag">2.NBT.9</span>
+      <span class="vinculum-std-tag mn">MN 2.1.2.3</span>
+    </div>
+    <button class="vinculum-back-btn" id="readAloudBtn" onclick="toggleReadAloud()" aria-label="Read Aloud" title="Read instructions aloud" style="margin-left:8px;white-space:nowrap;">&#128264; Read to Me</button>
+  </div>
+</div>
+
+<!-- ═══ MODE TABS ═══ -->
+<div class="vinculum-mode-tabs">
+  <button class="vinculum-mode-tab active-explore" id="tabExplore" data-mode="explore">
+    <svg width="18" height="18" viewBox="0 0 48 48" fill="none"><path d="M4 24C4 24 12 12 24 12C36 12 44 24 44 24C44 24 36 36 24 36C12 36 4 24 4 24Z" stroke="currentColor" stroke-width="3" fill="none"/><circle cx="24" cy="24" r="7" stroke="currentColor" stroke-width="3" fill="none"/><circle cx="24" cy="24" r="3" fill="currentColor"/><line x1="24" y1="4" x2="24" y2="9" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" opacity="0.5"/><line x1="10" y1="8" x2="13" y2="12" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" opacity="0.5"/><line x1="38" y1="8" x2="35" y2="12" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" opacity="0.5"/></svg> Explore
+  </button>
+  <button class="vinculum-mode-tab" id="tabPractice" data-mode="practice">
+    <svg width="18" height="18" viewBox="0 0 48 48" fill="none"><circle cx="24" cy="24" r="20" stroke="currentColor" stroke-width="3" fill="none" opacity="0.3"/><circle cx="24" cy="24" r="20" stroke="currentColor" stroke-width="3" fill="none" stroke-dasharray="126" stroke-dashoffset="32" stroke-linecap="round"/><polyline points="16,24 22,32 34,16" stroke="currentColor" stroke-width="4" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg> Practice
+  </button>
+  <button class="vinculum-mode-tab" id="tabPlay" data-mode="play">
+    <svg width="18" height="18" viewBox="0 0 48 48" fill="none"><polygon points="28,4 12,28 22,28 18,44 36,18 26,18" fill="none" stroke="currentColor" stroke-width="3" stroke-linejoin="round"/><polygon points="27,8 15,27 23,27 20,40 34,19 26,19" fill="currentColor" opacity="0.15"/></svg> Play
+  </button>
+  <div class="vinculum-diff-selector">
+    <span class="vinculum-diff-label">Level</span>
+    <button class="vinculum-diff-btn active" id="diffE" data-diff="emergent">No Regroup</button>
+    <button class="vinculum-diff-btn" id="diffP" data-diff="proficient">Regroup</button>
+    <button class="vinculum-diff-btn" id="diffA" data-diff="advanced">Multi-Step</button>
+  </div>
+</div>
+
+<!-- ═══ MAIN ═══ -->
+<div class="main">
+  <div class="workspace" role="main" id="workspace"></div>
+  <div class="side-panel" id="sidePanel"></div>
+</div>
+
+<!-- ═══ FEEDBACK POPUP ═══ -->
+<div class="feedback" id="feedback"></div>
+
+<script src="../../vinculum-input.js"></script>
+<script>
+/* ════════════════════════════════════════
+   STATE
+   ════════════════════════════════════════ */
+var S = {
+  mode: 'explore', diff: 'emergent',
+  /* Explore */
+  exA: 345, exB: 231, exOp: 'add', exShowResult: false,
+  /* Practice */
+  pA: 0, pB: 0, pOp: 'add', pAnswer: 0, pChoices: [], pAnswered: false,
+  pCorrect: 0, pTotal: 0,
+  /* Play */
+  score: 0, streak: 0, best: 0, round: 0, total: 10,
+  playA: 0, playB: 0, playOp: 'add', playAnswer: 0, playChoices: []
+};
+var playLocked = false;
+
+/* ════════════════════════════════════════
+   READ-ALOUD
+   ════════════════════════════════════════ */
+function toggleReadAloud() {
+  if (window.VinculumStories && VinculumStories.isReading()) {
+    VinculumStories.stopReading();
+    document.getElementById('readAloudBtn').innerHTML = '&#128264; Read to Me';
+  } else {
+    var fb = document.getElementById('feedback');
+    var inst = document.querySelector('.instruction-box');
+    var text = inst ? inst.textContent : (fb ? fb.textContent : 'Welcome to Three-Digit Operations!');
+    if (window.VinculumStories) {
+      VinculumStories.readAloud(text, { rate: 0.85, onComplete: function() {
+        document.getElementById('readAloudBtn').innerHTML = '&#128264; Read to Me';
+      }});
+      document.getElementById('readAloudBtn').textContent = '\u23F9 Stop';
+    }
+  }
+}
+
+/* ════════════════════════════════════════
+   MISCONCEPTIONS DATABASE
+   ════════════════════════════════════════ */
+var MISCONCEPTIONS = {
+  noRegroupMulti: {
+    id: 'no-regroup-multi',
+    desc: 'Student does not regroup across multiple places',
+    msg: function(a, b) {
+      return 'Check your regrouping! When ones or tens add to 10 or more, you must carry to the next place.';
+    }
+  },
+  lostRegroup: {
+    id: 'lost-regroup',
+    desc: 'Student loses track of regrouping in three-digit problems',
+    msg: function(a, b) {
+      return 'You may have lost a carry or borrow. Work column by column: ones first, then tens, then hundreds.';
+    }
+  },
+  offByHundred: {
+    id: 'off-by-100',
+    desc: 'Answer is off by exactly 100 (hundreds place error)',
+    msg: function(ans, got) {
+      return 'Your answer is off by 100! Double-check the hundreds column \u2014 did you carry or borrow correctly there?';
+    }
+  },
+  offByTen: {
+    id: 'off-by-10',
+    desc: 'Answer is off by exactly 10 (tens place error)',
+    msg: function(ans, got) {
+      return 'You\'re off by 10! Recheck the tens column. Did you remember to carry from the ones or borrow from the hundreds?';
+    }
+  },
+  subtractedSmallFromBig: {
+    id: 'subtract-flip',
+    desc: 'Student subtracts smaller digit from larger in each place without borrowing',
+    msg: function(a, b) {
+      return 'When the top digit is smaller, you can\'t just flip them \u2014 you need to borrow from the next place!';
+    }
+  },
+  placeValueMix: {
+    id: 'place-mix',
+    desc: 'Student mixes up place value columns',
+    msg: function(a, b) {
+      return 'Line up the digits by place value: hundreds under hundreds, tens under tens, ones under ones.';
+    }
+  }
+};
+
+/* ════════════════════════════════════════
+   HELPERS
+   ════════════════════════════════════════ */
+function rand(a, b) {
+  return Math.floor(Math.random() * (b - a + 1)) + a;
+}
+function hundreds(n) { return Math.floor(n / 100); }
+function tens(n) { return Math.floor((n % 100) / 10); }
+function ones(n) { return n % 10; }
+
+function showFB(msg, type) {
+  var fb = document.getElementById('feedback');
+  fb.textContent = msg;
+  fb.className = 'feedback ' + type + ' show';
+  setTimeout(function() { fb.classList.remove('show'); }, 2400);
+}
+
+/* ════════════════════════════════════════
+   PROBLEM GENERATORS
+   ════════════════════════════════════════ */
+function genProblem() {
+  var a, b, op;
+  if (S.diff === 'emergent') {
+    /* Addition only, no regrouping */
+    op = 'add';
+    a = rand(100, 499);
+    b = rand(100, 499);
+    while (ones(a) + ones(b) >= 10 || tens(a) + tens(b) >= 10 || a + b > 999) {
+      a = rand(100, 499);
+      b = rand(100, 499);
+    }
+  } else if (S.diff === 'proficient') {
+    /* Add/subtract with regrouping in any place */
+    op = Math.random() < 0.55 ? 'add' : 'sub';
+    if (op === 'add') {
+      a = rand(150, 599);
+      b = rand(120, 499);
+      /* Force at least one regroup */
+      var tries = 0;
+      while ((ones(a) + ones(b) < 10 && tens(a) + tens(b) < 10) || a + b > 999) {
+        a = rand(150, 599);
+        b = rand(120, 499);
+        if (++tries > 100) break;
+      }
+    } else {
+      a = rand(300, 899);
+      b = rand(100, a - 50);
+      /* Force at least one borrow */
+      var tries = 0;
+      while (ones(a) >= ones(b) && tens(a) >= tens(b)) {
+        a = rand(300, 899);
+        b = rand(100, a - 50);
+        if (++tries > 100) break;
+      }
+    }
+  } else {
+    /* Advanced: multi-step, double regroup, mixed ops */
+    op = Math.random() < 0.5 ? 'add' : 'sub';
+    if (op === 'add') {
+      a = rand(200, 650);
+      b = rand(180, 550);
+      /* Force regroup in both ones and tens */
+      var tries = 0;
+      while ((ones(a) + ones(b) < 10 || tens(a) + tens(b) + (ones(a) + ones(b) >= 10 ? 1 : 0) < 10) || a + b > 999) {
+        a = rand(200, 650);
+        b = rand(180, 550);
+        if (++tries > 100) break;
+      }
+    } else {
+      a = rand(400, 950);
+      b = rand(150, a - 100);
+      /* Force borrow from multiple places */
+      var tries = 0;
+      while (ones(a) >= ones(b) || tens(a) >= tens(b)) {
+        a = rand(400, 950);
+        b = rand(150, a - 100);
+        if (++tries > 100) break;
+      }
+    }
+  }
+  if (op === 'sub' && b > a) { var t = a; a = b; b = t; }
+  return { a: a, b: b, op: op, answer: op === 'add' ? a + b : a - b };
+}
+
+function generateDiagnosticChoices(a, b, op, answer) {
+  var choices = new Set([answer]);
+  var oA = ones(a), oB = ones(b), tA = tens(a), tB = tens(b), hA = hundreds(a), hB = hundreds(b);
+
+  /* Diagnostic distractor: no-regroup answer */
+  if (op === 'add') {
+    var oSum = oA + oB;
+    var tSum = tA + tB;
+    var hSum = hA + hB;
+    /* Forgot to carry from ones */
+    var noRegOnes = hSum * 100 + tSum * 10 + (oSum % 10);
+    if (oSum >= 10 && noRegOnes !== answer && noRegOnes >= 100 && noRegOnes <= 999) choices.add(noRegOnes);
+    /* Forgot to carry from tens */
+    var noRegTens = hSum * 100 + (tSum % 10) * 10 + (oSum >= 10 ? oSum - 10 : oSum);
+    if (tSum >= 10 && noRegTens !== answer && noRegTens >= 100 && noRegTens <= 999) choices.add(noRegTens);
+  } else {
+    /* Subtraction: subtracted smaller from larger without borrowing */
+    var flipOnes = Math.abs(oA - oB);
+    var flipTens = Math.abs(tA - tB);
+    var flipHun = Math.abs(hA - hB);
+    var flipAns = flipHun * 100 + flipTens * 10 + flipOnes;
+    if (flipAns !== answer && flipAns >= 100 && flipAns <= 999) choices.add(flipAns);
+  }
+
+  /* Off by 100 */
+  if (answer + 100 <= 999) choices.add(answer + 100);
+  if (answer - 100 >= 100) choices.add(answer - 100);
+
+  /* Off by 10 */
+  if (answer + 10 <= 999) choices.add(answer + 10);
+  if (answer - 10 >= 100) choices.add(answer - 10);
+
+  /* Fill remaining with near misses */
+  var attempts = 0;
+  while (choices.size < 6 && attempts < 50) {
+    var off = rand(-15, 15);
+    if (off === 0) off = rand(1, 8);
+    var c = answer + off;
+    if (c >= 100 && c <= 999 && !choices.has(c)) choices.add(c);
+    attempts++;
+  }
+
+  var arr = Array.from(choices);
+  arr = arr.filter(function(v) { return v >= 100 && v <= 999; });
+  /* Shuffle */
+  arr.sort(function() { return Math.random() - 0.5; });
+  /* Keep answer + 3 distractors */
+  if (arr.length > 4) {
+    var idx = arr.indexOf(answer);
+    arr.splice(idx, 1);
+    arr = arr.slice(0, 3);
+    arr.push(answer);
+  }
+  arr.sort(function(x, y) { return x - y; });
+  return arr;
+}
+
+/* ════════════════════════════════════════
+   SVG BASE-10 BLOCK BUILDERS
+   ════════════════════════════════════════ */
+function svgDefs() {
+  return '<defs>' +
+    '<linearGradient id="hunGrad" x1="0" y1="0" x2="1" y2="1">' +
+    '<stop offset="0%" stop-color="#ff9800"/><stop offset="100%" stop-color="#f57c00"/></linearGradient>' +
+    '<linearGradient id="tenGrad" x1="0" y1="0" x2="0" y2="1">' +
+    '<stop offset="0%" stop-color="#b388ff"/><stop offset="100%" stop-color="#7c4dff"/></linearGradient>' +
+    '<linearGradient id="oneGrad" x1="0" y1="0" x2="1" y2="1">' +
+    '<stop offset="0%" stop-color="#00d4ff"/><stop offset="100%" stop-color="#0091ea"/></linearGradient>' +
+    '</defs>';
+}
+
+function svgHundredsFlat(x, y) {
+  var g = '<g transform="translate(' + x + ',' + y + ')">';
+  g += '<rect width="40" height="40" rx="4" fill="url(#hunGrad)" stroke="#ff9800" stroke-width="1.5" opacity="0.95"/>';
+  /* 10x10 grid lines */
+  for (var i = 1; i < 10; i++) {
+    g += '<line x1="' + (i * 4) + '" y1="1" x2="' + (i * 4) + '" y2="39" stroke="rgba(255,255,255,0.2)" stroke-width="0.5"/>';
+    g += '<line x1="1" y1="' + (i * 4) + '" x2="39" y2="' + (i * 4) + '" stroke="rgba(255,255,255,0.2)" stroke-width="0.5"/>';
+  }
+  g += '<text x="20" y="24" text-anchor="middle" font-size="8" font-weight="800" fill="rgba(255,255,255,0.75)" font-family="JetBrains Mono,monospace">100</text>';
+  g += '</g>';
+  return g;
+}
+
+function svgTensRod(x, y) {
+  var g = '<g transform="translate(' + x + ',' + y + ')">';
+  g += '<rect width="16" height="68" rx="4" fill="url(#tenGrad)" stroke="#b388ff" stroke-width="1.5" opacity="0.95"/>';
+  for (var i = 0; i < 10; i++) {
+    g += '<rect x="2" y="' + (2 + i * 6.5) + '" width="12" height="4.5" rx="2" fill="rgba(255,255,255,0.2)"/>';
+  }
+  g += '<text x="8" y="38" text-anchor="middle" font-size="6" font-weight="800" fill="rgba(255,255,255,0.7)" font-family="JetBrains Mono,monospace">10</text>';
+  g += '</g>';
+  return g;
+}
+
+function svgOnesCube(x, y) {
+  return '<g transform="translate(' + x + ',' + y + ')">' +
+    '<rect width="16" height="16" rx="3" fill="url(#oneGrad)" stroke="#00d4ff" stroke-width="1.5" opacity="0.95"/>' +
+    '<rect x="2" y="2" width="12" height="12" rx="2" fill="rgba(255,255,255,0.15)"/>' +
+    '</g>';
+}
+
+function buildSVGBlocks(n, label) {
+  var h = hundreds(n), t = tens(n), o = ones(n);
+  /* Calculate width: up to 9 hundreds (in 2 rows), up to 9 tens, up to 9 ones */
+  var hunCols = Math.min(h, 5);
+  var hunRows = Math.ceil(h / 5);
+  var hunW = hunCols * 44 + 4;
+  var tenW = t * 20 + 4;
+  var oneW = Math.min(o, 5) * 20 + 4;
+  var totalW = Math.max(hunW + tenW + oneW + 16, 120);
+  var svgH = Math.max(hunRows * 44 + 30, 100);
+
+  var svg = '<svg width="' + totalW + '" height="' + svgH + '" viewBox="0 0 ' + totalW + ' ' + svgH + '" style="max-width:100%;">';
+  svg += svgDefs();
+
+  /* Label */
+  var lColor = label === 'result' ? '#00e676' : 'var(--muted)';
+  svg += '<text x="' + (totalW / 2) + '" y="12" text-anchor="middle" font-size="10" font-weight="700" fill="' + lColor + '" font-family="Inter,sans-serif">' + n + '</text>';
+
+  var startY = 18;
+  var cx = 2;
+
+  /* Hundreds flats */
+  for (var i = 0; i < h; i++) {
+    var col = i % 5;
+    var row = Math.floor(i / 5);
+    svg += svgHundredsFlat(cx + col * 44, startY + row * 44);
+  }
+  cx += hunCols * 44 + 8;
+
+  /* Tens rods */
+  for (var j = 0; j < t; j++) {
+    svg += svgTensRod(cx + j * 20, startY + (hunRows - 1) * 44 + 44 - 68);
+  }
+  cx += t * 20 + 8;
+
+  /* Ones cubes */
+  for (var k = 0; k < o; k++) {
+    var oCol = k % 5;
+    var oRow = Math.floor(k / 5);
+    svg += svgOnesCube(cx + oCol * 20, startY + (hunRows - 1) * 44 + 44 - 16 - oRow * 20);
+  }
+
+  svg += '</svg>';
+  return svg;
+}
+
+/* ════════════════════════════════════════
+   PLACE VALUE CHART
+   ════════════════════════════════════════ */
+function buildPVChart(h, t, o) {
+  var html = '<div class="pv-chart">';
+
+  /* Hundreds column */
+  html += '<div class="pv-column hundreds-col">';
+  html += '<div class="pv-col-label hundreds-label">Hundreds</div>';
+  html += '<div class="pv-blocks">';
+  for (var i = 0; i < h; i++) {
+    html += '<div class="hundreds-flat">100</div>';
+  }
+  html += '</div>';
+  html += '<div class="pv-digit h-d">' + h + '</div>';
+  html += '</div>';
+
+  /* Tens column */
+  html += '<div class="pv-column tens-col">';
+  html += '<div class="pv-col-label tens-label">Tens</div>';
+  html += '<div class="pv-blocks">';
+  for (var j = 0; j < t; j++) {
+    html += '<div class="tens-rod"></div>';
+  }
+  html += '</div>';
+  html += '<div class="pv-digit t-d">' + t + '</div>';
+  html += '</div>';
+
+  /* Ones column */
+  html += '<div class="pv-column ones-col">';
+  html += '<div class="pv-col-label ones-label">Ones</div>';
+  html += '<div class="pv-blocks">';
+  for (var k = 0; k < o; k++) {
+    html += '<div class="ones-cube">1</div>';
+  }
+  html += '</div>';
+  html += '<div class="pv-digit o-d">' + o + '</div>';
+  html += '</div>';
+
+  html += '</div>';
+  return html;
+}
+
+/* ════════════════════════════════════════
+   VERTICAL ALGORITHM BUILDER
+   ════════════════════════════════════════ */
+function buildVertAlgo(a, b, op, showAnswer) {
+  var opSym = op === 'add' ? '+' : '\u2212';
+  var answer = op === 'add' ? a + b : a - b;
+  var hA = hundreds(a), tA = tens(a), oA = ones(a);
+  var hB = hundreds(b), tB = tens(b), oB = ones(b);
+
+  var html = '<div class="vert-algo">';
+
+  /* Carry/borrow indicators */
+  if (showAnswer && op === 'add') {
+    var carryOnes = (oA + oB >= 10) ? 1 : 0;
+    var carryTens = (tA + tB + carryOnes >= 10) ? 1 : 0;
+    if (carryOnes || carryTens) {
+      html += '<div class="vert-row" style="min-height:24px;justify-content:flex-end;">';
+      html += '<div class="vert-digit" style="width:32px;">' + (carryTens ? '<span style="font-size:14px;color:var(--yellow);">1</span>' : '') + '</div>';
+      html += '<div class="vert-digit" style="width:32px;">' + (carryOnes ? '<span style="font-size:14px;color:var(--yellow);">1</span>' : '') + '</div>';
+      html += '<div class="vert-digit" style="width:32px;"></div>';
+      html += '</div>';
+    }
+  }
+
+  /* First number */
+  html += '<div class="vert-row">';
+  html += '<div class="vert-digit" style="width:32px;"></div>';
+  html += '<div class="vert-digit hundreds-d">' + hA + '</div>';
+  html += '<div class="vert-digit tens-d">' + tA + '</div>';
+  html += '<div class="vert-digit ones-d">' + oA + '</div>';
+  html += '</div>';
+
+  /* Operator + second number */
+  html += '<div class="vert-row">';
+  html += '<div class="vert-op">' + opSym + '</div>';
+  html += '<div class="vert-digit hundreds-d">' + hB + '</div>';
+  html += '<div class="vert-digit tens-d">' + tB + '</div>';
+  html += '<div class="vert-digit ones-d">' + oB + '</div>';
+  html += '</div>';
+
+  /* Line */
+  html += '<div class="vert-line"></div>';
+
+  /* Answer */
+  if (showAnswer) {
+    var ansH = hundreds(answer), ansT = tens(answer), ansO = ones(answer);
+    html += '<div class="vert-row">';
+    html += '<div class="vert-digit" style="width:32px;">' + (answer >= 1000 ? '<span class="vert-digit result-d">1</span>' : '') + '</div>';
+    html += '<div class="vert-digit result-d">' + ansH + '</div>';
+    html += '<div class="vert-digit result-d">' + ansT + '</div>';
+    html += '<div class="vert-digit result-d">' + ansO + '</div>';
+    html += '</div>';
+  } else {
+    html += '<div class="vert-row">';
+    html += '<div class="vert-digit" style="width:32px;"></div>';
+    html += '<div class="vert-digit" style="color:var(--muted);">?</div>';
+    html += '<div class="vert-digit" style="color:var(--muted);">?</div>';
+    html += '<div class="vert-digit" style="color:var(--muted);">?</div>';
+    html += '</div>';
+  }
+
+  html += '</div>';
+  return html;
+}
+
+/* ════════════════════════════════════════
+   STRATEGY BUILDER
+   ════════════════════════════════════════ */
+function buildStrategy(a, b, op) {
+  var oA = ones(a), oB = ones(b), tA = tens(a), tB = tens(b), hA = hundreds(a), hB = hundreds(b);
+  var html = '<div class="strategy-card">';
+  html += '<div class="strategy-title">Step-by-Step Strategy</div>';
+
+  if (op === 'add') {
+    var oSum = oA + oB;
+    var carryO = oSum >= 10 ? 1 : 0;
+    var oResult = oSum % 10;
+    var tSum = tA + tB + carryO;
+    var carryT = tSum >= 10 ? 1 : 0;
+    var tResult = tSum % 10;
+    var hResult = hA + hB + carryT;
+
+    html += '<div class="strategy-step">Ones: ' + oA + ' + ' + oB + ' = ' + oSum;
+    if (carryO) html += ' (write ' + oResult + ', carry 1 ten)';
+    html += '</div>';
+    html += '<div class="strategy-step">Tens: ' + tA + ' + ' + tB + (carryO ? ' + 1' : '') + ' = ' + tSum;
+    if (carryT) html += ' (write ' + tResult + ', carry 1 hundred)';
+    html += '</div>';
+    html += '<div class="strategy-step">Hundreds: ' + hA + ' + ' + hB + (carryT ? ' + 1' : '') + ' = ' + hResult + '</div>';
+    html += '<div class="strategy-step" style="color:var(--green);font-weight:700;">Answer: ' + (a + b) + '</div>';
+  } else {
+    var borrowO = oA < oB ? 1 : 0;
+    var oResult = borrowO ? (oA + 10 - oB) : (oA - oB);
+    var adjTA = tA - borrowO;
+    var borrowT = adjTA < tB ? 1 : 0;
+    var tResult = borrowT ? (adjTA + 10 - tB) : (adjTA - tB);
+    var hResult = hA - borrowT - hB;
+
+    html += '<div class="strategy-step">Ones: ' + oA + ' \u2212 ' + oB;
+    if (borrowO) html += ' \u2192 borrow 1 ten: (' + oA + '+10) \u2212 ' + oB + ' = ' + oResult;
+    else html += ' = ' + oResult;
+    html += '</div>';
+    html += '<div class="strategy-step">Tens: ' + tA + (borrowO ? ' \u2212 1' : '') + ' \u2212 ' + tB;
+    if (borrowT) html += ' \u2192 borrow 1 hundred: (' + adjTA + '+10) \u2212 ' + tB + ' = ' + tResult;
+    else html += ' = ' + tResult;
+    html += '</div>';
+    html += '<div class="strategy-step">Hundreds: ' + hA + (borrowT ? ' \u2212 1' : '') + ' \u2212 ' + hB + ' = ' + hResult + '</div>';
+    html += '<div class="strategy-step" style="color:var(--green);font-weight:700;">Answer: ' + (a - b) + '</div>';
+  }
+
+  html += '</div>';
+  return html;
+}
+
+/* ════════════════════════════════════════
+   RENDER: EXPLORE
+   ════════════════════════════════════════ */
+function renderExplore(ws, sp) {
+  var a = S.exA, b = S.exB, op = S.exOp;
+  var opSym = op === 'add' ? '+' : '\u2212';
+  var answer = op === 'add' ? a + b : a - b;
+
+  var h = '';
+
+  /* Instruction */
+  h += '<div class="instruction-box highlight-orange">Build and explore three-digit ' + (op === 'add' ? 'addition' : 'subtraction') + '! Use the buttons below to change numbers.</div>';
+
+  /* Blocks display */
+  h += '<div class="blocks-display">';
+  h += '<div class="blocks-group"><div class="blocks-group-label">' + a + '</div>' + buildSVGBlocks(a, 'first') + '</div>';
+  h += '<div style="font-size:28px;font-weight:900;color:var(--yellow);align-self:center;">' + opSym + '</div>';
+  h += '<div class="blocks-group"><div class="blocks-group-label">' + b + '</div>' + buildSVGBlocks(b, 'second') + '</div>';
+  if (S.exShowResult) {
+    h += '<div style="font-size:28px;font-weight:900;color:var(--muted);align-self:center;">=</div>';
+    h += '<div class="blocks-group"><div class="blocks-group-label" style="color:var(--green);">' + answer + '</div>' + buildSVGBlocks(answer, 'result') + '</div>';
+  }
+  h += '</div>';
+
+  /* Vertical algorithm */
+  h += '<div style="display:flex;gap:24px;align-items:flex-start;justify-content:center;flex-wrap:wrap;">';
+  h += buildVertAlgo(a, b, op, S.exShowResult);
+
+  /* Place value chart for answer */
+  if (S.exShowResult) {
+    h += '<div style="max-width:280px;">';
+    h += buildPVChart(hundreds(answer), tens(answer), ones(answer));
+    h += '</div>';
+  }
+  h += '</div>';
+
+  /* Controls */
+  h += '<div class="controls">';
+  if (!S.exShowResult) {
+    h += '<button class="ctrl-btn primary" onclick="S.exShowResult=true;render();">Solve It!</button>';
+  } else {
+    h += '<button class="ctrl-btn primary" onclick="newExplore();render();">New Problem</button>';
+  }
+  h += '<button class="ctrl-btn" onclick="toggleExOp();render();">' + (op === 'add' ? 'Switch to \u2212' : 'Switch to +') + '</button>';
+  h += '</div>';
+
+  /* Build area */
+  h += '<div class="explore-build">';
+  h += '<div class="build-number">';
+  h += '<div class="build-label">First Number</div>';
+  h += '<div class="build-value">' + a + '</div>';
+  h += '<div class="build-controls">';
+  h += '<button class="ctrl-btn add-hundred" onclick="adjEx(\'a\',100)">+100</button>';
+  h += '<button class="ctrl-btn add-ten" onclick="adjEx(\'a\',10)">+10</button>';
+  h += '<button class="ctrl-btn add-one" onclick="adjEx(\'a\',1)">+1</button>';
+  h += '<button class="ctrl-btn" onclick="adjEx(\'a\',-100)">\u2212100</button>';
+  h += '<button class="ctrl-btn" onclick="adjEx(\'a\',-10)">\u221210</button>';
+  h += '<button class="ctrl-btn" onclick="adjEx(\'a\',-1)">\u22121</button>';
+  h += '</div></div>';
+
+  h += '<div class="build-number">';
+  h += '<div class="build-label">Second Number</div>';
+  h += '<div class="build-value">' + b + '</div>';
+  h += '<div class="build-controls">';
+  h += '<button class="ctrl-btn add-hundred" onclick="adjEx(\'b\',100)">+100</button>';
+  h += '<button class="ctrl-btn add-ten" onclick="adjEx(\'b\',10)">+10</button>';
+  h += '<button class="ctrl-btn add-one" onclick="adjEx(\'b\',1)">+1</button>';
+  h += '<button class="ctrl-btn" onclick="adjEx(\'b\',-100)">\u2212100</button>';
+  h += '<button class="ctrl-btn" onclick="adjEx(\'b\',-10)">\u221210</button>';
+  h += '<button class="ctrl-btn" onclick="adjEx(\'b\',-1)">\u22121</button>';
+  h += '</div></div>';
+  h += '</div>';
+
+  /* Strategy if showing result */
+  if (S.exShowResult) {
+    h += buildStrategy(a, b, op);
+  }
+
+  ws.innerHTML = h;
+
+  /* Side panel */
+  var sp_h = '<div class="panel-section"><div class="panel-title">Explore Mode</div>';
+  sp_h += '<div class="panel-text">Build three-digit numbers and watch how addition and subtraction work with base-10 blocks!</div></div>';
+  sp_h += '<div class="panel-section"><div class="panel-title">Block Key</div>';
+  sp_h += '<div class="panel-text">';
+  sp_h += '<span style="color:#ff9800;font-weight:700;">Orange flat</span> = 100<br>';
+  sp_h += '<span style="color:#b388ff;font-weight:700;">Purple rod</span> = 10<br>';
+  sp_h += '<span style="color:#00d4ff;font-weight:700;">Cyan cube</span> = 1</div></div>';
+
+  if (S.diff === 'emergent') {
+    sp_h += '<div class="panel-section"><div class="panel-title">Tip</div>';
+    sp_h += '<div class="panel-text">These problems don\'t need regrouping. Add each column separately: ones, tens, hundreds!</div></div>';
+  } else if (S.diff === 'proficient') {
+    sp_h += '<div class="panel-section"><div class="panel-title">Tip</div>';
+    sp_h += '<div class="panel-text">Watch for regrouping! If a column adds to 10+, carry to the next place. If you can\'t subtract, borrow.</div></div>';
+  } else {
+    sp_h += '<div class="panel-section"><div class="panel-title">Tip</div>';
+    sp_h += '<div class="panel-text">These problems may require regrouping in multiple places. Track each carry or borrow carefully!</div></div>';
+  }
+
+  sp.innerHTML = sp_h;
+}
+
+function newExplore() {
+  S.exShowResult = false;
+  var p = genProblem();
+  S.exA = p.a; S.exB = p.b; S.exOp = p.op;
+}
+
+function toggleExOp() {
+  S.exOp = S.exOp === 'add' ? 'sub' : 'add';
+  S.exShowResult = false;
+  /* Ensure valid subtraction */
+  if (S.exOp === 'sub' && S.exB > S.exA) {
+    var t = S.exA; S.exA = S.exB; S.exB = t;
+  }
+}
+
+function adjEx(which, amount) {
+  if (which === 'a') {
+    S.exA = Math.max(100, Math.min(999, S.exA + amount));
+  } else {
+    S.exB = Math.max(100, Math.min(999, S.exB + amount));
+  }
+  /* Clamp for addition */
+  if (S.exOp === 'add' && S.exA + S.exB > 999) {
+    if (which === 'a') S.exA -= amount;
+    else S.exB -= amount;
+  }
+  /* Ensure valid subtraction */
+  if (S.exOp === 'sub' && S.exB >= S.exA) {
+    if (which === 'b') S.exB -= amount;
+    else S.exA -= amount;
+  }
+  S.exShowResult = false;
+  render();
+}
+
+/* ════════════════════════════════════════
+   RENDER: PRACTICE
+   ════════════════════════════════════════ */
+function newPractice() {
+  var p = genProblem();
+  S.pA = p.a; S.pB = p.b; S.pOp = p.op; S.pAnswer = p.answer;
+  S.pChoices = generateDiagnosticChoices(p.a, p.b, p.op, p.answer);
+  S.pAnswered = false;
+}
+
+function renderPractice(ws, sp) {
+  if (S.pA === 0) newPractice();
+
+  var a = S.pA, b = S.pB, op = S.pOp;
+  var opSym = op === 'add' ? '+' : '\u2212';
+
+  var h = '';
+
+  /* Instruction */
+  h += '<div class="instruction-box">Solve: <strong style="font-size:18px;font-family:JetBrains Mono,monospace;">' + a + ' ' + opSym + ' ' + b + '</strong></div>';
+
+  /* Blocks + vertical algorithm side by side */
+  h += '<div style="display:flex;gap:24px;align-items:flex-start;justify-content:center;flex-wrap:wrap;">';
+
+  /* Blocks display */
+  h += '<div class="blocks-display" style="flex-direction:column;gap:8px;padding:8px;">';
+  h += '<div style="display:flex;gap:16px;align-items:flex-end;justify-content:center;flex-wrap:wrap;">';
+  h += '<div class="blocks-group"><div class="blocks-group-label">' + a + '</div>' + buildSVGBlocks(a, 'first') + '</div>';
+  h += '<div style="font-size:24px;font-weight:900;color:var(--yellow);align-self:center;">' + opSym + '</div>';
+  h += '<div class="blocks-group"><div class="blocks-group-label">' + b + '</div>' + buildSVGBlocks(b, 'second') + '</div>';
+  h += '</div></div>';
+
+  /* Vertical algorithm */
+  h += buildVertAlgo(a, b, op, S.pAnswered);
+  h += '</div>';
+
+  /* MC choices */
+  h += '<div class="mc-grid">';
+  for (var i = 0; i < S.pChoices.length; i++) {
+    var c = S.pChoices[i];
+    h += '<button class="mc-btn" id="prac' + i + '" onclick="practicePick(' + c + ',' + i + ')"' + (S.pAnswered ? ' disabled' : '') + '>' + c + '</button>';
+  }
+  h += '</div>';
+
+  /* Next button after answered */
+  if (S.pAnswered) {
+    h += '<div class="controls" style="margin-top:12px;">';
+    h += '<button class="ctrl-btn primary" onclick="nextPractice()">Next Problem</button>';
+    h += '</div>';
+    h += buildStrategy(a, b, op);
+  }
+
+  ws.innerHTML = h;
+
+  /* Side panel */
+  var sp_h = '<div class="panel-section"><div class="panel-title">Practice Mode</div>';
+  sp_h += '<div class="panel-text">Look at the blocks and vertical algorithm. Pick the correct answer!</div></div>';
+  sp_h += '<div class="panel-section"><div class="panel-title">Progress</div>';
+  sp_h += '<div class="panel-text">' + S.pCorrect + ' correct out of ' + S.pTotal + '</div></div>';
+  sp_h += '<div class="panel-section"><div class="panel-title">Block Key</div>';
+  sp_h += '<div class="panel-text">';
+  sp_h += '<span style="color:#ff9800;font-weight:700;">Orange flat</span> = 100<br>';
+  sp_h += '<span style="color:#b388ff;font-weight:700;">Purple rod</span> = 10<br>';
+  sp_h += '<span style="color:#00d4ff;font-weight:700;">Cyan cube</span> = 1</div></div>';
+  sp_h += '<div class="panel-section"><div class="panel-title">Tips</div>';
+  sp_h += '<div class="panel-text">';
+  if (S.diff === 'emergent') {
+    sp_h += 'No regrouping needed! Add ones, then tens, then hundreds.';
+  } else if (S.diff === 'proficient') {
+    sp_h += 'Watch for regrouping! If a column totals 10+, carry. If you can\'t subtract, borrow.';
+  } else {
+    sp_h += 'Multiple regroups may be needed. Work column by column and track every carry/borrow.';
+  }
+  sp_h += '</div></div>';
+  sp.innerHTML = sp_h;
+}
+
+function practicePick(val, idx) {
+  if (S.pAnswered) return;
+  S.pAnswered = true;
+  S.pTotal++;
+  var btn = document.getElementById('prac' + idx);
+  if (val === S.pAnswer) {
+    S.pCorrect++;
+    if (btn) btn.classList.add('correct-flash');
+    showFB('\u2713 Correct! ' + S.pA + (S.pOp === 'add' ? ' + ' : ' \u2212 ') + S.pB + ' = ' + S.pAnswer, 'correct');
+  } else {
+    if (btn) btn.classList.add('incorrect-flash');
+    var fbMsg = diagnoseMisconception(S.pA, S.pB, S.pOp, S.pAnswer, val);
+    showFB(fbMsg, 'try-again');
+  }
+  render();
+}
+
+function nextPractice() {
+  newPractice();
+  render();
+}
+
+/* ════════════════════════════════════════
+   RENDER: PLAY
+   ════════════════════════════════════════ */
+function newPlayRound() {
+  var p = genProblem();
+  S.playA = p.a; S.playB = p.b; S.playOp = p.op; S.playAnswer = p.answer;
+  S.playChoices = generateDiagnosticChoices(p.a, p.b, p.op, p.answer);
+}
+
+function startPlay() {
+  S.score = 0; S.streak = 0; S.best = 0; S.round = 1; S.total = 10;
+  playLocked = false;
+  newPlayRound();
+  render();
+}
+
+function renderPlay(ws, sp) {
+  if (S.round === 0) {
+    /* Start screen */
+    var h = '<div style="text-align:center;">';
+    h += '<div style="font-size:28px;font-weight:900;background:var(--grad);-webkit-background-clip:text;-webkit-text-fill-color:transparent;margin-bottom:12px;">Three-Digit Operations Challenge</div>';
+    h += '<div style="font-size:15px;color:var(--text2);margin-bottom:20px;">10 rounds. Earn 10 points + streak bonus for each correct answer!</div>';
+    h += '<button class="ctrl-btn primary" onclick="startPlay()" style="font-size:16px;padding:14px 36px;">Start Game</button>';
+    h += '</div>';
+    ws.innerHTML = h;
+    sp.innerHTML = '<div class="panel-section"><div class="panel-title">Play Mode</div><div class="panel-text">Race through 10 three-digit problems! Build streaks for bonus points.</div></div>';
+    return;
+  }
+
+  if (S.round > S.total) {
+    /* Game over */
+    var pct = Math.round((S.score / (S.total * 12)) * 100);
+    var h = '<div class="game-over">';
+    h += '<div class="game-over-title">Game Complete!</div>';
+    h += '<div class="game-over-stat">Score: <span>' + S.score + '</span></div>';
+    h += '<div class="game-over-stat">Best Streak: <span>' + S.best + '</span></div>';
+    h += '<div class="game-over-stat">Rating: <span>' + (pct >= 80 ? 'Amazing!' : pct >= 60 ? 'Great Job!' : pct >= 40 ? 'Good Effort!' : 'Keep Practicing!') + '</span></div>';
+    h += '<div class="controls" style="margin-top:20px;">';
+    h += '<button class="ctrl-btn primary" onclick="startPlay()">Play Again</button>';
+    h += '</div></div>';
+    ws.innerHTML = h;
+    sp.innerHTML = '<div class="panel-section"><div class="panel-title">Results</div><div class="panel-text">Score: ' + S.score + '<br>Best Streak: ' + S.best + '</div></div>';
+    return;
+  }
+
+  var a = S.playA, b = S.playB, op = S.playOp;
+  var opSym = op === 'add' ? '+' : '\u2212';
+
+  var h = '<div style="font-size:12px;color:var(--muted);text-transform:uppercase;letter-spacing:1px;margin-bottom:4px;">Round ' + S.round + ' of ' + S.total + '</div>';
+
+  /* Problem display with blocks */
+  h += '<div class="blocks-display">';
+  h += '<div class="blocks-group"><div class="blocks-group-label">' + a + '</div>' + buildSVGBlocks(a, '') + '</div>';
+  h += '<div style="font-size:28px;font-weight:900;color:var(--yellow);align-self:center;">' + opSym + '</div>';
+  h += '<div class="blocks-group"><div class="blocks-group-label">' + b + '</div>' + buildSVGBlocks(b, '') + '</div>';
+  h += '<div style="font-size:28px;font-weight:900;color:var(--muted);align-self:center;">=</div>';
+  h += '<div style="font-size:40px;font-weight:900;color:var(--text);align-self:center;font-family:JetBrains Mono,monospace;">?</div>';
+  h += '</div>';
+
+  /* Problem text */
+  h += '<div style="font-size:26px;font-weight:900;font-family:JetBrains Mono,monospace;text-align:center;margin:6px 0;">';
+  h += '<span style="color:var(--text);">' + a + '</span> ';
+  h += '<span style="color:var(--yellow);">' + opSym + '</span> ';
+  h += '<span style="color:var(--text);">' + b + '</span>';
+  h += '</div>';
+
+  /* MC buttons */
+  h += '<div class="mc-grid">';
+  for (var i = 0; i < S.playChoices.length; i++) {
+    var c = S.playChoices[i];
+    h += '<button class="mc-btn" id="play' + i + '" onclick="playPick(' + c + ',' + i + ')">' + c + '</button>';
+  }
+  h += '</div>';
+
+  ws.innerHTML = h;
+
+  /* Side panel: score */
+  var sp_h = '<div class="score-display">';
+  sp_h += '<div class="score-label">Score</div>';
+  sp_h += '<div class="score-value">' + S.score + '</div>';
+  sp_h += '<div class="score-label" style="margin-top:8px;">Streak</div>';
+  sp_h += '<div class="streak-bar"><div class="streak-fill" style="width:' + Math.min(S.streak * 20, 100) + '%;"></div></div>';
+  sp_h += '<div style="font-size:14px;font-weight:700;color:var(--cyan);margin-top:4px;">' + S.streak + '</div>';
+  sp_h += '</div>';
+  sp_h += '<div class="panel-section"><div class="panel-title">Scoring</div>';
+  sp_h += '<div class="panel-text">10 pts per correct answer<br>+ ' + (S.streak * 2) + ' streak bonus</div></div>';
+  sp_h += '<div class="panel-section"><div class="panel-title">Round</div>';
+  sp_h += '<div class="panel-text">' + S.round + ' / ' + S.total + '</div></div>';
+  sp_h += '<div class="panel-section"><div class="panel-title">Block Key</div>';
+  sp_h += '<div class="panel-text">';
+  sp_h += '<span style="color:#ff9800;font-weight:700;">Orange flat</span> = 100<br>';
+  sp_h += '<span style="color:#b388ff;font-weight:700;">Purple rod</span> = 10<br>';
+  sp_h += '<span style="color:#00d4ff;font-weight:700;">Cyan cube</span> = 1</div></div>';
+  sp.innerHTML = sp_h;
+}
+
+function playPick(val, idx) {
+  if (playLocked) return;
+  playLocked = true;
+  var btn = document.getElementById('play' + idx);
+
+  if (val === S.playAnswer) {
+    if (btn) btn.classList.add('correct-flash');
+    S.score += 10 + (S.streak * 2);
+    S.streak++;
+    if (S.streak > S.best) S.best = S.streak;
+    showFB('\u2713 ' + S.playAnswer + '!', 'correct');
+  } else {
+    if (btn) btn.classList.add('incorrect-flash');
+    S.streak = 0;
+    var fbMsg = diagnoseMisconception(S.playA, S.playB, S.playOp, S.playAnswer, val);
+    showFB(fbMsg, 'try-again');
+  }
+
+  setTimeout(function() {
+    playLocked = false;
+    S.round++;
+    if (S.round <= S.total) {
+      newPlayRound();
+    }
+    render();
+  }, 1200);
+}
+
+/* ════════════════════════════════════════
+   MISCONCEPTION DIAGNOSIS
+   ════════════════════════════════════════ */
+function diagnoseMisconception(a, b, op, answer, chosen) {
+  var diff = Math.abs(chosen - answer);
+  var oA = ones(a), oB = ones(b), tA = tens(a), tB = tens(b), hA = hundreds(a), hB = hundreds(b);
+
+  /* Off by exactly 100 */
+  if (diff === 100) {
+    return MISCONCEPTIONS.offByHundred.msg(answer, chosen);
+  }
+
+  /* Off by exactly 10 */
+  if (diff === 10) {
+    return MISCONCEPTIONS.offByTen.msg(answer, chosen);
+  }
+
+  /* No-regroup error (addition) */
+  if (op === 'add') {
+    var oSum = oA + oB;
+    var tSum = tA + tB;
+    /* Forgot carry from ones */
+    var noCarryOnes = hA * 100 + hB * 100 + tSum * 10 + oSum;
+    if (oSum >= 10 && (chosen === noCarryOnes || chosen === (hA + hB) * 100 + tSum * 10 + (oSum % 10))) {
+      return MISCONCEPTIONS.noRegroupMulti.msg(a, b);
+    }
+    /* Forgot carry from tens */
+    if (tSum >= 10) {
+      return MISCONCEPTIONS.lostRegroup.msg(a, b);
+    }
+  }
+
+  /* Subtraction: subtracted small from big without borrowing */
+  if (op === 'sub') {
+    var flipOnes = Math.abs(oA - oB);
+    var flipTens = Math.abs(tA - tB);
+    var flipHun = Math.abs(hA - hB);
+    var flipAns = flipHun * 100 + flipTens * 10 + flipOnes;
+    if (chosen === flipAns && flipAns !== answer) {
+      return MISCONCEPTIONS.subtractedSmallFromBig.msg(a, b);
+    }
+    if (oA < oB || tA < tB) {
+      return MISCONCEPTIONS.lostRegroup.msg(a, b);
+    }
+  }
+
+  /* Place value mix */
+  if (diff > 50) {
+    return MISCONCEPTIONS.placeValueMix.msg(a, b);
+  }
+
+  /* Generic fallback */
+  return MISCONCEPTIONS.lostRegroup.msg(a, b);
+}
+
+/* ════════════════════════════════════════
+   SETTERS & RENDER
+   ════════════════════════════════════════ */
+function setMode(m) {
+  S.mode = m;
+  document.querySelectorAll('.vinculum-mode-tab').forEach(function(t) {
+    t.className = 'vinculum-mode-tab';
+  });
+  var tabId = m === 'explore' ? 'tabExplore' : m === 'practice' ? 'tabPractice' : 'tabPlay';
+  document.getElementById(tabId).classList.add('active-' + m);
+
+  if (m === 'practice') { S.pA = 0; S.pCorrect = 0; S.pTotal = 0; }
+  if (m === 'play') { S.round = 0; }
+  if (m === 'explore') { S.exShowResult = false; var p = genProblem(); S.exA = p.a; S.exB = p.b; S.exOp = p.op; }
+  render();
+}
+
+function setDiff(d) {
+  S.diff = d;
+  document.querySelectorAll('.vinculum-diff-btn').forEach(function(b) { b.classList.remove('active'); });
+  var did = d === 'emergent' ? 'diffE' : d === 'proficient' ? 'diffP' : 'diffA';
+  document.getElementById(did).classList.add('active');
+
+  if (S.mode === 'practice') { S.pA = 0; S.pCorrect = 0; S.pTotal = 0; }
+  if (S.mode === 'play') { S.round = 0; }
+  if (S.mode === 'explore') { S.exShowResult = false; var p = genProblem(); S.exA = p.a; S.exB = p.b; S.exOp = p.op; }
+  render();
+}
+
+function render() {
+  var ws = document.getElementById('workspace');
+  var sp = document.getElementById('sidePanel');
+  if (S.mode === 'explore') renderExplore(ws, sp);
+  else if (S.mode === 'practice') renderPractice(ws, sp);
+  else renderPlay(ws, sp);
+}
+
+/* ════════════════════════════════════════
+   INIT
+   ════════════════════════════════════════ */
+document.querySelectorAll('.vinculum-mode-tab').forEach(function(tab) {
+  tab.addEventListener('click', function() {
+    setMode(this.dataset.mode);
+  });
+});
+
+document.querySelectorAll('.vinculum-diff-btn').forEach(function(btn) {
+  btn.addEventListener('click', function() {
+    setDiff(this.dataset.diff);
+  });
+});
+
+render();
+</script>
+<script src="../../vinculum-core.js"></script>
+<script src="../../vinculum-data.js"></script>
+<script src="../../vinculum-adaptive-hook.js"></script>
+<script src="../../vinculum-3reads.js"></script>
+<script src="../../vinculum-stories.js"></script>
+<script src="../../vinculum-feedback.js"></script>
+<script src="../../vinculum-guide.js"></script>
+<script src="../../vinculum-identity.js"></script>
+<script src="../../vinculum-indigenous.js"></script>
+<script src="../../vinculum-dashboard.js"></script>
+<script src="../../vinculum-hyperfocus.js"></script>
+<script src="../../vinculum-layout.js"></script>
+</body>
+</html>

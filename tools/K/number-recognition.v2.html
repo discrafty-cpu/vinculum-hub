@@ -1,0 +1,755 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>VINCULUM — Number Recognition Engine</title>
+<link rel="stylesheet" href="../../vinculum-core.css">
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;600&display=swap');
+
+/* Theme system loaded from vinculum-core.css */
+.vinculum-rtm-btn .rtm-icon{font-size:14px;}
+
+/* ═══ FOCUS VISIBLE (Keyboard Navigation) ═══ */
+*:focus-visible {
+  outline:2px solid var(--cyan);outline-offset:2px;border-radius:4px;
+}
+.sr-only {
+  position:absolute;width:1px;height:1px;padding:0;margin:-1px;
+  overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0;
+}
+
+*{margin:0;padding:0;box-sizing:border-box;}
+body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);height:100vh;display:flex;flex-direction:column;overflow:hidden;user-select:none;}
+
+/* ── MAIN AREA ── */
+.main{flex:1;display:flex;overflow:hidden;}
+.workspace{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:flex-start;padding:24px;gap:16px;overflow-y:auto;}
+.side-panel{width:280px;background:var(--bg2);border-left:1px solid var(--border);padding:20px;overflow-y:auto;flex-shrink:0;}
+.panel-section{margin-bottom:20px;}
+.panel-title{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:1.5px;color:var(--muted);margin-bottom:8px;}
+.panel-text{font-size:13px;color:var(--text2);line-height:1.6;}
+
+/* ── NUMBER DISPLAY ── */
+.number-display{text-align:center;font-size:72px;font-weight:900;font-family:'JetBrains Mono',monospace;background:var(--grad);-webkit-background-clip:text;-webkit-text-fill-color:transparent;line-height:1;transition:transform 0.15s;}
+.number-display.bump{transform:scale(1.15);}
+
+/* ── NUMERAL CARD ── */
+.numeral-card{background:var(--card);border:2px solid var(--border);border-radius:20px;padding:32px 48px;text-align:center;margin:8px auto;max-width:280px;transition:all 0.3s;}
+.numeral-card:hover{border-color:var(--cyan);}
+
+/* ── NUMBER WORD ── */
+.number-word{font-size:22px;font-weight:700;color:var(--text2);text-align:center;margin-top:4px;font-style:italic;letter-spacing:1px;}
+
+/* ── OBJECT AREA (read-only display) ── */
+.object-area{width:100%;max-width:500px;background:var(--card);border:2px dashed var(--border);border-radius:20px;position:relative;display:flex;flex-wrap:wrap;align-content:flex-start;padding:20px;gap:12px;justify-content:center;min-height:80px;transition:border-color 0.2s;}
+.counting-object{width:48px;height:48px;border-radius:14px;display:flex;align-items:center;justify-content:center;font-size:28px;transition:transform 0.15s;}
+
+/* ── TEN FRAME ── */
+.ten-frame{display:grid;grid-template-columns:repeat(5,1fr);grid-template-rows:repeat(2,1fr);gap:4px;width:100%;max-width:500px;aspect-ratio:5/2;margin-top:8px;}
+.ten-frame-cell{background:var(--card);border:2px solid var(--border);border-radius:12px;display:flex;align-items:center;justify-content:center;font-size:28px;transition:all 0.2s;aspect-ratio:1;}
+.ten-frame-cell.filled{background:rgba(0,212,255,0.08);border-color:var(--cyan);}
+
+/* ── NUMBER SELECTOR ── */
+.number-selector{display:flex;gap:8px;justify-content:center;flex-wrap:wrap;max-width:600px;}
+.num-btn{width:52px;height:52px;border-radius:14px;border:2px solid var(--border);background:var(--card);color:var(--text);font-size:22px;font-weight:800;font-family:'JetBrains Mono',monospace;cursor:pointer;transition:all 0.15s;display:flex;align-items:center;justify-content:center;}
+.num-btn:hover{border-color:var(--cyan);transform:scale(1.08);}
+.num-btn.active{border-color:var(--cyan);background:rgba(0,212,255,0.12);color:var(--cyan);}
+
+/* ── MC GRID (2×2 for Practice) ── */
+.mc-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;max-width:420px;margin:16px auto;}
+.mc-btn{min-height:52px;border-radius:12px;border:2px solid var(--border);background:var(--card);color:var(--text);font-size:18px;font-weight:700;font-family:'JetBrains Mono',monospace;cursor:pointer;transition:all 0.15s;display:flex;align-items:center;justify-content:center;padding:10px 16px;}
+.mc-btn:hover{border-color:var(--cyan);background:rgba(0,212,255,0.05);transform:scale(1.03);}
+.mc-btn.correct-flash{border-color:var(--green);background:rgba(0,230,118,0.2);color:var(--green);}
+.mc-btn.incorrect-flash{border-color:var(--pink);background:rgba(255,59,139,0.2);color:var(--pink);animation:shake 0.3s ease-in-out;}
+
+/* ── ORDER BUTTONS (Advanced Practice) ── */
+.order-grid{display:flex;gap:10px;justify-content:center;flex-wrap:wrap;margin:16px auto;}
+.order-btn{width:64px;height:64px;border-radius:14px;border:2px solid var(--border);background:var(--card);color:var(--text);font-size:26px;font-weight:800;font-family:'JetBrains Mono',monospace;cursor:pointer;transition:all 0.15s;display:flex;align-items:center;justify-content:center;}
+.order-btn:hover{border-color:var(--cyan);transform:scale(1.08);}
+.order-btn.selected{border-color:var(--green);background:rgba(0,230,118,0.12);color:var(--green);transform:scale(0.95);}
+
+/* ── ANSWER BUTTONS (Play mode) ── */
+.answer-grid{display:flex;gap:10px;flex-wrap:wrap;justify-content:center;max-width:500px;}
+.answer-btn{width:52px;height:52px;border-radius:12px;border:2px solid var(--border);background:var(--card);color:var(--text);font-size:20px;font-weight:700;font-family:'JetBrains Mono',monospace;cursor:pointer;transition:all 0.15s;display:flex;align-items:center;justify-content:center;}
+.answer-btn:hover{border-color:var(--cyan);transform:scale(1.1);}
+.answer-btn.correct-flash{border-color:var(--green);background:rgba(0,230,118,0.2);color:var(--green);animation:correctFlash 0.4s ease-out;}
+.answer-btn.incorrect-flash{border-color:var(--pink);background:rgba(255,59,139,0.2);color:var(--pink);animation:shake 0.3s ease-in-out;}
+
+/* ── ORDER RESULT ── */
+.order-result{display:flex;gap:8px;justify-content:center;margin:8px auto;min-height:48px;align-items:center;}
+.order-result-num{width:48px;height:48px;border-radius:12px;background:rgba(0,230,118,0.12);border:2px solid var(--green);color:var(--green);font-size:22px;font-weight:800;font-family:'JetBrains Mono',monospace;display:flex;align-items:center;justify-content:center;}
+.order-arrow{color:var(--muted);font-size:18px;}
+
+/* ── INSTRUCTION BOX ── */
+.instruction-box{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:14px 20px;text-align:center;font-size:15px;color:var(--text2);font-weight:500;max-width:600px;transition:all 0.3s;}
+
+/* ── CONTROLS ── */
+.controls{display:flex;gap:8px;flex-wrap:wrap;justify-content:center;}
+.ctrl-btn{padding:10px 20px;border-radius:10px;border:1px solid var(--border);background:var(--card);color:var(--text2);font-size:13px;font-weight:600;font-family:inherit;cursor:pointer;transition:all 0.2s;display:flex;align-items:center;gap:6px;}
+.ctrl-btn:hover{background:var(--card2);color:var(--text);}
+.ctrl-btn.primary{background:var(--grad);color:var(--bg);border-color:transparent;}
+
+/* ── SCORE ── */
+.score-display{text-align:center;padding:16px;background:var(--card);border-radius:12px;margin-bottom:12px;}
+.score-value{font-size:36px;font-weight:900;font-family:'JetBrains Mono',monospace;background:var(--grad);-webkit-background-clip:text;-webkit-text-fill-color:transparent;}
+.score-label{font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:1px;}
+.streak-bar{height:6px;background:var(--card);border-radius:3px;overflow:hidden;margin-top:8px;}
+.streak-fill{height:100%;background:var(--grad);border-radius:3px;transition:width 0.3s;}
+
+/* ── FEEDBACK ── */
+.feedback{position:fixed;top:50%;left:50%;transform:translate(-50%,-50%) scale(0);padding:24px 48px;border-radius:20px;font-size:28px;font-weight:800;z-index:200;pointer-events:none;transition:transform 0.3s cubic-bezier(0.175,0.885,0.32,1.275),opacity 0.3s;opacity:0;}
+.feedback.show{transform:translate(-50%,-50%) scale(1);opacity:1;}
+.feedback.correct{background:rgba(0,230,118,0.15);color:var(--green);border:2px solid var(--green);}
+.feedback.incorrect{background:rgba(255,59,139,0.15);color:var(--pink);border:2px solid var(--pink);}
+.feedback.try-again{background:rgba(255,193,7,0.15);color:var(--yellow);border:2px solid var(--yellow);}
+
+/* ── ANIMATIONS ── */
+@keyframes pop{0%{transform:scale(0);}70%{transform:scale(1.2);}100%{transform:scale(1);}}
+@keyframes correctFlash{0%{transform:scale(1.2);}100%{transform:scale(1);}}
+@keyframes shake{0%,100%{transform:translateX(0);}25%{transform:translateX(-8px);}75%{transform:translateX(8px);}}
+.pop-in{animation:pop 0.3s ease-out forwards;}
+.shake{animation:shake 0.3s ease-in-out;}
+
+/* ── SCROLLBAR ── */
+::-webkit-scrollbar{width:6px;}::-webkit-scrollbar-track{background:transparent;}::-webkit-scrollbar-thumb{background:var(--border);border-radius:3px;}
+</style>
+</head>
+<body>
+
+<!-- ═══ HEADER ═══ -->
+<div class="vinculum-header">
+  <div class="vinculum-header-left">
+    <a class="vinculum-back-btn" href="../../VINCULUM-Hub.html" style="text-decoration:none;">◀ Hub</a>
+    <div class="vinculum-header-title"><span>VINCULUM</span> Number Recognition Engine</div>
+    <span class="vinculum-header-badge">K.CC</span>
+  </div>
+    <div class="vinculum-header-right">
+      <div class="vinculum-std-tags">
+    <span class="vinculum-std-tag">K.CC.3</span>
+    <span class="vinculum-std-tag">K.CC.6</span>
+    <span class="vinculum-std-tag">K.CC.7</span>
+    <span class="vinculum-std-tag mn">MN K.1.1.2</span>
+  </div>
+  <button class="vinculum-back-btn" id="readAloudBtn" onclick="toggleReadAloud()" aria-label="Read Aloud" title="Read instructions aloud" style="margin-left:8px;white-space:nowrap;">🔊 Read to Me</button>
+</div>
+
+<!-- ═══ MODE TABS ═══ -->
+</div>
+
+  <div class="vinculum-mode-tabs">
+  <button class="vinculum-mode-tab active-explore" id="tabExplore" data-mode="explore">
+    <svg width="18" height="18" viewBox="0 0 48 48" fill="none"><path d="M4 24C4 24 12 12 24 12C36 12 44 24 44 24C44 24 36 36 24 36C12 36 4 24 4 24Z" stroke="currentColor" stroke-width="3" fill="none"/><circle cx="24" cy="24" r="7" stroke="currentColor" stroke-width="3" fill="none"/><circle cx="24" cy="24" r="3" fill="currentColor"/><line x1="24" y1="4" x2="24" y2="9" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" opacity="0.5"/><line x1="10" y1="8" x2="13" y2="12" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" opacity="0.5"/><line x1="38" y1="8" x2="35" y2="12" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" opacity="0.5"/></svg> Explore
+  </button>
+  <button class="vinculum-mode-tab" id="tabPractice" data-mode="practice">
+    <svg width="18" height="18" viewBox="0 0 48 48" fill="none"><circle cx="24" cy="24" r="20" stroke="currentColor" stroke-width="3" fill="none" opacity="0.3"/><circle cx="24" cy="24" r="20" stroke="currentColor" stroke-width="3" fill="none" stroke-dasharray="126" stroke-dashoffset="32" stroke-linecap="round"/><polyline points="16,24 22,32 34,16" stroke="currentColor" stroke-width="4" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg> Practice
+  </button>
+  <button class="vinculum-mode-tab" id="tabPlay" data-mode="play">
+    <svg width="18" height="18" viewBox="0 0 48 48" fill="none"><polygon points="28,4 12,28 22,28 18,44 36,18 26,18" fill="none" stroke="currentColor" stroke-width="3" stroke-linejoin="round"/><polygon points="27,8 15,27 23,27 20,40 34,19 26,19" fill="currentColor" opacity="0.15"/></svg> Play
+  </button>
+  <div class="vinculum-diff-selector">
+    <span class="vinculum-diff-label">Level</span>
+    <button class="vinculum-diff-btn active" id="diffE" data-diff="emergent">0–10</button>
+    <button class="vinculum-diff-btn" id="diffP" data-diff="proficient">Match</button>
+    <button class="vinculum-diff-btn" id="diffA" data-diff="advanced">To 20</button>
+  </div>
+</div>
+
+<!-- ═══ MAIN ═══ -->
+<div class="main">
+  <div class="workspace" role="main" id="workspace"></div>
+  <div class="side-panel" id="sidePanel"></div>
+</div>
+
+<!-- ═══ FEEDBACK POPUP ═══ -->
+<div class="feedback" id="feedback"></div>
+
+  <script src="../../vinculum-input.js"></script>
+<script>
+// ════════════════════════════════════════
+// STATE
+// ════════════════════════════════════════
+let S = {
+  mode: 'explore', diff: 'emergent', maxN: 10,
+  // Explore
+  selectedNum: 5,
+  // Practice
+  pNum: 0, pType: 'identify', // identify | match | order
+  pChoices: [],
+  pOrderNums: [], pOrderSelected: [],
+  // Play
+  score: 0, streak: 0, best: 0, round: 0, total: 10,
+  playNum: 0, playType: 'identify', playChoices: []
+};
+
+const NUMBER_WORDS = ['zero','one','two','three','four','five','six','seven','eight','nine','ten','eleven','twelve','thirteen','fourteen','fifteen','sixteen','seventeen','eighteen','nineteen','twenty'];
+
+// ════════════════════════════════════════
+// MISCONCEPTIONS
+// ════════════════════════════════════════
+const MISCONCEPTIONS = {
+  reversedNumeral: { id: 'reversed', msg: (n) => `Careful! That's not ${n}. Some numbers look similar — look at the shape closely.` },
+  sizeConfusion: { id: 'size-confusion', msg: (n) => `The SIZE of objects doesn't matter — COUNT them! How many are there?` },
+  offByOne: { id: 'off-by-one', msg: (n, got) => `Close! You said ${got}, but count again carefully — the answer is ${n}.` },
+  randomGuess: { id: 'random', msg: () => `Look at the objects and count each one. The last number you say is the answer!` }
+};
+
+// ════════════════════════════════════════
+// READ-ALOUD + STORY BANNER
+// ════════════════════════════════════════
+function toggleReadAloud() {
+  if (window.VinculumStories && VinculumStories.isReading()) {
+    VinculumStories.stopReading();
+    document.getElementById('readAloudBtn').textContent = '🔊 Read to Me';
+  } else {
+    const fb = document.getElementById('feedback');
+    const storyEl = document.getElementById('storyBanner');
+    const text = storyEl ? storyEl.textContent : (fb ? fb.textContent : 'Welcome to this math tool!');
+    if (window.VinculumStories) {
+      VinculumStories.readAloud(text, { rate: 0.85, onComplete: () => {
+        document.getElementById('readAloudBtn').textContent = '🔊 Read to Me';
+      }});
+      document.getElementById('readAloudBtn').textContent = '⏹ Stop';
+    }
+  }
+}
+
+// ════════════════════════════════════════
+// HELPERS
+// ════════════════════════════════════════
+function rand(a, b) {
+  return Math.floor(Math.random() * (b - a + 1)) + a;
+}
+
+function showFeedback(text, type) {
+  const fb = document.getElementById('feedback');
+  fb.textContent = text;
+  fb.className = 'feedback ' + type + ' show';
+  setTimeout(() => { fb.classList.remove('show'); }, 1200);
+}
+
+function makeDots(n) {
+  let s = '';
+  for (let i = 0; i < n; i++) s += '●';
+  return s;
+}
+
+function makeApples(n) {
+  let s = '';
+  for (let i = 0; i < n; i++) s += '🍎';
+  return s;
+}
+
+function shuffle(arr) {
+  const a = arr.slice();
+  for (let i = a.length - 1; i > 0; i--) {
+    const j = rand(0, i);
+    [a[i], a[j]] = [a[j], a[i]];
+  }
+  return a;
+}
+
+function generateDistractors(correct, count, min, max) {
+  const choices = new Set([correct]);
+  // Add off-by-one
+  if (correct + 1 <= max) choices.add(correct + 1);
+  if (correct - 1 >= min) choices.add(correct - 1);
+  // Add ±2
+  if (correct + 2 <= max) choices.add(correct + 2);
+  if (correct - 2 >= min) choices.add(correct - 2);
+  // Fill remaining randomly
+  let attempts = 0;
+  while (choices.size < count && attempts < 50) {
+    choices.add(rand(min, max));
+    attempts++;
+  }
+  return shuffle(Array.from(choices)).slice(0, count);
+}
+
+// ════════════════════════════════════════
+// MODE / DIFF SWITCHING
+// ════════════════════════════════════════
+function setMode(m) {
+  S.mode = m;
+  document.querySelectorAll('.vinculum-mode-tab').forEach(t => t.classList.remove('active-explore', 'active-practice', 'active-play'));
+  document.getElementById('tab' + m.charAt(0).toUpperCase() + m.slice(1)).classList.add('active-' + m);
+  S.round = 0;
+  S.score = 0;
+  S.streak = 0;
+  S.pNum = 0;
+  S.pOrderSelected = [];
+  render();
+}
+
+function setDiff(d) {
+  S.diff = d;
+  if (d === 'emergent') S.maxN = 10;
+  else if (d === 'proficient') S.maxN = 10;
+  else S.maxN = 20;
+  document.querySelectorAll('.vinculum-diff-btn').forEach(b => b.classList.remove('active'));
+  document.getElementById('diff' + d.charAt(0).toUpperCase()).classList.add('active');
+  S.pNum = 0;
+  S.round = 0;
+  S.pOrderSelected = [];
+  render();
+}
+
+// ════════════════════════════════════════
+// RENDER
+// ════════════════════════════════════════
+function render() {
+  const ws = document.getElementById('workspace');
+  const sp = document.getElementById('sidePanel');
+  if (S.mode === 'explore') renderExplore(ws, sp);
+  else if (S.mode === 'practice') renderPractice(ws, sp);
+  else renderPlay(ws, sp);
+}
+
+// ════════════════════════════════════════
+// EXPLORE MODE
+// ════════════════════════════════════════
+function renderExplore(ws, sp) {
+  const n = S.selectedNum;
+  let h = '';
+
+  // Story banner
+  if (window.VinculumStories) {
+    const toolName = window.location.pathname.split('/').pop().replace('.html','');
+    const storyData = VinculumStories.getStory(toolName, {a: n, b: 3, total: n, n: n, ones: n % 10});
+    if (storyData && storyData.story) {
+      if (window.Vinculum3Reads) {
+        h += Vinculum3Reads.getBannerHTML(storyData);
+      } else {
+        const bannerHTML = '<div id="storyBanner" style="background:var(--card2,#1a1f2e);border:1px solid var(--border);border-radius:12px;padding:16px 20px;margin-bottom:16px;font-size:15px;line-height:1.6;color:var(--text);position:relative;"><span style="font-size:12px;color:var(--cyan);font-weight:700;text-transform:uppercase;letter-spacing:1px;">📖 Story</span><br>' + storyData.story + '<br><em style="color:var(--yellow);font-weight:600;">' + storyData.question + '</em><button onclick="toggleReadAloud()" style="position:absolute;top:12px;right:12px;background:none;border:1px solid var(--border);border-radius:8px;padding:4px 10px;color:var(--cyan);cursor:pointer;font-size:14px;" title="Read story aloud">🔊</button></div>';
+        h += bannerHTML;
+      }
+    }
+  }
+
+  // Number selector
+  h += '<div class="number-selector">';
+  const maxSel = S.diff === 'advanced' ? 20 : 10;
+  for (let i = 0; i <= maxSel; i++) {
+    h += `<button class="num-btn ${i === n ? 'active' : ''}" onclick="S.selectedNum=${i};render();">${i}</button>`;
+  }
+  h += '</div>';
+
+  // Numeral card with large number
+  h += '<div class="numeral-card">';
+  h += `<div class="number-display" id="numDisplay">${n}</div>`;
+  h += '</div>';
+
+  // Number word
+  h += `<div class="number-word">${NUMBER_WORDS[n] || n}</div>`;
+
+  // Object area with apples
+  if (n > 0) {
+    h += '<div class="object-area">';
+    for (let i = 0; i < n; i++) {
+      h += '<div class="counting-object pop-in" style="animation-delay:' + (i * 0.04) + 's;">🍎</div>';
+    }
+    h += '</div>';
+  } else {
+    h += '<div class="object-area" style="justify-content:center;align-items:center;min-height:60px;">';
+    h += '<span style="color:var(--muted);font-size:14px;">Zero means none!</span>';
+    h += '</div>';
+  }
+
+  // Ten frame
+  h += '<div class="ten-frame">';
+  for (let i = 0; i < 10; i++) {
+    const filled = i < n;
+    h += `<div class="ten-frame-cell ${filled ? 'filled' : ''}">${filled ? '🍎' : ''}</div>`;
+  }
+  h += '</div>';
+
+  // Show second ten frame for numbers > 10
+  if (S.diff === 'advanced' && n > 10) {
+    h += '<div class="ten-frame" style="margin-top:4px;">';
+    for (let i = 0; i < 10; i++) {
+      const filled = (i + 10) < n;
+      h += `<div class="ten-frame-cell ${filled ? 'filled' : ''}">${filled ? '🍎' : ''}</div>`;
+    }
+    h += '</div>';
+  }
+
+  ws.innerHTML = h;
+
+  // Side panel
+  sp.innerHTML = `
+    <div class="panel-section">
+      <div class="panel-title">How to Use</div>
+      <div class="panel-text">
+        1. Tap a <strong>number button</strong> above<br><br>
+        2. See the <strong>numeral</strong>, the <strong>word</strong>, and a group of objects<br><br>
+        3. The <strong>ten frame</strong> shows you how many cells are filled<br><br>
+        4. Try different numbers to explore!
+      </div>
+    </div>
+    <div class="panel-section">
+      <div class="panel-title">Key Concept</div>
+      <div class="panel-text">
+        Every number has a <strong>numeral</strong> (the symbol you write), a <strong>word</strong> (how you say it), and a <strong>quantity</strong> (how many things). They all mean the same amount!
+      </div>
+    </div>
+    <div class="panel-section">
+      <div class="panel-title">Standards</div>
+      <div class="panel-text">
+        <strong>K.CC.3</strong> — Write numbers 0–20; represent a number of objects with a written numeral<br><br>
+        <strong>K.CC.6</strong> — Identify whether the number of objects in one group is greater than, less than, or equal to the number of objects in another group<br><br>
+        <strong>K.CC.7</strong> — Compare two numbers between 1 and 10 presented as written numerals
+      </div>
+    </div>
+  `;
+}
+
+// ════════════════════════════════════════
+// PRACTICE MODE
+// ════════════════════════════════════════
+function newPractice() {
+  if (S.diff === 'emergent') {
+    // Identify: "What number is this?" → show numeral, pick dot group
+    S.pType = 'identify';
+    S.pNum = rand(0, 10);
+    S.pChoices = generateDistractors(S.pNum, 4, 0, 10);
+  } else if (S.diff === 'proficient') {
+    // Match: show objects → "How many?" pick numeral
+    S.pType = 'match';
+    S.pNum = rand(1, 10);
+    S.pChoices = generateDistractors(S.pNum, 4, 0, 10);
+  } else {
+    // Advanced: put 3 numerals in order
+    S.pType = 'order';
+    const a = rand(0, 14);
+    const b = rand(a + 1, Math.min(a + 6, 17));
+    const c = rand(b + 1, Math.min(b + 4, 20));
+    S.pOrderNums = shuffle([a, b, c]);
+    S.pOrderSelected = [];
+    S.pNum = 0; // not used for order
+  }
+}
+
+function renderPractice(ws, sp) {
+  if (S.pNum === 0 && S.pType !== 'order') newPractice();
+  if (S.pType === 'order' && S.pOrderNums.length === 0) newPractice();
+
+  let h = '';
+
+  if (S.pType === 'identify') {
+    // Show numeral, student picks matching dot group
+    h += '<div class="instruction-box">What number is this? Tap the matching group.</div>';
+    h += '<div class="numeral-card">';
+    h += `<div class="number-display">${S.pNum}</div>`;
+    h += '</div>';
+
+    h += '<div class="mc-grid">';
+    S.pChoices.forEach(c => {
+      const dots = c === 0 ? '(none)' : makeDots(c);
+      h += `<button class="mc-btn" id="mc${c}" onclick="checkPractice(${c})" style="font-size:${c > 7 ? 14 : 18}px;letter-spacing:2px;">${dots}</button>`;
+    });
+    h += '</div>';
+
+  } else if (S.pType === 'match') {
+    // Show objects, student picks numeral
+    h += '<div class="instruction-box">How many objects do you see? Tap the number.</div>';
+
+    h += '<div class="object-area">';
+    for (let i = 0; i < S.pNum; i++) {
+      h += '<div class="counting-object pop-in" style="animation-delay:' + (i * 0.04) + 's;">🍎</div>';
+    }
+    h += '</div>';
+
+    h += '<div class="mc-grid">';
+    S.pChoices.forEach(c => {
+      h += `<button class="mc-btn" id="mc${c}" onclick="checkPractice(${c})">${c}</button>`;
+    });
+    h += '</div>';
+
+  } else {
+    // Order: tap numerals in ascending order
+    h += '<div class="instruction-box">Put these numbers in order from smallest to largest!</div>';
+
+    // Show current selections
+    h += '<div class="order-result">';
+    S.pOrderSelected.forEach((n, i) => {
+      h += `<div class="order-result-num">${n}</div>`;
+      if (i < S.pOrderSelected.length - 1) h += '<span class="order-arrow">→</span>';
+    });
+    if (S.pOrderSelected.length === 0) {
+      h += '<span style="color:var(--muted);font-size:13px;">Tap numbers in order...</span>';
+    }
+    h += '</div>';
+
+    // Show available numbers
+    h += '<div class="order-grid">';
+    S.pOrderNums.forEach(n => {
+      const used = S.pOrderSelected.includes(n);
+      h += `<button class="order-btn ${used ? 'selected' : ''}" ${used ? 'disabled' : ''} onclick="orderPick(${n})">${n}</button>`;
+    });
+    h += '</div>';
+
+    // Undo button
+    h += '<div class="controls" style="margin-top:8px;">';
+    h += `<button class="ctrl-btn" onclick="orderUndo()">↺ Undo</button>`;
+    h += '</div>';
+  }
+
+  // Skip button
+  h += '<div class="controls" style="margin-top:12px;">';
+  h += `<button class="ctrl-btn" onclick="newPractice();render();">Skip →</button>`;
+  h += '</div>';
+
+  ws.innerHTML = h;
+
+  // Side panel
+  let spHtml = `<div class="panel-section"><div class="panel-title">Steps</div>
+    <div class="panel-text" style="background:var(--card);padding:12px;border-radius:8px;">`;
+
+  if (S.pType === 'identify') {
+    spHtml += `
+      <strong style="color:var(--cyan);">① Look</strong> at the numeral<br>
+      <span style="font-size:12px;">What number do you see?</span><br><br>
+      <strong style="color:var(--green);">② Count</strong> the dots in each choice<br>
+      <span style="font-size:12px;">Which group matches?</span><br><br>
+      <strong style="color:var(--pink);">③ Tap</strong> the matching group`;
+  } else if (S.pType === 'match') {
+    spHtml += `
+      <strong style="color:var(--cyan);">① Count</strong> the objects carefully<br>
+      <span style="font-size:12px;">Touch each one as you count</span><br><br>
+      <strong style="color:var(--green);">② Remember</strong> the last number you say<br>
+      <span style="font-size:12px;">That's how many there are!</span><br><br>
+      <strong style="color:var(--pink);">③ Tap</strong> that number`;
+  } else {
+    spHtml += `
+      <strong style="color:var(--cyan);">① Find</strong> the smallest number<br>
+      <span style="font-size:12px;">Which is least?</span><br><br>
+      <strong style="color:var(--green);">② Tap</strong> it first, then the next<br>
+      <span style="font-size:12px;">Go from small to big!</span><br><br>
+      <strong style="color:var(--pink);">③ Finish</strong> with the largest number`;
+  }
+
+  spHtml += `</div></div>`;
+
+  spHtml += `<div class="panel-section"><div class="panel-title">Tips</div>
+    <div class="panel-text">`;
+  if (S.pType === 'identify') {
+    spHtml += 'Count the dots in each box carefully. The <strong>last number</strong> you say tells the total!';
+  } else if (S.pType === 'match') {
+    spHtml += 'Remember: the <strong>size</strong> of the objects does not matter — only <strong>how many</strong> there are!';
+  } else {
+    spHtml += 'Think about counting: which number do you say <strong>first</strong> when you count up? That is the smallest!';
+  }
+  spHtml += '</div></div>';
+
+  sp.innerHTML = spHtml;
+}
+
+function checkPractice(picked) {
+  const btn = document.getElementById('mc' + picked);
+  if (picked === S.pNum) {
+    btn.classList.add('correct-flash');
+    showFeedback('✓ Correct!', 'correct');
+    setTimeout(() => { newPractice(); render(); }, 1500);
+  } else {
+    btn.classList.add('incorrect-flash');
+    const diff = Math.abs(picked - S.pNum);
+    let msg;
+    if (diff === 1) {
+      msg = MISCONCEPTIONS.offByOne.msg(S.pNum, picked);
+    } else if (S.pType === 'match' && picked > S.pNum + 2) {
+      msg = MISCONCEPTIONS.sizeConfusion.msg(S.pNum);
+    } else if (diff <= 2) {
+      msg = MISCONCEPTIONS.reversedNumeral.msg(S.pNum);
+    } else {
+      msg = MISCONCEPTIONS.randomGuess.msg();
+    }
+    showFeedback(msg, 'try-again');
+    setTimeout(() => { btn.classList.remove('incorrect-flash'); }, 400);
+  }
+}
+
+function orderPick(n) {
+  S.pOrderSelected.push(n);
+  if (S.pOrderSelected.length === S.pOrderNums.length) {
+    // Check if in ascending order
+    const sorted = S.pOrderNums.slice().sort((a, b) => a - b);
+    const isCorrect = S.pOrderSelected.every((v, i) => v === sorted[i]);
+    if (isCorrect) {
+      showFeedback('✓ Perfect order!', 'correct');
+      setTimeout(() => { newPractice(); render(); }, 1500);
+    } else {
+      showFeedback('Not quite — try smallest to largest!', 'try-again');
+      setTimeout(() => { S.pOrderSelected = []; render(); }, 1500);
+    }
+  } else {
+    render();
+  }
+}
+
+function orderUndo() {
+  S.pOrderSelected.pop();
+  render();
+}
+
+// ════════════════════════════════════════
+// PLAY MODE
+// ════════════════════════════════════════
+function startGame() {
+  S.round = 1;
+  S.score = 0;
+  S.streak = 0;
+  newPlayRound();
+}
+
+function newPlayRound() {
+  const max = S.maxN;
+  // Alternate between showing objects and showing numerals
+  if (rand(0, 1) === 0) {
+    S.playType = 'objects'; // show objects, pick number
+  } else {
+    S.playType = 'numeral'; // show numeral, pick dot count
+  }
+  S.playNum = rand(1, max);
+  S.playChoices = generateDistractors(S.playNum, 5, 0, max);
+}
+
+function renderPlay(ws, sp) {
+  if (S.round === 0) startGame();
+
+  let h = '';
+  h += `<div style="font-size:13px;color:var(--muted);margin-bottom:8px;">Round ${S.round} of ${S.total}</div>`;
+
+  if (S.playType === 'objects') {
+    // Show objects, pick the number
+    h += '<div class="object-area" style="cursor:default;">';
+    for (let i = 0; i < S.playNum; i++) {
+      const colors = ['#00d4ff','#ff3b8b','#ffc107','#00e676','#b388ff','#ff9100'];
+      h += `<div class="counting-object pop-in" style="background:${colors[i % colors.length]}20;animation-delay:${i * 0.04}s;">🍎</div>`;
+    }
+    h += '</div>';
+    h += '<div style="text-align:center;margin-top:8px;font-size:16px;font-weight:600;color:var(--text2);">How many 🍎 do you see?</div>';
+  } else {
+    // Show numeral, pick matching count
+    h += '<div class="numeral-card">';
+    h += `<div class="number-display">${S.playNum}</div>`;
+    h += '</div>';
+    h += '<div style="text-align:center;margin-top:8px;font-size:16px;font-weight:600;color:var(--text2);">Which group matches this number?</div>';
+  }
+
+  // Answer buttons
+  if (S.playType === 'objects') {
+    // Show number choices
+    h += '<div class="answer-grid" style="margin:16px auto;">';
+    S.playChoices.forEach(n => {
+      h += `<button class="answer-btn" id="pans${n}" onclick="playAnswer(${n})">${n}</button>`;
+    });
+    h += '</div>';
+  } else {
+    // Show dot group choices
+    h += '<div class="mc-grid">';
+    S.playChoices.forEach(n => {
+      const dots = n === 0 ? '(none)' : makeDots(n);
+      h += `<button class="mc-btn" id="pans${n}" onclick="playAnswer(${n})" style="font-size:${n > 7 ? 12 : 16}px;letter-spacing:2px;">${dots}<br><span style="font-size:11px;color:var(--muted);">${n}</span></button>`;
+    });
+    // If we have 5 choices and a 2-col grid, add a spanning 5th
+    h += '</div>';
+  }
+
+  ws.innerHTML = h;
+
+  // Side panel with score
+  sp.innerHTML = `
+    <div class="score-display"><div class="score-value">${S.score}</div><div class="score-label">Score</div></div>
+    <div class="score-display" style="background:transparent;padding:8px;">
+      <div style="font-size:18px;font-weight:700;color:var(--yellow);"><svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor" style="vertical-align:-2px;"><path d="M12 23c-4.97 0-8-3.58-8-7.5 0-3.07 2.17-5.84 4.5-7.5-.28 2.5 1.5 4.5 1.5 4.5s2-2.5 2-5.5c0-1.5-.5-3-1-4 3 1.5 5 4 5 7 0 .5-.08 1-.08 1s1.08-1.18 1.58-2.5C19.78 11.72 20 14.5 20 15.5c0 3.92-3.03 7.5-8 7.5z"/></svg> ${S.streak}</div>
+      <div class="score-label">Streak</div>
+      <div class="streak-bar"><div class="streak-fill" style="width:${Math.min(S.streak * 20, 100)}%;"></div></div>
+    </div>
+    <div class="panel-section"><div class="panel-title">How to Play</div>
+      <div class="panel-text">
+        Count the objects or read the numeral, then tap the correct answer.<br><br>
+        <strong>Quick answers</strong> earn bonus points!<br><br>
+        Build a streak for even more!
+      </div>
+    </div>
+    <div class="panel-section"><div class="panel-title">Best Streak</div>
+      <div class="panel-text" style="font-size:24px;font-weight:800;color:var(--purple);"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="vertical-align:-2px;"><path d="M6 4h12v2a6 6 0 01-12 0V4z" fill="currentColor" opacity="0.2"/><path d="M6 4h12v2a6 6 0 01-12 0V4z"/><path d="M6 6H3v2a3 3 0 003 3"/><path d="M18 6h3v2a3 3 0 01-3 3"/><line x1="12" y1="14" x2="12" y2="18"/><line x1="8" y1="18" x2="16" y2="18" stroke-linecap="round"/></svg> ${S.best}</div>
+    </div>
+  `;
+}
+
+function playAnswer(n) {
+  const btn = document.getElementById('pans' + n);
+  if (n === S.playNum) {
+    btn.classList.add('correct-flash');
+    S.score += 10 + S.streak * 2;
+    S.streak++;
+    if (S.streak > S.best) S.best = S.streak;
+    showFeedback('✓ ' + S.playNum + '!', 'correct');
+  } else {
+    btn.classList.add('incorrect-flash');
+    S.streak = 0;
+
+    const diff = Math.abs(n - S.playNum);
+    let msg;
+    if (diff === 1) {
+      msg = MISCONCEPTIONS.offByOne.msg(S.playNum, n);
+    } else if (S.playType === 'objects' && n > S.playNum + 2) {
+      msg = MISCONCEPTIONS.sizeConfusion.msg(S.playNum);
+    } else if (diff <= 2) {
+      msg = MISCONCEPTIONS.reversedNumeral.msg(S.playNum);
+    } else {
+      msg = MISCONCEPTIONS.randomGuess.msg();
+    }
+    showFeedback(msg, 'incorrect');
+  }
+
+  setTimeout(() => {
+    if (S.round >= S.total) {
+      showFeedback('Game Over! Score: ' + S.score, 'correct');
+      setTimeout(() => {
+        S.round = 0;
+        render();
+      }, 2000);
+      return;
+    }
+    S.round++;
+    newPlayRound();
+    render();
+  }, 1200);
+}
+
+// ════════════════════════════════════════
+// INIT
+// ════════════════════════════════════════
+    // Initialize tab event listeners
+    document.querySelectorAll('.vinculum-mode-tab').forEach(function(tab) {
+      tab.addEventListener('click', function() {
+        setMode(this.dataset.mode);
+      });
+    });
+
+    // Initialize difficulty button event listeners
+    document.querySelectorAll('.vinculum-diff-btn').forEach(function(btn) {
+      btn.addEventListener('click', function() {
+        setDiff(this.dataset.diff);
+      });
+    });
+
+render();
+</script>
+<script src="../../vinculum-core.js"></script>
+<script src="../../vinculum-data.js"></script>
+    <script src="../../vinculum-adaptive-hook.js"></script>
+<script src="../../vinculum-3reads.js"></script>
+<script src="../../vinculum-stories.js"></script>
+<script src="../../vinculum-feedback.js"></script>
+  <script src="../../vinculum-guide.js"></script>
+<script src="../../vinculum-identity.js"></script>
+<script src="../../vinculum-indigenous.js"></script>
+<script src="../../vinculum-dashboard.js"></script>
+<script src="../../vinculum-hyperfocus.js"></script>
+<script src="../../vinculum-layout.js"></script>
+</body>
+</html>

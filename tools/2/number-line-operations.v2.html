@@ -1,0 +1,1079 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>VINCULUM — Number Line Operations</title>
+<link rel="stylesheet" href="../../vinculum-core.css">
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;600&display=swap');
+
+/* Theme system loaded from vinculum-core.css */
+.vinculum-rtm-btn .rtm-icon{font-size:14px;}
+
+/* ═══ FOCUS VISIBLE (Keyboard Navigation) ═══ */
+*:focus-visible {
+  outline:2px solid var(--cyan);outline-offset:2px;border-radius:4px;
+}
+.sr-only {
+  position:absolute;width:1px;height:1px;padding:0;margin:-1px;
+  overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0;
+}
+
+* { margin:0; padding:0; box-sizing:border-box; }
+body {
+  font-family: 'Inter', sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  height: 100vh;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  user-select: none;
+}
+
+/* ── MAIN AREA ── */
+.main {
+  flex: 1;
+  display: flex;
+  overflow: hidden;
+}
+
+/* ── WORKSPACE ── */
+.workspace {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: flex-start;
+  padding: 20px 24px;
+  position: relative;
+  overflow-y: auto;
+}
+
+/* ── SVG NUMBER LINE ── */
+.number-line-wrap {
+  width: 100%;
+  max-width: 720px;
+  margin: 8px auto;
+  overflow-x: auto;
+  overflow-y: visible;
+  -webkit-overflow-scrolling: touch;
+}
+.number-line-wrap svg {
+  display: block;
+}
+.nl-tick-label {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 11px;
+  font-weight: 600;
+  fill: var(--text2);
+}
+.nl-tick-label.active {
+  fill: var(--cyan);
+  font-weight: 800;
+  font-size: 13px;
+}
+.nl-hop {
+  fill: none;
+  stroke-width: 2.5;
+  stroke-linecap: round;
+}
+.nl-hop.add-hop {
+  stroke: var(--green);
+}
+.nl-hop.sub-hop {
+  stroke: var(--pink);
+}
+.nl-hop-arrow {
+  fill: var(--cyan);
+}
+.nl-hop-arrow.add-arrow {
+  fill: var(--green);
+}
+.nl-hop-arrow.sub-arrow {
+  fill: var(--pink);
+}
+.nl-hop.animating {
+  stroke-dasharray: 60;
+  stroke-dashoffset: 60;
+  animation: hopDraw 0.5s ease-out forwards;
+}
+@keyframes hopDraw {
+  to { stroke-dashoffset: 0; }
+}
+.nl-dot {
+  fill: var(--cyan);
+  transition: r 0.2s;
+}
+.nl-dot.start-dot {
+  fill: var(--yellow);
+  r: 6;
+}
+.nl-dot.end-dot {
+  fill: var(--green);
+  r: 6;
+}
+
+/* ── FROG MARKER ── */
+.frog-marker { transition: transform 0.4s ease-in-out; }
+@keyframes frogBounce { 0%,100%{transform:translateY(0)} 50%{transform:translateY(-6px)} }
+.frog-bounce { animation: frogBounce 0.35s ease-in-out; }
+
+/* ── HOP LABEL ── */
+.hop-label { font-family:'JetBrains Mono',monospace; font-size:11px; font-weight:700; }
+.hop-label.add-label { fill: var(--green); }
+.hop-label.sub-label { fill: var(--pink); }
+
+/* ── EQUATION DISPLAY ── */
+.equation-display { font-family:'JetBrains Mono',monospace; font-size:22px; font-weight:700; color:var(--text); text-align:center; margin:12px 0; padding:10px 20px; background:var(--card); border-radius:12px; border:1.5px solid var(--border); display:inline-block; }
+.equation-display .op-add { color:var(--green); }
+.equation-display .op-sub { color:var(--pink); }
+.equation-display .eq-result { color:var(--cyan); font-weight:900; }
+
+/* ── CONTROLS ── */
+.controls { display:flex; gap:8px; margin-top:12px; flex-wrap:wrap; justify-content:center; }
+.ctrl-btn { padding:10px 18px; border-radius:10px; border:1px solid var(--border); background:var(--card); color:var(--text2); font-size:13px; font-weight:600; font-family:inherit; cursor:pointer; transition:all 0.2s; -webkit-tap-highlight-color:transparent; }
+.ctrl-btn:hover { border-color:var(--cyan); color:var(--cyan); }
+.ctrl-btn.primary { background:var(--grad); color:var(--bg); border-color:transparent; font-weight:700; }
+.ctrl-btn.primary:hover { opacity:0.85; }
+.ctrl-btn.danger { border-color:var(--pink); color:var(--pink); }
+.ctrl-btn.active-ctrl { border-color:var(--cyan); color:var(--cyan); background:rgba(0,212,255,0.08); }
+
+/* ── ANSWER GRID ── */
+.answer-grid { display:grid; grid-template-columns:repeat(2,1fr); gap:10px; max-width:360px; width:100%; }
+.answer-btn { padding:16px 12px; border-radius:12px; border:2px solid var(--border); background:var(--card); color:var(--text); font-size:20px; font-weight:700; font-family:'JetBrains Mono',monospace; cursor:pointer; transition:all 0.2s; -webkit-tap-highlight-color:transparent; }
+.answer-btn:hover { border-color:var(--cyan); background:rgba(0,212,255,0.08); transform:translateY(-2px); box-shadow:0 4px 12px rgba(0,0,0,0.15); }
+.answer-btn:active { transform:translateY(0); }
+.answer-btn.correct-flash { background:rgba(0,230,118,0.2); border-color:var(--green); color:var(--green); }
+.answer-btn.wrong-flash { background:rgba(255,59,139,0.2); border-color:var(--pink); color:var(--pink); }
+
+/* ── FEEDBACK ── */
+.feedback { position:fixed; bottom:80px; left:50%; transform:translateX(-50%) translateY(20px); padding:14px 28px; border-radius:14px; font-size:15px; font-weight:700; z-index:500; pointer-events:none; opacity:0; transition:all 0.3s; max-width:90vw; text-align:center; }
+.feedback.show { transform:translateX(-50%) translateY(0); opacity:1; }
+.feedback.correct { background:rgba(0,230,118,0.15); color:var(--green); border:2px solid var(--green); }
+.feedback.incorrect { background:rgba(255,59,139,0.15); color:var(--pink); border:2px solid var(--pink); }
+.feedback.try-again { background:rgba(255,193,7,0.15); color:var(--yellow); border:2px solid var(--yellow); }
+
+/* ── SIDE PANEL ── */
+.side-panel { width:280px; background:var(--bg2); border-left:1px solid var(--border); padding:20px; overflow-y:auto; flex-shrink:0; }
+.panel-section { margin-bottom:20px; }
+.panel-title { font-size:10px; font-weight:700; text-transform:uppercase; letter-spacing:1.5px; color:var(--muted); margin-bottom:8px; }
+.panel-text { font-size:13px; color:var(--text2); line-height:1.6; }
+.score-display { text-align:center; padding:16px; background:var(--card); border-radius:12px; margin-bottom:12px; }
+.score-value { font-size:36px; font-weight:900; font-family:'JetBrains Mono',monospace; background:var(--grad); -webkit-background-clip:text; -webkit-text-fill-color:transparent; }
+.score-label { font-size:11px; color:var(--muted); text-transform:uppercase; letter-spacing:1px; }
+.streak-bar { height:6px; background:var(--card); border-radius:3px; overflow:hidden; margin-top:8px; }
+.streak-fill { height:100%; background:var(--grad); border-radius:3px; transition:width 0.3s; }
+
+/* ── PROMPT LABEL ── */
+.prompt-label { font-size:18px; font-weight:700; color:var(--text); text-align:center; margin-bottom:12px; }
+.prompt-sublabel { font-size:14px; color:var(--text2); text-align:center; margin-bottom:8px; }
+.round-indicator { font-size:13px; color:var(--muted); text-align:center; margin-bottom:8px; }
+
+/* ── EXPLORE CONTROLS ── */
+.explore-inputs { display:flex; gap:8px; flex-wrap:wrap; justify-content:center; align-items:center; margin:12px 0; }
+.explore-inputs label { font-size:13px; font-weight:600; color:var(--text2); }
+.explore-inputs select { padding:6px 10px; border-radius:8px; border:1.5px solid var(--border); background:var(--card); color:var(--text); font-family:'JetBrains Mono',monospace; font-size:14px; font-weight:600; width:70px; text-align:center; }
+
+/* ── PATTERN CARDS ── */
+.pattern-card { padding:10px 12px; border-radius:10px; background:var(--card); border:1px solid var(--border); font-size:13px; color:var(--text2); line-height:1.5; margin-bottom:8px; }
+.pattern-label { display:inline-block; font-size:10px; font-weight:700; text-transform:uppercase; letter-spacing:1px; color:var(--cyan); margin-bottom:4px; }
+
+/* ── GAME OVER ── */
+.game-over { text-align:center; padding:24px; }
+.game-over-title { font-size:28px; font-weight:900; background:var(--grad); -webkit-background-clip:text; -webkit-text-fill-color:transparent; margin-bottom:8px; }
+.game-over-score { font-size:48px; font-weight:900; font-family:'JetBrains Mono',monospace; color:var(--yellow); margin-bottom:4px; }
+.game-over-label { font-size:13px; color:var(--muted); text-transform:uppercase; letter-spacing:1px; margin-bottom:20px; }
+
+/* ── RESPONSIVE ── */
+@media (max-width: 768px) {
+  .side-panel { display: none; }
+  .workspace { padding: 12px 10px; }
+  .equation-display { font-size: 18px; padding: 8px 14px; }
+  .answer-btn { font-size: 18px; padding: 14px 10px; }
+}
+
+/* ── SCROLLBAR ── */
+::-webkit-scrollbar { width: 6px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+</style>
+</head>
+<body>
+
+<!-- ═══ HEADER ═══ -->
+<div class="vinculum-header">
+  <div class="vinculum-header-left">
+    <a class="vinculum-back-btn" href="../../VINCULUM-Hub.html" style="text-decoration:none;">◀ Hub</a>
+    <div class="vinculum-header-title"><span>VINCULUM</span> Number Line Operations</div>
+    <span class="vinculum-header-badge">2.MD</span>
+  </div>
+  <div class="vinculum-header-right">
+    <div class="vinculum-std-tags">
+      <span class="vinculum-std-tag">2.MD.5</span>
+      <span class="vinculum-std-tag">2.MD.6</span>
+      <span class="vinculum-std-tag mn">MN 2.3.2.2</span>
+    </div>
+    <button class="vinculum-back-btn" id="readAloudBtn" onclick="toggleReadAloud()" aria-label="Read Aloud" title="Read instructions aloud" style="margin-left:8px;white-space:nowrap;">🔊 Read to Me</button>
+  </div>
+</div>
+
+<!-- ═══ MODE TABS ═══ -->
+<div class="vinculum-mode-tabs">
+  <button class="vinculum-mode-tab active-explore" id="tabExplore" data-mode="explore">
+    <svg width="18" height="18" viewBox="0 0 48 48" fill="none"><path d="M4 24C4 24 12 12 24 12C36 12 44 24 44 24C44 24 36 36 24 36C12 36 4 24 4 24Z" stroke="currentColor" stroke-width="3" fill="none"/><circle cx="24" cy="24" r="7" stroke="currentColor" stroke-width="3" fill="none"/><circle cx="24" cy="24" r="3" fill="currentColor"/><line x1="24" y1="4" x2="24" y2="9" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" opacity="0.5"/><line x1="10" y1="8" x2="13" y2="12" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" opacity="0.5"/><line x1="38" y1="8" x2="35" y2="12" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" opacity="0.5"/></svg> Explore
+  </button>
+  <button class="vinculum-mode-tab" id="tabPractice" data-mode="practice">
+    <svg width="18" height="18" viewBox="0 0 48 48" fill="none"><circle cx="24" cy="24" r="20" stroke="currentColor" stroke-width="3" fill="none" opacity="0.3"/><circle cx="24" cy="24" r="20" stroke="currentColor" stroke-width="3" fill="none" stroke-dasharray="126" stroke-dashoffset="32" stroke-linecap="round"/><polyline points="16,24 22,32 34,16" stroke="currentColor" stroke-width="4" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg> Practice
+  </button>
+  <button class="vinculum-mode-tab" id="tabPlay" data-mode="play">
+    <svg width="18" height="18" viewBox="0 0 48 48" fill="none"><polygon points="28,4 12,28 22,28 18,44 36,18 26,18" fill="none" stroke="currentColor" stroke-width="3" stroke-linejoin="round"/><polygon points="27,8 15,27 23,27 20,40 34,19 26,19" fill="currentColor" opacity="0.15"/></svg> Play
+  </button>
+  <div class="vinculum-diff-selector">
+    <span class="vinculum-diff-label">Level</span>
+    <button class="vinculum-diff-btn active" id="diffE" data-diff="emergent">Emergent</button>
+    <button class="vinculum-diff-btn" id="diffP" data-diff="proficient">Proficient</button>
+    <button class="vinculum-diff-btn" id="diffA" data-diff="advanced">Advanced</button>
+  </div>
+</div>
+
+<!-- ═══ MAIN ═══ -->
+<div class="main">
+  <div class="workspace" role="main" id="workspace"></div>
+  <div class="side-panel" id="sidePanel"></div>
+</div>
+
+<!-- ═══ FEEDBACK POPUP ═══ -->
+<div class="feedback" id="feedback"></div>
+
+<script src="../../vinculum-input.js"></script>
+<script>
+// ════════════════════════════════════════
+// STATE
+// ════════════════════════════════════════
+var S = {
+  mode: 'explore',
+  diff: 'emergent',
+  // Explore
+  exploreStart: 20,
+  exploreHops: [],        // [{value: 10, op: 'add'}, ...]
+  exploreFrogPos: 20,
+  exploreAnimating: false,
+  // Practice
+  pStart: 0,
+  pAddend: 0,
+  pOp: 'add',
+  pAnswer: 0,
+  pChoices: [],
+  pHops: [],
+  // Play
+  score: 0,
+  streak: 0,
+  best: 0,
+  round: 0,
+  total: 10,
+  playStart: 0,
+  playAddend: 0,
+  playOp: 'add',
+  playAnswer: 0,
+  playChoices: [],
+  playHops: []
+};
+
+// ════════════════════════════════════════
+// READ-ALOUD
+// ════════════════════════════════════════
+function toggleReadAloud() {
+  if (window.VinculumStories && VinculumStories.isReading()) {
+    VinculumStories.stopReading();
+    document.getElementById('readAloudBtn').textContent = '🔊 Read to Me';
+  } else {
+    var storyEl = document.getElementById('storyBanner');
+    var text = storyEl ? storyEl.textContent : 'Welcome to Number Line Operations! Use the frog to hop along the number line. Hop right to add, hop left to subtract.';
+    if (window.VinculumStories) {
+      VinculumStories.readAloud(text, { rate: 0.85, onComplete: function() {
+        document.getElementById('readAloudBtn').textContent = '🔊 Read to Me';
+      }});
+      document.getElementById('readAloudBtn').textContent = '⏹ Stop';
+    }
+  }
+}
+
+// ════════════════════════════════════════
+// MISCONCEPTIONS DATABASE
+// ════════════════════════════════════════
+var MISCONCEPTIONS = {
+  countJumpsWrong: {
+    id: 'count-jumps-wrong',
+    msg: function(start, addend, op, got, ans) {
+      return 'Count each hop carefully. Start at ' + start + ' and make ' + addend + ' hop' + (addend !== 1 ? 's' : '') + ' to the ' + (op === 'add' ? 'right' : 'left') + '. You land on ' + ans + '.';
+    }
+  },
+  startPosConfusion: {
+    id: 'start-pos-confusion',
+    msg: function(start, addend, op) {
+      return 'Remember: start AT ' + start + ', then hop ' + addend + ' spaces ' + (op === 'add' ? 'to the right' : 'to the left') + '. Don\'t count the starting spot as a hop!';
+    }
+  },
+  wrongDirection: {
+    id: 'wrong-direction',
+    msg: function(op) {
+      return op === 'add' ? 'Addition means hop RIGHT on the number line — numbers get bigger!' : 'Subtraction means hop LEFT on the number line — numbers get smaller!';
+    }
+  },
+  offByOne: {
+    id: 'off-by-one',
+    msg: function(start, ans, got) {
+      return 'Almost! You said ' + got + ', but the answer is ' + ans + '. Did you count the starting position as a hop? Remember to start counting AFTER you leave ' + start + '.';
+    }
+  },
+  confusesAddSub: {
+    id: 'confuses-add-sub',
+    msg: function(op, ans) {
+      return 'Check the sign! This problem uses ' + (op === 'add' ? 'addition (+)' : 'subtraction (−)') + '. The answer is ' + ans + '.';
+    }
+  },
+  randomGuess: {
+    id: 'random-guess',
+    msg: function(op) {
+      return 'Use the number line to help! Start at the first number and count your hops ' + (op === 'add' ? 'to the right' : 'to the left') + '.';
+    }
+  }
+};
+
+// ════════════════════════════════════════
+// HELPERS
+// ════════════════════════════════════════
+function randInt(min, max) {
+  return Math.floor(Math.random() * (max - min + 1)) + min;
+}
+
+function showFB(text, type) {
+  var fb = document.getElementById('feedback');
+  fb.textContent = text;
+  fb.className = 'feedback ' + type + ' show';
+  setTimeout(function() { fb.classList.remove('show'); }, 2200);
+}
+
+function shuffleArray(arr) {
+  var a = arr.slice();
+  for (var i = a.length - 1; i > 0; i--) {
+    var j = randInt(0, i);
+    var tmp = a[i]; a[i] = a[j]; a[j] = tmp;
+  }
+  return a;
+}
+
+// Difficulty ranges
+function getRange(diff) {
+  if (diff === 'emergent') return { max: 30, addMax: 10 };
+  if (diff === 'proficient') return { max: 100, addMax: 30 };
+  return { max: 100, addMax: 50 };
+}
+
+// ════════════════════════════════════════
+// MODE / DIFF SWITCHING
+// ════════════════════════════════════════
+function setMode(mode) {
+  S.mode = mode;
+  S.round = 0;
+  S.exploreHops = [];
+  S.exploreFrogPos = S.exploreStart;
+
+  document.querySelectorAll('.vinculum-mode-tab').forEach(function(t) {
+    t.classList.remove('active-explore', 'active-practice', 'active-play');
+  });
+  var tabEl = document.querySelector('[data-mode="' + mode + '"]');
+  if (tabEl) tabEl.classList.add('active-' + mode);
+
+  render();
+}
+
+function setDiff(diff) {
+  S.diff = diff;
+  S.round = 0;
+  S.exploreHops = [];
+  var range = getRange(diff);
+  S.exploreStart = diff === 'emergent' ? 10 : 20;
+  S.exploreFrogPos = S.exploreStart;
+  document.querySelectorAll('.vinculum-diff-btn').forEach(function(b) { b.classList.remove('active'); });
+  document.getElementById('diff' + diff.charAt(0).toUpperCase()).classList.add('active');
+  render();
+}
+
+// ════════════════════════════════════════
+// SVG NUMBER LINE BUILDER
+// ════════════════════════════════════════
+function buildNumberLineSVG(rangeMin, rangeMax, hops, frogPos, options) {
+  options = options || {};
+  var interactive = options.interactive || false;
+  var showFrog = options.showFrog !== false;
+
+  var numTicks = rangeMax - rangeMin + 1;
+  var tickSpacing = 14;
+  if (numTicks > 50) tickSpacing = 10;
+  if (numTicks > 80) tickSpacing = 8;
+  var padLeft = 30;
+  var padRight = 30;
+  var svgW = padLeft + (numTicks - 1) * tickSpacing + padRight;
+  var lineY = 80;
+  var svgH = 130;
+
+  var svg = '<svg xmlns="http://www.w3.org/2000/svg" width="' + svgW + '" height="' + svgH + '" viewBox="0 0 ' + svgW + ' ' + svgH + '">';
+
+  // Main line
+  var xStart = padLeft;
+  var xEnd = padLeft + (numTicks - 1) * tickSpacing;
+  svg += '<line x1="' + xStart + '" y1="' + lineY + '" x2="' + xEnd + '" y2="' + lineY + '" stroke="var(--text2)" stroke-width="2" stroke-linecap="round"/>';
+
+  // Arrowheads
+  svg += '<polygon points="' + (xStart - 6) + ',' + lineY + ' ' + (xStart + 2) + ',' + (lineY - 4) + ' ' + (xStart + 2) + ',' + (lineY + 4) + '" fill="var(--text2)"/>';
+  svg += '<polygon points="' + (xEnd + 6) + ',' + lineY + ' ' + (xEnd - 2) + ',' + (lineY - 4) + ' ' + (xEnd - 2) + ',' + (lineY + 4) + '" fill="var(--text2)"/>';
+
+  // Determine which labels to show
+  var labelEvery = 1;
+  if (numTicks > 20) labelEvery = 5;
+  if (numTicks > 60) labelEvery = 10;
+
+  // Tick marks and labels
+  for (var i = 0; i < numTicks; i++) {
+    var num = rangeMin + i;
+    var x = padLeft + i * tickSpacing;
+    var isMajor = (num % labelEvery === 0) || num === rangeMin || num === rangeMax;
+    var tickH = isMajor ? 10 : 5;
+
+    svg += '<line x1="' + x + '" y1="' + (lineY - tickH) + '" x2="' + x + '" y2="' + (lineY + tickH) + '" stroke="var(--text2)" stroke-width="' + (isMajor ? 1.5 : 0.8) + '"/>';
+
+    if (isMajor) {
+      var isActive = false;
+      // Highlight start/end positions
+      if (hops && hops.length > 0) {
+        var startVal = hops[0].start !== undefined ? hops[0].start : frogPos;
+        if (num === startVal || num === frogPos) isActive = true;
+      } else if (num === frogPos) {
+        isActive = true;
+      }
+      svg += '<text x="' + x + '" y="' + (lineY + 24) + '" text-anchor="middle" class="nl-tick-label' + (isActive ? ' active' : '') + '">' + num + '</text>';
+    }
+
+    // Interactive click targets
+    if (interactive) {
+      svg += '<rect x="' + (x - tickSpacing / 2) + '" y="' + (lineY - 15) + '" width="' + tickSpacing + '" height="30" fill="transparent" style="cursor:pointer;" onclick="exploreHopTo(' + num + ')"/>';
+    }
+  }
+
+  // Draw hop arcs
+  if (hops && hops.length > 0) {
+    var currentPos = hops[0].start !== undefined ? hops[0].start : S.exploreStart;
+    for (var h = 0; h < hops.length; h++) {
+      var hop = hops[h];
+      var fromX = padLeft + (currentPos - rangeMin) * tickSpacing;
+      var nextPos = hop.op === 'add' ? currentPos + hop.value : currentPos - hop.value;
+      var toX = padLeft + (nextPos - rangeMin) * tickSpacing;
+      var arcH = Math.min(20 + hop.value * 1.5, 45);
+      var isAdd = hop.op === 'add';
+      var hopClass = isAdd ? 'add-hop' : 'sub-hop';
+      var arrowClass = isAdd ? 'add-arrow' : 'sub-arrow';
+
+      // Arc path
+      var midX = (fromX + toX) / 2;
+      svg += '<path d="M ' + fromX + ' ' + lineY + ' Q ' + midX + ' ' + (lineY - arcH) + ' ' + toX + ' ' + lineY + '" class="nl-hop ' + hopClass + '" fill="none"/>';
+
+      // Arrowhead at destination
+      var arrDir = isAdd ? 1 : -1;
+      svg += '<polygon points="' + toX + ',' + lineY + ' ' + (toX - 4 * arrDir) + ',' + (lineY - 5) + ' ' + (toX - 4 * arrDir) + ',' + (lineY + 1) + '" class="nl-hop-arrow ' + arrowClass + '"/>';
+
+      // Hop label
+      var labelClass = isAdd ? 'add-label' : 'sub-label';
+      var labelText = isAdd ? '+' + hop.value : '−' + hop.value;
+      svg += '<text x="' + midX + '" y="' + (lineY - arcH - 4) + '" text-anchor="middle" class="hop-label ' + labelClass + '">' + labelText + '</text>';
+
+      currentPos = nextPos;
+    }
+  }
+
+  // Frog marker
+  if (showFrog && frogPos >= rangeMin && frogPos <= rangeMax) {
+    var frogX = padLeft + (frogPos - rangeMin) * tickSpacing;
+    var frogY = lineY - 18;
+    svg += '<g class="frog-marker" transform="translate(' + frogX + ',' + frogY + ')">';
+    // Frog body
+    svg += '<ellipse cx="0" cy="0" rx="9" ry="7" fill="#4CAF50" stroke="#2E7D32" stroke-width="1.5"/>';
+    // Eyes
+    svg += '<circle cx="-4" cy="-5" r="3" fill="white" stroke="#2E7D32" stroke-width="0.8"/>';
+    svg += '<circle cx="4" cy="-5" r="3" fill="white" stroke="#2E7D32" stroke-width="0.8"/>';
+    svg += '<circle cx="-4" cy="-5.5" r="1.5" fill="#1B5E20"/>';
+    svg += '<circle cx="4" cy="-5.5" r="1.5" fill="#1B5E20"/>';
+    // Mouth
+    svg += '<path d="M -3 2 Q 0 5 3 2" stroke="#2E7D32" stroke-width="0.8" fill="none"/>';
+    svg += '</g>';
+  }
+
+  svg += '</svg>';
+  return svg;
+}
+
+// ════════════════════════════════════════
+// EQUATION STRING BUILDER
+// ════════════════════════════════════════
+function buildEquationHTML(start, addend, op, showResult, result) {
+  var opSymbol = op === 'add' ? '+' : '−';
+  var opClass = op === 'add' ? 'op-add' : 'op-sub';
+  var html = '<div class="equation-display">';
+  html += start + ' <span class="' + opClass + '">' + opSymbol + '</span> ' + addend;
+  if (showResult) {
+    html += ' = <span class="eq-result">' + result + '</span>';
+  } else {
+    html += ' = <span class="eq-result">?</span>';
+  }
+  html += '</div>';
+  return html;
+}
+
+// ════════════════════════════════════════
+// EXPLORE MODE
+// ════════════════════════════════════════
+function exploreHopTo(num) {
+  if (S.exploreAnimating) return;
+  var diff = num - S.exploreFrogPos;
+  if (diff === 0) return;
+  var range = getRange(S.diff);
+  if (num < 0 || num > range.max) return;
+
+  var op = diff > 0 ? 'add' : 'sub';
+  var val = Math.abs(diff);
+  S.exploreHops.push({ start: S.exploreFrogPos, value: val, op: op });
+  S.exploreFrogPos = num;
+  render();
+}
+
+function exploreAddHop(val) {
+  if (S.exploreAnimating) return;
+  var range = getRange(S.diff);
+  var newPos = S.exploreFrogPos + val;
+  if (newPos < 0 || newPos > range.max) {
+    showFB('The frog can\'t hop there — it would go off the number line!', 'try-again');
+    return;
+  }
+  var op = val > 0 ? 'add' : 'sub';
+  S.exploreHops.push({ start: S.exploreFrogPos, value: Math.abs(val), op: op });
+  S.exploreFrogPos = newPos;
+  render();
+}
+
+function resetExplore() {
+  var range = getRange(S.diff);
+  S.exploreHops = [];
+  S.exploreStart = S.diff === 'emergent' ? 10 : 20;
+  S.exploreFrogPos = S.exploreStart;
+  render();
+}
+
+function setExploreStart(val) {
+  val = parseInt(val);
+  var range = getRange(S.diff);
+  if (isNaN(val) || val < 0 || val > range.max) return;
+  S.exploreStart = val;
+  S.exploreFrogPos = val;
+  S.exploreHops = [];
+  render();
+}
+
+function renderExplore(ws, sp) {
+  var range = getRange(S.diff);
+  var nlMin = 0;
+  var nlMax = range.max;
+  var html = '';
+
+  // Title
+  if (S.diff === 'emergent') {
+    html += '<div class="prompt-label">Hop on the Number Line!</div>';
+    html += '<div class="prompt-sublabel">Tap a number or use the buttons to make the frog hop</div>';
+  } else {
+    html += '<div class="prompt-label">Explore Addition & Subtraction</div>';
+    html += '<div class="prompt-sublabel">Place hops on the number line — right to add, left to subtract</div>';
+  }
+
+  // Start position picker
+  html += '<div class="explore-inputs">';
+  html += '<label>Start at: </label>';
+  html += '<button class="ctrl-btn" onclick="setExploreStart(Math.max(0, S.exploreStart - 1))">−</button>';
+  html += '<span style="font-size:20px;font-weight:800;font-family:\'JetBrains Mono\',monospace;min-width:40px;text-align:center;">' + S.exploreStart + '</span>';
+  html += '<button class="ctrl-btn" onclick="setExploreStart(Math.min(' + nlMax + ', S.exploreStart + 1))">+</button>';
+  html += '</div>';
+
+  // Equation readout
+  if (S.exploreHops.length > 0) {
+    var totalAdd = 0, totalSub = 0;
+    for (var i = 0; i < S.exploreHops.length; i++) {
+      if (S.exploreHops[i].op === 'add') totalAdd += S.exploreHops[i].value;
+      else totalSub += S.exploreHops[i].value;
+    }
+    html += '<div class="equation-display">';
+    html += S.exploreStart;
+    if (totalAdd > 0) html += ' <span class="op-add">+ ' + totalAdd + '</span>';
+    if (totalSub > 0) html += ' <span class="op-sub">− ' + totalSub + '</span>';
+    html += ' = <span class="eq-result">' + S.exploreFrogPos + '</span>';
+    html += '</div>';
+  }
+
+  // Number line
+  html += '<div class="number-line-wrap">';
+  html += buildNumberLineSVG(nlMin, nlMax, S.exploreHops, S.exploreFrogPos, { interactive: true, showFrog: true });
+  html += '</div>';
+
+  // Hop buttons
+  html += '<div class="controls">';
+  var hopSizes = S.diff === 'emergent' ? [1, 2, 5] : [1, 5, 10];
+  for (var h = 0; h < hopSizes.length; h++) {
+    html += '<button class="ctrl-btn" onclick="exploreAddHop(' + hopSizes[h] + ')">+ ' + hopSizes[h] + '</button>';
+  }
+  for (var h = 0; h < hopSizes.length; h++) {
+    html += '<button class="ctrl-btn" onclick="exploreAddHop(' + (-hopSizes[h]) + ')">− ' + hopSizes[h] + '</button>';
+  }
+  html += '<button class="ctrl-btn danger" onclick="resetExplore()">✕ Reset</button>';
+  html += '</div>';
+
+  ws.innerHTML = html;
+
+  // Side panel
+  sp.innerHTML = '<div class="panel-section">' +
+    '<div class="panel-title">How to Explore</div>' +
+    '<div class="panel-text">' +
+    '1. Set a <strong>starting number</strong><br><br>' +
+    '2. <strong>Tap numbers</strong> on the line or use the <strong>+ / −</strong> buttons<br><br>' +
+    '3. Watch the <strong>frog</strong> hop right (add) or left (subtract)<br><br>' +
+    '4. The equation updates as you go!' +
+    '</div></div>' +
+    '<div class="panel-section">' +
+    '<div class="panel-title">Key Ideas</div>' +
+    '<div class="pattern-card"><span class="pattern-label">Addition</span>' +
+    'Hop <strong>right</strong> on the number line — the number gets <strong>bigger</strong>.' +
+    '</div>' +
+    '<div class="pattern-card"><span class="pattern-label">Subtraction</span>' +
+    'Hop <strong>left</strong> on the number line — the number gets <strong>smaller</strong>.' +
+    '</div>' +
+    '<div class="pattern-card"><span class="pattern-label">Counting Hops</span>' +
+    'Don\'t count where you start! Count each <strong>jump</strong> you make.' +
+    '</div>' +
+    '</div>' +
+    '<div class="panel-section">' +
+    '<div class="panel-title">Standards</div>' +
+    '<div class="panel-text">' +
+    '<strong>2.MD.5</strong> — Use addition and subtraction within 100 to solve word problems involving lengths<br><br>' +
+    '<strong>2.MD.6</strong> — Represent whole numbers as lengths from 0 on a number line<br><br>' +
+    '<strong>MN 2.3.2.2</strong> — Use number sentences involving addition and subtraction to represent real-world situations' +
+    '</div></div>';
+}
+
+// ════════════════════════════════════════
+// PRACTICE MODE
+// ════════════════════════════════════════
+function generatePractice() {
+  var range = getRange(S.diff);
+
+  if (S.diff === 'emergent') {
+    // Simple addition only, small numbers
+    S.pOp = 'add';
+    S.pStart = randInt(1, 15);
+    S.pAddend = randInt(1, 10);
+    S.pAnswer = S.pStart + S.pAddend;
+    if (S.pAnswer > range.max) {
+      S.pStart = randInt(1, 10);
+      S.pAddend = randInt(1, 5);
+      S.pAnswer = S.pStart + S.pAddend;
+    }
+  } else if (S.diff === 'proficient') {
+    // Addition and subtraction within 100
+    S.pOp = Math.random() < 0.5 ? 'add' : 'sub';
+    if (S.pOp === 'add') {
+      S.pStart = randInt(10, 70);
+      S.pAddend = randInt(5, 30);
+      S.pAnswer = S.pStart + S.pAddend;
+      if (S.pAnswer > 100) {
+        S.pAddend = randInt(5, 100 - S.pStart);
+        S.pAnswer = S.pStart + S.pAddend;
+      }
+    } else {
+      S.pStart = randInt(20, 90);
+      S.pAddend = randInt(5, Math.min(25, S.pStart));
+      S.pAnswer = S.pStart - S.pAddend;
+    }
+  } else {
+    // Advanced: larger numbers, multi-step thinking
+    S.pOp = Math.random() < 0.5 ? 'add' : 'sub';
+    if (S.pOp === 'add') {
+      S.pStart = randInt(10, 50);
+      S.pAddend = randInt(15, 50);
+      S.pAnswer = S.pStart + S.pAddend;
+      if (S.pAnswer > 100) {
+        S.pAddend = 100 - S.pStart - randInt(0, 10);
+        if (S.pAddend < 15) S.pAddend = 15;
+        S.pAnswer = S.pStart + S.pAddend;
+        if (S.pAnswer > 100) { S.pStart = randInt(10, 30); S.pAddend = randInt(20, 40); S.pAnswer = S.pStart + S.pAddend; }
+      }
+    } else {
+      S.pStart = randInt(40, 95);
+      S.pAddend = randInt(15, Math.min(45, S.pStart - 5));
+      S.pAnswer = S.pStart - S.pAddend;
+    }
+  }
+
+  // Build hops for display
+  S.pHops = [{ start: S.pStart, value: S.pAddend, op: S.pOp }];
+
+  // Generate 4 MC choices
+  var choices = new Set([S.pAnswer]);
+  var tries = 0;
+  // Common mistake distractors
+  var offByOne = S.pOp === 'add' ? S.pStart + S.pAddend - 1 : S.pStart - S.pAddend + 1;
+  if (offByOne > 0 && offByOne !== S.pAnswer) choices.add(offByOne);
+  var wrongDir = S.pOp === 'add' ? S.pStart - S.pAddend : S.pStart + S.pAddend;
+  if (wrongDir > 0 && wrongDir <= 100 && wrongDir !== S.pAnswer) choices.add(wrongDir);
+
+  while (choices.size < 4 && tries < 50) {
+    var offset = randInt(-5, 5);
+    if (offset === 0) offset = randInt(1, 8);
+    var c = S.pAnswer + offset;
+    if (c > 0 && c <= 100) choices.add(c);
+    tries++;
+  }
+
+  S.pChoices = Array.from(choices).sort(function(a, b) { return a - b; });
+}
+
+function practiceAnswer(val) {
+  if (val === S.pAnswer) {
+    showFB('Correct! ' + S.pStart + (S.pOp === 'add' ? ' + ' : ' − ') + S.pAddend + ' = ' + S.pAnswer, 'correct');
+    setTimeout(function() { generatePractice(); render(); }, 1400);
+  } else {
+    diagnoseMisconception(S.pStart, S.pAddend, S.pOp, S.pAnswer, val);
+  }
+}
+
+function diagnoseMisconception(start, addend, op, ans, got) {
+  var diff = Math.abs(got - ans);
+  // Off by one — likely counted starting position
+  if (diff === 1) {
+    showFB(MISCONCEPTIONS.offByOne.msg(start, ans, got), 'try-again');
+  }
+  // Wrong direction — added instead of subtracted or vice versa
+  else if ((op === 'add' && got === start - addend) || (op === 'sub' && got === start + addend)) {
+    showFB(MISCONCEPTIONS.wrongDirection.msg(op), 'try-again');
+  }
+  // Close but miscounted jumps
+  else if (diff <= 3) {
+    showFB(MISCONCEPTIONS.countJumpsWrong.msg(start, addend, op, got, ans), 'try-again');
+  }
+  // Confused starting position
+  else if (got === addend || got === start) {
+    showFB(MISCONCEPTIONS.startPosConfusion.msg(start, addend, op), 'try-again');
+  }
+  // Far off
+  else {
+    showFB(MISCONCEPTIONS.randomGuess.msg(op), 'incorrect');
+  }
+}
+
+function renderPractice(ws, sp) {
+  if (S.pChoices.length === 0) generatePractice();
+
+  var range = getRange(S.diff);
+  var nlMin = 0;
+  var nlMax = range.max;
+  var html = '';
+
+  // Prompt
+  var opWord = S.pOp === 'add' ? 'add' : 'subtract';
+  html += '<div class="prompt-label">Start at ' + S.pStart + ', ' + opWord + ' ' + S.pAddend + ' — where do you land?</div>';
+  html += '<div class="prompt-sublabel">Use the number line to count your hops</div>';
+
+  // Equation
+  html += buildEquationHTML(S.pStart, S.pAddend, S.pOp, false, 0);
+
+  // Number line
+  html += '<div class="number-line-wrap">';
+  html += buildNumberLineSVG(nlMin, nlMax, S.pHops, S.pOp === 'add' ? S.pStart + S.pAddend : S.pStart - S.pAddend, { showFrog: true });
+  html += '</div>';
+
+  // MC choices
+  html += '<div class="answer-grid" style="margin:16px auto;">';
+  S.pChoices.forEach(function(c) {
+    html += '<button class="answer-btn" onclick="practiceAnswer(' + c + ')">' + c + '</button>';
+  });
+  html += '</div>';
+
+  // New question button
+  html += '<div class="controls" style="margin-top:8px;">';
+  html += '<button class="ctrl-btn" onclick="generatePractice();render();">↻ New Question</button>';
+  html += '</div>';
+
+  ws.innerHTML = html;
+
+  // Side panel
+  var diffDesc = {
+    emergent: 'Make hops with visual support. Addition within 30 — watch the frog hop right.',
+    proficient: 'Model and solve addition & subtraction on the number line within 100.',
+    advanced: 'Create and explain solutions using number line strategies with larger numbers.'
+  };
+  sp.innerHTML = '<div class="panel-section">' +
+    '<div class="panel-title">Instructions</div>' +
+    '<div class="panel-text">' + diffDesc[S.diff] + '<br><br>Look at the <strong>frog\'s hops</strong> on the number line. Count carefully!</div>' +
+    '</div>' +
+    '<div class="panel-section">' +
+    '<div class="panel-title">Tips</div>' +
+    '<div class="pattern-card"><span class="pattern-label">Don\'t count the start</span>' +
+    'Start AT the number, then count each hop. The start position is NOT hop #1.' +
+    '</div>' +
+    '<div class="pattern-card"><span class="pattern-label">Direction matters</span>' +
+    '<strong>+</strong> means hop RIGHT (bigger). <strong>−</strong> means hop LEFT (smaller).' +
+    '</div>' +
+    '</div>' +
+    '<div class="panel-section">' +
+    '<div class="panel-title">Standards</div>' +
+    '<div class="panel-text">' +
+    '<strong>2.MD.5</strong> — Use addition and subtraction within 100 to solve word problems involving lengths<br><br>' +
+    '<strong>2.MD.6</strong> — Represent whole numbers on a number line diagram' +
+    '</div></div>';
+}
+
+// ════════════════════════════════════════
+// PLAY MODE
+// ════════════════════════════════════════
+function generatePlay() {
+  var range = getRange(S.diff);
+
+  if (S.diff === 'emergent') {
+    S.playOp = 'add';
+    S.playStart = randInt(2, 18);
+    S.playAddend = randInt(1, 10);
+    S.playAnswer = S.playStart + S.playAddend;
+    if (S.playAnswer > 30) {
+      S.playStart = randInt(2, 12);
+      S.playAddend = randInt(1, 8);
+      S.playAnswer = S.playStart + S.playAddend;
+    }
+  } else if (S.diff === 'proficient') {
+    S.playOp = Math.random() < 0.5 ? 'add' : 'sub';
+    if (S.playOp === 'add') {
+      S.playStart = randInt(10, 65);
+      S.playAddend = randInt(5, 27);
+      S.playAnswer = S.playStart + S.playAddend;
+      if (S.playAnswer > 100) {
+        S.playAddend = randInt(5, 100 - S.playStart);
+        S.playAnswer = S.playStart + S.playAddend;
+      }
+    } else {
+      S.playStart = randInt(20, 85);
+      S.playAddend = randInt(5, Math.min(20, S.playStart - 2));
+      S.playAnswer = S.playStart - S.playAddend;
+    }
+  } else {
+    S.playOp = Math.random() < 0.5 ? 'add' : 'sub';
+    if (S.playOp === 'add') {
+      S.playStart = randInt(15, 50);
+      S.playAddend = randInt(20, 48);
+      S.playAnswer = S.playStart + S.playAddend;
+      if (S.playAnswer > 100) {
+        S.playAddend = 100 - S.playStart - randInt(0, 5);
+        if (S.playAddend < 20) S.playAddend = 20;
+        S.playAnswer = S.playStart + S.playAddend;
+        if (S.playAnswer > 100) { S.playStart = randInt(10, 25); S.playAddend = randInt(20, 40); S.playAnswer = S.playStart + S.playAddend; }
+      }
+    } else {
+      S.playStart = randInt(45, 95);
+      S.playAddend = randInt(15, Math.min(40, S.playStart - 5));
+      S.playAnswer = S.playStart - S.playAddend;
+    }
+  }
+
+  S.playHops = [{ start: S.playStart, value: S.playAddend, op: S.playOp }];
+
+  // Generate 4 MC choices with targeted distractors
+  var choices = new Set([S.playAnswer]);
+  // Off-by-one distractor
+  var obo = S.playOp === 'add' ? S.playAnswer - 1 : S.playAnswer + 1;
+  if (obo > 0 && obo <= 100) choices.add(obo);
+  // Wrong direction distractor
+  var wd = S.playOp === 'add' ? S.playStart - S.playAddend : S.playStart + S.playAddend;
+  if (wd > 0 && wd <= 100 && wd !== S.playAnswer) choices.add(wd);
+
+  var tries = 0;
+  while (choices.size < 4 && tries < 50) {
+    var off = randInt(-6, 6);
+    if (off === 0) off = randInt(2, 8);
+    var c = S.playAnswer + off;
+    if (c > 0 && c <= 100) choices.add(c);
+    tries++;
+  }
+
+  S.playChoices = Array.from(choices).sort(function(a, b) { return a - b; });
+}
+
+function playAnswer(val) {
+  if (S.round >= S.total) return;
+
+  if (val === S.playAnswer) {
+    S.streak++;
+    if (S.streak > S.best) S.best = S.streak;
+    var pts = 10 + S.streak * 2;
+    S.score += pts;
+    showFB('Correct! +' + pts + ' points', 'correct');
+    S.round++;
+    if (S.round < S.total) {
+      setTimeout(function() { generatePlay(); render(); }, 1200);
+    } else {
+      setTimeout(function() { render(); }, 1200);
+    }
+  } else {
+    S.streak = 0;
+    S.round++;
+    diagnoseMisconception(S.playStart, S.playAddend, S.playOp, S.playAnswer, val);
+    if (S.round < S.total) {
+      setTimeout(function() { generatePlay(); render(); }, 2000);
+    } else {
+      setTimeout(function() { render(); }, 2000);
+    }
+  }
+}
+
+function startNewGame() {
+  S.score = 0;
+  S.streak = 0;
+  S.round = 0;
+  generatePlay();
+  render();
+}
+
+function renderPlay(ws, sp) {
+  if (S.round === 0 && S.playChoices.length === 0) generatePlay();
+
+  var range = getRange(S.diff);
+  var nlMin = 0;
+  var nlMax = range.max;
+  var html = '';
+
+  // Game over
+  if (S.round >= S.total) {
+    html += '<div class="game-over">';
+    html += '<div class="game-over-title">Game Over!</div>';
+    html += '<div class="game-over-score">' + S.score + '</div>';
+    html += '<div class="game-over-label">points</div>';
+    html += '<div style="font-size:16px;color:var(--text2);margin-bottom:16px;">Best Streak: <strong style="color:var(--yellow);">' + S.best + '</strong></div>';
+    html += '<button class="ctrl-btn primary" onclick="startNewGame()">▶ Play Again</button>';
+    html += '</div>';
+    ws.innerHTML = html;
+
+    sp.innerHTML = '<div class="score-display">' +
+      '<div class="score-value">' + S.score + '</div>' +
+      '<div class="score-label">Final Score</div>' +
+      '</div>' +
+      '<div class="panel-section">' +
+      '<div class="panel-title">Summary</div>' +
+      '<div class="panel-text">' +
+      'You completed <strong>' + S.total + ' rounds</strong>!<br><br>' +
+      'Best streak: <strong>' + S.best + '</strong><br><br>' +
+      'Try a different level or play again to beat your score!' +
+      '</div></div>';
+    return;
+  }
+
+  // Round indicator
+  html += '<div class="round-indicator">Round ' + (S.round + 1) + ' of ' + S.total + '</div>';
+
+  // Prompt
+  var opWord = S.playOp === 'add' ? 'add' : 'subtract';
+  html += '<div class="prompt-label">Start at ' + S.playStart + ', ' + opWord + ' ' + S.playAddend + '</div>';
+  html += '<div class="prompt-sublabel">Where does the frog land?</div>';
+
+  // Equation
+  html += buildEquationHTML(S.playStart, S.playAddend, S.playOp, false, 0);
+
+  // Number line
+  html += '<div class="number-line-wrap">';
+  html += buildNumberLineSVG(nlMin, nlMax, S.playHops, S.playAnswer, { showFrog: true });
+  html += '</div>';
+
+  // MC choices
+  html += '<div class="answer-grid" style="margin:16px auto;">';
+  S.playChoices.forEach(function(c) {
+    html += '<button class="answer-btn" onclick="playAnswer(' + c + ')">' + c + '</button>';
+  });
+  html += '</div>';
+
+  ws.innerHTML = html;
+
+  // Side panel — score
+  sp.innerHTML = '<div class="score-display">' +
+    '<div class="score-value">' + S.score + '</div>' +
+    '<div class="score-label">Score</div>' +
+    '</div>' +
+    '<div class="score-display" style="background:transparent;padding:8px;">' +
+    '<div style="font-size:18px;font-weight:700;color:var(--yellow);">🔥 ' + S.streak + '</div>' +
+    '<div class="score-label">Streak</div>' +
+    '<div class="streak-bar"><div class="streak-fill" style="width:' + Math.min(S.streak * 20, 100) + '%;"></div></div>' +
+    '</div>' +
+    '<div class="panel-section">' +
+    '<div class="panel-title">How to Play</div>' +
+    '<div class="panel-text">' +
+    'Find where the frog lands on the number line.<br><br>' +
+    '<strong>10 points</strong> per correct answer + <strong>streak bonus</strong> (+2 per streak).<br><br>' +
+    '10 rounds total. Build a streak for the highest score!' +
+    '</div></div>' +
+    '<div class="panel-section">' +
+    '<div class="panel-title">Best Streak</div>' +
+    '<div class="panel-text" style="font-size:24px;font-weight:800;color:var(--purple);">🏆 ' + S.best + '</div>' +
+    '</div>' +
+    '<div class="panel-section">' +
+    '<div class="panel-title">Difficulty</div>' +
+    '<div class="panel-text">' +
+    (S.diff === 'emergent' ? '<strong>Emergent:</strong> Addition within 30 with visual support' :
+     S.diff === 'proficient' ? '<strong>Proficient:</strong> Add & subtract within 100 on number line' :
+     '<strong>Advanced:</strong> Larger numbers with strategic number line reasoning') +
+    '</div></div>';
+}
+
+// ════════════════════════════════════════
+// RENDER DISPATCH
+// ════════════════════════════════════════
+function render() {
+  var ws = document.getElementById('workspace');
+  var sp = document.getElementById('sidePanel');
+
+  if (S.mode === 'explore') renderExplore(ws, sp);
+  else if (S.mode === 'practice') renderPractice(ws, sp);
+  else renderPlay(ws, sp);
+}
+
+// ════════════════════════════════════════
+// INIT
+// ════════════════════════════════════════
+document.querySelectorAll('.vinculum-mode-tab').forEach(function(tab) {
+  tab.addEventListener('click', function() {
+    setMode(this.dataset.mode);
+  });
+});
+
+document.querySelectorAll('.vinculum-diff-btn').forEach(function(btn) {
+  btn.addEventListener('click', function() {
+    setDiff(this.dataset.diff);
+  });
+});
+
+render();
+</script>
+<script src="../../vinculum-core.js"></script>
+<script src="../../vinculum-data.js"></script>
+<script src="../../vinculum-adaptive-hook.js"></script>
+<script src="../../vinculum-3reads.js"></script>
+<script src="../../vinculum-stories.js"></script>
+<script src="../../vinculum-feedback.js"></script>
+<script src="../../vinculum-guide.js"></script>
+<script src="../../vinculum-identity.js"></script>
+<script src="../../vinculum-indigenous.js"></script>
+<script src="../../vinculum-dashboard.js"></script>
+<script src="../../vinculum-hyperfocus.js"></script>
+<script src="../../vinculum-layout.js"></script>
+</body>
+</html>

@@ -1,0 +1,1194 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>VINCULUM — Two-Digit Fluency</title>
+<link rel="stylesheet" href="../../vinculum-core.css">
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;600&display=swap');
+
+.vinculum-rtm-btn .rtm-icon{font-size:14px;}
+
+/* ═══ FOCUS VISIBLE ═══ */
+*:focus-visible {
+  outline:2px solid var(--cyan);outline-offset:2px;border-radius:4px;
+}
+.sr-only {
+  position:absolute;width:1px;height:1px;padding:0;margin:-1px;
+  overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0;
+}
+*{margin:0;padding:0;box-sizing:border-box;}
+body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);height:100vh;display:flex;flex-direction:column;overflow:hidden;user-select:none;}
+
+.main{flex:1;display:flex;overflow:hidden;}
+.workspace{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:24px;gap:12px;overflow-y:auto;}
+.side-panel{width:280px;background:var(--bg2);border-left:1px solid var(--border);padding:20px;overflow-y:auto;flex-shrink:0;}
+.panel-section{margin-bottom:20px;}
+.panel-title{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:1.5px;color:var(--muted);margin-bottom:8px;}
+.panel-text{font-size:13px;color:var(--text2);line-height:1.6;}
+
+/* ═══ PLACE VALUE CHART ═══ */
+.pv-chart {
+  display:flex;gap:2px;justify-content:center;margin:12px auto;max-width:420px;width:100%;
+}
+.pv-column {
+  flex:1;display:flex;flex-direction:column;align-items:center;
+  border:2px solid var(--border);border-radius:12px;padding:12px 8px;
+  min-height:180px;background:var(--card);transition:border-color 0.3s;
+}
+.pv-column.tens-col{border-color:rgba(179,136,255,0.4);}
+.pv-column.ones-col{border-color:rgba(0,212,255,0.4);}
+.pv-col-label{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:1.5px;margin-bottom:10px;}
+.pv-col-label.tens-label{color:#b388ff;}
+.pv-col-label.ones-label{color:#00d4ff;}
+.pv-blocks{display:flex;flex-wrap:wrap;gap:6px;justify-content:center;align-items:flex-end;flex:1;}
+
+/* ── Tens Rod (SVG-based) ── */
+.tens-rod {
+  width:20px;height:80px;border-radius:6px;
+  background:linear-gradient(180deg,#b388ff 0%,#7c4dff 100%);
+  border:2px solid #b388ff;box-shadow:0 2px 8px rgba(179,136,255,0.3);
+  transition:transform 0.2s, opacity 0.3s;position:relative;
+}
+.tens-rod::after {
+  content:'10';position:absolute;top:50%;left:50%;
+  transform:translate(-50%,-50%) rotate(-90deg);
+  font-size:9px;font-weight:800;color:rgba(255,255,255,0.8);
+  font-family:'JetBrains Mono',monospace;
+}
+.tens-rod.regroup-new {
+  background:linear-gradient(180deg,#00e676 0%,#00c853 100%);
+  border-color:#00e676;box-shadow:0 2px 12px rgba(0,230,118,0.5);
+}
+.tens-rod.result {
+  background:linear-gradient(180deg,#00e676 0%,#00c853 100%);
+  border-color:#00e676;box-shadow:0 2px 8px rgba(0,230,118,0.3);
+}
+
+/* ── Ones Cube ── */
+.ones-cube {
+  width:24px;height:24px;border-radius:5px;
+  background:linear-gradient(135deg,#00d4ff 0%,#0091ea 100%);
+  border:2px solid #00d4ff;box-shadow:0 2px 6px rgba(0,212,255,0.3);
+  transition:transform 0.2s, opacity 0.3s;
+  display:flex;align-items:center;justify-content:center;
+  font-size:8px;font-weight:800;color:rgba(255,255,255,0.7);
+  font-family:'JetBrains Mono',monospace;
+}
+.ones-cube.result {
+  background:linear-gradient(135deg,#00e676 0%,#00c853 100%);
+  border-color:#00e676;box-shadow:0 2px 6px rgba(0,230,118,0.3);
+}
+.ones-cube.bundling{animation:bundleShrink 0.5s ease-in forwards;}
+@keyframes bundleShrink{0%{transform:scale(1);opacity:1;} 100%{transform:scale(0);opacity:0;}}
+.tens-rod.appearing{animation:rodAppear 0.4s ease-out;}
+@keyframes rodAppear{0%{transform:scaleY(0);opacity:0;} 100%{transform:scaleY(1);opacity:1;}}
+
+/* ═══ VERTICAL ALGORITHM ═══ */
+.vert-algo {
+  display:flex;flex-direction:column;align-items:flex-end;
+  font-family:'JetBrains Mono',monospace;font-size:32px;font-weight:800;
+  background:var(--card);border:1px solid var(--border);border-radius:14px;
+  padding:20px 28px;min-width:160px;position:relative;
+}
+.vert-row {
+  display:flex;align-items:center;gap:4px;min-height:44px;
+}
+.vert-op {
+  color:var(--yellow);font-size:28px;margin-right:8px;
+}
+.vert-digit {
+  width:36px;text-align:center;display:inline-block;
+}
+.vert-digit.tens-d{color:#b388ff;}
+.vert-digit.ones-d{color:#00d4ff;}
+.vert-digit.result-d{color:var(--green);}
+.vert-digit.carry-d{
+  font-size:16px;color:var(--yellow);position:absolute;top:6px;
+}
+.vert-line {
+  width:100%;height:3px;background:var(--border);border-radius:2px;margin:4px 0;
+}
+
+/* ═══ BLOCKS DISPLAY ═══ */
+.blocks-display {
+  display:flex;gap:24px;align-items:flex-end;justify-content:center;padding:16px;min-height:140px;
+}
+.blocks-group {
+  display:flex;flex-direction:column;align-items:center;gap:6px;
+}
+.blocks-group-label {
+  font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:1px;color:var(--muted);
+}
+.blocks-row {
+  display:flex;gap:4px;align-items:flex-end;flex-wrap:wrap;justify-content:center;
+}
+
+/* ═══ INSTRUCTION BOX ═══ */
+.instruction-box {
+  background:var(--card);border:1px solid var(--border);border-radius:12px;
+  padding:14px 20px;text-align:center;font-size:15px;color:var(--text2);
+  font-weight:500;max-width:600px;line-height:1.6;
+}
+.instruction-box.highlight-cyan{border-color:var(--cyan);color:var(--cyan);}
+.instruction-box.highlight-green{border-color:var(--green);color:var(--green);}
+
+/* ═══ CONTROLS ═══ */
+.controls {
+  display:flex;gap:8px;flex-wrap:wrap;justify-content:center;margin-top:8px;
+}
+.ctrl-btn {
+  padding:10px 20px;border-radius:10px;border:1px solid var(--border);
+  background:var(--card);color:var(--text2);font-size:13px;font-weight:600;
+  font-family:inherit;cursor:pointer;transition:all 0.2s;
+  display:flex;align-items:center;gap:6px;
+}
+.ctrl-btn:hover{background:var(--card-hover,var(--card));color:var(--text);}
+.ctrl-btn.primary{background:var(--grad);color:var(--bg);border-color:transparent;}
+.ctrl-btn.primary:hover{opacity:0.9;}
+.ctrl-btn.add-ten{border-color:rgba(179,136,255,0.4);color:#b388ff;}
+.ctrl-btn.add-ten:hover{background:rgba(179,136,255,0.1);}
+.ctrl-btn.add-one{border-color:rgba(0,212,255,0.4);color:#00d4ff;}
+.ctrl-btn.add-one:hover{background:rgba(0,212,255,0.1);}
+.ctrl-btn:disabled{opacity:0.3;cursor:not-allowed;pointer-events:none;}
+
+/* ═══ MC GRID ═══ */
+.mc-grid{display:flex;gap:10px;flex-wrap:wrap;justify-content:center;max-width:500px;}
+.mc-btn {
+  min-width:120px;padding:14px 20px;border-radius:12px;border:2px solid var(--border);
+  background:var(--card);color:var(--text);font-size:18px;font-weight:700;
+  font-family:'JetBrains Mono',monospace;cursor:pointer;transition:all 0.15s;
+  display:flex;align-items:center;justify-content:center;text-align:center;
+}
+.mc-btn:hover{border-color:var(--cyan);transform:scale(1.04);}
+.mc-btn.correct-flash{border-color:var(--green);background:rgba(0,230,118,0.2);color:var(--green);animation:correctFlash 0.4s ease-out;}
+.mc-btn.incorrect-flash{border-color:var(--pink);background:rgba(255,59,139,0.2);color:var(--pink);animation:shake 0.3s ease-in-out;}
+
+/* ═══ SCORE DISPLAY ═══ */
+.score-display{text-align:center;padding:16px;background:var(--card);border-radius:12px;margin-bottom:12px;}
+.score-value{font-size:36px;font-weight:900;font-family:'JetBrains Mono',monospace;background:var(--grad);-webkit-background-clip:text;-webkit-text-fill-color:transparent;}
+.score-label{font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:1px;}
+.streak-bar{height:6px;background:var(--card);border-radius:3px;overflow:hidden;margin-top:8px;}
+.streak-fill{height:100%;background:var(--grad);border-radius:3px;transition:width 0.3s;}
+
+/* ═══ EXPLORE BUILD AREA ═══ */
+.explore-build {
+  display:flex;gap:24px;align-items:flex-start;justify-content:center;flex-wrap:wrap;
+}
+.build-number {
+  display:flex;flex-direction:column;align-items:center;gap:8px;
+  background:var(--card);border:1px solid var(--border);border-radius:14px;padding:16px;min-width:180px;
+}
+.build-label {
+  font-size:13px;font-weight:700;color:var(--text2);text-transform:uppercase;letter-spacing:1px;
+}
+.build-value {
+  font-size:42px;font-weight:900;font-family:'JetBrains Mono',monospace;
+  background:var(--grad);-webkit-background-clip:text;-webkit-text-fill-color:transparent;
+}
+.build-controls {
+  display:flex;gap:6px;flex-wrap:wrap;justify-content:center;
+}
+.build-controls .ctrl-btn{padding:8px 14px;font-size:12px;}
+
+/* ═══ STRATEGY CARD ═══ */
+.strategy-card {
+  background:var(--card);border:1px solid var(--border);border-radius:12px;
+  padding:14px;margin-top:8px;
+}
+.strategy-title {
+  font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:1px;
+  color:var(--cyan);margin-bottom:6px;
+}
+.strategy-step {
+  font-size:13px;color:var(--text2);line-height:1.6;padding:2px 0;
+}
+.strategy-step .highlight{font-weight:700;font-family:'JetBrains Mono',monospace;}
+.strategy-step .tens-h{color:#b388ff;}
+.strategy-step .ones-h{color:#00d4ff;}
+.strategy-step .carry-h{color:var(--yellow);}
+.strategy-step .result-h{color:var(--green);}
+
+/* ═══ FEEDBACK POPUP ═══ */
+.feedback {
+  position:fixed;top:50%;left:50%;
+  transform:translate(-50%,-50%) scale(0);
+  padding:24px 48px;border-radius:20px;font-size:22px;font-weight:800;
+  z-index:200;pointer-events:none;
+  transition:transform 0.3s cubic-bezier(0.175,0.885,0.32,1.275),opacity 0.3s;
+  opacity:0;max-width:90vw;text-align:center;line-height:1.4;
+}
+.feedback.show{transform:translate(-50%,-50%) scale(1);opacity:1;}
+.feedback.correct{background:rgba(0,230,118,0.15);color:var(--green);border:2px solid var(--green);}
+.feedback.incorrect{background:rgba(255,59,139,0.15);color:var(--pink);border:2px solid var(--pink);}
+.feedback.try-again{background:rgba(255,193,7,0.15);color:var(--yellow);border:2px solid var(--yellow);font-size:17px;}
+
+/* ═══ ANIMATIONS ═══ */
+@keyframes pop{0%{transform:scale(0);} 70%{transform:scale(1.2);} 100%{transform:scale(1);}}
+@keyframes shake{0%,100%{transform:translateX(0);} 25%{transform:translateX(-8px);} 75%{transform:translateX(8px);}}
+@keyframes correctFlash{0%{box-shadow:0 0 0 0 rgba(0,230,118,0.5);} 100%{box-shadow:0 0 0 20px rgba(0,230,118,0);}}
+@keyframes pulse-glow{0%,100%{box-shadow:0 0 8px rgba(0,212,255,0.3);} 50%{box-shadow:0 0 20px rgba(0,212,255,0.6);}}
+.pop-in{animation:pop 0.3s ease-out forwards;}
+.shake{animation:shake 0.3s ease-in-out;}
+
+/* ═══ REGROUP ANIMATION ═══ */
+@keyframes regroupFlash{
+  0%{background:rgba(255,193,7,0.0);}
+  30%{background:rgba(255,193,7,0.25);}
+  100%{background:rgba(255,193,7,0.0);}
+}
+.regroup-flash{animation:regroupFlash 0.8s ease-out;}
+
+/* ═══ GAME OVER ═══ */
+.game-over {
+  text-align:center;padding:24px;
+}
+.game-over-title {
+  font-size:32px;font-weight:900;background:var(--grad);
+  -webkit-background-clip:text;-webkit-text-fill-color:transparent;margin-bottom:8px;
+}
+.game-over-stat {
+  font-size:15px;color:var(--text2);margin:4px 0;
+}
+.game-over-stat span{font-weight:800;color:var(--text);font-family:'JetBrains Mono',monospace;}
+
+::-webkit-scrollbar{width:6px;}::-webkit-scrollbar-track{background:transparent;}::-webkit-scrollbar-thumb{background:var(--border);border-radius:3px;}
+</style>
+</head>
+<body>
+
+<!-- ═══ HEADER ═══ -->
+<div class="vinculum-header">
+  <div class="vinculum-header-left">
+    <a class="vinculum-back-btn" href="../../VINCULUM-Hub.html" style="text-decoration:none;">&#9664; Hub</a>
+    <div class="vinculum-header-title"><span>VINCULUM</span> Two-Digit Fluency</div>
+    <span class="vinculum-header-badge">2.NBT</span>
+  </div>
+  <div class="vinculum-header-right">
+    <div class="vinculum-std-tags">
+      <span class="vinculum-std-tag">2.NBT.5</span>
+      <span class="vinculum-std-tag">2.NBT.6</span>
+      <span class="vinculum-std-tag mn">MN 2.1.2.2</span>
+    </div>
+    <button class="vinculum-back-btn" id="readAloudBtn" onclick="toggleReadAloud()" aria-label="Read Aloud" title="Read instructions aloud" style="margin-left:8px;white-space:nowrap;">&#128264; Read to Me</button>
+  </div>
+</div>
+
+<!-- ═══ MODE TABS ═══ -->
+<div class="vinculum-mode-tabs">
+  <button class="vinculum-mode-tab active-explore" id="tabExplore" data-mode="explore">
+    <svg width="18" height="18" viewBox="0 0 48 48" fill="none"><path d="M4 24C4 24 12 12 24 12C36 12 44 24 44 24C44 24 36 36 24 36C12 36 4 24 4 24Z" stroke="currentColor" stroke-width="3" fill="none"/><circle cx="24" cy="24" r="7" stroke="currentColor" stroke-width="3" fill="none"/><circle cx="24" cy="24" r="3" fill="currentColor"/><line x1="24" y1="4" x2="24" y2="9" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" opacity="0.5"/><line x1="10" y1="8" x2="13" y2="12" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" opacity="0.5"/><line x1="38" y1="8" x2="35" y2="12" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" opacity="0.5"/></svg> Explore
+  </button>
+  <button class="vinculum-mode-tab" id="tabPractice" data-mode="practice">
+    <svg width="18" height="18" viewBox="0 0 48 48" fill="none"><circle cx="24" cy="24" r="20" stroke="currentColor" stroke-width="3" fill="none" opacity="0.3"/><circle cx="24" cy="24" r="20" stroke="currentColor" stroke-width="3" fill="none" stroke-dasharray="126" stroke-dashoffset="32" stroke-linecap="round"/><polyline points="16,24 22,32 34,16" stroke="currentColor" stroke-width="4" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg> Practice
+  </button>
+  <button class="vinculum-mode-tab" id="tabPlay" data-mode="play">
+    <svg width="18" height="18" viewBox="0 0 48 48" fill="none"><polygon points="28,4 12,28 22,28 18,44 36,18 26,18" fill="none" stroke="currentColor" stroke-width="3" stroke-linejoin="round"/><polygon points="27,8 15,27 23,27 20,40 34,19 26,19" fill="currentColor" opacity="0.15"/></svg> Play
+  </button>
+  <div class="vinculum-diff-selector">
+    <span class="vinculum-diff-label">Level</span>
+    <button class="vinculum-diff-btn active" id="diffE" data-diff="emergent">No Regroup</button>
+    <button class="vinculum-diff-btn" id="diffP" data-diff="proficient">Regroup</button>
+    <button class="vinculum-diff-btn" id="diffA" data-diff="advanced">Strategy</button>
+  </div>
+</div>
+
+<!-- ═══ MAIN ═══ -->
+<div class="main">
+  <div class="workspace" role="main" id="workspace"></div>
+  <div class="side-panel" id="sidePanel"></div>
+</div>
+
+<!-- ═══ FEEDBACK POPUP ═══ -->
+<div class="feedback" id="feedback"></div>
+
+<script src="../../vinculum-input.js"></script>
+<script>
+/* ════════════════════════════════════════
+   STATE
+   ════════════════════════════════════════ */
+var S = {
+  mode: 'explore', diff: 'emergent',
+  /* Explore */
+  exA: 34, exB: 23, exOp: 'add', exShowResult: false,
+  /* Practice */
+  pA: 0, pB: 0, pOp: 'add', pAnswer: 0, pChoices: [], pAnswered: false,
+  pCorrect: 0, pTotal: 0,
+  /* Play */
+  score: 0, streak: 0, best: 0, round: 0, total: 10,
+  playA: 0, playB: 0, playOp: 'add', playAnswer: 0, playChoices: []
+};
+var playLocked = false;
+
+/* ════════════════════════════════════════
+   READ-ALOUD
+   ════════════════════════════════════════ */
+function toggleReadAloud() {
+  if (window.VinculumStories && VinculumStories.isReading()) {
+    VinculumStories.stopReading();
+    document.getElementById('readAloudBtn').innerHTML = '&#128264; Read to Me';
+  } else {
+    var fb = document.getElementById('feedback');
+    var inst = document.querySelector('.instruction-box');
+    var text = inst ? inst.textContent : (fb ? fb.textContent : 'Welcome to Two-Digit Fluency!');
+    if (window.VinculumStories) {
+      VinculumStories.readAloud(text, { rate: 0.85, onComplete: function() {
+        document.getElementById('readAloudBtn').innerHTML = '&#128264; Read to Me';
+      }});
+      document.getElementById('readAloudBtn').textContent = '\u23F9 Stop';
+    }
+  }
+}
+
+/* ════════════════════════════════════════
+   MISCONCEPTIONS DATABASE
+   ════════════════════════════════════════ */
+var MISCONCEPTIONS = {
+  noRegroup: {
+    id: 'no-regroup',
+    desc: 'Students add ones and tens separately but do not regroup',
+    msg: function(a, b) {
+      return 'When ones add up to 10 or more, you must REGROUP! Bundle 10 ones into 1 new ten.';
+    }
+  },
+  confusedRegroup: {
+    id: 'confused-regroup',
+    desc: 'Students confuse the regrouping process',
+    msg: function(a, b) {
+      return 'Remember: regroup means trade 10 ones for 1 ten. Write the leftover ones below and carry the new ten!';
+    }
+  },
+  placeValueMix: {
+    id: 'pv-mix',
+    desc: 'Students add tens digit to ones digit across numbers',
+    msg: function(a, b) {
+      return 'Add tens with tens, ones with ones. Keep each place value in its own column!';
+    }
+  },
+  offByTen: {
+    id: 'off-by-ten',
+    desc: 'Answer is off by exactly 10 (forgot or extra regroup)',
+    msg: function(ans, got) {
+      return 'You\'re off by 10! Check: did you forget to regroup, or regroup when you shouldn\'t?';
+    }
+  },
+  reversedDigits: {
+    id: 'reversed-digits',
+    desc: 'Student reverses tens and ones in the answer',
+    msg: function(ans, got) {
+      return 'Check your answer \u2014 the digits look swapped! Tens digit goes on the left, ones on the right.';
+    }
+  },
+  randomGuess: {
+    id: 'random',
+    desc: 'No clear pattern, generic support',
+    msg: function() {
+      return 'Break both numbers into tens and ones, then add each column carefully.';
+    }
+  }
+};
+
+/* ════════════════════════════════════════
+   HELPERS
+   ════════════════════════════════════════ */
+function rand(a, b) {
+  return Math.floor(Math.random() * (b - a + 1)) + a;
+}
+function tens(n) { return Math.floor(n / 10); }
+function ones(n) { return n % 10; }
+function needsRegroup(a, b, op) {
+  if (op === 'add') return ones(a) + ones(b) >= 10;
+  return ones(a) < ones(b);
+}
+
+function showFB(msg, type) {
+  var fb = document.getElementById('feedback');
+  fb.textContent = msg;
+  fb.className = 'feedback ' + type + ' show';
+  setTimeout(function() { fb.classList.remove('show'); }, 2400);
+}
+
+/* ════════════════════════════════════════
+   PROBLEM GENERATORS
+   ════════════════════════════════════════ */
+function genProblem() {
+  var a, b, op;
+  if (S.diff === 'emergent') {
+    /* No regrouping: addition only */
+    op = 'add';
+    a = rand(11, 49);
+    b = rand(11, 49);
+    /* Ensure no regroup and sum <= 99 */
+    while (ones(a) + ones(b) >= 10 || a + b > 99) {
+      a = rand(11, 49);
+      b = rand(11, 49);
+    }
+  } else if (S.diff === 'proficient') {
+    /* Add/subtract with regrouping */
+    op = Math.random() < 0.6 ? 'add' : 'sub';
+    if (op === 'add') {
+      a = rand(15, 59);
+      b = rand(13, 49);
+      while (ones(a) + ones(b) < 10 || a + b > 99) {
+        a = rand(15, 59);
+        b = rand(13, 49);
+      }
+    } else {
+      a = rand(30, 89);
+      b = rand(11, a - 10);
+      /* Force borrowing */
+      while (ones(a) >= ones(b) || b >= a) {
+        a = rand(30, 89);
+        b = rand(11, a - 10);
+      }
+    }
+  } else {
+    /* Advanced: mixed ops, larger numbers, multi-strategy */
+    op = Math.random() < 0.55 ? 'add' : 'sub';
+    if (op === 'add') {
+      a = rand(25, 67);
+      b = rand(18, 55);
+      while (a + b > 99) {
+        a = rand(25, 67);
+        b = rand(18, 55);
+      }
+    } else {
+      a = rand(40, 95);
+      b = rand(15, a - 5);
+    }
+  }
+  if (op === 'sub' && b > a) { var t = a; a = b; b = t; }
+  return { a: a, b: b, op: op, answer: op === 'add' ? a + b : a - b };
+}
+
+function generateDiagnosticChoices(a, b, op, answer) {
+  var choices = new Set([answer]);
+  var oA = ones(a), oB = ones(b), tA = tens(a), tB = tens(b);
+
+  /* Diagnostic distractor: no-regroup answer */
+  if (op === 'add') {
+    var noReg = (tA + tB) * 10 + (oA + oB);
+    if (noReg !== answer && noReg >= 10 && noReg <= 99) choices.add(noReg);
+    /* If ones sum > 9, the "just write both digits" version */
+    if (oA + oB >= 10) {
+      var wrongOnes = (oA + oB) % 10;
+      var wrongTens = tA + tB;
+      var noCarry = wrongTens * 10 + wrongOnes;
+      if (noCarry !== answer && noCarry >= 10 && noCarry <= 99) choices.add(noCarry);
+    }
+  } else {
+    /* Subtraction: forgot to borrow */
+    if (oA < oB) {
+      var noBorrow = (tA - tB) * 10 + (oB - oA);
+      if (noBorrow !== answer && noBorrow >= 10 && noBorrow <= 99) choices.add(noBorrow);
+    }
+  }
+
+  /* Distractor: reversed digits */
+  var revAns = ones(answer) * 10 + tens(answer);
+  if (revAns !== answer && revAns >= 10 && revAns <= 99) choices.add(revAns);
+
+  /* Distractor: off by 10 */
+  if (answer + 10 <= 99) choices.add(answer + 10);
+  if (answer - 10 >= 10) choices.add(answer - 10);
+
+  /* Fill remaining with near misses */
+  var attempts = 0;
+  while (choices.size < 6 && attempts < 50) {
+    var off = rand(-6, 6);
+    if (off === 0) off = rand(1, 3);
+    var c = answer + off;
+    if (c >= 10 && c <= 99) choices.add(c);
+    attempts++;
+  }
+
+  var arr = Array.from(choices);
+  arr = arr.filter(function(v) { return v >= 10 && v <= 99; });
+  arr.sort(function() { return Math.random() - 0.5; });
+  /* Keep answer + 3 distractors = 4 total */
+  if (arr.length > 4) {
+    var hasAnswer = arr.indexOf(answer);
+    arr.splice(hasAnswer, 1);
+    arr = arr.slice(0, 3);
+    arr.push(answer);
+  }
+  arr.sort(function(x, y) { return x - y; });
+  return arr;
+}
+
+/* ════════════════════════════════════════
+   SVG BASE-10 BLOCK BUILDERS
+   ════════════════════════════════════════ */
+function svgTensRod(x, y, cls) {
+  cls = cls || '';
+  var rod = '<g class="' + cls + '" transform="translate(' + x + ',' + y + ')">';
+  rod += '<rect width="18" height="78" rx="4" fill="url(#tenGrad)" stroke="#b388ff" stroke-width="1.5" opacity="0.95"/>';
+  for (var i = 0; i < 10; i++) {
+    rod += '<rect x="3" y="' + (3 + i * 7.5) + '" width="12" height="5.5" rx="2" fill="rgba(255,255,255,0.2)"/>';
+  }
+  rod += '<text x="9" y="43" text-anchor="middle" font-size="7" font-weight="800" fill="rgba(255,255,255,0.7)" font-family="JetBrains Mono,monospace">10</text>';
+  rod += '</g>';
+  return rod;
+}
+
+function svgOnesCube(x, y, cls) {
+  cls = cls || '';
+  return '<g class="' + cls + '" transform="translate(' + x + ',' + y + ')">' +
+    '<rect width="20" height="20" rx="4" fill="url(#oneGrad)" stroke="#00d4ff" stroke-width="1.5" opacity="0.95"/>' +
+    '<rect x="3" y="3" width="14" height="14" rx="2" fill="rgba(255,255,255,0.15)"/>' +
+    '</g>';
+}
+
+function svgDefs() {
+  return '<defs>' +
+    '<linearGradient id="tenGrad" x1="0" y1="0" x2="0" y2="1">' +
+    '<stop offset="0%" stop-color="#b388ff"/><stop offset="100%" stop-color="#7c4dff"/></linearGradient>' +
+    '<linearGradient id="oneGrad" x1="0" y1="0" x2="1" y2="1">' +
+    '<stop offset="0%" stop-color="#00d4ff"/><stop offset="100%" stop-color="#0091ea"/></linearGradient>' +
+    '<linearGradient id="resGrad" x1="0" y1="0" x2="0" y2="1">' +
+    '<stop offset="0%" stop-color="#00e676"/><stop offset="100%" stop-color="#00c853"/></linearGradient>' +
+    '</defs>';
+}
+
+function buildSVGBlocks(n, offsetX, label) {
+  var t = tens(n), o = ones(n);
+  var h = '';
+  /* Column labels */
+  h += '<text x="' + (offsetX + 10) + '" y="14" font-size="10" font-weight="700" fill="' + (label === 'result' ? '#00e676' : 'var(--muted)') + '" text-anchor="middle" font-family="Inter,sans-serif">' + n + '</text>';
+  /* Tens */
+  for (var i = 0; i < t; i++) {
+    h += svgTensRod(offsetX + i * 22, 22);
+  }
+  /* Ones */
+  var oStartX = offsetX + Math.max(t, 1) * 22 + 6;
+  for (var j = 0; j < o; j++) {
+    var row = Math.floor(j / 3);
+    var col = j % 3;
+    h += svgOnesCube(oStartX + col * 24, 22 + 80 - 24 - row * 24);
+  }
+  return h;
+}
+
+/* ════════════════════════════════════════
+   PLACE VALUE CHART (HTML)
+   ════════════════════════════════════════ */
+function buildPVChart(n, showBlocks) {
+  var t = tens(n), o = ones(n);
+  var h = '<div class="pv-chart">';
+  h += '<div class="pv-column tens-col">';
+  h += '<div class="pv-col-label tens-label">Tens</div>';
+  h += '<div class="pv-blocks">';
+  if (showBlocks) {
+    for (var i = 0; i < t; i++) {
+      h += '<div class="tens-rod pop-in" style="animation-delay:' + (i * 0.08) + 's"></div>';
+    }
+  } else {
+    h += '<div style="font-size:36px;font-weight:900;color:#b388ff;font-family:JetBrains Mono,monospace;">' + t + '</div>';
+  }
+  h += '</div></div>';
+  h += '<div class="pv-column ones-col">';
+  h += '<div class="pv-col-label ones-label">Ones</div>';
+  h += '<div class="pv-blocks">';
+  if (showBlocks) {
+    for (var j = 0; j < o; j++) {
+      h += '<div class="ones-cube pop-in" style="animation-delay:' + (j * 0.06 + 0.3) + 's">1</div>';
+    }
+  } else {
+    h += '<div style="font-size:36px;font-weight:900;color:#00d4ff;font-family:JetBrains Mono,monospace;">' + o + '</div>';
+  }
+  h += '</div></div>';
+  h += '</div>';
+  return h;
+}
+
+/* ════════════════════════════════════════
+   VERTICAL ALGORITHM DISPLAY
+   ════════════════════════════════════════ */
+function buildVertAlgo(a, b, op, showAnswer) {
+  var tA = tens(a), oA = ones(a);
+  var tB = tens(b), oB = ones(b);
+  var answer = op === 'add' ? a + b : a - b;
+  var carry = 0;
+  var rO, rT;
+
+  if (op === 'add') {
+    var oSum = oA + oB;
+    carry = oSum >= 10 ? 1 : 0;
+    rO = oSum % 10;
+    rT = tA + tB + carry;
+  } else {
+    var borrow = oA < oB ? 1 : 0;
+    rO = borrow ? (oA + 10 - oB) : (oA - oB);
+    rT = tA - tB - borrow;
+    carry = borrow;
+  }
+
+  var h = '<div class="vert-algo">';
+  /* Carry/borrow indicator */
+  if (showAnswer && carry) {
+    if (op === 'add') {
+      h += '<div class="vert-row" style="justify-content:flex-end;min-height:24px;">';
+      h += '<span class="vert-digit carry-d" style="position:static;font-size:14px;">1</span>';
+      h += '<span class="vert-digit" style="visibility:hidden;">0</span>';
+      h += '</div>';
+    } else {
+      h += '<div class="vert-row" style="justify-content:flex-end;min-height:24px;">';
+      h += '<span class="vert-digit" style="visibility:hidden;">0</span>';
+      h += '<span class="vert-digit carry-d" style="position:static;font-size:14px;text-decoration:line-through;">' + tA + '</span>';
+      h += '<span class="vert-digit carry-d" style="position:static;font-size:14px;">' + (tA - 1) + '</span>';
+      h += '</div>';
+    }
+  }
+  /* First number */
+  h += '<div class="vert-row">';
+  h += '<span class="vert-digit tens-d">' + tA + '</span>';
+  h += '<span class="vert-digit ones-d">' + oA + '</span>';
+  h += '</div>';
+  /* Operator + second number */
+  h += '<div class="vert-row">';
+  h += '<span class="vert-op">' + (op === 'add' ? '+' : '\u2212') + '</span>';
+  h += '<span class="vert-digit tens-d">' + tB + '</span>';
+  h += '<span class="vert-digit ones-d">' + oB + '</span>';
+  h += '</div>';
+  /* Line */
+  h += '<div class="vert-line"></div>';
+  /* Answer */
+  if (showAnswer) {
+    h += '<div class="vert-row">';
+    if (rT >= 10) {
+      h += '<span class="vert-digit result-d">' + Math.floor(rT / 10) + '</span>';
+      h += '<span class="vert-digit result-d">' + (rT % 10) + '</span>';
+    } else {
+      h += '<span class="vert-digit result-d">' + rT + '</span>';
+    }
+    h += '<span class="vert-digit result-d">' + rO + '</span>';
+    h += '</div>';
+  } else {
+    h += '<div class="vert-row">';
+    h += '<span class="vert-digit" style="color:var(--muted);">?</span>';
+    h += '<span class="vert-digit" style="color:var(--muted);">?</span>';
+    h += '</div>';
+  }
+  h += '</div>';
+  return h;
+}
+
+/* ════════════════════════════════════════
+   STRATEGY EXPLANATION
+   ════════════════════════════════════════ */
+function buildStrategy(a, b, op) {
+  var tA = tens(a), oA = ones(a), tB = tens(b), oB = ones(b);
+  var answer = op === 'add' ? a + b : a - b;
+  var h = '<div class="strategy-card">';
+
+  if (op === 'add') {
+    var oSum = oA + oB;
+    var carry = oSum >= 10 ? 1 : 0;
+    h += '<div class="strategy-title">Addition Strategy</div>';
+    h += '<div class="strategy-step">1. Ones: <span class="highlight ones-h">' + oA + ' + ' + oB + ' = ' + oSum + '</span></div>';
+    if (carry) {
+      h += '<div class="strategy-step">2. Regroup! <span class="highlight carry-h">' + oSum + ' ones = 1 ten + ' + (oSum - 10) + ' ones</span></div>';
+      h += '<div class="strategy-step">3. Tens: <span class="highlight tens-h">' + tA + ' + ' + tB + ' + 1 = ' + (tA + tB + 1) + '</span></div>';
+    } else {
+      h += '<div class="strategy-step">2. No regrouping needed!</div>';
+      h += '<div class="strategy-step">3. Tens: <span class="highlight tens-h">' + tA + ' + ' + tB + ' = ' + (tA + tB) + '</span></div>';
+    }
+    h += '<div class="strategy-step">4. Answer: <span class="highlight result-h">' + answer + '</span></div>';
+  } else {
+    var borrow = oA < oB ? 1 : 0;
+    h += '<div class="strategy-title">Subtraction Strategy</div>';
+    if (borrow) {
+      h += '<div class="strategy-step">1. Ones: <span class="highlight ones-h">' + oA + ' &lt; ' + oB + '</span> \u2014 need to borrow!</div>';
+      h += '<div class="strategy-step">2. Borrow: <span class="highlight carry-h">Take 1 ten \u2192 now ' + (oA + 10) + ' ones</span></div>';
+      h += '<div class="strategy-step">3. Ones: <span class="highlight ones-h">' + (oA + 10) + ' \u2212 ' + oB + ' = ' + ((oA + 10) - oB) + '</span></div>';
+      h += '<div class="strategy-step">4. Tens: <span class="highlight tens-h">' + (tA - 1) + ' \u2212 ' + tB + ' = ' + (tA - 1 - tB) + '</span></div>';
+    } else {
+      h += '<div class="strategy-step">1. Ones: <span class="highlight ones-h">' + oA + ' \u2212 ' + oB + ' = ' + (oA - oB) + '</span></div>';
+      h += '<div class="strategy-step">2. No borrowing needed!</div>';
+      h += '<div class="strategy-step">3. Tens: <span class="highlight tens-h">' + tA + ' \u2212 ' + tB + ' = ' + (tA - tB) + '</span></div>';
+    }
+    h += '<div class="strategy-step">4. Answer: <span class="highlight result-h">' + answer + '</span></div>';
+  }
+  h += '</div>';
+  return h;
+}
+
+/* ════════════════════════════════════════
+   BLOCKS DISPLAY (horizontal row)
+   ════════════════════════════════════════ */
+function buildBlocks(n, cls) {
+  cls = cls || '';
+  var t = tens(n), o = ones(n);
+  var h = '<div class="blocks-group">';
+  h += '<div class="blocks-group-label">' + n + '</div>';
+  h += '<div style="display:flex;gap:8px;align-items:flex-end;">';
+  if (t > 0) {
+    h += '<div class="blocks-row" style="flex-direction:row;gap:3px;">';
+    for (var i = 0; i < t; i++) {
+      h += '<div class="tens-rod ' + cls + '"></div>';
+    }
+    h += '</div>';
+  }
+  if (o > 0) {
+    h += '<div class="blocks-row" style="flex-direction:row;flex-wrap:wrap;gap:3px;max-width:60px;align-content:flex-end;">';
+    for (var j = 0; j < o; j++) {
+      h += '<div class="ones-cube ' + cls + '">1</div>';
+    }
+    h += '</div>';
+  }
+  h += '</div></div>';
+  return h;
+}
+
+/* ════════════════════════════════════════
+   RENDER: EXPLORE
+   ════════════════════════════════════════ */
+function renderExplore(ws, sp) {
+  var a = S.exA, b = S.exB, op = S.exOp;
+  var answer = op === 'add' ? a + b : a - b;
+  var opSym = op === 'add' ? '+' : '\u2212';
+
+  var h = '<div class="instruction-box">Build two-digit numbers and see how ' + (op === 'add' ? 'addition' : 'subtraction') + ' works with base-10 blocks!</div>';
+
+  /* Build controls for both numbers */
+  h += '<div class="explore-build">';
+  /* Number A */
+  h += '<div class="build-number">';
+  h += '<div class="build-label">First Number</div>';
+  h += '<div class="build-value">' + a + '</div>';
+  h += '<div class="build-controls">';
+  h += '<button class="ctrl-btn add-ten" onclick="adjustExA(10)">+10</button>';
+  h += '<button class="ctrl-btn add-one" onclick="adjustExA(1)">+1</button>';
+  h += '<button class="ctrl-btn" onclick="adjustExA(-1)">\u22121</button>';
+  h += '<button class="ctrl-btn" onclick="adjustExA(-10)">\u221210</button>';
+  h += '</div>';
+  h += buildPVChart(a, true);
+  h += '</div>';
+
+  /* Operator toggle */
+  h += '<div style="display:flex;flex-direction:column;align-items:center;gap:8px;align-self:center;">';
+  h += '<button class="ctrl-btn" onclick="toggleExOp()" style="font-size:28px;font-weight:900;color:var(--yellow);padding:12px 18px;">' + opSym + '</button>';
+  h += '</div>';
+
+  /* Number B */
+  h += '<div class="build-number">';
+  h += '<div class="build-label">Second Number</div>';
+  h += '<div class="build-value">' + b + '</div>';
+  h += '<div class="build-controls">';
+  h += '<button class="ctrl-btn add-ten" onclick="adjustExB(10)">+10</button>';
+  h += '<button class="ctrl-btn add-one" onclick="adjustExB(1)">+1</button>';
+  h += '<button class="ctrl-btn" onclick="adjustExB(-1)">\u22121</button>';
+  h += '<button class="ctrl-btn" onclick="adjustExB(-10)">\u221210</button>';
+  h += '</div>';
+  h += buildPVChart(b, true);
+  h += '</div>';
+  h += '</div>';
+
+  /* Solve button / Result */
+  h += '<div class="controls" style="margin-top:12px;">';
+  if (!S.exShowResult) {
+    h += '<button class="ctrl-btn primary" onclick="solveExplore()">Solve It!</button>';
+  } else {
+    h += '<button class="ctrl-btn" onclick="resetExplore()">New Problem</button>';
+  }
+  h += '</div>';
+
+  /* Show result area */
+  if (S.exShowResult) {
+    h += '<div style="display:flex;gap:24px;align-items:flex-start;justify-content:center;flex-wrap:wrap;margin-top:12px;">';
+    h += buildVertAlgo(a, b, op, true);
+    h += '<div style="text-align:center;">';
+    h += '<div style="font-size:14px;font-weight:700;color:var(--green);margin-bottom:6px;">= ' + answer + '</div>';
+    h += buildPVChart(answer, true);
+    h += '</div>';
+    h += '</div>';
+    if (needsRegroup(a, b, op)) {
+      h += '<div class="instruction-box highlight-cyan" style="margin-top:8px;">';
+      h += op === 'add'
+        ? 'Regrouping! ' + ones(a) + ' + ' + ones(b) + ' = ' + (ones(a) + ones(b)) + ' ones. Trade 10 ones for 1 new ten!'
+        : 'Borrowing! ' + ones(a) + ' is less than ' + ones(b) + '. Borrow 1 ten to get ' + (ones(a) + 10) + ' ones!';
+      h += '</div>';
+    }
+  }
+
+  ws.innerHTML = h;
+
+  /* Side panel */
+  var sp_h = '<div class="panel-section"><div class="panel-title">Explore Mode</div>';
+  sp_h += '<div class="panel-text">Use the buttons to build two numbers, then press <strong>Solve It!</strong> to see the algorithm step by step.</div></div>';
+  sp_h += '<div class="panel-section"><div class="panel-title">Current Problem</div>';
+  sp_h += '<div class="panel-text" style="font-family:JetBrains Mono,monospace;font-size:18px;font-weight:700;text-align:center;">' + a + ' ' + opSym + ' ' + b + '</div></div>';
+  if (S.exShowResult) {
+    sp_h += buildStrategy(a, b, op);
+  }
+  sp_h += '<div class="panel-section"><div class="panel-title">Key Idea</div>';
+  sp_h += '<div class="panel-text">';
+  if (S.diff === 'emergent') {
+    sp_h += 'Add ones to ones and tens to tens. When ones stay under 10, no regrouping is needed!';
+  } else if (S.diff === 'proficient') {
+    sp_h += 'When ones add to 10 or more, <strong>regroup</strong>: trade 10 ones for 1 ten.';
+  } else {
+    sp_h += 'Choose a strategy: vertical algorithm, number line jumps, or decompose into place values.';
+  }
+  sp_h += '</div></div>';
+  sp.innerHTML = sp_h;
+}
+
+function adjustExA(d) {
+  S.exA = Math.max(10, Math.min(89, S.exA + d));
+  if (S.exOp === 'sub' && S.exA <= S.exB) S.exB = Math.max(10, S.exA - 1);
+  S.exShowResult = false;
+  render();
+}
+function adjustExB(d) {
+  S.exB = Math.max(10, Math.min(89, S.exB + d));
+  if (S.exOp === 'sub' && S.exB >= S.exA) S.exA = Math.min(89, S.exB + 1);
+  if (S.exOp === 'add' && S.exA + S.exB > 99) S.exB = 99 - S.exA;
+  S.exShowResult = false;
+  render();
+}
+function toggleExOp() {
+  S.exOp = S.exOp === 'add' ? 'sub' : 'add';
+  if (S.exOp === 'sub' && S.exB >= S.exA) {
+    var tmp = S.exA; S.exA = S.exB; S.exB = tmp;
+    if (S.exB >= S.exA) S.exB = S.exA - 1;
+  }
+  if (S.exOp === 'add' && S.exA + S.exB > 99) S.exB = 99 - S.exA;
+  S.exShowResult = false;
+  render();
+}
+function solveExplore() {
+  S.exShowResult = true;
+  render();
+}
+function resetExplore() {
+  S.exShowResult = false;
+  var p = genProblem();
+  S.exA = p.a; S.exB = p.b; S.exOp = p.op;
+  render();
+}
+
+/* ════════════════════════════════════════
+   RENDER: PRACTICE
+   ════════════════════════════════════════ */
+function newPractice() {
+  var p = genProblem();
+  S.pA = p.a; S.pB = p.b; S.pOp = p.op; S.pAnswer = p.answer;
+  S.pChoices = generateDiagnosticChoices(p.a, p.b, p.op, p.answer);
+  S.pAnswered = false;
+}
+
+function renderPractice(ws, sp) {
+  if (!S.pA) newPractice();
+  var a = S.pA, b = S.pB, op = S.pOp, answer = S.pAnswer;
+  var opSym = op === 'add' ? '+' : '\u2212';
+
+  var h = '<div class="instruction-box">Solve: What is <strong>' + a + ' ' + opSym + ' ' + b + '</strong>?</div>';
+
+  /* Visual: blocks + vertical algorithm side by side */
+  h += '<div style="display:flex;gap:24px;align-items:flex-start;justify-content:center;flex-wrap:wrap;margin:8px 0;">';
+
+  /* Blocks display */
+  h += '<div class="blocks-display">';
+  h += buildBlocks(a, '');
+  h += '<div style="font-size:32px;font-weight:900;color:var(--yellow);align-self:center;">' + opSym + '</div>';
+  h += buildBlocks(b, '');
+  h += '</div>';
+
+  /* Vertical algorithm */
+  h += buildVertAlgo(a, b, op, S.pAnswered);
+  h += '</div>';
+
+  /* MC choices */
+  h += '<div class="mc-grid">';
+  for (var i = 0; i < S.pChoices.length; i++) {
+    var c = S.pChoices[i];
+    h += '<button class="mc-btn" id="prac' + i + '" onclick="practicePick(' + c + ',' + i + ')"' + (S.pAnswered ? ' disabled' : '') + '>' + c + '</button>';
+  }
+  h += '</div>';
+
+  /* Next button after answered */
+  if (S.pAnswered) {
+    h += '<div class="controls" style="margin-top:12px;">';
+    h += '<button class="ctrl-btn primary" onclick="nextPractice()">Next Problem</button>';
+    h += '</div>';
+    /* Strategy explanation */
+    h += buildStrategy(a, b, op);
+  }
+
+  ws.innerHTML = h;
+
+  /* Side panel */
+  var sp_h = '<div class="panel-section"><div class="panel-title">Practice Mode</div>';
+  sp_h += '<div class="panel-text">Look at the blocks and the vertical algorithm. Pick the correct answer!</div></div>';
+  sp_h += '<div class="panel-section"><div class="panel-title">Progress</div>';
+  sp_h += '<div class="panel-text">' + S.pCorrect + ' correct out of ' + S.pTotal + '</div></div>';
+  sp_h += '<div class="panel-section"><div class="panel-title">Tips</div>';
+  sp_h += '<div class="panel-text">';
+  if (S.diff === 'emergent') {
+    sp_h += 'These problems don\'t need regrouping. Add ones, then add tens!';
+  } else if (S.diff === 'proficient') {
+    sp_h += 'Watch for regrouping! If ones add to 10+, carry a ten. If ones can\'t subtract, borrow.';
+  } else {
+    sp_h += 'Think about which strategy is fastest. Can you solve it mentally?';
+  }
+  sp_h += '</div></div>';
+  sp.innerHTML = sp_h;
+}
+
+function practicePick(val, idx) {
+  if (S.pAnswered) return;
+  S.pAnswered = true;
+  S.pTotal++;
+  var btn = document.getElementById('prac' + idx);
+  if (val === S.pAnswer) {
+    S.pCorrect++;
+    if (btn) btn.classList.add('correct-flash');
+    showFB('\u2713 Correct! ' + S.pA + (S.pOp === 'add' ? ' + ' : ' \u2212 ') + S.pB + ' = ' + S.pAnswer, 'correct');
+  } else {
+    if (btn) btn.classList.add('incorrect-flash');
+    var fbMsg = diagnoseMisconception(S.pA, S.pB, S.pOp, S.pAnswer, val);
+    showFB(fbMsg, 'try-again');
+  }
+  render();
+}
+
+function nextPractice() {
+  newPractice();
+  render();
+}
+
+/* ════════════════════════════════════════
+   RENDER: PLAY
+   ════════════════════════════════════════ */
+function newPlayRound() {
+  var p = genProblem();
+  S.playA = p.a; S.playB = p.b; S.playOp = p.op; S.playAnswer = p.answer;
+  S.playChoices = generateDiagnosticChoices(p.a, p.b, p.op, p.answer);
+}
+
+function startPlay() {
+  S.score = 0; S.streak = 0; S.best = 0; S.round = 1; S.total = 10;
+  playLocked = false;
+  newPlayRound();
+  render();
+}
+
+function renderPlay(ws, sp) {
+  if (S.round === 0) {
+    /* Start screen */
+    var h = '<div style="text-align:center;">';
+    h += '<div style="font-size:28px;font-weight:900;background:var(--grad);-webkit-background-clip:text;-webkit-text-fill-color:transparent;margin-bottom:12px;">Two-Digit Fluency Challenge</div>';
+    h += '<div style="font-size:15px;color:var(--text2);margin-bottom:20px;">10 rounds. Earn 10 points + streak bonus for each correct answer!</div>';
+    h += '<button class="ctrl-btn primary" onclick="startPlay()" style="font-size:16px;padding:14px 36px;">Start Game</button>';
+    h += '</div>';
+    ws.innerHTML = h;
+    sp.innerHTML = '<div class="panel-section"><div class="panel-title">Play Mode</div><div class="panel-text">Race through 10 problems as fast as you can! Build streaks for bonus points.</div></div>';
+    return;
+  }
+
+  if (S.round > S.total) {
+    /* Game over */
+    var pct = Math.round((S.score / (S.total * 12)) * 100);
+    var h = '<div class="game-over">';
+    h += '<div class="game-over-title">Game Complete!</div>';
+    h += '<div class="game-over-stat">Score: <span>' + S.score + '</span></div>';
+    h += '<div class="game-over-stat">Best Streak: <span>' + S.best + '</span></div>';
+    h += '<div class="game-over-stat">Rating: <span>' + (pct >= 80 ? 'Amazing!' : pct >= 60 ? 'Great Job!' : pct >= 40 ? 'Good Effort!' : 'Keep Practicing!') + '</span></div>';
+    h += '<div class="controls" style="margin-top:20px;">';
+    h += '<button class="ctrl-btn primary" onclick="startPlay()">Play Again</button>';
+    h += '</div></div>';
+    ws.innerHTML = h;
+    sp.innerHTML = '<div class="panel-section"><div class="panel-title">Results</div><div class="panel-text">Score: ' + S.score + '<br>Best Streak: ' + S.best + '</div></div>';
+    return;
+  }
+
+  var a = S.playA, b = S.playB, op = S.playOp;
+  var opSym = op === 'add' ? '+' : '\u2212';
+
+  var h = '<div style="font-size:12px;color:var(--muted);text-transform:uppercase;letter-spacing:1px;margin-bottom:4px;">Round ' + S.round + ' of ' + S.total + '</div>';
+
+  /* Problem display with blocks */
+  h += '<div class="blocks-display">';
+  h += buildBlocks(a, '');
+  h += '<div style="font-size:32px;font-weight:900;color:var(--yellow);align-self:center;">' + opSym + '</div>';
+  h += buildBlocks(b, '');
+  h += '<div style="font-size:32px;font-weight:900;color:var(--muted);align-self:center;">=</div>';
+  h += '<div style="font-size:40px;font-weight:900;color:var(--text);align-self:center;font-family:JetBrains Mono,monospace;">?</div>';
+  h += '</div>';
+
+  /* Problem text */
+  h += '<div style="font-size:28px;font-weight:900;font-family:JetBrains Mono,monospace;text-align:center;margin:8px 0;">';
+  h += '<span style="color:var(--text);">' + a + '</span> ';
+  h += '<span style="color:var(--yellow);">' + opSym + '</span> ';
+  h += '<span style="color:var(--text);">' + b + '</span>';
+  h += '</div>';
+
+  /* MC buttons */
+  h += '<div class="mc-grid">';
+  for (var i = 0; i < S.playChoices.length; i++) {
+    var c = S.playChoices[i];
+    h += '<button class="mc-btn" id="play' + i + '" onclick="playPick(' + c + ',' + i + ')">' + c + '</button>';
+  }
+  h += '</div>';
+
+  ws.innerHTML = h;
+
+  /* Side panel: score */
+  var sp_h = '<div class="score-display">';
+  sp_h += '<div class="score-label">Score</div>';
+  sp_h += '<div class="score-value">' + S.score + '</div>';
+  sp_h += '<div class="score-label" style="margin-top:8px;">Streak</div>';
+  sp_h += '<div class="streak-bar"><div class="streak-fill" style="width:' + Math.min(S.streak * 20, 100) + '%;"></div></div>';
+  sp_h += '<div style="font-size:14px;font-weight:700;color:var(--cyan);margin-top:4px;">' + S.streak + '</div>';
+  sp_h += '</div>';
+  sp_h += '<div class="panel-section"><div class="panel-title">Scoring</div>';
+  sp_h += '<div class="panel-text">10 pts per correct answer<br>+ ' + (S.streak * 2) + ' streak bonus</div></div>';
+  sp_h += '<div class="panel-section"><div class="panel-title">Round</div>';
+  sp_h += '<div class="panel-text">' + S.round + ' / ' + S.total + '</div></div>';
+  sp.innerHTML = sp_h;
+}
+
+function playPick(val, idx) {
+  if (playLocked) return;
+  playLocked = true;
+  var btn = document.getElementById('play' + idx);
+
+  if (val === S.playAnswer) {
+    if (btn) btn.classList.add('correct-flash');
+    S.score += 10 + (S.streak * 2);
+    S.streak++;
+    if (S.streak > S.best) S.best = S.streak;
+    showFB('\u2713 ' + S.playAnswer + '!', 'correct');
+  } else {
+    if (btn) btn.classList.add('incorrect-flash');
+    S.streak = 0;
+    var fbMsg = diagnoseMisconception(S.playA, S.playB, S.playOp, S.playAnswer, val);
+    showFB(fbMsg, 'try-again');
+  }
+
+  setTimeout(function() {
+    playLocked = false;
+    S.round++;
+    if (S.round <= S.total) {
+      newPlayRound();
+    }
+    render();
+  }, 1200);
+}
+
+/* ════════════════════════════════════════
+   MISCONCEPTION DIAGNOSIS
+   ════════════════════════════════════════ */
+function diagnoseMisconception(a, b, op, answer, chosen) {
+  var diff = Math.abs(chosen - answer);
+  var oA = ones(a), oB = ones(b), tA = tens(a), tB = tens(b);
+
+  /* Off by exactly 10 */
+  if (diff === 10) {
+    return MISCONCEPTIONS.offByTen.msg(answer, chosen);
+  }
+
+  /* Reversed digits */
+  var revAns = ones(answer) * 10 + tens(answer);
+  if (chosen === revAns) {
+    return MISCONCEPTIONS.reversedDigits.msg(answer, chosen);
+  }
+
+  /* No-regroup error (addition) */
+  if (op === 'add' && oA + oB >= 10) {
+    var noRegAns = tA * 10 + tB * 10 + oA + oB;
+    if (chosen === noRegAns || chosen === (tA + tB) * 10 + (oA + oB) % 10) {
+      return MISCONCEPTIONS.noRegroup.msg(a, b);
+    }
+  }
+
+  /* No-borrow error (subtraction) */
+  if (op === 'sub' && oA < oB) {
+    var noBorrowAns = (tA - tB) * 10 + (oB - oA);
+    if (chosen === noBorrowAns) {
+      return MISCONCEPTIONS.confusedRegroup.msg(a, b);
+    }
+  }
+
+  /* Place value mix */
+  if (diff > 10) {
+    return MISCONCEPTIONS.placeValueMix.msg(a, b);
+  }
+
+  /* Generic */
+  return MISCONCEPTIONS.randomGuess.msg();
+}
+
+/* ════════════════════════════════════════
+   SETTERS & RENDER
+   ════════════════════════════════════════ */
+function setMode(m) {
+  S.mode = m;
+  /* Reset tab styles */
+  document.querySelectorAll('.vinculum-mode-tab').forEach(function(t) {
+    t.className = 'vinculum-mode-tab';
+  });
+  var tabId = m === 'explore' ? 'tabExplore' : m === 'practice' ? 'tabPractice' : 'tabPlay';
+  document.getElementById(tabId).classList.add('active-' + m);
+
+  /* Reset mode-specific state */
+  if (m === 'practice') { S.pA = 0; S.pCorrect = 0; S.pTotal = 0; }
+  if (m === 'play') { S.round = 0; }
+  if (m === 'explore') { S.exShowResult = false; var p = genProblem(); S.exA = p.a; S.exB = p.b; S.exOp = p.op; }
+  render();
+}
+
+function setDiff(d) {
+  S.diff = d;
+  document.querySelectorAll('.vinculum-diff-btn').forEach(function(b) { b.classList.remove('active'); });
+  var did = d === 'emergent' ? 'diffE' : d === 'proficient' ? 'diffP' : 'diffA';
+  document.getElementById(did).classList.add('active');
+
+  /* Regenerate for new difficulty */
+  if (S.mode === 'practice') { S.pA = 0; S.pCorrect = 0; S.pTotal = 0; }
+  if (S.mode === 'play') { S.round = 0; }
+  if (S.mode === 'explore') { S.exShowResult = false; var p = genProblem(); S.exA = p.a; S.exB = p.b; S.exOp = p.op; }
+  render();
+}
+
+function render() {
+  var ws = document.getElementById('workspace');
+  var sp = document.getElementById('sidePanel');
+  if (S.mode === 'explore') renderExplore(ws, sp);
+  else if (S.mode === 'practice') renderPractice(ws, sp);
+  else renderPlay(ws, sp);
+}
+
+/* ════════════════════════════════════════
+   INIT
+   ════════════════════════════════════════ */
+document.querySelectorAll('.vinculum-mode-tab').forEach(function(tab) {
+  tab.addEventListener('click', function() {
+    setMode(this.dataset.mode);
+  });
+});
+
+document.querySelectorAll('.vinculum-diff-btn').forEach(function(btn) {
+  btn.addEventListener('click', function() {
+    setDiff(this.dataset.diff);
+  });
+});
+
+render();
+</script>
+<script src="../../vinculum-core.js"></script>
+<script src="../../vinculum-data.js"></script>
+<script src="../../vinculum-adaptive-hook.js"></script>
+<script src="../../vinculum-3reads.js"></script>
+<script src="../../vinculum-stories.js"></script>
+<script src="../../vinculum-feedback.js"></script>
+<script src="../../vinculum-guide.js"></script>
+<script src="../../vinculum-identity.js"></script>
+<script src="../../vinculum-indigenous.js"></script>
+<script src="../../vinculum-dashboard.js"></script>
+<script src="../../vinculum-hyperfocus.js"></script>
+<script src="../../vinculum-layout.js"></script>
+</body>
+</html>

@@ -1,0 +1,1143 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>VINCULUM — Shape Builder</title>
+<link rel="stylesheet" href="../../vinculum-core.css">
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;600&display=swap');
+
+/* Theme system loaded from vinculum-core.css */
+.vinculum-rtm-btn .rtm-icon{font-size:14px;}
+
+/* ═══ FOCUS VISIBLE (Keyboard Navigation) ═══ */
+*:focus-visible {
+  outline:2px solid var(--cyan);outline-offset:2px;border-radius:4px;
+}
+.sr-only {
+  position:absolute;width:1px;height:1px;padding:0;margin:-1px;
+  overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0;
+}
+
+* { margin:0; padding:0; box-sizing:border-box; }
+body {
+  font-family: 'Inter', sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  height: 100vh;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  user-select: none;
+}
+
+/* ── HEADER ── */
+/* ── MODE TABS ── */
+/* Difficulty selector */
+.vinculum-diff-btn:hover { color: var(--text2); }
+/* ── MAIN AREA ── */
+.main {
+  flex: 1;
+  display: flex;
+  overflow: hidden;
+}
+
+/* ── WORKSPACE ── */
+.workspace {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+  position: relative;
+  overflow-y: auto;
+}
+
+/* ── BUILD CANVAS ── */
+.build-canvas {
+  width: 100%;
+  max-width: 500px;
+  height: 300px;
+  background: var(--card);
+  border: 2px dashed var(--border);
+  border-radius: 16px;
+  position: relative;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  padding: 16px;
+  align-content: flex-start;
+  transition: border-color 0.2s;
+  overflow: hidden;
+}
+.build-canvas.active {
+  border-color: var(--cyan);
+  background: rgba(0,212,255,0.03);
+}
+.build-canvas-label {
+  position: absolute;
+  bottom: 12px;
+  left: 50%;
+  transform: translateX(-50%);
+  font-size: 12px;
+  color: var(--muted);
+  pointer-events: none;
+  white-space: nowrap;
+}
+
+/* ── PLACED PIECES ── */
+.placed-piece {
+  transition: transform 0.2s, opacity 0.2s;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+.placed-piece.pop-in {
+  animation: pop 0.3s ease-out forwards;
+}
+
+/* ── PIECE PALETTE ── */
+.piece-palette {
+  display: flex;
+  flex-direction: row;
+  gap: 12px;
+  justify-content: center;
+  flex-wrap: wrap;
+  margin-top: 16px;
+}
+.piece-btn {
+  width: 56px;
+  height: 56px;
+  border: 2px solid var(--border);
+  border-radius: 12px;
+  cursor: pointer;
+  padding: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--card);
+  transition: all 0.2s;
+  -webkit-tap-highlight-color: transparent;
+}
+.piece-btn:hover {
+  border-color: var(--cyan);
+  transform: scale(1.1);
+}
+.piece-btn.selected {
+  border-color: var(--cyan);
+  background: rgba(0,212,255,0.1);
+  box-shadow: 0 0 12px rgba(0,212,255,0.2);
+}
+
+/* ── TARGET OUTLINE ── */
+.target-outline {
+  border: 2px dashed var(--border);
+  opacity: 0.4;
+  border-radius: 12px;
+  padding: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-direction: column;
+  gap: 4px;
+}
+
+/* ── MC GRID ── */
+.mc-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 10px;
+  margin-top: 16px;
+  max-width: 440px;
+  width: 100%;
+}
+.mc-btn {
+  padding: 14px 16px;
+  border-radius: 12px;
+  border: 2px solid var(--border);
+  background: var(--card);
+  color: var(--text);
+  font-size: 14px;
+  font-weight: 600;
+  font-family: inherit;
+  cursor: pointer;
+  transition: all 0.15s;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  -webkit-tap-highlight-color: transparent;
+}
+.mc-btn:hover {
+  border-color: var(--cyan);
+  background: rgba(0,212,255,0.05);
+  transform: scale(1.02);
+}
+.mc-btn.correct-flash {
+  border-color: var(--green);
+  background: rgba(0,230,118,0.15);
+  color: var(--green);
+}
+.mc-btn.incorrect-flash {
+  border-color: var(--pink);
+  background: rgba(255,59,139,0.15);
+  color: var(--pink);
+}
+
+/* ── INSTRUCTION BOX ── */
+.instruction-box {
+  text-align: center;
+  padding: 16px 20px;
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  margin-bottom: 16px;
+  max-width: 500px;
+  width: 100%;
+}
+.instruction-box .inst-label {
+  font-size: 12px;
+  color: var(--cyan);
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  margin-bottom: 4px;
+}
+.instruction-box .inst-text {
+  font-size: 18px;
+  font-weight: 700;
+  color: var(--text);
+  line-height: 1.4;
+}
+
+/* ── CONTROLS ── */
+.controls {
+  display: flex;
+  gap: 8px;
+  margin-top: 16px;
+  flex-wrap: wrap;
+  justify-content: center;
+}
+.ctrl-btn {
+  padding: 10px 20px;
+  border-radius: 10px;
+  border: 1px solid var(--border);
+  background: var(--card);
+  color: var(--text2);
+  font-size: 13px;
+  font-weight: 600;
+  font-family: inherit;
+  cursor: pointer;
+  transition: all 0.2s;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  -webkit-tap-highlight-color: transparent;
+}
+.ctrl-btn:hover { background: var(--card-hover); color: var(--text); }
+.ctrl-btn.primary {
+  background: var(--grad);
+  color: var(--bg);
+  border-color: transparent;
+}
+.ctrl-btn.primary:hover { opacity: 0.9; }
+.ctrl-btn.danger { color: var(--pink); }
+.ctrl-btn.danger:hover { background: rgba(255,59,139,0.1); }
+
+/* ── SCORE DISPLAY ── */
+.score-display {
+  text-align: center;
+  padding: 16px;
+  background: var(--card);
+  border-radius: 12px;
+  margin-bottom: 12px;
+}
+.score-value {
+  font-size: 36px;
+  font-weight: 900;
+  font-family: 'JetBrains Mono', monospace;
+  background: var(--grad);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+.score-label {
+  font-size: 11px;
+  color: var(--muted);
+  text-transform: uppercase;
+  letter-spacing: 1px;
+}
+.streak-bar {
+  height: 6px;
+  background: var(--card);
+  border-radius: 3px;
+  overflow: hidden;
+  margin-top: 8px;
+}
+.streak-fill {
+  height: 100%;
+  background: var(--grad);
+  border-radius: 3px;
+  transition: width 0.3s;
+}
+
+/* ── FEEDBACK ── */
+.feedback {
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%) scale(0);
+  padding: 24px 48px;
+  border-radius: 20px;
+  font-size: 20px;
+  font-weight: 700;
+  z-index: 200;
+  pointer-events: none;
+  transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275), opacity 0.3s;
+  opacity: 0;
+  text-align: center;
+  max-width: 90vw;
+  line-height: 1.4;
+}
+.feedback.show {
+  transform: translate(-50%, -50%) scale(1);
+  opacity: 1;
+}
+.feedback.correct {
+  background: rgba(0,230,118,0.15);
+  color: var(--green);
+  border: 2px solid var(--green);
+}
+.feedback.incorrect {
+  background: rgba(255,59,139,0.15);
+  color: var(--pink);
+  border: 2px solid var(--pink);
+}
+.feedback.try-again {
+  background: rgba(255,193,7,0.15);
+  color: var(--yellow);
+  border: 2px solid var(--yellow);
+}
+
+/* ── SIDE PANEL ── */
+.side-panel {
+  width: 280px;
+  background: var(--bg2);
+  border-left: 1px solid var(--border);
+  padding: 20px;
+  overflow-y: auto;
+  flex-shrink: 0;
+}
+.panel-section {
+  margin-bottom: 20px;
+}
+.panel-title {
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 1.5px;
+  color: var(--muted);
+  margin-bottom: 8px;
+}
+.panel-text {
+  font-size: 13px;
+  color: var(--text2);
+  line-height: 1.6;
+}
+
+/* ── ANIMATIONS ── */
+@keyframes pop {
+  0% { transform: scale(0); }
+  70% { transform: scale(1.2); }
+  100% { transform: scale(1); }
+}
+@keyframes shake {
+  0%, 100% { transform: translateX(0); }
+  25% { transform: translateX(-8px); }
+  75% { transform: translateX(8px); }
+}
+.pop-in { animation: pop 0.3s ease-out forwards; }
+.shake { animation: shake 0.3s ease-in-out; }
+
+/* scrollbar */
+::-webkit-scrollbar { width: 6px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+</style>
+</head>
+<body>
+
+<!-- ═══ HEADER ═══ -->
+<div class="vinculum-header">
+  <div class="vinculum-header-left">
+    <a class="vinculum-back-btn" href="../../VINCULUM-Hub.html" style="text-decoration:none;">◀ Hub</a>
+    <div class="vinculum-header-title"><span>VINCULUM</span> Shape Builder</div>
+    <span class="vinculum-header-badge">K.G</span>
+  </div>
+    <div class="vinculum-header-right">
+      <div class="vinculum-std-tags">
+    <span class="vinculum-std-tag">K.G.5</span>
+    <span class="vinculum-std-tag">K.G.6</span>
+    <span class="vinculum-std-tag mn">MN K.3.1.2</span>
+  </div>
+  <button class="vinculum-back-btn" id="readAloudBtn" onclick="toggleReadAloud()" aria-label="Read Aloud" title="Read instructions aloud" style="margin-left:8px;white-space:nowrap;">🔊 Read to Me</button>
+</div>
+
+<!-- ═══ MODE TABS ═══ -->
+</div>
+
+  <div class="vinculum-mode-tabs">
+  <button class="vinculum-mode-tab active-explore" id="tabExplore" data-mode="explore">
+    <svg width="18" height="18" viewBox="0 0 48 48" fill="none"><path d="M4 24C4 24 12 12 24 12C36 12 44 24 44 24C44 24 36 36 24 36C12 36 4 24 4 24Z" stroke="currentColor" stroke-width="3" fill="none"/><circle cx="24" cy="24" r="7" stroke="currentColor" stroke-width="3" fill="none"/><circle cx="24" cy="24" r="3" fill="currentColor"/><line x1="24" y1="4" x2="24" y2="9" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" opacity="0.5"/><line x1="10" y1="8" x2="13" y2="12" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" opacity="0.5"/><line x1="38" y1="8" x2="35" y2="12" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" opacity="0.5"/></svg> Explore
+  </button>
+  <button class="vinculum-mode-tab" id="tabPractice" data-mode="practice">
+    <svg width="18" height="18" viewBox="0 0 48 48" fill="none"><circle cx="24" cy="24" r="20" stroke="currentColor" stroke-width="3" fill="none" opacity="0.3"/><circle cx="24" cy="24" r="20" stroke="currentColor" stroke-width="3" fill="none" stroke-dasharray="126" stroke-dashoffset="32" stroke-linecap="round"/><polyline points="16,24 22,32 34,16" stroke="currentColor" stroke-width="4" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg> Practice
+  </button>
+  <button class="vinculum-mode-tab" id="tabPlay" data-mode="play">
+    <svg width="18" height="18" viewBox="0 0 48 48" fill="none"><polygon points="28,4 12,28 22,28 18,44 36,18 26,18" fill="none" stroke="currentColor" stroke-width="3" stroke-linejoin="round"/><polygon points="27,8 15,27 23,27 20,40 34,19 26,19" fill="currentColor" opacity="0.15"/></svg> Play
+  </button>
+  <div class="vinculum-diff-selector">
+    <span class="vinculum-diff-label">Level</span>
+    <button class="vinculum-diff-btn active" id="diffE" data-diff="emergent">2 Pieces</button>
+    <button class="vinculum-diff-btn" id="diffP" data-diff="proficient">3-4 Pieces</button>
+    <button class="vinculum-diff-btn" id="diffA" data-diff="advanced">Create</button>
+  </div>
+</div>
+
+<!-- ═══ MAIN ═══ -->
+<div class="main">
+  <div class="workspace" role="main" id="workspace"></div>
+  <div class="side-panel" id="sidePanel"></div>
+</div>
+
+<!-- ═══ FEEDBACK POPUP ═══ -->
+<div class="feedback" id="feedback"></div>
+
+  <script src="../../vinculum-input.js"></script>
+<script>
+// ════════════════════════════════════════
+// SHAPE BUILDER — PIECES & TARGETS
+// ════════════════════════════════════════
+const PIECES = [
+  { name:'small triangle', svg:'<polygon points="0,40 40,40 20,0" fill="FILL" stroke="STROKE" stroke-width="2"/>', w:40, h:40 },
+  { name:'small square', svg:'<rect x="0" y="0" width="40" height="40" fill="FILL" stroke="STROKE" stroke-width="2"/>', w:40, h:40 },
+  { name:'large triangle', svg:'<polygon points="0,60 60,60 30,0" fill="FILL" stroke="STROKE" stroke-width="2"/>', w:60, h:60 },
+  { name:'rectangle', svg:'<rect x="0" y="0" width="60" height="30" fill="FILL" stroke="STROKE" stroke-width="2"/>', w:60, h:30 },
+  { name:'half circle', svg:'<path d="M0,30 A30,30 0 0,1 60,30 Z" fill="FILL" stroke="STROKE" stroke-width="2"/>', w:60, h:30 },
+];
+const COLORS = ['#00d4ff','#ff3b8b','#ffc107','#00e676','#b388ff'];
+
+const TARGETS = [
+  { name:'house', pieces:['small square','small triangle'], description:'a house (square + triangle on top)' },
+  { name:'rocket', pieces:['rectangle','small triangle','small triangle'], description:'a rocket (rectangle body + triangle top + triangle fins)' },
+  { name:'tree', pieces:['small square','large triangle'], description:'a tree (square trunk + triangle top)' },
+  { name:'boat', pieces:['small triangle','rectangle'], description:'a boat (rectangle hull + triangle sail)' },
+  { name:'ice cream', pieces:['half circle','small triangle'], description:'ice cream (half circle scoop + triangle cone)' },
+];
+
+// ════════════════════════════════════════
+// STATE
+// ════════════════════════════════════════
+let S = {
+  mode: 'explore',
+  diff: 'emergent',
+  // Explore
+  placedPieces: [], // [{pieceIdx, colorIdx, x, y}]
+  // Practice
+  pTarget: null,
+  pPlaced: [],
+  pNeeded: 0,
+  pChoices: [],
+  pAnswered: false,
+  // Play
+  score: 0,
+  streak: 0,
+  best: 0,
+  round: 0,
+  total: 10,
+  playTarget: null,
+  playPlaced: [],
+  playChoices: [],
+  playAnswered: false
+};
+
+// ════════════════════════════════════════
+// READ-ALOUD
+// ════════════════════════════════════════
+function toggleReadAloud() {
+  if (window.VinculumStories && VinculumStories.isReading()) {
+    VinculumStories.stopReading();
+    document.getElementById('readAloudBtn').textContent = '🔊 Read to Me';
+  } else {
+    const fb = document.getElementById('feedback');
+    const storyEl = document.getElementById('storyBanner');
+    const text = storyEl ? storyEl.textContent : (fb ? fb.textContent : 'Welcome to Shape Builder!');
+    if (window.VinculumStories) {
+      VinculumStories.readAloud(text, { rate: 0.85, onComplete: function() {
+        document.getElementById('readAloudBtn').textContent = '🔊 Read to Me';
+      }});
+      document.getElementById('readAloudBtn').textContent = '⏹ Stop';
+    }
+  }
+}
+
+// ════════════════════════════════════════
+// MISCONCEPTIONS DATABASE
+// ════════════════════════════════════════
+const MISCONCEPTIONS = {
+  sameSize: { id:'same-size', msg:function() { return 'Shapes don\'t have to be the same size! A big triangle and a small square can make something new.'; } },
+  rotationStruggle: { id:'rotation', msg:function() { return 'Try thinking about turning the shape. It might fit a different way!'; } },
+  wrongPiece: { id:'wrong-piece', msg:function(target) { return 'That piece doesn\'t fit the ' + target + '. Look at the shape you\'re building — what\'s missing?'; } },
+  randomGuess: { id:'random', msg:function() { return 'Look at the target shape. What simple shapes could it be made of?'; } }
+};
+
+// ════════════════════════════════════════
+// HELPERS
+// ════════════════════════════════════════
+function randInt(min, max) {
+  return Math.floor(Math.random() * (max - min + 1)) + min;
+}
+
+function shuffle(arr) {
+  var a = arr.slice();
+  for (var i = a.length - 1; i > 0; i--) {
+    var j = randInt(0, i);
+    var tmp = a[i]; a[i] = a[j]; a[j] = tmp;
+  }
+  return a;
+}
+
+function showFeedback(text, type) {
+  var fb = document.getElementById('feedback');
+  fb.textContent = text;
+  fb.className = 'feedback ' + type + ' show';
+  setTimeout(function() { fb.classList.remove('show'); }, 2000);
+}
+
+function pieceSVG(pieceIdx, colorIdx, size) {
+  var p = PIECES[pieceIdx];
+  var c = COLORS[colorIdx % COLORS.length];
+  var stroke = '#ffffff';
+  var svgStr = p.svg.replace('FILL', c).replace('STROKE', stroke);
+  var scale = size ? size / Math.max(p.w, p.h) : 1;
+  var sw = Math.round(p.w * scale);
+  var sh = Math.round(p.h * scale);
+  return '<svg width="' + sw + '" height="' + sh + '" viewBox="0 0 ' + p.w + ' ' + p.h + '">' + svgStr + '</svg>';
+}
+
+function pieceIdxByName(name) {
+  for (var i = 0; i < PIECES.length; i++) {
+    if (PIECES[i].name === name) return i;
+  }
+  return 0;
+}
+
+// ════════════════════════════════════════
+// MODE SWITCHING
+// ════════════════════════════════════════
+function setMode(mode) {
+  S.mode = mode;
+  S.placedPieces = [];
+  S.pTarget = null;
+  S.pPlaced = [];
+  S.pChoices = [];
+  S.pAnswered = false;
+  S.round = 0;
+  S.score = 0;
+  S.streak = 0;
+  S.playTarget = null;
+  S.playPlaced = [];
+  S.playChoices = [];
+  S.playAnswered = false;
+
+  document.querySelectorAll('.vinculum-mode-tab').forEach(function(t) {
+    t.classList.remove('active-explore', 'active-practice', 'active-play');
+  });
+  var tabEl = document.querySelector('[data-mode="' + mode + '"]');
+  if (tabEl) tabEl.classList.add('active-' + mode);
+
+  render();
+}
+
+function setDiff(diff) {
+  S.diff = diff;
+  document.querySelectorAll('.vinculum-diff-btn').forEach(function(b) { b.classList.remove('active'); });
+  document.getElementById('diff' + diff.charAt(0).toUpperCase()).classList.add('active');
+  setMode(S.mode);
+}
+
+// ════════════════════════════════════════
+// RENDER
+// ════════════════════════════════════════
+function render() {
+  var ws = document.getElementById('workspace');
+  var sp = document.getElementById('sidePanel');
+
+  if (S.mode === 'explore') renderExplore(ws, sp);
+  else if (S.mode === 'practice') renderPractice(ws, sp);
+  else renderPlay(ws, sp);
+}
+
+// ─── EXPLORE MODE ───
+function renderExplore(ws, sp) {
+  var html = '';
+
+  // Story banner
+  if (window.VinculumStories) {
+    var toolName = window.location.pathname.split('/').pop().replace('.html','');
+    var storyData = VinculumStories.getStory(toolName, {a: S.placedPieces.length || 2, b: 3, total: S.placedPieces.length || 5, n: S.placedPieces.length || 4, ones: S.placedPieces.length || 2});
+    if (storyData && storyData.story) {
+      if (window.Vinculum3Reads) {
+        html += Vinculum3Reads.getBannerHTML(storyData);
+      } else {
+        html += '<div id="storyBanner" style="background:var(--card2,#1a1f2e);border:1px solid var(--border);border-radius:12px;padding:16px 20px;margin-bottom:16px;font-size:15px;line-height:1.6;color:var(--text);position:relative;max-width:500px;width:100%;"><span style="font-size:12px;color:var(--cyan);font-weight:700;text-transform:uppercase;letter-spacing:1px;">📖 Story</span><br>' + storyData.story + '<br><em style="color:var(--yellow);font-weight:600;">' + storyData.question + '</em><button onclick="toggleReadAloud()" style="position:absolute;top:12px;right:12px;background:none;border:1px solid var(--border);border-radius:8px;padding:4px 10px;color:var(--cyan);cursor:pointer;font-size:14px;" title="Read story aloud">🔊</button></div>';
+      }
+    }
+  }
+
+  html += '<div class="instruction-box"><div class="inst-label">Explore</div><div class="inst-text">Tap shapes below to build something!</div></div>';
+
+  // Build canvas
+  html += '<div class="build-canvas" id="buildCanvas">';
+  if (S.placedPieces.length === 0) {
+    html += '<div class="build-canvas-label">Tap a shape to add it here</div>';
+  }
+  S.placedPieces.forEach(function(pp, i) {
+    html += '<div class="placed-piece pop-in" style="margin:4px;">' + pieceSVG(pp.pieceIdx, pp.colorIdx, 50) + '</div>';
+  });
+  html += '</div>';
+
+  // Piece palette
+  html += '<div class="piece-palette">';
+  PIECES.forEach(function(p, i) {
+    html += '<button class="piece-btn" onclick="explorePlacePiece(' + i + ')" aria-label="Add ' + p.name + '">' + pieceSVG(i, i, 36) + '</button>';
+  });
+  html += '</div>';
+
+  // Controls
+  html += '<div class="controls">';
+  html += '<button class="ctrl-btn" onclick="exploreUndo()">↺ Undo</button>';
+  html += '<button class="ctrl-btn danger" onclick="exploreClear()">✕ Clear</button>';
+  html += '</div>';
+
+  ws.innerHTML = html;
+
+  // Side panel
+  sp.innerHTML = '<div class="panel-section">' +
+    '<div class="panel-title">How to Use</div>' +
+    '<div class="panel-text">' +
+      '1. Tap a shape from the palette to add it to the building area<br><br>' +
+      '2. Each piece gets a color automatically<br><br>' +
+      '3. Combine shapes to make new things — a house, a tree, a rocket!<br><br>' +
+      '4. Use <strong>Undo</strong> or <strong>Clear</strong> to start over' +
+    '</div></div>' +
+    '<div class="panel-section">' +
+    '<div class="panel-title">Shape Vocabulary</div>' +
+    '<div class="panel-text">' +
+      '<strong>Triangle</strong> — 3 sides, 3 corners<br><br>' +
+      '<strong>Square</strong> — 4 equal sides<br><br>' +
+      '<strong>Rectangle</strong> — 4 sides, opposite sides equal<br><br>' +
+      '<strong>Half circle</strong> — half of a circle' +
+    '</div></div>' +
+    '<div class="panel-section">' +
+    '<div class="panel-title">Example Builds</div>' +
+    '<div class="panel-text">' +
+      '🏠 <strong>House</strong> = square + triangle<br><br>' +
+      '🌲 <strong>Tree</strong> = square + large triangle<br><br>' +
+      '🚀 <strong>Rocket</strong> = rectangle + triangles<br><br>' +
+      '🍦 <strong>Ice cream</strong> = half circle + triangle' +
+    '</div></div>' +
+    '<div class="panel-section">' +
+    '<div class="panel-title">Standards</div>' +
+    '<div class="panel-text">' +
+      '<strong>K.G.5</strong> — Model shapes by building and drawing<br><br>' +
+      '<strong>K.G.6</strong> — Compose simple shapes to form larger shapes' +
+    '</div></div>';
+}
+
+function explorePlacePiece(pieceIdx) {
+  S.placedPieces.push({
+    pieceIdx: pieceIdx,
+    colorIdx: randInt(0, COLORS.length - 1)
+  });
+  render();
+}
+
+function exploreUndo() {
+  if (S.placedPieces.length === 0) return;
+  S.placedPieces.pop();
+  render();
+}
+
+function exploreClear() {
+  S.placedPieces = [];
+  render();
+}
+
+// ─── PRACTICE MODE ───
+function renderPractice(ws, sp) {
+  // Generate new target if needed
+  if (!S.pTarget) {
+    newPracticeTarget();
+  }
+
+  var html = '';
+  var target = S.pTarget;
+
+  if (S.diff === 'advanced') {
+    // Advanced: "What pieces make this shape?" — text MC
+    html += '<div class="instruction-box"><div class="inst-label">Identify</div><div class="inst-text">What pieces make ' + target.description + '?</div></div>';
+
+    // Show target as a visual hint
+    html += '<div style="display:flex;gap:8px;justify-content:center;margin-bottom:16px;">';
+    target.pieces.forEach(function(pName, i) {
+      var idx = pieceIdxByName(pName);
+      html += '<div class="target-outline" style="padding:8px;">' + pieceSVG(idx, 2, 40) + '</div>';
+    });
+    html += '</div>';
+
+    // MC text choices
+    html += '<div class="mc-grid">';
+    S.pChoices.forEach(function(choice, ci) {
+      var cls = 'mc-btn';
+      if (S.pAnswered) {
+        if (choice.correct) cls += ' correct-flash';
+      }
+      html += '<button class="' + cls + '" id="mcBtn' + ci + '" onclick="practiceAnswerMC(' + ci + ')">' + choice.label + '</button>';
+    });
+    html += '</div>';
+  } else {
+    // Emergent / Proficient: tap correct pieces from palette
+    html += '<div class="instruction-box"><div class="inst-label">Build this shape!</div><div class="inst-text">Make ' + target.description + '</div></div>';
+
+    // Target outline preview
+    html += '<div style="display:flex;gap:8px;justify-content:center;margin-bottom:12px;opacity:0.5;">';
+    target.pieces.forEach(function(pName) {
+      var idx = pieceIdxByName(pName);
+      html += '<div class="target-outline">' + pieceSVG(idx, 0, 32) + '<div style="font-size:10px;color:var(--muted);margin-top:2px;">' + pName + '</div></div>';
+    });
+    html += '</div>';
+
+    // Build canvas with placed pieces
+    html += '<div class="build-canvas' + (S.pPlaced.length > 0 ? ' active' : '') + '" style="height:200px;">';
+    if (S.pPlaced.length === 0) {
+      html += '<div class="build-canvas-label">Tap the correct pieces below</div>';
+    }
+    S.pPlaced.forEach(function(pp) {
+      html += '<div class="placed-piece pop-in" style="margin:8px;">' + pieceSVG(pp.pieceIdx, pp.colorIdx, 56) + '</div>';
+    });
+    html += '</div>';
+
+    // Piece choices
+    html += '<div style="font-size:13px;color:var(--text2);text-align:center;margin-top:12px;">Tap the pieces you need:</div>';
+    html += '<div class="piece-palette">';
+    S.pChoices.forEach(function(choice, ci) {
+      var cls = 'piece-btn';
+      if (choice.used) cls += ' selected';
+      html += '<button class="' + cls + '" id="pChoice' + ci + '" onclick="practicePickPiece(' + ci + ')" aria-label="' + PIECES[choice.pieceIdx].name + '">' + pieceSVG(choice.pieceIdx, choice.colorIdx, 36) + '</button>';
+    });
+    html += '</div>';
+  }
+
+  // Controls
+  html += '<div class="controls">';
+  html += '<button class="ctrl-btn" onclick="practiceSkip()">Skip →</button>';
+  html += '</div>';
+
+  ws.innerHTML = html;
+
+  // Side panel
+  sp.innerHTML = '<div class="panel-section">' +
+    '<div class="panel-title">Instructions</div>' +
+    '<div class="panel-text">' +
+      (S.diff === 'emergent' ? 'Pick <strong>2 pieces</strong> that make the target shape. Tap each correct piece from the choices below.' :
+       S.diff === 'proficient' ? 'Pick <strong>3-4 pieces</strong> that make the target shape. Think about which shapes fit together!' :
+       'Look at the shape and choose which pieces were used to build it.') +
+    '</div></div>' +
+    '<div class="panel-section">' +
+    '<div class="panel-title">Building Hint</div>' +
+    '<div class="panel-text" style="background:var(--card);padding:12px;border-radius:8px;">' +
+      'Target: <strong style="color:var(--cyan);">' + target.name + '</strong><br>' +
+      'Needs: <strong>' + target.pieces.length + '</strong> pieces<br>' +
+      'You placed: <strong style="color:var(--green);">' + S.pPlaced.length + '</strong>' +
+    '</div></div>' +
+    '<div class="panel-section">' +
+    '<div class="panel-title">Key Idea</div>' +
+    '<div class="panel-text">You can put <strong>simple shapes together</strong> to make bigger, more interesting shapes. This is called <strong>composing</strong>.</div>' +
+    '</div>';
+}
+
+function newPracticeTarget() {
+  var target = TARGETS[randInt(0, TARGETS.length - 1)];
+
+  // For emergent, only use 2-piece targets
+  if (S.diff === 'emergent') {
+    var twoPiece = TARGETS.filter(function(t) { return t.pieces.length <= 2; });
+    target = twoPiece[randInt(0, twoPiece.length - 1)];
+  }
+  // For proficient, prefer 3+ piece targets
+  if (S.diff === 'proficient') {
+    var multiPiece = TARGETS.filter(function(t) { return t.pieces.length >= 2; });
+    target = multiPiece[randInt(0, multiPiece.length - 1)];
+  }
+
+  S.pTarget = target;
+  S.pPlaced = [];
+  S.pAnswered = false;
+
+  if (S.diff === 'advanced') {
+    // Generate MC text choices
+    var correctLabel = target.pieces.join(' + ');
+    var choices = [{ label: correctLabel, correct: true }];
+    // Generate wrong answers
+    var wrongSets = [];
+    for (var w = 0; w < 3; w++) {
+      var wrong = [];
+      var count = randInt(2, 3);
+      for (var c = 0; c < count; c++) {
+        wrong.push(PIECES[randInt(0, PIECES.length - 1)].name);
+      }
+      var wLabel = wrong.join(' + ');
+      if (wLabel !== correctLabel) {
+        wrongSets.push({ label: wLabel, correct: false });
+      }
+    }
+    // Ensure at least 3 wrong
+    while (wrongSets.length < 3) {
+      var fallback = [PIECES[randInt(0, PIECES.length - 1)].name, PIECES[randInt(0, PIECES.length - 1)].name].join(' + ');
+      if (fallback !== correctLabel) {
+        wrongSets.push({ label: fallback, correct: false });
+      }
+    }
+    S.pChoices = shuffle(choices.concat(wrongSets.slice(0, 3)));
+  } else {
+    // Generate piece choices (correct + distractors)
+    var correctPieces = target.pieces.map(function(name) {
+      return { pieceIdx: pieceIdxByName(name), colorIdx: randInt(0, COLORS.length - 1), needed: true, used: false };
+    });
+
+    // Add distractor pieces
+    var numDistractors = S.diff === 'emergent' ? 1 : 2;
+    var distractors = [];
+    for (var d = 0; d < numDistractors; d++) {
+      var distIdx = randInt(0, PIECES.length - 1);
+      // Make sure distractor isn't one of the needed pieces (by checking names)
+      var tries = 0;
+      while (target.pieces.indexOf(PIECES[distIdx].name) !== -1 && tries < 10) {
+        distIdx = randInt(0, PIECES.length - 1);
+        tries++;
+      }
+      distractors.push({ pieceIdx: distIdx, colorIdx: randInt(0, COLORS.length - 1), needed: false, used: false });
+    }
+
+    S.pChoices = shuffle(correctPieces.concat(distractors));
+  }
+}
+
+function practicePickPiece(ci) {
+  if (S.pAnswered) return;
+  var choice = S.pChoices[ci];
+  if (choice.used) return;
+
+  if (choice.needed) {
+    // Correct piece
+    choice.used = true;
+    S.pPlaced.push({ pieceIdx: choice.pieceIdx, colorIdx: choice.colorIdx });
+
+    // Check if all needed pieces are placed
+    var allPlaced = S.pChoices.filter(function(c) { return c.needed; }).every(function(c) { return c.used; });
+    if (allPlaced) {
+      S.pAnswered = true;
+      showFeedback('Great job! You built ' + S.pTarget.description + '!', 'correct');
+      setTimeout(function() {
+        newPracticeTarget();
+        render();
+      }, 2000);
+    } else {
+      render();
+    }
+  } else {
+    // Wrong piece — misconception feedback
+    var target = S.pTarget;
+    var pieceName = PIECES[choice.pieceIdx].name;
+
+    // Determine which misconception applies
+    var msg;
+    // Check if it's a size confusion (e.g., large triangle vs small triangle)
+    var neededNames = target.pieces;
+    var sizeConfusion = false;
+    neededNames.forEach(function(n) {
+      if ((n.indexOf('small') !== -1 && pieceName.indexOf('large') !== -1) ||
+          (n.indexOf('large') !== -1 && pieceName.indexOf('small') !== -1)) {
+        sizeConfusion = true;
+      }
+    });
+
+    if (sizeConfusion) {
+      msg = MISCONCEPTIONS.sameSize.msg();
+    } else if (S.pPlaced.length === 0 && S.pChoices.filter(function(c) { return !c.needed && !c.used; }).length > 1) {
+      msg = MISCONCEPTIONS.randomGuess.msg();
+    } else {
+      msg = MISCONCEPTIONS.wrongPiece.msg(target.name);
+    }
+
+    showFeedback(msg, 'try-again');
+    // Flash the button
+    var btn = document.getElementById('pChoice' + ci);
+    if (btn) {
+      btn.style.borderColor = 'var(--pink)';
+      btn.style.background = 'rgba(255,59,139,0.1)';
+      setTimeout(function() {
+        if (btn) {
+          btn.style.borderColor = '';
+          btn.style.background = '';
+        }
+      }, 800);
+    }
+  }
+}
+
+function practiceAnswerMC(ci) {
+  if (S.pAnswered) return;
+  S.pAnswered = true;
+
+  var choice = S.pChoices[ci];
+  var btn = document.getElementById('mcBtn' + ci);
+
+  if (choice.correct) {
+    if (btn) btn.classList.add('correct-flash');
+    showFeedback('Correct! ' + S.pTarget.name + ' = ' + S.pTarget.pieces.join(' + '), 'correct');
+  } else {
+    if (btn) btn.classList.add('incorrect-flash');
+    // Highlight correct
+    S.pChoices.forEach(function(c, i) {
+      if (c.correct) {
+        var correctBtn = document.getElementById('mcBtn' + i);
+        if (correctBtn) correctBtn.classList.add('correct-flash');
+      }
+    });
+    showFeedback(MISCONCEPTIONS.randomGuess.msg(), 'try-again');
+  }
+
+  setTimeout(function() {
+    newPracticeTarget();
+    render();
+  }, 2200);
+}
+
+function practiceSkip() {
+  newPracticeTarget();
+  render();
+}
+
+// ─── PLAY MODE ───
+function renderPlay(ws, sp) {
+  if (S.round === 0) startNewGame();
+
+  var html = '';
+  var target = S.playTarget;
+
+  // Round indicator
+  html += '<div style="text-align:center;margin-bottom:8px;">';
+  html += '<div style="font-size:14px;color:var(--muted);">Round ' + S.round + ' of ' + S.total + '</div>';
+  html += '</div>';
+
+  // Instruction
+  html += '<div class="instruction-box"><div class="inst-label">Which pieces make...</div><div class="inst-text">' + target.description + '?</div></div>';
+
+  // Target visual hint
+  html += '<div style="display:flex;gap:8px;justify-content:center;margin-bottom:16px;">';
+  target.pieces.forEach(function(pName) {
+    var idx = pieceIdxByName(pName);
+    html += '<div class="target-outline" style="padding:8px;opacity:0.6;">' + pieceSVG(idx, 2, 36) + '</div>';
+  });
+  html += '</div>';
+
+  // MC choices (piece combinations as buttons)
+  html += '<div class="mc-grid">';
+  S.playChoices.forEach(function(choice, ci) {
+    var cls = 'mc-btn';
+    if (S.playAnswered) {
+      if (choice.correct) cls += ' correct-flash';
+    }
+    // Show piece SVGs in the button
+    var pieceSVGs = '';
+    choice.pieces.forEach(function(pName, pi) {
+      var idx = pieceIdxByName(pName);
+      pieceSVGs += pieceSVG(idx, pi, 24);
+    });
+    html += '<button class="' + cls + '" id="playBtn' + ci + '" onclick="playAnswer(' + ci + ')">' +
+      '<span style="display:flex;gap:4px;align-items:center;flex-wrap:wrap;">' + pieceSVGs + '</span>' +
+      '<span style="font-size:11px;color:var(--muted);margin-left:auto;">' + choice.pieces.join(' + ') + '</span>' +
+    '</button>';
+  });
+  html += '</div>';
+
+  ws.innerHTML = html;
+
+  // Side panel with score
+  sp.innerHTML = '<div class="score-display">' +
+    '<div class="score-value">' + S.score + '</div>' +
+    '<div class="score-label">Score</div>' +
+  '</div>' +
+  '<div class="score-display" style="background:transparent;padding:8px;">' +
+    '<div style="font-size:18px;font-weight:700;color:var(--yellow);">🔥 ' + S.streak + '</div>' +
+    '<div class="score-label">Streak</div>' +
+    '<div class="streak-bar"><div class="streak-fill" style="width:' + Math.min(S.streak * 20, 100) + '%;"></div></div>' +
+  '</div>' +
+  '<div class="panel-section">' +
+    '<div class="panel-title">How to Play</div>' +
+    '<div class="panel-text">' +
+      'Look at the shape description and choose which pieces make it.<br><br>' +
+      '<strong>Correct answers</strong> earn 10 points + streak bonus!<br><br>' +
+      'Build a streak for more points!' +
+    '</div></div>' +
+  '<div class="panel-section">' +
+    '<div class="panel-title">Best Streak</div>' +
+    '<div class="panel-text" style="font-size:24px;font-weight:800;color:var(--purple);">🏆 ' + S.best + '</div>' +
+  '</div>';
+}
+
+function startNewGame() {
+  S.score = 0;
+  S.streak = 0;
+  S.round = 1;
+  S.playAnswered = false;
+  newPlayRound();
+}
+
+function newPlayRound() {
+  var target = TARGETS[randInt(0, TARGETS.length - 1)];
+  S.playTarget = target;
+  S.playAnswered = false;
+
+  // Generate choices: 1 correct + 3 wrong
+  var correctLabel = target.pieces.slice().sort().join('|');
+  var choices = [{ pieces: target.pieces.slice(), correct: true }];
+
+  var attempts = 0;
+  while (choices.length < 4 && attempts < 20) {
+    attempts++;
+    var wrongPieces = [];
+    var count = randInt(2, 3);
+    for (var c = 0; c < count; c++) {
+      wrongPieces.push(PIECES[randInt(0, PIECES.length - 1)].name);
+    }
+    var wLabel = wrongPieces.slice().sort().join('|');
+    if (wLabel !== correctLabel) {
+      // Check not duplicate
+      var dup = false;
+      choices.forEach(function(ch) {
+        if (ch.pieces.slice().sort().join('|') === wLabel) dup = true;
+      });
+      if (!dup) {
+        choices.push({ pieces: wrongPieces, correct: false });
+      }
+    }
+  }
+
+  // Fill remaining if needed
+  while (choices.length < 4) {
+    choices.push({ pieces: [PIECES[randInt(0, PIECES.length - 1)].name, PIECES[randInt(0, PIECES.length - 1)].name], correct: false });
+  }
+
+  S.playChoices = shuffle(choices);
+}
+
+function playAnswer(ci) {
+  if (S.playAnswered) return;
+  S.playAnswered = true;
+
+  var choice = S.playChoices[ci];
+  var btn = document.getElementById('playBtn' + ci);
+
+  if (choice.correct) {
+    if (btn) btn.classList.add('correct-flash');
+    S.score += 10 + (S.streak * 2);
+    S.streak++;
+    if (S.streak > S.best) S.best = S.streak;
+    showFeedback('Correct! +' + (10 + ((S.streak - 1) * 2)) + ' points', 'correct');
+  } else {
+    if (btn) btn.classList.add('incorrect-flash');
+    S.streak = 0;
+    // Show correct
+    S.playChoices.forEach(function(c, i) {
+      if (c.correct) {
+        var cb = document.getElementById('playBtn' + i);
+        if (cb) cb.classList.add('correct-flash');
+      }
+    });
+
+    // Misconception-based feedback
+    var msg;
+    // Check if they picked something with similar piece types (size confusion)
+    var chosenNames = choice.pieces.slice().sort();
+    var correctNames = S.playTarget.pieces.slice().sort();
+    var sameTypes = false;
+    chosenNames.forEach(function(cn) {
+      correctNames.forEach(function(crn) {
+        if (cn !== crn && (
+          (cn.indexOf('triangle') !== -1 && crn.indexOf('triangle') !== -1) ||
+          (cn.indexOf('square') !== -1 && crn.indexOf('rectangle') !== -1) ||
+          (cn.indexOf('rectangle') !== -1 && crn.indexOf('square') !== -1)
+        )) {
+          sameTypes = true;
+        }
+      });
+    });
+
+    if (sameTypes) {
+      msg = MISCONCEPTIONS.sameSize.msg();
+    } else {
+      msg = MISCONCEPTIONS.wrongPiece.msg(S.playTarget.name);
+    }
+
+    showFeedback(msg, 'incorrect');
+  }
+
+  setTimeout(function() {
+    if (S.round >= S.total) {
+      showFeedback('Game Over! Final Score: ' + S.score, 'correct');
+      setTimeout(function() {
+        S.round = 0;
+        render();
+      }, 2500);
+      return;
+    }
+    S.round++;
+    newPlayRound();
+    render();
+  }, 1500);
+}
+
+// ════════════════════════════════════════
+// INIT
+// ════════════════════════════════════════
+document.querySelectorAll('.vinculum-mode-tab').forEach(function(tab) {
+  tab.addEventListener('click', function() {
+    setMode(this.dataset.mode);
+  });
+});
+
+document.querySelectorAll('.vinculum-diff-btn').forEach(function(btn) {
+  btn.addEventListener('click', function() {
+    setDiff(this.dataset.diff);
+  });
+});
+
+render();
+</script>
+<script src="../../vinculum-core.js"></script>
+<script src="../../vinculum-data.js"></script>
+    <script src="../../vinculum-adaptive-hook.js"></script>
+<script src="../../vinculum-3reads.js"></script>
+<script src="../../vinculum-stories.js"></script>
+<script src="../../vinculum-feedback.js"></script>
+  <script src="../../vinculum-guide.js"></script>
+<script src="../../vinculum-identity.js"></script>
+<script src="../../vinculum-indigenous.js"></script>
+<script src="../../vinculum-dashboard.js"></script>
+<script src="../../vinculum-hyperfocus.js"></script>
+<script src="../../vinculum-layout.js"></script>
+</body>
+</html>

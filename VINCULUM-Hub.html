@@ -1061,6 +1061,42 @@ body {
 }
 .card-launch-btn:hover { opacity: 0.88; transform: translateY(-1px); }
 
+/* ═══ V2 COMPARISON SYSTEM ═══ */
+.version-toggle {
+  display: inline-flex; align-items: center; gap: 6px;
+  padding: 4px 12px; border-radius: 8px;
+  background: color-mix(in srgb, var(--accent-purple) 10%, transparent);
+  border: 1px solid color-mix(in srgb, var(--accent-purple) 30%, transparent);
+  font-size: 11px; font-weight: 700; color: var(--accent-purple);
+  cursor: pointer; transition: all 0.2s; letter-spacing: 0.5px;
+}
+.version-toggle:hover { background: color-mix(in srgb, var(--accent-purple) 20%, transparent); }
+.version-toggle.active { background: var(--accent-purple); color: #0a0e1a; }
+.version-btns {
+  display: flex; gap: 4px; margin-top: 8px;
+}
+.v-btn {
+  flex: 1; padding: 7px 8px; border-radius: 6px; border: 1px solid var(--border);
+  font-size: 11px; font-weight: 700; font-family: inherit; cursor: pointer;
+  text-align: center; transition: all 0.2s; letter-spacing: 0.3px;
+}
+.v-btn.v1 {
+  background: color-mix(in srgb, var(--accent-cyan) 10%, transparent);
+  color: var(--accent-cyan); border-color: color-mix(in srgb, var(--accent-cyan) 30%, transparent);
+}
+.v-btn.v1:hover { background: var(--accent-cyan); color: #0a0e1a; }
+.v-btn.v2 {
+  background: color-mix(in srgb, var(--accent-purple) 10%, transparent);
+  color: var(--accent-purple); border-color: color-mix(in srgb, var(--accent-purple) 30%, transparent);
+}
+.v-btn.v2:hover { background: var(--accent-purple); color: #0a0e1a; }
+.v-badge {
+  display: inline-block; font-size: 9px; font-weight: 800; padding: 2px 6px;
+  border-radius: 4px; letter-spacing: 0.5px; vertical-align: middle; margin-left: 4px;
+}
+.v-badge.v1 { background: color-mix(in srgb, var(--accent-cyan) 15%, transparent); color: var(--accent-cyan); }
+.v-badge.v2 { background: color-mix(in srgb, var(--accent-purple) 15%, transparent); color: var(--accent-purple); }
+
 /* scrollbar */
 ::-webkit-scrollbar { width: 6px; height: 6px; }
 ::-webkit-scrollbar-track { background: transparent; }
@@ -3890,7 +3926,7 @@ function renderToolCard(tool) {
   html += `<span class="tool-version">${tool.version}</span>`;
   html += '</div></div>';
   if (tool.isTeachingGame) html += '<span class="game-tag">GAME</span>';
-  html += `<h3>${tool.name}</h3>`;
+  html += `<h3>${tool.name}${V2_TOOLS.has(tool.id) ? '<span class="v-badge v2" style="margin-left:8px;">V2</span>' : ''}</h3>`;
   html += `<p class="description">${tool.description}</p>`;
 
   // Standards tags — show MN prominently when toggled, or CCSS by default
@@ -3925,11 +3961,24 @@ function renderToolCard(tool) {
     }
   }
 
-  // Card-level launch button for built/exists tools
+  // Card-level launch button(s) — V1/V2 side by side when both exist
   const cardUrl = getToolUrl(tool);
   const cardCanLaunch = cardUrl && (tool.status === 'exists' || tool.status === 'built' || tool.status === 'premium');
-  if (cardCanLaunch) {
+  const hasV2 = V2_TOOLS.has(tool.id);
+
+  if (cardCanLaunch && hasV2) {
+    // Both V1 and V2 exist — show side-by-side buttons
+    const v2Url = getToolUrlV2(tool);
+    html += '<div class="version-btns">';
+    html += `<button class="v-btn v1" onclick="event.stopPropagation(); launchTool('${cardUrl}')">▶ V1<span class="v-badge v1">CURRENT</span></button>`;
+    html += `<button class="v-btn v2" onclick="event.stopPropagation(); launchTool('${v2Url}')">▶ V2<span class="v-badge v2">NEW</span></button>`;
+    html += '</div>';
+  } else if (cardCanLaunch) {
     html += `<button class="card-launch-btn" onclick="event.stopPropagation(); launchTool('${cardUrl}')">▶ Launch Tool</button>`;
+  } else if (hasV2) {
+    // Only V2 exists (no V1)
+    const v2Url = getToolUrlV2(tool);
+    html += `<button class="card-launch-btn" style="background:var(--accent-purple);color:#fff;" onclick="event.stopPropagation(); launchTool('${v2Url}')">▶ Launch V2</button>`;
   }
 
   html += '</div>';
@@ -4028,6 +4077,27 @@ function renderDetailPanel(tool) {
 // TOOL LAUNCHING
 // ════════════════════════════════════════════════════
 
+// ═══ V2 TOOLS REGISTRY ═══
+// Tools that have a V2 (batch-built) version available as .v2.html
+const V2_TOOLS = new Set([
+  // Kindergarten (15)
+  '3d-shape-builder','add-subtract','classify-count','counting-sequences',
+  'measurement-compare','number-compare','number-path','number-recognition',
+  'pattern-machine','position-words','shape-builder','shape-sorter',
+  'story-problem-theater','teen-number-factory','teen-numbers',
+  // Grade 1 (13)
+  'add-sub-fluency','addition-number-line','clock-reader','counter-builder',
+  'counting-120','data-graphs','equation-balance','fact-family-houses',
+  'fraction-shapes','length-comparisons','place-value-tens-ones',
+  'shape-attributes','two-digit-operations',
+  // Grade 2 (19)
+  'addition-strategies','array-builder','equal-shares','fluency-20',
+  'line-plots','measurement-lab','money-decisions','number-line-operations',
+  'odd-even','partition-fractions','picture-graphs','place-value-hundreds',
+  'probability-predictions','shape-identifier','skip-counting',
+  'three-digit-operations','time-money','two-digit-fluency','word-problems'
+]);
+
 function getToolUrl(tool) {
   // Map grade values to folder names
   const gradeFolder = {
@@ -4041,6 +4111,12 @@ function getToolUrl(tool) {
   }
   if (!folder) return null;
   return `tools/${folder}/${tool.id}.html`;
+}
+
+function getToolUrlV2(tool) {
+  const folder = { 'K':'K','1':'1','2':'2' }[tool.grade];
+  if (!folder) return null;
+  return `tools/${folder}/${tool.id}.v2.html`;
 }
 
 function launchTool(url) {

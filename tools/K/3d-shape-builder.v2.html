@@ -1,0 +1,1207 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>VINCULUM — 3D Shape Builder</title>
+<link rel="stylesheet" href="../../vinculum-core.css">
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;600&display=swap');
+
+/* Theme system loaded from vinculum-core.css */
+.vinculum-rtm-btn .rtm-icon{font-size:14px;}
+
+/* ═══ FOCUS VISIBLE (Keyboard Navigation) ═══ */
+*:focus-visible {
+  outline:2px solid var(--cyan);outline-offset:2px;border-radius:4px;
+}
+.sr-only {
+  position:absolute;width:1px;height:1px;padding:0;margin:-1px;
+  overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0;
+}
+
+* { margin:0; padding:0; box-sizing:border-box; }
+body {
+  font-family: 'Inter', sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  height: 100vh;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  user-select: none;
+}
+
+/* ── HEADER ── */
+/* ── MODE TABS ── */
+/* Difficulty selector */
+.vinculum-diff-btn:hover { color: var(--text2); }
+/* ── MAIN AREA ── */
+.main {
+  flex: 1;
+  display: flex;
+  overflow: hidden;
+}
+
+/* ── WORKSPACE ── */
+.workspace {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: flex-start;
+  padding: 24px;
+  position: relative;
+  overflow-y: auto;
+}
+
+/* ── 3D SHAPE GALLERY ── */
+.shape-gallery-3d {
+  display: flex;
+  flex-direction: row;
+  gap: 16px;
+  justify-content: center;
+  flex-wrap: wrap;
+  margin-bottom: 16px;
+}
+.shape-card-3d {
+  width: 72px;
+  height: 72px;
+  border: 2px solid var(--border);
+  border-radius: 14px;
+  cursor: pointer;
+  padding: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--card);
+  transition: all 0.2s;
+}
+.shape-card-3d:hover {
+  border-color: var(--text2);
+  transform: scale(1.05);
+}
+.shape-card-3d.active {
+  border-color: var(--cyan);
+  background: rgba(0,212,255,0.1);
+  box-shadow: 0 0 12px rgba(0,212,255,0.2);
+}
+
+/* ── SHAPE DISPLAY ── */
+.shape-display-3d {
+  text-align: center;
+  margin: 16px auto;
+}
+
+/* ── INFO CARD ── */
+.shape-info-card {
+  background: var(--card);
+  border-radius: 12px;
+  padding: 16px;
+  text-align: center;
+  max-width: 480px;
+  width: 100%;
+  margin: 0 auto 16px;
+}
+.shape-info-card h2 {
+  font-size: 24px;
+  font-weight: 800;
+  text-transform: capitalize;
+  margin-bottom: 12px;
+}
+
+/* ── ATTRIBUTE BADGES ── */
+.attribute-badges {
+  display: flex;
+  flex-direction: row;
+  gap: 12px;
+  justify-content: center;
+  flex-wrap: wrap;
+  margin-bottom: 12px;
+}
+.attr-badge {
+  padding: 8px 14px;
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: 700;
+  background: var(--card);
+  border: 1px solid var(--border);
+}
+.attr-badge.faces { color: var(--cyan); border-color: rgba(0,212,255,0.3); background: rgba(0,212,255,0.08); }
+.attr-badge.edges { color: var(--yellow); border-color: rgba(255,193,7,0.3); background: rgba(255,193,7,0.08); }
+.attr-badge.vertices { color: var(--green); border-color: rgba(0,230,118,0.3); background: rgba(0,230,118,0.08); }
+
+/* ── REAL WORLD LIST ── */
+.real-world-list {
+  display: flex;
+  flex-direction: row;
+  gap: 8px;
+  justify-content: center;
+  flex-wrap: wrap;
+  margin: 8px 0;
+}
+.real-world-item {
+  padding: 6px 12px;
+  border-radius: 8px;
+  font-size: 13px;
+  font-weight: 600;
+  background: var(--card);
+  border: 1px solid var(--border);
+  color: var(--text2);
+}
+
+/* ── COMPARE TABLE ── */
+.compare-container {
+  display: flex;
+  gap: 24px;
+  justify-content: center;
+  align-items: flex-start;
+  flex-wrap: wrap;
+  margin: 16px auto;
+  max-width: 600px;
+}
+.compare-col {
+  text-align: center;
+  flex: 1;
+  min-width: 140px;
+}
+.compare-col h3 {
+  font-size: 16px;
+  font-weight: 700;
+  text-transform: capitalize;
+  margin: 8px 0;
+}
+.compare-table {
+  width: 100%;
+  max-width: 500px;
+  margin: 12px auto;
+  border-collapse: collapse;
+}
+.compare-table th, .compare-table td {
+  padding: 8px 12px;
+  font-size: 13px;
+  border-bottom: 1px solid var(--border);
+  text-align: center;
+}
+.compare-table th {
+  color: var(--muted);
+  font-weight: 700;
+  text-transform: uppercase;
+  font-size: 10px;
+  letter-spacing: 1px;
+}
+.compare-table td {
+  font-weight: 600;
+  font-family: 'JetBrains Mono', monospace;
+}
+
+/* ── MC GRID ── */
+.mc-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 10px;
+  max-width: 420px;
+  width: 100%;
+  margin: 16px auto;
+}
+.mc-btn {
+  padding: 14px 16px;
+  border-radius: 12px;
+  border: 2px solid var(--border);
+  background: var(--card);
+  color: var(--text);
+  font-size: 15px;
+  font-weight: 600;
+  font-family: inherit;
+  cursor: pointer;
+  transition: all 0.15s;
+  text-align: center;
+  text-transform: capitalize;
+}
+.mc-btn:hover {
+  border-color: var(--cyan);
+  background: rgba(0,212,255,0.05);
+  transform: scale(1.03);
+}
+.mc-btn.correct-flash {
+  border-color: var(--green);
+  background: rgba(0,230,118,0.15);
+  color: var(--green);
+}
+.mc-btn.incorrect-flash {
+  border-color: var(--pink);
+  background: rgba(255,59,139,0.15);
+  color: var(--pink);
+}
+
+/* ── INSTRUCTION BOX ── */
+.instruction-box {
+  text-align: center;
+  padding: 12px 20px;
+  background: var(--card);
+  border-radius: 12px;
+  border: 1px solid var(--border);
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--text2);
+  margin-bottom: 16px;
+  max-width: 480px;
+  width: 100%;
+  line-height: 1.5;
+}
+
+/* ── CONTROLS ── */
+.controls {
+  display: flex;
+  gap: 8px;
+  margin-top: 16px;
+  flex-wrap: wrap;
+  justify-content: center;
+}
+.ctrl-btn {
+  padding: 10px 20px;
+  border-radius: 10px;
+  border: 1px solid var(--border);
+  background: var(--card);
+  color: var(--text2);
+  font-size: 13px;
+  font-weight: 600;
+  font-family: inherit;
+  cursor: pointer;
+  transition: all 0.2s;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.ctrl-btn:hover { background: var(--card-hover); color: var(--text); }
+.ctrl-btn.primary {
+  background: var(--grad);
+  color: var(--bg);
+  border-color: transparent;
+}
+.ctrl-btn.primary:hover { opacity: 0.9; }
+.ctrl-btn.danger { color: var(--pink); }
+.ctrl-btn.danger:hover { background: rgba(255,59,139,0.1); }
+
+/* ── SCORE DISPLAY ── */
+.score-display {
+  text-align: center;
+  padding: 16px;
+  background: var(--card);
+  border-radius: 12px;
+  margin-bottom: 12px;
+}
+.score-value {
+  font-size: 36px;
+  font-weight: 900;
+  font-family: 'JetBrains Mono', monospace;
+  background: var(--grad);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+.score-label {
+  font-size: 11px;
+  color: var(--muted);
+  text-transform: uppercase;
+  letter-spacing: 1px;
+}
+.streak-bar {
+  height: 6px;
+  background: var(--card);
+  border-radius: 3px;
+  overflow: hidden;
+  margin-top: 8px;
+}
+.streak-fill {
+  height: 100%;
+  background: var(--grad);
+  border-radius: 3px;
+  transition: width 0.3s;
+}
+
+/* ── FEEDBACK ── */
+.feedback {
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%) scale(0);
+  padding: 24px 48px;
+  border-radius: 20px;
+  font-size: 20px;
+  font-weight: 700;
+  z-index: 200;
+  pointer-events: none;
+  transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275), opacity 0.3s;
+  opacity: 0;
+  max-width: 90vw;
+  text-align: center;
+  line-height: 1.4;
+}
+.feedback.show {
+  transform: translate(-50%, -50%) scale(1);
+  opacity: 1;
+}
+.feedback.correct {
+  background: rgba(0,230,118,0.15);
+  color: var(--green);
+  border: 2px solid var(--green);
+}
+.feedback.incorrect {
+  background: rgba(255,59,139,0.15);
+  color: var(--pink);
+  border: 2px solid var(--pink);
+}
+.feedback.try-again {
+  background: rgba(255,193,7,0.15);
+  color: var(--yellow);
+  border: 2px solid var(--yellow);
+}
+
+/* ── SIDE PANEL ── */
+.side-panel {
+  width: 280px;
+  background: var(--bg2);
+  border-left: 1px solid var(--border);
+  padding: 20px;
+  overflow-y: auto;
+  flex-shrink: 0;
+}
+.panel-section {
+  margin-bottom: 20px;
+}
+.panel-title {
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 1.5px;
+  color: var(--muted);
+  margin-bottom: 8px;
+}
+.panel-text {
+  font-size: 13px;
+  color: var(--text2);
+  line-height: 1.6;
+}
+
+/* ── ANIMATIONS ── */
+@keyframes pop {
+  0% { transform: scale(0); }
+  70% { transform: scale(1.2); }
+  100% { transform: scale(1); }
+}
+@keyframes shake {
+  0%, 100% { transform: translateX(0); }
+  25% { transform: translateX(-8px); }
+  75% { transform: translateX(8px); }
+}
+.pop-in { animation: pop 0.3s ease-out forwards; }
+.shake { animation: shake 0.3s ease-in-out; }
+
+/* scrollbar */
+::-webkit-scrollbar { width: 6px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+</style>
+</head>
+<body>
+
+<!-- ═══ HEADER ═══ -->
+<div class="vinculum-header">
+  <div class="vinculum-header-left">
+    <a class="vinculum-back-btn" href="../../VINCULUM-Hub.html" style="text-decoration:none;">◀ Hub</a>
+    <div class="vinculum-header-title"><span>VINCULUM</span> 3D Shape Builder</div>
+    <span class="vinculum-header-badge">K.G</span>
+  </div>
+    <div class="vinculum-header-right">
+      <div class="vinculum-std-tags">
+    <span class="vinculum-std-tag">K.G.4</span>
+    <span class="vinculum-std-tag">K.G.5</span>
+    <span class="vinculum-std-tag mn">MN K.4.1.1</span>
+  </div>
+  <button class="vinculum-back-btn" id="readAloudBtn" onclick="toggleReadAloud()" aria-label="Read Aloud" title="Read instructions aloud" style="margin-left:8px;white-space:nowrap;">🔊 Read to Me</button>
+</div>
+
+<!-- ═══ MODE TABS ═══ -->
+</div>
+
+  <div class="vinculum-mode-tabs">
+  <button class="vinculum-mode-tab active-explore" id="tabExplore" data-mode="explore">
+    <svg width="18" height="18" viewBox="0 0 48 48" fill="none"><path d="M4 24C4 24 12 12 24 12C36 12 44 24 44 24C44 24 36 36 24 36C12 36 4 24 4 24Z" stroke="currentColor" stroke-width="3" fill="none"/><circle cx="24" cy="24" r="7" stroke="currentColor" stroke-width="3" fill="none"/><circle cx="24" cy="24" r="3" fill="currentColor"/><line x1="24" y1="4" x2="24" y2="9" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" opacity="0.5"/><line x1="10" y1="8" x2="13" y2="12" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" opacity="0.5"/><line x1="38" y1="8" x2="35" y2="12" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" opacity="0.5"/></svg> Explore
+  </button>
+  <button class="vinculum-mode-tab" id="tabPractice" data-mode="practice">
+    <svg width="18" height="18" viewBox="0 0 48 48" fill="none"><circle cx="24" cy="24" r="20" stroke="currentColor" stroke-width="3" fill="none" opacity="0.3"/><circle cx="24" cy="24" r="20" stroke="currentColor" stroke-width="3" fill="none" stroke-dasharray="126" stroke-dashoffset="32" stroke-linecap="round"/><polyline points="16,24 22,32 34,16" stroke="currentColor" stroke-width="4" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg> Practice
+  </button>
+  <button class="vinculum-mode-tab" id="tabPlay" data-mode="play">
+    <svg width="18" height="18" viewBox="0 0 48 48" fill="none"><polygon points="28,4 12,28 22,28 18,44 36,18 26,18" fill="none" stroke="currentColor" stroke-width="3" stroke-linejoin="round"/><polygon points="27,8 15,27 23,27 20,40 34,19 26,19" fill="currentColor" opacity="0.15"/></svg> Play
+  </button>
+  <div class="vinculum-diff-selector">
+    <span class="vinculum-diff-label">Level</span>
+    <button class="vinculum-diff-btn active" id="diffE" data-diff="emergent">Cube+Sphere</button>
+    <button class="vinculum-diff-btn" id="diffP" data-diff="proficient">4 Shapes</button>
+    <button class="vinculum-diff-btn" id="diffA" data-diff="advanced">All</button>
+  </div>
+</div>
+
+<!-- ═══ MAIN ═══ -->
+<div class="main">
+  <div class="workspace" role="main" id="workspace"></div>
+  <div class="side-panel" id="sidePanel"></div>
+</div>
+
+<!-- ═══ FEEDBACK POPUP ═══ -->
+<div class="feedback" id="feedback"></div>
+
+  <script src="../../vinculum-input.js"></script>
+<script>
+// ════════════════════════════════════════
+// 3D SHAPE DATA
+// ════════════════════════════════════════
+const SHAPES_3D = [
+  { name:'cube', faces:6, edges:12, vertices:8, faceShape:'square', color:'#00d4ff',
+    description:'A cube has 6 square faces, 12 edges, and 8 corners.',
+    realWorld:['dice','box','ice cube','block'],
+    svg:function(size,fill,stroke){ return '<svg viewBox="0 0 100 100" width="'+size+'" height="'+size+'"><polygon points="25,30 50,15 75,30 75,70 50,85 25,70" fill="'+fill+'" opacity="0.2" stroke="'+stroke+'" stroke-width="2"/><line x1="50" y1="15" x2="50" y2="55" stroke="'+stroke+'" stroke-width="1.5" opacity="0.4"/><line x1="25" y1="30" x2="50" y2="45" stroke="'+stroke+'" stroke-width="1.5" opacity="0.4"/><line x1="75" y1="30" x2="50" y2="45" stroke="'+stroke+'" stroke-width="1.5" opacity="0.4"/></svg>'; } },
+  { name:'sphere', faces:0, edges:0, vertices:0, faceShape:'none (curved)', color:'#ff3b8b',
+    description:'A sphere is perfectly round with no flat faces, no edges, and no corners.',
+    realWorld:['ball','globe','marble','orange'],
+    svg:function(size,fill,stroke){ return '<svg viewBox="0 0 100 100" width="'+size+'" height="'+size+'"><circle cx="50" cy="50" r="40" fill="'+fill+'" opacity="0.2" stroke="'+stroke+'" stroke-width="2"/><ellipse cx="50" cy="50" rx="40" ry="12" fill="none" stroke="'+stroke+'" stroke-width="1" opacity="0.3"/><ellipse cx="50" cy="50" rx="12" ry="40" fill="none" stroke="'+stroke+'" stroke-width="1" opacity="0.3"/></svg>'; } },
+  { name:'cylinder', faces:2, edges:2, vertices:0, faceShape:'circle', color:'#ffc107',
+    description:'A cylinder has 2 flat circle faces, 2 edges, and no corners.',
+    realWorld:['can','log','pipe','pencil'],
+    svg:function(size,fill,stroke){ return '<svg viewBox="0 0 100 100" width="'+size+'" height="'+size+'"><ellipse cx="50" cy="25" rx="30" ry="10" fill="'+fill+'" opacity="0.2" stroke="'+stroke+'" stroke-width="2"/><rect x="20" y="25" width="60" height="50" fill="'+fill+'" opacity="0.15" stroke="none"/><line x1="20" y1="25" x2="20" y2="75" stroke="'+stroke+'" stroke-width="2"/><line x1="80" y1="25" x2="80" y2="75" stroke="'+stroke+'" stroke-width="2"/><ellipse cx="50" cy="75" rx="30" ry="10" fill="'+fill+'" opacity="0.2" stroke="'+stroke+'" stroke-width="2"/></svg>'; } },
+  { name:'cone', faces:1, edges:1, vertices:1, faceShape:'circle', color:'#00e676',
+    description:'A cone has 1 flat circle face, 1 edge, and 1 point (vertex) at the top.',
+    realWorld:['ice cream cone','party hat','traffic cone','funnel'],
+    svg:function(size,fill,stroke){ return '<svg viewBox="0 0 100 100" width="'+size+'" height="'+size+'"><polygon points="50,15 20,80 80,80" fill="'+fill+'" opacity="0.2" stroke="'+stroke+'" stroke-width="2"/><ellipse cx="50" cy="80" rx="30" ry="8" fill="'+fill+'" opacity="0.15" stroke="'+stroke+'" stroke-width="2"/></svg>'; } },
+  { name:'rectangular prism', faces:6, edges:12, vertices:8, faceShape:'rectangle', color:'#b388ff',
+    description:'A rectangular prism has 6 rectangular faces, 12 edges, and 8 corners.',
+    realWorld:['book','brick','cereal box','shoe box'],
+    svg:function(size,fill,stroke){ return '<svg viewBox="0 0 100 100" width="'+size+'" height="'+size+'"><polygon points="15,35 45,20 85,35 85,75 55,90 15,75" fill="'+fill+'" opacity="0.2" stroke="'+stroke+'" stroke-width="2"/><line x1="55" y1="50" x2="55" y2="90" stroke="'+stroke+'" stroke-width="1.5" opacity="0.4"/><line x1="15" y1="35" x2="55" y2="50" stroke="'+stroke+'" stroke-width="1.5" opacity="0.4"/><line x1="85" y1="35" x2="55" y2="50" stroke="'+stroke+'" stroke-width="1.5" opacity="0.4"/></svg>'; } }
+];
+
+// ════════════════════════════════════════
+// MISCONCEPTIONS
+// ════════════════════════════════════════
+const MISCONCEPTIONS = {
+  flatVsSolid: { id:'2d-3d', msg:function(shape){ return 'A '+shape+' is a 3D shape \u2014 you can HOLD it. A flat drawing is 2D!'; } },
+  faceConfusion: { id:'faces', msg:function(shape,faces){ return 'Faces are the FLAT parts. A '+shape+' has '+faces+' flat face'+(faces!==1?'s':'')+'. Count them!'; } },
+  offByOne: { id:'off-by-one', msg:function(ans,got){ return 'Close! You said '+got+' but it\u2019s actually '+ans+'. Try counting again!'; } },
+  randomGuess: { id:'random', msg:function(){ return 'Think about the shape \u2014 is it flat or solid? Does it roll or stack?'; } }
+};
+
+// ════════════════════════════════════════
+// STATE
+// ════════════════════════════════════════
+let S = {
+  mode: 'explore',
+  diff: 'emergent',
+  availableShapes: [],
+  selectedIdx: 0,
+  comparing: false,
+  compareIdx: 0,
+  // Practice
+  pShape: null,
+  pType: 'name',
+  pChoices: [],
+  pCorrect: null,
+  pAnswered: false,
+  // Play
+  score: 0,
+  streak: 0,
+  best: 0,
+  round: 0,
+  total: 10,
+  playShape: null,
+  playType: 'name',
+  playChoices: [],
+  playCorrect: null,
+  playAnswered: false
+};
+
+// ════════════════════════════════════════
+// READ-ALOUD
+// ════════════════════════════════════════
+function toggleReadAloud() {
+  if (window.VinculumStories && VinculumStories.isReading()) {
+    VinculumStories.stopReading();
+    document.getElementById('readAloudBtn').textContent = '\uD83D\uDD0A Read to Me';
+  } else {
+    var fb = document.getElementById('feedback');
+    var storyEl = document.getElementById('storyBanner');
+    var text = storyEl ? storyEl.textContent : (fb ? fb.textContent : 'Welcome to 3D Shape Builder!');
+    if (window.VinculumStories) {
+      VinculumStories.readAloud(text, { rate: 0.85, onComplete: function() {
+        document.getElementById('readAloudBtn').textContent = '\uD83D\uDD0A Read to Me';
+      }});
+      document.getElementById('readAloudBtn').textContent = '\u23F9 Stop';
+    }
+  }
+}
+
+// ════════════════════════════════════════
+// HELPERS
+// ════════════════════════════════════════
+function randInt(min, max) {
+  return Math.floor(Math.random() * (max - min + 1)) + min;
+}
+
+function shuffle(arr) {
+  var a = arr.slice();
+  for (var i = a.length - 1; i > 0; i--) {
+    var j = randInt(0, i);
+    var tmp = a[i]; a[i] = a[j]; a[j] = tmp;
+  }
+  return a;
+}
+
+function getAvailableShapes() {
+  if (S.diff === 'emergent') return SHAPES_3D.filter(function(s){ return s.name === 'cube' || s.name === 'sphere'; });
+  if (S.diff === 'proficient') return SHAPES_3D.filter(function(s){ return s.name !== 'rectangular prism'; });
+  return SHAPES_3D.slice();
+}
+
+function getShapeSVG(shape, size) {
+  return shape.svg(size, shape.color, shape.color);
+}
+
+function showFeedback(text, type, duration) {
+  var fb = document.getElementById('feedback');
+  fb.textContent = text;
+  fb.className = 'feedback ' + type + ' show';
+  setTimeout(function(){ fb.classList.remove('show'); }, duration || 2000);
+}
+
+// ════════════════════════════════════════
+// MODE / DIFFICULTY SWITCHING
+// ════════════════════════════════════════
+function setMode(mode) {
+  S.mode = mode;
+  S.comparing = false;
+  S.pShape = null;
+  S.pAnswered = false;
+  S.playAnswered = false;
+  if (mode === 'play') { S.round = 0; S.score = 0; S.streak = 0; }
+
+  document.querySelectorAll('.vinculum-mode-tab').forEach(function(t){ t.classList.remove('active-explore','active-practice','active-play'); });
+  var tabEl = document.querySelector('[data-mode="'+mode+'"]');
+  if (tabEl) tabEl.classList.add('active-' + mode);
+
+  S.availableShapes = getAvailableShapes();
+  S.selectedIdx = 0;
+  render();
+}
+
+function setDiff(diff) {
+  S.diff = diff;
+  document.querySelectorAll('.vinculum-diff-btn').forEach(function(b){ b.classList.remove('active'); });
+  document.getElementById('diff' + diff.charAt(0).toUpperCase()).classList.add('active');
+  S.availableShapes = getAvailableShapes();
+  S.selectedIdx = 0;
+  S.comparing = false;
+  S.pShape = null;
+  S.pAnswered = false;
+  if (S.mode === 'play') { S.round = 0; S.score = 0; S.streak = 0; }
+  render();
+}
+
+// ════════════════════════════════════════
+// RENDER
+// ════════════════════════════════════════
+function render() {
+  var ws = document.getElementById('workspace');
+  var sp = document.getElementById('sidePanel');
+
+  S.availableShapes = getAvailableShapes();
+
+  if (S.mode === 'explore') renderExplore(ws, sp);
+  else if (S.mode === 'practice') renderPractice(ws, sp);
+  else renderPlay(ws, sp);
+}
+
+// ─── EXPLORE MODE ───
+function renderExplore(ws, sp) {
+  var shapes = S.availableShapes;
+  if (S.selectedIdx >= shapes.length) S.selectedIdx = 0;
+  var sel = shapes[S.selectedIdx];
+  var html = '';
+
+  // Story banner
+  if (window.VinculumStories) {
+    var toolName = window.location.pathname.split('/').pop().replace('.html','');
+    var storyData = VinculumStories.getStory(toolName, {a: sel.faces, b: sel.edges, total: sel.vertices, n: shapes.length});
+    if (storyData && storyData.story) {
+      if (window.Vinculum3Reads) {
+        html += Vinculum3Reads.getBannerHTML(storyData);
+      } else {
+        html += '<div id="storyBanner" style="background:var(--card2,#1a1f2e);border:1px solid var(--border);border-radius:12px;padding:16px 20px;margin-bottom:16px;font-size:15px;line-height:1.6;color:var(--text);position:relative;max-width:480px;width:100%;"><span style="font-size:12px;color:var(--cyan);font-weight:700;text-transform:uppercase;letter-spacing:1px;">\uD83D\uDCD6 Story</span><br>' + storyData.story + '<br><em style="color:var(--yellow);font-weight:600;">' + storyData.question + '</em><button onclick="toggleReadAloud()" style="position:absolute;top:12px;right:12px;background:none;border:1px solid var(--border);border-radius:8px;padding:4px 10px;color:var(--cyan);cursor:pointer;font-size:14px;" title="Read story aloud">\uD83D\uDD0A</button></div>';
+      }
+    }
+  }
+
+  // Shape gallery
+  html += '<div class="shape-gallery-3d">';
+  shapes.forEach(function(shape, i) {
+    html += '<div class="shape-card-3d' + (i === S.selectedIdx ? ' active' : '') + '" onclick="selectShape('+i+')" title="'+shape.name+'">';
+    html += getShapeSVG(shape, 48);
+    html += '</div>';
+  });
+  html += '</div>';
+
+  if (!S.comparing) {
+    // Selected shape display
+    html += '<div class="shape-display-3d pop-in">';
+    html += getShapeSVG(sel, 180);
+    html += '</div>';
+
+    // Info card
+    html += '<div class="shape-info-card">';
+    html += '<h2 style="color:'+sel.color+';">'+sel.name+'</h2>';
+    html += '<div class="attribute-badges">';
+    html += '<span class="attr-badge faces">' + sel.faces + ' Face' + (sel.faces !== 1 ? 's' : '') + '</span>';
+    html += '<span class="attr-badge edges">' + sel.edges + ' Edge' + (sel.edges !== 1 ? 's' : '') + '</span>';
+    html += '<span class="attr-badge vertices">' + sel.vertices + ' Vertice' + (sel.vertices !== 1 ? 's' : '') + '</span>';
+    html += '</div>';
+    html += '<div style="font-size:13px;color:var(--muted);margin-bottom:8px;">Face shape: <strong style="color:var(--text2);">'+sel.faceShape+'</strong></div>';
+    html += '<div style="font-size:14px;color:var(--text2);margin-bottom:10px;">'+sel.description+'</div>';
+    html += '<div style="font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:1px;margin-bottom:6px;">Real-World Examples</div>';
+    html += '<div class="real-world-list">';
+    sel.realWorld.forEach(function(item) {
+      html += '<span class="real-world-item">'+item+'</span>';
+    });
+    html += '</div>';
+    html += '</div>';
+
+    // Controls
+    if (shapes.length > 1) {
+      html += '<div class="controls">';
+      html += '<button class="ctrl-btn primary" onclick="startCompare()">Compare Shapes</button>';
+      html += '</div>';
+    }
+  } else {
+    // Compare mode
+    var s1 = sel;
+    var s2Idx = S.compareIdx;
+    if (s2Idx === S.selectedIdx) s2Idx = (s2Idx + 1) % shapes.length;
+    var s2 = shapes[s2Idx];
+
+    html += '<div class="compare-container">';
+    html += '<div class="compare-col">';
+    html += getShapeSVG(s1, 120);
+    html += '<h3 style="color:'+s1.color+';">'+s1.name+'</h3>';
+    html += '</div>';
+    html += '<div style="font-size:24px;color:var(--muted);align-self:center;font-weight:700;">vs</div>';
+    html += '<div class="compare-col">';
+    html += getShapeSVG(s2, 120);
+    html += '<h3 style="color:'+s2.color+';">'+s2.name+'</h3>';
+    html += '</div>';
+    html += '</div>';
+
+    html += '<table class="compare-table">';
+    html += '<tr><th>Attribute</th><th style="color:'+s1.color+';">'+s1.name+'</th><th style="color:'+s2.color+';">'+s2.name+'</th></tr>';
+    html += '<tr><td style="color:var(--text2);font-weight:600;">Faces</td><td>'+s1.faces+'</td><td>'+s2.faces+'</td></tr>';
+    html += '<tr><td style="color:var(--text2);font-weight:600;">Edges</td><td>'+s1.edges+'</td><td>'+s2.edges+'</td></tr>';
+    html += '<tr><td style="color:var(--text2);font-weight:600;">Vertices</td><td>'+s1.vertices+'</td><td>'+s2.vertices+'</td></tr>';
+    html += '<tr><td style="color:var(--text2);font-weight:600;">Face Shape</td><td style="font-family:inherit;">'+s1.faceShape+'</td><td style="font-family:inherit;">'+s2.faceShape+'</td></tr>';
+    html += '</table>';
+
+    // Compare shape picker
+    html += '<div style="text-align:center;margin-top:12px;font-size:12px;color:var(--muted);">Compare with:</div>';
+    html += '<div class="shape-gallery-3d" style="margin-top:6px;">';
+    shapes.forEach(function(shape, i) {
+      if (i === S.selectedIdx) return;
+      html += '<div class="shape-card-3d' + (i === s2Idx ? ' active' : '') + '" onclick="setCompare('+i+')" title="'+shape.name+'">';
+      html += getShapeSVG(shape, 36);
+      html += '</div>';
+    });
+    html += '</div>';
+
+    html += '<div class="controls">';
+    html += '<button class="ctrl-btn" onclick="stopCompare()">Back to Explore</button>';
+    html += '</div>';
+  }
+
+  ws.innerHTML = html;
+
+  // Side panel
+  sp.innerHTML =
+    '<div class="panel-section">' +
+      '<div class="panel-title">How to Use</div>' +
+      '<div class="panel-text">' +
+        '1. Tap a shape in the gallery to explore it<br><br>' +
+        '2. Read about its <strong>faces, edges, and vertices</strong><br><br>' +
+        '3. See real-world examples of the shape<br><br>' +
+        '4. Use <strong>Compare</strong> to see two shapes side by side' +
+      '</div>' +
+    '</div>' +
+    '<div class="panel-section">' +
+      '<div class="panel-title">2D vs 3D</div>' +
+      '<div class="panel-text" style="background:var(--card);padding:12px;border-radius:8px;">' +
+        '<strong style="color:var(--cyan);">2D shapes</strong> are flat \u2014 like a drawing on paper (circle, square, triangle).<br><br>' +
+        '<strong style="color:var(--pink);">3D shapes</strong> are solid \u2014 you can hold them! They have faces, edges, and vertices.' +
+      '</div>' +
+    '</div>' +
+    '<div class="panel-section">' +
+      '<div class="panel-title">Vocabulary</div>' +
+      '<div class="panel-text">' +
+        '<strong>Face</strong> \u2014 a flat surface on a 3D shape<br><br>' +
+        '<strong>Edge</strong> \u2014 where two faces meet (a line)<br><br>' +
+        '<strong>Vertex</strong> \u2014 a corner where edges meet<br><br>' +
+        '<strong>Vertices</strong> \u2014 more than one vertex' +
+      '</div>' +
+    '</div>' +
+    '<div class="panel-section">' +
+      '<div class="panel-title">Standards</div>' +
+      '<div class="panel-text">' +
+        '<strong>K.G.4</strong> \u2014 Analyze and compare two- and three-dimensional shapes using informal language<br><br>' +
+        '<strong>K.G.5</strong> \u2014 Model shapes in the world by building and drawing shapes' +
+      '</div>' +
+    '</div>';
+}
+
+function selectShape(idx) {
+  S.selectedIdx = idx;
+  render();
+}
+
+function startCompare() {
+  S.comparing = true;
+  var shapes = S.availableShapes;
+  S.compareIdx = (S.selectedIdx + 1) % shapes.length;
+  render();
+}
+
+function stopCompare() {
+  S.comparing = false;
+  render();
+}
+
+function setCompare(idx) {
+  S.compareIdx = idx;
+  render();
+}
+
+// ─── PRACTICE MODE ───
+function renderPractice(ws, sp) {
+  var shapes = S.availableShapes;
+
+  if (!S.pShape || S.pAnswered) {
+    if (S.pAnswered) {
+      // Already answered, wait for next call
+    } else {
+      generatePracticeQuestion();
+    }
+  }
+
+  var html = '';
+
+  // Instruction
+  html += '<div class="instruction-box">' + S.pQuestion + '</div>';
+
+  // Shape display (if showing a shape)
+  if (S.pShowShape) {
+    html += '<div class="shape-display-3d pop-in">';
+    html += getShapeSVG(S.pShape, 140);
+    html += '</div>';
+  }
+
+  // MC grid
+  html += '<div class="mc-grid">';
+  S.pChoices.forEach(function(choice, i) {
+    html += '<button class="mc-btn" id="pmc'+i+'" onclick="practiceAnswer('+i+')">'+choice+'</button>';
+  });
+  html += '</div>';
+
+  // Skip
+  html += '<div class="controls">';
+  html += '<button class="ctrl-btn" onclick="skipPractice()">Skip \u27A1</button>';
+  html += '</div>';
+
+  ws.innerHTML = html;
+
+  // Side panel
+  sp.innerHTML =
+    '<div class="panel-section">' +
+      '<div class="panel-title">Instructions</div>' +
+      '<div class="panel-text">' +
+        'Look at the shape and answer the question.<br><br>' +
+        'Tap your answer from the choices below.<br><br>' +
+        (S.diff === 'emergent' ? '<strong>Emergent:</strong> Identify cubes and spheres by name.' :
+         S.diff === 'proficient' ? '<strong>Proficient:</strong> Count faces and match real-world objects.' :
+         '<strong>Advanced:</strong> Compare attributes and distinguish 2D from 3D.') +
+      '</div>' +
+    '</div>' +
+    '<div class="panel-section">' +
+      '<div class="panel-title">Tip</div>' +
+      '<div class="panel-text" style="background:var(--card);padding:12px;border-radius:8px;">' +
+        'Remember: <strong>faces</strong> are flat, <strong>edges</strong> are lines, and <strong>vertices</strong> are corners!' +
+      '</div>' +
+    '</div>';
+}
+
+function generatePracticeQuestion() {
+  var shapes = S.availableShapes;
+  S.pShape = shapes[randInt(0, shapes.length - 1)];
+  S.pAnswered = false;
+  S.pShowShape = true;
+
+  if (S.diff === 'emergent') {
+    // "What 3D shape is this?" with 2-3 name choices
+    S.pType = 'name';
+    S.pQuestion = 'What 3D shape is this?';
+    S.pCorrect = S.pShape.name;
+    var choices = [S.pShape.name];
+    shapes.forEach(function(s) {
+      if (s.name !== S.pShape.name && choices.length < 3) choices.push(s.name);
+    });
+    // Pad with extra if needed
+    if (choices.length < 2) choices.push('triangle');
+    S.pChoices = shuffle(choices);
+  } else if (S.diff === 'proficient') {
+    var qType = randInt(0, 1);
+    if (qType === 0) {
+      // "How many faces does this shape have?"
+      S.pType = 'faces';
+      S.pQuestion = 'How many faces does a ' + S.pShape.name + ' have?';
+      S.pCorrect = String(S.pShape.faces);
+      var faceSet = new Set([String(S.pShape.faces)]);
+      shapes.forEach(function(s) { faceSet.add(String(s.faces)); });
+      while (faceSet.size < 4) faceSet.add(String(randInt(0, 12)));
+      S.pChoices = shuffle(Array.from(faceSet)).slice(0, 4);
+      if (S.pChoices.indexOf(S.pCorrect) === -1) S.pChoices[0] = S.pCorrect;
+      S.pChoices = shuffle(S.pChoices);
+    } else {
+      // "Which real-world object is a ___?"
+      S.pType = 'realworld';
+      S.pQuestion = 'Which real-world object is a ' + S.pShape.name + '?';
+      S.pCorrect = S.pShape.realWorld[randInt(0, S.pShape.realWorld.length - 1)];
+      var rwChoices = [S.pCorrect];
+      shapes.forEach(function(s) {
+        if (s.name !== S.pShape.name) {
+          rwChoices.push(s.realWorld[randInt(0, s.realWorld.length - 1)]);
+        }
+      });
+      while (rwChoices.length < 4) rwChoices.push(['crayon','penny','sheet','ring'][rwChoices.length]);
+      S.pChoices = shuffle(rwChoices.slice(0, 4));
+      if (S.pChoices.indexOf(S.pCorrect) === -1) S.pChoices[0] = S.pCorrect;
+      S.pChoices = shuffle(S.pChoices);
+      S.pShowShape = true;
+    }
+  } else {
+    // Advanced: mixed questions
+    var qType = randInt(0, 2);
+    if (qType === 0) {
+      // "Which shape has the same number of faces as a ___?"
+      S.pType = 'match-faces';
+      var partner = null;
+      shapes.forEach(function(s) {
+        if (s.name !== S.pShape.name && s.faces === S.pShape.faces) partner = s;
+      });
+      if (partner) {
+        S.pQuestion = 'Which shape has the same number of faces as a ' + S.pShape.name + '?';
+        S.pCorrect = partner.name;
+        var nameChoices = [partner.name];
+        shapes.forEach(function(s) {
+          if (s.name !== S.pShape.name && s.name !== partner.name && nameChoices.length < 4) nameChoices.push(s.name);
+        });
+        while (nameChoices.length < 4) nameChoices.push('pyramid');
+        S.pChoices = shuffle(nameChoices.slice(0, 4));
+        if (S.pChoices.indexOf(S.pCorrect) === -1) S.pChoices[0] = S.pCorrect;
+        S.pChoices = shuffle(S.pChoices);
+      } else {
+        // Fallback to faces question
+        S.pType = 'faces';
+        S.pQuestion = 'How many faces does a ' + S.pShape.name + ' have?';
+        S.pCorrect = String(S.pShape.faces);
+        var faceSet2 = new Set([String(S.pShape.faces)]);
+        shapes.forEach(function(s) { faceSet2.add(String(s.faces)); });
+        while (faceSet2.size < 4) faceSet2.add(String(randInt(0, 12)));
+        S.pChoices = shuffle(Array.from(faceSet2)).slice(0, 4);
+        if (S.pChoices.indexOf(S.pCorrect) === -1) S.pChoices[0] = S.pCorrect;
+        S.pChoices = shuffle(S.pChoices);
+      }
+    } else if (qType === 1) {
+      // "Is this 2D or 3D?"
+      S.pType = '2d-vs-3d';
+      S.pQuestion = 'Is a ' + S.pShape.name + ' a 2D shape or a 3D shape?';
+      S.pCorrect = '3D';
+      S.pChoices = shuffle(['2D', '3D']);
+      S.pShowShape = true;
+    } else {
+      // "How many vertices does a ___ have?"
+      S.pType = 'vertices';
+      S.pQuestion = 'How many vertices (corners) does a ' + S.pShape.name + ' have?';
+      S.pCorrect = String(S.pShape.vertices);
+      var vSet = new Set([String(S.pShape.vertices)]);
+      shapes.forEach(function(s) { vSet.add(String(s.vertices)); });
+      while (vSet.size < 4) vSet.add(String(randInt(0, 12)));
+      S.pChoices = shuffle(Array.from(vSet)).slice(0, 4);
+      if (S.pChoices.indexOf(S.pCorrect) === -1) S.pChoices[0] = S.pCorrect;
+      S.pChoices = shuffle(S.pChoices);
+    }
+  }
+}
+
+function practiceAnswer(idx) {
+  if (S.pAnswered) return;
+  S.pAnswered = true;
+  var chosen = S.pChoices[idx];
+  var btn = document.getElementById('pmc' + idx);
+
+  if (chosen === S.pCorrect) {
+    btn.classList.add('correct-flash');
+    showFeedback('\u2713 Correct! ' + (S.pShape.name.charAt(0).toUpperCase() + S.pShape.name.slice(1)) + '!', 'correct', 1500);
+    setTimeout(function() {
+      S.pAnswered = false;
+      S.pShape = null;
+      render();
+    }, 1500);
+  } else {
+    btn.classList.add('incorrect-flash');
+    // Misconception-targeted feedback
+    var msg = '';
+    if (S.pType === '2d-vs-3d') {
+      msg = MISCONCEPTIONS.flatVsSolid.msg(S.pShape.name);
+    } else if (S.pType === 'faces' || S.pType === 'vertices') {
+      var numChosen = parseInt(chosen);
+      var numCorrect = parseInt(S.pCorrect);
+      if (!isNaN(numChosen) && !isNaN(numCorrect) && Math.abs(numChosen - numCorrect) === 1) {
+        msg = MISCONCEPTIONS.offByOne.msg(S.pCorrect, chosen);
+      } else if (S.pType === 'faces') {
+        msg = MISCONCEPTIONS.faceConfusion.msg(S.pShape.name, S.pShape.faces);
+      } else {
+        msg = MISCONCEPTIONS.offByOne.msg(S.pCorrect, chosen);
+      }
+    } else {
+      msg = MISCONCEPTIONS.randomGuess.msg();
+    }
+    showFeedback(msg, 'try-again', 2500);
+    // Highlight correct
+    S.pChoices.forEach(function(c, ci) {
+      if (c === S.pCorrect) {
+        var correctBtn = document.getElementById('pmc' + ci);
+        if (correctBtn) correctBtn.classList.add('correct-flash');
+      }
+    });
+    setTimeout(function() {
+      S.pAnswered = false;
+      S.pShape = null;
+      render();
+    }, 2500);
+  }
+}
+
+function skipPractice() {
+  S.pAnswered = false;
+  S.pShape = null;
+  render();
+}
+
+// ─── PLAY MODE ───
+function renderPlay(ws, sp) {
+  if (S.round === 0) startNewGame();
+
+  var html = '';
+
+  // Round indicator
+  html += '<div style="text-align:center;margin-bottom:8px;">';
+  html += '<div style="font-size:14px;color:var(--muted);">Round ' + S.round + ' of ' + S.total + '</div>';
+  html += '</div>';
+
+  // Instruction
+  html += '<div class="instruction-box">' + S.playQuestion + '</div>';
+
+  // Shape display
+  if (S.playShowShape) {
+    html += '<div class="shape-display-3d pop-in">';
+    html += getShapeSVG(S.playShape, 140);
+    html += '</div>';
+  }
+
+  // MC grid
+  html += '<div class="mc-grid">';
+  S.playChoices.forEach(function(choice, i) {
+    html += '<button class="mc-btn" id="plmc'+i+'" onclick="playAnswer('+i+')">'+choice+'</button>';
+  });
+  html += '</div>';
+
+  ws.innerHTML = html;
+
+  // Side panel with score
+  sp.innerHTML =
+    '<div class="score-display">' +
+      '<div class="score-value">' + S.score + '</div>' +
+      '<div class="score-label">Score</div>' +
+    '</div>' +
+    '<div class="score-display" style="background:transparent;padding:8px;">' +
+      '<div style="font-size:18px;font-weight:700;color:var(--yellow);">\uD83D\uDD25 ' + S.streak + '</div>' +
+      '<div class="score-label">Streak</div>' +
+      '<div class="streak-bar"><div class="streak-fill" style="width:' + Math.min(S.streak * 20, 100) + '%;"></div></div>' +
+    '</div>' +
+    '<div class="panel-section">' +
+      '<div class="panel-title">How to Play</div>' +
+      '<div class="panel-text">' +
+        'Identify shapes, count attributes, and answer quickly!<br><br>' +
+        '<strong>Quick answers</strong> earn bonus points!<br><br>' +
+        'Build a streak for even more!' +
+      '</div>' +
+    '</div>' +
+    '<div class="panel-section">' +
+      '<div class="panel-title">Best Streak</div>' +
+      '<div class="panel-text" style="font-size:24px;font-weight:800;color:var(--purple);">\uD83C\uDFC6 ' + S.best + '</div>' +
+    '</div>';
+}
+
+function startNewGame() {
+  S.score = 0;
+  S.streak = 0;
+  S.round = 1;
+  S.playAnswered = false;
+  generatePlayQuestion();
+}
+
+function generatePlayQuestion() {
+  var shapes = S.availableShapes;
+  S.playShape = shapes[randInt(0, shapes.length - 1)];
+  S.playAnswered = false;
+  S.playShowShape = true;
+
+  // Mix question types based on difficulty
+  var qTypes = [];
+  if (S.diff === 'emergent') {
+    qTypes = ['name'];
+  } else if (S.diff === 'proficient') {
+    qTypes = ['name', 'faces', 'realworld'];
+  } else {
+    qTypes = ['name', 'faces', 'vertices', 'realworld', '2d-vs-3d'];
+  }
+  S.playType = qTypes[randInt(0, qTypes.length - 1)];
+
+  if (S.playType === 'name') {
+    S.playQuestion = 'What 3D shape is this?';
+    S.playCorrect = S.playShape.name;
+    var choices = [S.playShape.name];
+    shapes.forEach(function(s) {
+      if (s.name !== S.playShape.name && choices.length < (S.diff === 'emergent' ? 2 : 4)) choices.push(s.name);
+    });
+    if (choices.length < 2) choices.push('triangle');
+    while (choices.length < (S.diff === 'emergent' ? 2 : 4)) choices.push(['pyramid','prism','oval'][choices.length - 2] || 'pentagon');
+    S.playChoices = shuffle(choices);
+  } else if (S.playType === 'faces') {
+    S.playQuestion = 'How many faces does a ' + S.playShape.name + ' have?';
+    S.playCorrect = String(S.playShape.faces);
+    var fSet = new Set([String(S.playShape.faces)]);
+    shapes.forEach(function(s) { fSet.add(String(s.faces)); });
+    while (fSet.size < 4) fSet.add(String(randInt(0, 12)));
+    S.playChoices = shuffle(Array.from(fSet)).slice(0, 4);
+    if (S.playChoices.indexOf(S.playCorrect) === -1) S.playChoices[0] = S.playCorrect;
+    S.playChoices = shuffle(S.playChoices);
+  } else if (S.playType === 'vertices') {
+    S.playQuestion = 'How many vertices (corners) does a ' + S.playShape.name + ' have?';
+    S.playCorrect = String(S.playShape.vertices);
+    var vSet = new Set([String(S.playShape.vertices)]);
+    shapes.forEach(function(s) { vSet.add(String(s.vertices)); });
+    while (vSet.size < 4) vSet.add(String(randInt(0, 12)));
+    S.playChoices = shuffle(Array.from(vSet)).slice(0, 4);
+    if (S.playChoices.indexOf(S.playCorrect) === -1) S.playChoices[0] = S.playCorrect;
+    S.playChoices = shuffle(S.playChoices);
+  } else if (S.playType === 'realworld') {
+    S.playQuestion = 'Which real-world object is a ' + S.playShape.name + '?';
+    S.playCorrect = S.playShape.realWorld[randInt(0, S.playShape.realWorld.length - 1)];
+    var rwc = [S.playCorrect];
+    shapes.forEach(function(s) {
+      if (s.name !== S.playShape.name) rwc.push(s.realWorld[randInt(0, s.realWorld.length - 1)]);
+    });
+    while (rwc.length < 4) rwc.push(['crayon','penny','sheet','ring'][rwc.length]);
+    S.playChoices = shuffle(rwc.slice(0, 4));
+    if (S.playChoices.indexOf(S.playCorrect) === -1) S.playChoices[0] = S.playCorrect;
+    S.playChoices = shuffle(S.playChoices);
+  } else {
+    // 2d-vs-3d
+    S.playQuestion = 'Is a ' + S.playShape.name + ' a 2D shape or a 3D shape?';
+    S.playCorrect = '3D';
+    S.playChoices = shuffle(['2D', '3D']);
+  }
+}
+
+function playAnswer(idx) {
+  if (S.playAnswered) return;
+  S.playAnswered = true;
+  var chosen = S.playChoices[idx];
+  var btn = document.getElementById('plmc' + idx);
+
+  if (chosen === S.playCorrect) {
+    btn.classList.add('correct-flash');
+    S.score += 10 + (S.streak * 2);
+    S.streak++;
+    if (S.streak > S.best) S.best = S.streak;
+    showFeedback('\u2713 Correct!', 'correct', 1000);
+  } else {
+    btn.classList.add('incorrect-flash');
+    S.streak = 0;
+    // Misconception feedback
+    var msg = '';
+    if (S.playType === '2d-vs-3d') {
+      msg = MISCONCEPTIONS.flatVsSolid.msg(S.playShape.name);
+    } else if (S.playType === 'faces') {
+      msg = MISCONCEPTIONS.faceConfusion.msg(S.playShape.name, S.playShape.faces);
+    } else {
+      msg = MISCONCEPTIONS.randomGuess.msg();
+    }
+    showFeedback(msg, 'incorrect', 2000);
+    // Highlight correct
+    S.playChoices.forEach(function(c, ci) {
+      if (c === S.playCorrect) {
+        var cb = document.getElementById('plmc' + ci);
+        if (cb) cb.classList.add('correct-flash');
+      }
+    });
+  }
+
+  var delay = (chosen === S.playCorrect) ? 1000 : 2000;
+  setTimeout(function() {
+    if (S.round >= S.total) {
+      showFeedback('Game Over! Score: ' + S.score, 'correct', 2500);
+      setTimeout(function() {
+        S.round = 0;
+        render();
+      }, 2500);
+      return;
+    }
+    S.round++;
+    generatePlayQuestion();
+    render();
+  }, delay);
+}
+
+// ════════════════════════════════════════
+// INIT
+// ════════════════════════════════════════
+document.querySelectorAll('.vinculum-mode-tab').forEach(function(tab) {
+  tab.addEventListener('click', function() {
+    setMode(this.dataset.mode);
+  });
+});
+
+document.querySelectorAll('.vinculum-diff-btn').forEach(function(btn) {
+  btn.addEventListener('click', function() {
+    setDiff(this.dataset.diff);
+  });
+});
+
+S.availableShapes = getAvailableShapes();
+render();
+</script>
+<script src="../../vinculum-core.js"></script>
+<script src="../../vinculum-data.js"></script>
+    <script src="../../vinculum-adaptive-hook.js"></script>
+<script src="../../vinculum-3reads.js"></script>
+<script src="../../vinculum-stories.js"></script>
+<script src="../../vinculum-feedback.js"></script>
+  <script src="../../vinculum-guide.js"></script>
+<script src="../../vinculum-identity.js"></script>
+<script src="../../vinculum-indigenous.js"></script>
+<script src="../../vinculum-dashboard.js"></script>
+<script src="../../vinculum-hyperfocus.js"></script>
+<script src="../../vinculum-layout.js"></script>
+</body>
+</html>

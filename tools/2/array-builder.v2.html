@@ -1,0 +1,1383 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>VINCULUM — Array Builder</title>
+<link rel="stylesheet" href="../../vinculum-core.css">
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;600&display=swap');
+
+/* Theme system loaded from vinculum-core.css */
+.vinculum-rtm-btn .rtm-icon{font-size:14px;}
+
+/* ═══ FOCUS VISIBLE (Keyboard Navigation) ═══ */
+*:focus-visible {
+  outline:2px solid var(--cyan);outline-offset:2px;border-radius:4px;
+}
+.sr-only {
+  position:absolute;width:1px;height:1px;padding:0;margin:-1px;
+  overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0;
+}
+
+* { margin:0; padding:0; box-sizing:border-box; }
+body {
+  font-family: 'Inter', sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  height: 100vh;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  user-select: none;
+}
+
+/* ── HEADER ── */
+.vinculum-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 24px;
+  background: var(--bg2);
+  border-bottom: 1px solid var(--border);
+  flex-shrink: 0;
+}
+.vinculum-header-left {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+.vinculum-back-btn {
+  padding: 6px 12px;
+  border-radius: 8px;
+  border: 1px solid var(--border);
+  background: transparent;
+  color: var(--text2);
+  font-size: 13px;
+  font-family: inherit;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+.vinculum-back-btn:hover { background: var(--card); color: var(--cyan); }
+.vinculum-header-title {
+  font-size: 18px;
+  font-weight: 800;
+}
+.vinculum-header-title span {
+  background: var(--grad);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+.vinculum-header-badge {
+  font-size: 10px;
+  font-weight: 700;
+  padding: 3px 10px;
+  border-radius: 6px;
+  background: rgba(0,212,255,0.1);
+  color: var(--cyan);
+  border: 1px solid rgba(0,212,255,0.2);
+  letter-spacing: 1px;
+}
+.vinculum-std-tags {
+  display: flex;
+  gap: 6px;
+}
+.vinculum-std-tag {
+  font-size: 10px;
+  font-family: 'JetBrains Mono', monospace;
+  font-weight: 600;
+  padding: 3px 8px;
+  border-radius: 5px;
+  background: rgba(0,212,255,0.08);
+  color: var(--cyan);
+}
+.vinculum-std-tag.mn { background: rgba(255,145,0,0.08); color: var(--orange); }
+
+/* ── MODE TABS ── */
+.vinculum-mode-tabs {
+  display: flex;
+  gap: 4px;
+  padding: 8px 24px;
+  background: var(--bg2);
+  border-bottom: 1px solid var(--border);
+  flex-shrink: 0;
+}
+.vinculum-mode-tab {
+  padding: 8px 20px;
+  border-radius: 8px;
+  border: 1px solid transparent;
+  background: transparent;
+  color: var(--muted);
+  font-size: 13px;
+  font-weight: 600;
+  font-family: inherit;
+  cursor: pointer;
+  transition: all 0.2s;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.vinculum-mode-tab:hover { color: var(--text2); background: var(--card); }
+.vinculum-mode-tab.active-explore { background: rgba(0,212,255,0.1); color: var(--cyan); border-color: rgba(0,212,255,0.3); }
+.vinculum-mode-tab.active-practice { background: rgba(0,230,118,0.1); color: var(--green); border-color: rgba(0,230,118,0.3); }
+.vinculum-mode-tab.active-play { background: rgba(255,59,139,0.1); color: var(--pink); border-color: rgba(255,59,139,0.3); }
+
+/* Difficulty selector */
+.vinculum-diff-selector {
+  margin-left: auto;
+  display: flex;
+  gap: 4px;
+  align-items: center;
+}
+.vinculum-diff-label {
+  font-size: 11px;
+  color: var(--muted);
+  margin-right: 8px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+}
+.vinculum-diff-btn {
+  padding: 5px 12px;
+  border-radius: 6px;
+  border: 1px solid var(--border);
+  background: transparent;
+  color: var(--muted);
+  font-size: 11px;
+  font-weight: 600;
+  font-family: inherit;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+.vinculum-diff-btn:hover { color: var(--text2); }
+.vinculum-diff-btn.active { background: rgba(0,212,255,0.1); color: var(--cyan); border-color: rgba(0,212,255,0.3); }
+
+/* ── MAIN AREA ── */
+.main {
+  flex: 1;
+  display: flex;
+  overflow: hidden;
+}
+
+/* ── WORKSPACE ── */
+.workspace {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+  position: relative;
+  overflow-y: auto;
+}
+
+/* ── ARRAY CONTAINER ── */
+.array-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 20px;
+  width: 100%;
+  max-width: 600px;
+}
+
+/* ── SVG ARRAY GRID ── */
+.array-svg-wrap {
+  padding: 20px;
+  background: var(--card);
+  border-radius: 16px;
+  border: 2px solid var(--border);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  min-width: 200px;
+  min-height: 180px;
+  position: relative;
+}
+
+/* ── ARRAY INFO ── */
+.array-info {
+  text-align: center;
+  padding: 16px 20px;
+  background: rgba(0,212,255,0.05);
+  border-radius: 12px;
+  border: 1px solid var(--border);
+  width: 100%;
+}
+.array-equation {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 20px;
+  font-weight: 700;
+  color: var(--cyan);
+  margin: 8px 0;
+}
+.array-description {
+  font-size: 14px;
+  color: var(--text2);
+  margin-top: 6px;
+}
+
+/* ── BUILDER CONTROLS (tap +/-) ── */
+.builder-controls {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  width: 100%;
+  padding: 16px;
+  background: var(--card);
+  border-radius: 12px;
+}
+.control-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  justify-content: center;
+}
+.control-label {
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--muted);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  min-width: 70px;
+  text-align: right;
+}
+.control-val {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 22px;
+  font-weight: 800;
+  color: var(--text);
+  min-width: 36px;
+  text-align: center;
+}
+.ctrl-btn {
+  width: 42px;
+  height: 42px;
+  border-radius: 50%;
+  border: 2px solid var(--border);
+  background: var(--bg2);
+  color: var(--text);
+  font-size: 20px;
+  font-weight: 700;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.15s;
+  font-family: 'JetBrains Mono', monospace;
+}
+.ctrl-btn:hover { border-color: var(--cyan); color: var(--cyan); background: rgba(0,212,255,0.06); }
+.ctrl-btn:active { transform: scale(0.92); }
+.ctrl-btn:disabled { opacity: 0.3; cursor: default; }
+.ctrl-btn:disabled:hover { border-color: var(--border); color: var(--text); background: var(--bg2); }
+
+/* ── PRACTICE QUESTION ── */
+.practice-question {
+  text-align: center;
+  width: 100%;
+  max-width: 420px;
+}
+.question-text {
+  font-size: 16px;
+  font-weight: 700;
+  color: var(--text);
+  margin-bottom: 8px;
+}
+.question-highlight {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 22px;
+  font-weight: 800;
+  color: var(--cyan);
+  margin: 8px 0 16px;
+}
+.play-btn {
+  padding: 10px 24px;
+  border-radius: 10px;
+  border: 2px solid var(--border);
+  background: var(--bg2);
+  color: var(--text);
+  font-size: 14px;
+  font-weight: 700;
+  font-family: inherit;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+.play-btn.primary {
+  background: var(--grad);
+  color: var(--bg);
+  border: none;
+}
+.play-btn.primary:hover { opacity: 0.9; }
+
+/* ── FEEDBACK ── */
+.feedback {
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%) scale(0);
+  padding: 24px 48px;
+  border-radius: 16px;
+  font-size: 24px;
+  font-weight: 800;
+  z-index: 200;
+  pointer-events: none;
+  transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275), opacity 0.3s;
+  opacity: 0;
+}
+.feedback.show {
+  transform: translate(-50%, -50%) scale(1);
+  opacity: 1;
+}
+.feedback.correct {
+  background: rgba(0,230,118,0.15);
+  color: var(--green);
+  border: 2px solid var(--green);
+}
+.feedback.incorrect {
+  background: rgba(255,59,139,0.15);
+  color: var(--pink);
+  border: 2px solid var(--pink);
+}
+.feedback.try-again {
+  background: rgba(255,193,7,0.15);
+  color: var(--yellow);
+  border: 2px solid var(--yellow);
+}
+
+/* ── SIDE PANEL (Instructions / Score) ── */
+.side-panel {
+  width: 280px;
+  background: var(--bg2);
+  border-left: 1px solid var(--border);
+  padding: 20px;
+  overflow-y: auto;
+  flex-shrink: 0;
+}
+.panel-section {
+  margin-bottom: 20px;
+}
+.panel-title {
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 1.5px;
+  color: var(--muted);
+  margin-bottom: 8px;
+}
+.panel-text {
+  font-size: 13px;
+  color: var(--text2);
+  line-height: 1.6;
+}
+.score-display {
+  text-align: center;
+  padding: 16px;
+  background: var(--card);
+  border-radius: 12px;
+  margin-bottom: 12px;
+}
+.score-value {
+  font-size: 36px;
+  font-weight: 900;
+  font-family: 'JetBrains Mono', monospace;
+  background: var(--grad);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+.score-label {
+  font-size: 11px;
+  color: var(--muted);
+  text-transform: uppercase;
+  letter-spacing: 1px;
+}
+.streak-bar {
+  height: 6px;
+  background: var(--card);
+  border-radius: 3px;
+  overflow: hidden;
+  margin-top: 8px;
+}
+.streak-fill {
+  height: 100%;
+  background: var(--grad);
+  border-radius: 3px;
+  transition: width 0.3s;
+}
+
+/* ── MC EQUATION GRID ── */
+.mc-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+  margin-top: 16px;
+  width: 100%;
+  max-width: 420px;
+}
+.mc-btn {
+  padding: 14px 12px;
+  border-radius: 12px;
+  border: 2px solid var(--border);
+  background: var(--bg2);
+  color: var(--text);
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 15px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  min-height: 52px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  user-select: none;
+  -webkit-user-select: none;
+}
+.mc-btn:hover {
+  border-color: var(--cyan);
+  color: var(--cyan);
+  background: rgba(0,212,255,0.06);
+  transform: scale(1.03);
+}
+.mc-btn:active { transform: scale(0.97); }
+.mc-btn.mc-correct {
+  border-color: var(--green);
+  background: rgba(0,230,118,0.15);
+  color: var(--green);
+  animation: pop 0.3s ease-out;
+}
+.mc-btn.mc-wrong {
+  border-color: var(--pink);
+  background: rgba(255,59,139,0.1);
+  color: var(--pink);
+  animation: shake 0.3s ease-in-out;
+  opacity: 0.5;
+}
+
+/* ── GAME INFO BAR ── */
+.game-info {
+  display: flex;
+  gap: 24px;
+  justify-content: center;
+  margin-bottom: 12px;
+}
+.info-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+}
+.info-item span:first-child {
+  font-size: 10px;
+  color: var(--muted);
+  text-transform: uppercase;
+  letter-spacing: 1px;
+}
+.info-item span:last-child {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 18px;
+  font-weight: 800;
+}
+
+/* ── ANIMATIONS ── */
+@keyframes pop {
+  0% { transform: scale(0); opacity: 0; }
+  70% { transform: scale(1.2); }
+  100% { transform: scale(1); opacity: 1; }
+}
+@keyframes shake {
+  0%, 100% { transform: translateX(0); }
+  25% { transform: translateX(-8px); }
+  75% { transform: translateX(8px); }
+}
+@keyframes hop {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-12px); }
+}
+.pop-in { animation: pop 0.3s ease-out forwards; }
+.shake { animation: shake 0.3s ease-in-out; }
+.hop { animation: hop 0.4s ease-in-out; }
+
+/* scrollbar */
+::-webkit-scrollbar { width: 6px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+
+/* ── ROW HIGHLIGHT ON HOVER ── */
+.array-row-group:hover rect.row-bg {
+  opacity: 0.12;
+}
+.array-row-group rect.row-bg {
+  opacity: 0;
+  transition: opacity 0.15s;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .array-svg-wrap {
+    min-width: 160px;
+    min-height: 140px;
+    padding: 12px;
+  }
+  .side-panel {
+    width: 220px;
+  }
+  .array-equation {
+    font-size: 16px;
+  }
+  .ctrl-btn {
+    width: 36px;
+    height: 36px;
+    font-size: 16px;
+  }
+}
+</style>
+</head>
+<body>
+
+<!-- ═══ HEADER ═══ -->
+<div class="vinculum-header">
+  <div class="vinculum-header-left">
+    <a class="vinculum-back-btn" href="../../VINCULUM-Hub.html" style="text-decoration:none;">&#9664; Hub</a>
+    <div class="vinculum-header-title"><span>VINCULUM</span> Array Builder</div>
+    <span class="vinculum-header-badge">2 &middot; OA</span>
+  </div>
+  <div class="vinculum-std-tags" style="display:flex;align-items:center;gap:8px;">
+    <button class="vinculum-back-btn" id="readAloudBtn" onclick="toggleReadAloud()" aria-label="Read Aloud" title="Read instructions aloud">&#x1F50A; Read to Me</button>
+    <span class="vinculum-std-tag">2.OA.4</span>
+    <span class="vinculum-std-tag mn">MN 2.2.2.2</span>
+  </div>
+</div>
+
+<!-- ═══ MODE TABS ═══ -->
+<div class="vinculum-mode-tabs">
+  <button class="vinculum-mode-tab active-explore" id="tabExplore" onclick="setMode('explore')">
+    <svg width="18" height="18" viewBox="0 0 48 48" fill="none"><path d="M4 24C4 24 12 12 24 12C36 12 44 24 44 24C44 24 36 36 24 36C12 36 4 24 4 24Z" stroke="currentColor" stroke-width="3" fill="none"/><circle cx="24" cy="24" r="7" stroke="currentColor" stroke-width="3" fill="none"/><circle cx="24" cy="24" r="3" fill="currentColor"/></svg> Explore
+  </button>
+  <button class="vinculum-mode-tab" id="tabPractice" onclick="setMode('practice')">
+    <svg width="18" height="18" viewBox="0 0 48 48" fill="none"><circle cx="24" cy="24" r="20" stroke="currentColor" stroke-width="3" fill="none" opacity="0.3"/><circle cx="24" cy="24" r="20" stroke="currentColor" stroke-width="3" fill="none" stroke-dasharray="126" stroke-dashoffset="32" stroke-linecap="round"/><polyline points="16,24 22,32 34,16" stroke="currentColor" stroke-width="4" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg> Practice
+  </button>
+  <button class="vinculum-mode-tab" id="tabPlay" onclick="setMode('play')">
+    <svg width="18" height="18" viewBox="0 0 48 48" fill="none"><polygon points="28,4 12,28 22,28 18,44 36,18 26,18" fill="none" stroke="currentColor" stroke-width="3" stroke-linejoin="round"/><polygon points="27,8 15,27 23,27 20,40 34,19 26,19" fill="currentColor" opacity="0.15"/></svg> Play
+  </button>
+  <div class="vinculum-diff-selector">
+    <span class="vinculum-diff-label">Level</span>
+    <button class="vinculum-diff-btn active" id="diffE" onclick="setDiff('emergent')" data-diff="emergent">Emergent</button>
+    <button class="vinculum-diff-btn" id="diffP" onclick="setDiff('proficient')" data-diff="proficient">Proficient</button>
+    <button class="vinculum-diff-btn" id="diffA" onclick="setDiff('advanced')" data-diff="advanced">Advanced</button>
+  </div>
+</div>
+
+<!-- ═══ MAIN ═══ -->
+<div class="main">
+  <div class="workspace" role="main" id="workspace"></div>
+  <div class="side-panel" id="sidePanel"></div>
+</div>
+
+<!-- ═══ FEEDBACK POPUP ═══ -->
+<div class="feedback" id="feedback"></div>
+
+<script src="../../vinculum-input.js"></script>
+<script>
+
+// ════════════════════════════════════════
+// MISCONCEPTIONS DATABASE (2.OA.4)
+// ════════════════════════════════════════
+var MISCONCEPTIONS = {
+  rowColConfusion: {
+    id: 'row-col-confusion',
+    label: 'Confuses rows and columns',
+    detect: function(targetR, targetC, userR, userC) {
+      return userR === targetC && userC === targetR && targetR !== targetC;
+    },
+    msg: 'Rows go across, columns go up and down. You swapped them!'
+  },
+  countTotal: {
+    id: 'count-total-not-groups',
+    label: 'Counts total instead of groups',
+    detect: function(targetR, targetC, userAnswer) {
+      return userAnswer === targetR + targetC;
+    },
+    msg: 'You added the rows and columns. Multiply (count all the dots)!'
+  },
+  offByOneRow: {
+    id: 'off-by-one-row',
+    label: 'Miscounts rows by 1',
+    detect: function(targetR, targetC, userAnswer) {
+      return userAnswer === (targetR + 1) * targetC || userAnswer === (targetR - 1) * targetC;
+    },
+    msg: 'Count the rows again carefully. Each horizontal line is one row.'
+  },
+  offByOneCol: {
+    id: 'off-by-one-col',
+    label: 'Miscounts columns by 1',
+    detect: function(targetR, targetC, userAnswer) {
+      return userAnswer === targetR * (targetC + 1) || userAnswer === targetR * (targetC - 1);
+    },
+    msg: 'Count the columns again. Each dot in a row is one column.'
+  },
+  addsInsteadOfMultiplies: {
+    id: 'adds-not-multiplies',
+    label: 'Adds rows instead of repeated addition',
+    detect: function(targetR, targetC, userAnswer) {
+      return userAnswer === targetR + targetC;
+    },
+    msg: 'An array uses repeated addition: add the number in each row, for every row.'
+  },
+  groupsNotEqual: {
+    id: 'groups-not-equal',
+    label: 'Does not see rows as equal groups',
+    detect: function() { return false; },
+    msg: 'Every row in an array has the same number of dots. They are equal groups!'
+  }
+};
+
+// ════════════════════════════════════════
+// DOT COLORS (cycle per row)
+// ════════════════════════════════════════
+var DOT_COLORS = ['#00D4FF', '#00E676', '#F59E0B', '#EC4899', '#EF4444'];
+
+// ════════════════════════════════════════
+// STATE
+// ════════════════════════════════════════
+var S = {
+  mode: 'explore',
+  diff: 'emergent',
+
+  // Explore
+  rows: 3,
+  cols: 4,
+
+  // Practice
+  questionType: null,
+  targetRows: 0,
+  targetCols: 0,
+  targetTotal: 0,
+  score: 0,
+  total: 0,
+  practiceAnswered: false,
+
+  // Play
+  playScore: 0,
+  playStreak: 0,
+  playRound: 0,
+  playBest: 0,
+  gameEnded: false,
+  playAnswered: false,
+  challengeRows: 0,
+  challengeCols: 0,
+  challengeTotal: 0,
+  playChoices: []
+};
+
+// ════════════════════════════════════════
+// READ-ALOUD
+// ════════════════════════════════════════
+function toggleReadAloud() {
+  if (window.VinculumStories && VinculumStories.isReading()) {
+    VinculumStories.stopReading();
+    document.getElementById('readAloudBtn').textContent = '\u{1F50A} Read to Me';
+  } else {
+    var text = document.getElementById('sidePanel').textContent || 'Arrays show equal groups in rows and columns.';
+    if (window.VinculumStories) {
+      VinculumStories.readAloud(text, { rate: 0.85, onComplete: function() {
+        document.getElementById('readAloudBtn').textContent = '\u{1F50A} Read to Me';
+      }});
+      document.getElementById('readAloudBtn').textContent = '\u23F9 Stop';
+    }
+  }
+}
+
+// ════════════════════════════════════════
+// HELPERS
+// ════════════════════════════════════════
+function getMaxRows() {
+  return { emergent: 5, proficient: 6, advanced: 8 }[S.diff];
+}
+function getMaxCols() {
+  return { emergent: 5, proficient: 6, advanced: 8 }[S.diff];
+}
+
+function randInt(min, max) {
+  return Math.floor(Math.random() * (max - min + 1)) + min;
+}
+
+function rand(arr) {
+  return arr[Math.floor(Math.random() * arr.length)];
+}
+
+function showFB(text, type) {
+  var fb = document.getElementById('feedback');
+  fb.textContent = text;
+  fb.className = 'feedback ' + type + ' show';
+  setTimeout(function() { fb.classList.remove('show'); }, 2000);
+}
+
+// ════════════════════════════════════════
+// SVG ARRAY BUILDER
+// ════════════════════════════════════════
+function buildArraySVG(rows, cols, opts) {
+  opts = opts || {};
+  var dotR = 14;
+  var gap = 8;
+  var cellSize = dotR * 2 + gap;
+  var labelOffset = opts.showLabels ? 40 : 0;
+  var topLabel = opts.showLabels ? 28 : 0;
+  var svgW = labelOffset + cols * cellSize + 10;
+  var svgH = topLabel + rows * cellSize + 10;
+
+  var svg = '<svg width="' + svgW + '" height="' + svgH + '" viewBox="0 0 ' + svgW + ' ' + svgH + '" xmlns="http://www.w3.org/2000/svg" style="max-width:100%;">';
+
+  // Column label
+  if (opts.showLabels) {
+    svg += '<text x="' + (labelOffset + (cols * cellSize) / 2) + '" y="16" text-anchor="middle" font-family="JetBrains Mono,monospace" font-size="13" font-weight="700" fill="' + DOT_COLORS[1] + '">' + cols + ' columns</text>';
+  }
+
+  // Row label
+  if (opts.showLabels) {
+    svg += '<text x="12" y="' + (topLabel + (rows * cellSize) / 2 + 4) + '" text-anchor="middle" font-family="JetBrains Mono,monospace" font-size="13" font-weight="700" fill="' + DOT_COLORS[0] + '" transform="rotate(-90, 12, ' + (topLabel + (rows * cellSize) / 2) + ')">' + rows + ' rows</text>';
+  }
+
+  // Dots with row highlight groups
+  for (var r = 0; r < rows; r++) {
+    var gy = topLabel + r * cellSize;
+    var color = DOT_COLORS[r % DOT_COLORS.length];
+
+    // Row hover background
+    svg += '<g class="array-row-group">';
+    svg += '<rect class="row-bg" x="' + labelOffset + '" y="' + gy + '" width="' + (cols * cellSize) + '" height="' + cellSize + '" rx="8" fill="' + color + '" opacity="0"/>';
+
+    for (var c = 0; c < cols; c++) {
+      var cx = labelOffset + c * cellSize + dotR + 4;
+      var cy = gy + dotR + 4;
+      var delay = (r * cols + c) * 0.03;
+      svg += '<circle cx="' + cx + '" cy="' + cy + '" r="' + dotR + '" fill="' + color + '" style="animation:pop 0.3s ease-out ' + delay + 's both;"/>';
+    }
+    svg += '</g>';
+  }
+
+  svg += '</svg>';
+  return svg;
+}
+
+// Build repeated addition string: e.g. "4 + 4 + 4 = 12"
+function repeatedAddStr(rows, cols) {
+  if (rows === 0 || cols === 0) return '0';
+  var parts = [];
+  for (var i = 0; i < rows; i++) parts.push(cols);
+  return parts.join(' + ') + ' = ' + (rows * cols);
+}
+
+// ════════════════════════════════════════
+// MODE SWITCHING
+// ════════════════════════════════════════
+function setMode(mode) {
+  S.mode = mode;
+
+  if (mode === 'practice' && S.total === 0) {
+    S.score = 0;
+    S.total = 0;
+    newPracticeQuestion();
+  }
+
+  if (mode === 'play' && S.playRound === 0) {
+    S.playScore = 0;
+    S.playStreak = 0;
+    S.playRound = 1;
+    S.playBest = 0;
+    S.gameEnded = false;
+    startPlayChallenge();
+  }
+
+  document.querySelectorAll('.vinculum-mode-tab').forEach(function(t) {
+    t.classList.remove('active-explore', 'active-practice', 'active-play');
+  });
+  var tabEl = document.getElementById('tab' + mode.charAt(0).toUpperCase() + mode.slice(1));
+  tabEl.classList.add('active-' + mode);
+
+  render();
+}
+
+function setDiff(diff) {
+  S.diff = diff;
+  S.rows = 3;
+  S.cols = 4;
+  S.score = 0;
+  S.total = 0;
+  S.playScore = 0;
+  S.playStreak = 0;
+  S.playRound = 0;
+  S.playBest = 0;
+
+  document.querySelectorAll('.vinculum-diff-btn').forEach(function(b) { b.classList.remove('active'); });
+  var btnId = { emergent: 'diffE', proficient: 'diffP', advanced: 'diffA' }[diff];
+  document.getElementById(btnId).classList.add('active');
+
+  setMode(S.mode);
+}
+
+// ════════════════════════════════════════
+// RENDER MAIN
+// ════════════════════════════════════════
+function render() {
+  var ws = document.getElementById('workspace');
+  var sp = document.getElementById('sidePanel');
+
+  if (S.mode === 'explore') renderExplore(ws, sp);
+  else if (S.mode === 'practice') renderPractice(ws, sp);
+  else renderPlay(ws, sp);
+}
+
+// ─── EXPLORE MODE ───
+function renderExplore(ws, sp) {
+  var total = S.rows * S.cols;
+  var maxR = getMaxRows();
+  var maxC = getMaxCols();
+
+  var html = '<div class="array-container">';
+
+  // SVG array
+  html += '<div class="array-svg-wrap">';
+  html += buildArraySVG(S.rows, S.cols, { showLabels: true });
+  html += '</div>';
+
+  // Info
+  html += '<div class="array-info">';
+  html += '<div style="color:var(--muted);font-size:12px;margin-bottom:4px;">Repeated Addition</div>';
+  html += '<div class="array-equation">' + repeatedAddStr(S.rows, S.cols) + '</div>';
+  html += '<div class="array-description">' + S.rows + ' rows of ' + S.cols + ' = ' + total + '</div>';
+  if (S.diff === 'advanced') {
+    html += '<div style="font-size:12px;color:var(--muted);margin-top:6px;font-style:italic;">Also: ' + S.cols + ' rows of ' + S.rows + ' = ' + total + '</div>';
+  }
+  html += '</div>';
+
+  // +/- controls
+  html += '<div class="builder-controls">';
+  html += '<div class="control-row">';
+  html += '<span class="control-label" style="color:var(--cyan);">ROWS</span>';
+  html += '<button class="ctrl-btn" onclick="adjustRows(-1)"' + (S.rows <= 1 ? ' disabled' : '') + '>&minus;</button>';
+  html += '<span class="control-val">' + S.rows + '</span>';
+  html += '<button class="ctrl-btn" onclick="adjustRows(1)"' + (S.rows >= maxR ? ' disabled' : '') + '>+</button>';
+  html += '</div>';
+  html += '<div class="control-row">';
+  html += '<span class="control-label" style="color:' + DOT_COLORS[1] + ';">COLUMNS</span>';
+  html += '<button class="ctrl-btn" onclick="adjustCols(-1)"' + (S.cols <= 1 ? ' disabled' : '') + '>&minus;</button>';
+  html += '<span class="control-val">' + S.cols + '</span>';
+  html += '<button class="ctrl-btn" onclick="adjustCols(1)"' + (S.cols >= maxC ? ' disabled' : '') + '>+</button>';
+  html += '</div>';
+  html += '</div>';
+
+  html += '</div>';
+  ws.innerHTML = html;
+
+  // Side panel
+  sp.innerHTML = '<div class="panel-section">' +
+    '<div class="panel-title">How It Works</div>' +
+    '<div class="panel-text">' +
+    'Tap <strong>+</strong> and <strong>&minus;</strong> to change the rows and columns.<br><br>' +
+    'Watch the <strong>colored dots</strong> form an array.<br><br>' +
+    'The <strong>equation</strong> shows repeated addition!' +
+    '</div></div>' +
+    '<div class="panel-section">' +
+    '<div class="panel-title">Key Concept</div>' +
+    '<div class="panel-text">' +
+    'An <strong>array</strong> is a set of objects arranged in <strong>equal rows</strong> and <strong>equal columns</strong>.<br><br>' +
+    'Each row has the <strong>same number</strong> of dots. We can count by adding the rows together!' +
+    '</div></div>' +
+    (S.diff === 'advanced' ? '<div class="panel-section"><div class="panel-title">Connection</div><div class="panel-text">Arrays connect to <strong>multiplication</strong>! 4 rows of 3 is the same as 4 &times; 3 = 12.</div></div>' : '') +
+    '<div class="panel-section">' +
+    '<div class="panel-title">Standards</div>' +
+    '<div class="panel-text">' +
+    '<strong>2.OA.4</strong> &mdash; Use addition to find the total in rectangular arrays<br><br>' +
+    '<strong>MN 2.2.2.2</strong> &mdash; Use repeated addition with arrays' +
+    '</div></div>';
+}
+
+function adjustRows(delta) {
+  var v = S.rows + delta;
+  if (v >= 1 && v <= getMaxRows()) {
+    S.rows = v;
+    render();
+  }
+}
+
+function adjustCols(delta) {
+  var v = S.cols + delta;
+  if (v >= 1 && v <= getMaxCols()) {
+    S.cols = v;
+    render();
+  }
+}
+
+// ─── PRACTICE MODE ───
+function newPracticeQuestion() {
+  S.total = (S.total || 0) + 1;
+  S.practiceAnswered = false;
+
+  var maxR = getMaxRows();
+  var maxC = getMaxCols();
+
+  if (S.diff === 'emergent') {
+    // Build arrays and count
+    S.questionType = rand(['build-array', 'count-dots']);
+  } else if (S.diff === 'proficient') {
+    // Create arrays and write repeated addition
+    S.questionType = rand(['build-array', 'write-equation', 'count-dots']);
+  } else {
+    // Interpret arrays, connect to multiplication
+    S.questionType = rand(['write-equation', 'interpret-array', 'count-dots']);
+  }
+
+  S.targetRows = randInt(2, Math.max(2, maxR - 1));
+  S.targetCols = randInt(2, Math.max(2, maxC - 1));
+  S.targetTotal = S.targetRows * S.targetCols;
+
+  // Reset builder
+  S.rows = 2;
+  S.cols = 2;
+}
+
+function renderPractice(ws, sp) {
+  var html = '<div class="array-container">';
+  html += '<div style="text-align:center;margin-bottom:8px;">';
+  html += '<div style="font-size:14px;color:var(--muted);">\u2B50 ' + S.score + '/' + S.total + '</div>';
+  html += '</div>';
+
+  var maxR = getMaxRows();
+  var maxC = getMaxCols();
+
+  if (S.questionType === 'count-dots') {
+    // Show array, student counts total
+    html += '<div class="array-svg-wrap">';
+    html += buildArraySVG(S.targetRows, S.targetCols, { showLabels: false });
+    html += '</div>';
+    html += '<div class="practice-question">';
+    html += '<div class="question-text">How many dots in total?</div>';
+    html += '<div class="mc-grid" id="mcGrid"></div>';
+    html += '</div>';
+
+  } else if (S.questionType === 'build-array') {
+    // Student builds target array
+    html += '<div class="practice-question">';
+    html += '<div class="question-text">Build an array with:</div>';
+    html += '<div class="question-highlight">' + S.targetRows + ' rows of ' + S.targetCols + '</div>';
+    html += '</div>';
+    html += '<div class="array-svg-wrap">';
+    html += buildArraySVG(S.rows, S.cols, { showLabels: true });
+    html += '</div>';
+
+    var match = (S.rows === S.targetRows && S.cols === S.targetCols);
+
+    html += '<div class="builder-controls">';
+    html += '<div class="control-row">';
+    html += '<span class="control-label" style="color:var(--cyan);">ROWS</span>';
+    html += '<button class="ctrl-btn" onclick="adjustPracticeRows(-1)"' + (S.rows <= 1 ? ' disabled' : '') + '>&minus;</button>';
+    html += '<span class="control-val">' + S.rows + '</span>';
+    html += '<button class="ctrl-btn" onclick="adjustPracticeRows(1)"' + (S.rows >= maxR ? ' disabled' : '') + '>+</button>';
+    html += '</div>';
+    html += '<div class="control-row">';
+    html += '<span class="control-label" style="color:' + DOT_COLORS[1] + ';">COLUMNS</span>';
+    html += '<button class="ctrl-btn" onclick="adjustPracticeCols(-1)"' + (S.cols <= 1 ? ' disabled' : '') + '>&minus;</button>';
+    html += '<span class="control-val">' + S.cols + '</span>';
+    html += '<button class="ctrl-btn" onclick="adjustPracticeCols(1)"' + (S.cols >= maxC ? ' disabled' : '') + '>+</button>';
+    html += '</div>';
+    html += '<div style="text-align:center;margin-top:8px;">';
+    html += '<div style="font-family:\'JetBrains Mono\',monospace;font-size:14px;color:var(--text2);margin-bottom:6px;">' + S.rows + ' rows of ' + S.cols + ' = ' + (S.rows * S.cols) + '</div>';
+    if (match) {
+      html += '<button class="play-btn primary" onclick="submitBuildArray()">\u2713 That\'s it!</button>';
+    } else {
+      html += '<div style="color:var(--muted);font-size:12px;">Keep adjusting...</div>';
+    }
+    html += '</div></div>';
+
+  } else if (S.questionType === 'write-equation') {
+    // Show array, pick the correct repeated addition
+    html += '<div class="array-svg-wrap">';
+    html += buildArraySVG(S.targetRows, S.targetCols, { showLabels: false });
+    html += '</div>';
+    html += '<div class="practice-question">';
+    html += '<div class="question-text">Which equation matches this array?</div>';
+    html += '<div class="mc-grid" id="mcGrid"></div>';
+    html += '</div>';
+
+  } else if (S.questionType === 'interpret-array') {
+    // Advanced: show array + equation, identify rows/cols/connection
+    html += '<div class="array-svg-wrap">';
+    html += buildArraySVG(S.targetRows, S.targetCols, { showLabels: false });
+    html += '</div>';
+    html += '<div class="practice-question">';
+    html += '<div class="question-text">How can we describe this array?</div>';
+    html += '<div class="mc-grid" id="mcGrid"></div>';
+    html += '</div>';
+  }
+
+  html += '</div>';
+  ws.innerHTML = html;
+
+  // Wire up MC after DOM render
+  setTimeout(function() { initPracticeMC(); }, 50);
+
+  // Side panel
+  sp.innerHTML = '<div class="score-display">' +
+    '<div class="score-value">' + S.score + '/' + S.total + '</div>' +
+    '<div class="score-label">Score</div></div>' +
+    '<div class="panel-section"><div class="panel-title">Instructions</div><div class="panel-text">' +
+    (S.questionType === 'count-dots' ? 'Count all the dots! Use the rows to help you add.' : '') +
+    (S.questionType === 'build-array' ? 'Tap <strong>+</strong> and <strong>&minus;</strong> to set the rows and columns.' : '') +
+    (S.questionType === 'write-equation' ? 'Tap the <strong>equation</strong> that matches the array.' : '') +
+    (S.questionType === 'interpret-array' ? 'Choose the <strong>description</strong> that matches.' : '') +
+    '</div></div>' +
+    '<div class="panel-section"><div class="panel-title">Hint</div><div class="panel-text">' +
+    (S.questionType === 'count-dots' ? 'Count one row, then add that number for each row.' : '') +
+    (S.questionType === 'build-array' ? 'Rows go left to right. Columns go up and down.' : '') +
+    (S.questionType === 'write-equation' ? 'Count the rows. Then count dots in one row. Add that many times.' : '') +
+    (S.questionType === 'interpret-array' ? 'Look at rows and columns. Each row is one group.' : '') +
+    '</div></div>';
+}
+
+function initPracticeMC() {
+  if (S.questionType === 'build-array') return;
+
+  var grid = document.getElementById('mcGrid');
+  if (!grid) return;
+
+  var choices = [];
+
+  if (S.questionType === 'count-dots') {
+    choices = generateCountChoices(S.targetRows, S.targetCols);
+  } else if (S.questionType === 'write-equation') {
+    choices = generateEquationChoices(S.targetRows, S.targetCols);
+  } else if (S.questionType === 'interpret-array') {
+    choices = generateInterpretChoices(S.targetRows, S.targetCols);
+  }
+
+  choices.forEach(function(choice) {
+    var btn = document.createElement('button');
+    btn.className = 'mc-btn';
+    btn.textContent = choice.text;
+    btn.addEventListener('click', function() {
+      handlePracticeMC(btn, choice, grid);
+    });
+    grid.appendChild(btn);
+  });
+}
+
+function handlePracticeMC(btn, choice, grid) {
+  if (S.practiceAnswered) return;
+  if (choice.isCorrect) {
+    S.practiceAnswered = true;
+    btn.classList.add('mc-correct');
+    showFB('\u2713 Correct!', 'correct');
+    S.score++;
+    grid.querySelectorAll('.mc-btn').forEach(function(b) { b.style.pointerEvents = 'none'; });
+    setTimeout(function() { S.practiceAnswered = false; newPracticeQuestion(); render(); }, 900);
+  } else {
+    btn.classList.add('mc-wrong');
+    btn.style.pointerEvents = 'none';
+    // Misconception-aware feedback
+    var msg = getMisconceptionMsg(choice);
+    showFB(msg || '\u2717 Try again', 'try-again');
+  }
+}
+
+function getMisconceptionMsg(choice) {
+  if (choice.misconception && MISCONCEPTIONS[choice.misconception]) {
+    return MISCONCEPTIONS[choice.misconception].msg;
+  }
+  return null;
+}
+
+// ── MC Generators ──
+function generateCountChoices(rows, cols) {
+  var total = rows * cols;
+  var correct = { text: '' + total, isCorrect: true };
+  var choices = [correct];
+  var used = new Set([total]);
+
+  function tryAdd(val, mis) {
+    if (val > 0 && !used.has(val)) {
+      used.add(val);
+      choices.push({ text: '' + val, isCorrect: false, misconception: mis || null });
+    }
+  }
+
+  // Misconception distractors
+  tryAdd(rows + cols, 'addsInsteadOfMultiplies');     // adds instead of multiplies
+  tryAdd((rows + 1) * cols, 'offByOneRow');           // off-by-one row
+  tryAdd((rows - 1) * cols, 'offByOneRow');           // off-by-one row
+  tryAdd(rows * (cols + 1), 'offByOneCol');           // off-by-one col
+  tryAdd(rows * (cols - 1), 'offByOneCol');           // off-by-one col
+
+  // Fill to 4
+  while (choices.length < 4) {
+    var v = randInt(Math.max(2, total - 8), total + 8);
+    tryAdd(v);
+  }
+
+  return shuffle(choices).slice(0, 4);
+}
+
+function generateEquationChoices(rows, cols) {
+  var total = rows * cols;
+  var correctText = repeatedAddStr(rows, cols);
+  var correct = { text: correctText, isCorrect: true };
+  var choices = [correct];
+  var used = new Set([correctText]);
+
+  function tryAdd(r, c, mis) {
+    var t = repeatedAddStr(r, c);
+    if (!used.has(t)) {
+      used.add(t);
+      choices.push({ text: t, isCorrect: false, misconception: mis || null });
+    }
+  }
+
+  // Swapped
+  if (rows !== cols) tryAdd(cols, rows, 'rowColConfusion');
+  // Off-by-one
+  if (rows + 1 <= getMaxRows()) tryAdd(rows + 1, cols, 'offByOneRow');
+  if (rows - 1 >= 1) tryAdd(rows - 1, cols, 'offByOneRow');
+  if (cols + 1 <= getMaxCols()) tryAdd(rows, cols + 1, 'offByOneCol');
+
+  while (choices.length < 4) {
+    var rr = randInt(2, getMaxRows());
+    var cc = randInt(2, getMaxCols());
+    tryAdd(rr, cc);
+  }
+
+  return shuffle(choices).slice(0, 4);
+}
+
+function generateInterpretChoices(rows, cols) {
+  var total = rows * cols;
+  var correctText = rows + ' rows of ' + cols + ' = ' + total;
+  var correct = { text: correctText, isCorrect: true };
+  var choices = [correct];
+  var used = new Set([correctText]);
+
+  function tryAdd(txt, mis) {
+    if (!used.has(txt)) {
+      used.add(txt);
+      choices.push({ text: txt, isCorrect: false, misconception: mis || null });
+    }
+  }
+
+  // Swapped
+  if (rows !== cols) tryAdd(cols + ' rows of ' + rows + ' = ' + total, 'rowColConfusion');
+  // Wrong total (addition)
+  tryAdd(rows + ' rows of ' + cols + ' = ' + (rows + cols), 'addsInsteadOfMultiplies');
+  // Off by one
+  tryAdd((rows + 1) + ' rows of ' + cols + ' = ' + ((rows + 1) * cols), 'offByOneRow');
+
+  while (choices.length < 4) {
+    var rr = randInt(2, getMaxRows());
+    var cc = randInt(2, getMaxCols());
+    tryAdd(rr + ' rows of ' + cc + ' = ' + (rr * cc));
+  }
+
+  return shuffle(choices).slice(0, 4);
+}
+
+function shuffle(arr) {
+  var a = arr.slice();
+  for (var i = a.length - 1; i > 0; i--) {
+    var j = randInt(0, i);
+    var tmp = a[i]; a[i] = a[j]; a[j] = tmp;
+  }
+  return a;
+}
+
+function adjustPracticeRows(delta) {
+  var v = S.rows + delta;
+  if (v >= 1 && v <= getMaxRows()) {
+    S.rows = v;
+    render();
+  }
+}
+
+function adjustPracticeCols(delta) {
+  var v = S.cols + delta;
+  if (v >= 1 && v <= getMaxCols()) {
+    S.cols = v;
+    render();
+  }
+}
+
+function submitBuildArray() {
+  var match = (S.rows === S.targetRows && S.cols === S.targetCols);
+  if (match) {
+    showFB('\u2713 Perfect!', 'correct');
+    S.score++;
+    setTimeout(function() { newPracticeQuestion(); render(); }, 800);
+  }
+}
+
+// ─── PLAY MODE ───
+function startPlayChallenge() {
+  var maxR = getMaxRows();
+  var maxC = getMaxCols();
+  S.challengeRows = randInt(2, Math.max(3, maxR - 1));
+  S.challengeCols = randInt(2, Math.max(3, maxC - 1));
+  S.challengeTotal = S.challengeRows * S.challengeCols;
+  S.playAnswered = false;
+  S.playChoices = generatePlayChoices(S.challengeRows, S.challengeCols);
+  render();
+}
+
+function generatePlayChoices(rows, cols) {
+  var total = rows * cols;
+  var correct = { text: '' + total, value: total, isCorrect: true };
+  var choices = [correct];
+  var used = new Set([total]);
+
+  function tryAdd(val, mis) {
+    if (val > 0 && !used.has(val)) {
+      used.add(val);
+      choices.push({ text: '' + val, value: val, isCorrect: false, misconception: mis || null });
+    }
+  }
+
+  // Misconception distractors
+  tryAdd(rows + cols, 'addsInsteadOfMultiplies');
+  tryAdd((rows + 1) * cols, 'offByOneRow');
+  tryAdd((rows - 1) * cols, 'offByOneRow');
+  tryAdd(rows * (cols + 1), 'offByOneCol');
+  tryAdd(rows * (cols - 1), 'offByOneCol');
+  // Random near values
+  tryAdd(total + randInt(1, 4));
+  tryAdd(Math.max(2, total - randInt(1, 4)));
+
+  return shuffle(choices).slice(0, 4);
+}
+
+function renderPlay(ws, sp) {
+  var html = '<div class="array-container">';
+
+  if (S.gameEnded) {
+    html += '<div style="text-align:center;padding:40px;font-size:32px;font-weight:800;">';
+    html += 'Game Complete!<br>';
+    html += '<div style="font-size:48px;margin:20px 0;background:var(--grad);-webkit-background-clip:text;-webkit-text-fill-color:transparent;">';
+    html += S.playScore;
+    html += '</div>';
+    html += '<div style="font-size:14px;color:var(--muted);margin-bottom:20px;">Best streak: ' + S.playBest + '</div>';
+    html += '<button class="play-btn primary" onclick="playAgain()">\u25B6 Play Again</button>';
+    html += '</div>';
+  } else {
+    // Game info bar
+    html += '<div class="game-info">';
+    html += '<div class="info-item"><span class="info-label">Round</span><span>' + S.playRound + ' / 10</span></div>';
+    html += '<div class="info-item"><span class="info-label">\u2B50 Score</span><span>' + S.playScore + '</span></div>';
+    html += '<div class="info-item"><span class="info-label">\uD83D\uDD25 Streak</span><span>' + S.playStreak + '</span></div>';
+    html += '</div>';
+
+    // Array (no labels)
+    html += '<div class="array-svg-wrap">';
+    html += buildArraySVG(S.challengeRows, S.challengeCols, { showLabels: false });
+    html += '</div>';
+
+    // Question
+    html += '<div class="practice-question">';
+    html += '<div class="question-text">How many dots in ' + S.challengeRows + ' rows of ' + S.challengeCols + '?</div>';
+    html += '<div class="mc-grid" id="playMcGrid"></div>';
+    html += '</div>';
+  }
+
+  html += '</div>';
+  ws.innerHTML = html;
+
+  if (!S.gameEnded) {
+    setTimeout(function() { initPlayMC(); }, 50);
+  }
+
+  // Side panel
+  sp.innerHTML = '<div class="score-display">' +
+    '<div class="score-value">' + S.playScore + '</div>' +
+    '<div class="score-label">Score</div></div>' +
+    '<div class="score-display" style="background:transparent;padding:8px;">' +
+    '<div style="font-size:18px;font-weight:700;color:var(--yellow);">\uD83D\uDD25 ' + S.playStreak + '</div>' +
+    '<div class="score-label">Streak</div>' +
+    '<div class="streak-bar"><div class="streak-fill" style="width:' + Math.min(S.playStreak * 10, 100) + '%;"></div></div>' +
+    '</div>' +
+    '<div class="panel-section"><div class="panel-title">How to Play</div><div class="panel-text">' +
+    'Each round shows a new <strong>array</strong>.<br><br>' +
+    '<strong>Tap the answer</strong> that matches the total number of dots.<br><br>' +
+    'Consecutive correct answers build your <strong>streak</strong>!</div></div>' +
+    '<div class="panel-section"><div class="panel-title">Scoring</div><div class="panel-text">' +
+    'Base: <strong>10 points</strong><br>' +
+    'Streak bonus: <strong>+2 &times; streak</strong><br>' +
+    '<strong>Max: 30 pts/round</strong></div></div>';
+}
+
+function initPlayMC() {
+  var grid = document.getElementById('playMcGrid');
+  if (!grid) return;
+  grid.innerHTML = '';
+
+  S.playChoices.forEach(function(choice) {
+    var btn = document.createElement('button');
+    btn.className = 'mc-btn';
+    btn.textContent = choice.text;
+    btn.addEventListener('click', function() {
+      handlePlayMC(btn, choice, grid);
+    });
+    grid.appendChild(btn);
+  });
+}
+
+function handlePlayMC(btn, choice, grid) {
+  if (S.playAnswered) return;
+
+  if (choice.isCorrect) {
+    S.playAnswered = true;
+    btn.classList.add('mc-correct');
+    var pts = Math.min(10 + (S.playStreak * 2), 30);
+    showFB('\u2713 +' + pts + ' pts!', 'correct');
+    S.playScore += pts;
+    S.playStreak++;
+    S.playBest = Math.max(S.playBest, S.playStreak);
+    grid.querySelectorAll('.mc-btn').forEach(function(b) { b.style.pointerEvents = 'none'; });
+
+    if (S.playRound >= 10) {
+      setTimeout(function() { S.gameEnded = true; render(); }, 900);
+    } else {
+      S.playRound++;
+      setTimeout(function() { S.playAnswered = false; startPlayChallenge(); }, 900);
+    }
+  } else {
+    btn.classList.add('mc-wrong');
+    btn.style.pointerEvents = 'none';
+    S.playStreak = 0;
+    var msg = getMisconceptionMsg(choice);
+    showFB(msg || '\u2717 Not quite', 'try-again');
+    var wrap = document.querySelector('.array-svg-wrap');
+    if (wrap) { wrap.classList.add('shake'); setTimeout(function() { wrap.classList.remove('shake'); }, 400); }
+  }
+}
+
+function playAgain() {
+  S.playScore = 0;
+  S.playStreak = 0;
+  S.playRound = 1;
+  S.gameEnded = false;
+  S.playAnswered = false;
+  S.playBest = 0;
+  startPlayChallenge();
+}
+
+// ════════════════════════════════════════
+// INIT
+// ════════════════════════════════════════
+render();
+</script>
+<script src="../../vinculum-core.js"></script>
+<script src="../../vinculum-data.js"></script>
+<script src="../../vinculum-adaptive-hook.js"></script>
+<script src="../../vinculum-3reads.js"></script>
+<script src="../../vinculum-stories.js"></script>
+<script src="../../vinculum-feedback.js"></script>
+<script src="../../vinculum-guide.js"></script>
+<script src="../../vinculum-identity.js"></script>
+<script src="../../vinculum-indigenous.js"></script>
+<script src="../../vinculum-dashboard.js"></script>
+<script src="../../vinculum-hyperfocus.js"></script>
+<script src="../../vinculum-layout.js"></script>
+</body>
+</html>

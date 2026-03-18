@@ -1,0 +1,1213 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>VINCULUM — Addition & Subtraction Fluency</title>
+<link rel="stylesheet" href="../../vinculum-core.css">
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;600&display=swap');
+
+/* Theme system loaded from vinculum-core.css */
+.vinculum-rtm-btn .rtm-icon{font-size:14px;}
+
+/* ═══ FOCUS VISIBLE (Keyboard Navigation) ═══ */
+*:focus-visible {
+  outline:2px solid var(--cyan);outline-offset:2px;border-radius:4px;
+}
+.sr-only {
+  position:absolute;width:1px;height:1px;padding:0;margin:-1px;
+  overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0;
+}
+
+* { margin:0; padding:0; box-sizing:border-box; }
+body {
+  font-family: 'Inter', sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  height: 100vh;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  user-select: none;
+}
+
+/* ── HEADER ── */
+/* ── MODE TABS ── */
+/* Difficulty selector */
+.vinculum-diff-btn:hover { color: var(--text2); }
+/* ── MAIN AREA ── */
+.main {
+  flex: 1;
+  display: flex;
+  overflow: hidden;
+}
+
+/* ── WORKSPACE ── */
+.workspace {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+  position: relative;
+  overflow-y: auto;
+}
+
+/* ── STRATEGY SELECTOR ── */
+.strategy-selector {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  justify-content: center;
+  margin-bottom: 16px;
+}
+.strategy-btn {
+  padding: 10px 16px;
+  border-radius: 10px;
+  border: 2px solid var(--border);
+  background: var(--card);
+  color: var(--text2);
+  font-size: 14px;
+  font-weight: 600;
+  font-family: inherit;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+.strategy-btn:hover { border-color: var(--cyan); color: var(--text); transform: scale(1.03); }
+.strategy-btn.active {
+  border-color: var(--cyan);
+  background: rgba(0,212,255,0.1);
+  color: var(--cyan);
+}
+
+/* ── STRATEGY VISUAL ── */
+.strategy-visual {
+  max-width: 500px;
+  margin: 0 auto;
+  padding: 20px;
+}
+
+/* ── TEN FRAME ── */
+.ten-frame {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 6px;
+  max-width: 280px;
+  margin: 12px auto;
+}
+.ten-frame-cell {
+  width: 48px;
+  height: 48px;
+  border-radius: 10px;
+  border: 2px solid var(--border);
+  background: var(--card);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 24px;
+  transition: all 0.3s;
+}
+.ten-frame-cell.filled {
+  border-color: var(--cyan);
+  background: rgba(0,212,255,0.12);
+}
+.ten-frame-cell.filled-b {
+  border-color: var(--pink);
+  background: rgba(255,59,139,0.12);
+}
+.ten-frame-cell.highlight {
+  border-color: var(--yellow);
+  background: rgba(255,193,7,0.15);
+  box-shadow: 0 0 10px rgba(255,193,7,0.3);
+}
+
+/* ── DOUBLES VISUAL ── */
+.doubles-rows {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  margin: 12px auto;
+}
+.doubles-row {
+  display: flex;
+  gap: 6px;
+}
+.doubles-dot {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 18px;
+  font-weight: 800;
+  font-family: 'JetBrains Mono', monospace;
+  transition: all 0.3s;
+}
+.doubles-dot.top { background: rgba(0,212,255,0.2); border: 2px solid var(--cyan); color: var(--cyan); }
+.doubles-dot.bottom { background: rgba(255,59,139,0.2); border: 2px solid var(--pink); color: var(--pink); }
+.doubles-dot.extra { background: rgba(255,193,7,0.2); border: 2px solid var(--yellow); color: var(--yellow); }
+
+/* ── NUMBER LINE ── */
+.number-line-wrap {
+  max-width: 460px;
+  margin: 12px auto;
+  overflow-x: auto;
+}
+.number-line {
+  display: flex;
+  align-items: flex-end;
+  gap: 0;
+  position: relative;
+  padding: 32px 0 0;
+}
+.nl-tick {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  width: 36px;
+  flex-shrink: 0;
+}
+.nl-num {
+  font-size: 14px;
+  font-weight: 700;
+  font-family: 'JetBrains Mono', monospace;
+  color: var(--muted);
+  margin-top: 4px;
+}
+.nl-tick .nl-mark {
+  width: 2px;
+  height: 14px;
+  background: var(--border);
+}
+.nl-tick.start .nl-num { color: var(--cyan); font-size: 16px; }
+.nl-tick.end .nl-num { color: var(--green); font-size: 16px; }
+.nl-hop {
+  position: absolute;
+  top: 0;
+  font-size: 18px;
+  color: var(--yellow);
+  animation: hop-bounce 0.4s ease-out;
+}
+@keyframes hop-bounce {
+  0% { transform: translateY(10px); opacity: 0; }
+  60% { transform: translateY(-4px); }
+  100% { transform: translateY(0); opacity: 1; }
+}
+
+/* ── STEP DISPLAY ── */
+.step-display {
+  background: var(--card);
+  border-radius: 12px;
+  padding: 16px;
+  font-size: 18px;
+  text-align: center;
+  line-height: 1.8;
+  color: var(--text);
+  border: 1px solid var(--border);
+  margin-top: 12px;
+}
+.step-display .step-num { color: var(--cyan); font-weight: 800; font-family: 'JetBrains Mono', monospace; }
+.step-display .step-op { color: var(--yellow); font-weight: 800; }
+.step-display .step-result { color: var(--green); font-weight: 800; font-family: 'JetBrains Mono', monospace; }
+.step-display .step-highlight { color: var(--pink); font-weight: 700; }
+
+/* ── EQUATION DISPLAY ── */
+.equation-display {
+  font-size: 48px;
+  font-weight: 900;
+  font-family: 'JetBrains Mono', monospace;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin: 16px 0;
+}
+.eq-part { transition: all 0.3s; }
+.eq-part.num-a { color: var(--cyan); }
+.eq-part.op { color: var(--yellow); }
+.eq-part.num-b { color: var(--pink); }
+.eq-part.eq-sign { color: var(--muted); }
+.eq-part.result { color: var(--green); }
+.eq-part.missing {
+  color: var(--purple);
+  border-bottom: 4px solid var(--purple);
+  min-width: 48px;
+  text-align: center;
+}
+
+/* ── NUMBER SELECTORS (bubble input) ── */
+.num-selector {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+  justify-content: center;
+  margin-top: 8px;
+}
+.num-selector-label {
+  font-size: 12px;
+  color: var(--muted);
+  text-align: center;
+  margin-bottom: 4px;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  font-weight: 600;
+}
+.num-sel-btn {
+  width: 42px;
+  height: 42px;
+  border-radius: 10px;
+  border: 2px solid var(--border);
+  background: var(--card);
+  color: var(--text);
+  font-size: 18px;
+  font-weight: 700;
+  font-family: 'JetBrains Mono', monospace;
+  cursor: pointer;
+  transition: all 0.15s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.num-sel-btn:hover { border-color: var(--cyan); transform: scale(1.08); }
+.num-sel-btn.active { border-color: var(--cyan); background: rgba(0,212,255,0.15); color: var(--cyan); }
+
+/* ── MC GRID ── */
+.mc-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 10px;
+  max-width: 320px;
+  margin: 16px auto;
+}
+.mc-btn {
+  padding: 18px;
+  border-radius: 14px;
+  border: 2px solid var(--border);
+  background: var(--card);
+  color: var(--text);
+  font-size: 24px;
+  font-weight: 800;
+  font-family: 'JetBrains Mono', monospace;
+  cursor: pointer;
+  transition: all 0.15s;
+  text-align: center;
+}
+.mc-btn:hover { border-color: var(--cyan); background: rgba(0,212,255,0.05); transform: scale(1.03); }
+.mc-btn.correct-flash { border-color: var(--green); background: rgba(0,230,118,0.15); color: var(--green); }
+.mc-btn.incorrect-flash { border-color: var(--pink); background: rgba(255,59,139,0.15); color: var(--pink); }
+
+/* ── ANSWER GRID (Play mode, 5 choices) ── */
+.answer-grid {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 8px;
+  margin-top: 16px;
+  max-width: 400px;
+}
+.answer-btn {
+  padding: 14px;
+  border-radius: 12px;
+  border: 2px solid var(--border);
+  background: var(--card);
+  color: var(--text);
+  font-size: 20px;
+  font-weight: 700;
+  font-family: 'JetBrains Mono', monospace;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+.answer-btn:hover { border-color: var(--cyan); background: rgba(0,212,255,0.05); transform: scale(1.05); }
+.answer-btn.correct-flash { border-color: var(--green); background: rgba(0,230,118,0.15); color: var(--green); }
+.answer-btn.incorrect-flash { border-color: var(--pink); background: rgba(255,59,139,0.15); color: var(--pink); }
+
+/* ── INSTRUCTION BOX ── */
+.instruction-box {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 14px 20px;
+  margin-bottom: 16px;
+  font-size: 15px;
+  line-height: 1.6;
+  color: var(--text2);
+  text-align: center;
+}
+
+/* ── CONTROLS ── */
+.controls {
+  display: flex;
+  gap: 8px;
+  margin-top: 16px;
+  flex-wrap: wrap;
+  justify-content: center;
+}
+.ctrl-btn {
+  padding: 10px 20px;
+  border-radius: 10px;
+  border: 1px solid var(--border);
+  background: var(--card);
+  color: var(--text2);
+  font-size: 13px;
+  font-weight: 600;
+  font-family: inherit;
+  cursor: pointer;
+  transition: all 0.2s;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.ctrl-btn:hover { background: var(--card-hover); color: var(--text); }
+.ctrl-btn.primary { background: var(--grad); color: var(--bg); border-color: transparent; }
+.ctrl-btn.primary:hover { opacity: 0.9; }
+.ctrl-btn.danger { color: var(--pink); }
+.ctrl-btn.danger:hover { background: rgba(255,59,139,0.1); }
+
+/* ── SCORE DISPLAY ── */
+.score-display {
+  text-align: center;
+  padding: 16px;
+  background: var(--card);
+  border-radius: 12px;
+  margin-bottom: 12px;
+}
+.score-value {
+  font-size: 36px;
+  font-weight: 900;
+  font-family: 'JetBrains Mono', monospace;
+  background: var(--grad);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+.score-label {
+  font-size: 11px;
+  color: var(--muted);
+  text-transform: uppercase;
+  letter-spacing: 1px;
+}
+.streak-bar {
+  height: 6px;
+  background: var(--card);
+  border-radius: 3px;
+  overflow: hidden;
+  margin-top: 8px;
+}
+.streak-fill {
+  height: 100%;
+  background: var(--grad);
+  border-radius: 3px;
+  transition: width 0.3s;
+}
+
+/* ── FEEDBACK ── */
+.feedback {
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%) scale(0);
+  padding: 24px 48px;
+  border-radius: 20px;
+  font-size: 28px;
+  font-weight: 800;
+  z-index: 200;
+  pointer-events: none;
+  transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275), opacity 0.3s;
+  opacity: 0;
+  text-align: center;
+  max-width: 90vw;
+}
+.feedback.show {
+  transform: translate(-50%, -50%) scale(1);
+  opacity: 1;
+}
+.feedback.correct {
+  background: rgba(0,230,118,0.15);
+  color: var(--green);
+  border: 2px solid var(--green);
+}
+.feedback.incorrect {
+  background: rgba(255,59,139,0.15);
+  color: var(--pink);
+  border: 2px solid var(--pink);
+}
+.feedback.try-again {
+  background: rgba(255,193,7,0.15);
+  color: var(--yellow);
+  border: 2px solid var(--yellow);
+  font-size: 18px;
+  line-height: 1.5;
+}
+
+/* ── SIDE PANEL ── */
+.side-panel {
+  width: 280px;
+  background: var(--bg2);
+  border-left: 1px solid var(--border);
+  padding: 20px;
+  overflow-y: auto;
+  flex-shrink: 0;
+}
+.panel-section {
+  margin-bottom: 20px;
+}
+.panel-title {
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 1.5px;
+  color: var(--muted);
+  margin-bottom: 8px;
+}
+.panel-text {
+  font-size: 13px;
+  color: var(--text2);
+  line-height: 1.6;
+}
+
+/* ── ANIMATIONS ── */
+@keyframes pop {
+  0% { transform: scale(0); }
+  70% { transform: scale(1.2); }
+  100% { transform: scale(1); }
+}
+@keyframes shake {
+  0%, 100% { transform: translateX(0); }
+  25% { transform: translateX(-8px); }
+  75% { transform: translateX(8px); }
+}
+@keyframes correctFlash {
+  0% { box-shadow: 0 0 0 0 rgba(0,230,118,0.5); }
+  100% { box-shadow: 0 0 0 20px rgba(0,230,118,0); }
+}
+@keyframes pulse-glow {
+  0%, 100% { box-shadow: 0 0 8px rgba(0,212,255,0.3); }
+  50% { box-shadow: 0 0 20px rgba(0,212,255,0.6); }
+}
+.pop-in { animation: pop 0.3s ease-out forwards; }
+.shake { animation: shake 0.3s ease-in-out; }
+.correct-flash-anim { animation: correctFlash 0.5s ease-out; }
+.pulse-glow { animation: pulse-glow 1.5s ease-in-out infinite; }
+
+/* scrollbar */
+::-webkit-scrollbar { width: 6px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+</style>
+</head>
+<body>
+
+<!-- ═══ HEADER ═══ -->
+<div class="vinculum-header">
+  <div class="vinculum-header-left">
+    <a class="vinculum-back-btn" href="../../VINCULUM-Hub.html" style="text-decoration:none;">&#9664; Hub</a>
+    <div class="vinculum-header-title"><span>VINCULUM</span> Addition &amp; Subtraction Fluency</div>
+    <span class="vinculum-header-badge">1.OA</span>
+  </div>
+  <div class="vinculum-header-right">
+    <div class="vinculum-std-tags">
+      <span class="vinculum-std-tag">1.OA.5</span>
+      <span class="vinculum-std-tag">1.OA.6</span>
+      <span class="vinculum-std-tag mn">MN 1.2.2.4</span>
+    </div>
+    <button class="vinculum-back-btn" id="readAloudBtn" onclick="toggleReadAloud()" aria-label="Read Aloud" title="Read instructions aloud" style="margin-left:8px;white-space:nowrap;">&#x1F50A; Read to Me</button>
+  </div>
+</div>
+
+<!-- ═══ MODE TABS ═══ -->
+<div class="vinculum-mode-tabs">
+  <button class="vinculum-mode-tab active-explore" id="tabExplore" data-mode="explore">
+    <svg width="18" height="18" viewBox="0 0 48 48" fill="none"><path d="M4 24C4 24 12 12 24 12C36 12 44 24 44 24C44 24 36 36 24 36C12 36 4 24 4 24Z" stroke="currentColor" stroke-width="3" fill="none"/><circle cx="24" cy="24" r="7" stroke="currentColor" stroke-width="3" fill="none"/><circle cx="24" cy="24" r="3" fill="currentColor"/><line x1="24" y1="4" x2="24" y2="9" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" opacity="0.5"/><line x1="10" y1="8" x2="13" y2="12" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" opacity="0.5"/><line x1="38" y1="8" x2="35" y2="12" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" opacity="0.5"/></svg> Explore
+  </button>
+  <button class="vinculum-mode-tab" id="tabPractice" data-mode="practice">
+    <svg width="18" height="18" viewBox="0 0 48 48" fill="none"><circle cx="24" cy="24" r="20" stroke="currentColor" stroke-width="3" fill="none" opacity="0.3"/><circle cx="24" cy="24" r="20" stroke="currentColor" stroke-width="3" fill="none" stroke-dasharray="126" stroke-dashoffset="32" stroke-linecap="round"/><polyline points="16,24 22,32 34,16" stroke="currentColor" stroke-width="4" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg> Practice
+  </button>
+  <button class="vinculum-mode-tab" id="tabPlay" data-mode="play">
+    <svg width="18" height="18" viewBox="0 0 48 48" fill="none"><polygon points="28,4 12,28 22,28 18,44 36,18 26,18" fill="none" stroke="currentColor" stroke-width="3" stroke-linejoin="round"/><polygon points="27,8 15,27 23,27 20,40 34,19 26,19" fill="currentColor" opacity="0.15"/></svg> Play
+  </button>
+  <div class="vinculum-diff-selector">
+    <span class="vinculum-diff-label">Level</span>
+    <button class="vinculum-diff-btn active" id="diffE" data-diff="emergent">Make 10</button>
+    <button class="vinculum-diff-btn" id="diffP" data-diff="proficient">Doubles</button>
+    <button class="vinculum-diff-btn" id="diffA" data-diff="advanced">Strategies</button>
+  </div>
+</div>
+
+<!-- ═══ MAIN ═══ -->
+<div class="main">
+  <div class="workspace" role="main" id="workspace"></div>
+  <div class="side-panel" id="sidePanel"></div>
+</div>
+
+<!-- ═══ FEEDBACK POPUP ═══ -->
+<div class="feedback" id="feedback"></div>
+
+<script src="../../vinculum-input.js"></script>
+<script>
+// ════════════════════════════════════════
+// STRATEGIES
+// ════════════════════════════════════════
+var STRATEGIES = {
+  make10: { name:'Make 10', description:'Break a number apart to make 10 first', example:'8+5 \u2192 8+2+3 \u2192 10+3 = 13' },
+  doubles: { name:'Doubles', description:'When both numbers are the same', example:'6+6 = 12' },
+  doublesPlus1: { name:'Doubles +1', description:'One more than a double', example:'6+7 = 6+6+1 = 13' },
+  countOn: { name:'Count On', description:'Start from the bigger number and count up', example:'9+3 \u2192 9...10,11,12' }
+};
+
+// ════════════════════════════════════════
+// STATE
+// ════════════════════════════════════════
+var S = {
+  mode: 'explore', diff: 'emergent', maxN: 20,
+  strategy: 'make10', exampleA: 8, exampleB: 5,
+  pA: 0, pB: 0, pOp: 'add', pAnswer: 0, pStrategy: '', pChoices: [],
+  score: 0, streak: 0, best: 0, round: 0, total: 10,
+  playA: 0, playB: 0, playOp: 'add', playAnswer: 0, playChoices: []
+};
+
+// ════════════════════════════════════════
+// READ-ALOUD
+// ════════════════════════════════════════
+function toggleReadAloud() {
+  if (window.VinculumStories && VinculumStories.isReading()) {
+    VinculumStories.stopReading();
+    document.getElementById('readAloudBtn').textContent = '\uD83D\uDD0A Read to Me';
+  } else {
+    var fb = document.getElementById('feedback');
+    var storyEl = document.getElementById('storyBanner');
+    var text = storyEl ? storyEl.textContent : (fb ? fb.textContent : 'Welcome to Addition and Subtraction Fluency!');
+    if (window.VinculumStories) {
+      VinculumStories.readAloud(text, { rate: 0.85, onComplete: function() {
+        document.getElementById('readAloudBtn').textContent = '\uD83D\uDD0A Read to Me';
+      }});
+      document.getElementById('readAloudBtn').textContent = '\u23F9 Stop';
+    }
+  }
+}
+
+// ════════════════════════════════════════
+// MISCONCEPTIONS DATABASE
+// ════════════════════════════════════════
+var MISCONCEPTIONS = {
+  countOnOnly: {
+    id: 'count-on-only',
+    msg: function(a, b) { return 'Instead of counting on from ' + a + ', try the MAKE 10 strategy! Break ' + b + ' into parts.'; }
+  },
+  noDoubles: {
+    id: 'no-doubles',
+    msg: function(a, b) { return a + '+' + b + ' is close to a DOUBLE! ' + Math.min(a,b) + '+' + Math.min(a,b) + '=' + (Math.min(a,b)*2) + ', then add ' + Math.abs(a-b) + ' more.'; }
+  },
+  offByOne: {
+    id: 'off-by-one',
+    msg: function(ans, got) { return 'Almost! ' + got + ' is close but the answer is ' + ans + '.'; }
+  },
+  randomGuess: {
+    id: 'random',
+    msg: function() { return 'Try a strategy: Make 10, Doubles, or Count On. Which fits best?'; }
+  }
+};
+
+// ════════════════════════════════════════
+// HELPERS
+// ════════════════════════════════════════
+function rand(a, b) {
+  return Math.floor(Math.random() * (b - a + 1)) + a;
+}
+
+function showFeedback(text, type) {
+  var fb = document.getElementById('feedback');
+  fb.textContent = text;
+  fb.className = 'feedback ' + type + ' show';
+  setTimeout(function() { fb.classList.remove('show'); }, 2200);
+}
+
+function generateChoices(answer, max, count) {
+  var choices = new Set([answer]);
+  if (answer - 1 >= 0) choices.add(answer - 1);
+  if (answer + 1 <= max) choices.add(answer + 1);
+  if (answer - 2 >= 0) choices.add(answer - 2);
+  if (answer + 2 <= max) choices.add(answer + 2);
+  while (choices.size < count) {
+    choices.add(rand(Math.max(0, answer - 5), Math.min(max, answer + 5)));
+  }
+  return Array.from(choices).sort(function(a, b) { return a - b; }).slice(0, count);
+}
+
+// Determine best strategy for a problem
+function bestStrategy(a, b) {
+  if (a === b) return 'doubles';
+  if (Math.abs(a - b) === 1) return 'doublesPlus1';
+  if (a + b > 10 && (a >= 7 || b >= 7)) return 'make10';
+  return 'countOn';
+}
+
+// ════════════════════════════════════════
+// MODE / DIFF SWITCHING
+// ════════════════════════════════════════
+function setMode(m) {
+  S.mode = m;
+  S.round = 0;
+  S.score = 0;
+  S.streak = 0;
+  S.pA = 0;
+  S.pB = 0;
+  document.querySelectorAll('.vinculum-mode-tab').forEach(function(t) {
+    t.classList.remove('active-explore', 'active-practice', 'active-play');
+  });
+  var tabEl = document.querySelector('[data-mode="' + m + '"]');
+  if (tabEl) tabEl.classList.add('active-' + m);
+  render();
+}
+
+function setDiff(d) {
+  S.diff = d;
+  S.round = 0;
+  S.pA = 0;
+  S.pB = 0;
+  // Set default strategy per difficulty
+  if (d === 'emergent') S.strategy = 'make10';
+  else if (d === 'proficient') S.strategy = 'doubles';
+  else S.strategy = 'make10';
+
+  document.querySelectorAll('.vinculum-diff-btn').forEach(function(b) {
+    b.classList.remove('active');
+  });
+  document.getElementById('diff' + d.charAt(0).toUpperCase()).classList.add('active');
+  setMode(S.mode);
+}
+
+function setStrategy(st) {
+  S.strategy = st;
+  // Reset example numbers to suit the strategy
+  if (st === 'make10') { S.exampleA = 8; S.exampleB = 5; }
+  else if (st === 'doubles') { S.exampleA = 6; S.exampleB = 6; }
+  else if (st === 'doublesPlus1') { S.exampleA = 6; S.exampleB = 7; }
+  else { S.exampleA = 9; S.exampleB = 3; }
+  render();
+}
+
+// ════════════════════════════════════════
+// RENDER
+// ════════════════════════════════════════
+function render() {
+  var ws = document.getElementById('workspace');
+  var sp = document.getElementById('sidePanel');
+  if (S.mode === 'explore') renderExplore(ws, sp);
+  else if (S.mode === 'practice') renderPractice(ws, sp);
+  else renderPlay(ws, sp);
+}
+
+// ─── BUILD TEN FRAME HTML ───
+function buildTenFrame(a, b, highlightBreak) {
+  // Shows a ten-frame with 'a' cyan dots, then 'b' pink dots
+  // If highlightBreak, the pink dots that fill to 10 get highlight class
+  var breakPart = highlightBreak ? Math.min(b, 10 - a) : 0;
+  var html = '<div class="ten-frame">';
+  for (var i = 0; i < 10; i++) {
+    if (i < a) {
+      html += '<div class="ten-frame-cell filled">\u25CF</div>';
+    } else if (i < a + breakPart) {
+      html += '<div class="ten-frame-cell highlight">\u25CF</div>';
+    } else {
+      html += '<div class="ten-frame-cell"></div>';
+    }
+  }
+  html += '</div>';
+  // Overflow row for remainder
+  var remainder = b - breakPart;
+  if (remainder > 0) {
+    html += '<div class="ten-frame" style="margin-top:4px;">';
+    for (var j = 0; j < 10; j++) {
+      if (j < remainder) {
+        html += '<div class="ten-frame-cell filled-b">\u25CF</div>';
+      } else {
+        html += '<div class="ten-frame-cell"></div>';
+      }
+    }
+    html += '</div>';
+  }
+  return html;
+}
+
+// ─── BUILD DOUBLES VISUAL ───
+function buildDoublesVisual(a, b) {
+  var base = Math.min(a, b);
+  var extra = Math.abs(a - b);
+  var html = '<div class="doubles-rows">';
+  // Top row
+  html += '<div class="doubles-row">';
+  for (var i = 0; i < base; i++) html += '<div class="doubles-dot top"></div>';
+  if (a > b) for (var e = 0; e < extra; e++) html += '<div class="doubles-dot extra"></div>';
+  html += '</div>';
+  // Bottom row
+  html += '<div class="doubles-row">';
+  for (var j = 0; j < base; j++) html += '<div class="doubles-dot bottom"></div>';
+  if (b > a) for (var f = 0; f < extra; f++) html += '<div class="doubles-dot extra"></div>';
+  html += '</div>';
+  html += '</div>';
+  return html;
+}
+
+// ─── BUILD NUMBER LINE ───
+function buildNumberLine(start, hops) {
+  var end = start + hops;
+  var lo = Math.max(0, start - 1);
+  var hi = Math.min(20, end + 1);
+  var html = '<div class="number-line-wrap"><div class="number-line">';
+  for (var n = lo; n <= hi; n++) {
+    var cls = '';
+    if (n === start) cls = ' start';
+    if (n === end) cls = ' end';
+    html += '<div class="nl-tick' + cls + '"><div class="nl-mark"></div><div class="nl-num">' + n + '</div></div>';
+  }
+  // Draw hops
+  for (var h = 0; h < hops; h++) {
+    var leftPos = (start - lo + h) * 36 + 10;
+    html += '<div class="nl-hop" style="left:' + leftPos + 'px;animation-delay:' + (h * 0.2) + 's;">\u2934</div>';
+  }
+  html += '</div></div>';
+  return html;
+}
+
+// ─── EXPLORE MODE ───
+function renderExplore(ws, sp) {
+  var html = '';
+  var a = S.exampleA;
+  var b = S.exampleB;
+  var sum = a + b;
+
+  // Strategy selector buttons
+  html += '<div class="strategy-selector">';
+  ['make10', 'doubles', 'doublesPlus1', 'countOn'].forEach(function(key) {
+    html += '<button class="strategy-btn' + (S.strategy === key ? ' active' : '') + '" onclick="setStrategy(\'' + key + '\')">' + STRATEGIES[key].name + '</button>';
+  });
+  html += '</div>';
+
+  // Strategy name and example
+  var st = STRATEGIES[S.strategy];
+  html += '<div class="instruction-box"><strong>' + st.name + '</strong>: ' + st.description + '<br><em style="color:var(--cyan);">' + st.example + '</em></div>';
+
+  // Visual demonstration
+  html += '<div class="strategy-visual">';
+
+  if (S.strategy === 'make10') {
+    // Make-10: two ten-frames showing breaking apart
+    var break10 = 10 - a; // how much of b goes to fill 10
+    var leftover = b - break10;
+    html += buildTenFrame(a, b, true);
+    html += '<div class="step-display">';
+    html += '<span class="step-num">' + a + '</span> <span class="step-op">+</span> <span class="step-num">' + b + '</span><br>';
+    html += '\u2192 <span class="step-num">' + a + '</span> <span class="step-op">+</span> <span class="step-highlight">' + break10 + '</span> <span class="step-op">+</span> <span class="step-highlight">' + leftover + '</span><br>';
+    html += '\u2192 <span class="step-num">10</span> <span class="step-op">+</span> <span class="step-num">' + leftover + '</span> <span class="step-op">=</span> <span class="step-result">' + sum + '</span>';
+    html += '</div>';
+
+  } else if (S.strategy === 'doubles') {
+    html += buildDoublesVisual(a, b);
+    html += '<div class="step-display">';
+    html += '<span class="step-num">' + a + '</span> <span class="step-op">+</span> <span class="step-num">' + b + '</span> <span class="step-op">=</span> <span class="step-result">' + sum + '</span><br>';
+    html += 'Two equal groups of <span class="step-num">' + a + '</span>';
+    html += '</div>';
+
+  } else if (S.strategy === 'doublesPlus1') {
+    var base = Math.min(a, b);
+    var doubleSum = base * 2;
+    html += buildDoublesVisual(a, b);
+    html += '<div class="step-display">';
+    html += '<span class="step-num">' + a + '</span> <span class="step-op">+</span> <span class="step-num">' + b + '</span><br>';
+    html += '\u2192 <span class="step-num">' + base + '</span> <span class="step-op">+</span> <span class="step-num">' + base + '</span> <span class="step-op">+</span> <span class="step-highlight">1</span><br>';
+    html += '\u2192 <span class="step-num">' + doubleSum + '</span> <span class="step-op">+</span> <span class="step-num">1</span> <span class="step-op">=</span> <span class="step-result">' + sum + '</span>';
+    html += '</div>';
+
+  } else {
+    // Count On
+    var bigger = Math.max(a, b);
+    var smaller = Math.min(a, b);
+    html += buildNumberLine(bigger, smaller);
+    html += '<div class="step-display">';
+    html += 'Start at <span class="step-num">' + bigger + '</span>, count up <span class="step-highlight">' + smaller + '</span>:<br>';
+    html += '<span class="step-num">' + bigger + '</span>';
+    for (var c = 1; c <= smaller; c++) {
+      html += ' \u2192 <span class="step-num">' + (bigger + c) + '</span>';
+    }
+    html += '<br><span class="step-op">=</span> <span class="step-result">' + sum + '</span>';
+    html += '</div>';
+  }
+
+  html += '</div>'; // end strategy-visual
+
+  // Number selectors (bubble input, not keyboard)
+  html += '<div style="display:flex;gap:32px;margin-top:16px;flex-wrap:wrap;justify-content:center;">';
+  // First number
+  html += '<div>';
+  html += '<div class="num-selector-label">First Number</div>';
+  html += '<div class="num-selector">';
+  for (var n = 1; n <= 10; n++) {
+    html += '<button class="num-sel-btn' + (n === S.exampleA ? ' active' : '') + '" onclick="setExampleA(' + n + ')">' + n + '</button>';
+  }
+  html += '</div></div>';
+  // Second number
+  html += '<div>';
+  html += '<div class="num-selector-label">Second Number</div>';
+  html += '<div class="num-selector">';
+  for (var n2 = 1; n2 <= 10; n2++) {
+    var disabled = (a + n2 > 20) ? ' style="opacity:0.3;pointer-events:none;"' : '';
+    html += '<button class="num-sel-btn' + (n2 === S.exampleB ? ' active' : '') + '"' + disabled + ' onclick="setExampleB(' + n2 + ')">' + n2 + '</button>';
+  }
+  html += '</div></div>';
+  html += '</div>';
+
+  ws.innerHTML = html;
+
+  // Side panel
+  sp.innerHTML = '<div class="panel-section">' +
+    '<div class="panel-title">How to Use</div>' +
+    '<div class="panel-text">' +
+      '1. Choose a <strong>strategy</strong> above<br><br>' +
+      '2. Watch the step-by-step visual<br><br>' +
+      '3. Tap the number bubbles to try different examples<br><br>' +
+      '4. Notice when each strategy works best!' +
+    '</div>' +
+    '</div>' +
+    '<div class="panel-section">' +
+    '<div class="panel-title">When to Use Each</div>' +
+    '<div class="panel-text">' +
+      '<strong style="color:var(--cyan);">Make 10</strong> \u2014 When one number is close to 10 (7, 8, 9)<br><br>' +
+      '<strong style="color:var(--pink);">Doubles</strong> \u2014 When both numbers are the same<br><br>' +
+      '<strong style="color:var(--yellow);">Doubles +1</strong> \u2014 When numbers are one apart<br><br>' +
+      '<strong style="color:var(--purple);">Count On</strong> \u2014 When adding a small number (1, 2, 3)' +
+    '</div>' +
+    '</div>' +
+    '<div class="panel-section">' +
+    '<div class="panel-title">Standards</div>' +
+    '<div class="panel-text">' +
+      '<strong>1.OA.5</strong> \u2014 Relate counting to addition and subtraction<br><br>' +
+      '<strong>1.OA.6</strong> \u2014 Add and subtract within 20 using strategies<br><br>' +
+      '<strong>MN 1.2.2.4</strong> \u2014 Use strategies for addition/subtraction facts' +
+    '</div>' +
+    '</div>';
+}
+
+function setExampleA(n) {
+  S.exampleA = n;
+  if (S.exampleA + S.exampleB > 20) S.exampleB = 20 - S.exampleA;
+  render();
+}
+
+function setExampleB(n) {
+  S.exampleB = n;
+  if (S.exampleA + S.exampleB > 20) S.exampleA = 20 - S.exampleB;
+  render();
+}
+
+// ─── PRACTICE MODE ───
+function renderPractice(ws, sp) {
+  if (S.pA === 0 && S.pB === 0) {
+    newPractice();
+    return;
+  }
+
+  var html = '';
+  var answer = S.pAnswer;
+
+  // Strategy hint
+  if (S.diff === 'emergent') {
+    // Make 10 focus: show ten-frame hint
+    html += '<div class="instruction-box">Use the <strong>Make 10</strong> strategy with the ten-frame to help!</div>';
+  } else if (S.diff === 'proficient') {
+    html += '<div class="instruction-box">Use <strong>Doubles</strong> and <strong>Count On</strong> strategies fluently!</div>';
+  } else {
+    html += '<div class="instruction-box">Choose the <strong>best strategy</strong> and solve!</div>';
+  }
+
+  // Equation display
+  html += '<div class="equation-display">';
+  html += '<span class="eq-part num-a">' + S.pA + '</span>';
+  html += '<span class="eq-part op">' + (S.pOp === 'add' ? '+' : '\u2212') + '</span>';
+  html += '<span class="eq-part num-b">' + S.pB + '</span>';
+  html += '<span class="eq-part eq-sign">=</span>';
+  html += '<span class="eq-part missing">?</span>';
+  html += '</div>';
+
+  // Visual hint for emergent
+  if (S.diff === 'emergent' && S.pOp === 'add') {
+    html += '<div class="strategy-visual" style="padding:8px;">';
+    html += buildTenFrame(S.pA, S.pB, true);
+    html += '</div>';
+  }
+
+  // Strategy tag
+  if (S.pStrategy) {
+    html += '<div style="text-align:center;margin-bottom:8px;"><span style="font-size:12px;color:var(--muted);background:var(--card);padding:4px 12px;border-radius:20px;border:1px solid var(--border);">Strategy: <strong style="color:var(--cyan);">' + STRATEGIES[S.pStrategy].name + '</strong></span></div>';
+  }
+
+  // MC grid (4 choices, bubbles for values <= 20)
+  html += '<div class="mc-grid">';
+  S.pChoices.forEach(function(c) {
+    html += '<button class="mc-btn" id="mc' + c + '" onclick="checkPractice(' + c + ')">' + c + '</button>';
+  });
+  html += '</div>';
+
+  // Controls
+  html += '<div class="controls">';
+  html += '<button class="ctrl-btn" onclick="newPractice()">Skip \u279C</button>';
+  html += '</div>';
+
+  ws.innerHTML = html;
+
+  // Side panel
+  sp.innerHTML = '<div class="panel-section">' +
+    '<div class="panel-title">Instructions</div>' +
+    '<div class="panel-text">' +
+      'Look at the equation.<br><br>' +
+      'Find the answer and tap it!<br><br>' +
+      (S.diff === 'emergent' ? 'Use the <strong style="color:var(--cyan);">ten-frame</strong> to help you make 10.' :
+       S.diff === 'proficient' ? 'Try using <strong>doubles</strong> or <strong>counting on</strong> from the bigger number.' :
+       'Pick the best strategy for each problem. Be flexible!') +
+    '</div>' +
+    '</div>' +
+    '<div class="panel-section">' +
+    '<div class="panel-title">Tip</div>' +
+    '<div class="panel-text" style="background:var(--card);padding:12px;border-radius:8px;">' +
+      (S.pStrategy && STRATEGIES[S.pStrategy] ? STRATEGIES[S.pStrategy].description + '<br><em>' + STRATEGIES[S.pStrategy].example + '</em>' : 'Think about which strategy fits this problem best!') +
+    '</div>' +
+    '</div>';
+}
+
+function newPractice() {
+  if (S.diff === 'emergent') {
+    // Make 10 problems: sums crossing 10
+    S.pOp = 'add';
+    S.pA = rand(6, 9);
+    S.pB = rand(2, 10 - (S.pA - 10 < 0 ? 0 : S.pA - 10));
+    S.pB = rand(Math.max(2, 11 - S.pA), Math.min(9, 20 - S.pA));
+    S.pAnswer = S.pA + S.pB;
+    S.pStrategy = 'make10';
+  } else if (S.diff === 'proficient') {
+    // Doubles and count-on
+    var useDoubles = rand(0, 1) === 0;
+    S.pOp = 'add';
+    if (useDoubles) {
+      var isNear = rand(0, 1) === 0;
+      var base = rand(3, 9);
+      S.pA = base;
+      S.pB = isNear ? base + 1 : base;
+      S.pStrategy = isNear ? 'doublesPlus1' : 'doubles';
+    } else {
+      // Count on: add 1, 2, or 3
+      S.pA = rand(5, 17);
+      S.pB = rand(1, 3);
+      S.pStrategy = 'countOn';
+    }
+    S.pAnswer = S.pA + S.pB;
+    if (S.pAnswer > 20) { S.pA = 20 - S.pB; S.pAnswer = 20; }
+  } else {
+    // Advanced: mixed strategies, addition and subtraction
+    S.pOp = rand(0, 2) === 0 ? 'subtract' : 'add';
+    if (S.pOp === 'add') {
+      S.pA = rand(3, 12);
+      S.pB = rand(2, Math.min(12, 20 - S.pA));
+      S.pAnswer = S.pA + S.pB;
+      S.pStrategy = bestStrategy(S.pA, S.pB);
+    } else {
+      S.pA = rand(11, 20);
+      S.pB = rand(2, Math.min(9, S.pA));
+      S.pAnswer = S.pA - S.pB;
+      S.pStrategy = '';
+    }
+  }
+
+  S.pChoices = generateChoices(S.pAnswer, 20, 4);
+  render();
+}
+
+function checkPractice(n) {
+  var btn = document.getElementById('mc' + n);
+  if (n === S.pAnswer) {
+    if (btn) btn.classList.add('correct-flash');
+    showFeedback('\u2713 Correct! ' + S.pA + (S.pOp === 'add' ? '+' : '\u2212') + S.pB + ' = ' + S.pAnswer, 'correct');
+    setTimeout(function() { newPractice(); }, 1500);
+  } else {
+    if (btn) btn.classList.add('incorrect-flash');
+    var diff = Math.abs(n - S.pAnswer);
+    var feedbackMsg;
+
+    if (diff === 1) {
+      feedbackMsg = MISCONCEPTIONS.offByOne.msg(S.pAnswer, n);
+    } else if (S.pOp === 'add' && S.pA === S.pB && n !== S.pAnswer) {
+      feedbackMsg = MISCONCEPTIONS.noDoubles.msg(S.pA, S.pB);
+    } else if (S.pOp === 'add' && Math.abs(S.pA - S.pB) === 1 && n !== S.pAnswer) {
+      feedbackMsg = MISCONCEPTIONS.noDoubles.msg(S.pA, S.pB);
+    } else if (S.pOp === 'add' && (S.pA >= 7 || S.pB >= 7) && S.pA + S.pB > 10) {
+      feedbackMsg = MISCONCEPTIONS.countOnOnly.msg(Math.max(S.pA, S.pB), Math.min(S.pA, S.pB));
+    } else {
+      feedbackMsg = MISCONCEPTIONS.randomGuess.msg();
+    }
+
+    showFeedback(feedbackMsg, 'try-again');
+  }
+}
+
+// ─── PLAY MODE ───
+function renderPlay(ws, sp) {
+  if (S.round === 0) {
+    S.score = 0;
+    S.streak = 0;
+    S.round = 1;
+    newPlayRound();
+  }
+
+  var html = '';
+
+  // Game over check
+  if (S.round > S.total) {
+    html += '<div style="text-align:center;">';
+    html += '<div style="font-size:48px;font-weight:900;background:var(--grad);-webkit-background-clip:text;-webkit-text-fill-color:transparent;margin-bottom:12px;">Game Over!</div>';
+    html += '<div class="score-display" style="display:inline-block;padding:24px 48px;">';
+    html += '<div class="score-value" style="font-size:56px;">' + S.score + '</div>';
+    html += '<div class="score-label">Final Score</div>';
+    html += '</div>';
+    html += '<div style="margin-top:12px;font-size:18px;color:var(--text2);">Best Streak: <strong style="color:var(--yellow);">' + S.best + '</strong></div>';
+    html += '<div class="controls" style="margin-top:24px;">';
+    html += '<button class="ctrl-btn primary" onclick="S.round=0;render();">Play Again</button>';
+    html += '</div>';
+    html += '</div>';
+    ws.innerHTML = html;
+    sp.innerHTML = '';
+    return;
+  }
+
+  // Round indicator
+  html += '<div style="text-align:center;margin-bottom:8px;">';
+  html += '<div style="font-size:14px;color:var(--muted);">Round ' + S.round + ' of ' + S.total + '</div>';
+  html += '</div>';
+
+  // Equation with missing result
+  html += '<div class="equation-display">';
+  html += '<span class="eq-part num-a">' + S.playA + '</span>';
+  html += '<span class="eq-part op">' + (S.playOp === 'add' ? '+' : '\u2212') + '</span>';
+  html += '<span class="eq-part num-b">' + S.playB + '</span>';
+  html += '<span class="eq-part eq-sign">=</span>';
+  html += '<span class="eq-part missing">?</span>';
+  html += '</div>';
+
+  // 5 MC answer buttons
+  html += '<div class="answer-grid" style="margin:16px auto;">';
+  S.playChoices.forEach(function(c) {
+    html += '<button class="answer-btn" id="play' + c + '" onclick="playPick(' + c + ')">' + c + '</button>';
+  });
+  html += '</div>';
+
+  ws.innerHTML = html;
+
+  // Side panel with score
+  sp.innerHTML = '<div class="score-display">' +
+    '<div class="score-value">' + S.score + '</div>' +
+    '<div class="score-label">Score</div>' +
+    '</div>' +
+    '<div class="score-display" style="background:transparent;padding:8px;">' +
+    '<div style="font-size:18px;font-weight:700;color:var(--yellow);">\uD83D\uDD25 ' + S.streak + '</div>' +
+    '<div class="score-label">Streak</div>' +
+    '<div class="streak-bar"><div class="streak-fill" style="width:' + Math.min(S.streak * 20, 100) + '%;"></div></div>' +
+    '</div>' +
+    '<div class="panel-section">' +
+    '<div class="panel-title">How to Play</div>' +
+    '<div class="panel-text">' +
+      'Solve each problem as fast as you can!<br><br>' +
+      'Use <strong>Make 10</strong>, <strong>Doubles</strong>, or <strong>Count On</strong> \u2014 pick the best strategy!<br><br>' +
+      '<strong>Build a streak</strong> for bonus points!' +
+    '</div>' +
+    '</div>' +
+    '<div class="panel-section">' +
+    '<div class="panel-title">Best Streak</div>' +
+    '<div class="panel-text" style="font-size:24px;font-weight:800;color:var(--purple);">\uD83C\uDFC6 ' + S.best + '</div>' +
+    '</div>';
+}
+
+function newPlayRound() {
+  // Mixed problems within 20
+  S.playOp = rand(0, 2) === 0 ? 'subtract' : 'add';
+  if (S.playOp === 'add') {
+    S.playA = rand(2, 14);
+    S.playB = rand(2, 20 - S.playA);
+    S.playAnswer = S.playA + S.playB;
+  } else {
+    S.playA = rand(6, 20);
+    S.playB = rand(1, Math.min(S.playA - 1, 10));
+    S.playAnswer = S.playA - S.playB;
+  }
+  S.playChoices = generateChoices(S.playAnswer, 20, 5);
+}
+
+var playLocked = false;
+
+function playPick(n) {
+  if (playLocked) return;
+  playLocked = true;
+  var btn = document.getElementById('play' + n);
+
+  if (n === S.playAnswer) {
+    if (btn) btn.classList.add('correct-flash');
+    S.score += 10 + (S.streak * 2);
+    S.streak++;
+    if (S.streak > S.best) S.best = S.streak;
+    showFeedback('\u2713 ' + S.playAnswer + '!', 'correct');
+  } else {
+    if (btn) btn.classList.add('incorrect-flash');
+    S.streak = 0;
+
+    var diff = Math.abs(n - S.playAnswer);
+    var feedbackMsg;
+    if (diff === 1) {
+      feedbackMsg = MISCONCEPTIONS.offByOne.msg(S.playAnswer, n);
+    } else if (S.playOp === 'add' && (S.playA === S.playB || Math.abs(S.playA - S.playB) === 1)) {
+      feedbackMsg = MISCONCEPTIONS.noDoubles.msg(S.playA, S.playB);
+    } else if (S.playOp === 'add' && (S.playA >= 7 || S.playB >= 7)) {
+      feedbackMsg = MISCONCEPTIONS.countOnOnly.msg(Math.max(S.playA, S.playB), Math.min(S.playA, S.playB));
+    } else {
+      feedbackMsg = MISCONCEPTIONS.randomGuess.msg();
+    }
+    showFeedback(feedbackMsg, 'try-again');
+  }
+
+  setTimeout(function() {
+    playLocked = false;
+    S.round++;
+    if (S.round <= S.total) {
+      newPlayRound();
+    }
+    render();
+  }, 1200);
+}
+
+// ════════════════════════════════════════
+// INIT
+// ════════════════════════════════════════
+document.querySelectorAll('.vinculum-mode-tab').forEach(function(tab) {
+  tab.addEventListener('click', function() {
+    setMode(this.dataset.mode);
+  });
+});
+
+document.querySelectorAll('.vinculum-diff-btn').forEach(function(btn) {
+  btn.addEventListener('click', function() {
+    setDiff(this.dataset.diff);
+  });
+});
+
+render();
+</script>
+<script src="../../vinculum-core.js"></script>
+<script src="../../vinculum-data.js"></script>
+<script src="../../vinculum-adaptive-hook.js"></script>
+<script src="../../vinculum-3reads.js"></script>
+<script src="../../vinculum-stories.js"></script>
+<script src="../../vinculum-feedback.js"></script>
+<script src="../../vinculum-guide.js"></script>
+<script src="../../vinculum-identity.js"></script>
+<script src="../../vinculum-indigenous.js"></script>
+<script src="../../vinculum-dashboard.js"></script>
+<script src="../../vinculum-hyperfocus.js"></script>
+<script src="../../vinculum-layout.js"></script>
+</body>
+</html>

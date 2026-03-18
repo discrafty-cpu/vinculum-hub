@@ -1,0 +1,1613 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>VINCULUM — Equal Shares Partitioner</title>
+<link rel="stylesheet" href="../../vinculum-core.css">
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;600&display=swap');
+
+/* Theme system loaded from vinculum-core.css */
+.vinculum-rtm-btn .rtm-icon{font-size:14px;}
+
+/* ═══ FOCUS VISIBLE (Keyboard Navigation) ═══ */
+*:focus-visible {
+  outline:2px solid var(--cyan);outline-offset:2px;border-radius:4px;
+}
+.sr-only {
+  position:absolute;width:1px;height:1px;padding:0;margin:-1px;
+  overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0;
+}
+
+* { margin:0; padding:0; box-sizing:border-box; }
+body {
+  font-family: 'Inter', sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  height: 100vh;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  user-select: none;
+}
+
+/* ── HEADER ── */
+.vinculum-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 24px;
+  background: var(--bg2);
+  border-bottom: 1px solid var(--border);
+  flex-shrink: 0;
+}
+.vinculum-header-left {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+.vinculum-back-btn {
+  padding: 6px 12px;
+  border-radius: 8px;
+  border: 1px solid var(--border);
+  background: transparent;
+  color: var(--text2);
+  font-size: 13px;
+  font-family: inherit;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+.vinculum-back-btn:hover { background: var(--card); color: var(--cyan); }
+.vinculum-header-title {
+  font-size: 18px;
+  font-weight: 800;
+}
+.vinculum-header-title span {
+  background: var(--grad);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+.vinculum-header-badge {
+  font-size: 10px;
+  font-weight: 700;
+  padding: 3px 10px;
+  border-radius: 6px;
+  background: rgba(0,212,255,0.1);
+  color: var(--cyan);
+  border: 1px solid rgba(0,212,255,0.2);
+  letter-spacing: 1px;
+}
+.vinculum-std-tags {
+  display: flex;
+  gap: 6px;
+}
+.vinculum-std-tag {
+  font-size: 10px;
+  font-family: 'JetBrains Mono', monospace;
+  font-weight: 600;
+  padding: 3px 8px;
+  border-radius: 5px;
+  background: rgba(0,212,255,0.08);
+  color: var(--cyan);
+}
+.vinculum-std-tag.mn { background: rgba(255,145,0,0.08); color: var(--orange); }
+
+/* ── MODE TABS ── */
+.vinculum-mode-tabs {
+  display: flex;
+  gap: 4px;
+  padding: 8px 24px;
+  background: var(--bg2);
+  border-bottom: 1px solid var(--border);
+  flex-shrink: 0;
+}
+.vinculum-mode-tab {
+  padding: 8px 20px;
+  border-radius: 8px;
+  border: 1px solid transparent;
+  background: transparent;
+  color: var(--muted);
+  font-size: 13px;
+  font-weight: 600;
+  font-family: inherit;
+  cursor: pointer;
+  transition: all 0.2s;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.vinculum-mode-tab:hover { color: var(--text2); background: var(--card); }
+.vinculum-mode-tab.active-explore { background: rgba(0,212,255,0.1); color: var(--cyan); border-color: rgba(0,212,255,0.3); }
+.vinculum-mode-tab.active-practice { background: rgba(0,230,118,0.1); color: var(--green); border-color: rgba(0,230,118,0.3); }
+.vinculum-mode-tab.active-play { background: rgba(255,59,139,0.1); color: var(--pink); border-color: rgba(255,59,139,0.3); }
+
+/* Difficulty selector */
+.vinculum-diff-selector {
+  margin-left: auto;
+  display: flex;
+  gap: 4px;
+  align-items: center;
+}
+.vinculum-diff-label {
+  font-size: 11px;
+  color: var(--muted);
+  margin-right: 8px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+}
+.vinculum-diff-btn {
+  padding: 5px 12px;
+  border-radius: 6px;
+  border: 1px solid var(--border);
+  background: transparent;
+  color: var(--muted);
+  font-size: 11px;
+  font-weight: 600;
+  font-family: inherit;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+.vinculum-diff-btn:hover { color: var(--text2); }
+.vinculum-diff-btn.active { background: rgba(0,212,255,0.1); color: var(--cyan); border-color: rgba(0,212,255,0.3); }
+
+/* ── MAIN AREA ── */
+.main {
+  flex: 1;
+  display: flex;
+  overflow: hidden;
+}
+
+/* ── WORKSPACE ── */
+.workspace {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+  position: relative;
+  overflow-y: auto;
+}
+
+/* ── SIDE PANEL ── */
+.side-panel {
+  width: 280px;
+  background: var(--bg2);
+  border-left: 1px solid var(--border);
+  padding: 20px;
+  overflow-y: auto;
+  flex-shrink: 0;
+}
+.panel-section {
+  margin-bottom: 20px;
+}
+.panel-title {
+  font-size: 12px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  color: var(--muted);
+  margin-bottom: 8px;
+}
+.panel-text {
+  font-size: 13px;
+  color: var(--text2);
+  line-height: 1.6;
+}
+
+/* ── SHAPE CONTAINER ── */
+.shape-area {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 20px;
+  width: 100%;
+  max-width: 560px;
+}
+
+.shape-svg-container {
+  width: 100%;
+  max-width: 400px;
+  min-height: 300px;
+  background: var(--card);
+  border-radius: 16px;
+  border: 2px solid var(--border);
+  padding: 20px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+  overflow: hidden;
+}
+
+.shape-label {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--muted);
+  text-transform: uppercase;
+  letter-spacing: 1.5px;
+  margin-top: -8px;
+}
+
+/* ── EXPLORE CONTROLS ── */
+.explore-controls {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  margin-top: 8px;
+}
+.explore-controls label {
+  font-size: 13px;
+  color: var(--text2);
+  font-weight: 600;
+}
+
+.shape-picker {
+  display: flex;
+  gap: 8px;
+}
+.shape-pick-btn {
+  padding: 8px 18px;
+  border-radius: 8px;
+  border: 2px solid var(--border);
+  background: var(--card);
+  color: var(--text2);
+  font-size: 13px;
+  font-weight: 600;
+  font-family: inherit;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+.shape-pick-btn:hover { border-color: var(--cyan); color: var(--cyan); }
+.shape-pick-btn.active { background: rgba(0,212,255,0.1); color: var(--cyan); border-color: var(--cyan); }
+
+.partition-picker {
+  display: flex;
+  gap: 8px;
+  margin-top: 4px;
+}
+.part-btn {
+  width: 44px;
+  height: 44px;
+  border-radius: 10px;
+  border: 2px solid var(--border);
+  background: var(--card);
+  color: var(--text2);
+  font-size: 18px;
+  font-weight: 700;
+  font-family: 'JetBrains Mono', monospace;
+  cursor: pointer;
+  transition: all 0.2s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.part-btn:hover { border-color: var(--cyan); color: var(--cyan); }
+.part-btn.active { background: rgba(0,212,255,0.15); color: var(--cyan); border-color: var(--cyan); }
+
+.fraction-name {
+  font-size: 28px;
+  font-weight: 800;
+  background: var(--grad);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  text-align: center;
+}
+
+.fraction-desc {
+  font-size: 14px;
+  color: var(--text2);
+  text-align: center;
+  max-width: 400px;
+  line-height: 1.5;
+}
+
+/* ── PRACTICE / PLAY ── */
+.question-text {
+  font-size: 18px;
+  font-weight: 700;
+  color: var(--text);
+  text-align: center;
+  margin-bottom: 8px;
+}
+
+.choice-buttons {
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+  justify-content: center;
+  margin-top: 8px;
+}
+.choice-btn {
+  padding: 14px 28px;
+  border-radius: 12px;
+  border: 2px solid var(--border);
+  background: var(--card);
+  color: var(--text);
+  font-size: 15px;
+  font-weight: 700;
+  font-family: inherit;
+  cursor: pointer;
+  transition: all 0.2s;
+  min-width: 120px;
+  text-align: center;
+}
+.choice-btn:hover { border-color: var(--cyan); color: var(--cyan); transform: translateY(-2px); }
+.choice-btn.correct {
+  border-color: var(--green);
+  background: rgba(0,230,118,0.15);
+  color: var(--green);
+  animation: pop 0.3s ease-out;
+}
+.choice-btn.wrong {
+  border-color: var(--pink);
+  background: rgba(255,59,139,0.1);
+  color: var(--pink);
+  animation: shake 0.3s ease-in-out;
+}
+.choice-btn:disabled { cursor: default; opacity: 0.7; }
+
+/* ── FEEDBACK ── */
+.feedback {
+  position: fixed;
+  bottom: 24px;
+  left: 50%;
+  transform: translateX(-50%) translateY(80px);
+  padding: 12px 28px;
+  border-radius: 12px;
+  font-size: 15px;
+  font-weight: 700;
+  z-index: 1000;
+  pointer-events: none;
+  opacity: 0;
+  transition: all 0.35s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+.feedback.show {
+  transform: translateX(-50%) translateY(0);
+  opacity: 1;
+}
+.feedback.correct { background: rgba(0,230,118,0.15); color: var(--green); border: 1px solid rgba(0,230,118,0.3); }
+.feedback.wrong { background: rgba(255,59,139,0.1); color: var(--pink); border: 1px solid rgba(255,59,139,0.3); }
+.feedback.info { background: rgba(0,212,255,0.1); color: var(--cyan); border: 1px solid rgba(0,212,255,0.3); }
+
+/* ── SCORE DISPLAY ── */
+.score-display {
+  text-align: center;
+  padding: 12px;
+  background: var(--card);
+  border-radius: 12px;
+  border: 1px solid var(--border);
+}
+.score-value {
+  font-size: 36px;
+  font-weight: 900;
+  font-family: 'JetBrains Mono', monospace;
+  background: var(--grad);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+.score-label {
+  font-size: 11px;
+  color: var(--muted);
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  margin-top: 2px;
+}
+.score-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 6px 0;
+  font-size: 13px;
+  color: var(--text2);
+}
+.score-row strong {
+  font-family: 'JetBrains Mono', monospace;
+  color: var(--cyan);
+}
+
+/* ── PLAY HUD ── */
+.play-hud {
+  display: flex;
+  gap: 24px;
+  align-items: center;
+  margin-bottom: 8px;
+}
+.play-hud-item {
+  text-align: center;
+}
+.play-hud-value {
+  font-size: 24px;
+  font-weight: 800;
+  font-family: 'JetBrains Mono', monospace;
+  color: var(--cyan);
+}
+.play-hud-label {
+  font-size: 10px;
+  color: var(--muted);
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.play-btn {
+  padding: 12px 32px;
+  border-radius: 12px;
+  border: 2px solid var(--border);
+  background: var(--card);
+  color: var(--text);
+  font-size: 15px;
+  font-weight: 700;
+  font-family: inherit;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+.play-btn:hover { border-color: var(--cyan); }
+.play-btn.primary {
+  background: rgba(0,212,255,0.1);
+  border-color: rgba(0,212,255,0.3);
+  color: var(--cyan);
+}
+
+/* ── GAME OVER ── */
+.game-over {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+  padding: 32px;
+}
+.game-over-title {
+  font-size: 24px;
+  font-weight: 800;
+  background: var(--grad);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+.game-over-score {
+  font-size: 64px;
+  font-weight: 900;
+  font-family: 'JetBrains Mono', monospace;
+  background: var(--grad);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+.game-over-label {
+  font-size: 14px;
+  color: var(--muted);
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+}
+
+/* ── RESULT BADGE ── */
+.result-badge {
+  display: inline-block;
+  padding: 8px 24px;
+  border-radius: 10px;
+  font-size: 16px;
+  font-weight: 800;
+  letter-spacing: 1px;
+}
+.equal-badge { background: rgba(0,230,118,0.15); color: var(--green); border: 1px solid rgba(0,230,118,0.3); }
+.unequal-badge { background: rgba(255,59,139,0.1); color: var(--pink); border: 1px solid rgba(255,59,139,0.3); }
+
+/* ── PARTITION LINE STYLES ── */
+.partition-line {
+  stroke: var(--cyan);
+  stroke-width: 2.5;
+  stroke-linecap: round;
+  transition: stroke 0.2s;
+}
+.partition-line.draggable {
+  cursor: grab;
+  stroke-width: 3;
+}
+.partition-line.draggable:hover {
+  stroke: var(--green);
+  stroke-width: 4;
+}
+.equal-highlight { stroke: var(--green) !important; }
+.unequal-highlight { stroke: var(--pink) !important; }
+
+/* ── EXPLORE DRAG HINT ── */
+.drag-hint {
+  font-size: 12px;
+  color: var(--muted);
+  text-align: center;
+  font-style: italic;
+  margin-top: 4px;
+}
+
+/* ── VOCAB TABLE ── */
+.vocab-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 12px;
+}
+.vocab-table td {
+  padding: 6px 8px;
+  border-bottom: 1px solid var(--border);
+}
+.vocab-table td:first-child {
+  font-weight: 700;
+  color: var(--cyan);
+  font-family: 'JetBrains Mono', monospace;
+  white-space: nowrap;
+}
+
+/* ═══ ANIMATIONS ═══ */
+@keyframes pop {
+  0% { transform: scale(0.6); opacity: 0; }
+  70% { transform: scale(1.08); }
+  100% { transform: scale(1); opacity: 1; }
+}
+@keyframes shake {
+  0%, 100% { transform: translateX(0); }
+  20% { transform: translateX(-6px); }
+  40% { transform: translateX(6px); }
+  60% { transform: translateX(-4px); }
+  80% { transform: translateX(4px); }
+}
+@keyframes hop {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-8px); }
+}
+@keyframes pulse {
+  0%, 100% { opacity: 0.6; }
+  50% { opacity: 1; }
+}
+
+.pop-in { animation: pop 0.3s ease-out forwards; }
+.shake { animation: shake 0.3s ease-in-out; }
+.hop { animation: hop 0.4s ease-in-out; }
+
+/* Scrollbar */
+::-webkit-scrollbar { width: 6px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+
+/* ── RESPONSIVE ── */
+@media (max-width: 768px) {
+  .side-panel { width: 220px; }
+  .shape-svg-container { min-height: 220px; padding: 12px; }
+  .choice-btn { padding: 12px 20px; font-size: 14px; min-width: 100px; }
+  .fraction-name { font-size: 22px; }
+}
+</style>
+</head>
+<body>
+
+<!-- ═══ HEADER ═══ -->
+<div class="vinculum-header">
+  <div class="vinculum-header-left">
+    <a class="vinculum-back-btn" href="../../VINCULUM-Hub.html" style="text-decoration:none;">&#9664; Hub</a>
+    <div class="vinculum-header-title"><span>VINCULUM</span> Equal Shares</div>
+    <span class="vinculum-header-badge">2 &middot; G</span>
+  </div>
+  <div class="vinculum-std-tags" style="display:flex;align-items:center;gap:8px;">
+    <button class="vinculum-back-btn" id="readAloudBtn" onclick="toggleReadAloud()" aria-label="Read Aloud" title="Read instructions aloud">&#128266; Read to Me</button>
+    <span class="vinculum-std-tag">2.G.3</span>
+    <span class="vinculum-std-tag mn">MN 2.4.1.1</span>
+  </div>
+</div>
+
+<!-- ═══ MODE TABS ═══ -->
+<div class="vinculum-mode-tabs">
+  <button class="vinculum-mode-tab active-explore" id="tabExplore" onclick="setMode('explore')">
+    <svg width="18" height="18" viewBox="0 0 48 48" fill="none"><path d="M4 24C4 24 12 12 24 12C36 12 44 24 44 24C44 24 36 36 24 36C12 36 4 24 4 24Z" stroke="currentColor" stroke-width="3" fill="none"/><circle cx="24" cy="24" r="7" stroke="currentColor" stroke-width="3" fill="none"/><circle cx="24" cy="24" r="3" fill="currentColor"/><line x1="24" y1="4" x2="24" y2="9" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" opacity="0.5"/><line x1="10" y1="8" x2="13" y2="12" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" opacity="0.5"/><line x1="38" y1="8" x2="35" y2="12" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" opacity="0.5"/></svg> Explore
+  </button>
+  <button class="vinculum-mode-tab" id="tabPractice" onclick="setMode('practice')">
+    <svg width="18" height="18" viewBox="0 0 48 48" fill="none"><circle cx="24" cy="24" r="20" stroke="currentColor" stroke-width="3" fill="none" opacity="0.3"/><circle cx="24" cy="24" r="20" stroke="currentColor" stroke-width="3" fill="none" stroke-dasharray="126" stroke-dashoffset="32" stroke-linecap="round"/><polyline points="16,24 22,32 34,16" stroke="currentColor" stroke-width="4" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg> Practice
+  </button>
+  <button class="vinculum-mode-tab" id="tabPlay" onclick="setMode('play')">
+    <svg width="18" height="18" viewBox="0 0 48 48" fill="none"><polygon points="28,4 12,28 22,28 18,44 36,18 26,18" fill="none" stroke="currentColor" stroke-width="3" stroke-linejoin="round"/><polygon points="27,8 15,27 23,27 20,40 34,19 26,19" fill="currentColor" opacity="0.15"/></svg> Play
+  </button>
+  <div class="vinculum-diff-selector">
+    <span class="vinculum-diff-label">Level</span>
+    <button class="vinculum-diff-btn active" id="diffE" onclick="setDiff('emergent')" data-diff="emergent">Emergent</button>
+    <button class="vinculum-diff-btn" id="diffP" onclick="setDiff('proficient')" data-diff="proficient">Proficient</button>
+    <button class="vinculum-diff-btn" id="diffA" onclick="setDiff('advanced')" data-diff="advanced">Advanced</button>
+  </div>
+</div>
+
+<!-- ═══ MAIN ═══ -->
+<div class="main">
+  <div class="workspace" role="main" id="workspace"></div>
+  <div class="side-panel" id="sidePanel"></div>
+</div>
+
+<!-- ═══ FEEDBACK POPUP ═══ -->
+<div class="feedback" id="feedback"></div>
+
+<script src="../../vinculum-input.js"></script>
+<script>
+
+// ════════════════════════════════════════
+// MISCONCEPTIONS DATABASE
+// ════════════════════════════════════════
+var MISCONCEPTIONS = {
+  unequalCalledEqual: {
+    id: 'unequal-called-equal',
+    msg: function() { return 'Look carefully — equal shares must be the SAME SIZE. These pieces are different sizes!'; }
+  },
+  halvesIdentical: {
+    id: 'halves-identical',
+    msg: function() { return 'Halves do not have to look the same shape! Two pieces are halves if each is the same size, even if they look different.'; }
+  },
+  fractionLanguage: {
+    id: 'fraction-language',
+    msg: function(parts) { return 'When we split a shape into ' + parts + ' equal parts, each piece is called one ' + partName(parts) + '. The name tells you how many equal pieces there are!'; }
+  },
+  countNotSize: {
+    id: 'count-not-size',
+    msg: function() { return 'Counting pieces is not enough. Each piece must be the same SIZE to be equal shares.'; }
+  },
+  morePartsMoreTotal: {
+    id: 'more-parts-more',
+    msg: function() { return 'More parts does NOT mean more total. Cutting into more equal pieces makes each piece SMALLER, but the whole stays the same.'; }
+  },
+  orientationConfusion: {
+    id: 'orientation-confusion',
+    msg: function() { return 'Rotating a shape does not change whether the shares are equal. Look at the size of each piece, not the direction of the cut.'; }
+  }
+};
+
+// ════════════════════════════════════════
+// STATE
+// ════════════════════════════════════════
+var S = {
+  mode: 'explore',
+  diff: 'emergent',
+
+  // Explore
+  exploreShape: 'circle',
+  exploreParts: 2,
+  exploreDragOffset: 0,
+
+  // Practice
+  practiceAnswered: false,
+  practiceCorrect: false,
+  practiceQ: null,
+  score: 0,
+  total: 0,
+
+  // Play
+  playScore: 0,
+  playStreak: 0,
+  playRound: 0,
+  playBest: 0,
+  gameEnded: false,
+  playQ: null,
+  playAnswered: false,
+  timerStart: 0
+};
+
+// ════════════════════════════════════════
+// READ-ALOUD
+// ════════════════════════════════════════
+function toggleReadAloud() {
+  if (window.VinculumStories && VinculumStories.isReading()) {
+    VinculumStories.stopReading();
+    document.getElementById('readAloudBtn').innerHTML = '&#128266; Read to Me';
+  } else {
+    var text = document.getElementById('sidePanel').textContent || 'Equal shares means splitting a shape into pieces that are all the same size.';
+    if (window.VinculumStories) {
+      VinculumStories.readAloud(text, { rate: 0.85, onComplete: function() {
+        document.getElementById('readAloudBtn').innerHTML = '&#128266; Read to Me';
+      }});
+      document.getElementById('readAloudBtn').innerHTML = '&#9209; Stop';
+    }
+  }
+}
+
+// ════════════════════════════════════════
+// HELPERS
+// ════════════════════════════════════════
+function randInt(min, max) {
+  return Math.floor(Math.random() * (max - min + 1)) + min;
+}
+
+function shuffle(arr) {
+  var a = arr.slice();
+  for (var i = a.length - 1; i > 0; i--) {
+    var j = randInt(0, i);
+    var tmp = a[i]; a[i] = a[j]; a[j] = tmp;
+  }
+  return a;
+}
+
+function partName(n) {
+  if (n === 2) return 'half';
+  if (n === 3) return 'third';
+  if (n === 4) return 'fourth';
+  return '1/' + n;
+}
+
+function partNamePlural(n) {
+  if (n === 2) return 'halves';
+  if (n === 3) return 'thirds';
+  if (n === 4) return 'fourths';
+  return n + ' equal parts';
+}
+
+function getAllowedParts() {
+  if (S.diff === 'emergent') return [2];
+  if (S.diff === 'proficient') return [2, 3];
+  return [2, 3, 4];
+}
+
+function getAllowedShapes() {
+  if (S.diff === 'emergent') return ['circle'];
+  return ['circle', 'rectangle'];
+}
+
+// ════════════════════════════════════════
+// SVG SHAPE BUILDERS
+// ════════════════════════════════════════
+function buildCircleSVG(cx, cy, r, parts, equal, orientation) {
+  var svg = '';
+  var ori = orientation || 0;
+
+  // Outer circle
+  svg += '<circle cx="' + cx + '" cy="' + cy + '" r="' + r + '" fill="rgba(0,212,255,0.08)" stroke="var(--cyan)" stroke-width="2.5" />';
+
+  if (parts === 2) {
+    if (equal) {
+      // Horizontal or vertical line through center
+      var angle = ori * Math.PI / 180;
+      var x1 = cx + r * Math.cos(angle);
+      var y1 = cy + r * Math.sin(angle);
+      var x2 = cx - r * Math.cos(angle);
+      var y2 = cy - r * Math.sin(angle);
+      svg += '<line x1="' + x1 + '" y1="' + y1 + '" x2="' + x2 + '" y2="' + y2 + '" class="partition-line" />';
+    } else {
+      // Unequal: line offset from center
+      var offset = r * 0.35;
+      var angle = ori * Math.PI / 180;
+      var perpAngle = angle + Math.PI / 2;
+      var mx = cx + offset * Math.cos(perpAngle);
+      var my = cy + offset * Math.sin(perpAngle);
+      // Chord at offset
+      var dist = offset;
+      var halfChord = Math.sqrt(r * r - dist * dist);
+      var x1 = mx + halfChord * Math.cos(angle);
+      var y1 = my + halfChord * Math.sin(angle);
+      var x2 = mx - halfChord * Math.cos(angle);
+      var y2 = my - halfChord * Math.sin(angle);
+      svg += '<line x1="' + x1 + '" y1="' + y1 + '" x2="' + x2 + '" y2="' + y2 + '" class="partition-line" />';
+    }
+  } else if (parts === 3) {
+    if (equal) {
+      // Three equal sectors (120 degrees each)
+      for (var i = 0; i < 3; i++) {
+        var angle = (ori + i * 120) * Math.PI / 180;
+        var ex = cx + r * Math.cos(angle);
+        var ey = cy + r * Math.sin(angle);
+        svg += '<line x1="' + cx + '" y1="' + cy + '" x2="' + ex + '" y2="' + ey + '" class="partition-line" />';
+      }
+    } else {
+      // Unequal: three lines but not evenly spaced
+      var angles = [ori, ori + 90, ori + 200];
+      for (var i = 0; i < 3; i++) {
+        var angle = angles[i] * Math.PI / 180;
+        var ex = cx + r * Math.cos(angle);
+        var ey = cy + r * Math.sin(angle);
+        svg += '<line x1="' + cx + '" y1="' + cy + '" x2="' + ex + '" y2="' + ey + '" class="partition-line" />';
+      }
+    }
+  } else if (parts === 4) {
+    if (equal) {
+      // Four equal sectors (90 degrees each)
+      for (var i = 0; i < 2; i++) {
+        var angle = (ori + i * 90) * Math.PI / 180;
+        var x1 = cx + r * Math.cos(angle);
+        var y1 = cy + r * Math.sin(angle);
+        var x2 = cx - r * Math.cos(angle);
+        var y2 = cy - r * Math.sin(angle);
+        svg += '<line x1="' + x1 + '" y1="' + y1 + '" x2="' + x2 + '" y2="' + y2 + '" class="partition-line" />';
+      }
+    } else {
+      // Unequal: two perpendicular lines, but offset
+      var angle1 = ori * Math.PI / 180;
+      var angle2 = (ori + 90) * Math.PI / 180;
+      // First line through center
+      svg += '<line x1="' + (cx + r * Math.cos(angle1)) + '" y1="' + (cy + r * Math.sin(angle1)) + '" x2="' + (cx - r * Math.cos(angle1)) + '" y2="' + (cy - r * Math.sin(angle1)) + '" class="partition-line" />';
+      // Second line offset
+      var off = r * 0.3;
+      var perpA = angle1 + Math.PI / 2;
+      var mx = cx + off * Math.cos(perpA);
+      var my = cy + off * Math.sin(perpA);
+      var halfC = Math.sqrt(r * r - off * off);
+      svg += '<line x1="' + (mx + halfC * Math.cos(angle1)) + '" y1="' + (my + halfC * Math.sin(angle1)) + '" x2="' + (mx - halfC * Math.cos(angle1)) + '" y2="' + (my - halfC * Math.sin(angle1)) + '" class="partition-line" />';
+    }
+  }
+
+  return svg;
+}
+
+function buildRectSVG(x, y, w, h, parts, equal, orientation) {
+  var svg = '';
+  var ori = orientation || 0; // 0 = vertical cuts, 1 = horizontal cuts, 2 = mixed
+
+  // Outer rectangle
+  svg += '<rect x="' + x + '" y="' + y + '" width="' + w + '" height="' + h + '" rx="4" fill="rgba(0,212,255,0.08)" stroke="var(--cyan)" stroke-width="2.5" />';
+
+  if (parts === 2) {
+    if (equal) {
+      if (ori === 0 || ori === 2) {
+        // Vertical cut in middle
+        svg += '<line x1="' + (x + w / 2) + '" y1="' + y + '" x2="' + (x + w / 2) + '" y2="' + (y + h) + '" class="partition-line" />';
+      } else {
+        // Horizontal cut in middle
+        svg += '<line x1="' + x + '" y1="' + (y + h / 2) + '" x2="' + (x + w) + '" y2="' + (y + h / 2) + '" class="partition-line" />';
+      }
+    } else {
+      // Unequal cut
+      if (ori === 0 || ori === 2) {
+        var off = w * (0.25 + Math.random() * 0.15);
+        svg += '<line x1="' + (x + off) + '" y1="' + y + '" x2="' + (x + off) + '" y2="' + (y + h) + '" class="partition-line" />';
+      } else {
+        var off = h * (0.25 + Math.random() * 0.15);
+        svg += '<line x1="' + x + '" y1="' + (y + off) + '" x2="' + (x + w) + '" y2="' + (y + off) + '" class="partition-line" />';
+      }
+    }
+  } else if (parts === 3) {
+    if (equal) {
+      if (ori === 0 || ori === 2) {
+        for (var i = 1; i < 3; i++) {
+          svg += '<line x1="' + (x + w * i / 3) + '" y1="' + y + '" x2="' + (x + w * i / 3) + '" y2="' + (y + h) + '" class="partition-line" />';
+        }
+      } else {
+        for (var i = 1; i < 3; i++) {
+          svg += '<line x1="' + x + '" y1="' + (y + h * i / 3) + '" x2="' + (x + w) + '" y2="' + (y + h * i / 3) + '" class="partition-line" />';
+        }
+      }
+    } else {
+      // Unequal thirds
+      if (ori === 0 || ori === 2) {
+        svg += '<line x1="' + (x + w * 0.2) + '" y1="' + y + '" x2="' + (x + w * 0.2) + '" y2="' + (y + h) + '" class="partition-line" />';
+        svg += '<line x1="' + (x + w * 0.7) + '" y1="' + y + '" x2="' + (x + w * 0.7) + '" y2="' + (y + h) + '" class="partition-line" />';
+      } else {
+        svg += '<line x1="' + x + '" y1="' + (y + h * 0.2) + '" x2="' + (x + w) + '" y2="' + (y + h * 0.2) + '" class="partition-line" />';
+        svg += '<line x1="' + x + '" y1="' + (y + h * 0.7) + '" x2="' + (x + w) + '" y2="' + (y + h * 0.7) + '" class="partition-line" />';
+      }
+    }
+  } else if (parts === 4) {
+    if (equal) {
+      if (ori === 2) {
+        // Grid: one vertical + one horizontal
+        svg += '<line x1="' + (x + w / 2) + '" y1="' + y + '" x2="' + (x + w / 2) + '" y2="' + (y + h) + '" class="partition-line" />';
+        svg += '<line x1="' + x + '" y1="' + (y + h / 2) + '" x2="' + (x + w) + '" y2="' + (y + h / 2) + '" class="partition-line" />';
+      } else if (ori === 0) {
+        // 4 vertical columns
+        for (var i = 1; i < 4; i++) {
+          svg += '<line x1="' + (x + w * i / 4) + '" y1="' + y + '" x2="' + (x + w * i / 4) + '" y2="' + (y + h) + '" class="partition-line" />';
+        }
+      } else {
+        // 4 horizontal rows
+        for (var i = 1; i < 4; i++) {
+          svg += '<line x1="' + x + '" y1="' + (y + h * i / 4) + '" x2="' + (x + w) + '" y2="' + (y + h * i / 4) + '" class="partition-line" />';
+        }
+      }
+    } else {
+      // Unequal: grid with offset center
+      var offX = w * (0.3 + Math.random() * 0.1);
+      var offY = h * (0.3 + Math.random() * 0.1);
+      svg += '<line x1="' + (x + offX) + '" y1="' + y + '" x2="' + (x + offX) + '" y2="' + (y + h) + '" class="partition-line" />';
+      svg += '<line x1="' + x + '" y1="' + (y + offY) + '" x2="' + (x + w) + '" y2="' + (y + offY) + '" class="partition-line" />';
+    }
+  }
+
+  return svg;
+}
+
+function buildShapeSVG(shape, parts, equal, orientation, svgW, svgH) {
+  svgW = svgW || 280;
+  svgH = svgH || 260;
+  var svg = '<svg width="' + svgW + '" height="' + svgH + '" viewBox="0 0 ' + svgW + ' ' + svgH + '">';
+
+  if (shape === 'circle') {
+    var cx = svgW / 2;
+    var cy = svgH / 2;
+    var r = Math.min(svgW, svgH) / 2 - 20;
+    svg += buildCircleSVG(cx, cy, r, parts, equal, orientation);
+  } else {
+    var pad = 30;
+    var rw = svgW - pad * 2;
+    var rh = svgH - pad * 2;
+    svg += buildRectSVG(pad, pad, rw, rh, parts, equal, orientation);
+  }
+
+  // Label the parts
+  if (equal) {
+    svg += '<text x="' + (svgW / 2) + '" y="' + (svgH - 6) + '" text-anchor="middle" fill="var(--green)" font-size="12" font-weight="700" font-family="Inter">' + parts + ' equal ' + (parts === 1 ? 'part' : 'parts') + ' — ' + partNamePlural(parts) + '</text>';
+  } else {
+    svg += '<text x="' + (svgW / 2) + '" y="' + (svgH - 6) + '" text-anchor="middle" fill="var(--pink)" font-size="12" font-weight="700" font-family="Inter">NOT equal shares</text>';
+  }
+
+  svg += '</svg>';
+  return svg;
+}
+
+// ════════════════════════════════════════
+// EXPLORE: INTERACTIVE DRAG SVG
+// ════════════════════════════════════════
+function buildExploreSVG(shape, parts, offsetPct) {
+  var svgW = 300;
+  var svgH = 280;
+  var svg = '<svg width="' + svgW + '" height="' + svgH + '" viewBox="0 0 ' + svgW + ' ' + svgH + '" id="exploreSvg">';
+
+  var cx = svgW / 2;
+  var cy = svgH / 2 - 10;
+
+  if (shape === 'circle') {
+    var r = 100;
+    svg += '<circle cx="' + cx + '" cy="' + cy + '" r="' + r + '" fill="rgba(0,212,255,0.08)" stroke="var(--cyan)" stroke-width="2.5" />';
+
+    if (parts === 2) {
+      // Movable horizontal line
+      var lineY = cy + offsetPct * r;
+      var halfChord = Math.sqrt(Math.max(0, r * r - offsetPct * offsetPct * r * r));
+      var isEqual = Math.abs(offsetPct) < 0.06;
+      var col = isEqual ? 'var(--green)' : 'var(--pink)';
+      svg += '<line x1="' + (cx - halfChord) + '" y1="' + lineY + '" x2="' + (cx + halfChord) + '" y2="' + lineY + '" stroke="' + col + '" stroke-width="3" stroke-linecap="round" />';
+      // Drag handle
+      svg += '<circle cx="' + (cx + halfChord) + '" cy="' + lineY + '" r="8" fill="' + col + '" opacity="0.8" style="cursor:grab;" />';
+      svg += '<circle cx="' + (cx - halfChord) + '" cy="' + lineY + '" r="8" fill="' + col + '" opacity="0.8" style="cursor:grab;" />';
+      // Labels
+      var topArea = isEqual ? '1 half' : 'smaller';
+      var botArea = isEqual ? '1 half' : 'bigger';
+      if (offsetPct > 0.06) { topArea = 'bigger'; botArea = 'smaller'; }
+      svg += '<text x="' + cx + '" y="' + (cy - 20) + '" text-anchor="middle" fill="var(--text2)" font-size="14" font-weight="700" font-family="Inter">' + topArea + '</text>';
+      svg += '<text x="' + cx + '" y="' + (cy + 30) + '" text-anchor="middle" fill="var(--text2)" font-size="14" font-weight="700" font-family="Inter">' + botArea + '</text>';
+    } else if (parts === 3) {
+      var baseAngle = offsetPct * 40;
+      var angles = [0 + baseAngle, 120 + baseAngle * 0.5, 240 - baseAngle * 1.5];
+      var diffs = [];
+      for (var i = 0; i < 3; i++) {
+        var next = (i + 1) % 3;
+        var d = ((angles[next] - angles[i]) + 360) % 360;
+        diffs.push(d);
+      }
+      var maxDiff = Math.max.apply(null, diffs) - Math.min.apply(null, diffs);
+      var isEqual = maxDiff < 8;
+      var col = isEqual ? 'var(--green)' : 'var(--pink)';
+      for (var i = 0; i < 3; i++) {
+        var a = angles[i] * Math.PI / 180;
+        var ex = cx + r * Math.cos(a);
+        var ey = cy + r * Math.sin(a);
+        svg += '<line x1="' + cx + '" y1="' + cy + '" x2="' + ex + '" y2="' + ey + '" stroke="' + col + '" stroke-width="3" stroke-linecap="round" />';
+        svg += '<circle cx="' + ex + '" cy="' + ey + '" r="7" fill="' + col + '" opacity="0.8" style="cursor:grab;" />';
+      }
+      svg += '<text x="' + cx + '" y="' + (svgH - 20) + '" text-anchor="middle" fill="' + col + '" font-size="13" font-weight="700" font-family="Inter">' + (isEqual ? 'Equal thirds!' : 'Not equal — keep adjusting') + '</text>';
+    } else if (parts === 4) {
+      var tilt = offsetPct * 30;
+      var col = Math.abs(tilt) < 3 ? 'var(--green)' : 'var(--pink)';
+      var isEqual = Math.abs(tilt) < 3;
+      for (var i = 0; i < 2; i++) {
+        var a = (tilt + i * 90) * Math.PI / 180;
+        svg += '<line x1="' + (cx + r * Math.cos(a)) + '" y1="' + (cy + r * Math.sin(a)) + '" x2="' + (cx - r * Math.cos(a)) + '" y2="' + (cy - r * Math.sin(a)) + '" stroke="' + col + '" stroke-width="3" stroke-linecap="round" />';
+      }
+      // Handle on one end
+      var a0 = tilt * Math.PI / 180;
+      svg += '<circle cx="' + (cx + r * Math.cos(a0)) + '" cy="' + (cy + r * Math.sin(a0)) + '" r="8" fill="' + col + '" opacity="0.8" style="cursor:grab;" />';
+      svg += '<text x="' + cx + '" y="' + (svgH - 20) + '" text-anchor="middle" fill="' + col + '" font-size="13" font-weight="700" font-family="Inter">' + (isEqual ? 'Equal fourths!' : 'Not equal — adjust the lines') + '</text>';
+    }
+  } else {
+    // Rectangle explore
+    var pad = 30;
+    var rw = svgW - pad * 2;
+    var rh = svgH - pad * 2 - 30;
+    var ry = pad;
+    svg += '<rect x="' + pad + '" y="' + ry + '" width="' + rw + '" height="' + rh + '" rx="4" fill="rgba(0,212,255,0.08)" stroke="var(--cyan)" stroke-width="2.5" />';
+
+    if (parts === 2) {
+      var cutX = pad + rw / 2 + offsetPct * rw * 0.4;
+      var isEqual = Math.abs(offsetPct) < 0.06;
+      var col = isEqual ? 'var(--green)' : 'var(--pink)';
+      svg += '<line x1="' + cutX + '" y1="' + ry + '" x2="' + cutX + '" y2="' + (ry + rh) + '" stroke="' + col + '" stroke-width="3" stroke-linecap="round" />';
+      svg += '<circle cx="' + cutX + '" cy="' + ry + '" r="8" fill="' + col + '" opacity="0.8" style="cursor:grab;" />';
+      svg += '<circle cx="' + cutX + '" cy="' + (ry + rh) + '" r="8" fill="' + col + '" opacity="0.8" style="cursor:grab;" />';
+      var leftW = cutX - pad;
+      var rightW = pad + rw - cutX;
+      svg += '<text x="' + (pad + leftW / 2) + '" y="' + (ry + rh / 2 + 5) + '" text-anchor="middle" fill="var(--text2)" font-size="13" font-weight="700" font-family="Inter">' + (isEqual ? '1 half' : (leftW < rightW ? 'smaller' : 'bigger')) + '</text>';
+      svg += '<text x="' + (cutX + rightW / 2) + '" y="' + (ry + rh / 2 + 5) + '" text-anchor="middle" fill="var(--text2)" font-size="13" font-weight="700" font-family="Inter">' + (isEqual ? '1 half' : (rightW < leftW ? 'smaller' : 'bigger')) + '</text>';
+    } else if (parts === 3) {
+      var off = offsetPct * rw * 0.15;
+      var cut1 = pad + rw / 3 + off;
+      var cut2 = pad + rw * 2 / 3 - off * 0.5;
+      var isEqual = Math.abs(cut2 - cut1 - rw / 3) < rw * 0.03 && Math.abs(cut1 - pad - rw / 3) < rw * 0.03;
+      var col = isEqual ? 'var(--green)' : 'var(--pink)';
+      svg += '<line x1="' + cut1 + '" y1="' + ry + '" x2="' + cut1 + '" y2="' + (ry + rh) + '" stroke="' + col + '" stroke-width="3" stroke-linecap="round" />';
+      svg += '<line x1="' + cut2 + '" y1="' + ry + '" x2="' + cut2 + '" y2="' + (ry + rh) + '" stroke="' + col + '" stroke-width="3" stroke-linecap="round" />';
+      svg += '<circle cx="' + cut1 + '" cy="' + ry + '" r="7" fill="' + col + '" opacity="0.8" style="cursor:grab;" />';
+      svg += '<circle cx="' + cut2 + '" cy="' + ry + '" r="7" fill="' + col + '" opacity="0.8" style="cursor:grab;" />';
+      svg += '<text x="' + (pad + rw / 2) + '" y="' + (svgH - 8) + '" text-anchor="middle" fill="' + col + '" font-size="13" font-weight="700" font-family="Inter">' + (isEqual ? 'Equal thirds!' : 'Not equal — drag the lines') + '</text>';
+    } else {
+      // Fourths: grid
+      var offX = offsetPct * rw * 0.2;
+      var cutX = pad + rw / 2 + offX;
+      var cutY = ry + rh / 2;
+      var isEqual = Math.abs(offX) < rw * 0.03;
+      var col = isEqual ? 'var(--green)' : 'var(--pink)';
+      svg += '<line x1="' + cutX + '" y1="' + ry + '" x2="' + cutX + '" y2="' + (ry + rh) + '" stroke="' + col + '" stroke-width="3" stroke-linecap="round" />';
+      svg += '<line x1="' + pad + '" y1="' + cutY + '" x2="' + (pad + rw) + '" y2="' + cutY + '" stroke="' + col + '" stroke-width="3" stroke-linecap="round" />';
+      svg += '<circle cx="' + cutX + '" cy="' + ry + '" r="7" fill="' + col + '" opacity="0.8" style="cursor:grab;" />';
+      svg += '<text x="' + (pad + rw / 2) + '" y="' + (svgH - 8) + '" text-anchor="middle" fill="' + col + '" font-size="13" font-weight="700" font-family="Inter">' + (isEqual ? 'Equal fourths!' : 'Not equal — drag the line') + '</text>';
+    }
+  }
+
+  svg += '</svg>';
+  return svg;
+}
+
+// ════════════════════════════════════════
+// QUESTION GENERATORS
+// ════════════════════════════════════════
+function generateQuestion() {
+  var shapes = getAllowedShapes();
+  var parts = getAllowedParts();
+  var shape = shapes[randInt(0, shapes.length - 1)];
+  var numParts = parts[randInt(0, parts.length - 1)];
+  var equal = Math.random() < 0.5;
+  var ori = randInt(0, 2);
+
+  // Pick question type
+  var qTypes = ['yesno']; // "Are these equal shares?"
+  if (S.diff !== 'emergent') {
+    qTypes.push('howmany'); // "How many equal parts?"
+  }
+  if (S.diff === 'advanced') {
+    qTypes.push('name'); // "What do we call each part?"
+  }
+
+  var qType = qTypes[randInt(0, qTypes.length - 1)];
+
+  // For howmany/name questions, always show equal partitions
+  if (qType === 'howmany' || qType === 'name') {
+    equal = true;
+  }
+
+  var q = {
+    shape: shape,
+    parts: numParts,
+    equal: equal,
+    orientation: ori,
+    type: qType,
+    answer: null,
+    choices: []
+  };
+
+  if (qType === 'yesno') {
+    q.answer = equal ? 'Yes' : 'No';
+    q.choices = shuffle(['Yes', 'No']);
+    q.prompt = 'Are these equal shares?';
+  } else if (qType === 'howmany') {
+    q.answer = '' + numParts;
+    var opts = ['' + numParts];
+    var pool = [2, 3, 4, 5, 6];
+    pool = pool.filter(function(x) { return x !== numParts; });
+    pool = shuffle(pool);
+    opts.push(pool[0] + '');
+    opts.push(pool[1] + '');
+    q.choices = shuffle(opts);
+    q.prompt = 'How many equal parts?';
+  } else {
+    q.answer = partNamePlural(numParts);
+    var opts = [partNamePlural(numParts)];
+    var allNames = [partNamePlural(2), partNamePlural(3), partNamePlural(4)];
+    allNames = allNames.filter(function(n) { return n !== partNamePlural(numParts); });
+    opts.push(allNames[0]);
+    if (allNames.length > 1) opts.push(allNames[1]);
+    q.choices = shuffle(opts);
+    q.prompt = 'What do we call each part?';
+  }
+
+  return q;
+}
+
+// ════════════════════════════════════════
+// FEEDBACK
+// ════════════════════════════════════════
+function showFB(text, type) {
+  var fb = document.getElementById('feedback');
+  fb.textContent = text;
+  fb.className = 'feedback ' + type + ' show';
+  setTimeout(function() { fb.classList.remove('show'); }, 1800);
+}
+
+function getMisconceptionFB(q, chosen) {
+  if (q.type === 'yesno') {
+    if (!q.equal && chosen === 'Yes') {
+      return MISCONCEPTIONS.unequalCalledEqual.msg();
+    }
+    if (q.equal && chosen === 'No') {
+      // They said unequal shares are not equal — maybe orientation confusion
+      if (S.diff === 'advanced') {
+        return MISCONCEPTIONS.orientationConfusion.msg();
+      }
+      return MISCONCEPTIONS.halvesIdentical.msg();
+    }
+  }
+  if (q.type === 'howmany') {
+    return MISCONCEPTIONS.countNotSize.msg();
+  }
+  if (q.type === 'name') {
+    return MISCONCEPTIONS.fractionLanguage.msg(q.parts);
+  }
+  return null;
+}
+
+// ════════════════════════════════════════
+// MODE / DIFF SWITCHING
+// ════════════════════════════════════════
+function setMode(mode) {
+  S.mode = mode;
+
+  if (mode === 'practice' && S.total === 0) {
+    S.score = 0;
+    S.total = 0;
+    newPracticeQuestion();
+  }
+
+  if (mode === 'play' && S.playRound === 0) {
+    S.playScore = 0;
+    S.playStreak = 0;
+    S.playRound = 1;
+    S.playBest = 0;
+    S.gameEnded = false;
+    newPlayQuestion();
+  }
+
+  document.querySelectorAll('.vinculum-mode-tab').forEach(function(t) {
+    t.classList.remove('active-explore', 'active-practice', 'active-play');
+  });
+  var tabEl = document.getElementById('tab' + mode.charAt(0).toUpperCase() + mode.slice(1));
+  tabEl.classList.add('active-' + mode);
+
+  render();
+}
+
+function setDiff(diff) {
+  S.diff = diff;
+  S.exploreShape = getAllowedShapes()[0];
+  S.exploreParts = getAllowedParts()[0];
+  S.exploreDragOffset = 0;
+  S.score = 0;
+  S.total = 0;
+  S.playScore = 0;
+  S.playStreak = 0;
+  S.playRound = 0;
+  S.playBest = 0;
+  S.practiceAnswered = false;
+
+  document.querySelectorAll('.vinculum-diff-btn').forEach(function(b) {
+    b.classList.remove('active');
+  });
+  document.getElementById('diff' + diff.charAt(0).toUpperCase()).classList.add('active');
+
+  setMode(S.mode);
+}
+
+// ════════════════════════════════════════
+// RENDER MAIN
+// ════════════════════════════════════════
+function render() {
+  var ws = document.getElementById('workspace');
+  var sp = document.getElementById('sidePanel');
+
+  if (S.mode === 'explore') renderExplore(ws, sp);
+  else if (S.mode === 'practice') renderPractice(ws, sp);
+  else renderPlay(ws, sp);
+}
+
+// ════════════════════════════════════════
+// EXPLORE MODE
+// ════════════════════════════════════════
+function renderExplore(ws, sp) {
+  var shape = S.exploreShape;
+  var parts = S.exploreParts;
+  var allowedShapes = getAllowedShapes();
+  var allowedParts = getAllowedParts();
+
+  var html = '<div class="shape-area">';
+
+  // Title
+  html += '<div class="fraction-name">' + partNamePlural(parts) + '</div>';
+
+  // Interactive SVG
+  html += '<div class="shape-svg-container" id="exploreShapeArea">';
+  html += buildExploreSVG(shape, parts, S.exploreDragOffset);
+  html += '</div>';
+
+  // Drag hint
+  html += '<div class="drag-hint">Drag the handles to see equal vs. unequal shares</div>';
+
+  // Explanation
+  html += '<div class="fraction-desc">';
+  html += 'A <strong>' + shape + '</strong> split into <strong>' + parts + ' equal parts</strong> makes <strong>' + partNamePlural(parts) + '</strong>. ';
+  html += 'Each piece is one <strong>' + partName(parts) + '</strong> of the whole.';
+  html += '</div>';
+
+  // Shape picker
+  if (allowedShapes.length > 1) {
+    html += '<div class="explore-controls"><label>Shape:</label><div class="shape-picker">';
+    for (var i = 0; i < allowedShapes.length; i++) {
+      var s = allowedShapes[i];
+      var cls = s === shape ? ' active' : '';
+      html += '<button class="shape-pick-btn' + cls + '" onclick="S.exploreShape=\'' + s + '\';S.exploreDragOffset=0;render()">' + s.charAt(0).toUpperCase() + s.slice(1) + '</button>';
+    }
+    html += '</div></div>';
+  }
+
+  // Partition picker
+  html += '<div class="explore-controls"><label>Parts:</label><div class="partition-picker">';
+  for (var i = 0; i < allowedParts.length; i++) {
+    var p = allowedParts[i];
+    var cls = p === parts ? ' active' : '';
+    html += '<button class="part-btn' + cls + '" onclick="S.exploreParts=' + p + ';S.exploreDragOffset=0;render()">' + p + '</button>';
+  }
+  html += '</div></div>';
+
+  // Drag slider (simple control)
+  html += '<div class="explore-controls" style="flex-direction:column;gap:8px;">';
+  html += '<label>Slide to move the partition line:</label>';
+  html += '<input type="range" min="-100" max="100" value="' + Math.round(S.exploreDragOffset * 100) + '" style="width:260px;accent-color:var(--cyan);" oninput="S.exploreDragOffset=this.value/100;render()">';
+  html += '</div>';
+
+  html += '</div>';
+  ws.innerHTML = html;
+
+  // Side panel
+  var spHtml = '<div class="panel-section">';
+  spHtml += '<div class="panel-title">How it Works</div>';
+  spHtml += '<div class="panel-text">A shape has <strong>equal shares</strong> when every piece is the <strong>same size</strong>. Use the slider to move the partition line and see when shares become equal or unequal.</div>';
+  spHtml += '</div>';
+
+  spHtml += '<div class="panel-section">';
+  spHtml += '<div class="panel-title">Key Vocabulary</div>';
+  spHtml += '<table class="vocab-table">';
+  spHtml += '<tr><td>Halves</td><td>2 equal parts</td></tr>';
+  if (S.diff !== 'emergent') {
+    spHtml += '<tr><td>Thirds</td><td>3 equal parts</td></tr>';
+  }
+  if (S.diff === 'advanced') {
+    spHtml += '<tr><td>Fourths</td><td>4 equal parts</td></tr>';
+  }
+  spHtml += '<tr><td>Equal shares</td><td>Same-size pieces</td></tr>';
+  spHtml += '<tr><td>Whole</td><td>All parts together</td></tr>';
+  spHtml += '</table></div>';
+
+  spHtml += '<div class="panel-section">';
+  spHtml += '<div class="panel-title">Remember</div>';
+  spHtml += '<div class="panel-text">Equal shares must be the <strong>same size</strong>, but they do NOT have to be the same shape. A rectangle cut with a diagonal has two halves that look like triangles!</div>';
+  spHtml += '</div>';
+
+  spHtml += '<div class="panel-section">';
+  spHtml += '<div class="panel-title">Standards</div>';
+  spHtml += '<div class="panel-text" style="font-family:\'JetBrains Mono\',monospace;font-size:11px;">CCSS 2.G.3<br>MN 2.4.1.1</div>';
+  spHtml += '</div>';
+
+  sp.innerHTML = spHtml;
+}
+
+// ════════════════════════════════════════
+// PRACTICE MODE
+// ════════════════════════════════════════
+function newPracticeQuestion() {
+  S.practiceQ = generateQuestion();
+  S.practiceAnswered = false;
+  S.practiceCorrect = false;
+}
+
+function renderPractice(ws, sp) {
+  var q = S.practiceQ;
+  if (!q) { newPracticeQuestion(); q = S.practiceQ; }
+
+  var html = '<div class="shape-area">';
+
+  // Question prompt
+  html += '<div class="question-text">' + q.prompt + '</div>';
+
+  // Shape display
+  html += '<div class="shape-svg-container">';
+  html += buildShapeSVG(q.shape, q.parts, q.equal, q.orientation);
+  html += '</div>';
+
+  // Choices
+  if (!S.practiceAnswered) {
+    html += '<div class="choice-buttons" id="practiceChoices">';
+    for (var i = 0; i < q.choices.length; i++) {
+      html += '<button class="choice-btn" onclick="checkPractice(\'' + q.choices[i].replace(/'/g, "\\'") + '\')" aria-label="' + q.choices[i] + '">' + q.choices[i] + '</button>';
+    }
+    html += '</div>';
+  } else {
+    // Show result
+    html += '<div class="choice-buttons">';
+    for (var i = 0; i < q.choices.length; i++) {
+      var cls = 'choice-btn';
+      if (q.choices[i] === q.answer) cls += ' correct';
+      else if (q.choices[i] === S.practiceChosen && !S.practiceCorrect) cls += ' wrong';
+      html += '<button class="' + cls + '" disabled>' + q.choices[i] + '</button>';
+    }
+    html += '</div>';
+
+    // Result badge
+    if (q.type === 'yesno') {
+      html += '<div class="result-badge ' + (q.equal ? 'equal-badge' : 'unequal-badge') + '" style="animation:pop 0.3s ease-out;">';
+      html += q.equal ? 'EQUAL SHARES' : 'NOT EQUAL';
+      html += '</div>';
+    }
+
+    // Next button
+    html += '<button class="play-btn primary" onclick="newPracticeQuestion();render()" style="margin-top:8px;">Next Question</button>';
+  }
+
+  html += '</div>';
+  ws.innerHTML = html;
+
+  // Side panel
+  var spHtml = '<div class="panel-section">';
+  spHtml += '<div class="panel-title">Score</div>';
+  spHtml += '<div class="score-display">';
+  spHtml += '<div class="score-value">' + S.score + '/' + S.total + '</div>';
+  spHtml += '<div class="score-label">' + (S.total > 0 ? Math.round(S.score / S.total * 100) + '% correct' : 'Answer to begin') + '</div>';
+  spHtml += '</div></div>';
+
+  spHtml += '<div class="panel-section">';
+  spHtml += '<div class="panel-title">Tips</div>';
+  spHtml += '<div class="panel-text">';
+  if (q.type === 'yesno') {
+    spHtml += 'Look at the <strong>size</strong> of each piece. Are they all the same size? If yes, those are equal shares!';
+  } else if (q.type === 'howmany') {
+    spHtml += 'Count the pieces carefully. Each piece must be the <strong>same size</strong> to be an equal share.';
+  } else {
+    spHtml += '2 equal parts = <strong>halves</strong><br>3 equal parts = <strong>thirds</strong><br>4 equal parts = <strong>fourths</strong>';
+  }
+  spHtml += '</div></div>';
+
+  spHtml += '<div class="panel-section">';
+  spHtml += '<div class="panel-title">Shape</div>';
+  spHtml += '<div class="panel-text">' + q.shape.charAt(0).toUpperCase() + q.shape.slice(1) + ' with ' + q.parts + ' partition' + (q.parts > 2 ? ' lines' : ' line') + '</div>';
+  spHtml += '</div>';
+
+  sp.innerHTML = spHtml;
+}
+
+function checkPractice(chosen) {
+  if (S.practiceAnswered) return;
+  S.practiceAnswered = true;
+  S.practiceChosen = chosen;
+  S.total++;
+
+  var q = S.practiceQ;
+  if (chosen === q.answer) {
+    S.practiceCorrect = true;
+    S.score++;
+    showFB('Correct!', 'correct');
+  } else {
+    S.practiceCorrect = false;
+    var mcFB = getMisconceptionFB(q, chosen);
+    if (mcFB) {
+      showFB(mcFB, 'wrong');
+    } else {
+      showFB('Not quite. The answer is ' + q.answer + '.', 'wrong');
+    }
+  }
+  render();
+}
+
+// ════════════════════════════════════════
+// PLAY MODE
+// ════════════════════════════════════════
+function newPlayQuestion() {
+  // Play always uses yesno for speed
+  var shapes = getAllowedShapes();
+  var parts = getAllowedParts();
+  var shape = shapes[randInt(0, shapes.length - 1)];
+  var numParts = parts[randInt(0, parts.length - 1)];
+  var equal = Math.random() < 0.5;
+  var ori = randInt(0, 2);
+
+  S.playQ = {
+    shape: shape,
+    parts: numParts,
+    equal: equal,
+    orientation: ori,
+    answer: equal ? 'Equal' : 'Not Equal'
+  };
+  S.playAnswered = false;
+  S.timerStart = Date.now();
+}
+
+function renderPlay(ws, sp) {
+  if (S.gameEnded) {
+    renderGameOver(ws, sp);
+    return;
+  }
+
+  var q = S.playQ;
+  if (!q) { newPlayQuestion(); q = S.playQ; }
+
+  var html = '<div class="shape-area">';
+
+  // HUD
+  html += '<div class="play-hud">';
+  html += '<div class="play-hud-item"><div class="play-hud-value">' + S.playRound + '/10</div><div class="play-hud-label">Round</div></div>';
+  html += '<div class="play-hud-item"><div class="play-hud-value">' + S.playScore + '</div><div class="play-hud-label">Score</div></div>';
+  html += '<div class="play-hud-item"><div class="play-hud-value">' + S.playStreak + '</div><div class="play-hud-label">Streak</div></div>';
+  html += '</div>';
+
+  // Prompt
+  html += '<div class="question-text">Equal shares?</div>';
+
+  // Shape
+  html += '<div class="shape-svg-container">';
+  html += buildShapeSVG(q.shape, q.parts, q.equal, q.orientation);
+  html += '</div>';
+
+  // Buttons
+  if (!S.playAnswered) {
+    html += '<div class="choice-buttons">';
+    html += '<button class="choice-btn" onclick="checkPlay(\'Equal\')" aria-label="Equal" style="min-width:130px;">Equal</button>';
+    html += '<button class="choice-btn" onclick="checkPlay(\'Not Equal\')" aria-label="Not Equal" style="min-width:130px;">Not Equal</button>';
+    html += '</div>';
+  } else {
+    html += '<div class="choice-buttons">';
+    var eqCls = 'choice-btn' + (q.equal ? ' correct' : (S.playChosen === 'Equal' ? ' wrong' : ''));
+    var neCls = 'choice-btn' + (!q.equal ? ' correct' : (S.playChosen === 'Not Equal' ? ' wrong' : ''));
+    html += '<button class="' + eqCls + '" disabled>Equal</button>';
+    html += '<button class="' + neCls + '" disabled>Not Equal</button>';
+    html += '</div>';
+
+    html += '<div class="result-badge ' + (q.equal ? 'equal-badge' : 'unequal-badge') + '" style="animation:pop 0.3s ease-out;">';
+    html += q.equal ? 'EQUAL SHARES' : 'NOT EQUAL';
+    html += '</div>';
+  }
+
+  html += '</div>';
+  ws.innerHTML = html;
+
+  // Side panel
+  var spHtml = '<div class="panel-section">';
+  spHtml += '<div class="panel-title">Game Score</div>';
+  spHtml += '<div class="score-display">';
+  spHtml += '<div class="score-value">' + S.playScore + '</div>';
+  spHtml += '<div class="score-label">Points</div>';
+  spHtml += '</div></div>';
+
+  spHtml += '<div class="panel-section">';
+  spHtml += '<div class="panel-title">Stats</div>';
+  spHtml += '<div class="score-row"><span>Round</span><strong>' + S.playRound + ' / 10</strong></div>';
+  spHtml += '<div class="score-row"><span>Streak</span><strong>' + S.playStreak + '</strong></div>';
+  spHtml += '<div class="score-row"><span>Best Streak</span><strong>' + S.playBest + '</strong></div>';
+  spHtml += '</div>';
+
+  spHtml += '<div class="panel-section">';
+  spHtml += '<div class="panel-title">Scoring</div>';
+  spHtml += '<div class="panel-text">Correct = <strong>10 pts</strong> + streak &times; 2 bonus<br>Speed bonus for fast answers!</div>';
+  spHtml += '</div>';
+
+  sp.innerHTML = spHtml;
+}
+
+function checkPlay(chosen) {
+  if (S.playAnswered) return;
+  S.playAnswered = true;
+  S.playChosen = chosen;
+
+  var q = S.playQ;
+  var correct = chosen === q.answer;
+  var elapsed = Date.now() - S.timerStart;
+  var speedBonus = elapsed < 3000 ? 5 : (elapsed < 5000 ? 2 : 0);
+
+  if (correct) {
+    S.playStreak++;
+    if (S.playStreak > S.playBest) S.playBest = S.playStreak;
+    var pts = 10 + S.playStreak * 2 + speedBonus;
+    S.playScore += pts;
+    showFB('+' + pts + ' points!', 'correct');
+  } else {
+    S.playStreak = 0;
+    showFB('Not quite!', 'wrong');
+  }
+
+  render();
+
+  // Advance after delay
+  setTimeout(function() {
+    if (S.playRound >= 10) {
+      S.gameEnded = true;
+      render();
+    } else {
+      S.playRound++;
+      newPlayQuestion();
+      render();
+    }
+  }, 1200);
+}
+
+function renderGameOver(ws, sp) {
+  var html = '<div class="shape-area">';
+  html += '<div class="game-over">';
+  html += '<div class="game-over-title">Equal Shares Complete!</div>';
+  html += '<div class="game-over-score">' + S.playScore + '</div>';
+  html += '<div class="game-over-label">Total Points</div>';
+
+  // Stars
+  var stars = S.playScore >= 100 ? 3 : (S.playScore >= 60 ? 2 : 1);
+  html += '<div style="font-size:32px;margin-bottom:16px;">';
+  for (var i = 0; i < 3; i++) {
+    html += '<span style="opacity:' + (i < stars ? '1' : '0.2') + ';">\u2B50</span>';
+  }
+  html += '</div>';
+
+  html += '<div style="font-size:14px;color:var(--text2);margin-bottom:20px;">';
+  html += 'Best Streak: <strong>' + S.playBest + '</strong>';
+  html += '</div>';
+
+  html += '<button class="play-btn primary" onclick="playAgain()">Play Again</button>';
+  html += '</div></div>';
+
+  ws.innerHTML = html;
+
+  // Side panel
+  var spHtml = '<div class="panel-section">';
+  spHtml += '<div class="panel-title">Final Score</div>';
+  spHtml += '<div class="score-display">';
+  spHtml += '<div class="score-value">' + S.playScore + '</div>';
+  spHtml += '<div class="score-label">Points</div>';
+  spHtml += '</div></div>';
+
+  spHtml += '<div class="panel-section">';
+  spHtml += '<div class="panel-title">Performance</div>';
+  spHtml += '<div class="panel-text">';
+  if (S.playScore >= 120) {
+    spHtml += 'Outstanding! You are an equal shares expert!';
+  } else if (S.playScore >= 80) {
+    spHtml += 'Great job! You really understand equal shares.';
+  } else if (S.playScore >= 40) {
+    spHtml += 'Good effort! Keep practicing to build speed.';
+  } else {
+    spHtml += 'Keep trying! Remember: equal shares means every piece is the same size.';
+  }
+  spHtml += '</div></div>';
+
+  sp.innerHTML = spHtml;
+}
+
+function playAgain() {
+  S.playScore = 0;
+  S.playStreak = 0;
+  S.playRound = 1;
+  S.gameEnded = false;
+  S.playAnswered = false;
+  newPlayQuestion();
+  render();
+}
+
+// ════════════════════════════════════════
+// INIT
+// ════════════════════════════════════════
+newPracticeQuestion();
+newPlayQuestion();
+render();
+</script>
+<script src="../../vinculum-core.js"></script>
+<script src="../../vinculum-data.js"></script>
+<script src="../../vinculum-adaptive-hook.js"></script>
+<script src="../../vinculum-3reads.js"></script>
+<script src="../../vinculum-stories.js"></script>
+<script src="../../vinculum-feedback.js"></script>
+<script src="../../vinculum-guide.js"></script>
+<script src="../../vinculum-identity.js"></script>
+<script src="../../vinculum-indigenous.js"></script>
+<script src="../../vinculum-dashboard.js"></script>
+<script src="../../vinculum-hyperfocus.js"></script>
+<script src="../../vinculum-layout.js"></script>
+</body>
+</html>

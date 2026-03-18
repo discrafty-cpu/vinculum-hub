@@ -1,0 +1,1079 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>VINCULUM — Pattern Machine</title>
+<link rel="stylesheet" href="../../vinculum-core.css">
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;600&display=swap');
+
+/* Theme system loaded from vinculum-core.css */
+.vinculum-rtm-btn .rtm-icon{font-size:14px;}
+
+/* Focus Visible */
+*:focus-visible {
+  outline:2px solid var(--cyan);outline-offset:2px;border-radius:4px;
+}
+.sr-only {
+  position:absolute;width:1px;height:1px;padding:0;margin:-1px;
+  overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0;
+}
+
+* { margin:0; padding:0; box-sizing:border-box; }
+body {
+  font-family: 'Inter', sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  height: 100vh;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  user-select: none;
+}
+
+/* ── MAIN AREA ── */
+.vinculum-diff-btn:hover { color: var(--text2); }
+.main {
+  flex: 1;
+  display: flex;
+  overflow: hidden;
+}
+
+/* ── WORKSPACE ── */
+.workspace {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+  position: relative;
+  overflow-y: auto;
+}
+
+/* ── PATTERN DISPLAY ── */
+.pattern-display {
+  display: flex;
+  flex-direction: row;
+  gap: 8px;
+  justify-content: center;
+  flex-wrap: wrap;
+  padding: 16px;
+  background: var(--card);
+  border: 2px solid var(--border);
+  border-radius: 16px;
+  min-height: 80px;
+  min-width: 200px;
+  max-width: 700px;
+  width: 100%;
+  align-items: center;
+  position: relative;
+}
+
+.pattern-element {
+  width: 44px;
+  height: 44px;
+  border-radius: 10px;
+  border: 2px solid var(--border);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: 0.2s;
+  cursor: pointer;
+  background: var(--card);
+  flex-shrink: 0;
+}
+.pattern-element:hover {
+  transform: scale(1.1);
+}
+.pattern-element.highlighted {
+  border-color: var(--cyan);
+  box-shadow: 0 0 12px rgba(0,212,255,0.3);
+}
+.pattern-element.missing {
+  border-color: var(--yellow);
+  animation: pulse-glow 1.2s ease-in-out infinite;
+}
+.pattern-element svg {
+  width: 32px;
+  height: 32px;
+}
+
+/* ── ELEMENT PALETTE ── */
+.element-palette {
+  display: flex;
+  flex-direction: row;
+  gap: 12px;
+  justify-content: center;
+  margin-top: 16px;
+}
+.palette-btn {
+  width: 52px;
+  height: 52px;
+  border-radius: 50%;
+  border: 2px solid var(--border);
+  background: var(--card);
+  cursor: pointer;
+  transition: all 0.2s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.palette-btn:hover {
+  border-color: var(--cyan);
+  transform: scale(1.1);
+}
+.palette-btn.selected {
+  border-color: var(--cyan);
+  background: rgba(0,212,255,0.1);
+  box-shadow: 0 0 12px rgba(0,212,255,0.2);
+}
+.palette-btn svg {
+  width: 32px;
+  height: 32px;
+}
+
+/* ── UNIT BRACKET ── */
+.unit-bracket {
+  position: absolute;
+  bottom: -18px;
+  height: 14px;
+  border: 2px solid var(--cyan);
+  border-top: none;
+  border-radius: 0 0 8px 8px;
+  pointer-events: none;
+}
+.unit-bracket-label {
+  position: absolute;
+  bottom: -36px;
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--cyan);
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  white-space: nowrap;
+}
+
+/* ── PATTERN TYPE SELECTOR ── */
+.pattern-type-selector {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  justify-content: center;
+  margin-top: 12px;
+}
+.pattern-type-btn {
+  padding: 8px 16px;
+  border-radius: 10px;
+  border: 1px solid var(--border);
+  background: var(--card);
+  color: var(--text2);
+  font-size: 13px;
+  font-weight: 700;
+  font-family: 'JetBrains Mono', monospace;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+.pattern-type-btn:hover { border-color: var(--cyan); color: var(--text); }
+.pattern-type-btn.active {
+  background: rgba(0,212,255,0.1);
+  border-color: var(--cyan);
+  color: var(--cyan);
+}
+
+/* ── MC GRID ── */
+.mc-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 12px;
+  margin-top: 16px;
+  max-width: 320px;
+  width: 100%;
+}
+.mc-btn {
+  padding: 16px;
+  border-radius: 14px;
+  border: 2px solid var(--border);
+  background: var(--card);
+  cursor: pointer;
+  transition: all 0.15s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.mc-btn:hover {
+  border-color: var(--cyan);
+  background: rgba(0,212,255,0.05);
+  transform: scale(1.05);
+}
+.mc-btn svg {
+  width: 40px;
+  height: 40px;
+}
+.mc-btn.correct-flash {
+  border-color: var(--green);
+  background: rgba(0,230,118,0.15);
+}
+.mc-btn.incorrect-flash {
+  border-color: var(--pink);
+  background: rgba(255,59,139,0.15);
+}
+
+/* 5-choice grid for play */
+.mc-grid-5 {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 10px;
+  margin-top: 16px;
+  max-width: 420px;
+  width: 100%;
+}
+
+/* ── INSTRUCTION BOX ── */
+.instruction-box {
+  text-align: center;
+  padding: 12px 20px;
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  margin-bottom: 16px;
+  font-size: 15px;
+  color: var(--text2);
+  line-height: 1.5;
+  max-width: 600px;
+}
+
+/* ── CONTROLS ── */
+.controls {
+  display: flex;
+  gap: 8px;
+  margin-top: 16px;
+  flex-wrap: wrap;
+  justify-content: center;
+}
+.ctrl-btn {
+  padding: 10px 20px;
+  border-radius: 10px;
+  border: 1px solid var(--border);
+  background: var(--card);
+  color: var(--text2);
+  font-size: 13px;
+  font-weight: 600;
+  font-family: inherit;
+  cursor: pointer;
+  transition: all 0.2s;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.ctrl-btn:hover { background: var(--card-hover); color: var(--text); }
+.ctrl-btn.primary {
+  background: var(--grad);
+  color: var(--bg);
+  border-color: transparent;
+}
+.ctrl-btn.primary:hover { opacity: 0.9; }
+.ctrl-btn.danger { color: var(--pink); }
+.ctrl-btn.danger:hover { background: rgba(255,59,139,0.1); }
+
+/* ── SCORE DISPLAY ── */
+.score-display {
+  text-align: center;
+  padding: 16px;
+  background: var(--card);
+  border-radius: 12px;
+  margin-bottom: 12px;
+}
+.score-value {
+  font-size: 36px;
+  font-weight: 900;
+  font-family: 'JetBrains Mono', monospace;
+  background: var(--grad);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+.score-label {
+  font-size: 11px;
+  color: var(--muted);
+  text-transform: uppercase;
+  letter-spacing: 1px;
+}
+.streak-bar {
+  height: 6px;
+  background: var(--card);
+  border-radius: 3px;
+  overflow: hidden;
+  margin-top: 8px;
+}
+.streak-fill {
+  height: 100%;
+  background: var(--grad);
+  border-radius: 3px;
+  transition: width 0.3s;
+}
+
+/* ── FEEDBACK ── */
+.feedback {
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%) scale(0);
+  padding: 24px 48px;
+  border-radius: 20px;
+  font-size: 28px;
+  font-weight: 800;
+  z-index: 200;
+  pointer-events: none;
+  transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275), opacity 0.3s;
+  opacity: 0;
+  max-width: 90vw;
+  text-align: center;
+}
+.feedback.show {
+  transform: translate(-50%, -50%) scale(1);
+  opacity: 1;
+}
+.feedback.correct {
+  background: rgba(0,230,118,0.15);
+  color: var(--green);
+  border: 2px solid var(--green);
+}
+.feedback.incorrect {
+  background: rgba(255,59,139,0.15);
+  color: var(--pink);
+  border: 2px solid var(--pink);
+}
+.feedback.try-again {
+  background: rgba(255,193,7,0.15);
+  color: var(--yellow);
+  border: 2px solid var(--yellow);
+}
+.feedback.misconception {
+  background: rgba(255,193,7,0.15);
+  color: var(--yellow);
+  border: 2px solid var(--yellow);
+  font-size: 18px;
+  font-weight: 600;
+  line-height: 1.4;
+}
+
+/* ── SIDE PANEL ── */
+.side-panel {
+  width: 280px;
+  background: var(--bg2);
+  border-left: 1px solid var(--border);
+  padding: 20px;
+  overflow-y: auto;
+  flex-shrink: 0;
+}
+.panel-section {
+  margin-bottom: 20px;
+}
+.panel-title {
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 1.5px;
+  color: var(--muted);
+  margin-bottom: 8px;
+}
+.panel-text {
+  font-size: 13px;
+  color: var(--text2);
+  line-height: 1.6;
+}
+
+/* ── ANIMATIONS ── */
+@keyframes pop {
+  0% { transform: scale(0); }
+  70% { transform: scale(1.2); }
+  100% { transform: scale(1); }
+}
+@keyframes shake {
+  0%, 100% { transform: translateX(0); }
+  25% { transform: translateX(-8px); }
+  75% { transform: translateX(8px); }
+}
+@keyframes pulse-glow {
+  0%, 100% { box-shadow: 0 0 4px rgba(255,193,7,0.3); }
+  50% { box-shadow: 0 0 16px rgba(255,193,7,0.6); }
+}
+.pop-in { animation: pop 0.3s ease-out forwards; }
+.shake { animation: shake 0.3s ease-in-out; }
+
+/* scrollbar */
+::-webkit-scrollbar { width: 6px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+</style>
+</head>
+<body>
+
+<!-- HEADER -->
+<div class="vinculum-header">
+  <div class="vinculum-header-left">
+    <a class="vinculum-back-btn" href="../../VINCULUM-Hub.html" style="text-decoration:none;">&#9664; Hub</a>
+    <div class="vinculum-header-title"><span>VINCULUM</span> Pattern Machine</div>
+    <span class="vinculum-header-badge">K.OA</span>
+  </div>
+  <div class="vinculum-header-right">
+    <div class="vinculum-std-tags">
+      <span class="vinculum-std-tag">K.OA.3</span>
+      <span class="vinculum-std-tag mn">MN K.2.1.1</span>
+    </div>
+    <button class="vinculum-back-btn" id="readAloudBtn" onclick="toggleReadAloud()" aria-label="Read Aloud" title="Read instructions aloud" style="margin-left:8px;white-space:nowrap;">&#128264; Read to Me</button>
+  </div>
+</div>
+
+<!-- MODE TABS -->
+<div class="vinculum-mode-tabs">
+  <button class="vinculum-mode-tab active-explore" id="tabExplore" data-mode="explore">
+    <svg width="18" height="18" viewBox="0 0 48 48" fill="none"><path d="M4 24C4 24 12 12 24 12C36 12 44 24 44 24C44 24 36 36 24 36C12 36 4 24 4 24Z" stroke="currentColor" stroke-width="3" fill="none"/><circle cx="24" cy="24" r="7" stroke="currentColor" stroke-width="3" fill="none"/><circle cx="24" cy="24" r="3" fill="currentColor"/><line x1="24" y1="4" x2="24" y2="9" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" opacity="0.5"/><line x1="10" y1="8" x2="13" y2="12" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" opacity="0.5"/><line x1="38" y1="8" x2="35" y2="12" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" opacity="0.5"/></svg> Explore
+  </button>
+  <button class="vinculum-mode-tab" id="tabPractice" data-mode="practice">
+    <svg width="18" height="18" viewBox="0 0 48 48" fill="none"><circle cx="24" cy="24" r="20" stroke="currentColor" stroke-width="3" fill="none" opacity="0.3"/><circle cx="24" cy="24" r="20" stroke="currentColor" stroke-width="3" fill="none" stroke-dasharray="126" stroke-dashoffset="32" stroke-linecap="round"/><polyline points="16,24 22,32 34,16" stroke="currentColor" stroke-width="4" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg> Practice
+  </button>
+  <button class="vinculum-mode-tab" id="tabPlay" data-mode="play">
+    <svg width="18" height="18" viewBox="0 0 48 48" fill="none"><polygon points="28,4 12,28 22,28 18,44 36,18 26,18" fill="none" stroke="currentColor" stroke-width="3" stroke-linejoin="round"/><polygon points="27,8 15,27 23,27 20,40 34,19 26,19" fill="currentColor" opacity="0.15"/></svg> Play
+  </button>
+  <div class="vinculum-diff-selector">
+    <span class="vinculum-diff-label">Level</span>
+    <button class="vinculum-diff-btn active" id="diffE" data-diff="emergent">AB</button>
+    <button class="vinculum-diff-btn" id="diffP" data-diff="proficient">ABC</button>
+    <button class="vinculum-diff-btn" id="diffA" data-diff="advanced">Advanced</button>
+  </div>
+</div>
+
+<!-- MAIN -->
+<div class="main">
+  <div class="workspace" role="main" id="workspace"></div>
+  <div class="side-panel" id="sidePanel"></div>
+</div>
+
+<!-- FEEDBACK POPUP -->
+<div class="feedback" id="feedback"></div>
+
+<script src="../../vinculum-input.js"></script>
+<script>
+// ════════════════════════════════════════
+// PATTERN ELEMENTS
+// ════════════════════════════════════════
+const ELEMENTS = [
+  { name:'circle', color:'#00d4ff', svg:'<circle cx="20" cy="20" r="16" fill="#00d4ff"/>' },
+  { name:'square', color:'#ff3b8b', svg:'<rect x="4" y="4" width="32" height="32" rx="4" fill="#ff3b8b"/>' },
+  { name:'triangle', color:'#ffc107', svg:'<polygon points="20,4 36,36 4,36" fill="#ffc107"/>' },
+  { name:'diamond', color:'#00e676', svg:'<polygon points="20,2 38,20 20,38 2,20" fill="#00e676"/>' },
+  { name:'star', color:'#b388ff', svg:'<polygon points="20,2 25,15 38,15 27,24 31,38 20,29 9,38 13,24 2,15 15,15" fill="#b388ff"/>' }
+];
+
+// ════════════════════════════════════════
+// STATE
+// ════════════════════════════════════════
+let S = {
+  mode: 'explore',
+  diff: 'emergent',
+  // Pattern config
+  patternType: 'AB',
+  patternUnit: [],    // indices into ELEMENTS
+  sequence: [],       // full generated sequence
+  showUnit: false,
+  // Explore
+  userPattern: [],    // what user has built
+  // Practice
+  pSequence: [],
+  pMissingIdx: -1,
+  pAnswer: -1,
+  pChoices: [],
+  pLocked: false,
+  // Play
+  score: 0,
+  streak: 0,
+  best: 0,
+  round: 0,
+  total: 10,
+  playSequence: [],
+  playMissingIdx: -1,
+  playAnswer: -1,
+  playChoices: [],
+  playLocked: false
+};
+
+// ════════════════════════════════════════
+// READ-ALOUD
+// ════════════════════════════════════════
+function toggleReadAloud() {
+  if (window.VinculumStories && VinculumStories.isReading()) {
+    VinculumStories.stopReading();
+    document.getElementById('readAloudBtn').textContent = '\u{1F50A} Read to Me';
+  } else {
+    var fb = document.getElementById('feedback');
+    var storyEl = document.getElementById('storyBanner');
+    var text = storyEl ? storyEl.textContent : (fb ? fb.textContent : 'Welcome to the Pattern Machine!');
+    if (window.VinculumStories) {
+      VinculumStories.readAloud(text, { rate: 0.85, onComplete: function() {
+        document.getElementById('readAloudBtn').textContent = '\u{1F50A} Read to Me';
+      }});
+      document.getElementById('readAloudBtn').textContent = '\u23F9 Stop';
+    }
+  }
+}
+
+// ════════════════════════════════════════
+// MISCONCEPTIONS
+// ════════════════════════════════════════
+const MISCONCEPTIONS = {
+  colorOnly: { id:'color-only', msg:function() { return 'Look at the SHAPES too, not just the colors! The pattern uses different shapes.'; } },
+  cantExtend: { id:'cant-extend', msg:function() { return 'The pattern REPEATS. Look at the first few shapes \u2014 what comes next?'; } },
+  unitConfusion: { id:'unit-confusion', msg:function() { return 'Find the part that repeats. That\'s the pattern UNIT. Then repeat it!'; } },
+  randomGuess: { id:'random', msg:function() { return 'Look carefully at what comes before. The pattern keeps going the same way!'; } }
+};
+
+// ════════════════════════════════════════
+// HELPERS
+// ════════════════════════════════════════
+function randInt(min, max) {
+  return Math.floor(Math.random() * (max - min + 1)) + min;
+}
+
+function shuffle(arr) {
+  var a = arr.slice();
+  for (var i = a.length - 1; i > 0; i--) {
+    var j = randInt(0, i);
+    var tmp = a[i]; a[i] = a[j]; a[j] = tmp;
+  }
+  return a;
+}
+
+function showFeedback(text, type) {
+  var fb = document.getElementById('feedback');
+  fb.textContent = text;
+  fb.className = 'feedback ' + type + ' show';
+  setTimeout(function() { fb.classList.remove('show'); }, type === 'misconception' ? 2500 : 1200);
+}
+
+function elementSVG(idx, size) {
+  size = size || 40;
+  var el = ELEMENTS[idx];
+  return '<svg width="' + size + '" height="' + size + '" viewBox="0 0 40 40">' + el.svg + '</svg>';
+}
+
+function getPatternTypes() {
+  if (S.diff === 'emergent') return ['AB'];
+  if (S.diff === 'proficient') return ['AB','ABC','ABB'];
+  return ['AB','ABC','ABB','AAB','AABB'];
+}
+
+function getPatternUnitFromType(type) {
+  // Pick random distinct elements for the pattern
+  var indices = shuffle([0,1,2,3,4]);
+  if (type === 'AB')   return [indices[0], indices[1]];
+  if (type === 'ABC')  return [indices[0], indices[1], indices[2]];
+  if (type === 'ABB')  return [indices[0], indices[1], indices[1]];
+  if (type === 'AAB')  return [indices[0], indices[0], indices[1]];
+  if (type === 'AABB') return [indices[0], indices[0], indices[1], indices[1]];
+  return [indices[0], indices[1]];
+}
+
+function generateSequence(unit, repeats) {
+  var seq = [];
+  for (var r = 0; r < repeats; r++) {
+    for (var i = 0; i < unit.length; i++) {
+      seq.push(unit[i]);
+    }
+  }
+  return seq;
+}
+
+function generateRandomPattern() {
+  var types = getPatternTypes();
+  S.patternType = types[randInt(0, types.length - 1)];
+  S.patternUnit = getPatternUnitFromType(S.patternType);
+  var repeats = S.diff === 'emergent' ? 3 : (S.diff === 'proficient' ? 3 : 3);
+  S.sequence = generateSequence(S.patternUnit, repeats);
+}
+
+function generateMCChoices(correctIdx) {
+  var choices = [correctIdx];
+  var pool = [0,1,2,3,4].filter(function(i) { return i !== correctIdx; });
+  pool = shuffle(pool);
+  for (var i = 0; i < 3 && i < pool.length; i++) {
+    choices.push(pool[i]);
+  }
+  return shuffle(choices);
+}
+
+function generate5MCChoices(correctIdx) {
+  var choices = [correctIdx];
+  var pool = [0,1,2,3,4].filter(function(i) { return i !== correctIdx; });
+  pool = shuffle(pool);
+  for (var i = 0; i < pool.length; i++) {
+    choices.push(pool[i]);
+  }
+  return shuffle(choices);
+}
+
+function getMisconceptionFeedback(chosenIdx, correctIdx) {
+  // Determine which misconception likely caused the error
+  var chosenEl = ELEMENTS[chosenIdx];
+  var correctEl = ELEMENTS[correctIdx];
+
+  // If student picked same color family but wrong shape
+  if (chosenEl.color === correctEl.color) {
+    return MISCONCEPTIONS.colorOnly.msg();
+  }
+  // Random guess detection: chosen not adjacent in pattern
+  return MISCONCEPTIONS.cantExtend.msg();
+}
+
+// ════════════════════════════════════════
+// MODE / DIFF SWITCHING
+// ════════════════════════════════════════
+function setMode(mode) {
+  S.mode = mode;
+  S.userPattern = [];
+  S.showUnit = false;
+  S.pLocked = false;
+  S.playLocked = false;
+
+  document.querySelectorAll('.vinculum-mode-tab').forEach(function(t) {
+    t.classList.remove('active-explore', 'active-practice', 'active-play');
+  });
+  var tabEl = document.querySelector('[data-mode="' + mode + '"]');
+  if (tabEl) tabEl.classList.add('active-' + mode);
+
+  if (mode === 'practice') {
+    generatePracticeRound();
+  } else if (mode === 'play') {
+    S.score = 0;
+    S.streak = 0;
+    S.round = 0;
+    generatePlayRound();
+  } else {
+    generateRandomPattern();
+  }
+
+  render();
+}
+
+function setDiff(diff) {
+  S.diff = diff;
+  document.querySelectorAll('.vinculum-diff-btn').forEach(function(b) {
+    b.classList.remove('active');
+  });
+  var id = diff === 'emergent' ? 'diffE' : diff === 'proficient' ? 'diffP' : 'diffA';
+  document.getElementById(id).classList.add('active');
+
+  // Update pattern type to valid type for this difficulty
+  var types = getPatternTypes();
+  if (types.indexOf(S.patternType) === -1) {
+    S.patternType = types[0];
+  }
+
+  setMode(S.mode);
+}
+
+// ════════════════════════════════════════
+// PRACTICE
+// ════════════════════════════════════════
+function generatePracticeRound() {
+  generateRandomPattern();
+  S.pSequence = S.sequence.slice();
+  // Pick a missing index (not the first one)
+  S.pMissingIdx = randInt(1, S.pSequence.length - 1);
+  S.pAnswer = S.pSequence[S.pMissingIdx];
+  S.pChoices = generateMCChoices(S.pAnswer);
+  S.pLocked = false;
+}
+
+// ════════════════════════════════════════
+// PLAY
+// ════════════════════════════════════════
+function generatePlayRound() {
+  S.round++;
+  generateRandomPattern();
+  S.playSequence = S.sequence.slice();
+  S.playMissingIdx = randInt(1, S.playSequence.length - 1);
+  S.playAnswer = S.playSequence[S.playMissingIdx];
+  S.playChoices = generate5MCChoices(S.playAnswer);
+  S.playLocked = false;
+}
+
+// ════════════════════════════════════════
+// RENDER
+// ════════════════════════════════════════
+function render() {
+  var ws = document.getElementById('workspace');
+  var sp = document.getElementById('sidePanel');
+
+  if (S.mode === 'explore') renderExplore(ws, sp);
+  else if (S.mode === 'practice') renderPractice(ws, sp);
+  else renderPlay(ws, sp);
+}
+
+// ── EXPLORE ──
+function renderExplore(ws, sp) {
+  var html = '';
+
+  // Story banner
+  if (window.VinculumStories) {
+    var toolName = window.location.pathname.split('/').pop().replace('.html','');
+    var storyData = VinculumStories.getStory(toolName, {a: S.sequence.length || 6, b: S.patternUnit.length || 2, total: S.sequence.length || 6, n: S.userPattern.length || 0, ones: S.patternUnit.length || 2});
+    if (storyData && storyData.story) {
+      if (window.Vinculum3Reads) {
+        html += Vinculum3Reads.getBannerHTML(storyData);
+      } else {
+        html += '<div id="storyBanner" style="background:var(--card2,#1a1f2e);border:1px solid var(--border);border-radius:12px;padding:16px 20px;margin-bottom:16px;font-size:15px;line-height:1.6;color:var(--text);position:relative;max-width:600px;width:100%;"><span style="font-size:12px;color:var(--cyan);font-weight:700;text-transform:uppercase;letter-spacing:1px;">\u{1F4D6} Story</span><br>' + storyData.story + '<br><em style="color:var(--yellow);font-weight:600;">' + storyData.question + '</em><button onclick="toggleReadAloud()" style="position:absolute;top:12px;right:12px;background:none;border:1px solid var(--border);border-radius:8px;padding:4px 10px;color:var(--cyan);cursor:pointer;font-size:14px;" title="Read story aloud">\u{1F50A}</button></div>';
+      }
+    }
+  }
+
+  html += '<div class="instruction-box">Tap shapes from the palette to build your own pattern. Try to make it repeat!</div>';
+
+  // Pattern type selector
+  html += '<div class="pattern-type-selector">';
+  var types = getPatternTypes();
+  for (var t = 0; t < types.length; t++) {
+    html += '<button class="pattern-type-btn' + (S.patternType === types[t] ? ' active' : '') + '" onclick="selectPatternType(\'' + types[t] + '\')">' + types[t] + '</button>';
+  }
+  html += '</div>';
+
+  // Generated pattern display
+  html += '<div style="margin-top:16px;text-align:center;"><span style="font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:1px;">Example ' + S.patternType + ' Pattern</span></div>';
+  html += '<div class="pattern-display" id="examplePattern" style="position:relative;">';
+  for (var i = 0; i < S.sequence.length; i++) {
+    var isUnit = S.showUnit && i < S.patternUnit.length;
+    html += '<div class="pattern-element' + (isUnit ? ' highlighted' : '') + '">' + elementSVG(S.sequence[i]) + '</div>';
+  }
+  // Unit bracket
+  if (S.showUnit) {
+    var unitLen = S.patternUnit.length;
+    var bracketWidth = unitLen * 44 + (unitLen - 1) * 8;
+    html += '<div class="unit-bracket" style="left:16px;width:' + bracketWidth + 'px;"></div>';
+    html += '<div class="unit-bracket-label" style="left:' + (16 + bracketWidth / 2) + 'px;transform:translateX(-50%);">Pattern Unit</div>';
+  }
+  html += '</div>';
+
+  // Show Unit / New Pattern buttons
+  html += '<div class="controls" style="margin-top:' + (S.showUnit ? '40' : '16') + 'px;">';
+  html += '<button class="ctrl-btn' + (S.showUnit ? ' primary' : '') + '" onclick="toggleShowUnit()">' + (S.showUnit ? '\u2713 Unit Shown' : '\u{1F50D} Show Pattern Unit') + '</button>';
+  html += '<button class="ctrl-btn" onclick="newExamplePattern()">\u21BA New Pattern</button>';
+  html += '</div>';
+
+  // User build area
+  html += '<div style="margin-top:24px;text-align:center;"><span style="font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:1px;">Build Your Own</span></div>';
+  html += '<div class="pattern-display" style="min-height:60px;">';
+  if (S.userPattern.length === 0) {
+    html += '<span style="color:var(--muted);font-size:13px;">Tap shapes below to start building</span>';
+  } else {
+    for (var j = 0; j < S.userPattern.length; j++) {
+      html += '<div class="pattern-element pop-in" style="animation-delay:' + (j * 0.03) + 's;">' + elementSVG(S.userPattern[j]) + '</div>';
+    }
+  }
+  html += '</div>';
+
+  // Element palette
+  html += '<div class="element-palette">';
+  for (var e = 0; e < ELEMENTS.length; e++) {
+    html += '<button class="palette-btn" onclick="addToUserPattern(' + e + ')">' + elementSVG(e, 32) + '</button>';
+  }
+  html += '</div>';
+
+  // Build controls
+  html += '<div class="controls">';
+  html += '<button class="ctrl-btn danger" onclick="clearUserPattern()">\u2715 Clear</button>';
+  html += '<button class="ctrl-btn" onclick="undoUserPattern()">\u21A9 Undo</button>';
+  html += '</div>';
+
+  ws.innerHTML = html;
+
+  // Side panel
+  sp.innerHTML = '<div class="panel-section">' +
+    '<div class="panel-title">How to Use</div>' +
+    '<div class="panel-text">' +
+      '1. Look at the <strong>example pattern</strong> above<br><br>' +
+      '2. Tap <strong>Show Pattern Unit</strong> to see what repeats<br><br>' +
+      '3. Try different pattern types: ' + types.join(', ') + '<br><br>' +
+      '4. <strong>Build your own</strong> pattern by tapping shapes from the palette' +
+    '</div>' +
+  '</div>' +
+  '<div class="panel-section">' +
+    '<div class="panel-title">Standards</div>' +
+    '<div class="panel-text">' +
+      '<strong>K.OA.3</strong> \u2014 Decompose numbers less than or equal to 10; understand repeating patterns<br><br>' +
+      '<strong>MN K.2.1.1</strong> \u2014 Identify, create, complete and extend simple patterns' +
+    '</div>' +
+  '</div>' +
+  '<div class="panel-section">' +
+    '<div class="panel-title">Key Concept</div>' +
+    '<div class="panel-text">' +
+      'A <strong>pattern</strong> is a sequence that <strong>repeats</strong>. The part that repeats is called the <strong>pattern unit</strong>. Once you find the unit, you can extend the pattern forever!' +
+    '</div>' +
+  '</div>';
+}
+
+function selectPatternType(type) {
+  S.patternType = type;
+  S.patternUnit = getPatternUnitFromType(type);
+  var repeats = 3;
+  S.sequence = generateSequence(S.patternUnit, repeats);
+  S.showUnit = false;
+  render();
+}
+
+function toggleShowUnit() {
+  S.showUnit = !S.showUnit;
+  render();
+}
+
+function newExamplePattern() {
+  S.patternUnit = getPatternUnitFromType(S.patternType);
+  S.sequence = generateSequence(S.patternUnit, 3);
+  S.showUnit = false;
+  render();
+}
+
+function addToUserPattern(idx) {
+  if (S.userPattern.length >= 20) return;
+  S.userPattern.push(idx);
+  render();
+}
+
+function clearUserPattern() {
+  S.userPattern = [];
+  render();
+}
+
+function undoUserPattern() {
+  S.userPattern.pop();
+  render();
+}
+
+// ── PRACTICE ──
+function renderPractice(ws, sp) {
+  var html = '';
+
+  html += '<div class="instruction-box">Find the missing shape in the pattern. What goes where the <strong style="color:var(--yellow);">?</strong> is?</div>';
+
+  // Pattern type label
+  html += '<div style="margin-bottom:8px;text-align:center;"><span style="font-size:12px;color:var(--cyan);font-weight:700;letter-spacing:1px;">' + S.patternType + ' PATTERN</span></div>';
+
+  // Pattern display with missing piece
+  html += '<div class="pattern-display">';
+  for (var i = 0; i < S.pSequence.length; i++) {
+    if (i === S.pMissingIdx) {
+      html += '<div class="pattern-element missing"><span style="font-size:24px;font-weight:800;color:var(--yellow);">?</span></div>';
+    } else {
+      html += '<div class="pattern-element">' + elementSVG(S.pSequence[i]) + '</div>';
+    }
+  }
+  html += '</div>';
+
+  // MC choices (2x2)
+  html += '<div class="mc-grid">';
+  for (var c = 0; c < S.pChoices.length; c++) {
+    var choiceIdx = S.pChoices[c];
+    html += '<button class="mc-btn" id="pmc' + choiceIdx + '" onclick="practiceAnswer(' + choiceIdx + ')">' + elementSVG(choiceIdx, 40) + '</button>';
+  }
+  html += '</div>';
+
+  // Skip
+  html += '<div class="controls">';
+  html += '<button class="ctrl-btn" onclick="practiceSkip()">\u23E9 Skip</button>';
+  html += '</div>';
+
+  ws.innerHTML = html;
+
+  // Side panel
+  sp.innerHTML = '<div class="panel-section">' +
+    '<div class="panel-title">Instructions</div>' +
+    '<div class="panel-text">' +
+      'Look at the pattern carefully.<br><br>' +
+      'Find the <strong style="color:var(--yellow);">?</strong> \u2014 which shape belongs there?<br><br>' +
+      'Tap the correct shape from the choices below the pattern.' +
+    '</div>' +
+  '</div>' +
+  '<div class="panel-section">' +
+    '<div class="panel-title">Tip</div>' +
+    '<div class="panel-text" style="background:var(--card);padding:12px;border-radius:8px;">' +
+      'Look at what comes <strong>before</strong> and <strong>after</strong> the missing piece. The pattern keeps repeating the same way!' +
+    '</div>' +
+  '</div>' +
+  '<div class="panel-section">' +
+    '<div class="panel-title">Pattern Type</div>' +
+    '<div class="panel-text"><strong style="color:var(--cyan);">' + S.patternType + '</strong> \u2014 ' + getPatternDescription(S.patternType) + '</div>' +
+  '</div>';
+}
+
+function getPatternDescription(type) {
+  var descs = {
+    'AB': 'Two shapes alternate: A, B, A, B, A, B...',
+    'ABC': 'Three shapes cycle: A, B, C, A, B, C...',
+    'ABB': 'One shape then two of another: A, B, B, A, B, B...',
+    'AAB': 'Two of one shape then another: A, A, B, A, A, B...',
+    'AABB': 'Two of each: A, A, B, B, A, A, B, B...'
+  };
+  return descs[type] || '';
+}
+
+function practiceAnswer(choiceIdx) {
+  if (S.pLocked) return;
+  S.pLocked = true;
+
+  var btn = document.getElementById('pmc' + choiceIdx);
+  if (choiceIdx === S.pAnswer) {
+    if (btn) btn.classList.add('correct-flash');
+    showFeedback('\u2713 Correct!', 'correct');
+    setTimeout(function() {
+      generatePracticeRound();
+      render();
+    }, 1500);
+  } else {
+    if (btn) btn.classList.add('incorrect-flash');
+    var msg = getMisconceptionFeedback(choiceIdx, S.pAnswer);
+    showFeedback(msg, 'misconception');
+    setTimeout(function() {
+      S.pLocked = false;
+      // Highlight incorrect button reset
+      if (btn) btn.classList.remove('incorrect-flash');
+    }, 2500);
+  }
+}
+
+function practiceSkip() {
+  generatePracticeRound();
+  render();
+}
+
+// ── PLAY ──
+function renderPlay(ws, sp) {
+  if (S.round === 0) {
+    generatePlayRound();
+  }
+
+  var html = '';
+
+  // Round counter
+  html += '<div style="text-align:center;margin-bottom:8px;">';
+  html += '<span style="font-size:14px;color:var(--muted);">Round ' + S.round + ' of ' + S.total + '</span>';
+  html += '</div>';
+
+  // Pattern type label
+  html += '<div style="margin-bottom:8px;text-align:center;"><span style="font-size:12px;color:var(--cyan);font-weight:700;letter-spacing:1px;">' + S.patternType + ' PATTERN</span></div>';
+
+  // Pattern with missing piece
+  html += '<div class="pattern-display">';
+  for (var i = 0; i < S.playSequence.length; i++) {
+    if (i === S.playMissingIdx) {
+      html += '<div class="pattern-element missing"><span style="font-size:24px;font-weight:800;color:var(--yellow);">?</span></div>';
+    } else {
+      html += '<div class="pattern-element">' + elementSVG(S.playSequence[i]) + '</div>';
+    }
+  }
+  html += '</div>';
+
+  // Question
+  html += '<div style="text-align:center;margin-top:12px;font-size:16px;font-weight:600;color:var(--text2);">Which shape completes the pattern?</div>';
+
+  // 5 MC choices
+  html += '<div class="mc-grid-5">';
+  for (var c = 0; c < S.playChoices.length; c++) {
+    var ci = S.playChoices[c];
+    html += '<button class="mc-btn" id="plmc' + ci + '" onclick="playAnswer(' + ci + ')">' + elementSVG(ci, 40) + '</button>';
+  }
+  html += '</div>';
+
+  ws.innerHTML = html;
+
+  // Side panel with score
+  sp.innerHTML = '<div class="score-display">' +
+    '<div class="score-value">' + S.score + '</div>' +
+    '<div class="score-label">Score</div>' +
+  '</div>' +
+  '<div class="score-display" style="background:transparent;padding:8px;">' +
+    '<div style="font-size:18px;font-weight:700;color:var(--yellow);">\u{1F525} ' + S.streak + '</div>' +
+    '<div class="score-label">Streak</div>' +
+    '<div class="streak-bar"><div class="streak-fill" style="width:' + Math.min(S.streak * 20, 100) + '%;"></div></div>' +
+  '</div>' +
+  '<div class="panel-section">' +
+    '<div class="panel-title">How to Play</div>' +
+    '<div class="panel-text">' +
+      'Find the missing shape in each pattern.<br><br>' +
+      '<strong>Quick answers</strong> earn bonus points!<br><br>' +
+      'Build a streak for even more!' +
+    '</div>' +
+  '</div>' +
+  '<div class="panel-section">' +
+    '<div class="panel-title">Best Streak</div>' +
+    '<div class="panel-text" style="font-size:24px;font-weight:800;color:var(--purple);">\u{1F3C6} ' + S.best + '</div>' +
+  '</div>';
+}
+
+function playAnswer(choiceIdx) {
+  if (S.playLocked) return;
+  S.playLocked = true;
+
+  var btn = document.getElementById('plmc' + choiceIdx);
+  if (choiceIdx === S.playAnswer) {
+    if (btn) btn.classList.add('correct-flash');
+    S.score += 10 + (S.streak * 2);
+    S.streak++;
+    if (S.streak > S.best) S.best = S.streak;
+    showFeedback('\u2713 Correct!', 'correct');
+  } else {
+    if (btn) btn.classList.add('incorrect-flash');
+    S.streak = 0;
+    var msg = getMisconceptionFeedback(choiceIdx, S.playAnswer);
+    showFeedback(msg, 'misconception');
+  }
+
+  setTimeout(function() {
+    if (S.round >= S.total) {
+      showFeedback('Game Over! Score: ' + S.score, 'correct');
+      setTimeout(function() {
+        S.round = 0;
+        S.score = 0;
+        S.streak = 0;
+        generatePlayRound();
+        render();
+      }, 2000);
+      return;
+    }
+    generatePlayRound();
+    render();
+  }, 1500);
+}
+
+// ════════════════════════════════════════
+// INIT
+// ════════════════════════════════════════
+document.querySelectorAll('.vinculum-mode-tab').forEach(function(tab) {
+  tab.addEventListener('click', function() {
+    setMode(this.dataset.mode);
+  });
+});
+
+document.querySelectorAll('.vinculum-diff-btn').forEach(function(btn) {
+  btn.addEventListener('click', function() {
+    setDiff(this.dataset.diff);
+  });
+});
+
+// Generate initial pattern
+generateRandomPattern();
+render();
+</script>
+<script src="../../vinculum-core.js"></script>
+<script src="../../vinculum-data.js"></script>
+<script src="../../vinculum-adaptive-hook.js"></script>
+<script src="../../vinculum-3reads.js"></script>
+<script src="../../vinculum-stories.js"></script>
+<script src="../../vinculum-feedback.js"></script>
+<script src="../../vinculum-guide.js"></script>
+<script src="../../vinculum-identity.js"></script>
+<script src="../../vinculum-indigenous.js"></script>
+<script src="../../vinculum-dashboard.js"></script>
+<script src="../../vinculum-hyperfocus.js"></script>
+<script src="../../vinculum-layout.js"></script>
+</body>
+</html>

@@ -1,0 +1,1108 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>VINCULUM — Shape Sorter</title>
+<link rel="stylesheet" href="../../vinculum-core.css">
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;600&display=swap');
+
+/* Theme system loaded from vinculum-core.css */
+.vinculum-rtm-btn .rtm-icon{font-size:14px;}
+
+/* ═══ FOCUS VISIBLE (Keyboard Navigation) ═══ */
+*:focus-visible {
+  outline:2px solid var(--cyan);outline-offset:2px;border-radius:4px;
+}
+.sr-only {
+  position:absolute;width:1px;height:1px;padding:0;margin:-1px;
+  overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0;
+}
+
+* { margin:0; padding:0; box-sizing:border-box; }
+body {
+  font-family: 'Inter', sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  height: 100vh;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  user-select: none;
+}
+
+/* ── MAIN AREA ── */
+.main {
+  flex: 1;
+  display: flex;
+  overflow: hidden;
+}
+
+/* ── WORKSPACE ── */
+.workspace {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+  position: relative;
+  overflow-y: auto;
+}
+
+/* ── SHAPE GALLERY ── */
+.shape-gallery {
+  display: flex;
+  flex-direction: row;
+  gap: 12px;
+  justify-content: center;
+  flex-wrap: wrap;
+  margin-bottom: 16px;
+}
+.shape-card {
+  width: 64px;
+  height: 64px;
+  border: 2px solid var(--border);
+  border-radius: 14px;
+  cursor: pointer;
+  transition: all 0.2s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--card);
+}
+.shape-card:hover {
+  border-color: var(--text2);
+  transform: scale(1.05);
+}
+.shape-card.active {
+  border-color: var(--cyan);
+  background: rgba(0,212,255,0.1);
+  box-shadow: 0 0 12px rgba(0,212,255,0.2);
+}
+
+/* ── SHAPE DISPLAY ── */
+.shape-display {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 200px;
+  height: 200px;
+  margin: 20px auto;
+  transition: transform 0.4s ease;
+}
+
+/* ── SHAPE INFO ── */
+.shape-info {
+  text-align: center;
+  font-size: 24px;
+  font-weight: 700;
+  margin-bottom: 8px;
+}
+.attribute-row {
+  display: flex;
+  flex-direction: row;
+  gap: 16px;
+  justify-content: center;
+  font-size: 14px;
+  color: var(--text2);
+  margin-bottom: 12px;
+}
+.attribute-row span {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+/* ── INSTRUCTION BOX ── */
+.instruction-box {
+  text-align: center;
+  font-size: 18px;
+  font-weight: 600;
+  color: var(--text2);
+  margin-bottom: 16px;
+  padding: 12px 20px;
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  max-width: 500px;
+}
+
+/* ── MC GRID ── */
+.mc-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 10px;
+  max-width: 400px;
+  width: 100%;
+  margin: 0 auto;
+}
+.mc-btn {
+  padding: 16px 12px;
+  border-radius: 14px;
+  border: 2px solid var(--border);
+  background: var(--card);
+  color: var(--text);
+  font-size: 16px;
+  font-weight: 600;
+  font-family: inherit;
+  cursor: pointer;
+  transition: all 0.15s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  min-height: 56px;
+}
+.mc-btn:hover {
+  border-color: var(--cyan);
+  background: rgba(0,212,255,0.05);
+  transform: scale(1.03);
+}
+.mc-btn.correct-flash {
+  border-color: var(--green);
+  background: rgba(0,230,118,0.15);
+  color: var(--green);
+}
+.mc-btn.incorrect-flash {
+  border-color: var(--pink);
+  background: rgba(255,59,139,0.15);
+  color: var(--pink);
+}
+
+/* ── CONTROLS ── */
+.controls {
+  display: flex;
+  gap: 8px;
+  margin-top: 16px;
+  flex-wrap: wrap;
+  justify-content: center;
+}
+.ctrl-btn {
+  padding: 10px 20px;
+  border-radius: 10px;
+  border: 1px solid var(--border);
+  background: var(--card);
+  color: var(--text2);
+  font-size: 13px;
+  font-weight: 600;
+  font-family: inherit;
+  cursor: pointer;
+  transition: all 0.2s;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.ctrl-btn:hover { background: var(--card-hover); color: var(--text); }
+.ctrl-btn.primary {
+  background: var(--grad);
+  color: var(--bg);
+  border-color: transparent;
+}
+.ctrl-btn.primary:hover { opacity: 0.9; }
+
+/* ── SCORE DISPLAY ── */
+.score-display {
+  text-align: center;
+  padding: 16px;
+  background: var(--card);
+  border-radius: 12px;
+  margin-bottom: 12px;
+}
+.score-value {
+  font-size: 36px;
+  font-weight: 900;
+  font-family: 'JetBrains Mono', monospace;
+  background: var(--grad);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+.score-label {
+  font-size: 11px;
+  color: var(--muted);
+  text-transform: uppercase;
+  letter-spacing: 1px;
+}
+.streak-bar {
+  height: 6px;
+  background: var(--card);
+  border-radius: 3px;
+  overflow: hidden;
+  margin-top: 8px;
+}
+.streak-fill {
+  height: 100%;
+  background: var(--grad);
+  border-radius: 3px;
+  transition: width 0.3s;
+}
+
+/* ── FEEDBACK ── */
+.feedback {
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%) scale(0);
+  padding: 24px 48px;
+  border-radius: 20px;
+  font-size: 20px;
+  font-weight: 700;
+  z-index: 200;
+  pointer-events: none;
+  transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275), opacity 0.3s;
+  opacity: 0;
+  text-align: center;
+  max-width: 420px;
+  line-height: 1.4;
+}
+.feedback.show {
+  transform: translate(-50%, -50%) scale(1);
+  opacity: 1;
+}
+.feedback.correct {
+  background: rgba(0,230,118,0.15);
+  color: var(--green);
+  border: 2px solid var(--green);
+}
+.feedback.incorrect {
+  background: rgba(255,59,139,0.15);
+  color: var(--pink);
+  border: 2px solid var(--pink);
+}
+.feedback.try-again {
+  background: rgba(255,193,7,0.15);
+  color: var(--yellow);
+  border: 2px solid var(--yellow);
+}
+
+/* ── SIDE PANEL ── */
+.side-panel {
+  width: 280px;
+  background: var(--bg2);
+  border-left: 1px solid var(--border);
+  padding: 20px;
+  overflow-y: auto;
+  flex-shrink: 0;
+}
+.panel-section {
+  margin-bottom: 20px;
+}
+.panel-title {
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 1.5px;
+  color: var(--muted);
+  margin-bottom: 8px;
+}
+.panel-text {
+  font-size: 13px;
+  color: var(--text2);
+  line-height: 1.6;
+}
+
+/* ── ANIMATIONS ── */
+@keyframes pop {
+  0% { transform: scale(0); }
+  70% { transform: scale(1.2); }
+  100% { transform: scale(1); }
+}
+@keyframes shake {
+  0%, 100% { transform: translateX(0); }
+  25% { transform: translateX(-8px); }
+  75% { transform: translateX(8px); }
+}
+@keyframes corner-pulse {
+  0%, 100% { r: 4; opacity: 1; }
+  50% { r: 6; opacity: 0.7; }
+}
+.pop-in { animation: pop 0.3s ease-out forwards; }
+.shake { animation: shake 0.3s ease-in-out; }
+
+/* Difficulty selector overrides */
+.vinculum-diff-btn:hover { color: var(--text2); }
+
+/* scrollbar */
+::-webkit-scrollbar { width: 6px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+</style>
+</head>
+<body>
+
+<!-- ═══ HEADER ═══ -->
+<div class="vinculum-header">
+  <div class="vinculum-header-left">
+    <a class="vinculum-back-btn" href="../../VINCULUM-Hub.html" style="text-decoration:none;">◀ Hub</a>
+    <div class="vinculum-header-title"><span>VINCULUM</span> Shape Sorter</div>
+    <span class="vinculum-header-badge">K.G</span>
+  </div>
+  <div class="vinculum-header-right">
+    <div class="vinculum-std-tags">
+      <span class="vinculum-std-tag">K.G.2</span>
+      <span class="vinculum-std-tag">K.G.4</span>
+      <span class="vinculum-std-tag">K.G.6</span>
+      <span class="vinculum-std-tag mn">MN K.3.1.1</span>
+    </div>
+    <button class="vinculum-back-btn" id="readAloudBtn" onclick="toggleReadAloud()" aria-label="Read Aloud" title="Read instructions aloud" style="margin-left:8px;white-space:nowrap;">🔊 Read to Me</button>
+  </div>
+</div>
+
+<!-- ═══ MODE TABS ═══ -->
+<div class="vinculum-mode-tabs">
+  <button class="vinculum-mode-tab active-explore" id="tabExplore" data-mode="explore">
+    <svg width="18" height="18" viewBox="0 0 48 48" fill="none"><path d="M4 24C4 24 12 12 24 12C36 12 44 24 44 24C44 24 36 36 24 36C12 36 4 24 4 24Z" stroke="currentColor" stroke-width="3" fill="none"/><circle cx="24" cy="24" r="7" stroke="currentColor" stroke-width="3" fill="none"/><circle cx="24" cy="24" r="3" fill="currentColor"/><line x1="24" y1="4" x2="24" y2="9" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" opacity="0.5"/><line x1="10" y1="8" x2="13" y2="12" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" opacity="0.5"/><line x1="38" y1="8" x2="35" y2="12" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" opacity="0.5"/></svg> Explore
+  </button>
+  <button class="vinculum-mode-tab" id="tabPractice" data-mode="practice">
+    <svg width="18" height="18" viewBox="0 0 48 48" fill="none"><circle cx="24" cy="24" r="20" stroke="currentColor" stroke-width="3" fill="none" opacity="0.3"/><circle cx="24" cy="24" r="20" stroke="currentColor" stroke-width="3" fill="none" stroke-dasharray="126" stroke-dashoffset="32" stroke-linecap="round"/><polyline points="16,24 22,32 34,16" stroke="currentColor" stroke-width="4" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg> Practice
+  </button>
+  <button class="vinculum-mode-tab" id="tabPlay" data-mode="play">
+    <svg width="18" height="18" viewBox="0 0 48 48" fill="none"><polygon points="28,4 12,28 22,28 18,44 36,18 26,18" fill="none" stroke="currentColor" stroke-width="3" stroke-linejoin="round"/><polygon points="27,8 15,27 23,27 20,40 34,19 26,19" fill="currentColor" opacity="0.15"/></svg> Play
+  </button>
+  <div class="vinculum-diff-selector">
+    <span class="vinculum-diff-label">Level</span>
+    <button class="vinculum-diff-btn active" id="diffE" data-diff="emergent">Basic</button>
+    <button class="vinculum-diff-btn" id="diffP" data-diff="proficient">All Shapes</button>
+    <button class="vinculum-diff-btn" id="diffA" data-diff="advanced">Attributes</button>
+  </div>
+</div>
+
+<!-- ═══ MAIN ═══ -->
+<div class="main">
+  <div class="workspace" role="main" id="workspace"></div>
+  <div class="side-panel" id="sidePanel"></div>
+</div>
+
+<!-- ═══ FEEDBACK POPUP ═══ -->
+<div class="feedback" id="feedback"></div>
+
+<script src="../../vinculum-input.js"></script>
+<script>
+// ════════════════════════════════════════
+// SHAPE DATA
+// ════════════════════════════════════════
+const SHAPES = [
+  { name:'circle', sides:0, corners:0, color:'#00d4ff',
+    svg:function(s,rot,showLabels){
+      var r = rot||0;
+      return '<svg viewBox="0 0 80 80" width="'+s+'" height="'+s+'" style="transform:rotate('+r+'deg)"><circle cx="40" cy="40" r="35" fill="currentColor" opacity="0.2" stroke="currentColor" stroke-width="3"/>'+(showLabels?'<text x="40" y="44" text-anchor="middle" font-size="10" fill="currentColor" font-weight="700">0 sides</text>':'')+'</svg>';
+    }},
+  { name:'square', sides:4, corners:4, color:'#ff3b8b',
+    svg:function(s,rot,showLabels){
+      var r = rot||0;
+      var labels = '';
+      if(showLabels){
+        labels = '<circle cx="10" cy="10" r="4" fill="var(--yellow)"/><circle cx="70" cy="10" r="4" fill="var(--yellow)"/><circle cx="70" cy="70" r="4" fill="var(--yellow)"/><circle cx="10" cy="70" r="4" fill="var(--yellow)"/>';
+      }
+      return '<svg viewBox="0 0 80 80" width="'+s+'" height="'+s+'" style="transform:rotate('+r+'deg)"><rect x="10" y="10" width="60" height="60" fill="currentColor" opacity="0.2" stroke="currentColor" stroke-width="3"/>'+labels+'</svg>';
+    }},
+  { name:'triangle', sides:3, corners:3, color:'#ffc107',
+    svg:function(s,rot,showLabels){
+      var r = rot||0;
+      var labels = '';
+      if(showLabels){
+        labels = '<circle cx="40" cy="8" r="4" fill="var(--yellow)"/><circle cx="75" cy="72" r="4" fill="var(--yellow)"/><circle cx="5" cy="72" r="4" fill="var(--yellow)"/>';
+      }
+      return '<svg viewBox="0 0 80 80" width="'+s+'" height="'+s+'" style="transform:rotate('+r+'deg)"><polygon points="40,8 75,72 5,72" fill="currentColor" opacity="0.2" stroke="currentColor" stroke-width="3"/>'+labels+'</svg>';
+    }},
+  { name:'rectangle', sides:4, corners:4, color:'#00e676',
+    svg:function(s,rot,showLabels){
+      var r = rot||0;
+      var labels = '';
+      if(showLabels){
+        labels = '<circle cx="5" cy="20" r="4" fill="var(--yellow)"/><circle cx="75" cy="20" r="4" fill="var(--yellow)"/><circle cx="75" cy="60" r="4" fill="var(--yellow)"/><circle cx="5" cy="60" r="4" fill="var(--yellow)"/>';
+      }
+      return '<svg viewBox="0 0 80 80" width="'+s+'" height="'+s+'" style="transform:rotate('+r+'deg)"><rect x="5" y="20" width="70" height="40" fill="currentColor" opacity="0.2" stroke="currentColor" stroke-width="3"/>'+labels+'</svg>';
+    }},
+  { name:'hexagon', sides:6, corners:6, color:'#b388ff',
+    svg:function(s,rot,showLabels){
+      var r = rot||0;
+      var labels = '';
+      if(showLabels){
+        labels = '<circle cx="40" cy="5" r="4" fill="var(--yellow)"/><circle cx="72" cy="22" r="4" fill="var(--yellow)"/><circle cx="72" cy="58" r="4" fill="var(--yellow)"/><circle cx="40" cy="75" r="4" fill="var(--yellow)"/><circle cx="8" cy="58" r="4" fill="var(--yellow)"/><circle cx="8" cy="22" r="4" fill="var(--yellow)"/>';
+      }
+      return '<svg viewBox="0 0 80 80" width="'+s+'" height="'+s+'" style="transform:rotate('+r+'deg)"><polygon points="40,5 72,22 72,58 40,75 8,58 8,22" fill="currentColor" opacity="0.2" stroke="currentColor" stroke-width="3"/>'+labels+'</svg>';
+    }}
+];
+
+// ════════════════════════════════════════
+// STATE
+// ════════════════════════════════════════
+let S = {
+  mode: 'explore',
+  diff: 'emergent',
+  // Explore
+  selectedShape: 0,
+  showAttributes: false,
+  rotation: 0,
+  showLabels: false,
+  // Practice
+  pShape: null,
+  pType: 'name',   // name | sides | corners | compare
+  pChoices: [],
+  pCorrect: null,
+  pAnswered: false,
+  pRotation: 0,
+  // Play
+  score: 0,
+  streak: 0,
+  best: 0,
+  round: 0,
+  total: 10,
+  playShape: null,
+  playType: 'name',
+  playChoices: [],
+  playCorrect: null,
+  playAnswered: false,
+  playRotation: 0
+};
+
+// ════════════════════════════════════════
+// READ-ALOUD
+// ════════════════════════════════════════
+function toggleReadAloud() {
+  if (window.VinculumStories && VinculumStories.isReading()) {
+    VinculumStories.stopReading();
+    document.getElementById('readAloudBtn').textContent = '🔊 Read to Me';
+  } else {
+    var fb = document.getElementById('feedback');
+    var storyEl = document.getElementById('storyBanner');
+    var text = storyEl ? storyEl.textContent : (fb ? fb.textContent : 'Welcome to Shape Sorter!');
+    if (window.VinculumStories) {
+      VinculumStories.readAloud(text, { rate: 0.85, onComplete: function() {
+        document.getElementById('readAloudBtn').textContent = '🔊 Read to Me';
+      }});
+      document.getElementById('readAloudBtn').textContent = '⏹ Stop';
+    }
+  }
+}
+
+// ════════════════════════════════════════
+// MISCONCEPTIONS DATABASE
+// ════════════════════════════════════════
+const MISCONCEPTIONS = {
+  orientationBias: {
+    id: 'orientation',
+    msg: function(shape) { return "That's still a " + shape + " even when it's turned! The shape doesn't change."; }
+  },
+  sidesCorners: {
+    id: 'sides-corners',
+    msg: function(shape, attr) { return (attr === 'sides' ? 'Sides are the straight lines' : 'Corners are where two sides meet') + '. Count them on the ' + shape + '!'; }
+  },
+  offByOne: {
+    id: 'off-by-one',
+    msg: function(shape, correct, got) { return 'Close! You said ' + got + ' but a ' + shape + ' has ' + correct + '. Count again carefully!'; }
+  },
+  randomGuess: {
+    id: 'random',
+    msg: function() { return 'Look at the shape carefully. What do you notice about it?'; }
+  }
+};
+
+// ════════════════════════════════════════
+// HELPERS
+// ════════════════════════════════════════
+function getAvailableShapes() {
+  if (S.diff === 'emergent') return SHAPES.slice(0, 3);         // circle, square, triangle
+  return SHAPES;                                                  // all 5
+}
+
+function randInt(min, max) {
+  return Math.floor(Math.random() * (max - min + 1)) + min;
+}
+
+function shuffle(arr) {
+  var a = arr.slice();
+  for (var i = a.length - 1; i > 0; i--) {
+    var j = randInt(0, i);
+    var t = a[i]; a[i] = a[j]; a[j] = t;
+  }
+  return a;
+}
+
+function randomRotation() {
+  var angles = [0, 30, 45, 60, 90, 120, 135, 150, 180, 210, 225, 270, 315];
+  return angles[randInt(0, angles.length - 1)];
+}
+
+function showFeedback(text, type, duration) {
+  var fb = document.getElementById('feedback');
+  fb.textContent = text;
+  fb.className = 'feedback ' + type + ' show';
+  setTimeout(function() { fb.classList.remove('show'); }, duration || 1800);
+}
+
+// ════════════════════════════════════════
+// MODE SWITCHING
+// ════════════════════════════════════════
+function setMode(mode) {
+  S.mode = mode;
+  // Reset mode-specific state
+  S.pShape = null;
+  S.pAnswered = false;
+  S.playAnswered = false;
+  if (mode === 'play') {
+    S.round = 0;
+    S.score = 0;
+    S.streak = 0;
+  }
+
+  document.querySelectorAll('.vinculum-mode-tab').forEach(function(t) {
+    t.classList.remove('active-explore', 'active-practice', 'active-play');
+  });
+  var tabEl = document.querySelector('[data-mode="' + mode + '"]');
+  if (tabEl) tabEl.classList.add('active-' + mode);
+
+  render();
+}
+
+function setDiff(diff) {
+  S.diff = diff;
+  document.querySelectorAll('.vinculum-diff-btn').forEach(function(b) { b.classList.remove('active'); });
+  document.getElementById('diff' + diff.charAt(0).toUpperCase()).classList.add('active');
+  // Clamp selected shape
+  var avail = getAvailableShapes();
+  if (S.selectedShape >= avail.length) S.selectedShape = 0;
+  S.pShape = null;
+  S.pAnswered = false;
+  if (S.mode === 'play') { S.round = 0; S.score = 0; S.streak = 0; }
+  render();
+}
+
+// ════════════════════════════════════════
+// RENDER
+// ════════════════════════════════════════
+function render() {
+  var ws = document.getElementById('workspace');
+  var sp = document.getElementById('sidePanel');
+
+  if (S.mode === 'explore') renderExplore(ws, sp);
+  else if (S.mode === 'practice') renderPractice(ws, sp);
+  else renderPlay(ws, sp);
+}
+
+// ─── EXPLORE MODE ───
+function renderExplore(ws, sp) {
+  var shapes = getAvailableShapes();
+  var shape = shapes[S.selectedShape];
+  var html = '';
+
+  // Shape gallery
+  html += '<div class="shape-gallery">';
+  shapes.forEach(function(sh, i) {
+    html += '<div class="shape-card ' + (i === S.selectedShape ? 'active' : '') + '" onclick="selectShape(' + i + ')" style="color:' + sh.color + ';">' + sh.svg(40) + '</div>';
+  });
+  html += '</div>';
+
+  // Large shape display
+  html += '<div class="shape-display pop-in" style="color:' + shape.color + ';" id="shapeDisplay">';
+  html += shape.svg(200, S.rotation, S.showLabels);
+  html += '</div>';
+
+  // Name label
+  html += '<div class="shape-info" style="color:' + shape.color + ';">' + shape.name.charAt(0).toUpperCase() + shape.name.slice(1) + '</div>';
+
+  // Attributes
+  html += '<div class="attribute-row">';
+  html += '<span><strong>' + shape.sides + '</strong> side' + (shape.sides !== 1 ? 's' : '') + '</span>';
+  html += '<span><strong>' + shape.corners + '</strong> corner' + (shape.corners !== 1 ? 's' : '') + '</span>';
+  html += '</div>';
+
+  // Controls
+  html += '<div class="controls">';
+  html += '<button class="ctrl-btn" onclick="rotateShape()">↻ Rotate</button>';
+  html += '<button class="ctrl-btn ' + (S.showLabels ? 'primary' : '') + '" onclick="toggleLabels()">' + (S.showLabels ? '● Hide Labels' : '○ Show Labels') + '</button>';
+  html += '</div>';
+
+  ws.innerHTML = html;
+
+  // Side panel
+  var tableRows = '';
+  shapes.forEach(function(sh) {
+    var isSelected = sh.name === shape.name;
+    tableRows += '<tr style="' + (isSelected ? 'background:rgba(0,212,255,0.08);' : '') + '">';
+    tableRows += '<td style="padding:6px 8px;color:' + sh.color + ';">' + sh.svg(24) + '</td>';
+    tableRows += '<td style="padding:6px 8px;font-weight:600;">' + sh.name.charAt(0).toUpperCase() + sh.name.slice(1) + '</td>';
+    tableRows += '<td style="padding:6px 8px;text-align:center;">' + sh.sides + '</td>';
+    tableRows += '<td style="padding:6px 8px;text-align:center;">' + sh.corners + '</td>';
+    tableRows += '</tr>';
+  });
+
+  sp.innerHTML =
+    '<div class="panel-section">' +
+      '<div class="panel-title">Shape Attributes</div>' +
+      '<table style="width:100%;font-size:12px;color:var(--text2);border-collapse:collapse;">' +
+        '<thead><tr style="border-bottom:1px solid var(--border);">' +
+          '<th style="padding:6px 8px;text-align:left;"></th>' +
+          '<th style="padding:6px 8px;text-align:left;">Shape</th>' +
+          '<th style="padding:6px 8px;text-align:center;">Sides</th>' +
+          '<th style="padding:6px 8px;text-align:center;">Corners</th>' +
+        '</tr></thead>' +
+        '<tbody>' + tableRows + '</tbody>' +
+      '</table>' +
+    '</div>' +
+    '<div class="panel-section">' +
+      '<div class="panel-title">How to Use</div>' +
+      '<div class="panel-text">' +
+        '1. Click a shape above to select it<br><br>' +
+        '2. Tap <strong>Rotate</strong> to see the shape turned — it is still the same shape!<br><br>' +
+        '3. Tap <strong>Show Labels</strong> to see corner dots on the shape<br><br>' +
+        '4. Count the sides (straight lines) and corners (points where sides meet)' +
+      '</div>' +
+    '</div>' +
+    '<div class="panel-section">' +
+      '<div class="panel-title">Key Concept</div>' +
+      '<div class="panel-text">' +
+        'A shape stays the <strong>same shape</strong> no matter which way you turn it. A triangle always has 3 sides and 3 corners!' +
+      '</div>' +
+    '</div>';
+}
+
+function selectShape(i) {
+  S.selectedShape = i;
+  S.rotation = 0;
+  S.showLabels = false;
+  render();
+}
+
+function rotateShape() {
+  S.rotation = (S.rotation + 45) % 360;
+  render();
+}
+
+function toggleLabels() {
+  S.showLabels = !S.showLabels;
+  render();
+}
+
+// ─── PRACTICE MODE ───
+function generatePractice() {
+  var shapes = getAvailableShapes();
+  S.pRotation = randomRotation();
+  S.pAnswered = false;
+
+  if (S.diff === 'emergent') {
+    // "What shape is this?" — name identification
+    S.pType = 'name';
+    S.pShape = shapes[randInt(0, shapes.length - 1)];
+    var choices = [S.pShape.name];
+    while (choices.length < Math.min(shapes.length, 3)) {
+      var c = shapes[randInt(0, shapes.length - 1)].name;
+      if (choices.indexOf(c) === -1) choices.push(c);
+    }
+    S.pChoices = shuffle(choices);
+    S.pCorrect = S.pShape.name;
+  } else if (S.diff === 'proficient') {
+    // "How many sides/corners?"
+    S.pType = Math.random() < 0.5 ? 'sides' : 'corners';
+    S.pShape = shapes[randInt(0, shapes.length - 1)];
+    var correct = S.pType === 'sides' ? S.pShape.sides : S.pShape.corners;
+    var numChoices = [correct];
+    var possibleNums = [0, 1, 2, 3, 4, 5, 6];
+    while (numChoices.length < 4) {
+      var n = possibleNums[randInt(0, possibleNums.length - 1)];
+      if (numChoices.indexOf(n) === -1) numChoices.push(n);
+    }
+    S.pChoices = numChoices.sort(function(a,b){return a-b;});
+    S.pCorrect = correct;
+  } else {
+    // Advanced: compare shapes
+    S.pType = 'compare';
+    var attr = Math.random() < 0.5 ? 'sides' : 'corners';
+    // Pick two shapes with different attribute counts
+    var s1 = shapes[randInt(0, shapes.length - 1)];
+    var s2;
+    var attempts = 0;
+    do {
+      s2 = shapes[randInt(0, shapes.length - 1)];
+      attempts++;
+    } while (s2.name === s1.name && attempts < 20);
+    var val1 = attr === 'sides' ? s1.sides : s1.corners;
+    var val2 = attr === 'sides' ? s2.sides : s2.corners;
+    S.pShape = { s1: s1, s2: s2, attr: attr };
+    if (val1 === val2) {
+      // "Which shapes both have X sides/corners?"
+      S.pShape.question = 'Which shapes both have ' + val1 + ' ' + attr + '?';
+      S.pCorrect = 'both';
+      S.pChoices = [s1.name + ' and ' + s2.name, s1.name + ' only', s2.name + ' only', 'Neither'];
+    } else {
+      var winner = val1 > val2 ? s1 : s2;
+      S.pShape.question = 'Which shape has more ' + attr + '?';
+      S.pCorrect = winner.name;
+      S.pChoices = shuffle([s1.name, s2.name]);
+      // Add a "They're equal" option
+      S.pChoices.push('They are equal');
+      if (S.pChoices.length < 4) {
+        var extra = shapes.filter(function(x){ return x.name !== s1.name && x.name !== s2.name; });
+        if (extra.length > 0) S.pChoices.push(extra[0].name);
+      }
+    }
+  }
+}
+
+function renderPractice(ws, sp) {
+  if (!S.pShape) generatePractice();
+
+  var html = '';
+
+  if (S.pType === 'name') {
+    html += '<div class="instruction-box">What shape is this?</div>';
+    html += '<div class="shape-display pop-in" style="color:' + S.pShape.color + ';">';
+    html += S.pShape.svg(180, S.pRotation, false);
+    html += '</div>';
+    html += '<div class="mc-grid">';
+    S.pChoices.forEach(function(c) {
+      var sh = SHAPES.find(function(x){return x.name===c;});
+      html += '<button class="mc-btn" onclick="practiceAnswer(\'' + c + '\')" data-choice="' + c + '">';
+      if(sh) html += '<span style="color:'+sh.color+';">'+sh.svg(28)+'</span> ';
+      html += c.charAt(0).toUpperCase() + c.slice(1);
+      html += '</button>';
+    });
+    html += '</div>';
+  } else if (S.pType === 'sides' || S.pType === 'corners') {
+    html += '<div class="instruction-box">How many ' + S.pType + ' does this shape have?</div>';
+    html += '<div class="shape-display pop-in" style="color:' + S.pShape.color + ';">';
+    html += S.pShape.svg(180, S.pRotation, false);
+    html += '</div>';
+    html += '<div style="text-align:center;font-size:16px;color:var(--muted);margin-bottom:12px;">' + S.pShape.name.charAt(0).toUpperCase() + S.pShape.name.slice(1) + '</div>';
+    html += '<div class="mc-grid">';
+    S.pChoices.forEach(function(c) {
+      html += '<button class="mc-btn" onclick="practiceAnswer(' + c + ')" data-choice="' + c + '" style="font-size:24px;font-family:\'JetBrains Mono\',monospace;">' + c + '</button>';
+    });
+    html += '</div>';
+  } else if (S.pType === 'compare') {
+    html += '<div class="instruction-box">' + S.pShape.question + '</div>';
+    html += '<div style="display:flex;gap:24px;justify-content:center;align-items:center;margin:16px 0;">';
+    html += '<div style="text-align:center;"><div style="color:' + S.pShape.s1.color + ';">' + S.pShape.s1.svg(120, randomRotation(), false) + '</div><div style="font-weight:700;font-size:14px;margin-top:4px;">' + S.pShape.s1.name.charAt(0).toUpperCase() + S.pShape.s1.name.slice(1) + '</div></div>';
+    html += '<div style="font-size:24px;color:var(--muted);font-weight:700;">vs</div>';
+    html += '<div style="text-align:center;"><div style="color:' + S.pShape.s2.color + ';">' + S.pShape.s2.svg(120, randomRotation(), false) + '</div><div style="font-weight:700;font-size:14px;margin-top:4px;">' + S.pShape.s2.name.charAt(0).toUpperCase() + S.pShape.s2.name.slice(1) + '</div></div>';
+    html += '</div>';
+    html += '<div class="mc-grid">';
+    S.pChoices.forEach(function(c) {
+      html += '<button class="mc-btn" onclick="practiceAnswer(\'' + c.replace(/'/g,"\\'") + '\')" data-choice="' + c + '">' + c.charAt(0).toUpperCase() + c.slice(1) + '</button>';
+    });
+    html += '</div>';
+  }
+
+  // Skip button
+  html += '<div class="controls">';
+  html += '<button class="ctrl-btn" onclick="skipPractice()">Skip →</button>';
+  html += '</div>';
+
+  ws.innerHTML = html;
+
+  // Side panel
+  sp.innerHTML =
+    '<div class="panel-section">' +
+      '<div class="panel-title">Instructions</div>' +
+      '<div class="panel-text">' +
+        (S.pType === 'name' ? 'Look at the shape carefully. Notice its sides and corners to identify it. The shape may be rotated — that does not change what it is!' :
+         S.pType === 'sides' || S.pType === 'corners' ? 'Count the ' + S.pType + ' on the shape. <strong>Sides</strong> are straight lines. <strong>Corners</strong> are where two sides meet.' :
+         'Compare the two shapes. Think about their attributes to answer the question.') +
+      '</div>' +
+    '</div>' +
+    '<div class="panel-section">' +
+      '<div class="panel-title">Remember</div>' +
+      '<div class="panel-text" style="background:var(--card);padding:12px;border-radius:8px;">' +
+        '<strong style="color:var(--cyan);">Sides</strong> = straight lines around the shape<br><br>' +
+        '<strong style="color:var(--yellow);">Corners</strong> = points where two sides meet<br><br>' +
+        'A circle has <strong>0</strong> sides and <strong>0</strong> corners!' +
+      '</div>' +
+    '</div>' +
+    '<div class="panel-section">' +
+      '<div class="panel-title">Standards</div>' +
+      '<div class="panel-text">' +
+        '<strong>K.G.2</strong> — Correctly name shapes regardless of orientation or size<br><br>' +
+        '<strong>K.G.4</strong> — Analyze and compare 2-D shapes by their attributes' +
+      '</div>' +
+    '</div>';
+}
+
+function practiceAnswer(ans) {
+  if (S.pAnswered) return;
+  S.pAnswered = true;
+
+  var isCorrect = false;
+  if (S.pType === 'compare' && S.pCorrect === 'both') {
+    isCorrect = (ans === S.pShape.s1.name + ' and ' + S.pShape.s2.name);
+  } else {
+    isCorrect = (String(ans) === String(S.pCorrect));
+  }
+
+  // Flash the button
+  var btns = document.querySelectorAll('.mc-btn');
+  btns.forEach(function(btn) {
+    var choice = btn.getAttribute('data-choice');
+    if (String(choice) === String(ans)) {
+      btn.classList.add(isCorrect ? 'correct-flash' : 'incorrect-flash');
+    }
+    if (!isCorrect && String(choice) === String(S.pCorrect)) {
+      setTimeout(function(){ btn.classList.add('correct-flash'); }, 400);
+    }
+  });
+
+  if (isCorrect) {
+    showFeedback('Correct!', 'correct');
+    setTimeout(function() {
+      S.pShape = null;
+      render();
+    }, 1400);
+  } else {
+    // Misconception feedback
+    var msg;
+    if (S.pType === 'name' && S.pShape) {
+      msg = MISCONCEPTIONS.orientationBias.msg(S.pCorrect);
+    } else if ((S.pType === 'sides' || S.pType === 'corners') && S.pShape) {
+      var diff = Math.abs(Number(ans) - Number(S.pCorrect));
+      if (diff === 1) {
+        msg = MISCONCEPTIONS.offByOne.msg(S.pShape.name, S.pCorrect, ans);
+      } else {
+        msg = MISCONCEPTIONS.sidesCorners.msg(S.pShape.name, S.pType);
+      }
+    } else {
+      msg = MISCONCEPTIONS.randomGuess.msg();
+    }
+    showFeedback(msg, 'try-again', 2500);
+    setTimeout(function() {
+      S.pShape = null;
+      render();
+    }, 2800);
+  }
+}
+
+function skipPractice() {
+  S.pShape = null;
+  S.pAnswered = false;
+  render();
+}
+
+// ─── PLAY MODE ───
+function generatePlayRound() {
+  var shapes = getAvailableShapes();
+  S.playRotation = randomRotation();
+  S.playAnswered = false;
+
+  if (S.diff === 'emergent') {
+    S.playType = 'name';
+  } else if (S.diff === 'proficient') {
+    S.playType = Math.random() < 0.4 ? 'name' : (Math.random() < 0.5 ? 'sides' : 'corners');
+  } else {
+    var r = Math.random();
+    if (r < 0.25) S.playType = 'name';
+    else if (r < 0.5) S.playType = 'sides';
+    else if (r < 0.75) S.playType = 'corners';
+    else S.playType = 'compare';
+  }
+
+  if (S.playType === 'compare') {
+    var attr = Math.random() < 0.5 ? 'sides' : 'corners';
+    var s1 = shapes[randInt(0, shapes.length - 1)];
+    var s2;
+    var attempts = 0;
+    do { s2 = shapes[randInt(0, shapes.length - 1)]; attempts++; } while (s2.name === s1.name && attempts < 20);
+    var v1 = attr === 'sides' ? s1.sides : s1.corners;
+    var v2 = attr === 'sides' ? s2.sides : s2.corners;
+    S.playShape = { s1: s1, s2: s2, attr: attr };
+    if (v1 === v2) {
+      S.playShape.question = 'Which shapes both have ' + v1 + ' ' + attr + '?';
+      S.playCorrect = 'both';
+      S.playChoices = [s1.name + ' and ' + s2.name, s1.name + ' only', s2.name + ' only', 'Neither'];
+    } else {
+      var winner = v1 > v2 ? s1 : s2;
+      S.playCorrect = winner.name;
+      S.playChoices = shuffle([s1.name, s2.name, 'They are equal']);
+    }
+  } else if (S.playType === 'name') {
+    S.playShape = shapes[randInt(0, shapes.length - 1)];
+    var nameChoices = [S.playShape.name];
+    while (nameChoices.length < Math.min(shapes.length, 4)) {
+      var c = shapes[randInt(0, shapes.length - 1)].name;
+      if (nameChoices.indexOf(c) === -1) nameChoices.push(c);
+    }
+    S.playChoices = shuffle(nameChoices);
+    S.playCorrect = S.playShape.name;
+  } else {
+    // sides or corners
+    S.playShape = shapes[randInt(0, shapes.length - 1)];
+    var correct = S.playType === 'sides' ? S.playShape.sides : S.playShape.corners;
+    var nums = [correct];
+    var pool = [0, 1, 2, 3, 4, 5, 6];
+    while (nums.length < 4) {
+      var n = pool[randInt(0, pool.length - 1)];
+      if (nums.indexOf(n) === -1) nums.push(n);
+    }
+    S.playChoices = nums.sort(function(a,b){return a-b;});
+    S.playCorrect = correct;
+  }
+}
+
+function renderPlay(ws, sp) {
+  if (S.round === 0) {
+    S.score = 0;
+    S.streak = 0;
+    S.round = 1;
+    generatePlayRound();
+  }
+
+  var html = '';
+
+  // Round indicator
+  html += '<div style="text-align:center;margin-bottom:8px;">';
+  html += '<div style="font-size:14px;color:var(--muted);">Round ' + S.round + ' of ' + S.total + '</div>';
+  html += '</div>';
+
+  if (S.playType === 'compare') {
+    html += '<div class="instruction-box">' + S.playShape.question + '</div>';
+    html += '<div style="display:flex;gap:24px;justify-content:center;align-items:center;margin:16px 0;">';
+    html += '<div style="text-align:center;"><div style="color:' + S.playShape.s1.color + ';">' + S.playShape.s1.svg(100, S.playRotation, false) + '</div><div style="font-weight:700;font-size:13px;margin-top:4px;">' + S.playShape.s1.name.charAt(0).toUpperCase() + S.playShape.s1.name.slice(1) + '</div></div>';
+    html += '<div style="font-size:20px;color:var(--muted);font-weight:700;">vs</div>';
+    html += '<div style="text-align:center;"><div style="color:' + S.playShape.s2.color + ';">' + S.playShape.s2.svg(100, randomRotation(), false) + '</div><div style="font-weight:700;font-size:13px;margin-top:4px;">' + S.playShape.s2.name.charAt(0).toUpperCase() + S.playShape.s2.name.slice(1) + '</div></div>';
+    html += '</div>';
+    html += '<div class="mc-grid">';
+    S.playChoices.forEach(function(c) {
+      html += '<button class="mc-btn" onclick="playAnswer(\'' + c.replace(/'/g,"\\'") + '\')" data-choice="' + c + '">' + c.charAt(0).toUpperCase() + c.slice(1) + '</button>';
+    });
+    html += '</div>';
+  } else if (S.playType === 'name') {
+    html += '<div class="instruction-box">What shape is this?</div>';
+    html += '<div class="shape-display pop-in" style="color:' + S.playShape.color + ';">';
+    html += S.playShape.svg(180, S.playRotation, false);
+    html += '</div>';
+    html += '<div class="mc-grid">';
+    S.playChoices.forEach(function(c) {
+      var sh = SHAPES.find(function(x){return x.name===c;});
+      html += '<button class="mc-btn" onclick="playAnswer(\'' + c + '\')" data-choice="' + c + '">';
+      if(sh) html += '<span style="color:'+sh.color+';">'+sh.svg(24)+'</span> ';
+      html += c.charAt(0).toUpperCase() + c.slice(1);
+      html += '</button>';
+    });
+    html += '</div>';
+  } else {
+    html += '<div class="instruction-box">How many ' + S.playType + ' does this shape have?</div>';
+    html += '<div class="shape-display pop-in" style="color:' + S.playShape.color + ';">';
+    html += S.playShape.svg(180, S.playRotation, false);
+    html += '</div>';
+    html += '<div style="text-align:center;font-size:15px;color:var(--muted);margin-bottom:12px;">' + S.playShape.name.charAt(0).toUpperCase() + S.playShape.name.slice(1) + '</div>';
+    html += '<div class="mc-grid">';
+    S.playChoices.forEach(function(c) {
+      html += '<button class="mc-btn" onclick="playAnswer(' + c + ')" data-choice="' + c + '" style="font-size:24px;font-family:\'JetBrains Mono\',monospace;">' + c + '</button>';
+    });
+    html += '</div>';
+  }
+
+  ws.innerHTML = html;
+
+  // Side panel with score
+  sp.innerHTML =
+    '<div class="score-display">' +
+      '<div class="score-value">' + S.score + '</div>' +
+      '<div class="score-label">Score</div>' +
+    '</div>' +
+    '<div class="score-display" style="background:transparent;padding:8px;">' +
+      '<div style="font-size:18px;font-weight:700;color:var(--yellow);">🔥 ' + S.streak + '</div>' +
+      '<div class="score-label">Streak</div>' +
+      '<div class="streak-bar"><div class="streak-fill" style="width:' + Math.min(S.streak * 20, 100) + '%;"></div></div>' +
+    '</div>' +
+    '<div class="panel-section">' +
+      '<div class="panel-title">How to Play</div>' +
+      '<div class="panel-text">' +
+        'Identify shapes and their attributes as fast as you can!<br><br>' +
+        '<strong>10 points</strong> per correct answer<br>' +
+        '<strong>Streak bonus</strong> for consecutive correct answers<br><br>' +
+        'Shapes may be rotated — look carefully!' +
+      '</div>' +
+    '</div>' +
+    '<div class="panel-section">' +
+      '<div class="panel-title">Best Streak</div>' +
+      '<div class="panel-text" style="font-size:24px;font-weight:800;color:var(--purple);">⭐ ' + S.best + '</div>' +
+    '</div>';
+}
+
+function playAnswer(ans) {
+  if (S.playAnswered) return;
+  S.playAnswered = true;
+
+  var isCorrect = false;
+  if (S.playType === 'compare' && S.playCorrect === 'both') {
+    isCorrect = (ans === S.playShape.s1.name + ' and ' + S.playShape.s2.name);
+  } else {
+    isCorrect = (String(ans) === String(S.playCorrect));
+  }
+
+  // Flash buttons
+  var btns = document.querySelectorAll('.mc-btn');
+  btns.forEach(function(btn) {
+    var choice = btn.getAttribute('data-choice');
+    if (String(choice) === String(ans)) {
+      btn.classList.add(isCorrect ? 'correct-flash' : 'incorrect-flash');
+    }
+    if (!isCorrect && String(choice) === String(S.playCorrect)) {
+      setTimeout(function(){ btn.classList.add('correct-flash'); }, 400);
+    }
+  });
+
+  if (isCorrect) {
+    S.score += 10 + (S.streak * 2);
+    S.streak++;
+    if (S.streak > S.best) S.best = S.streak;
+    showFeedback('Correct!', 'correct');
+  } else {
+    S.streak = 0;
+    var msg;
+    if (S.playType === 'name') {
+      msg = MISCONCEPTIONS.orientationBias.msg(S.playCorrect);
+    } else if (S.playType === 'sides' || S.playType === 'corners') {
+      msg = MISCONCEPTIONS.sidesCorners.msg(S.playShape.name, S.playType);
+    } else {
+      msg = MISCONCEPTIONS.randomGuess.msg();
+    }
+    showFeedback(msg, 'incorrect', 2200);
+  }
+
+  setTimeout(function() {
+    if (S.round >= S.total) {
+      showFeedback('Game Over! Score: ' + S.score, 'correct', 2500);
+      setTimeout(function() {
+        S.round = 0;
+        render();
+      }, 2800);
+      return;
+    }
+    S.round++;
+    generatePlayRound();
+    render();
+  }, isCorrect ? 1200 : 2400);
+}
+
+// ════════════════════════════════════════
+// INIT
+// ════════════════════════════════════════
+document.querySelectorAll('.vinculum-mode-tab').forEach(function(tab) {
+  tab.addEventListener('click', function() {
+    setMode(this.dataset.mode);
+  });
+});
+
+document.querySelectorAll('.vinculum-diff-btn').forEach(function(btn) {
+  btn.addEventListener('click', function() {
+    setDiff(this.dataset.diff);
+  });
+});
+
+render();
+</script>
+<script src="../../vinculum-core.js"></script>
+<script src="../../vinculum-data.js"></script>
+<script src="../../vinculum-adaptive-hook.js"></script>
+<script src="../../vinculum-3reads.js"></script>
+<script src="../../vinculum-stories.js"></script>
+<script src="../../vinculum-feedback.js"></script>
+<script src="../../vinculum-guide.js"></script>
+<script src="../../vinculum-identity.js"></script>
+<script src="../../vinculum-indigenous.js"></script>
+<script src="../../vinculum-dashboard.js"></script>
+<script src="../../vinculum-hyperfocus.js"></script>
+<script src="../../vinculum-layout.js"></script>
+</body>
+</html>

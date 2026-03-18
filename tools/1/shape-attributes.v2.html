@@ -1,0 +1,959 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>VINCULUM — Shape Attributes</title>
+<link rel="stylesheet" href="../../vinculum-core.css">
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;600&display=swap');
+.vinculum-rtm-btn .rtm-icon{font-size:14px;}
+
+/* Focus Visible */
+*:focus-visible {
+  outline:2px solid var(--cyan);outline-offset:2px;border-radius:4px;
+}
+.sr-only {
+  position:absolute;width:1px;height:1px;padding:0;margin:-1px;
+  overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0;
+}
+*{margin:0;padding:0;box-sizing:border-box;}
+body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);height:100vh;display:flex;flex-direction:column;overflow:hidden;user-select:none;}
+
+.main{flex:1;display:flex;overflow:hidden;}
+.workspace{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:flex-start;padding:24px;gap:16px;overflow-y:auto;}
+.side-panel{width:280px;background:var(--bg2);border-left:1px solid var(--border);padding:20px;overflow-y:auto;flex-shrink:0;}
+.panel-section{margin-bottom:20px;}
+.panel-title{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:1.5px;color:var(--muted);margin-bottom:8px;}
+.panel-text{font-size:13px;color:var(--text2);line-height:1.6;}
+
+/* Shape Gallery */
+.shape-gallery{display:flex;flex-wrap:wrap;gap:14px;justify-content:center;max-width:640px;}
+.shape-card{
+  width:120px;height:140px;border-radius:14px;border:2px solid var(--border);background:var(--card);
+  display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px;
+  cursor:pointer;transition:all 0.2s;position:relative;
+}
+.shape-card:hover{border-color:var(--cyan);transform:scale(1.04);}
+.shape-card.selected{border-color:var(--purple);background:rgba(179,136,255,0.08);}
+.shape-card .shape-label{font-size:11px;font-weight:700;color:var(--text2);text-transform:capitalize;}
+.shape-card svg{transition:transform 0.3s;}
+
+/* Attribute labels overlay */
+.attribute-labels{
+  position:absolute;top:4px;right:4px;display:flex;flex-direction:column;gap:2px;
+  font-size:9px;font-weight:700;font-family:'JetBrains Mono',monospace;
+}
+.attribute-labels .attr-tag{
+  padding:2px 5px;border-radius:4px;background:rgba(0,212,255,0.15);color:var(--cyan);white-space:nowrap;
+}
+
+/* Sort Bins */
+.sort-bins{display:flex;gap:16px;justify-content:center;flex-wrap:wrap;max-width:600px;}
+.sort-bin{
+  min-width:180px;min-height:140px;border-radius:14px;border:2px dashed var(--border);background:var(--card);
+  padding:12px;display:flex;flex-direction:column;align-items:center;gap:8px;transition:all 0.2s;
+}
+.sort-bin.active{border-color:var(--green);background:rgba(0,230,118,0.05);}
+.sort-bin .bin-title{font-size:12px;font-weight:700;color:var(--cyan);text-align:center;}
+.sort-bin .bin-shapes{display:flex;flex-wrap:wrap;gap:6px;justify-content:center;}
+.sort-bin .bin-shape{
+  width:48px;height:48px;border-radius:8px;background:var(--bg);border:1px solid var(--border);
+  display:flex;align-items:center;justify-content:center;
+}
+
+/* Draggable shapes in sort mode */
+.drag-shape{
+  width:64px;height:64px;border-radius:10px;border:2px solid var(--border);background:var(--card);
+  display:inline-flex;align-items:center;justify-content:center;cursor:pointer;transition:all 0.15s;
+}
+.drag-shape:hover{border-color:var(--purple);transform:scale(1.08);}
+.drag-shape.placed{opacity:0.35;pointer-events:none;}
+
+/* Instruction Box */
+.instruction-box{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:14px 20px;text-align:center;font-size:15px;color:var(--text2);font-weight:500;max-width:600px;transition:all 0.3s;}
+.instruction-box.highlight-cyan{border-color:var(--cyan);color:var(--cyan);}
+.instruction-box.highlight-pink{border-color:var(--pink);color:var(--pink);}
+.instruction-box.highlight-green{border-color:var(--green);color:var(--green);}
+
+/* Controls */
+.controls{display:flex;gap:8px;flex-wrap:wrap;justify-content:center;}
+.ctrl-btn{padding:10px 20px;border-radius:10px;border:1px solid var(--border);background:var(--card);color:var(--text2);font-size:13px;font-weight:600;font-family:inherit;cursor:pointer;transition:all 0.2s;display:flex;align-items:center;gap:6px;}
+.ctrl-btn:hover{background:var(--card2);color:var(--text);}
+.ctrl-btn.primary{background:var(--grad);color:var(--bg);border-color:transparent;}
+
+/* MC Grid */
+.mc-grid{display:flex;gap:10px;flex-wrap:wrap;justify-content:center;max-width:500px;}
+.mc-btn{min-width:140px;padding:12px 16px;border-radius:12px;border:2px solid var(--border);background:var(--card);color:var(--text);font-size:14px;font-weight:600;font-family:inherit;cursor:pointer;transition:all 0.15s;display:flex;align-items:center;justify-content:center;text-align:center;}
+.mc-btn:hover{border-color:var(--cyan);transform:scale(1.04);}
+.mc-btn.correct-flash{border-color:var(--green);background:rgba(0,230,118,0.2);color:var(--green);animation:correctFlash 0.4s ease-out;}
+.mc-btn.incorrect-flash{border-color:var(--pink);background:rgba(255,59,139,0.2);color:var(--pink);animation:shake 0.3s ease-in-out;}
+
+/* Multi-select */
+.mc-btn.multi-selected{border-color:var(--purple);background:rgba(179,136,255,0.15);color:var(--purple);}
+
+@keyframes correctFlash{0%{transform:scale(1.1);} 100%{transform:scale(1);}}
+@keyframes shake{0%,100%{transform:translateX(0);} 25%{transform:translateX(-4px);} 75%{transform:translateX(4px);}}
+
+.score-display{text-align:center;padding:16px;background:var(--card);border-radius:12px;margin-bottom:12px;}
+.score-value{font-size:36px;font-weight:900;font-family:'JetBrains Mono',monospace;background:var(--grad);-webkit-background-clip:text;-webkit-text-fill-color:transparent;}
+.score-label{font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:1px;}
+.streak-bar{height:6px;background:var(--card);border-radius:3px;overflow:hidden;margin-top:8px;}
+.streak-fill{height:100%;background:var(--grad);border-radius:3px;transition:width 0.3s;}
+
+.feedback{position:fixed;top:50%;left:50%;transform:translate(-50%,-50%) scale(0);padding:24px 48px;border-radius:20px;font-size:28px;font-weight:800;z-index:200;pointer-events:none;transition:transform 0.3s cubic-bezier(0.175,0.885,0.32,1.275),opacity 0.3s;opacity:0;max-width:90vw;text-align:center;}
+.feedback.show{transform:translate(-50%,-50%) scale(1);opacity:1;}
+.feedback.correct{background:rgba(0,230,118,0.15);color:var(--green);border:2px solid var(--green);}
+.feedback.incorrect{background:rgba(255,59,139,0.15);color:var(--pink);border:2px solid var(--pink);}
+.feedback.try-again{background:rgba(255,193,7,0.15);color:var(--yellow);border:2px solid var(--yellow);}
+
+/* Shape info panel */
+.shape-info-card{background:var(--card);border:1px solid var(--border);border-radius:10px;padding:12px;margin-top:8px;}
+.shape-info-row{display:flex;justify-content:space-between;align-items:center;padding:4px 0;font-size:12px;}
+.shape-info-row .info-label{color:var(--muted);font-weight:600;}
+.shape-info-row .info-value{color:var(--text);font-weight:700;font-family:'JetBrains Mono',monospace;}
+
+/* Toggle switch for attribute labels */
+.toggle-wrap{display:flex;align-items:center;gap:8px;font-size:12px;font-weight:600;color:var(--text2);}
+.toggle-switch{width:40px;height:22px;border-radius:11px;background:var(--border);cursor:pointer;position:relative;transition:background 0.2s;}
+.toggle-switch.on{background:var(--cyan);}
+.toggle-switch::after{content:'';position:absolute;top:2px;left:2px;width:18px;height:18px;border-radius:50%;background:white;transition:left 0.2s;}
+.toggle-switch.on::after{left:20px;}
+
+::-webkit-scrollbar{width:6px;}::-webkit-scrollbar-track{background:transparent;}::-webkit-scrollbar-thumb{background:var(--border);border-radius:3px;}
+</style>
+</head>
+<body>
+
+<div class="vinculum-header">
+  <div class="vinculum-header-left">
+    <a class="vinculum-back-btn" href="../../VINCULUM-Hub.html" style="text-decoration:none;">◀ Hub</a>
+    <div class="vinculum-header-title"><span>VINCULUM</span> Shape Attributes</div>
+    <span class="vinculum-header-badge">1.G</span>
+  </div>
+  <div class="vinculum-header-right">
+    <div class="vinculum-std-tags">
+      <span class="vinculum-std-tag">1.G.1</span>
+      <span class="vinculum-std-tag mn">MN 1.4.1.1</span>
+    </div>
+    <button class="vinculum-back-btn" id="readAloudBtn" onclick="toggleReadAloud()" aria-label="Read Aloud" title="Read instructions aloud" style="margin-left:8px;white-space:nowrap;">🔊 Read to Me</button>
+  </div>
+</div>
+
+<div class="vinculum-mode-tabs">
+  <button class="vinculum-mode-tab active-explore" data-mode="explore" id="tabExplore" onclick="setMode('explore')"><svg width="18" height="18" viewBox="0 0 48 48" fill="none"><path d="M4 24C4 24 12 12 24 12C36 12 44 24 44 24C44 24 36 36 24 36C12 36 4 24 4 24Z" stroke="currentColor" stroke-width="3" fill="none"/><circle cx="24" cy="24" r="7" stroke="currentColor" stroke-width="3" fill="none"/><circle cx="24" cy="24" r="3" fill="currentColor"/><line x1="24" y1="4" x2="24" y2="9" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" opacity="0.5"/><line x1="10" y1="8" x2="13" y2="12" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" opacity="0.5"/><line x1="38" y1="8" x2="35" y2="12" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" opacity="0.5"/></svg> Explore</button>
+  <button class="vinculum-mode-tab" id="tabPractice" data-mode="practice" onclick="setMode('practice')"><svg width="18" height="18" viewBox="0 0 48 48" fill="none"><circle cx="24" cy="24" r="20" stroke="currentColor" stroke-width="3" fill="none" opacity="0.3"/><circle cx="24" cy="24" r="20" stroke="currentColor" stroke-width="3" fill="none" stroke-dasharray="126" stroke-dashoffset="32" stroke-linecap="round"/><polyline points="16,24 22,32 34,16" stroke="currentColor" stroke-width="4" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg> Practice</button>
+  <button class="vinculum-mode-tab" id="tabPlay" data-mode="play" onclick="setMode('play')"><svg width="18" height="18" viewBox="0 0 48 48" fill="none"><polygon points="28,4 12,28 22,28 18,44 36,18 26,18" fill="none" stroke="currentColor" stroke-width="3" stroke-linejoin="round"/><polygon points="27,8 15,27 23,27 20,40 34,19 26,19" fill="currentColor" opacity="0.15"/></svg> Play</button>
+  <div class="vinculum-diff-selector">
+    <span class="vinculum-diff-label">Level</span>
+    <button class="vinculum-diff-btn active" id="diffE" data-diff="emergent" onclick="setDiff('emergent')">Sort</button>
+    <button class="vinculum-diff-btn" id="diffP" data-diff="proficient" onclick="setDiff('proficient')">Describe</button>
+    <button class="vinculum-diff-btn" id="diffA" data-diff="advanced" onclick="setDiff('advanced')">Compare</button>
+  </div>
+</div>
+
+<div class="main">
+  <div class="workspace" role="main" id="workspace"></div>
+  <div class="side-panel" id="sidePanel"></div>
+</div>
+<div class="feedback" id="feedback"></div>
+
+<script src="../../vinculum-input.js"></script>
+<script>
+/* ═══════════════════════════════════════════
+   SHAPE DATA
+   ═══════════════════════════════════════════ */
+
+const SHAPES = [
+  { name:'triangle', sides:3, corners:3, closed:true },
+  { name:'square', sides:4, corners:4, closed:true },
+  { name:'rectangle', sides:4, corners:4, closed:true },
+  { name:'circle', sides:0, corners:0, closed:true },
+  { name:'hexagon', sides:6, corners:6, closed:true },
+  { name:'trapezoid', sides:4, corners:4, closed:true },
+];
+
+const COLORS = ['#ff3b8b','#00d4ff','#b388ff','#00e676','#ffc107','#ff6e40'];
+const SIZES = [0.7, 1.0, 1.3];
+const ROTATIONS = [0, 45, 90, 135, 180, 270];
+
+/* Generate an SVG for a given shape with color, size, rotation */
+function shapeSVG(shape, color, size, rotation, w, h) {
+  w = w || 60; h = h || 60;
+  const cx = w / 2, cy = h / 2;
+  const s = size || 1.0;
+  const r = rotation || 0;
+  const fill = color || '#00d4ff';
+  let path = '';
+
+  switch (shape.name) {
+    case 'triangle': {
+      const R = 22 * s;
+      const pts = [];
+      for (let i = 0; i < 3; i++) {
+        const a = (i * 120 - 90) * Math.PI / 180;
+        pts.push(`${cx + R * Math.cos(a)},${cy + R * Math.sin(a)}`);
+      }
+      path = `<polygon points="${pts.join(' ')}" fill="${fill}" opacity="0.8" stroke="${fill}" stroke-width="2"/>`;
+      break;
+    }
+    case 'square': {
+      const side = 36 * s;
+      path = `<rect x="${cx - side/2}" y="${cy - side/2}" width="${side}" height="${side}" fill="${fill}" opacity="0.8" stroke="${fill}" stroke-width="2" rx="2"/>`;
+      break;
+    }
+    case 'rectangle': {
+      const rw = 42 * s, rh = 26 * s;
+      path = `<rect x="${cx - rw/2}" y="${cy - rh/2}" width="${rw}" height="${rh}" fill="${fill}" opacity="0.8" stroke="${fill}" stroke-width="2" rx="2"/>`;
+      break;
+    }
+    case 'circle': {
+      const cr = 20 * s;
+      path = `<circle cx="${cx}" cy="${cy}" r="${cr}" fill="${fill}" opacity="0.8" stroke="${fill}" stroke-width="2"/>`;
+      break;
+    }
+    case 'hexagon': {
+      const R = 22 * s;
+      const pts = [];
+      for (let i = 0; i < 6; i++) {
+        const a = (i * 60 - 90) * Math.PI / 180;
+        pts.push(`${cx + R * Math.cos(a)},${cy + R * Math.sin(a)}`);
+      }
+      path = `<polygon points="${pts.join(' ')}" fill="${fill}" opacity="0.8" stroke="${fill}" stroke-width="2"/>`;
+      break;
+    }
+    case 'trapezoid': {
+      const tw = 20 * s, bw = 34 * s, th = 24 * s;
+      const pts = [
+        `${cx - tw},${cy - th/2}`,
+        `${cx + tw},${cy - th/2}`,
+        `${cx + bw},${cy + th/2}`,
+        `${cx - bw},${cy + th/2}`
+      ];
+      path = `<polygon points="${pts.join(' ')}" fill="${fill}" opacity="0.8" stroke="${fill}" stroke-width="2"/>`;
+      break;
+    }
+  }
+
+  return `<svg width="${w}" height="${h}" viewBox="0 0 ${w} ${h}" style="overflow:visible;"><g transform="rotate(${r},${cx},${cy})">${path}</g></svg>`;
+}
+
+/* Generate a random variant of a shape */
+function randomVariant(shapeIdx) {
+  const shape = SHAPES[shapeIdx];
+  return {
+    shapeIdx: shapeIdx,
+    shape: shape,
+    color: COLORS[Math.floor(Math.random() * COLORS.length)],
+    size: SIZES[Math.floor(Math.random() * SIZES.length)],
+    rotation: ROTATIONS[Math.floor(Math.random() * ROTATIONS.length)]
+  };
+}
+
+/* ═══════════════════════════════════════════
+   STATE
+   ═══════════════════════════════════════════ */
+
+let S = {
+  mode: 'explore', diff: 'emergent',
+  selectedShape: 0,
+  showLabels: true,
+  galleryVariants: [],
+
+  // Sort bins (explore emergent)
+  sortRule: null,
+  sortBins: { yes: [], no: [] },
+  sortPool: [],
+
+  // Practice
+  pQuestion: null, pChoices: [], pAnswer: null, pMultiAnswer: [],
+  pMultiSelected: [],
+
+  // Play
+  score: 0, streak: 0, best: 0, round: 0, total: 10,
+  playQuestion: null, playChoices: [], playAnswer: null
+};
+
+/* ── Misconceptions ── */
+const MISCONCEPTIONS = {
+  nonDefining: { id:'non-defining', msg:(attr) => `Color, size, and orientation do NOT define a shape. "${attr}" can change, but the shape stays the same!` },
+  orientationBias: { id:'orientation', msg:(name) => `A ${name} is still a ${name} even when rotated! Turning a shape does not change what it is.` },
+  offByOne: { id:'off-by-one', msg:(name, attr, correct, got) => `Close! A ${name} has ${correct} ${attr}, not ${got}. Count carefully!` },
+  randomGuess: { id:'random', msg:() => `Look at the shape carefully. Count the sides and corners to help you decide!` }
+};
+
+/* ── Read-Aloud ── */
+function toggleReadAloud() {
+  if (window.VinculumStories && VinculumStories.isReading()) {
+    VinculumStories.stopReading();
+    document.getElementById('readAloudBtn').textContent = '🔊 Read to Me';
+  } else {
+    const fb = document.getElementById('feedback');
+    const storyEl = document.getElementById('storyBanner');
+    const text = storyEl ? storyEl.textContent : (fb ? fb.textContent : 'Welcome to Shape Attributes!');
+    if (window.VinculumStories) {
+      VinculumStories.readAloud(text, { rate: 0.85, onComplete: () => {
+        document.getElementById('readAloudBtn').textContent = '🔊 Read to Me';
+      }});
+      document.getElementById('readAloudBtn').textContent = '⏹ Stop';
+    }
+  }
+}
+
+function rand(a, b) {
+  return Math.floor(Math.random() * (b - a + 1)) + a;
+}
+
+function shuffle(arr) {
+  for (let i = arr.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [arr[i], arr[j]] = [arr[j], arr[i]];
+  }
+  return arr;
+}
+
+function showFB(msg, type) {
+  const fb = document.getElementById('feedback');
+  fb.className = 'feedback ' + type;
+  fb.textContent = msg;
+  fb.classList.add('show');
+  setTimeout(() => { fb.classList.remove('show'); }, 2200);
+}
+
+/* ── Mode & Difficulty ── */
+function setMode(m) {
+  S.mode = m;
+  document.querySelectorAll('.vinculum-mode-tab').forEach(t => t.classList.remove('active-explore', 'active-practice', 'active-play'));
+  document.getElementById('tab' + m.charAt(0).toUpperCase() + m.slice(1)).classList.add('active-' + m);
+  S.round = 0; S.score = 0; S.streak = 0;
+  if (m === 'explore') initExplore();
+  if (m === 'practice') newPractice();
+  render();
+}
+
+function setDiff(d) {
+  S.diff = d;
+  document.querySelectorAll('.vinculum-diff-btn').forEach(b => b.classList.remove('active'));
+  document.getElementById('diff' + d.charAt(0).toUpperCase()).classList.add('active');
+  if (S.mode === 'explore') initExplore();
+  if (S.mode === 'practice') newPractice();
+  if (S.mode === 'play') S.round = 0;
+  render();
+}
+
+function render() {
+  const ws = document.getElementById('workspace');
+  const sp = document.getElementById('sidePanel');
+  if (S.mode === 'explore') renderExplore(ws, sp);
+  else if (S.mode === 'practice') renderPractice(ws, sp);
+  else renderPlay(ws, sp);
+}
+
+/* ═══════════════════════════════════════════
+   EXPLORE MODE
+   ═══════════════════════════════════════════ */
+
+function initExplore() {
+  // Generate gallery variants — each shape in 2 different appearances
+  S.galleryVariants = [];
+  for (let i = 0; i < SHAPES.length; i++) {
+    S.galleryVariants.push(randomVariant(i));
+    S.galleryVariants.push(randomVariant(i));
+  }
+  shuffle(S.galleryVariants);
+
+  // Sort rule for emergent
+  const rules = [
+    { label: 'Has 4 sides', test: (sh) => sh.sides === 4 },
+    { label: 'Has 3 corners', test: (sh) => sh.corners === 3 },
+    { label: 'Has more than 4 sides', test: (sh) => sh.sides > 4 },
+    { label: 'Has 0 corners', test: (sh) => sh.corners === 0 },
+    { label: 'Has exactly 3 sides', test: (sh) => sh.sides === 3 },
+    { label: 'Has 4 corners', test: (sh) => sh.corners === 4 },
+  ];
+  S.sortRule = rules[rand(0, rules.length - 1)];
+  S.sortBins = { yes: [], no: [] };
+  S.sortPool = [];
+  for (let i = 0; i < SHAPES.length; i++) {
+    S.sortPool.push(randomVariant(i));
+  }
+  shuffle(S.sortPool);
+}
+
+function renderExplore(ws, sp) {
+  if (!S.galleryVariants.length) initExplore();
+  let h = '';
+
+  // Story banner
+  if (window.VinculumStories) {
+    const toolName = window.location.pathname.split('/').pop().replace('.html','');
+    const storyData = VinculumStories.getStory(toolName, { n: SHAPES.length });
+    if (storyData && storyData.story) {
+      if (window.Vinculum3Reads) {
+        h += Vinculum3Reads.getBannerHTML(storyData);
+      } else {
+        h += '<div id="storyBanner" style="background:var(--card2,#1a1f2e);border:1px solid var(--border);border-radius:12px;padding:16px 20px;margin-bottom:16px;font-size:15px;line-height:1.6;color:var(--text);position:relative;"><span style="font-size:12px;color:var(--cyan);font-weight:700;text-transform:uppercase;letter-spacing:1px;">📖 Story</span><br>' + storyData.story + '<br><em style="color:var(--yellow);font-weight:600;">' + storyData.question + '</em><button onclick="toggleReadAloud()" style="position:absolute;top:12px;right:12px;background:none;border:1px solid var(--border);border-radius:8px;padding:4px 10px;color:var(--cyan);cursor:pointer;font-size:14px;" title="Read story aloud">🔊</button></div>';
+      }
+    }
+  }
+
+  if (S.diff === 'emergent') {
+    // Sort shapes into bins by a defining attribute
+    h += `<div class="instruction-box highlight-cyan">Sort each shape: ${S.sortRule.label}?</div>`;
+
+    // Shapes to place
+    const remaining = S.sortPool.filter((v, i) => {
+      return !S.sortBins.yes.includes(i) && !S.sortBins.no.includes(i);
+    });
+
+    if (remaining.length > 0) {
+      h += '<div style="display:flex;flex-wrap:wrap;gap:10px;justify-content:center;margin:8px 0;">';
+      S.sortPool.forEach((v, i) => {
+        const placed = S.sortBins.yes.includes(i) || S.sortBins.no.includes(i);
+        h += `<div class="drag-shape ${placed ? 'placed' : ''}" data-idx="${i}" onclick="${placed ? '' : 'selectForSort(' + i + ')'}">${shapeSVG(v.shape, v.color, v.size, v.rotation, 56, 56)}</div>`;
+      });
+      h += '</div>';
+    }
+
+    // Sort bins
+    h += '<div class="sort-bins">';
+
+    // Yes bin
+    h += '<div class="sort-bin" id="binYes" onclick="placeToBin(\'yes\')">';
+    h += `<div class="bin-title">Yes</div>`;
+    h += '<div class="bin-shapes">';
+    S.sortBins.yes.forEach(i => {
+      const v = S.sortPool[i];
+      h += `<div class="bin-shape">${shapeSVG(v.shape, v.color, v.size * 0.6, 0, 40, 40)}</div>`;
+    });
+    h += '</div></div>';
+
+    // No bin
+    h += '<div class="sort-bin" id="binNo" onclick="placeToBin(\'no\')">';
+    h += `<div class="bin-title">No</div>`;
+    h += '<div class="bin-shapes">';
+    S.sortBins.no.forEach(i => {
+      const v = S.sortPool[i];
+      h += `<div class="bin-shape">${shapeSVG(v.shape, v.color, v.size * 0.6, 0, 40, 40)}</div>`;
+    });
+    h += '</div></div>';
+
+    h += '</div>';
+
+    // Check / reset
+    h += '<div class="controls" style="margin-top:12px;">';
+    const allPlaced = S.sortBins.yes.length + S.sortBins.no.length === S.sortPool.length;
+    if (allPlaced) {
+      h += `<button class="ctrl-btn primary" onclick="checkSort()">Check My Sort</button>`;
+    }
+    h += `<button class="ctrl-btn" onclick="resetSort()">↺ New Sort</button>`;
+    h += '</div>';
+
+  } else {
+    // Proficient/Advanced: Shape gallery with attribute labels
+    h += `<div class="instruction-box">Tap a shape to see its defining attributes. Same shape, different look!</div>`;
+
+    // Attribute label toggle
+    h += `<div class="toggle-wrap" style="margin:4px 0;">
+      <span>Show Attribute Labels</span>
+      <div class="toggle-switch ${S.showLabels ? 'on' : ''}" onclick="S.showLabels=!S.showLabels;render();"></div>
+    </div>`;
+
+    h += '<div class="shape-gallery">';
+    S.galleryVariants.forEach((v, i) => {
+      const isSelected = S.selectedShape === i;
+      h += `<div class="shape-card ${isSelected ? 'selected' : ''}" onclick="S.selectedShape=${i};render();">`;
+      h += shapeSVG(v.shape, v.color, v.size, v.rotation, 70, 70);
+      h += `<div class="shape-label">${v.shape.name}</div>`;
+      if (S.showLabels) {
+        h += '<div class="attribute-labels">';
+        h += `<span class="attr-tag">${v.shape.sides} sides</span>`;
+        h += `<span class="attr-tag">${v.shape.corners} corners</span>`;
+        h += `<span class="attr-tag">closed</span>`;
+        h += '</div>';
+      }
+      h += '</div>';
+    });
+    h += '</div>';
+
+    // Selected shape detail
+    if (S.galleryVariants.length > 0) {
+      const sel = S.galleryVariants[S.selectedShape];
+      h += `<div style="margin-top:12px;text-align:center;max-width:500px;">`;
+      h += `<div style="font-size:20px;font-weight:800;color:var(--purple);margin-bottom:4px;">${sel.shape.name.charAt(0).toUpperCase() + sel.shape.name.slice(1)}</div>`;
+      h += `<div style="font-size:13px;color:var(--text2);line-height:1.6;">`;
+      h += `<strong style="color:var(--cyan);">Defining:</strong> ${sel.shape.sides} sides, ${sel.shape.corners} corners, ${sel.shape.closed ? 'closed shape' : 'open shape'}<br>`;
+      h += `<strong style="color:var(--pink);">Non-defining:</strong> color is <span style="color:${sel.color};">${sel.color}</span>, size is ${sel.size < 1 ? 'small' : sel.size > 1 ? 'large' : 'medium'}, rotation is ${sel.rotation}°`;
+      h += '</div></div>';
+    }
+
+    h += '<div class="controls" style="margin-top:8px;">';
+    h += `<button class="ctrl-btn primary" onclick="initExplore();render();">↺ New Shapes</button>`;
+    h += '</div>';
+  }
+
+  ws.innerHTML = h;
+
+  // Side panel
+  let sp_h = `<div class="panel-section"><div class="panel-title">Defining Attributes</div>
+    <div class="panel-text">
+      <strong style="color:var(--cyan);">Defining</strong> attributes tell us what kind of shape it is:<br>
+      <strong>&#8226;</strong> Number of <strong>sides</strong><br>
+      <strong>&#8226;</strong> Number of <strong>corners</strong><br>
+      <strong>&#8226;</strong> Whether it is <strong>closed</strong>
+    </div></div>`;
+
+  sp_h += `<div class="panel-section"><div class="panel-title">Non-Defining Attributes</div>
+    <div class="panel-text">
+      <strong style="color:var(--pink);">Non-defining</strong> attributes do NOT change the shape name:<br>
+      <strong>&#8226;</strong> <strong>Color</strong> — a red triangle is still a triangle<br>
+      <strong>&#8226;</strong> <strong>Size</strong> — big or small, it's the same shape<br>
+      <strong>&#8226;</strong> <strong>Orientation</strong> — rotating doesn't change it
+    </div></div>`;
+
+  sp_h += `<div class="panel-section"><div class="panel-title">Shape Reference</div>`;
+  sp_h += '<div style="display:flex;flex-direction:column;gap:4px;">';
+  SHAPES.forEach(sh => {
+    sp_h += `<div class="shape-info-card" style="padding:8px 10px;display:flex;align-items:center;gap:10px;">
+      ${shapeSVG(sh, '#b388ff', 0.7, 0, 36, 36)}
+      <div><div style="font-size:12px;font-weight:700;color:var(--text);text-transform:capitalize;">${sh.name}</div>
+      <div style="font-size:10px;color:var(--muted);">${sh.sides} sides, ${sh.corners} corners</div></div>
+    </div>`;
+  });
+  sp_h += '</div></div>';
+
+  sp.innerHTML = sp_h;
+}
+
+/* ── Sort interaction ── */
+let _selectedSortIdx = -1;
+
+function selectForSort(idx) {
+  _selectedSortIdx = idx;
+  // Highlight the selected shape
+  document.querySelectorAll('.drag-shape').forEach(el => el.style.borderColor = '');
+  const el = document.querySelector(`.drag-shape[data-idx="${idx}"]`);
+  if (el) el.style.borderColor = 'var(--yellow)';
+  // Highlight bins
+  document.querySelectorAll('.sort-bin').forEach(b => b.classList.add('active'));
+}
+
+function placeToBin(bin) {
+  if (_selectedSortIdx < 0) return;
+  S.sortBins[bin].push(_selectedSortIdx);
+  _selectedSortIdx = -1;
+  render();
+}
+
+function checkSort() {
+  let correct = 0, total = S.sortPool.length;
+  S.sortBins.yes.forEach(i => {
+    if (S.sortRule.test(S.sortPool[i].shape)) correct++;
+  });
+  S.sortBins.no.forEach(i => {
+    if (!S.sortRule.test(S.sortPool[i].shape)) correct++;
+  });
+
+  if (correct === total) {
+    showFB('Perfect sort!', 'correct');
+    setTimeout(() => { resetSort(); render(); }, 2000);
+  } else {
+    const wrong = total - correct;
+    showFB(`${wrong} shape${wrong > 1 ? 's' : ''} in the wrong bin. Try again!`, 'try-again');
+    // Reset bins
+    S.sortBins = { yes: [], no: [] };
+    render();
+  }
+}
+
+function resetSort() {
+  initExplore();
+  render();
+}
+
+/* ═══════════════════════════════════════════
+   PRACTICE MODE
+   ═══════════════════════════════════════════ */
+
+function newPractice() {
+  S.pMultiSelected = [];
+
+  if (S.diff === 'emergent') {
+    // "Is [attribute] a defining attribute?" yes/no
+    const nonDef = ['color','size','orientation'];
+    const def = ['number of sides','number of corners','being closed'];
+    const all = nonDef.map(a => ({ attr: a, defining: false })).concat(def.map(a => ({ attr: a, defining: true })));
+    const pick = all[rand(0, all.length - 1)];
+    S.pQuestion = `Is "${pick.attr}" a defining attribute of shapes?`;
+    S.pChoices = ['Yes', 'No'];
+    S.pAnswer = pick.defining ? 'Yes' : 'No';
+    S.pMultiAnswer = [];
+
+  } else if (S.diff === 'proficient') {
+    // "How many sides does a [shape] have?" MC
+    const si = rand(0, SHAPES.length - 1);
+    const sh = SHAPES[si];
+    S.pQuestion = `How many sides does a ${sh.name} have?`;
+    S.pAnswer = String(sh.sides);
+    const choices = new Set([String(sh.sides)]);
+    // Off-by-one and other plausible distractors
+    if (sh.sides > 0) choices.add(String(sh.sides - 1));
+    choices.add(String(sh.sides + 1));
+    choices.add(String(sh.sides + 2));
+    while (choices.size < 4) choices.add(String(rand(0, 8)));
+    S.pChoices = shuffle(Array.from(choices));
+    S.pMultiAnswer = [];
+    S._practiceShape = sh;
+
+  } else {
+    // "Which shapes have 4 corners?" multi-select
+    const cornerCounts = [0, 3, 4, 6];
+    const target = cornerCounts[rand(0, cornerCounts.length - 1)];
+    S.pQuestion = `Which shapes have exactly ${target} corners? (Tap all that match, then Submit)`;
+    S.pChoices = SHAPES.map(sh => sh.name);
+    S.pMultiAnswer = SHAPES.filter(sh => sh.corners === target).map(sh => sh.name);
+    S.pAnswer = null;
+    S.pMultiSelected = [];
+    S._practiceTarget = target;
+  }
+}
+
+function renderPractice(ws, sp) {
+  if (!S.pQuestion) newPractice();
+
+  let h = '';
+  h += `<div class="instruction-box highlight-green">${S.pQuestion}</div>`;
+
+  if (S.diff === 'advanced') {
+    // Show shape gallery for reference
+    h += '<div class="shape-gallery" style="margin:12px 0;">';
+    SHAPES.forEach(sh => {
+      const v = randomVariant(SHAPES.indexOf(sh));
+      const selected = S.pMultiSelected.includes(sh.name);
+      h += `<div class="shape-card ${selected ? 'selected' : ''}" style="width:100px;height:110px;" onclick="toggleMultiSelect('${sh.name}')">`;
+      h += shapeSVG(sh, v.color, 0.9, 0, 60, 60);
+      h += `<div class="shape-label">${sh.name}</div>`;
+      h += '</div>';
+    });
+    h += '</div>';
+
+    h += '<div class="controls">';
+    h += `<button class="ctrl-btn primary" onclick="checkPracticeMulti()">Submit</button>`;
+    h += `<button class="ctrl-btn" onclick="newPractice();render();">Skip</button>`;
+    h += '</div>';
+
+  } else {
+    // Show a shape visual for proficient
+    if (S.diff === 'proficient' && S._practiceShape) {
+      const v = randomVariant(SHAPES.indexOf(S._practiceShape));
+      h += `<div style="margin:12px 0;">${shapeSVG(S._practiceShape, v.color, 1.5, v.rotation, 120, 120)}</div>`;
+    }
+
+    h += '<div class="mc-grid">';
+    S.pChoices.forEach((c, i) => {
+      h += `<button class="mc-btn" id="pmc${i}" onclick="checkPractice('${c}', ${i})">${c}</button>`;
+    });
+    h += '</div>';
+
+    h += '<div class="controls" style="margin-top:8px;">';
+    h += `<button class="ctrl-btn" onclick="newPractice();render();">Skip</button>`;
+    h += '</div>';
+  }
+
+  ws.innerHTML = h;
+
+  // Side panel
+  let sp_h = `<div class="panel-section"><div class="panel-title">Steps</div>
+    <div class="panel-text" style="background:var(--card);padding:12px;border-radius:8px;">
+      <div style="margin-bottom:8px;">
+        <strong style="color:var(--purple);">① Read</strong><br>
+        <span style="font-size:12px;">Read the question carefully</span>
+      </div>
+      <div style="margin-bottom:8px;">
+        <strong style="color:var(--cyan);">② Think</strong><br>
+        <span style="font-size:12px;">Defining = sides, corners, closed<br>Non-defining = color, size, rotation</span>
+      </div>
+      <div>
+        <strong style="color:var(--green);">③ Tap</strong><br>
+        <span style="font-size:12px;">Pick your answer</span>
+      </div>
+    </div></div>`;
+
+  sp_h += `<div class="panel-section"><div class="panel-title">Remember</div>
+    <div class="panel-text">Changing <strong style="color:var(--pink);">color</strong>, <strong style="color:var(--pink);">size</strong>, or <strong style="color:var(--pink);">orientation</strong> does NOT change what a shape is. Only <strong style="color:var(--cyan);">sides</strong>, <strong style="color:var(--cyan);">corners</strong>, and <strong style="color:var(--cyan);">being closed</strong> matter!</div></div>`;
+
+  sp.innerHTML = sp_h;
+}
+
+function checkPractice(clicked, idx) {
+  const btn = document.getElementById('pmc' + idx);
+  if (clicked === S.pAnswer) {
+    btn.classList.add('correct-flash');
+    showFB('Correct!', 'correct');
+    setTimeout(() => { newPractice(); render(); }, 1500);
+  } else {
+    btn.classList.add('incorrect-flash');
+
+    // Misconception feedback
+    let msg;
+    if (S.diff === 'emergent') {
+      // Non-defining attribute confusion
+      const attr = S.pQuestion.match(/"([^"]+)"/);
+      msg = MISCONCEPTIONS.nonDefining.msg(attr ? attr[1] : 'that');
+    } else if (S.diff === 'proficient') {
+      const sh = S._practiceShape;
+      const got = parseInt(clicked);
+      if (!isNaN(got) && Math.abs(got - sh.sides) === 1) {
+        msg = MISCONCEPTIONS.offByOne.msg(sh.name, 'sides', sh.sides, got);
+      } else {
+        msg = MISCONCEPTIONS.randomGuess.msg();
+      }
+    } else {
+      msg = MISCONCEPTIONS.randomGuess.msg();
+    }
+    showFB(msg, 'try-again');
+    setTimeout(() => { btn.classList.remove('incorrect-flash'); }, 400);
+  }
+}
+
+function toggleMultiSelect(name) {
+  const idx = S.pMultiSelected.indexOf(name);
+  if (idx >= 0) {
+    S.pMultiSelected.splice(idx, 1);
+  } else {
+    S.pMultiSelected.push(name);
+  }
+  render();
+}
+
+function checkPracticeMulti() {
+  const selected = S.pMultiSelected.sort();
+  const correct = S.pMultiAnswer.sort();
+
+  if (selected.length === correct.length && selected.every((v, i) => v === correct[i])) {
+    showFB('Perfect! You found all the right shapes!', 'correct');
+    setTimeout(() => { newPractice(); render(); }, 1800);
+  } else {
+    // Find what's wrong
+    const missed = correct.filter(n => !selected.includes(n));
+    const extra = selected.filter(n => !correct.includes(n));
+
+    let msg;
+    if (extra.length > 0) {
+      const sh = SHAPES.find(s => s.name === extra[0]);
+      msg = `A ${extra[0]} has ${sh.corners} corners, not ${S._practiceTarget}. That one doesn't belong!`;
+    } else if (missed.length > 0) {
+      msg = `You missed ${missed[0]}! It has ${S._practiceTarget} corners too.`;
+    } else {
+      msg = MISCONCEPTIONS.randomGuess.msg();
+    }
+    showFB(msg, 'try-again');
+    S.pMultiSelected = [];
+    render();
+  }
+}
+
+/* ═══════════════════════════════════════════
+   PLAY MODE — 10 rounds, MC, score + streak
+   ═══════════════════════════════════════════ */
+
+function startGame() {
+  S.round = 1;
+  S.score = 0;
+  S.streak = 0;
+  newPlayRound();
+}
+
+function newPlayRound() {
+  const questionTypes = [];
+
+  if (S.diff === 'emergent') {
+    questionTypes.push('sort-yn');
+  } else if (S.diff === 'proficient') {
+    questionTypes.push('count-sides', 'count-corners', 'defining-yn');
+  } else {
+    questionTypes.push('count-sides', 'count-corners', 'defining-yn', 'which-shapes');
+  }
+
+  const qType = questionTypes[rand(0, questionTypes.length - 1)];
+  const si = rand(0, SHAPES.length - 1);
+  const sh = SHAPES[si];
+
+  switch (qType) {
+    case 'sort-yn': {
+      const nonDef = ['color','size','orientation'];
+      const def = ['number of sides','number of corners','being closed'];
+      const all = nonDef.map(a => ({ attr: a, defining: false })).concat(def.map(a => ({ attr: a, defining: true })));
+      const pick = all[rand(0, all.length - 1)];
+      S.playQuestion = `Is "${pick.attr}" a defining attribute?`;
+      S.playChoices = ['Yes', 'No'];
+      S.playAnswer = pick.defining ? 'Yes' : 'No';
+      S._playAttr = pick.attr;
+      S._playShape = null;
+      break;
+    }
+    case 'count-sides': {
+      S.playQuestion = `How many sides does a ${sh.name} have?`;
+      S.playAnswer = String(sh.sides);
+      const choices = new Set([String(sh.sides)]);
+      if (sh.sides > 0) choices.add(String(sh.sides - 1));
+      choices.add(String(sh.sides + 1));
+      choices.add(String(sh.sides + 2));
+      while (choices.size < 4) choices.add(String(rand(0, 8)));
+      S.playChoices = shuffle(Array.from(choices));
+      S._playShape = sh;
+      S._playAttr = null;
+      break;
+    }
+    case 'count-corners': {
+      S.playQuestion = `How many corners does a ${sh.name} have?`;
+      S.playAnswer = String(sh.corners);
+      const choices = new Set([String(sh.corners)]);
+      if (sh.corners > 0) choices.add(String(sh.corners - 1));
+      choices.add(String(sh.corners + 1));
+      choices.add(String(sh.corners + 2));
+      while (choices.size < 4) choices.add(String(rand(0, 8)));
+      S.playChoices = shuffle(Array.from(choices));
+      S._playShape = sh;
+      S._playAttr = null;
+      break;
+    }
+    case 'defining-yn': {
+      const nonDef = ['color','size','orientation'];
+      const def = ['number of sides','number of corners','being closed'];
+      const all = nonDef.map(a => ({ attr: a, defining: false })).concat(def.map(a => ({ attr: a, defining: true })));
+      const pick = all[rand(0, all.length - 1)];
+      S.playQuestion = `Is "${pick.attr}" a defining attribute?`;
+      S.playChoices = ['Yes', 'No'];
+      S.playAnswer = pick.defining ? 'Yes' : 'No';
+      S._playAttr = pick.attr;
+      S._playShape = null;
+      break;
+    }
+    case 'which-shapes': {
+      const targets = [3, 4, 6, 0];
+      const target = targets[rand(0, targets.length - 1)];
+      const matching = SHAPES.filter(s => s.sides === target);
+      if (matching.length > 0) {
+        const correctShape = matching[rand(0, matching.length - 1)];
+        S.playQuestion = `Which shape has ${target} sides?`;
+        S.playAnswer = correctShape.name;
+        const choices = new Set([correctShape.name]);
+        while (choices.size < 4) {
+          choices.add(SHAPES[rand(0, SHAPES.length - 1)].name);
+        }
+        S.playChoices = shuffle(Array.from(choices));
+      } else {
+        // Fallback
+        S.playQuestion = `How many sides does a ${sh.name} have?`;
+        S.playAnswer = String(sh.sides);
+        S.playChoices = shuffle([String(sh.sides), String(sh.sides + 1), String(sh.sides - 1), String(sh.sides + 2)].filter(c => parseInt(c) >= 0));
+      }
+      S._playShape = null;
+      S._playAttr = null;
+      break;
+    }
+  }
+}
+
+function renderPlay(ws, sp) {
+  if (S.round === 0) startGame();
+
+  let h = '';
+  h += `<div style="font-size:13px;color:var(--muted);margin-bottom:8px;">Round ${S.round} of ${S.total}</div>`;
+
+  h += `<div class="instruction-box">${S.playQuestion}</div>`;
+
+  // Show shape visual if relevant
+  if (S._playShape) {
+    const v = randomVariant(SHAPES.indexOf(S._playShape));
+    h += `<div style="margin:16px 0;">${shapeSVG(S._playShape, v.color, 1.8, v.rotation, 140, 140)}</div>`;
+  }
+
+  h += '<div class="mc-grid">';
+  S.playChoices.forEach((c, i) => {
+    const label = c.charAt(0).toUpperCase() + c.slice(1);
+    h += `<button class="mc-btn" id="play${i}" onclick="playPick('${c}', ${i})">${label}</button>`;
+  });
+  h += '</div>';
+
+  ws.innerHTML = h;
+
+  // Side panel with score
+  sp.innerHTML = `
+    <div class="score-display"><div class="score-value">${S.score}</div><div class="score-label">Score</div></div>
+    <div class="score-display" style="background:transparent;padding:8px;">
+      <div style="font-size:18px;font-weight:700;color:var(--yellow);"><svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor" style="vertical-align:-2px;"><path d="M12 23c-4.97 0-8-3.58-8-7.5 0-3.07 2.17-5.84 4.5-7.5-.28 2.5 1.5 4.5 1.5 4.5s2-2.5 2-5.5c0-1.5-.5-3-1-4 3 1.5 5 4 5 7 0 .5-.08 1-.08 1s1.08-1.18 1.58-2.5C19.78 11.72 20 14.5 20 15.5c0 3.92-3.03 7.5-8 7.5z"/></svg> ${S.streak}</div>
+      <div class="score-label">Streak</div>
+      <div class="streak-bar"><div class="streak-fill" style="width:${Math.min(S.streak * 20, 100)}%;"></div></div>
+    </div>
+    <div class="panel-section"><div class="panel-title">Best Streak</div>
+    <div class="panel-text" style="font-size:24px;font-weight:800;color:var(--purple);"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="vertical-align:-2px;"><path d="M6 4h12v2a6 6 0 01-12 0V4z" fill="currentColor" opacity="0.2"/><path d="M6 4h12v2a6 6 0 01-12 0V4z"/><path d="M6 6H3v2a3 3 0 003 3"/><path d="M18 6h3v2a3 3 0 01-3 3"/><line x1="12" y1="14" x2="12" y2="18"/><line x1="8" y1="18" x2="16" y2="18" stroke-linecap="round"/></svg> ${S.best}</div></div>
+    <div class="panel-section"><div class="panel-title">Tip</div>
+    <div class="panel-text">Defining attributes: <strong>sides</strong>, <strong>corners</strong>, <strong>closed</strong>.<br>Non-defining: color, size, orientation.<br>Count carefully!</div></div>`;
+}
+
+function playPick(clicked, idx) {
+  const btn = document.getElementById('play' + idx);
+
+  if (clicked === S.playAnswer) {
+    btn.classList.add('correct-flash');
+    S.score += 10 + S.streak * 2;
+    S.streak++;
+    if (S.streak > S.best) S.best = S.streak;
+    showFB('Correct!', 'correct');
+  } else {
+    btn.classList.add('incorrect-flash');
+    S.streak = 0;
+
+    let msg;
+    // Targeted misconception feedback
+    if (S._playAttr) {
+      msg = MISCONCEPTIONS.nonDefining.msg(S._playAttr);
+    } else if (S._playShape) {
+      const got = parseInt(clicked);
+      const q = S.playQuestion;
+      if (q.includes('sides') && !isNaN(got) && Math.abs(got - S._playShape.sides) === 1) {
+        msg = MISCONCEPTIONS.offByOne.msg(S._playShape.name, 'sides', S._playShape.sides, got);
+      } else if (q.includes('corners') && !isNaN(got) && Math.abs(got - S._playShape.corners) === 1) {
+        msg = MISCONCEPTIONS.offByOne.msg(S._playShape.name, 'corners', S._playShape.corners, got);
+      } else {
+        msg = MISCONCEPTIONS.randomGuess.msg();
+      }
+    } else {
+      msg = MISCONCEPTIONS.randomGuess.msg();
+    }
+
+    showFB(msg, 'incorrect');
+  }
+
+  setTimeout(() => {
+    if (S.round >= S.total) {
+      showFB(`Game Over! Score: ${S.score}`, 'correct');
+      setTimeout(() => { S.round = 0; render(); }, 2000);
+      return;
+    }
+    S.round++;
+    newPlayRound();
+    render();
+  }, 1200);
+}
+
+/* ── Init ── */
+initExplore();
+render();
+</script>
+<script src="../../vinculum-core.js"></script>
+<script src="../../vinculum-data.js"></script>
+<script src="../../vinculum-adaptive-hook.js"></script>
+<script src="../../vinculum-3reads.js"></script>
+<script src="../../vinculum-stories.js"></script>
+<script src="../../vinculum-feedback.js"></script>
+<script src="../../vinculum-guide.js"></script>
+<script src="../../vinculum-identity.js"></script>
+<script src="../../vinculum-indigenous.js"></script>
+<script src="../../vinculum-dashboard.js"></script>
+<script src="../../vinculum-hyperfocus.js"></script>
+<script src="../../vinculum-layout.js"></script>
+</body>
+</html>

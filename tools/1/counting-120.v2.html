@@ -1,0 +1,1396 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>VINCULUM — Counting to 120</title>
+<link rel="stylesheet" href="../../vinculum-core.css">
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;600&display=swap');
+
+/* Theme system loaded from vinculum-core.css */
+.vinculum-rtm-btn .rtm-icon{font-size:14px;}
+
+/* ═══ FOCUS VISIBLE (Keyboard Navigation) ═══ */
+*:focus-visible {
+  outline:2px solid var(--cyan);outline-offset:2px;border-radius:4px;
+}
+.sr-only {
+  position:absolute;width:1px;height:1px;padding:0;margin:-1px;
+  overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0;
+}
+
+* { margin:0; padding:0; box-sizing:border-box; }
+body {
+  font-family: 'Inter', sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  height: 100vh;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  user-select: none;
+}
+
+/* ── MAIN AREA ── */
+.main {
+  flex: 1;
+  display: flex;
+  overflow: hidden;
+}
+
+/* ── WORKSPACE ── */
+.workspace {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: flex-start;
+  padding: 20px 24px;
+  position: relative;
+  overflow-y: auto;
+}
+
+/* ── 120 CHART ── */
+.chart-120 {
+  display: grid;
+  grid-template-columns: repeat(10, 1fr);
+  gap: 3px;
+  width: 100%;
+  max-width: 440px;
+  margin: 8px auto;
+}
+.chart-cell {
+  width: 100%;
+  aspect-ratio: 1;
+  min-width: 0;
+  max-width: 42px;
+  border-radius: 6px;
+  border: 1.5px solid var(--border);
+  background: var(--card);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 12px;
+  font-weight: 600;
+  font-family: 'JetBrains Mono', monospace;
+  color: var(--text2);
+  cursor: pointer;
+  transition: all 0.15s;
+  -webkit-tap-highlight-color: transparent;
+}
+.chart-cell:hover {
+  border-color: var(--cyan);
+  background: rgba(0,212,255,0.05);
+  transform: scale(1.08);
+  z-index: 2;
+}
+.chart-cell.highlighted {
+  background: rgba(0,212,255,0.15);
+  border-color: var(--cyan);
+  color: var(--cyan);
+  font-weight: 800;
+  box-shadow: 0 0 8px rgba(0,212,255,0.2);
+}
+.chart-cell.current {
+  background: var(--grad);
+  color: var(--bg);
+  border-color: transparent;
+  font-weight: 900;
+  box-shadow: 0 0 12px rgba(0,212,255,0.4);
+  transform: scale(1.1);
+  z-index: 3;
+}
+.chart-cell.decade {
+  background: rgba(255,193,7,0.12);
+  border-color: var(--yellow);
+  color: var(--yellow);
+  font-weight: 700;
+}
+.chart-cell.row-highlight {
+  background: rgba(0,230,118,0.12);
+  border-color: var(--green);
+  color: var(--green);
+  font-weight: 700;
+}
+.chart-cell.col-highlight {
+  background: rgba(179,136,255,0.12);
+  border-color: var(--purple);
+  color: var(--purple);
+  font-weight: 700;
+}
+.chart-cell.fives {
+  background: rgba(255,59,139,0.12);
+  border-color: var(--pink);
+  color: var(--pink);
+  font-weight: 700;
+}
+.chart-cell.hidden-cell {
+  color: transparent;
+  border-style: dashed;
+}
+.chart-cell.target-cell {
+  border-color: var(--cyan);
+  background: rgba(0,212,255,0.08);
+  color: var(--cyan);
+  font-weight: 900;
+  animation: pulse-border 1.5s infinite;
+}
+
+/* ── CONTROLS ── */
+.controls {
+  display: flex;
+  gap: 8px;
+  margin-top: 12px;
+  flex-wrap: wrap;
+  justify-content: center;
+}
+.ctrl-btn {
+  padding: 10px 18px;
+  border-radius: 10px;
+  border: 1px solid var(--border);
+  background: var(--card);
+  color: var(--text2);
+  font-size: 13px;
+  font-weight: 600;
+  font-family: inherit;
+  cursor: pointer;
+  transition: all 0.2s;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  -webkit-tap-highlight-color: transparent;
+}
+.ctrl-btn:hover { background: var(--card-hover); color: var(--text); }
+.ctrl-btn.primary {
+  background: var(--grad);
+  color: var(--bg);
+  border-color: transparent;
+}
+.ctrl-btn.primary:hover { opacity: 0.9; }
+.ctrl-btn.active-ctrl {
+  border-color: var(--cyan);
+  background: rgba(0,212,255,0.1);
+  color: var(--cyan);
+}
+.ctrl-btn.danger { color: var(--pink); }
+.ctrl-btn.danger:hover { background: rgba(255,59,139,0.1); }
+
+/* ── SEQUENCE DISPLAY (Practice/Play) ── */
+.sequence-display {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  justify-content: center;
+  flex-wrap: wrap;
+  margin: 16px 0;
+  max-width: 500px;
+}
+.seq-card {
+  width: 52px;
+  height: 52px;
+  border-radius: 12px;
+  border: 2px solid var(--border);
+  background: var(--card);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 20px;
+  font-weight: 700;
+  font-family: 'JetBrains Mono', monospace;
+  color: var(--text);
+  transition: all 0.2s;
+}
+.seq-card.missing {
+  border-color: var(--cyan);
+  background: rgba(0,212,255,0.08);
+  color: var(--cyan);
+  font-size: 24px;
+  font-weight: 900;
+  animation: pulse-border 1.5s infinite;
+}
+.seq-card.arrow {
+  width: 24px;
+  border: none;
+  background: transparent;
+  color: var(--muted);
+  font-size: 16px;
+}
+
+@keyframes pulse-border {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(0,212,255,0.3); }
+  50% { box-shadow: 0 0 0 4px rgba(0,212,255,0.15); }
+}
+
+/* ── MC GRID ── */
+.mc-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 8px;
+  margin-top: 16px;
+  max-width: 320px;
+}
+.mc-grid.five-col {
+  grid-template-columns: repeat(5, 1fr);
+  max-width: 380px;
+}
+.mc-btn {
+  padding: 14px;
+  border-radius: 12px;
+  border: 2px solid var(--border);
+  background: var(--card);
+  color: var(--text);
+  font-size: 18px;
+  font-weight: 700;
+  font-family: 'JetBrains Mono', monospace;
+  cursor: pointer;
+  transition: all 0.15s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  -webkit-tap-highlight-color: transparent;
+}
+.mc-btn:hover {
+  border-color: var(--cyan);
+  background: rgba(0,212,255,0.05);
+  transform: scale(1.05);
+}
+.mc-btn.correct-flash {
+  border-color: var(--green);
+  background: rgba(0,230,118,0.15);
+  color: var(--green);
+  animation: correctFlash 0.4s ease-out;
+}
+.mc-btn.incorrect-flash {
+  border-color: var(--pink);
+  background: rgba(255,59,139,0.15);
+  color: var(--pink);
+  animation: shake 0.3s ease-in-out;
+}
+
+/* ── PATTERN EXPLANATION ── */
+.pattern-card {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 12px 14px;
+  margin-bottom: 10px;
+  font-size: 13px;
+  color: var(--text2);
+  line-height: 1.6;
+}
+.pattern-card strong { color: var(--text); }
+.pattern-card .pattern-label {
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 1.2px;
+  color: var(--cyan);
+  margin-bottom: 4px;
+  display: block;
+}
+
+/* ── FEEDBACK ── */
+.feedback {
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%) scale(0);
+  padding: 24px 48px;
+  border-radius: 20px;
+  font-size: 22px;
+  font-weight: 800;
+  z-index: 200;
+  pointer-events: none;
+  transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275), opacity 0.3s;
+  opacity: 0;
+  max-width: 90vw;
+  text-align: center;
+  line-height: 1.4;
+}
+.feedback.show {
+  transform: translate(-50%, -50%) scale(1);
+  opacity: 1;
+}
+.feedback.correct {
+  background: rgba(0,230,118,0.15);
+  color: var(--green);
+  border: 2px solid var(--green);
+}
+.feedback.incorrect {
+  background: rgba(255,59,139,0.15);
+  color: var(--pink);
+  border: 2px solid var(--pink);
+}
+.feedback.try-again {
+  background: rgba(255,193,7,0.15);
+  color: var(--yellow);
+  border: 2px solid var(--yellow);
+}
+
+/* ── SIDE PANEL ── */
+.side-panel {
+  width: 280px;
+  background: var(--bg2);
+  border-left: 1px solid var(--border);
+  padding: 20px;
+  overflow-y: auto;
+  flex-shrink: 0;
+}
+.panel-section {
+  margin-bottom: 20px;
+}
+.panel-title {
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 1.5px;
+  color: var(--muted);
+  margin-bottom: 8px;
+}
+.panel-text {
+  font-size: 13px;
+  color: var(--text2);
+  line-height: 1.6;
+}
+.score-display {
+  text-align: center;
+  padding: 16px;
+  background: var(--card);
+  border-radius: 12px;
+  margin-bottom: 12px;
+}
+.score-value {
+  font-size: 36px;
+  font-weight: 900;
+  font-family: 'JetBrains Mono', monospace;
+  background: var(--grad);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+.score-label {
+  font-size: 11px;
+  color: var(--muted);
+  text-transform: uppercase;
+  letter-spacing: 1px;
+}
+.streak-bar {
+  height: 6px;
+  background: var(--card);
+  border-radius: 3px;
+  overflow: hidden;
+  margin-top: 8px;
+}
+.streak-fill {
+  height: 100%;
+  background: var(--grad);
+  border-radius: 3px;
+  transition: width 0.3s;
+}
+
+/* ── PROMPT LABEL ── */
+.prompt-label {
+  font-size: 18px;
+  font-weight: 700;
+  color: var(--text);
+  text-align: center;
+  margin-bottom: 12px;
+}
+.prompt-sublabel {
+  font-size: 14px;
+  color: var(--text2);
+  text-align: center;
+  margin-bottom: 8px;
+}
+.round-indicator {
+  font-size: 13px;
+  color: var(--muted);
+  text-align: center;
+  margin-bottom: 8px;
+}
+
+/* ── ANIMATIONS ── */
+@keyframes correctFlash {
+  0% { transform: scale(1.1); }
+  100% { transform: scale(1); }
+}
+@keyframes shake {
+  0%, 100% { transform: translateX(0); }
+  25% { transform: translateX(-8px); }
+  75% { transform: translateX(8px); }
+}
+@keyframes countAnim {
+  0% { background: rgba(0,212,255,0.3); transform: scale(1.15); }
+  100% { background: rgba(0,212,255,0.15); transform: scale(1); }
+}
+@keyframes pop {
+  0% { transform: scale(0); }
+  70% { transform: scale(1.2); }
+  100% { transform: scale(1); }
+}
+.pop-in { animation: pop 0.3s ease-out forwards; }
+.count-anim { animation: countAnim 0.4s ease-out; }
+
+/* scrollbar */
+::-webkit-scrollbar { width: 6px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+</style>
+</head>
+<body>
+
+<!-- ═══ HEADER ═══ -->
+<div class="vinculum-header">
+  <div class="vinculum-header-left">
+    <a class="vinculum-back-btn" href="../../VINCULUM-Hub.html" style="text-decoration:none;">◀ Hub</a>
+    <div class="vinculum-header-title"><span>VINCULUM</span> Counting to 120</div>
+    <span class="vinculum-header-badge">1.NBT</span>
+  </div>
+  <div class="vinculum-header-right">
+    <div class="vinculum-std-tags">
+      <span class="vinculum-std-tag">1.NBT.1</span>
+      <span class="vinculum-std-tag mn">MN 1.1.1.1</span>
+    </div>
+    <button class="vinculum-back-btn" id="readAloudBtn" onclick="toggleReadAloud()" aria-label="Read Aloud" title="Read instructions aloud" style="margin-left:8px;white-space:nowrap;">🔊 Read to Me</button>
+  </div>
+</div>
+
+<!-- ═══ MODE TABS ═══ -->
+<div class="vinculum-mode-tabs">
+  <button class="vinculum-mode-tab active-explore" id="tabExplore" data-mode="explore">
+    <svg width="18" height="18" viewBox="0 0 48 48" fill="none"><path d="M4 24C4 24 12 12 24 12C36 12 44 24 44 24C44 24 36 36 24 36C12 36 4 24 4 24Z" stroke="currentColor" stroke-width="3" fill="none"/><circle cx="24" cy="24" r="7" stroke="currentColor" stroke-width="3" fill="none"/><circle cx="24" cy="24" r="3" fill="currentColor"/><line x1="24" y1="4" x2="24" y2="9" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" opacity="0.5"/><line x1="10" y1="8" x2="13" y2="12" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" opacity="0.5"/><line x1="38" y1="8" x2="35" y2="12" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" opacity="0.5"/></svg> Explore
+  </button>
+  <button class="vinculum-mode-tab" id="tabPractice" data-mode="practice">
+    <svg width="18" height="18" viewBox="0 0 48 48" fill="none"><circle cx="24" cy="24" r="20" stroke="currentColor" stroke-width="3" fill="none" opacity="0.3"/><circle cx="24" cy="24" r="20" stroke="currentColor" stroke-width="3" fill="none" stroke-dasharray="126" stroke-dashoffset="32" stroke-linecap="round"/><polyline points="16,24 22,32 34,16" stroke="currentColor" stroke-width="4" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg> Practice
+  </button>
+  <button class="vinculum-mode-tab" id="tabPlay" data-mode="play">
+    <svg width="18" height="18" viewBox="0 0 48 48" fill="none"><polygon points="28,4 12,28 22,28 18,44 36,18 26,18" fill="none" stroke="currentColor" stroke-width="3" stroke-linejoin="round"/><polygon points="27,8 15,27 23,27 20,40 34,19 26,19" fill="currentColor" opacity="0.15"/></svg> Play
+  </button>
+  <div class="vinculum-diff-selector">
+    <span class="vinculum-diff-label">Level</span>
+    <button class="vinculum-diff-btn active" id="diffE" data-diff="emergent">Count</button>
+    <button class="vinculum-diff-btn" id="diffP" data-diff="proficient">Patterns</button>
+    <button class="vinculum-diff-btn" id="diffA" data-diff="advanced">Extend</button>
+  </div>
+</div>
+
+<!-- ═══ MAIN ═══ -->
+<div class="main">
+  <div class="workspace" role="main" id="workspace"></div>
+  <div class="side-panel" id="sidePanel"></div>
+</div>
+
+<!-- ═══ FEEDBACK POPUP ═══ -->
+<div class="feedback" id="feedback"></div>
+
+<script src="../../vinculum-input.js"></script>
+<script>
+// ════════════════════════════════════════
+// STATE
+// ════════════════════════════════════════
+let S = {
+  mode: 'explore',
+  diff: 'emergent',
+  highlighted: new Set(),
+  currentNum: 1,
+  countingActive: false,
+  countBy: 1,
+  highlightMode: null, // null | 'row' | 'col' | 'decade' | 'fives'
+  highlightVal: -1,
+  // Practice
+  pSequence: [],
+  pMissingIdx: -1,
+  pAnswer: 0,
+  pChoices: [],
+  pQuestionType: 'missing', // missing | pattern | chart-tap
+  pHiddenCells: [],
+  pTargetCell: 0,
+  // Play
+  score: 0,
+  streak: 0,
+  best: 0,
+  round: 0,
+  total: 10,
+  playAnswer: 0,
+  playChoices: [],
+  playQuestionType: 'next', // next | gap | chart
+  playSequence: [],
+  playGapIdx: -1,
+  playTargetCell: 0
+};
+
+// ════════════════════════════════════════
+// READ-ALOUD
+// ════════════════════════════════════════
+function toggleReadAloud() {
+  if (window.VinculumStories && VinculumStories.isReading()) {
+    VinculumStories.stopReading();
+    document.getElementById('readAloudBtn').textContent = '🔊 Read to Me';
+  } else {
+    var fb = document.getElementById('feedback');
+    var storyEl = document.getElementById('storyBanner');
+    var text = storyEl ? storyEl.textContent : (fb ? fb.textContent : 'Welcome to Counting to 120!');
+    if (window.VinculumStories) {
+      VinculumStories.readAloud(text, { rate: 0.85, onComplete: function() {
+        document.getElementById('readAloudBtn').textContent = '🔊 Read to Me';
+      }});
+      document.getElementById('readAloudBtn').textContent = '⏹ Stop';
+    }
+  }
+}
+
+// ════════════════════════════════════════
+// MISCONCEPTIONS DATABASE (6 types)
+// ════════════════════════════════════════
+const MISCONCEPTIONS = {
+  noPatterns: {
+    id: 'no-patterns',
+    msg: function() { return 'Look at the columns \u2014 all numbers ending in the same digit are in the same column!'; }
+  },
+  decadeBoundary: {
+    id: 'decade',
+    msg: function(n) { return 'After ' + (n - 1) + ' comes ' + n + '. The tens digit goes up by 1 when you cross a tens boundary!'; }
+  },
+  offByOne: {
+    id: 'off-by-one',
+    msg: function(ans, got) { return 'Close! You said ' + got + ' but the answer is ' + ans + '.'; }
+  },
+  randomGuess: {
+    id: 'random',
+    msg: function() { return 'Follow the chart \u2014 each row is a group of 10 numbers.'; }
+  },
+  skipCountStep: {
+    id: 'skip-step',
+    msg: function(step) { return 'You are counting by ' + step + 's. Each number is ' + step + ' more than the last!'; }
+  },
+  afterHundred: {
+    id: 'after-100',
+    msg: function(n) { return n + ' comes after 100. The pattern 1\u2013120 keeps going past 100!'; }
+  }
+};
+
+// ════════════════════════════════════════
+// HELPERS
+// ════════════════════════════════════════
+function rand(a, b) {
+  return Math.floor(Math.random() * (b - a + 1)) + a;
+}
+
+function showFB(text, type) {
+  var fb = document.getElementById('feedback');
+  fb.textContent = text;
+  fb.className = 'feedback ' + type + ' show';
+  setTimeout(function() { fb.classList.remove('show'); }, 2000);
+}
+
+function shuffle(arr) {
+  for (var i = arr.length - 1; i > 0; i--) {
+    var j = rand(0, i);
+    var tmp = arr[i]; arr[i] = arr[j]; arr[j] = tmp;
+  }
+  return arr;
+}
+
+function isDecadeBoundary(n) {
+  return n % 10 === 0;
+}
+
+function getRow(n) {
+  return Math.floor((n - 1) / 10);
+}
+
+function getCol(n) {
+  return (n - 1) % 10;
+}
+
+// ════════════════════════════════════════
+// MODE / DIFF SWITCHING
+// ════════════════════════════════════════
+function setMode(m) {
+  S.mode = m;
+  S.highlighted = new Set();
+  S.currentNum = 1;
+  S.countingActive = false;
+  S.highlightMode = null;
+  S.highlightVal = -1;
+  S.round = 0;
+  S.score = 0;
+  S.streak = 0;
+  S.pSequence = [];
+
+  document.querySelectorAll('.vinculum-mode-tab').forEach(function(t) {
+    t.classList.remove('active-explore', 'active-practice', 'active-play');
+  });
+  var tabEl = document.querySelector('[data-mode="' + m + '"]');
+  if (tabEl) tabEl.classList.add('active-' + m);
+
+  render();
+}
+
+function setDiff(d) {
+  S.diff = d;
+  document.querySelectorAll('.vinculum-diff-btn').forEach(function(b) { b.classList.remove('active'); });
+  document.getElementById('diff' + d.charAt(0).toUpperCase()).classList.add('active');
+  S.round = 0;
+  S.score = 0;
+  S.streak = 0;
+  S.highlighted = new Set();
+  S.highlightMode = null;
+  S.pSequence = [];
+  render();
+}
+
+// ════════════════════════════════════════
+// 120 CHART BUILDER
+// ════════════════════════════════════════
+function build120Chart(options) {
+  options = options || {};
+  var interactive = options.interactive !== false;
+  var showNumbers = options.showNumbers !== false;
+  var hiddenSet = options.hiddenCells ? new Set(options.hiddenCells) : new Set();
+  var targetNum = options.targetCell || 0;
+  var html = '<div class="chart-120">';
+  for (var n = 1; n <= 120; n++) {
+    var classes = ['chart-cell'];
+    if (S.highlighted.has(n)) classes.push('highlighted');
+    if (n === S.currentNum && S.countingActive) classes.push('current');
+    if (S.highlightMode === 'row' && getRow(n) === S.highlightVal) classes.push('row-highlight');
+    if (S.highlightMode === 'col' && getCol(n) === S.highlightVal) classes.push('col-highlight');
+    if (S.highlightMode === 'decade' && n % 10 === 0) classes.push('decade');
+    if (S.highlightMode === 'fives' && n % 5 === 0) classes.push('fives');
+    if (hiddenSet.has(n)) classes.push('hidden-cell');
+    if (n === targetNum) classes.push('target-cell');
+    if (options.customClass) {
+      var extra = options.customClass(n);
+      if (extra) classes.push(extra);
+    }
+    var onclick = interactive ? ' onclick="cellTap(' + n + ')"' : '';
+    var label = showNumbers ? n : '';
+    if (hiddenSet.has(n)) label = '';
+    html += '<div class="' + classes.join(' ') + '"' + onclick + ' data-n="' + n + '">' + label + '</div>';
+  }
+  html += '</div>';
+  return html;
+}
+
+// ════════════════════════════════════════
+// EXPLORE MODE — Counting & Pattern Discovery
+// ════════════════════════════════════════
+var countTimer = null;
+
+function cellTap(n) {
+  if (S.mode === 'explore') {
+    if (S.highlighted.has(n)) {
+      S.highlighted.delete(n);
+    } else {
+      S.highlighted.add(n);
+    }
+    render();
+  }
+}
+
+function startCounting() {
+  if (S.countingActive) {
+    stopCounting();
+    return;
+  }
+  S.countingActive = true;
+  S.currentNum = 1;
+  S.highlighted = new Set();
+  render();
+  countTimer = setInterval(function() {
+    S.highlighted.add(S.currentNum);
+    S.currentNum += S.countBy;
+    if (S.currentNum > 120) {
+      stopCounting();
+      return;
+    }
+    render();
+  }, 400);
+}
+
+function stopCounting() {
+  S.countingActive = false;
+  if (countTimer) { clearInterval(countTimer); countTimer = null; }
+  render();
+}
+
+function setCountBy(n) {
+  S.countBy = n;
+  stopCounting();
+  S.highlighted = new Set();
+  render();
+}
+
+function highlightRow(row) {
+  if (S.highlightMode === 'row' && S.highlightVal === row) {
+    S.highlightMode = null;
+    S.highlightVal = -1;
+  } else {
+    S.highlightMode = 'row';
+    S.highlightVal = row;
+  }
+  render();
+}
+
+function highlightCol(col) {
+  if (S.highlightMode === 'col' && S.highlightVal === col) {
+    S.highlightMode = null;
+    S.highlightVal = -1;
+  } else {
+    S.highlightMode = 'col';
+    S.highlightVal = col;
+  }
+  render();
+}
+
+function highlightDecades() {
+  if (S.highlightMode === 'decade') {
+    S.highlightMode = null;
+  } else {
+    S.highlightMode = 'decade';
+  }
+  render();
+}
+
+function highlightFives() {
+  if (S.highlightMode === 'fives') {
+    S.highlightMode = null;
+  } else {
+    S.highlightMode = 'fives';
+  }
+  render();
+}
+
+function clearHighlights() {
+  S.highlighted = new Set();
+  S.highlightMode = null;
+  S.highlightVal = -1;
+  S.countingActive = false;
+  if (countTimer) { clearInterval(countTimer); countTimer = null; }
+  render();
+}
+
+function renderExplore(ws, sp) {
+  var html = '';
+
+  // Story banner
+  if (window.VinculumStories) {
+    var toolName = window.location.pathname.split('/').pop().replace('.html','');
+    var storyData = VinculumStories.getStory(toolName, {a: S.highlighted.size || 10, b: 120, total: 120, n: S.currentNum || 1, ones: (S.currentNum || 1) % 10});
+    if (storyData && storyData.story) {
+      if (window.Vinculum3Reads) {
+        html += Vinculum3Reads.getBannerHTML(storyData);
+      } else {
+        html += '<div id="storyBanner" style="background:var(--card2,#1a1f2e);border:1px solid var(--border);border-radius:12px;padding:14px 18px;margin-bottom:12px;font-size:14px;line-height:1.6;color:var(--text);position:relative;width:100%;max-width:480px;"><span style="font-size:11px;color:var(--cyan);font-weight:700;text-transform:uppercase;letter-spacing:1px;">📖 Story</span><br>' + storyData.story + '<br><em style="color:var(--yellow);font-weight:600;">' + storyData.question + '</em><button onclick="toggleReadAloud()" style="position:absolute;top:10px;right:10px;background:none;border:1px solid var(--border);border-radius:8px;padding:4px 10px;color:var(--cyan);cursor:pointer;font-size:13px;" title="Read story aloud">🔊</button></div>';
+      }
+    }
+  }
+
+  // Instruction
+  html += '<div style="font-size:15px;color:var(--text2);text-align:center;margin-bottom:8px;max-width:460px;">Tap cells to highlight. Press <strong>Count</strong> to animate counting patterns.</div>';
+
+  // 120 chart
+  html += build120Chart({ interactive: true, showNumbers: true });
+
+  // Count controls
+  html += '<div class="controls">';
+  html += '<button class="ctrl-btn primary" onclick="startCounting()">' + (S.countingActive ? '⏹ Stop' : '▶ Count') + '</button>';
+  html += '<button class="ctrl-btn' + (S.countBy === 1 ? ' active-ctrl' : '') + '" onclick="setCountBy(1)">by 1s</button>';
+  html += '<button class="ctrl-btn' + (S.countBy === 2 ? ' active-ctrl' : '') + '" onclick="setCountBy(2)">by 2s</button>';
+  html += '<button class="ctrl-btn' + (S.countBy === 5 ? ' active-ctrl' : '') + '" onclick="setCountBy(5)">by 5s</button>';
+  html += '<button class="ctrl-btn' + (S.countBy === 10 ? ' active-ctrl' : '') + '" onclick="setCountBy(10)">by 10s</button>';
+  html += '</div>';
+
+  // Highlight controls
+  html += '<div class="controls" style="margin-top:6px;">';
+  html += '<button class="ctrl-btn' + (S.highlightMode === 'decade' ? ' active-ctrl' : '') + '" onclick="highlightDecades()">Decades</button>';
+  html += '<button class="ctrl-btn' + (S.highlightMode === 'fives' ? ' active-ctrl' : '') + '" onclick="highlightFives()">Fives</button>';
+  html += '<button class="ctrl-btn danger" onclick="clearHighlights()">✕ Clear</button>';
+  html += '</div>';
+
+  // Row / Column highlight selectors
+  html += '<div class="controls" style="margin-top:6px;">';
+  html += '<span style="font-size:11px;color:var(--muted);font-weight:600;margin-right:4px;">Row:</span>';
+  for (var r = 0; r < 12; r++) {
+    html += '<button class="ctrl-btn' + (S.highlightMode === 'row' && S.highlightVal === r ? ' active-ctrl' : '') + '" style="padding:5px 8px;font-size:10px;" onclick="highlightRow(' + r + ')">' + (r + 1) + '</button>';
+  }
+  html += '</div>';
+  html += '<div class="controls" style="margin-top:4px;">';
+  html += '<span style="font-size:11px;color:var(--muted);font-weight:600;margin-right:4px;">Col:</span>';
+  for (var c = 0; c < 10; c++) {
+    html += '<button class="ctrl-btn' + (S.highlightMode === 'col' && S.highlightVal === c ? ' active-ctrl' : '') + '" style="padding:5px 8px;font-size:10px;" onclick="highlightCol(' + c + ')">' + (c + 1) + '</button>';
+  }
+  html += '</div>';
+
+  ws.innerHTML = html;
+
+  // Side panel
+  sp.innerHTML = '<div class="panel-section">' +
+    '<div class="panel-title">How to Use</div>' +
+    '<div class="panel-text">' +
+    '1. <strong>Tap cells</strong> to highlight them<br><br>' +
+    '2. Press <strong>▶ Count</strong> to animate counting by 1s, 2s, 5s, or 10s<br><br>' +
+    '3. Use <strong>Row</strong> and <strong>Col</strong> buttons to highlight groups<br><br>' +
+    '4. Tap <strong>Decades</strong> or <strong>Fives</strong> to see multiples' +
+    '</div></div>' +
+    '<div class="panel-section">' +
+    '<div class="panel-title">Patterns to Notice</div>' +
+    '<div class="pattern-card"><span class="pattern-label">Columns</span>' +
+    'Numbers in the <strong>same column</strong> all end with the same ones digit. Column 3 has 3, 13, 23, 33 ...' +
+    '</div>' +
+    '<div class="pattern-card"><span class="pattern-label">Rows</span>' +
+    'Each row is a <strong>group of 10</strong>. The tens digit stays the same across a row.' +
+    '</div>' +
+    '<div class="pattern-card"><span class="pattern-label">Decades</span>' +
+    'Decade numbers (10, 20, 30...) are at the <strong>end of each row</strong>. They mark the boundary.' +
+    '</div>' +
+    '<div class="pattern-card"><span class="pattern-label">Fives</span>' +
+    'Numbers ending in <strong>5 or 0</strong> form two columns. Try highlighting them!' +
+    '</div>' +
+    '<div class="pattern-card"><span class="pattern-label">After 100</span>' +
+    'The pattern continues! 101\u2013110 is just like 1\u201310, but with a <strong>1 in the hundreds place</strong>.' +
+    '</div>' +
+    '</div>' +
+    '<div class="panel-section">' +
+    '<div class="panel-title">Standards</div>' +
+    '<div class="panel-text">' +
+    '<strong>1.NBT.1</strong> \u2014 Count to 120, starting at any number less than 120<br><br>' +
+    '<strong>MN 1.1.1.1</strong> \u2014 Use place value to describe whole numbers between 10 and 120' +
+    '</div></div>';
+}
+
+// ════════════════════════════════════════
+// PRACTICE MODE — Find Missing Numbers
+// ════════════════════════════════════════
+function generatePractice() {
+  S.pSequence = [];
+  S.pChoices = [];
+  S.pHiddenCells = [];
+  S.pTargetCell = 0;
+
+  if (S.diff === 'emergent') {
+    // Simple: count forward by 1, find missing number in sequence
+    var start = rand(1, 100);
+    var len = 5;
+    for (var i = 0; i < len; i++) S.pSequence.push(start + i);
+    S.pMissingIdx = rand(1, len - 2);
+    S.pAnswer = S.pSequence[S.pMissingIdx];
+    S.pQuestionType = 'missing';
+  } else if (S.diff === 'proficient') {
+    // Count by 10s or 5s, or find a hidden cell on the chart
+    if (rand(0, 1) === 0) {
+      // Skip-count sequence with gap
+      var step = rand(0, 1) === 0 ? 10 : 5;
+      var start2 = step === 10 ? rand(1, 9) * 10 : rand(1, 20) * 5;
+      var len2 = 5;
+      S.pSequence = [];
+      for (var j = 0; j < len2; j++) {
+        var val = start2 + j * step;
+        if (val > 120) { start2 = step; val = start2 + j * step; }
+        S.pSequence.push(val);
+      }
+      S.pMissingIdx = rand(1, len2 - 2);
+      S.pAnswer = S.pSequence[S.pMissingIdx];
+      S.pQuestionType = 'missing';
+    } else {
+      // Hidden cells on 120 chart \u2014 tap the correct number
+      var target = rand(1, 120);
+      S.pTargetCell = target;
+      // Hide target and a few neighbors
+      S.pHiddenCells = [target];
+      var neighbors = [target - 1, target + 1, target - 10, target + 10];
+      for (var k = 0; k < neighbors.length; k++) {
+        if (neighbors[k] >= 1 && neighbors[k] <= 120 && rand(0, 1) === 0) {
+          S.pHiddenCells.push(neighbors[k]);
+        }
+      }
+      S.pAnswer = target;
+      S.pQuestionType = 'chart-tap';
+    }
+  } else {
+    // Advanced: cross-decade or extend skip-count patterns
+    if (rand(0, 1) === 0) {
+      // Cross-decade missing
+      var decade = rand(2, 11) * 10;
+      S.pSequence = [decade - 2, decade - 1, decade, decade + 1, decade + 2];
+      if (S.pSequence[4] > 120) { decade = 100; S.pSequence = [98, 99, 100, 101, 102]; }
+      S.pMissingIdx = 2; // the decade boundary
+      S.pAnswer = S.pSequence[S.pMissingIdx];
+      S.pQuestionType = 'missing';
+    } else {
+      // What comes next in a skip-count pattern
+      var step2 = [2, 5, 10][rand(0, 2)];
+      var start3 = rand(1, Math.floor(80 / step2)) * step2;
+      S.pSequence = [];
+      for (var m = 0; m < 4; m++) S.pSequence.push(start3 + m * step2);
+      S.pAnswer = start3 + 4 * step2;
+      if (S.pAnswer > 120) { start3 = step2; S.pSequence = []; for (var q = 0; q < 4; q++) S.pSequence.push(start3 + q * step2); S.pAnswer = start3 + 4 * step2; }
+      S.pMissingIdx = -1;
+      S.pQuestionType = 'pattern';
+    }
+  }
+
+  // Generate 4 MC choices (for sequence types)
+  if (S.pQuestionType !== 'chart-tap') {
+    var choices = new Set([S.pAnswer]);
+    var tries = 0;
+    while (choices.size < 4 && tries < 50) {
+      var offset = rand(-5, 5);
+      if (offset === 0) offset = rand(1, 10);
+      var cv = S.pAnswer + offset;
+      if (cv >= 1 && cv <= 125) choices.add(cv);
+      tries++;
+    }
+    S.pChoices = Array.from(choices).sort(function(a, b) { return a - b; });
+  } else {
+    // For chart-tap, generate 4 choices including the target
+    var ch = new Set([S.pAnswer]);
+    var t2 = 0;
+    while (ch.size < 4 && t2 < 50) {
+      var o2 = rand(-3, 3);
+      if (o2 === 0) o2 = rand(1, 5);
+      var cv2 = S.pAnswer + o2;
+      if (cv2 >= 1 && cv2 <= 120) ch.add(cv2);
+      t2++;
+    }
+    S.pChoices = Array.from(ch).sort(function(a, b) { return a - b; });
+  }
+}
+
+function practiceAnswer(val) {
+  if (val === S.pAnswer) {
+    showFB('Correct!', 'correct');
+    setTimeout(function() { generatePractice(); render(); }, 1200);
+  } else {
+    // Misconception-aware feedback
+    var diff = Math.abs(val - S.pAnswer);
+    if (diff === 1) {
+      showFB(MISCONCEPTIONS.offByOne.msg(S.pAnswer, val), 'try-again');
+    } else if (S.pAnswer > 100) {
+      showFB(MISCONCEPTIONS.afterHundred.msg(S.pAnswer), 'try-again');
+    } else if (isDecadeBoundary(S.pAnswer) || isDecadeBoundary(S.pAnswer + 1)) {
+      showFB(MISCONCEPTIONS.decadeBoundary.msg(S.pAnswer), 'try-again');
+    } else if (S.pQuestionType === 'pattern' && S.pSequence.length >= 2) {
+      var step = S.pSequence[1] - S.pSequence[0];
+      showFB(MISCONCEPTIONS.skipCountStep.msg(step), 'try-again');
+    } else if (diff > 10) {
+      showFB(MISCONCEPTIONS.randomGuess.msg(), 'incorrect');
+    } else {
+      showFB(MISCONCEPTIONS.noPatterns.msg(), 'try-again');
+    }
+  }
+}
+
+function renderPractice(ws, sp) {
+  if (S.pSequence.length === 0 && S.pQuestionType !== 'chart-tap') generatePractice();
+  if (S.pChoices.length === 0) generatePractice();
+
+  var html = '';
+
+  if (S.pQuestionType === 'chart-tap') {
+    html += '<div class="prompt-label">What number belongs in the highlighted cell?</div>';
+    html += '<div class="prompt-sublabel">Use the chart pattern to figure it out</div>';
+
+    // 120 chart with hidden cells and a target
+    html += build120Chart({
+      interactive: false,
+      showNumbers: true,
+      hiddenCells: S.pHiddenCells,
+      targetCell: S.pTargetCell
+    });
+
+    // MC choices
+    html += '<div class="mc-grid" style="margin:16px auto;">';
+    S.pChoices.forEach(function(c) {
+      html += '<button class="mc-btn" id="pAns' + c + '" onclick="practiceAnswer(' + c + ')">' + c + '</button>';
+    });
+    html += '</div>';
+  } else if (S.pQuestionType === 'missing') {
+    html += '<div class="prompt-label">Find the missing number</div>';
+    if (S.diff === 'proficient' && S.pSequence.length >= 2) {
+      var step = S.pSequence[1] - S.pSequence[0];
+      if (step > 1) html += '<div class="prompt-sublabel">Counting by ' + step + 's</div>';
+    }
+    if (S.diff === 'advanced' && isDecadeBoundary(S.pAnswer)) {
+      html += '<div class="prompt-sublabel" style="color:var(--yellow);">Watch the decade boundary!</div>';
+    }
+
+    // Sequence display
+    html += '<div class="sequence-display">';
+    for (var i = 0; i < S.pSequence.length; i++) {
+      if (i > 0) html += '<div class="seq-card arrow">\u2192</div>';
+      if (i === S.pMissingIdx) {
+        html += '<div class="seq-card missing">?</div>';
+      } else {
+        html += '<div class="seq-card">' + S.pSequence[i] + '</div>';
+      }
+    }
+    html += '</div>';
+
+    // 120 chart with context highlighting
+    var seqSet = new Set(S.pSequence);
+    html += build120Chart({
+      interactive: false,
+      showNumbers: true,
+      customClass: function(n) {
+        if (n === S.pAnswer) return 'highlighted';
+        if (seqSet.has(n)) return 'row-highlight';
+        return '';
+      }
+    });
+
+    // Choices
+    html += '<div class="mc-grid" style="margin:16px auto;">';
+    S.pChoices.forEach(function(c) {
+      html += '<button class="mc-btn" id="pAns' + c + '" onclick="practiceAnswer(' + c + ')">' + c + '</button>';
+    });
+    html += '</div>';
+  } else {
+    // pattern type: what comes next?
+    html += '<div class="prompt-label">What comes next in the pattern?</div>';
+    var step3 = S.pSequence[1] - S.pSequence[0];
+    html += '<div class="prompt-sublabel">Counting by ' + step3 + 's</div>';
+
+    // Sequence display
+    html += '<div class="sequence-display">';
+    for (var j = 0; j < S.pSequence.length; j++) {
+      if (j > 0) html += '<div class="seq-card arrow">\u2192</div>';
+      html += '<div class="seq-card">' + S.pSequence[j] + '</div>';
+    }
+    html += '<div class="seq-card arrow">\u2192</div>';
+    html += '<div class="seq-card missing">?</div>';
+    html += '</div>';
+
+    // 120 chart
+    var seqSet2 = new Set(S.pSequence);
+    html += build120Chart({
+      interactive: false,
+      showNumbers: true,
+      customClass: function(n) {
+        if (n === S.pAnswer) return 'highlighted';
+        if (seqSet2.has(n)) return 'row-highlight';
+        return '';
+      }
+    });
+
+    // Choices
+    html += '<div class="mc-grid" style="margin:16px auto;">';
+    S.pChoices.forEach(function(c) {
+      html += '<button class="mc-btn" id="pAns' + c + '" onclick="practiceAnswer(' + c + ')">' + c + '</button>';
+    });
+    html += '</div>';
+  }
+
+  // New question button
+  html += '<div class="controls" style="margin-top:8px;">';
+  html += '<button class="ctrl-btn" onclick="generatePractice();render();">\u21BB New Question</button>';
+  html += '</div>';
+
+  ws.innerHTML = html;
+
+  // Side panel
+  var diffDesc = {
+    emergent: 'Count forward by 1s and find the missing number in the sequence.',
+    proficient: 'Identify patterns counting by 5s and 10s. Find missing numbers in skip-count sequences and on the chart.',
+    advanced: 'Explain patterns, handle decade boundaries, and extend counting sequences.'
+  };
+  sp.innerHTML = '<div class="panel-section">' +
+    '<div class="panel-title">Instructions</div>' +
+    '<div class="panel-text">' + diffDesc[S.diff] + '<br><br>Use the <strong>120 chart</strong> below to help you see the pattern.</div>' +
+    '</div>' +
+    '<div class="panel-section">' +
+    '<div class="panel-title">Tips</div>' +
+    '<div class="pattern-card"><span class="pattern-label">Count by 1s</span>' +
+    'Each number is <strong>one more</strong> than the last. Follow the row left to right, then drop down.' +
+    '</div>' +
+    '<div class="pattern-card"><span class="pattern-label">Count by 10s</span>' +
+    'Move <strong>straight down</strong> a column. The ones digit stays the same!' +
+    '</div>' +
+    '<div class="pattern-card"><span class="pattern-label">Decade Crossings</span>' +
+    'After 29 comes 30, after 99 comes 100. The <strong>tens digit changes</strong> and ones resets to 0.' +
+    '</div>' +
+    '<div class="pattern-card"><span class="pattern-label">Count by 5s</span>' +
+    'Numbers ending in <strong>5 or 0</strong> form the skip-count pattern for 5s.' +
+    '</div>' +
+    '</div>' +
+    '<div class="panel-section">' +
+    '<div class="panel-title">Difficulty: ' + S.diff.charAt(0).toUpperCase() + S.diff.slice(1) + '</div>' +
+    '<div class="panel-text">' + diffDesc[S.diff] + '</div>' +
+    '</div>';
+}
+
+// ════════════════════════════════════════
+// PLAY MODE — 10 Rounds, Scored
+// ════════════════════════════════════════
+function generatePlayRound() {
+  S.round++;
+  S.playChoices = [];
+
+  if (S.diff === 'emergent') {
+    // "What comes next?" by 1s
+    var start = rand(1, 115);
+    S.playSequence = [start, start + 1, start + 2, start + 3];
+    S.playAnswer = start + 4;
+    S.playQuestionType = 'next';
+  } else if (S.diff === 'proficient') {
+    var r = rand(0, 2);
+    if (r === 0) {
+      // Fill the gap in skip counting
+      var step = [5, 10][rand(0, 1)];
+      var s2 = rand(1, Math.floor(90 / step)) * step;
+      S.playSequence = [];
+      for (var i = 0; i < 5; i++) S.playSequence.push(s2 + i * step);
+      S.playGapIdx = rand(1, 3);
+      S.playAnswer = S.playSequence[S.playGapIdx];
+      S.playQuestionType = 'gap';
+    } else if (r === 1) {
+      // What comes next by 10s
+      var s3 = rand(1, 8) * 10;
+      S.playSequence = [s3, s3 + 10, s3 + 20];
+      S.playAnswer = s3 + 30;
+      if (S.playAnswer > 120) { s3 = 10; S.playSequence = [10, 20, 30]; S.playAnswer = 40; }
+      S.playQuestionType = 'next';
+    } else {
+      // What number is hidden on the chart?
+      var target = rand(1, 120);
+      S.playTargetCell = target;
+      S.playAnswer = target;
+      S.playSequence = [];
+      S.playQuestionType = 'chart';
+    }
+  } else {
+    // Advanced: cross-decade, extend by 2s/5s/10s, or chart
+    var types = ['cross-decade', 'skip-extend', 'chart-adv'];
+    var type = types[rand(0, 2)];
+    if (type === 'cross-decade') {
+      var dec = rand(2, 11) * 10;
+      S.playSequence = [dec - 3, dec - 2, dec - 1, dec];
+      S.playAnswer = dec + 1;
+      if (S.playAnswer > 120) { dec = 110; S.playSequence = [107, 108, 109, 110]; S.playAnswer = 111; }
+      S.playQuestionType = 'next';
+    } else if (type === 'skip-extend') {
+      var step2 = [2, 5, 10][rand(0, 2)];
+      var s4 = rand(1, Math.floor(80 / step2)) * step2;
+      S.playSequence = [];
+      for (var j = 0; j < 4; j++) S.playSequence.push(s4 + j * step2);
+      S.playGapIdx = rand(1, 2);
+      S.playAnswer = S.playSequence[S.playGapIdx];
+      S.playQuestionType = 'gap';
+    } else {
+      // Chart: multiple hidden cells near decades
+      var dec2 = rand(2, 11) * 10;
+      if (dec2 > 120) dec2 = 110;
+      S.playTargetCell = dec2;
+      S.playAnswer = dec2;
+      S.playSequence = [];
+      S.playQuestionType = 'chart';
+    }
+  }
+
+  // Generate 5 MC choices
+  var choices = new Set([S.playAnswer]);
+  var tries = 0;
+  while (choices.size < 5 && tries < 50) {
+    var off = rand(-8, 8);
+    if (off === 0) off = rand(1, 10);
+    var cv = S.playAnswer + off;
+    if (cv >= 1 && cv <= 125) choices.add(cv);
+    tries++;
+  }
+  S.playChoices = Array.from(choices).sort(function(a, b) { return a - b; });
+}
+
+function playAnswer(val) {
+  var btn = document.getElementById('playAns' + val);
+  if (val === S.playAnswer) {
+    if (btn) btn.classList.add('correct-flash');
+    var bonus = 10 + S.streak * 2;
+    S.score += bonus;
+    S.streak++;
+    if (S.streak > S.best) S.best = S.streak;
+    showFB('Correct! +' + bonus, 'correct');
+  } else {
+    if (btn) btn.classList.add('incorrect-flash');
+    S.streak = 0;
+    // Misconception-aware feedback
+    var diff = Math.abs(val - S.playAnswer);
+    if (diff === 1) {
+      showFB(MISCONCEPTIONS.offByOne.msg(S.playAnswer, val), 'incorrect');
+    } else if (S.playAnswer > 100) {
+      showFB(MISCONCEPTIONS.afterHundred.msg(S.playAnswer), 'incorrect');
+    } else if (isDecadeBoundary(S.playAnswer) || isDecadeBoundary(S.playAnswer - 1)) {
+      showFB(MISCONCEPTIONS.decadeBoundary.msg(S.playAnswer), 'incorrect');
+    } else if (S.playQuestionType === 'gap' && S.playSequence.length >= 2) {
+      var step = S.playSequence[1] - S.playSequence[0];
+      showFB(MISCONCEPTIONS.skipCountStep.msg(step), 'incorrect');
+    } else if (diff > 15) {
+      showFB(MISCONCEPTIONS.randomGuess.msg(), 'incorrect');
+    } else {
+      showFB('The answer was ' + S.playAnswer + '. ' + MISCONCEPTIONS.noPatterns.msg(), 'incorrect');
+    }
+  }
+
+  setTimeout(function() {
+    if (S.round >= S.total) {
+      showFB('Game Over! Score: ' + S.score, 'correct');
+      setTimeout(function() { S.round = 0; S.score = 0; S.streak = 0; render(); }, 2500);
+      return;
+    }
+    generatePlayRound();
+    render();
+  }, 1200);
+}
+
+function renderPlay(ws, sp) {
+  if (S.round === 0) {
+    S.score = 0;
+    S.streak = 0;
+    generatePlayRound();
+  }
+
+  var html = '';
+
+  // Round indicator
+  html += '<div class="round-indicator">Round ' + S.round + ' of ' + S.total + '</div>';
+
+  // Question prompt
+  if (S.playQuestionType === 'chart') {
+    html += '<div class="prompt-label">What number goes here?</div>';
+
+    // Build chart with hidden target and neighbors
+    var tgt = S.playTargetCell || S.playAnswer;
+    var hideList = [tgt];
+    var nbrs = [tgt - 1, tgt + 1, tgt - 10, tgt + 10];
+    for (var h = 0; h < nbrs.length; h++) {
+      if (nbrs[h] >= 1 && nbrs[h] <= 120 && rand(0, 2) === 0) hideList.push(nbrs[h]);
+    }
+    html += build120Chart({
+      interactive: false,
+      showNumbers: true,
+      hiddenCells: hideList,
+      targetCell: tgt
+    });
+  } else {
+    if (S.playQuestionType === 'next') {
+      html += '<div class="prompt-label">What comes next?</div>';
+    } else {
+      html += '<div class="prompt-label">Fill in the gap!</div>';
+    }
+
+    // Sequence display
+    html += '<div class="sequence-display">';
+    for (var i = 0; i < S.playSequence.length; i++) {
+      if (i > 0) html += '<div class="seq-card arrow">\u2192</div>';
+      if (S.playQuestionType === 'gap' && i === S.playGapIdx) {
+        html += '<div class="seq-card missing">?</div>';
+      } else {
+        html += '<div class="seq-card">' + S.playSequence[i] + '</div>';
+      }
+    }
+    if (S.playQuestionType === 'next') {
+      html += '<div class="seq-card arrow">\u2192</div>';
+      html += '<div class="seq-card missing">?</div>';
+    }
+    html += '</div>';
+
+    // Mini 120 chart for reference
+    html += '<div style="margin-top:12px;opacity:0.7;transform:scale(0.85);transform-origin:top center;">';
+    var seqSet = new Set(S.playSequence);
+    html += build120Chart({
+      interactive: false,
+      showNumbers: true,
+      customClass: function(n) {
+        if (n === S.playAnswer) return 'highlighted';
+        if (seqSet.has(n)) return 'row-highlight';
+        return '';
+      }
+    });
+    html += '</div>';
+  }
+
+  // MC Choices
+  html += '<div class="mc-grid five-col" style="margin:16px auto;">';
+  S.playChoices.forEach(function(c) {
+    html += '<button class="mc-btn" id="playAns' + c + '" onclick="playAnswer(' + c + ')">' + c + '</button>';
+  });
+  html += '</div>';
+
+  ws.innerHTML = html;
+
+  // Side panel \u2014 score
+  sp.innerHTML = '<div class="score-display">' +
+    '<div class="score-value">' + S.score + '</div>' +
+    '<div class="score-label">Score</div>' +
+    '</div>' +
+    '<div class="score-display" style="background:transparent;padding:8px;">' +
+    '<div style="font-size:18px;font-weight:700;color:var(--yellow);">' +
+    '<svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor" style="vertical-align:-2px;"><path d="M12 23c-4.97 0-8-3.58-8-7.5 0-3.07 2.17-5.84 4.5-7.5-.28 2.5 1.5 4.5 1.5 4.5s2-2.5 2-5.5c0-1.5-.5-3-1-4 3 1.5 5 4 5 7 0 .5-.08 1-.08 1s1.08-1.18 1.58-2.5C19.78 11.72 20 14.5 20 15.5c0 3.92-3.03 7.5-8 7.5z"/></svg> ' + S.streak + '</div>' +
+    '<div class="score-label">Streak</div>' +
+    '<div class="streak-bar"><div class="streak-fill" style="width:' + Math.min(S.streak * 20, 100) + '%;"></div></div>' +
+    '</div>' +
+    '<div class="panel-section">' +
+    '<div class="panel-title">How to Play</div>' +
+    '<div class="panel-text">' +
+    'Find the missing or next number in the sequence.<br><br>' +
+    '<strong>Base 10 pts</strong> per correct answer.<br>' +
+    '<strong>+2 bonus</strong> per streak level!<br><br>' +
+    'Build a <strong>streak</strong> for even more!' +
+    '</div></div>' +
+    '<div class="panel-section">' +
+    '<div class="panel-title">Best Streak</div>' +
+    '<div class="panel-text" style="font-size:24px;font-weight:800;color:var(--purple);">' +
+    '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="vertical-align:-2px;"><path d="M6 4h12v2a6 6 0 01-12 0V4z" fill="currentColor" opacity="0.2"/><path d="M6 4h12v2a6 6 0 01-12 0V4z"/><path d="M6 6H3v2a3 3 0 003 3"/><path d="M18 6h3v2a3 3 0 01-3 3"/><line x1="12" y1="14" x2="12" y2="18"/><line x1="8" y1="18" x2="16" y2="18" stroke-linecap="round"/></svg> ' + S.best + '</div>' +
+    '</div>' +
+    '<div class="panel-section">' +
+    '<div class="panel-title">Difficulty</div>' +
+    '<div class="panel-text">' +
+    (S.diff === 'emergent' ? '<strong>Count:</strong> Count forward by 1s' :
+     S.diff === 'proficient' ? '<strong>Patterns:</strong> Skip count by 5s and 10s, find hidden chart numbers' :
+     '<strong>Extend:</strong> Cross decade boundaries and extend patterns') +
+    '</div></div>';
+}
+
+// ════════════════════════════════════════
+// RENDER DISPATCH
+// ════════════════════════════════════════
+function render() {
+  var ws = document.getElementById('workspace');
+  var sp = document.getElementById('sidePanel');
+
+  if (S.mode === 'explore') renderExplore(ws, sp);
+  else if (S.mode === 'practice') renderPractice(ws, sp);
+  else renderPlay(ws, sp);
+}
+
+// ════════════════════════════════════════
+// INIT
+// ════════════════════════════════════════
+document.querySelectorAll('.vinculum-mode-tab').forEach(function(tab) {
+  tab.addEventListener('click', function() {
+    setMode(this.dataset.mode);
+  });
+});
+
+document.querySelectorAll('.vinculum-diff-btn').forEach(function(btn) {
+  btn.addEventListener('click', function() {
+    setDiff(this.dataset.diff);
+  });
+});
+
+render();
+</script>
+<script src="../../vinculum-core.js"></script>
+<script src="../../vinculum-data.js"></script>
+<script src="../../vinculum-adaptive-hook.js"></script>
+<script src="../../vinculum-3reads.js"></script>
+<script src="../../vinculum-stories.js"></script>
+<script src="../../vinculum-feedback.js"></script>
+<script src="../../vinculum-guide.js"></script>
+<script src="../../vinculum-identity.js"></script>
+<script src="../../vinculum-indigenous.js"></script>
+<script src="../../vinculum-dashboard.js"></script>
+<script src="../../vinculum-hyperfocus.js"></script>
+<script src="../../vinculum-layout.js"></script>
+</body>
+</html>

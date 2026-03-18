@@ -1,0 +1,1273 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>VINCULUM — Data Graphs</title>
+<link rel="stylesheet" href="../../vinculum-core.css">
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;600&display=swap');
+
+/* Theme system loaded from vinculum-core.css */
+.vinculum-rtm-btn .rtm-icon{font-size:14px;}
+
+/* Focus Visible */
+*:focus-visible {
+  outline:2px solid var(--cyan);outline-offset:2px;border-radius:4px;
+}
+.sr-only {
+  position:absolute;width:1px;height:1px;padding:0;margin:-1px;
+  overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0;
+}
+
+* { margin:0; padding:0; box-sizing:border-box; }
+body {
+  font-family: 'Inter', sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  height: 100vh;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  user-select: none;
+}
+
+/* ── MAIN AREA ── */
+.main {
+  flex: 1;
+  display: flex;
+  overflow: hidden;
+}
+
+/* ── WORKSPACE ── */
+.workspace {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: flex-start;
+  padding: 20px 24px;
+  position: relative;
+  overflow-y: auto;
+}
+
+/* ── INSTRUCTION BOX ── */
+.instruction-box {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 14px 20px;
+  text-align: center;
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--text2);
+  line-height: 1.5;
+  margin-bottom: 12px;
+  max-width: 600px;
+  width: 100%;
+}
+.instruction-box .highlight { color: var(--cyan); font-weight: 700; }
+.instruction-box .highlight-green { color: var(--green); font-weight: 700; }
+
+/* ── DATA SET SELECTOR ── */
+.data-selector {
+  display: flex;
+  gap: 6px;
+  margin-bottom: 14px;
+  flex-wrap: wrap;
+  justify-content: center;
+}
+.data-selector-btn {
+  padding: 8px 16px;
+  border-radius: 10px;
+  border: 2px solid var(--border);
+  background: var(--card);
+  color: var(--text2);
+  font-size: 13px;
+  font-weight: 600;
+  font-family: inherit;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+.data-selector-btn:hover { border-color: var(--cyan); transform: scale(1.04); }
+.data-selector-btn.active {
+  border-color: var(--cyan);
+  background: rgba(0,212,255,0.12);
+  color: var(--cyan);
+}
+
+/* ── GRAPH TITLE ── */
+.graph-title {
+  font-size: 20px;
+  font-weight: 800;
+  color: var(--text);
+  margin-bottom: 14px;
+  text-align: center;
+}
+
+/* ── PICTURE GRAPH ── */
+.picture-graph {
+  display: grid;
+  gap: 6px;
+  width: 100%;
+  max-width: 540px;
+  margin-bottom: 16px;
+}
+.pg-row {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+.pg-label {
+  width: 110px;
+  text-align: right;
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text2);
+  flex-shrink: 0;
+  padding-right: 8px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.pg-icons {
+  display: flex;
+  gap: 4px;
+  flex-wrap: wrap;
+  min-height: 42px;
+  align-items: center;
+}
+.graph-icon {
+  width: 36px;
+  height: 36px;
+  border-radius: 10px;
+  background: var(--card);
+  border: 2px solid var(--border);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 20px;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+.graph-icon.filled {
+  border-color: var(--cyan);
+  background: rgba(0,212,255,0.1);
+}
+.graph-icon.placeholder {
+  border-style: dashed;
+  opacity: 0.4;
+}
+.graph-icon:hover { transform: scale(1.1); }
+.graph-icon.pop-in { animation: pop 0.25s ease-out forwards; }
+
+/* ── BAR GRAPH ── */
+.bar-graph {
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  gap: 16px;
+  width: 100%;
+  max-width: 480px;
+  min-height: 200px;
+  padding: 0 8px;
+  margin-bottom: 16px;
+  position: relative;
+}
+.bar-graph-container {
+  width: 100%;
+  max-width: 520px;
+  position: relative;
+  margin-bottom: 16px;
+}
+.bar-y-axis {
+  display: flex;
+  flex-direction: column-reverse;
+  justify-content: space-between;
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 28px;
+  width: 24px;
+}
+.bar-y-label {
+  font-size: 11px;
+  font-family: 'JetBrains Mono', monospace;
+  color: var(--muted);
+  text-align: right;
+}
+.bar-grid-area {
+  margin-left: 30px;
+  position: relative;
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  gap: 16px;
+  min-height: 180px;
+  border-left: 2px solid var(--border);
+  border-bottom: 2px solid var(--border);
+  padding: 0 16px 0 12px;
+}
+.bar-col {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  flex: 1;
+  max-width: 80px;
+}
+.bar-bar {
+  width: 100%;
+  border-radius: 8px 8px 0 0;
+  min-height: 0;
+  transition: height 0.5s cubic-bezier(0.34, 1.56, 0.64, 1);
+  position: relative;
+}
+.bar-bar-inner {
+  width: 100%;
+  height: 100%;
+  border-radius: 8px 8px 0 0;
+}
+.bar-value {
+  font-size: 14px;
+  font-weight: 800;
+  font-family: 'JetBrains Mono', monospace;
+  color: var(--text);
+  position: absolute;
+  top: -22px;
+  left: 50%;
+  transform: translateX(-50%);
+}
+.bar-cat-label {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text2);
+  text-align: center;
+  word-break: break-word;
+  max-width: 80px;
+}
+.bar-colors-0 { background: var(--cyan); }
+.bar-colors-1 { background: var(--pink); }
+.bar-colors-2 { background: var(--green); }
+.bar-colors-3 { background: var(--yellow); }
+
+/* ── TALLY CHART ── */
+.tally-chart {
+  width: 100%;
+  max-width: 420px;
+  border-collapse: collapse;
+  margin-bottom: 16px;
+}
+.tally-chart th {
+  font-size: 12px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  color: var(--muted);
+  padding: 8px 12px;
+  border-bottom: 2px solid var(--border);
+  text-align: left;
+}
+.tally-chart th:last-child { text-align: center; }
+.tally-chart td {
+  padding: 10px 12px;
+  border-bottom: 1px solid var(--border);
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--text2);
+}
+.tally-chart td:last-child {
+  text-align: center;
+  font-family: 'JetBrains Mono', monospace;
+  color: var(--text);
+  font-weight: 700;
+}
+.tally-marks {
+  font-size: 18px;
+  letter-spacing: 2px;
+  color: var(--cyan);
+}
+
+/* ── VIEW TOGGLE ── */
+.view-toggle {
+  display: flex;
+  gap: 4px;
+  background: var(--card);
+  border-radius: 10px;
+  padding: 4px;
+  border: 1px solid var(--border);
+  margin-bottom: 14px;
+}
+.view-btn {
+  padding: 8px 16px;
+  border-radius: 8px;
+  border: none;
+  background: transparent;
+  color: var(--muted);
+  font-size: 13px;
+  font-weight: 700;
+  font-family: inherit;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+.view-btn.active {
+  background: var(--grad);
+  color: var(--bg);
+}
+.view-btn:hover:not(.active) { color: var(--text2); }
+
+/* ── MC GRID ── */
+.mc-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 8px;
+  margin-top: 12px;
+  max-width: 400px;
+  width: 100%;
+}
+.mc-btn {
+  padding: 14px 12px;
+  border-radius: 12px;
+  border: 2px solid var(--border);
+  background: var(--card);
+  color: var(--text);
+  font-size: 16px;
+  font-weight: 700;
+  font-family: inherit;
+  cursor: pointer;
+  transition: all 0.15s;
+  text-align: center;
+  line-height: 1.4;
+}
+.mc-btn:hover {
+  border-color: var(--cyan);
+  background: rgba(0,212,255,0.05);
+  transform: scale(1.03);
+}
+.mc-btn.correct-flash {
+  border-color: var(--green);
+  background: rgba(0,230,118,0.15);
+  color: var(--green);
+}
+.mc-btn.incorrect-flash {
+  border-color: var(--pink);
+  background: rgba(255,59,139,0.15);
+  color: var(--pink);
+}
+.mc-btn.number-only {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 22px;
+}
+
+/* ── CONTROLS ── */
+.controls {
+  display: flex;
+  gap: 8px;
+  margin-top: 12px;
+  flex-wrap: wrap;
+  justify-content: center;
+}
+.ctrl-btn {
+  padding: 10px 20px;
+  border-radius: 10px;
+  border: 1px solid var(--border);
+  background: var(--card);
+  color: var(--text2);
+  font-size: 13px;
+  font-weight: 600;
+  font-family: inherit;
+  cursor: pointer;
+  transition: all 0.2s;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.ctrl-btn:hover { background: var(--card-hover); color: var(--text); }
+.ctrl-btn.primary {
+  background: var(--grad);
+  color: var(--bg);
+  border-color: transparent;
+}
+.ctrl-btn.primary:hover { opacity: 0.9; }
+
+/* ── SCORE DISPLAY ── */
+.score-display {
+  text-align: center;
+  padding: 14px;
+  background: var(--card);
+  border-radius: 12px;
+  margin-bottom: 12px;
+  width: 100%;
+  max-width: 300px;
+}
+.score-value {
+  font-size: 36px;
+  font-weight: 900;
+  font-family: 'JetBrains Mono', monospace;
+  background: var(--grad);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+.score-label {
+  font-size: 11px;
+  color: var(--muted);
+  text-transform: uppercase;
+  letter-spacing: 1px;
+}
+.streak-bar {
+  height: 6px;
+  background: var(--card);
+  border-radius: 3px;
+  overflow: hidden;
+  margin-top: 8px;
+}
+.streak-fill {
+  height: 100%;
+  background: var(--grad);
+  border-radius: 3px;
+  transition: width 0.3s;
+}
+
+/* ── SIDE PANEL ── */
+.side-panel {
+  width: 280px;
+  background: var(--bg2);
+  border-left: 1px solid var(--border);
+  padding: 20px;
+  overflow-y: auto;
+  flex-shrink: 0;
+}
+.panel-section {
+  margin-bottom: 20px;
+}
+.panel-title {
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 1.5px;
+  color: var(--muted);
+  margin-bottom: 8px;
+}
+.panel-text {
+  font-size: 13px;
+  color: var(--text2);
+  line-height: 1.6;
+}
+
+/* ── FEEDBACK ── */
+.feedback {
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%) scale(0);
+  padding: 24px 48px;
+  border-radius: 20px;
+  font-size: 22px;
+  font-weight: 800;
+  z-index: 200;
+  pointer-events: none;
+  transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275), opacity 0.3s;
+  opacity: 0;
+  max-width: 90vw;
+  text-align: center;
+  line-height: 1.4;
+}
+.feedback.show {
+  transform: translate(-50%, -50%) scale(1);
+  opacity: 1;
+}
+.feedback.correct {
+  background: rgba(0,230,118,0.15);
+  color: var(--green);
+  border: 2px solid var(--green);
+}
+.feedback.incorrect {
+  background: rgba(255,59,139,0.15);
+  color: var(--pink);
+  border: 2px solid var(--pink);
+}
+.feedback.try-again {
+  background: rgba(255,193,7,0.15);
+  color: var(--yellow);
+  border: 2px solid var(--yellow);
+}
+
+/* ── ANIMATIONS ── */
+@keyframes pop {
+  0% { transform: scale(0); }
+  70% { transform: scale(1.2); }
+  100% { transform: scale(1); }
+}
+@keyframes shake {
+  0%, 100% { transform: translateX(0); }
+  25% { transform: translateX(-8px); }
+  75% { transform: translateX(8px); }
+}
+.pop-in { animation: pop 0.3s ease-out forwards; }
+.shake { animation: shake 0.3s ease-in-out; }
+
+/* scrollbar */
+::-webkit-scrollbar { width: 6px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+</style>
+</head>
+<body>
+
+<!-- ═══ HEADER ═══ -->
+<div class="vinculum-header">
+  <div class="vinculum-header-left">
+    <a class="vinculum-back-btn" href="../../VINCULUM-Hub.html" style="text-decoration:none;">◀ Hub</a>
+    <div class="vinculum-header-title"><span>VINCULUM</span> Data Graphs</div>
+    <span class="vinculum-header-badge">1.MD</span>
+  </div>
+  <div class="vinculum-header-right">
+    <div class="vinculum-std-tags">
+      <span class="vinculum-std-tag">1.MD.4</span>
+      <span class="vinculum-std-tag mn">MN 1.3.3.1</span>
+    </div>
+    <button class="vinculum-back-btn" id="readAloudBtn" onclick="toggleReadAloud()" aria-label="Read Aloud" title="Read instructions aloud" style="margin-left:8px;white-space:nowrap;">🔊 Read to Me</button>
+  </div>
+</div>
+
+<!-- ═══ MODE TABS ═══ -->
+<div class="vinculum-mode-tabs">
+  <button class="vinculum-mode-tab active-explore" id="tabExplore" data-mode="explore">
+    <svg width="18" height="18" viewBox="0 0 48 48" fill="none"><path d="M4 24C4 24 12 12 24 12C36 12 44 24 44 24C44 24 36 36 24 36C12 36 4 24 4 24Z" stroke="currentColor" stroke-width="3" fill="none"/><circle cx="24" cy="24" r="7" stroke="currentColor" stroke-width="3" fill="none"/><circle cx="24" cy="24" r="3" fill="currentColor"/><line x1="24" y1="4" x2="24" y2="9" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" opacity="0.5"/><line x1="10" y1="8" x2="13" y2="12" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" opacity="0.5"/><line x1="38" y1="8" x2="35" y2="12" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" opacity="0.5"/></svg> Explore
+  </button>
+  <button class="vinculum-mode-tab" id="tabPractice" data-mode="practice">
+    <svg width="18" height="18" viewBox="0 0 48 48" fill="none"><circle cx="24" cy="24" r="20" stroke="currentColor" stroke-width="3" fill="none" opacity="0.3"/><circle cx="24" cy="24" r="20" stroke="currentColor" stroke-width="3" fill="none" stroke-dasharray="126" stroke-dashoffset="32" stroke-linecap="round"/><polyline points="16,24 22,32 34,16" stroke="currentColor" stroke-width="4" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg> Practice
+  </button>
+  <button class="vinculum-mode-tab" id="tabPlay" data-mode="play">
+    <svg width="18" height="18" viewBox="0 0 48 48" fill="none"><polygon points="28,4 12,28 22,28 18,44 36,18 26,18" fill="none" stroke="currentColor" stroke-width="3" stroke-linejoin="round"/><polygon points="27,8 15,27 23,27 20,40 34,19 26,19" fill="currentColor" opacity="0.15"/></svg> Play
+  </button>
+  <div class="vinculum-diff-selector">
+    <span class="vinculum-diff-label">Level</span>
+    <button class="vinculum-diff-btn active" id="diffE" data-diff="emergent">Picture</button>
+    <button class="vinculum-diff-btn" id="diffP" data-diff="proficient">Bar Graph</button>
+    <button class="vinculum-diff-btn" id="diffA" data-diff="advanced">Questions</button>
+  </div>
+</div>
+
+<!-- ═══ MAIN ═══ -->
+<div class="main">
+  <div class="workspace" role="main" id="workspace"></div>
+  <div class="side-panel" id="sidePanel"></div>
+</div>
+
+<!-- ═══ FEEDBACK POPUP ═══ -->
+<div class="feedback" id="feedback"></div>
+
+<script src="../../vinculum-input.js"></script>
+<script>
+// ════════════════════════════════════════
+// DATA SETS
+// ════════════════════════════════════════
+var DATA_SETS = [
+  { title:'Favorite Fruit', categories:['🍎 Apple','🍌 Banana','🍇 Grape','🍊 Orange'], values:[4,3,2,5] },
+  { title:'Favorite Pet', categories:['🐶 Dog','🐱 Cat','🐟 Fish','🐰 Rabbit'], values:[5,4,2,3] },
+  { title:'Favorite Color', categories:['🔴 Red','🔵 Blue','🟢 Green','🟡 Yellow'], values:[3,5,4,2] }
+];
+
+// ════════════════════════════════════════
+// STATE
+// ════════════════════════════════════════
+var S = {
+  mode: 'explore',
+  diff: 'emergent',
+  dataIndex: 0,
+  // Explore state
+  view: 'picture',        // picture | bar | tally
+  built: [0, 0, 0, 0],   // icons placed per category in picture mode
+  // Practice state
+  pQuestion: null,
+  pChoices: [],
+  pAnswer: null,
+  pAttempts: 0,
+  // Play state
+  score: 0,
+  streak: 0,
+  best: 0,
+  round: 0,
+  total: 10,
+  playQuestion: null,
+  playChoices: [],
+  playAnswer: null
+};
+
+// ════════════════════════════════════════
+// MISCONCEPTIONS DATABASE
+// ════════════════════════════════════════
+var MISCONCEPTIONS = {
+  oneToOne: {
+    id: 'one-to-one',
+    detect: function(ds, catIdx, userVal) {
+      return userVal !== ds.values[catIdx] && Math.abs(userVal - ds.values[catIdx]) > 1;
+    },
+    msg: function(cat) { return 'Each icon stands for ONE vote. Count carefully — one picture = one person who chose ' + cat + '.'; }
+  },
+  miscount: {
+    id: 'miscount',
+    detect: function(ds, catIdx, userVal) {
+      return Math.abs(userVal - ds.values[catIdx]) === 1;
+    },
+    msg: function(cat) { return 'Almost! Count each icon in the ' + cat + ' row again. Touch each one as you count.'; }
+  },
+  offByOne: {
+    id: 'off-by-one',
+    detect: function(correct, got) {
+      return Math.abs(correct - got) === 1;
+    },
+    msg: function(correct, got) { return 'So close! You said ' + got + ' but the answer is ' + correct + '. Try counting one more time!'; }
+  },
+  random: {
+    id: 'random',
+    detect: function(correct, got) {
+      return Math.abs(correct - got) > 2;
+    },
+    msg: function() { return 'Look at the graph carefully. Count each icon or read each bar to find the answer.'; }
+  }
+};
+
+// ════════════════════════════════════════
+// READ-ALOUD
+// ════════════════════════════════════════
+function toggleReadAloud() {
+  if (window.VinculumStories && VinculumStories.isReading()) {
+    VinculumStories.stopReading();
+    document.getElementById('readAloudBtn').textContent = '🔊 Read to Me';
+  } else {
+    var inst = document.querySelector('.instruction-box');
+    var text = inst ? inst.textContent : 'Welcome to Data Graphs!';
+    if (window.VinculumStories) {
+      VinculumStories.readAloud(text, { rate: 0.85, onComplete: function() {
+        document.getElementById('readAloudBtn').textContent = '🔊 Read to Me';
+      }});
+      document.getElementById('readAloudBtn').textContent = '⏹ Stop';
+    }
+  }
+}
+
+// ════════════════════════════════════════
+// HELPERS
+// ════════════════════════════════════════
+function randInt(min, max) {
+  return Math.floor(Math.random() * (max - min + 1)) + min;
+}
+var rand = randInt;
+
+function currentData() {
+  return DATA_SETS[S.dataIndex];
+}
+
+function getEmoji(catStr) {
+  var m = catStr.match(/^(\S+)/);
+  return m ? m[1] : '●';
+}
+
+function getCatName(catStr) {
+  return catStr.replace(/^(\S+)\s*/, '');
+}
+
+function maxVal(ds) {
+  var mx = 0;
+  for (var i = 0; i < ds.values.length; i++) {
+    if (ds.values[i] > mx) mx = ds.values[i];
+  }
+  return mx;
+}
+
+function showFeedback(text, type) {
+  var fb = document.getElementById('feedback');
+  fb.textContent = text;
+  fb.className = 'feedback ' + type + ' show';
+  setTimeout(function() { fb.classList.remove('show'); }, 2200);
+}
+var showFB = showFeedback;
+
+function tallyStr(n) {
+  var result = '';
+  var groups = Math.floor(n / 5);
+  var rem = n % 5;
+  for (var g = 0; g < groups; g++) {
+    result += '𝍸 ';
+  }
+  for (var r = 0; r < rem; r++) {
+    result += '|';
+  }
+  return result;
+}
+
+function shuffleArray(arr) {
+  var a = arr.slice();
+  for (var i = a.length - 1; i > 0; i--) {
+    var j = randInt(0, i);
+    var tmp = a[i]; a[i] = a[j]; a[j] = tmp;
+  }
+  return a;
+}
+
+function generateNumChoices(correct, max) {
+  var choices = [correct];
+  if (correct - 1 >= 0 && choices.indexOf(correct - 1) === -1) choices.push(correct - 1);
+  if (correct + 1 <= max && choices.indexOf(correct + 1) === -1) choices.push(correct + 1);
+  if (correct - 2 >= 0 && choices.indexOf(correct - 2) === -1) choices.push(correct - 2);
+  if (correct + 2 <= max && choices.indexOf(correct + 2) === -1) choices.push(correct + 2);
+  while (choices.length < 4) {
+    var r = randInt(0, max);
+    if (choices.indexOf(r) === -1) choices.push(r);
+  }
+  choices.sort(function(a, b) { return a - b; });
+  return choices;
+}
+
+// ════════════════════════════════════════
+// QUESTION GENERATORS
+// ════════════════════════════════════════
+function generateQuestion(ds) {
+  var types = ['howMany', 'most', 'least', 'howManyMore'];
+  var type = types[randInt(0, types.length - 1)];
+  var q = {};
+  if (type === 'howMany') {
+    var ci = randInt(0, ds.categories.length - 1);
+    q.text = 'How many chose ' + getCatName(ds.categories[ci]) + '?';
+    q.answer = ds.values[ci];
+    q.choices = generateNumChoices(q.answer, maxVal(ds) + 2);
+    q.choiceType = 'number';
+  } else if (type === 'most') {
+    var mxI = 0;
+    for (var i = 1; i < ds.values.length; i++) {
+      if (ds.values[i] > ds.values[mxI]) mxI = i;
+    }
+    q.text = 'Which has the MOST votes?';
+    q.answer = ds.categories[mxI];
+    q.choices = shuffleArray(ds.categories.slice());
+    q.choiceType = 'category';
+  } else if (type === 'least') {
+    var mnI = 0;
+    for (var i = 1; i < ds.values.length; i++) {
+      if (ds.values[i] < ds.values[mnI]) mnI = i;
+    }
+    q.text = 'Which has the FEWEST votes?';
+    q.answer = ds.categories[mnI];
+    q.choices = shuffleArray(ds.categories.slice());
+    q.choiceType = 'category';
+  } else {
+    // howManyMore
+    var idxs = shuffleArray([0, 1, 2, 3]);
+    var a = idxs[0], b = idxs[1];
+    if (ds.values[a] < ds.values[b]) { var tmp = a; a = b; b = tmp; }
+    q.text = 'How many MORE chose ' + getCatName(ds.categories[a]) + ' than ' + getCatName(ds.categories[b]) + '?';
+    q.answer = ds.values[a] - ds.values[b];
+    q.choices = generateNumChoices(q.answer, maxVal(ds) + 2);
+    q.choiceType = 'number';
+  }
+  return q;
+}
+
+// ════════════════════════════════════════
+// BUILD EXPLORE PICTURE GRAPH (interactive)
+// ════════════════════════════════════════
+function buildPictureGraphHTML(ds, interactive) {
+  var html = '';
+  for (var i = 0; i < ds.categories.length; i++) {
+    html += '<div class="pg-row">';
+    html += '<div class="pg-label">' + ds.categories[i] + '</div>';
+    html += '<div class="pg-icons" id="pgRow' + i + '">';
+    var emoji = getEmoji(ds.categories[i]);
+    var count = interactive ? S.built[i] : ds.values[i];
+    for (var j = 0; j < count; j++) {
+      html += '<div class="graph-icon filled pop-in">' + emoji + '</div>';
+    }
+    if (interactive) {
+      var target = ds.values[i];
+      for (var k = count; k < target; k++) {
+        html += '<div class="graph-icon placeholder" data-cat="' + i + '" onclick="addIcon(' + i + ')">' + emoji + '</div>';
+      }
+    }
+    html += '</div>';
+    html += '</div>';
+  }
+  return html;
+}
+
+function addIcon(catIdx) {
+  var ds = currentData();
+  if (S.built[catIdx] < ds.values[catIdx]) {
+    S.built[catIdx]++;
+    // Check one-to-one: did they add correctly?
+    renderExplore();
+    if (S.built[catIdx] === ds.values[catIdx]) {
+      // Check if all done
+      var allDone = true;
+      for (var i = 0; i < ds.values.length; i++) {
+        if (S.built[i] < ds.values[i]) { allDone = false; break; }
+      }
+      if (allDone) {
+        showFeedback('Great job! You built the picture graph!', 'correct');
+      }
+    }
+  }
+}
+
+// ════════════════════════════════════════
+// BUILD BAR GRAPH HTML
+// ════════════════════════════════════════
+function buildBarGraphHTML(ds) {
+  var mx = maxVal(ds);
+  var html = '<div class="bar-graph-container">';
+  // Y-axis labels
+  html += '<div class="bar-y-axis">';
+  for (var y = 0; y <= mx; y++) {
+    html += '<div class="bar-y-label">' + y + '</div>';
+  }
+  html += '</div>';
+  // Bars
+  html += '<div class="bar-grid-area" style="height:' + (mx * 32 + 40) + 'px;">';
+  for (var i = 0; i < ds.categories.length; i++) {
+    var h = (ds.values[i] / mx) * 100;
+    html += '<div class="bar-col">';
+    html += '<div class="bar-bar" style="height:' + h + '%;position:relative;">';
+    html += '<div class="bar-bar-inner bar-colors-' + i + '"></div>';
+    html += '<div class="bar-value">' + ds.values[i] + '</div>';
+    html += '</div>';
+    html += '<div class="bar-cat-label">' + ds.categories[i] + '</div>';
+    html += '</div>';
+  }
+  html += '</div></div>';
+  return html;
+}
+
+// ════════════════════════════════════════
+// BUILD TALLY CHART HTML
+// ════════════════════════════════════════
+function buildTallyHTML(ds) {
+  var html = '<table class="tally-chart">';
+  html += '<tr><th>Category</th><th>Tally</th><th>Total</th></tr>';
+  for (var i = 0; i < ds.categories.length; i++) {
+    html += '<tr>';
+    html += '<td>' + ds.categories[i] + '</td>';
+    html += '<td><span class="tally-marks">' + tallyStr(ds.values[i]) + '</span></td>';
+    html += '<td>' + ds.values[i] + '</td>';
+    html += '</tr>';
+  }
+  html += '</table>';
+  return html;
+}
+
+// ════════════════════════════════════════
+// DATA SELECTOR HTML
+// ════════════════════════════════════════
+function dataSelectorHTML() {
+  var html = '<div class="data-selector">';
+  for (var i = 0; i < DATA_SETS.length; i++) {
+    var cls = i === S.dataIndex ? ' active' : '';
+    html += '<button class="data-selector-btn' + cls + '" onclick="selectData(' + i + ')">' + DATA_SETS[i].title + '</button>';
+  }
+  html += '</div>';
+  return html;
+}
+
+function selectData(idx) {
+  S.dataIndex = idx;
+  S.built = [0, 0, 0, 0];
+  render();
+}
+
+// ════════════════════════════════════════
+// RENDER — EXPLORE
+// ════════════════════════════════════════
+function renderExplore() {
+  var ws = document.getElementById('workspace');
+  var ds = currentData();
+  var html = '';
+
+  if (S.diff === 'emergent') {
+    // Picture graph — interactive building
+    html += '<div class="instruction-box">Tap each icon to build the <span class="highlight">picture graph</span> for <strong>' + ds.title + '</strong>.<br>Each picture = 1 vote!</div>';
+    html += dataSelectorHTML();
+    html += '<div class="graph-title">' + ds.title + '</div>';
+    html += '<div class="picture-graph">' + buildPictureGraphHTML(ds, true) + '</div>';
+    var allDone = true;
+    for (var i = 0; i < ds.values.length; i++) {
+      if (S.built[i] < ds.values[i]) { allDone = false; break; }
+    }
+    if (allDone) {
+      html += '<div class="controls"><button class="ctrl-btn primary" onclick="newData()">🔄 New Data</button></div>';
+    }
+  } else if (S.diff === 'proficient') {
+    // Bar graph + tally chart
+    html += '<div class="instruction-box">Explore the <span class="highlight">bar graph</span> and <span class="highlight">tally chart</span> for <strong>' + ds.title + '</strong>.</div>';
+    html += dataSelectorHTML();
+    html += '<div class="view-toggle">';
+    html += '<button class="view-btn' + (S.view === 'bar' || S.view === 'picture' ? ' active' : '') + '" onclick="setView(\'bar\')">Bar Graph</button>';
+    html += '<button class="view-btn' + (S.view === 'tally' ? ' active' : '') + '" onclick="setView(\'tally\')">Tally Chart</button>';
+    html += '</div>';
+    html += '<div class="graph-title">' + ds.title + '</div>';
+    if (S.view === 'tally') {
+      html += buildTallyHTML(ds);
+    } else {
+      html += buildBarGraphHTML(ds);
+    }
+    html += '<div class="controls"><button class="ctrl-btn primary" onclick="newData()">🔄 New Data</button></div>';
+  } else {
+    // Advanced — all three views + questions preview
+    html += '<div class="instruction-box">Study the data for <strong>' + ds.title + '</strong>. Switch views, then try <span class="highlight-green">Practice</span> to answer questions!</div>';
+    html += dataSelectorHTML();
+    html += '<div class="view-toggle">';
+    html += '<button class="view-btn' + (S.view === 'picture' ? ' active' : '') + '" onclick="setView(\'picture\')">Picture</button>';
+    html += '<button class="view-btn' + (S.view === 'bar' ? ' active' : '') + '" onclick="setView(\'bar\')">Bar Graph</button>';
+    html += '<button class="view-btn' + (S.view === 'tally' ? ' active' : '') + '" onclick="setView(\'tally\')">Tally Chart</button>';
+    html += '</div>';
+    html += '<div class="graph-title">' + ds.title + '</div>';
+    if (S.view === 'picture') {
+      html += '<div class="picture-graph">' + buildPictureGraphHTML(ds, false) + '</div>';
+    } else if (S.view === 'bar') {
+      html += buildBarGraphHTML(ds);
+    } else {
+      html += buildTallyHTML(ds);
+    }
+    html += '<div class="controls"><button class="ctrl-btn primary" onclick="newData()">🔄 New Data</button></div>';
+  }
+
+  ws.innerHTML = html;
+  renderSidePanel();
+}
+
+// ════════════════════════════════════════
+// RENDER — PRACTICE
+// ════════════════════════════════════════
+function renderPractice() {
+  var ws = document.getElementById('workspace');
+  var ds = currentData();
+
+  if (!S.pQuestion) {
+    S.pQuestion = generateQuestion(ds);
+    S.pAnswer = S.pQuestion.answer;
+    S.pChoices = S.pQuestion.choices;
+    S.pAttempts = 0;
+  }
+
+  var html = '';
+  html += dataSelectorHTML();
+  html += '<div class="graph-title">' + ds.title + '</div>';
+
+  // Show graph based on diff
+  if (S.diff === 'emergent') {
+    html += '<div class="picture-graph">' + buildPictureGraphHTML(ds, false) + '</div>';
+  } else if (S.diff === 'proficient') {
+    html += buildBarGraphHTML(ds);
+  } else {
+    // Advanced: no graph shown — pure question mode
+    html += buildTallyHTML(ds);
+  }
+
+  html += '<div class="instruction-box">' + S.pQuestion.text + '</div>';
+  html += '<div class="mc-grid">';
+  for (var i = 0; i < S.pChoices.length; i++) {
+    var display = S.pQuestion.choiceType === 'number' ? S.pChoices[i] : S.pChoices[i];
+    var numClass = S.pQuestion.choiceType === 'number' ? ' number-only' : '';
+    html += '<button class="mc-btn' + numClass + '" onclick="answerPractice(' + i + ')">' + display + '</button>';
+  }
+  html += '</div>';
+  html += '<div class="controls"><button class="ctrl-btn" onclick="skipPractice()">Skip →</button></div>';
+
+  ws.innerHTML = html;
+  renderSidePanel();
+}
+
+function answerPractice(idx) {
+  var chosen = S.pChoices[idx];
+  var correct = S.pAnswer;
+  var isCorrect = (chosen === correct);
+  var btns = document.querySelectorAll('.mc-btn');
+  S.pAttempts++;
+
+  if (isCorrect) {
+    btns[idx].classList.add('correct-flash');
+    showFeedback('Correct! ' + (typeof correct === 'number' ? correct : getCatName(String(correct))) + ' is right!', 'correct');
+    setTimeout(function() { nextPractice(); }, 1500);
+  } else {
+    btns[idx].classList.add('incorrect-flash');
+    // Misconception feedback
+    if (typeof correct === 'number' && typeof chosen === 'number') {
+      if (MISCONCEPTIONS.offByOne.detect(correct, chosen)) {
+        showFeedback(MISCONCEPTIONS.offByOne.msg(correct, chosen), 'try-again');
+      } else if (MISCONCEPTIONS.random.detect(correct, chosen)) {
+        showFeedback(MISCONCEPTIONS.random.msg(), 'incorrect');
+      } else {
+        showFeedback('Not quite. Try again!', 'try-again');
+      }
+    } else {
+      showFeedback('Not that one. Look at the graph again!', 'try-again');
+    }
+    setTimeout(function() {
+      btns[idx].classList.remove('incorrect-flash');
+    }, 1200);
+  }
+}
+
+function nextPractice() {
+  S.pQuestion = null;
+  renderPractice();
+}
+
+function skipPractice() {
+  S.pQuestion = null;
+  renderPractice();
+}
+
+// ════════════════════════════════════════
+// RENDER — PLAY
+// ════════════════════════════════════════
+function renderPlay() {
+  var ws = document.getElementById('workspace');
+  var ds = currentData();
+
+  if (S.round >= S.total) {
+    // Game over
+    var html = '';
+    html += '<div class="score-display">';
+    html += '<div class="score-value">' + S.score + '</div>';
+    html += '<div class="score-label">Final Score · Best Streak ' + S.best + '</div>';
+    var maxPossible = S.total * 10 + (S.total * (S.total - 1));
+    html += '<div class="streak-bar"><div class="streak-fill" style="width:' + Math.min((S.score / maxPossible) * 100, 100) + '%;"></div></div>';
+    html += '</div>';
+    if (S.score >= 100) {
+      html += '<div class="instruction-box"><span class="highlight-green">Amazing!</span> You are a data graph expert!</div>';
+    } else if (S.score >= 50) {
+      html += '<div class="instruction-box">Good work! Keep practicing to get even better.</div>';
+    } else {
+      html += '<div class="instruction-box">Nice try! Go back to Explore and study the graphs, then try again.</div>';
+    }
+    html += '<div class="controls"><button class="ctrl-btn primary" onclick="restartPlay()">🔄 Play Again</button></div>';
+    ws.innerHTML = html;
+    renderSidePanel();
+    return;
+  }
+
+  if (!S.playQuestion) {
+    // Pick a random data set for variety
+    var rIdx = randInt(0, DATA_SETS.length - 1);
+    S.dataIndex = rIdx;
+    ds = currentData();
+    S.playQuestion = generateQuestion(ds);
+    S.playAnswer = S.playQuestion.answer;
+    S.playChoices = S.playQuestion.choices;
+  }
+
+  var html = '';
+  html += '<div class="score-display">';
+  html += '<div class="score-value">' + S.score + '</div>';
+  html += '<div class="score-label">Round ' + (S.round + 1) + ' of ' + S.total + ' · Streak ' + S.streak + '</div>';
+  html += '<div class="streak-bar"><div class="streak-fill" style="width:' + (S.streak * 10) + '%;"></div></div>';
+  html += '</div>';
+
+  html += '<div class="graph-title">' + ds.title + '</div>';
+
+  // Show appropriate graph
+  if (S.diff === 'emergent') {
+    html += '<div class="picture-graph">' + buildPictureGraphHTML(ds, false) + '</div>';
+  } else if (S.diff === 'proficient') {
+    html += buildBarGraphHTML(ds);
+  } else {
+    html += buildTallyHTML(ds);
+  }
+
+  html += '<div class="instruction-box">' + S.playQuestion.text + '</div>';
+  html += '<div class="mc-grid">';
+  for (var i = 0; i < S.playChoices.length; i++) {
+    var display = S.playChoices[i];
+    var numClass = S.playQuestion.choiceType === 'number' ? ' number-only' : '';
+    html += '<button class="mc-btn' + numClass + '" onclick="answerPlay(' + i + ')">' + display + '</button>';
+  }
+  html += '</div>';
+
+  ws.innerHTML = html;
+  renderSidePanel();
+}
+
+function answerPlay(idx) {
+  var chosen = S.playChoices[idx];
+  var correct = S.playAnswer;
+  var isCorrect = (chosen === correct);
+  var btns = document.querySelectorAll('.mc-btn');
+
+  if (isCorrect) {
+    var pts = 10 + S.streak * 2;
+    S.score += pts;
+    S.streak++;
+    if (S.streak > S.best) S.best = S.streak;
+    btns[idx].classList.add('correct-flash');
+    showFeedback('Yes! +' + pts + ' pts', 'correct');
+  } else {
+    S.streak = 0;
+    btns[idx].classList.add('incorrect-flash');
+    // Highlight correct
+    for (var j = 0; j < btns.length; j++) {
+      if (S.playChoices[j] === correct) {
+        btns[j].classList.add('correct-flash');
+      }
+    }
+    if (typeof correct === 'number' && typeof chosen === 'number') {
+      if (MISCONCEPTIONS.offByOne.detect(correct, chosen)) {
+        showFeedback(MISCONCEPTIONS.offByOne.msg(correct, chosen), 'try-again');
+      } else {
+        showFeedback('The answer is ' + correct, 'incorrect');
+      }
+    } else {
+      showFeedback('The answer is ' + (typeof correct === 'string' ? getCatName(correct) : correct), 'incorrect');
+    }
+  }
+
+  S.round++;
+  S.playQuestion = null;
+  setTimeout(function() { renderPlay(); }, 1600);
+}
+
+function restartPlay() {
+  S.score = 0;
+  S.streak = 0;
+  S.round = 0;
+  S.playQuestion = null;
+  renderPlay();
+}
+
+// ════════════════════════════════════════
+// NEW DATA (Explore)
+// ════════════════════════════════════════
+function newData() {
+  S.dataIndex = (S.dataIndex + 1) % DATA_SETS.length;
+  S.built = [0, 0, 0, 0];
+  render();
+}
+
+function setView(v) {
+  S.view = v;
+  render();
+}
+
+// ════════════════════════════════════════
+// SIDE PANEL
+// ════════════════════════════════════════
+function renderSidePanel() {
+  var sp = document.getElementById('sidePanel');
+  var ds = currentData();
+  var html = '';
+
+  html += '<div class="panel-section">';
+  html += '<div class="panel-title">Data Summary</div>';
+  html += '<div class="panel-text"><strong>' + ds.title + '</strong></div>';
+  for (var i = 0; i < ds.categories.length; i++) {
+    html += '<div class="panel-text">' + ds.categories[i] + ': <strong>' + ds.values[i] + '</strong></div>';
+  }
+  html += '</div>';
+
+  html += '<div class="panel-section">';
+  html += '<div class="panel-title">Tips</div>';
+  if (S.diff === 'emergent') {
+    html += '<div class="panel-text">Each picture stands for <strong>one</strong> vote. Count carefully — touch each icon as you count!</div>';
+  } else if (S.diff === 'proficient') {
+    html += '<div class="panel-text">The taller the bar, the more votes. Compare bar heights to find the most and least.</div>';
+  } else {
+    html += '<div class="panel-text">"How many more?" means <strong>subtract</strong> the smaller number from the bigger number.</div>';
+  }
+  html += '</div>';
+
+  if (S.mode === 'play') {
+    html += '<div class="panel-section">';
+    html += '<div class="panel-title">Score</div>';
+    html += '<div class="panel-text">Score: <strong>' + S.score + '</strong> / ' + S.total + '</div>';
+    html += '<div class="panel-text">Streak: <strong>' + S.streak + '</strong></div>';
+    html += '<div class="panel-text">Best: <strong>' + S.best + '</strong></div>';
+    html += '</div>';
+  }
+
+  html += '<div class="panel-section">';
+  html += '<div class="panel-title">Standards</div>';
+  html += '<div class="panel-text">1.MD.4 — Organize, represent, and interpret data with up to three categories.</div>';
+  html += '<div class="panel-text" style="margin-top:6px;">MN 1.3.3.1 — Collect, display and interpret data using tally charts and bar graphs.</div>';
+  html += '</div>';
+
+  sp.innerHTML = html;
+}
+
+// ════════════════════════════════════════
+// MODE / DIFF
+// ════════════════════════════════════════
+function setMode(mode) {
+  S.mode = mode;
+  S.pQuestion = null;
+  S.playQuestion = null;
+  S.round = 0;
+  S.score = 0;
+  S.streak = 0;
+  S.built = [0, 0, 0, 0];
+
+  document.querySelectorAll('.vinculum-mode-tab').forEach(function(t) {
+    t.className = 'vinculum-mode-tab';
+  });
+  var tab = document.getElementById('tab' + mode.charAt(0).toUpperCase() + mode.slice(1));
+  if (tab) tab.classList.add('active-' + mode);
+
+  render();
+}
+
+function setDiff(diff) {
+  S.diff = diff;
+  S.pQuestion = null;
+  S.playQuestion = null;
+  S.built = [0, 0, 0, 0];
+  if (diff === 'proficient') S.view = 'bar';
+  else if (diff === 'emergent') S.view = 'picture';
+  else S.view = 'picture';
+
+  document.querySelectorAll('.vinculum-diff-btn').forEach(function(b) {
+    b.classList.remove('active');
+  });
+  var btn = { emergent: 'diffE', proficient: 'diffP', advanced: 'diffA' }[diff];
+  document.getElementById(btn).classList.add('active');
+
+  render();
+}
+
+// ════════════════════════════════════════
+// MAIN RENDER
+// ════════════════════════════════════════
+function render() {
+  if (S.mode === 'explore') renderExplore();
+  else if (S.mode === 'practice') renderPractice();
+  else renderPlay();
+}
+
+// ════════════════════════════════════════
+// INIT
+// ════════════════════════════════════════
+document.querySelectorAll('.vinculum-mode-tab').forEach(function(tab) {
+  tab.addEventListener('click', function() {
+    setMode(this.dataset.mode);
+  });
+});
+
+document.querySelectorAll('.vinculum-diff-btn').forEach(function(btn) {
+  btn.addEventListener('click', function() {
+    setDiff(this.dataset.diff);
+  });
+});
+
+render();
+</script>
+<script src="../../vinculum-core.js"></script>
+<script src="../../vinculum-data.js"></script>
+<script src="../../vinculum-adaptive-hook.js"></script>
+<script src="../../vinculum-3reads.js"></script>
+<script src="../../vinculum-stories.js"></script>
+<script src="../../vinculum-feedback.js"></script>
+<script src="../../vinculum-guide.js"></script>
+<script src="../../vinculum-identity.js"></script>
+<script src="../../vinculum-indigenous.js"></script>
+<script src="../../vinculum-dashboard.js"></script>
+<script src="../../vinculum-hyperfocus.js"></script>
+<script src="../../vinculum-layout.js"></script>
+</body>
+</html>
