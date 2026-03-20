@@ -89,6 +89,12 @@ body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);heigh
 .canvas-inner.explore-mode .click-target{display:none;}
 .canvas-inner.explore-mode{cursor:pointer;}
 
+/* ═══ DRAG-AND-DROP ═══ */
+.tray-piece[draggable="true"]{cursor:grab;}
+.tray-piece[draggable="true"]:active{cursor:grabbing;}
+.canvas-wrap.drag-over{border-color:var(--cyan);box-shadow:0 0 20px rgba(0,212,255,0.2);}
+.drag-ghost{position:fixed;pointer-events:none;z-index:10000;opacity:0.8;transform:scale(1.1);}
+
 ::-webkit-scrollbar{width:6px;}::-webkit-scrollbar-track{background:transparent;}::-webkit-scrollbar-thumb{background:var(--border);border-radius:3px;}
 </style>
 </head>
@@ -626,7 +632,7 @@ function renderExploreTray(types){
   types.forEach(type=>{
     const s=SHAPES[type];
     const sel = S.exSelected===type;
-    h+=`<div class="tray-piece ${sel?'selected':''}" onclick="S.exSelected='${type}';render();">`;
+    h+=`<div class="tray-piece ${sel?'selected':''}" draggable="true" data-shape="${type}" onclick="S.exSelected='${type}';render();">`;
     h+=`<div>${thumbSVG(type,28)}</div>`;
     h+=`<div class="t-label">${s.name}</div>`;
     h+='</div>';
@@ -634,6 +640,46 @@ function renderExploreTray(types){
   h+='</div>';
   return h;
 }
+
+/* ═══ DRAG-AND-DROP ENGINE ═══ */
+let dragType = null;
+document.addEventListener('dragstart', function(e){
+  const piece = e.target.closest('.tray-piece[draggable]');
+  if(!piece) return;
+  dragType = piece.dataset.shape;
+  S.exSelected = dragType;
+  e.dataTransfer.setData('text/plain', dragType);
+  e.dataTransfer.effectAllowed = 'copy';
+  if(window.VinculumAudio) VinculumAudio.sfx.dragStart();
+});
+document.addEventListener('dragover', function(e){
+  const canvas = e.target.closest('.canvas-wrap');
+  if(!canvas || S.mode !== 'explore') return;
+  e.preventDefault();
+  e.dataTransfer.dropEffect = 'copy';
+  canvas.classList.add('drag-over');
+});
+document.addEventListener('dragleave', function(e){
+  const canvas = e.target.closest('.canvas-wrap');
+  if(canvas) canvas.classList.remove('drag-over');
+});
+document.addEventListener('drop', function(e){
+  const canvasWrap = e.target.closest('.canvas-wrap');
+  if(!canvasWrap || S.mode !== 'explore') return;
+  e.preventDefault();
+  canvasWrap.classList.remove('drag-over');
+  const type = e.dataTransfer.getData('text/plain') || dragType;
+  if(!type || !SHAPES[type]) return;
+  // Calculate grid position from drop coordinates
+  const inner = canvasWrap.querySelector('.canvas-inner');
+  const rect = inner.getBoundingClientRect();
+  const gx = Math.floor((e.clientX - rect.left) / CELL);
+  const gy = Math.floor((e.clientY - rect.top) / CELL);
+  S.exSelected = type;
+  clickCanvas(gx, gy);
+  if(window.VinculumAudio) VinculumAudio.sfx.drop();
+  dragType = null;
+});
 
 function renderPracticeTray(types,totalCounts,remaining){
   let h='<div class="tray">';
@@ -683,5 +729,7 @@ render();
     <script src="../../vinculum-identity.js"></script>
     <script src="../../vinculum-indigenous.js"></script>
     <script src="../../vinculum-dashboard.js"></script>
+<script src="../../vinculum-audio.js"></script>
+<script src="../../vinculum-layout.js"></script>
 </body>
 </html>

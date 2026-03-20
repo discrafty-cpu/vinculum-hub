@@ -660,6 +660,136 @@
                 </div>
             </div>`;
 
+            html += `<div class="panel-section">
+                <div class="panel-title">Sort Activity</div>
+                <div class="panel-content">
+                    <button class="answer-btn" style="width:100%;margin-top:8px;padding:12px;background:rgba(0,212,255,0.1);border:1px solid var(--cyan,#00d4ff);color:var(--cyan,#00d4ff);border-radius:8px;cursor:pointer;font-weight:700;" onclick="startSortActivity()">🗂 Sort Shapes</button>
+                </div>
+            </div>`;
+
+            return html;
+        }
+
+        /* ═══ SORTING ACTIVITY ═══ */
+        let sortState = { shapes:[], bins:[], current:0, totalCorrect:0, totalWrong:0, active:false };
+
+        function startSortActivity() {
+            generateSortChallenge();
+            sortState.active = true;
+            render();
+        }
+
+        function generateSortChallenge() {
+            const allShapes = S.shapes.filter(s => s.type === '2D');
+            const shuffled = allShapes.sort(() => Math.random() - 0.5);
+
+            // Determine difficulty-based bins
+            const diffLabel = document.querySelector('.vinculum-diff-btn.active');
+            const diff = diffLabel ? diffLabel.textContent.trim().toLowerCase() : 'emergent';
+
+            if (diff === 'proficient' || diff === '2d') {
+                // 2 bins by attribute
+                sortState.bins = [
+                    { label: 'Has 4 sides', shapes: [], test: s => s.sides === 4 },
+                    { label: 'Not 4 sides', shapes: [], test: s => s.sides !== 4 }
+                ];
+                sortState.shapes = shuffled.slice(0, 7);
+            } else if (diff === 'advanced' || diff === '3d') {
+                // 3 bins by corners
+                sortState.bins = [
+                    { label: '0 corners', shapes: [], test: s => s.corners === 0 },
+                    { label: '3 corners', shapes: [], test: s => s.corners === 3 },
+                    { label: '4+ corners', shapes: [], test: s => s.corners >= 4 }
+                ];
+                sortState.shapes = shuffled.slice(0, 10);
+            } else {
+                // Emergent: 2 bins by shape name
+                const targetName = shuffled[0] ? shuffled[0].name : 'Circle';
+                sortState.bins = [
+                    { label: targetName + 's', shapes: [], test: s => s.name === targetName },
+                    { label: 'Not ' + targetName + 's', shapes: [], test: s => s.name !== targetName }
+                ];
+                sortState.shapes = shuffled.slice(0, 6);
+            }
+            sortState.current = 0;
+            sortState.totalCorrect = 0;
+            sortState.totalWrong = 0;
+        }
+
+        function sortIntoBin(binIdx) {
+            if (sortState.current >= sortState.shapes.length) return;
+            const shape = sortState.shapes[sortState.current];
+            const bin = sortState.bins[binIdx];
+            const correct = bin.test(shape);
+
+            if (correct) {
+                sortState.totalCorrect++;
+                bin.shapes.push(shape);
+                if (window.VinculumAudio) VinculumAudio.sfx.correct();
+                showFB('✓ ' + shape.name + ' → ' + bin.label, 'correct');
+            } else {
+                sortState.totalWrong++;
+                if (window.VinculumAudio) VinculumAudio.sfx.incorrect();
+                // Find correct bin
+                const correctBin = sortState.bins.find(b => b.test(shape));
+                showFB('A ' + shape.name + ' has ' + shape.sides + ' sides and ' + shape.corners + ' corners — it goes in "' + (correctBin ? correctBin.label : '?') + '"', 'try-again');
+                if (correctBin) correctBin.shapes.push(shape);
+            }
+
+            sortState.current++;
+            if (sortState.current >= sortState.shapes.length) {
+                setTimeout(() => {
+                    if (window.VinculumAudio) VinculumAudio.sfx.celebrate();
+                    showFB('Sort complete! ' + sortState.totalCorrect + '/' + sortState.shapes.length + ' correct', 'correct');
+                }, 600);
+            }
+            render();
+        }
+
+        function renderSortActivity() {
+            let html = '<div class="practice-layout" style="gap:16px;">';
+
+            if (sortState.current >= sortState.shapes.length) {
+                // Complete
+                html += '<div class="practice-question" style="font-size:24px;">Sort Complete!</div>';
+                html += '<div style="text-align:center;font-size:18px;color:var(--green,#00e676);font-weight:700;">' + sortState.totalCorrect + ' / ' + sortState.shapes.length + ' correct</div>';
+                html += '<div style="display:flex;gap:16px;justify-content:center;margin-top:16px;flex-wrap:wrap;">';
+                sortState.bins.forEach(bin => {
+                    html += '<div style="background:var(--card,#1a1f2e);border:1px solid var(--border,#2a2f3e);border-radius:12px;padding:12px;min-width:120px;text-align:center;">';
+                    html += '<div style="font-size:11px;font-weight:700;text-transform:uppercase;color:var(--muted,#888);margin-bottom:8px;">' + bin.label + '</div>';
+                    bin.shapes.forEach(s => {
+                        html += '<div style="font-size:13px;color:var(--text2,#ccc);">' + s.name + '</div>';
+                    });
+                    html += '</div>';
+                });
+                html += '</div>';
+                html += '<div style="text-align:center;margin-top:16px;"><button class="answer-btn" style="padding:12px 24px;background:rgba(0,212,255,0.1);border:1px solid var(--cyan,#00d4ff);color:var(--cyan,#00d4ff);border-radius:8px;cursor:pointer;font-weight:700;" onclick="sortState.active=false;initializePractice();render();">Back to Practice</button>';
+                html += ' <button class="answer-btn" style="padding:12px 24px;background:rgba(0,230,118,0.1);border:1px solid var(--green,#00e676);color:var(--green,#00e676);border-radius:8px;cursor:pointer;font-weight:700;" onclick="startSortActivity();">Sort Again</button></div>';
+            } else {
+                const shape = sortState.shapes[sortState.current];
+                html += '<div class="practice-question">Sort this shape into the right bin!</div>';
+                html += '<div style="text-align:center;font-size:13px;color:var(--muted,#888);">Shape ' + (sortState.current + 1) + ' of ' + sortState.shapes.length + '</div>';
+
+                // Show current shape
+                html += '<div class="practice-shape-display" style="margin:12px auto;">';
+                html += buildShapeSVG(shape, 180);
+                html += '<div style="margin-top:8px;font-size:16px;font-weight:700;color:var(--text,#fff);">' + shape.name + '</div>';
+                html += '</div>';
+
+                // Bin buttons
+                html += '<div style="display:flex;gap:12px;justify-content:center;flex-wrap:wrap;">';
+                sortState.bins.forEach((bin, i) => {
+                    html += '<button class="answer-btn" style="padding:16px 24px;min-width:140px;font-size:15px;" onclick="sortIntoBin(' + i + ')">';
+                    html += '<div style="font-weight:700;">' + bin.label + '</div>';
+                    if (bin.shapes.length > 0) {
+                        html += '<div style="font-size:11px;color:var(--muted,#888);margin-top:4px;">' + bin.shapes.length + ' sorted</div>';
+                    }
+                    html += '</button>';
+                });
+                html += '</div>';
+            }
+
+            html += '</div>';
             return html;
         }
 
@@ -689,6 +819,8 @@
             let workspaceHtml = '';
             if (S.mode === 'explore') {
                 workspaceHtml = renderExploreMode();
+            } else if (S.mode === 'practice' && sortState.active) {
+                workspaceHtml = renderSortActivity();
             } else if (S.mode === 'practice') {
                 workspaceHtml = renderPracticeMode();
             } else if (S.mode === 'play') {
@@ -715,6 +847,7 @@
             document.querySelectorAll('.vinculum-mode-tab').forEach(tab => {
                 tab.addEventListener('click', () => {
                     clearTourTimers();
+                    sortState.active = false;
                     S.mode = tab.dataset.mode;
                     document.querySelectorAll('.vinculum-mode-tab').forEach(t => {
                       t.classList.remove('active-explore', 'active-practice', 'active-play');
@@ -952,6 +1085,8 @@
 <script src="../../vinculum-identity.js"></script>
 <script src="../../vinculum-indigenous.js"></script>
 <script src="../../vinculum-dashboard.js"></script>
+<script src="../../vinculum-audio.js"></script>
+<script src="../../vinculum-layout.js"></script>
 <!-- Foundation loaded from vinculum-core.js -->
 </body>
 </html>
