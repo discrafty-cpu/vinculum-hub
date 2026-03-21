@@ -3,329 +3,518 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta name="description" content="VINCULUM Learning Hub - Fair Games Explorer">
+    <meta name="description" content="VINCULUM Learning Hub - Fair Games Explorer with visual manipulatives">
     <meta name="author" content="VINCULUM">
     <title>Fair Games Explorer — VINCULUM Hub</title>
-
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
-
-    <!-- VINCULUM Core Styles -->
     <link rel="stylesheet" href="../../vinculum-core.css">
-
     <style>
         :root {
             --color-coin: #FFD700;
             --color-spinner: #FF6B9D;
             --color-dice: #4ECDC4;
+            --color-bag: #9B59B6;
             --color-fair: #2ECC71;
             --color-unfair: #E74C3C;
         }
 
-        .tool-section {
-            margin: 2rem 0;
-            padding: 1.5rem;
-            background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
-            border-radius: 12px;
-            border-left: 5px solid var(--color-coin);
-        }
-
-        .tool-section.spinner-sec {
-            border-left-color: var(--color-spinner);
-        }
-
-        .tool-section.dice-sec {
-            border-left-color: var(--color-dice);
-        }
-
-        .button-group {
+        .manip-stage {
             display: flex;
-            gap: 1rem;
-            flex-wrap: wrap;
+            align-items: center;
+            justify-content: center;
+            min-height: 200px;
             margin: 1rem 0;
+            position: relative;
+        }
+
+        /* ── COIN ── */
+        .coin-wrap {
+            perspective: 800px;
+            width: 150px; height: 150px;
+            cursor: pointer;
+            filter: drop-shadow(0 8px 16px rgba(0,0,0,0.35));
+        }
+        .coin-wrap:hover { filter: drop-shadow(0 10px 20px rgba(255,215,0,0.4)); }
+        .coin-inner {
+            width: 100%; height: 100%;
+            position: relative;
+            transform-style: preserve-3d;
+            transition: transform 0.1s;
+        }
+        .coin-inner.flipping {
+            animation: coinFlip 1s cubic-bezier(0.25, 0.46, 0.45, 0.94) forwards;
+        }
+        .coin-inner.flipping-tails {
+            animation: coinFlipTails 1s cubic-bezier(0.25, 0.46, 0.45, 0.94) forwards;
+        }
+        @keyframes coinFlip {
+            0% { transform: rotateY(0deg) translateY(0) scale(1); }
+            15% { transform: rotateY(360deg) translateY(-100px) scale(1.1); }
+            40% { transform: rotateY(900deg) translateY(-60px) scale(1.05); }
+            70% { transform: rotateY(1260deg) translateY(-20px) scale(1.02); }
+            100% { transform: rotateY(1440deg) translateY(0) scale(1); }
+        }
+        @keyframes coinFlipTails {
+            0% { transform: rotateY(0deg) translateY(0) scale(1); }
+            15% { transform: rotateY(360deg) translateY(-100px) scale(1.1); }
+            40% { transform: rotateY(900deg) translateY(-60px) scale(1.05); }
+            70% { transform: rotateY(1260deg) translateY(-20px) scale(1.02); }
+            100% { transform: rotateY(1620deg) translateY(0) scale(1); }
+        }
+        .coin-face {
+            position: absolute; width: 100%; height: 100%;
+            border-radius: 50%;
+            backface-visibility: hidden;
+            display: flex; align-items: center; justify-content: center;
+            flex-direction: column;
+            border: 4px solid #B8860B;
+            box-shadow:
+                0 0 0 2px #DAA520,
+                inset 0 4px 8px rgba(255,255,255,0.4),
+                inset 0 -4px 8px rgba(139,69,20,0.3),
+                0 6px 20px rgba(0,0,0,0.4);
+        }
+        .coin-face::before {
+            content: '';
+            position: absolute;
+            top: 8px; left: 8px; right: 8px; bottom: 8px;
+            border-radius: 50%;
+            border: 2px solid rgba(255,230,109,0.6);
+            pointer-events: none;
+        }
+        .coin-face::after {
+            content: '';
+            position: absolute;
+            top: 5%; left: 15%; width: 40%; height: 30%;
+            background: linear-gradient(135deg, rgba(255,255,255,0.5), transparent);
+            border-radius: 50%;
+            pointer-events: none;
+        }
+        .coin-heads {
+            background: conic-gradient(from 0deg, #FFD700, #FFC125, #FFD700, #DAA520, #FFD700, #FFE66D, #FFD700);
+            color: #7B5B14;
+            font-size: 1rem; font-weight: 800;
+            text-shadow: 0 1px 0 rgba(255,230,109,0.8), 0 -1px 0 rgba(139,69,20,0.3);
+            letter-spacing: 1px;
+        }
+        .coin-heads .coin-letter { font-size: 2.8rem; font-family: 'Georgia', serif; font-weight: 900; }
+        .coin-heads .coin-label { font-size: 0.65rem; text-transform: uppercase; letter-spacing: 3px; margin-top: -2px; }
+        .coin-tails {
+            background: conic-gradient(from 180deg, #C0C0C0, #D8D8D8, #A9A9A9, #C0C0C0, #D3D3D3, #B0B0B0, #C0C0C0);
+            color: #555;
+            font-size: 1rem; font-weight: 800;
+            text-shadow: 0 1px 0 rgba(255,255,255,0.6), 0 -1px 0 rgba(0,0,0,0.15);
+            letter-spacing: 1px;
+            transform: rotateY(180deg);
+            border-color: #888;
+        }
+        .coin-tails .coin-letter { font-size: 2.8rem; font-family: 'Georgia', serif; font-weight: 900; }
+        .coin-tails .coin-label { font-size: 0.65rem; text-transform: uppercase; letter-spacing: 3px; margin-top: -2px; }
+        .coin-tails::before { border-color: rgba(200,200,200,0.5); }
+        .coin-tails::after { background: linear-gradient(135deg, rgba(255,255,255,0.35), transparent); }
+
+        /* ── DICE ── */
+        .dice-3d {
+            width: 100px; height: 100px;
+            perspective: 400px;
+            cursor: pointer;
+            filter: drop-shadow(0 8px 16px rgba(0,0,0,0.35));
+        }
+        .dice-3d:hover { filter: drop-shadow(0 10px 20px rgba(78,205,196,0.3)); }
+        .dice-cube {
+            width: 100px; height: 100px;
+            position: relative;
+            transform-style: preserve-3d;
+            transition: transform 0.1s;
+        }
+        .dice-cube.rolling {
+            animation: diceRoll 1.1s cubic-bezier(0.25, 0.46, 0.45, 0.94) forwards;
+        }
+        @keyframes diceRoll {
+            0% { transform: rotateX(0) rotateY(0) rotateZ(0) translateY(0) scale(1); }
+            10% { transform: rotateX(120deg) rotateY(90deg) rotateZ(45deg) translateY(-80px) scale(1.1); }
+            30% { transform: rotateX(360deg) rotateY(270deg) rotateZ(135deg) translateY(-50px) scale(1.05); }
+            50% { transform: rotateX(540deg) rotateY(450deg) rotateZ(225deg) translateY(-30px) scale(1.02); }
+            75% { transform: rotateX(660deg) rotateY(540deg) rotateZ(300deg) translateY(-8px); }
+            100% { transform: var(--dice-end); }
+        }
+        .dice-face-el {
+            position: absolute; width: 100px; height: 100px;
+            background: linear-gradient(145deg, #ffffff, #f0f0f0);
+            border: none;
+            border-radius: 16px;
+            display: grid;
+            padding: 14px;
+            box-shadow: inset 0 2px 4px rgba(255,255,255,0.8), inset 0 -2px 4px rgba(0,0,0,0.08);
+        }
+        .dice-face-el.f1 { transform: translateZ(50px); }
+        .dice-face-el.f2 { transform: rotateY(180deg) translateZ(50px); }
+        .dice-face-el.f3 { transform: rotateY(90deg) translateZ(50px); }
+        .dice-face-el.f4 { transform: rotateY(-90deg) translateZ(50px); }
+        .dice-face-el.f5 { transform: rotateX(90deg) translateZ(50px); }
+        .dice-face-el.f6 { transform: rotateX(-90deg) translateZ(50px); }
+        .pip {
+            width: 16px; height: 16px;
+            background: radial-gradient(circle at 40% 35%, #555, #1a1a1a);
+            border-radius: 50%;
+            align-self: center; justify-self: center;
+            box-shadow: inset 0 1px 2px rgba(255,255,255,0.15), 0 1px 2px rgba(0,0,0,0.2);
+        }
+        .dice-face-el.f1 { grid-template: 1fr / 1fr; place-items: center; }
+        .dice-face-el.f1 .pip { width: 20px; height: 20px; background: radial-gradient(circle at 40% 35%, #E74C3C, #C0392B); }
+        .dice-face-el.f2 { grid-template: 1fr 1fr / 1fr; }
+        .dice-face-el.f2 .pip:first-child { justify-self: end; align-self: start; }
+        .dice-face-el.f2 .pip:last-child { justify-self: start; align-self: end; }
+        .dice-face-el.f3 { grid-template: 1fr 1fr 1fr / 1fr; }
+        .dice-face-el.f3 .pip:first-child { justify-self: end; align-self: start; }
+        .dice-face-el.f3 .pip:nth-child(2) { justify-self: center; }
+        .dice-face-el.f3 .pip:last-child { justify-self: start; align-self: end; }
+        .dice-face-el.f4 { grid-template: 1fr 1fr / 1fr 1fr; }
+        .dice-face-el.f5 { grid-template: 1fr 1fr 1fr / 1fr 1fr; }
+        .dice-face-el.f5 .pip:nth-child(5) { grid-column: 1 / -1; }
+        .dice-face-el.f6 { grid-template: 1fr 1fr 1fr / 1fr 1fr; }
+
+        /* ── SPINNER ── */
+        .spinner-container {
+            position: relative; width: 220px; height: 220px;
+            cursor: pointer;
+        }
+        .spinner-container::before {
+            content: '';
+            position: absolute;
+            top: -6px; left: -6px; right: -6px; bottom: -6px;
+            border-radius: 50%;
+            background: conic-gradient(from 0deg, #888, #ccc, #888, #aaa, #ddd, #888);
+            box-shadow: 0 4px 20px rgba(0,0,0,0.3), inset 0 2px 6px rgba(255,255,255,0.3);
+            z-index: 0;
+        }
+        .spinner-wheel {
+            width: 100%; height: 100%;
+            border-radius: 50%;
+            transition: transform 0.1s;
+            box-shadow: inset 0 0 10px rgba(0,0,0,0.15);
+            position: relative;
+            z-index: 1;
+        }
+        .spinner-wheel.spinning {
+            transition: transform 3.5s cubic-bezier(0.17, 0.67, 0.08, 0.99);
+        }
+        .spinner-arrow {
+            position: absolute;
+            top: -16px; left: 50%;
+            transform: translateX(-50%);
+            width: 0; height: 0;
+            border-left: 14px solid transparent;
+            border-right: 14px solid transparent;
+            border-top: 24px solid #E74C3C;
+            z-index: 3;
+            filter: drop-shadow(0 3px 4px rgba(0,0,0,0.4));
+        }
+        .spinner-arrow::after {
+            content: '';
+            position: absolute;
+            top: -24px; left: -8px;
+            border-left: 8px solid transparent;
+            border-right: 8px solid transparent;
+            border-top: 16px solid #FF6B6B;
+        }
+        .spinner-center {
+            position: absolute;
+            top: 50%; left: 50%;
+            transform: translate(-50%, -50%);
+            width: 24px; height: 24px;
+            background: radial-gradient(circle at 40% 35%, #666, #222);
+            border-radius: 50%;
+            z-index: 2;
+            box-shadow: 0 2px 6px rgba(0,0,0,0.4), inset 0 1px 2px rgba(255,255,255,0.2);
+            border: 2px solid #555;
+        }
+
+        /* ── MARBLE BAG ── */
+        .bag-container {
+            position: relative;
+            width: 180px; height: 200px;
+            cursor: pointer;
+            filter: drop-shadow(0 6px 14px rgba(0,0,0,0.3));
+        }
+        .bag-container:hover { filter: drop-shadow(0 8px 18px rgba(155,89,182,0.3)); }
+        .bag-body {
+            position: absolute; bottom: 0;
+            width: 160px; height: 140px; left: 10px;
+            background:
+                linear-gradient(160deg, #A0522D 0%, #8B4513 30%, #6B3410 60%, #5C2D0E 100%);
+            border-radius: 0 0 50px 50px;
+            box-shadow:
+                inset -12px 0 20px rgba(0,0,0,0.25),
+                inset 8px 0 15px rgba(160,82,45,0.3),
+                inset 0 -8px 15px rgba(0,0,0,0.2),
+                0 6px 12px rgba(0,0,0,0.35);
+            overflow: hidden;
+        }
+        .bag-body::before {
+            content: '';
+            position: absolute;
+            top: 0; left: 20%; width: 15%; height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(205,133,63,0.3), transparent);
+            pointer-events: none;
+        }
+        .bag-top {
+            position: absolute; top: 30px;
+            width: 180px; height: 55px;
+            background: linear-gradient(180deg, #A0522D, #8B4513);
+            border-radius: 50%;
+            box-shadow: 0 -3px 8px rgba(0,0,0,0.25), inset 0 2px 4px rgba(205,133,63,0.3);
+        }
+        .bag-drawstring {
+            position: absolute; top: 2px;
+            left: 50%; transform: translateX(-50%);
+            width: 70px; height: 35px;
+            border: 3px solid #DAA520;
+            border-bottom: none;
+            border-radius: 35px 35px 0 0;
+            box-shadow: 0 -2px 4px rgba(218,165,32,0.3);
+        }
+        .bag-drawstring::before, .bag-drawstring::after {
+            content: '';
+            position: absolute;
+            bottom: -4px;
+            width: 8px; height: 8px;
+            background: radial-gradient(circle at 40% 35%, #FFD700, #B8860B);
+            border-radius: 50%;
+        }
+        .bag-drawstring::before { left: -4px; }
+        .bag-drawstring::after { right: -4px; }
+        .bag-marble-inside {
+            position: absolute;
+            width: 22px; height: 22px;
+            border-radius: 50%;
+            box-shadow:
+                inset -4px -4px 6px rgba(0,0,0,0.35),
+                inset 3px 3px 4px rgba(255,255,255,0.25),
+                1px 2px 4px rgba(0,0,0,0.3);
+        }
+        .bag-marble-inside::after {
+            content: '';
+            position: absolute;
+            top: 3px; left: 4px;
+            width: 6px; height: 4px;
+            background: rgba(255,255,255,0.5);
+            border-radius: 50%;
+            transform: rotate(-30deg);
+        }
+        .drawn-marble {
+            width: 50px; height: 50px;
+            border-radius: 50%;
+            box-shadow:
+                inset -6px -6px 12px rgba(0,0,0,0.35),
+                inset 4px 4px 8px rgba(255,255,255,0.3),
+                3px 4px 10px rgba(0,0,0,0.3);
+            animation: marblePop 0.6s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+            margin-left: 20px;
+            position: relative;
+        }
+        .drawn-marble::after {
+            content: '';
+            position: absolute;
+            top: 8px; left: 10px;
+            width: 12px; height: 8px;
+            background: rgba(255,255,255,0.5);
+            border-radius: 50%;
+            transform: rotate(-30deg);
+        }
+        @keyframes marblePop {
+            0% { transform: scale(0) translateY(60px) rotate(-180deg); opacity: 0; }
+            50% { transform: scale(1.3) translateY(-15px) rotate(0deg); opacity: 1; }
+            70% { transform: scale(0.9) translateY(5px) rotate(10deg); }
+            100% { transform: scale(1) translateY(0) rotate(0deg); opacity: 1; }
+        }
+
+        /* ── RESULTS ── */
+        .results-bar-chart {
+            display: flex;
+            align-items: flex-end;
+            gap: 6px;
+            height: 120px;
+            padding: 0.5rem;
+            background: rgba(0,0,0,0.03);
+            border-radius: 8px;
+            margin: 0.5rem 0;
+        }
+        .bar-col {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 4px;
+            height: 100%;
+            justify-content: flex-end;
+        }
+        .bar-fill {
+            width: 100%;
+            border-radius: 4px 4px 0 0;
+            transition: height 0.3s ease;
+            min-width: 20px;
+        }
+        .bar-lbl {
+            font-size: 0.7rem;
+            font-weight: 600;
+            color: var(--text);
+            text-align: center;
+        }
+        .bar-count {
+            font-size: 0.75rem;
+            font-weight: 700;
+            font-family: 'JetBrains Mono', monospace;
+        }
+
+        /* ── TOOL SECTIONS ── */
+        .tool-card {
+            background: var(--card-bg, rgba(255,255,255,0.05));
+            border: 1px solid var(--border, rgba(255,255,255,0.1));
+            border-radius: 12px;
+            padding: 1.5rem;
+            margin: 1rem 0;
+        }
+        .tool-card h3 {
+            margin: 0 0 0.5rem 0;
+            color: var(--text);
+        }
+        .tool-card p {
+            color: var(--text-secondary, #aaa);
+            margin: 0.3rem 0;
         }
 
         .action-btn {
-            padding: 0.75rem 1.5rem;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            padding: 0.6rem 1.2rem;
+            background: linear-gradient(135deg, var(--cyan, #00d4ff), #0099cc);
             color: white;
             border: none;
             border-radius: 8px;
             font-weight: 600;
             cursor: pointer;
-            transition: transform 0.2s, box-shadow 0.2s;
-            font-size: 1rem;
+            transition: transform 0.15s, box-shadow 0.15s;
+            font-size: 0.95rem;
+        }
+        .action-btn:hover { transform: translateY(-2px); box-shadow: 0 4px 12px rgba(0,212,255,0.3); }
+        .action-btn:active { transform: translateY(0); }
+        .action-btn.secondary { background: linear-gradient(135deg, #667eea, #764ba2); }
+        .action-btn.fair-btn { background: var(--color-fair); }
+        .action-btn.unfair-btn { background: var(--color-unfair); }
+        .action-btn.manip-call {
+            background: linear-gradient(135deg, var(--color-bag), #8E44AD);
+            font-size: 0.85rem;
+            padding: 0.4rem 0.8rem;
         }
 
-        .action-btn:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
-        }
-
-        .action-btn:active {
-            transform: translateY(0);
-        }
-
-        .results-display {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
-            gap: 1rem;
-            margin: 1.5rem 0;
-        }
-
-        .result-box {
-            background: white;
-            padding: 1rem;
-            border-radius: 8px;
-            text-align: center;
-            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
-            border-top: 4px solid var(--color-coin);
-        }
-
-        .result-box.spinner {
-            border-top-color: var(--color-spinner);
-        }
-
-        .result-box.dice {
-            border-top-color: var(--color-dice);
-        }
+        .btn-row { display: flex; gap: 0.5rem; flex-wrap: wrap; margin: 0.8rem 0; }
 
         .result-label {
-            font-size: 0.85rem;
-            color: #666;
-            text-transform: uppercase;
-            letter-spacing: 0.5px;
-            margin-bottom: 0.5rem;
-        }
-
-        .result-value {
-            font-size: 2.5rem;
-            font-weight: 700;
-            color: #333;
-            font-family: 'JetBrains Mono', monospace;
-        }
-
-        .tally-chart {
-            display: flex;
-            align-items: flex-end;
-            gap: 0.5rem;
-            margin: 1rem 0;
-            padding: 1rem;
-            background: white;
-            border-radius: 8px;
-            min-height: 200px;
-        }
-
-        .tally-bar {
-            flex: 1;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            gap: 0.5rem;
-        }
-
-        .bar {
-            width: 100%;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            border-radius: 4px 4px 0 0;
-            min-height: 20px;
-            transition: height 0.3s ease;
-            position: relative;
-        }
-
-        .bar-label {
-            font-weight: 600;
-            font-size: 0.9rem;
-            text-align: center;
-        }
-
-        .bar-count {
-            position: absolute;
-            top: -25px;
-            left: 50%;
-            transform: translateX(-50%);
-            font-weight: 700;
-            color: #333;
-        }
-
-        .prediction-box {
-            background: #FFF8DC;
-            border: 2px dashed #FFB347;
-            padding: 1rem;
-            border-radius: 8px;
-            margin: 1rem 0;
-        }
-
-        .prediction-label {
-            font-weight: 600;
-            color: #333;
-            margin-bottom: 0.5rem;
-        }
-
-        .prediction-options {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
-            gap: 0.5rem;
-        }
-
-        .prediction-btn {
-            padding: 0.5rem;
-            border: 2px solid #ddd;
-            background: white;
-            border-radius: 6px;
-            cursor: pointer;
-            font-weight: 600;
-            transition: all 0.2s;
-        }
-
-        .prediction-btn:hover {
-            border-color: #667eea;
-            background: #f0f4ff;
-        }
-
-        .prediction-btn.selected {
-            background: #667eea;
-            color: white;
-            border-color: #667eea;
-        }
-
-        .spinner-viz {
             display: inline-block;
-            width: 150px;
-            height: 150px;
-            border-radius: 50%;
-            margin: 1rem;
-            position: relative;
-            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
-            animation: spin-anim 0.1s linear infinite;
-        }
-
-        @keyframes spin-anim {
-            0% { transform: rotate(0deg); }
-            100% { transform: rotate(360deg); }
-        }
-
-        .spinner-section-1 {
-            clip-path: polygon(50% 50%, 50% 0%, 100% 0%);
-            background: #FF6B9D;
-            position: absolute;
-            width: 100%;
-            height: 100%;
-            border-radius: 50%;
-        }
-
-        .spinner-section-2 {
-            clip-path: polygon(50% 50%, 100% 0%, 100% 100%);
-            background: #4ECDC4;
-            position: absolute;
-            width: 100%;
-            height: 100%;
-            border-radius: 50%;
-        }
-
-        .spinner-section-3 {
-            clip-path: polygon(50% 50%, 100% 100%, 0% 100%);
-            background: #FFD700;
-            position: absolute;
-            width: 100%;
-            height: 100%;
-            border-radius: 50%;
-        }
-
-        .spinner-section-4 {
-            clip-path: polygon(50% 50%, 0% 100%, 0% 0%);
-            background: #95E1D3;
-            position: absolute;
-            width: 100%;
-            height: 100%;
-            border-radius: 50%;
-        }
-
-        .dice-display {
-            display: inline-flex;
-            gap: 1rem;
-            margin: 1rem 0;
-        }
-
-        .dice {
-            width: 80px;
-            height: 80px;
-            background: white;
-            border: 3px solid #333;
-            border-radius: 8px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 2.5rem;
-            font-weight: 700;
-            box-shadow: 0 4px 8px rgba(0,0,0,0.2);
-        }
-
-        .game-card {
-            background: white;
-            border: 2px solid #e0e0e0;
-            border-radius: 8px;
-            padding: 1.5rem;
-            margin: 1rem 0;
-            cursor: pointer;
-            transition: all 0.2s;
-        }
-
-        .game-card:hover {
-            border-color: #667eea;
-            box-shadow: 0 4px 12px rgba(102, 126, 234, 0.2);
-            transform: translateY(-2px);
-        }
-
-        .game-card h3 {
-            color: #333;
-            margin: 0 0 0.5rem 0;
-        }
-
-        .game-card p {
-            color: #666;
+            padding: 0.3rem 0.8rem;
+            border-radius: 20px;
+            font-weight: 600;
             font-size: 0.95rem;
             margin: 0.5rem 0;
         }
-
-        .fair-indicator {
-            display: inline-block;
-            padding: 0.5rem 1rem;
-            border-radius: 20px;
-            font-weight: 600;
-            font-size: 0.9rem;
-            margin-top: 1rem;
-        }
-
-        .fair-indicator.fair {
-            background: var(--color-fair);
-            color: white;
-        }
-
-        .fair-indicator.unfair {
-            background: var(--color-unfair);
-            color: white;
-        }
+        .result-label.heads-result { background: rgba(255,215,0,0.2); color: var(--color-coin); }
+        .result-label.tails-result { background: rgba(192,192,192,0.2); color: #999; }
 
         .score-display {
-            font-size: 2rem;
+            font-size: 1.8rem;
             font-weight: 700;
             color: var(--color-fair);
             text-align: center;
-            padding: 1rem;
-            background: #f0fff4;
+            padding: 0.8rem;
+            background: rgba(46,204,113,0.1);
             border-radius: 8px;
-            margin: 1rem 0;
+            margin: 0.8rem 0;
+            font-family: 'JetBrains Mono', monospace;
         }
 
-        .play-instructions {
-            background: #e3f2fd;
-            border-left: 4px solid #2196F3;
-            padding: 1rem;
-            border-radius: 4px;
+        .game-scenario {
+            background: var(--card-bg, rgba(255,255,255,0.05));
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 1.5rem;
             margin: 1rem 0;
         }
+        .game-scenario h4 {
+            margin: 0 0 0.5rem 0;
+            font-size: 1.1rem;
+        }
+        .game-scenario .scenario-text {
+            font-size: 1.15rem;
+            line-height: 1.5;
+            color: var(--text);
+            margin: 0.5rem 0;
+        }
+
+        .feedback-box {
+            padding: 1rem;
+            border-radius: 8px;
+            margin: 0.8rem 0;
+            border-left: 4px solid;
+        }
+        .feedback-box.correct {
+            background: rgba(46,204,113,0.1);
+            border-color: var(--color-fair);
+        }
+        .feedback-box.incorrect {
+            background: rgba(231,76,60,0.1);
+            border-color: var(--color-unfair);
+        }
+
+        .manip-note {
+            font-size: 0.8rem;
+            color: var(--text-secondary, #888);
+            font-style: italic;
+            text-align: center;
+            margin-top: 0.3rem;
+        }
+
+        .prediction-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(100px, 1fr));
+            gap: 0.5rem;
+            margin: 0.5rem 0;
+        }
+        .pred-btn {
+            padding: 0.5rem;
+            border: 2px solid var(--border);
+            background: var(--card-bg, rgba(255,255,255,0.05));
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: 600;
+            color: var(--text);
+            transition: all 0.2s;
+            text-align: center;
+        }
+        .pred-btn:hover { border-color: var(--cyan); }
+        .pred-btn.selected { background: var(--cyan); color: white; border-color: var(--cyan); }
+
+        .rubric-indicator {
+            display: flex; gap: 4px; justify-content: center; margin: 0.5rem 0;
+        }
+        .rubric-dot {
+            width: 10px; height: 10px; border-radius: 50%;
+            background: rgba(255,255,255,0.1);
+            border: 1px solid var(--border);
+        }
+        .rubric-dot.filled { background: var(--color-fair); border-color: var(--color-fair); }
+        .rubric-dot.capped { background: var(--color-coin); border-color: var(--color-coin); }
+
+        .play-instructions {
+            background: rgba(0,212,255,0.05);
+            border-left: 4px solid var(--cyan);
+            padding: 1rem;
+            border-radius: 0 8px 8px 0;
+            margin: 0.8rem 0;
+        }
+
+        *:focus-visible { outline: 2px solid var(--cyan); outline-offset: 2px; border-radius: 4px; }
+        .sr-only { position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0; }
     </style>
 </head>
 <body>
@@ -336,212 +525,148 @@
             <div class="badge">1.MD</div>
             <div class="tags">
                 <div class="tag">1.MD.C.4</div>
-                <div class="tag">K.MD.A.1</div>
+                <div class="tag">1.OA.A.1</div>
             </div>
         </div>
     </div>
 
     <div class="vinculum-mode-tabs">
-        <button class="vinculum-mode-tab" data-mode="explore"><svg width="18" height="18" viewBox="0 0 48 48" fill="none"><path d="M4 24C4 24 12 12 24 12C36 12 44 24 44 24C44 24 36 36 24 36C12 36 4 24 4 24Z" stroke="currentColor" stroke-width="3" fill="none"/><circle cx="24" cy="24" r="7" stroke="currentColor" stroke-width="3" fill="none"/><circle cx="24" cy="24" r="3" fill="currentColor"/><line x1="24" y1="4" x2="24" y2="9" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" opacity="0.5"/><line x1="10" y1="8" x2="13" y2="12" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" opacity="0.5"/><line x1="38" y1="8" x2="35" y2="12" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" opacity="0.5"/></svg> Explore</button>
+        <button class="vinculum-mode-tab" data-mode="explore"><svg width="18" height="18" viewBox="0 0 48 48" fill="none"><path d="M4 24C4 24 12 12 24 12C36 12 44 24 44 24C44 24 36 36 24 36C12 36 4 24 4 24Z" stroke="currentColor" stroke-width="3" fill="none"/><circle cx="24" cy="24" r="7" stroke="currentColor" stroke-width="3" fill="none"/><circle cx="24" cy="24" r="3" fill="currentColor"/></svg> Explore</button>
         <button class="vinculum-mode-tab" data-mode="practice"><svg width="18" height="18" viewBox="0 0 48 48" fill="none"><circle cx="24" cy="24" r="20" stroke="currentColor" stroke-width="3" fill="none" opacity="0.3"/><circle cx="24" cy="24" r="20" stroke="currentColor" stroke-width="3" fill="none" stroke-dasharray="126" stroke-dashoffset="32" stroke-linecap="round"/><polyline points="16,24 22,32 34,16" stroke="currentColor" stroke-width="4" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg> Practice</button>
-        <button class="vinculum-mode-tab" data-mode="play"><svg width="18" height="18" viewBox="0 0 48 48" fill="none"><polygon points="28,4 12,28 22,28 18,44 36,18 26,18" fill="none" stroke="currentColor" stroke-width="3" stroke-linejoin="round"/><polygon points="27,8 15,27 23,27 20,40 34,19 26,19" fill="currentColor" opacity="0.15"/></svg> Play</button>
-
+        <button class="vinculum-mode-tab" data-mode="play"><svg width="18" height="18" viewBox="0 0 48 48" fill="none"><polygon points="28,4 12,28 22,28 18,44 36,18 26,18" fill="none" stroke="currentColor" stroke-width="3" stroke-linejoin="round"/></svg> Play</button>
         <div class="difficulty-selector">
             <label for="difficulty-select">Difficulty:</label>
             <select id="difficulty-select" class="vinculum-diff-button">
-                <option value="easy">Easy</option>
-                <option value="medium" selected>Medium</option>
-                <option value="hard">Hard</option>
+                <option value="emergent">Emergent</option>
+                <option value="proficient" selected>Proficient</option>
+                <option value="advanced">Advanced</option>
             </select>
         </div>
     </div>
 
-    <!-- EXPLORE MODE -->
+    <!-- ═══════════ EXPLORE ═══════════ -->
     <div class="vinculum-mode-content" data-mode="explore">
-        <div class="card">
-            <h2>Explore: Flip, Spin & Roll!</h2>
-            <p>Try different games and see what happens! Watch the results pile up.</p>
+        <div class="tool-card">
+            <h3>Explore: Flip, Spin, Roll & Draw!</h3>
+            <p>Use real manipulatives to explore chance. Try each one many times and watch patterns emerge.</p>
+        </div>
 
-            <!-- Coin Flip -->
-            <div class="tool-section">
-                <h3>🪙 Flip a Coin</h3>
-                <p>Heads or tails? Let's see!</p>
-                <div class="button-group">
-                    <button class="action-btn" id="flip-btn">Flip Coin</button>
-                    <button class="action-btn" id="reset-coin" style="background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);">Reset</button>
-                </div>
-                <div class="results-display">
-                    <div class="result-box">
-                        <div class="result-label">Heads</div>
-                        <div class="result-value" id="heads-count">0</div>
-                    </div>
-                    <div class="result-box">
-                        <div class="result-label">Tails</div>
-                        <div class="result-value" id="tails-count">0</div>
+        <!-- Coin -->
+        <div class="tool-card" id="explore-coin">
+            <h3>🪙 Flip a Coin</h3>
+            <p>Click the coin to flip it! Is it fair?</p>
+            <div class="manip-stage">
+                <div class="coin-wrap" id="coin-manip" role="button" tabindex="0" aria-label="Flip the coin">
+                    <div class="coin-inner" id="coin-inner">
+                        <div class="coin-face coin-heads"><span class="coin-letter">H</span><span class="coin-label">Heads</span></div>
+                        <div class="coin-face coin-tails"><span class="coin-letter">T</span><span class="coin-label">Tails</span></div>
                     </div>
                 </div>
-                <div class="tally-chart">
-                    <div class="tally-bar">
-                        <div class="bar" id="heads-bar" style="height: 0%"></div>
-                        <div class="bar-label">Heads</div>
-                    </div>
-                    <div class="tally-bar">
-                        <div class="bar" id="tails-bar" style="height: 0%"></div>
-                        <div class="bar-label">Tails</div>
-                    </div>
-                </div>
+                <span class="result-label" id="coin-result" style="margin-left:1rem;"></span>
             </div>
+            <div class="btn-row">
+                <button class="action-btn" id="flip-btn">Flip Coin</button>
+                <button class="action-btn" id="flip-10-btn" style="background:linear-gradient(135deg,#f093fb,#f5576c);">Flip 10x</button>
+                <button class="action-btn secondary" id="reset-coin">Reset</button>
+            </div>
+            <div class="results-bar-chart" id="coin-chart"></div>
+            <div class="manip-note">Total flips: <span id="coin-total">0</span></div>
+        </div>
 
-            <!-- Spinner -->
-            <div class="tool-section spinner-sec">
-                <h3>🎡 Spin the Spinner</h3>
-                <p>Red, blue, yellow, or green? Spin and see!</p>
-                <div class="button-group">
-                    <button class="action-btn" id="spin-btn" style="background: linear-gradient(135deg, #FF6B9D 0%, #FF8F7E 100%);">Spin Spinner</button>
-                    <button class="action-btn" id="reset-spinner" style="background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);">Reset</button>
+        <!-- Spinner -->
+        <div class="tool-card" id="explore-spinner">
+            <h3>🎡 Spin the Spinner</h3>
+            <p>Click the spinner or press Spin! Watch where the arrow lands.</p>
+            <div class="manip-stage">
+                <div class="spinner-container" id="spinner-manip" role="button" tabindex="0" aria-label="Spin the spinner">
+                    <div class="spinner-arrow"></div>
+                    <canvas class="spinner-wheel" id="spinner-canvas" width="220" height="220"></canvas>
+                    <div class="spinner-center"></div>
                 </div>
-                <div class="results-display">
-                    <div class="result-box spinner">
-                        <div class="result-label">Red</div>
-                        <div class="result-value" id="red-count">0</div>
-                    </div>
-                    <div class="result-box spinner">
-                        <div class="result-label">Blue</div>
-                        <div class="result-value" id="blue-count">0</div>
-                    </div>
-                    <div class="result-box spinner">
-                        <div class="result-label">Yellow</div>
-                        <div class="result-value" id="yellow-count">0</div>
-                    </div>
-                    <div class="result-box spinner">
-                        <div class="result-label">Green</div>
-                        <div class="result-value" id="green-count">0</div>
-                    </div>
-                </div>
+                <span class="result-label" id="spinner-result" style="margin-left:1rem;"></span>
             </div>
+            <div class="btn-row">
+                <button class="action-btn" id="spin-btn" style="background:linear-gradient(135deg,#FF6B9D,#FF8F7E);">Spin!</button>
+                <button class="action-btn" id="spin-10-btn" style="background:linear-gradient(135deg,#f093fb,#f5576c);">Spin 10x</button>
+                <button class="action-btn secondary" id="reset-spinner">Reset</button>
+            </div>
+            <div class="results-bar-chart" id="spinner-chart"></div>
+            <div class="manip-note">Total spins: <span id="spinner-total">0</span></div>
+        </div>
 
-            <!-- Dice -->
-            <div class="tool-section dice-sec">
-                <h3>🎲 Roll a Dice</h3>
-                <p>Roll and see how many dots appear!</p>
-                <div class="button-group">
-                    <button class="action-btn" id="roll-btn" style="background: linear-gradient(135deg, #4ECDC4 0%, #44A08D 100%);">Roll Dice</button>
-                    <button class="action-btn" id="reset-dice" style="background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);">Reset</button>
+        <!-- Dice -->
+        <div class="tool-card" id="explore-dice">
+            <h3>🎲 Roll a Die</h3>
+            <p>Click the die to roll it! Each face has the same chance.</p>
+            <div class="manip-stage">
+                <div class="dice-3d" id="dice-manip" role="button" tabindex="0" aria-label="Roll the die">
+                    <div class="dice-cube" id="dice-cube"></div>
                 </div>
-                <div id="dice-display"></div>
-                <div class="tally-chart">
-                    <div class="tally-bar">
-                        <div class="bar" id="one-bar" style="height: 0%"></div>
-                        <div class="bar-label">1</div>
-                    </div>
-                    <div class="tally-bar">
-                        <div class="bar" id="two-bar" style="height: 0%"></div>
-                        <div class="bar-label">2</div>
-                    </div>
-                    <div class="tally-bar">
-                        <div class="bar" id="three-bar" style="height: 0%"></div>
-                        <div class="bar-label">3</div>
-                    </div>
-                    <div class="tally-bar">
-                        <div class="bar" id="four-bar" style="height: 0%"></div>
-                        <div class="bar-label">4</div>
-                    </div>
-                    <div class="tally-bar">
-                        <div class="bar" id="five-bar" style="height: 0%"></div>
-                        <div class="bar-label">5</div>
-                    </div>
-                    <div class="tally-bar">
-                        <div class="bar" id="six-bar" style="height: 0%"></div>
-                        <div class="bar-label">6</div>
-                    </div>
-                </div>
+                <span class="result-label" id="dice-result" style="margin-left:1.5rem;font-size:1.5rem;"></span>
             </div>
+            <div class="btn-row">
+                <button class="action-btn" id="roll-btn" style="background:linear-gradient(135deg,#4ECDC4,#44A08D);">Roll!</button>
+                <button class="action-btn" id="roll-10-btn" style="background:linear-gradient(135deg,#f093fb,#f5576c);">Roll 10x</button>
+                <button class="action-btn secondary" id="reset-dice">Reset</button>
+            </div>
+            <div class="results-bar-chart" id="dice-chart"></div>
+            <div class="manip-note">Total rolls: <span id="dice-total">0</span></div>
+        </div>
+
+        <!-- Marble Bag -->
+        <div class="tool-card" id="explore-bag">
+            <h3>🎒 Reach Into the Bag</h3>
+            <p>This bag has colored marbles inside. Draw one without looking!</p>
+            <div class="btn-row" style="margin-bottom:0.5rem;">
+                <label style="color:var(--text);font-weight:600;">Bag setup:</label>
+                <select id="bag-setup" class="vinculum-diff-button">
+                    <option value="5r5b">5 Red, 5 Blue (Fair)</option>
+                    <option value="7r3b">7 Red, 3 Blue (Unfair)</option>
+                    <option value="3r3b3y">3 Red, 3 Blue, 3 Yellow (Fair)</option>
+                    <option value="6r2b2y">6 Red, 2 Blue, 2 Yellow (Unfair)</option>
+                    <option value="1r1b1y1g">1 each of 4 colors (Fair)</option>
+                </select>
+            </div>
+            <div class="manip-stage" id="bag-stage">
+                <div class="bag-container" id="bag-manip" role="button" tabindex="0" aria-label="Draw a marble from the bag">
+                    <div class="bag-drawstring"></div>
+                    <div class="bag-top"></div>
+                    <div class="bag-body" id="bag-marbles"></div>
+                </div>
+                <div id="drawn-marble-display" style="margin-left:1.5rem;min-width:50px;"></div>
+            </div>
+            <div class="btn-row">
+                <button class="action-btn" id="draw-btn" style="background:linear-gradient(135deg,#9B59B6,#8E44AD);">Draw!</button>
+                <button class="action-btn" id="draw-10-btn" style="background:linear-gradient(135deg,#f093fb,#f5576c);">Draw 10x</button>
+                <button class="action-btn secondary" id="reset-bag">Reset</button>
+            </div>
+            <div class="results-bar-chart" id="bag-chart"></div>
+            <div class="manip-note">Total draws: <span id="bag-total">0</span> (marble goes back after each draw)</div>
         </div>
     </div>
 
-    <!-- PRACTICE MODE -->
+    <!-- ═══════════ PRACTICE ═══════════ -->
     <div class="vinculum-mode-content" data-mode="practice">
-        <div class="card">
-            <h2>Practice: Predict the Results</h2>
-            <p>Make a guess about what will happen! Which result do you think will happen more?</p>
-
-            <div class="tool-section">
-                <h3>📊 Coin Flip Prediction</h3>
-                <p id="coin-scenario">You flip a coin 10 times. Which will come up more?</p>
-                <div class="prediction-box">
-                    <div class="prediction-label">Your prediction:</div>
-                    <div class="prediction-options">
-                        <button class="prediction-btn" id="pred-heads">Heads</button>
-                        <button class="prediction-btn" id="pred-tails">Tails</button>
-                        <button class="prediction-btn" id="pred-equal">About Equal</button>
-                    </div>
-                </div>
-                <div class="button-group">
-                    <button class="action-btn" id="test-coin-pred" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);">Test My Prediction!</button>
-                </div>
-                <div id="coin-pred-feedback"></div>
-            </div>
-
-            <div class="tool-section spinner-sec">
-                <h3>🎡 Spinner Prediction</h3>
-                <p id="spinner-scenario">The spinner has 4 equal sections. Which color will come up most?</p>
-                <div class="prediction-box">
-                    <div class="prediction-label">Your prediction:</div>
-                    <div class="prediction-options">
-                        <button class="prediction-btn" id="pred-likely-equal">Any color equally</button>
-                        <button class="prediction-btn" id="pred-likely-one">One color more</button>
-                    </div>
-                </div>
-                <div class="button-group">
-                    <button class="action-btn" id="test-spinner-pred" style="background: linear-gradient(135deg, #FF6B9D 0%, #FF8F7E 100%);">Test My Prediction!</button>
-                </div>
-                <div id="spinner-pred-feedback"></div>
-            </div>
-
-            <div class="tool-section dice-sec">
-                <h3>🎲 Dice Roll Prediction</h3>
-                <p id="dice-scenario">Roll a dice many times. What will happen?</p>
-                <div class="prediction-box">
-                    <div class="prediction-label">Your prediction:</div>
-                    <div class="prediction-options">
-                        <button class="prediction-btn" id="pred-high">High numbers (4,5,6)</button>
-                        <button class="prediction-btn" id="pred-low">Low numbers (1,2,3)</button>
-                        <button class="prediction-btn" id="pred-fair">About equal</button>
-                    </div>
-                </div>
-                <div class="button-group">
-                    <button class="action-btn" id="test-dice-pred" style="background: linear-gradient(135deg, #4ECDC4 0%, #44A08D 100%);">Test My Prediction!</button>
-                </div>
-                <div id="dice-pred-feedback"></div>
-            </div>
+        <div class="tool-card">
+            <h3>Practice: Predict & Test</h3>
+            <p>Make a prediction, then run the experiment with the manipulative to check!</p>
         </div>
+        <div id="practice-area"></div>
     </div>
 
-    <!-- PLAY MODE -->
+    <!-- ═══════════ PLAY ═══════════ -->
     <div class="vinculum-mode-content" data-mode="play">
-        <div class="card">
-            <h2>Play: Is It Fair? Game</h2>
+        <div class="tool-card">
+            <h3>Play: Is It Fair?</h3>
             <div class="play-instructions">
-                <p><strong>Rules:</strong> I'll describe a game. You decide: Is it FAIR or UNFAIR?
-                A fair game gives everyone the same chance to win!</p>
-            </div>
-
-            <div class="score-display">
-                Score: <span id="play-score">0</span> / <span id="play-total">0</span>
-            </div>
-
-            <div id="game-container">
-                <div id="game-question"></div>
-                <div class="button-group" id="game-buttons">
-                    <button class="action-btn" id="fair-btn" style="background: var(--color-fair);">FAIR ✓</button>
-                    <button class="action-btn" id="unfair-btn" style="background: var(--color-unfair);">UNFAIR ✗</button>
-                </div>
-                <div id="game-feedback"></div>
-                <div id="game-controls">
-                    <button class="action-btn" id="next-game" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);">Next Game</button>
-                </div>
+                <p><strong>Rules:</strong> I'll describe a game. You decide: is it <strong style="color:var(--color-fair)">FAIR</strong> or <strong style="color:var(--color-unfair)">UNFAIR</strong>? A fair game gives everyone the same chance to win!</p>
             </div>
         </div>
+        <div class="score-display">
+            Score: <span id="play-score">0</span> / <span id="play-total">0</span>
+            <div class="rubric-indicator" id="rubric-dots"></div>
+        </div>
+        <div id="play-area"></div>
     </div>
 
     <div id="feedback" class="feedback"></div>
@@ -550,312 +675,733 @@
     <script src="../../vinculum-dashboard.js"></script>
     <script src="../../vinculum-audio.js"></script>
     <script src="../../vinculum-layout.js"></script>
-    <script src="../../vinculum-feedback.js"></script><script src="../../vinculum-guide.js"></script><script src="../../vinculum-indigenous.js"></script><script src="../../indigenous-context-panel.js"></script>
+    <script src="../../vinculum-feedback.js"></script>
+    <script src="../../vinculum-guide.js"></script>
+    <script src="../../vinculum-indigenous.js"></script>
+    <script src="../../indigenous-context-panel.js"></script>
     <script src="../../vinculum-input.js"></script>
     <script src="../../vinculum-stories.js"></script>
 
     <script>
-        // State management
-        const state = {
-            explore: {
-                coin: { heads: 0, tails: 0 },
-                spinner: { red: 0, blue: 0, yellow: 0, green: 0 },
-                dice: { 1: 0, 2: 0, 3: 0, 4: 0, 5: 0, 6: 0 }
-            },
-            practice: {
-                coinPred: null,
-                spinnerPred: null,
-                dicePred: null
-            },
-            play: {
-                score: 0,
-                total: 0,
-                gameIndex: 0
+    // ═══════════════════════════════════════════════
+    // MANIPULATIVE RENDERERS
+    // ═══════════════════════════════════════════════
+
+    const COLORS = {
+        red: '#E74C3C', blue: '#3498DB', yellow: '#F1C40F',
+        green: '#2ECC71', purple: '#9B59B6', orange: '#E67E22'
+    };
+
+    // ── COIN ──
+    function flipCoin(callback) {
+        const inner = document.getElementById('coin-inner');
+        const result = Math.random() < 0.5 ? 'heads' : 'tails';
+        inner.className = 'coin-inner';
+        void inner.offsetWidth;
+        inner.classList.add(result === 'heads' ? 'flipping' : 'flipping-tails');
+        if (typeof VinculumAudio !== 'undefined') VinculumAudio.sfx.click();
+        setTimeout(() => {
+            inner.className = 'coin-inner';
+            const resultEl = document.getElementById('coin-result');
+            resultEl.textContent = result === 'heads' ? '✨ Heads!' : '✨ Tails!';
+            resultEl.className = 'result-label ' + (result === 'heads' ? 'heads-result' : 'tails-result');
+            if (callback) callback(result);
+        }, 1050);
+        return result;
+    }
+
+    // ── SPINNER ──
+    let spinnerSections = [
+        { label: 'Red', color: COLORS.red, weight: 1 },
+        { label: 'Blue', color: COLORS.blue, weight: 1 },
+        { label: 'Yellow', color: COLORS.yellow, weight: 1 },
+        { label: 'Green', color: COLORS.green, weight: 1 },
+    ];
+    let spinnerAngle = 0;
+
+    function drawSpinner(sections) {
+        const canvas = document.getElementById('spinner-canvas');
+        if (!canvas) return;
+        canvas.width = 220; canvas.height = 220;
+        const ctx = canvas.getContext('2d');
+        const cx = 110, cy = 110, r = 106;
+        ctx.clearRect(0, 0, 220, 220);
+        const totalWeight = sections.reduce((s, sec) => s + sec.weight, 0);
+        let startAngle = -Math.PI / 2;
+        sections.forEach(sec => {
+            const sliceAngle = (sec.weight / totalWeight) * Math.PI * 2;
+            // Main fill
+            ctx.beginPath();
+            ctx.moveTo(cx, cy);
+            ctx.arc(cx, cy, r, startAngle, startAngle + sliceAngle);
+            ctx.closePath();
+            // Gradient fill for depth
+            const midAngle = startAngle + sliceAngle / 2;
+            const gx = cx + r * 0.3 * Math.cos(midAngle);
+            const gy = cy + r * 0.3 * Math.sin(midAngle);
+            const grad = ctx.createRadialGradient(gx, gy, 0, cx, cy, r);
+            grad.addColorStop(0, lightenHex(sec.color, 30));
+            grad.addColorStop(0.7, sec.color);
+            grad.addColorStop(1, darkenHex(sec.color, 25));
+            ctx.fillStyle = grad;
+            ctx.fill();
+            // Section dividers
+            ctx.strokeStyle = 'rgba(255,255,255,0.6)';
+            ctx.lineWidth = 2.5;
+            ctx.stroke();
+            // Label with shadow
+            const tx = cx + (r * 0.62) * Math.cos(midAngle);
+            const ty = cy + (r * 0.62) * Math.sin(midAngle);
+            ctx.fillStyle = 'white';
+            ctx.font = 'bold 13px Inter, Arial, sans-serif';
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+            ctx.shadowColor = 'rgba(0,0,0,0.6)';
+            ctx.shadowBlur = 4;
+            ctx.shadowOffsetY = 1;
+            ctx.fillText(sec.label, tx, ty);
+            ctx.shadowBlur = 0;
+            ctx.shadowOffsetY = 0;
+            startAngle += sliceAngle;
+        });
+        // Inner glow ring
+        const glow = ctx.createRadialGradient(cx, cy, r * 0.85, cx, cy, r);
+        glow.addColorStop(0, 'transparent');
+        glow.addColorStop(1, 'rgba(0,0,0,0.12)');
+        ctx.beginPath();
+        ctx.arc(cx, cy, r, 0, Math.PI * 2);
+        ctx.fillStyle = glow;
+        ctx.fill();
+    }
+
+    function lightenHex(hex, amt) {
+        const r = Math.min(255, parseInt(hex.slice(1,3),16) + amt);
+        const g = Math.min(255, parseInt(hex.slice(3,5),16) + amt);
+        const b = Math.min(255, parseInt(hex.slice(5,7),16) + amt);
+        return `rgb(${r},${g},${b})`;
+    }
+    function darkenHex(hex, amt) {
+        const r = Math.max(0, parseInt(hex.slice(1,3),16) - amt);
+        const g = Math.max(0, parseInt(hex.slice(3,5),16) - amt);
+        const b = Math.max(0, parseInt(hex.slice(5,7),16) - amt);
+        return `rgb(${r},${g},${b})`;
+    }
+
+    function spinSpinner(sections, callback) {
+        const canvas = document.getElementById('spinner-canvas');
+        if (!canvas) return;
+        const totalWeight = sections.reduce((s, sec) => s + sec.weight, 0);
+        const extraRotations = 1440 + Math.random() * 720;
+        spinnerAngle += extraRotations;
+        canvas.classList.add('spinning');
+        canvas.style.transform = `rotate(${spinnerAngle}deg)`;
+        if (typeof VinculumAudio !== 'undefined') VinculumAudio.sfx.click();
+
+        setTimeout(() => {
+            canvas.classList.remove('spinning');
+            const normalizedAngle = (360 - (spinnerAngle % 360)) % 360;
+            let cumAngle = 0;
+            let result = sections[0].label;
+            for (const sec of sections) {
+                cumAngle += (sec.weight / totalWeight) * 360;
+                if (normalizedAngle < cumAngle) { result = sec.label; break; }
             }
-        };
-
-        const fairGames = [
-            {
-                q: "A coin flip: Heads or Tails.",
-                answer: true,
-                exp: "Both sides have equal chance!"
-            },
-            {
-                q: "A spinner with 4 equal colors.",
-                answer: true,
-                exp: "Each color has the same space!"
-            },
-            {
-                q: "A dice roll: any number 1-6.",
-                answer: true,
-                exp: "Every number has equal chance!"
-            },
-            {
-                q: "A bag with 3 red balls and 1 blue. Pick without looking.",
-                answer: false,
-                exp: "Red is picked more often!"
-            },
-            {
-                q: "A spinner that's 3/4 red and 1/4 blue.",
-                answer: false,
-                exp: "Red takes up more space!"
+            const resultEl = document.getElementById('spinner-result');
+            if (resultEl) {
+                resultEl.textContent = '✨ ' + result + '!';
+                resultEl.style.color = sections.find(s => s.label === result)?.color || '#fff';
             }
-        ];
-
-        // ─────────────────────────────────────────────────────
-        // EXPLORE MODE
-        // ─────────────────────────────────────────────────────
-
-        function renderExplore() {
-            setupCoinFlip();
-            setupSpinner();
-            setupDice();
+            if (callback) callback(result);
+        }, 3600);
+        // Pre-determine result
+        const normalizedAngle = (360 - ((spinnerAngle) % 360)) % 360;
+        let cumAngle = 0;
+        let result = sections[0].label;
+        for (const sec of sections) {
+            cumAngle += (sec.weight / totalWeight) * 360;
+            if (normalizedAngle < cumAngle) { result = sec.label; break; }
         }
+        return result;
+    }
 
-        function setupCoinFlip() {
-            const flipBtn = document.getElementById('flip-btn');
-            const resetBtn = document.getElementById('reset-coin');
+    // ── DICE ──
+    function buildDiceFaces() {
+        const cube = document.getElementById('dice-cube');
+        if (!cube) return;
+        cube.innerHTML = '';
+        for (let f = 1; f <= 6; f++) {
+            const face = document.createElement('div');
+            face.className = `dice-face-el f${f}`;
+            for (let p = 0; p < f; p++) {
+                const pip = document.createElement('div');
+                pip.className = 'pip';
+                face.appendChild(pip);
+            }
+            cube.appendChild(face);
+        }
+    }
 
-            flipBtn.addEventListener('click', () => {
-                const result = Math.random() > 0.5 ? 'heads' : 'tails';
-                state.explore.coin[result]++;
-                updateCoinDisplay();
+    const DICE_ROTATIONS = {
+        1: 'rotateX(0deg) rotateY(0deg)',
+        2: 'rotateX(0deg) rotateY(180deg)',
+        3: 'rotateX(0deg) rotateY(-90deg)',
+        4: 'rotateX(0deg) rotateY(90deg)',
+        5: 'rotateX(-90deg) rotateY(0deg)',
+        6: 'rotateX(90deg) rotateY(0deg)',
+    };
+
+    function rollDice(callback) {
+        const cube = document.getElementById('dice-cube');
+        if (!cube) return 1;
+        const result = Math.floor(Math.random() * 6) + 1;
+        cube.style.setProperty('--dice-end', DICE_ROTATIONS[result]);
+        cube.classList.remove('rolling');
+        void cube.offsetWidth;
+        cube.classList.add('rolling');
+        if (typeof VinculumAudio !== 'undefined') VinculumAudio.sfx.click();
+
+        setTimeout(() => {
+            cube.classList.remove('rolling');
+            cube.style.transform = DICE_ROTATIONS[result];
+            const resultEl = document.getElementById('dice-result');
+            if (resultEl) resultEl.textContent = '🎯 ' + result;
+            if (callback) callback(result);
+        }, 1150);
+        return result;
+    }
+
+    // ── MARBLE BAG ──
+    const BAG_CONFIGS = {
+        '5r5b': [{ color: 'red', count: 5 }, { color: 'blue', count: 5 }],
+        '7r3b': [{ color: 'red', count: 7 }, { color: 'blue', count: 3 }],
+        '3r3b3y': [{ color: 'red', count: 3 }, { color: 'blue', count: 3 }, { color: 'yellow', count: 3 }],
+        '6r2b2y': [{ color: 'red', count: 6 }, { color: 'blue', count: 2 }, { color: 'yellow', count: 2 }],
+        '1r1b1y1g': [{ color: 'red', count: 1 }, { color: 'blue', count: 1 }, { color: 'yellow', count: 1 }, { color: 'green', count: 1 }],
+    };
+
+    function renderBagMarbles(configKey) {
+        const container = document.getElementById('bag-marbles');
+        if (!container) return;
+        container.innerHTML = '';
+        const config = BAG_CONFIGS[configKey] || BAG_CONFIGS['5r5b'];
+        const allMarbles = [];
+        config.forEach(c => {
+            for (let i = 0; i < c.count; i++) allMarbles.push(c.color);
+        });
+        // Place marbles visually inside bag
+        allMarbles.forEach((color, i) => {
+            const m = document.createElement('div');
+            m.className = 'bag-marble-inside';
+            m.style.background = `radial-gradient(circle at 35% 35%, ${lighten(COLORS[color])}, ${COLORS[color]})`;
+            m.style.left = (15 + Math.random() * 90) + 'px';
+            m.style.top = (15 + Math.random() * 70) + 'px';
+            container.appendChild(m);
+        });
+    }
+
+    function lighten(hex) {
+        const r = parseInt(hex.slice(1,3),16), g = parseInt(hex.slice(3,5),16), b = parseInt(hex.slice(5,7),16);
+        return `rgb(${Math.min(255,r+60)},${Math.min(255,g+60)},${Math.min(255,b+60)})`;
+    }
+
+    function drawFromBag(configKey, callback) {
+        const config = BAG_CONFIGS[configKey] || BAG_CONFIGS['5r5b'];
+        const allMarbles = [];
+        config.forEach(c => { for (let i = 0; i < c.count; i++) allMarbles.push(c.color); });
+        const drawn = allMarbles[Math.floor(Math.random() * allMarbles.length)];
+        if (typeof VinculumAudio !== 'undefined') VinculumAudio.sfx.click();
+
+        const display = document.getElementById('drawn-marble-display');
+        if (display) {
+            display.innerHTML = '';
+            const m = document.createElement('div');
+            m.className = 'drawn-marble';
+            m.style.background = `radial-gradient(circle at 35% 35%, ${lighten(COLORS[drawn])}, ${COLORS[drawn]})`;
+            display.appendChild(m);
+        }
+        setTimeout(() => { if (callback) callback(drawn); }, 500);
+        return drawn;
+    }
+
+    // ── BAR CHART RENDERER ──
+    function renderBarChart(containerId, data, colors) {
+        const container = document.getElementById(containerId);
+        if (!container) return;
+        const total = Math.max(Object.values(data).reduce((a, b) => a + b, 0), 1);
+        const max = Math.max(...Object.values(data), 1);
+        container.innerHTML = '';
+        Object.entries(data).forEach(([label, count]) => {
+            const col = document.createElement('div');
+            col.className = 'bar-col';
+            const countEl = document.createElement('div');
+            countEl.className = 'bar-count';
+            countEl.textContent = count;
+            const fill = document.createElement('div');
+            fill.className = 'bar-fill';
+            fill.style.height = ((count / max) * 80) + '%';
+            fill.style.background = colors[label] || '#667eea';
+            const lbl = document.createElement('div');
+            lbl.className = 'bar-lbl';
+            lbl.textContent = label;
+            col.appendChild(countEl);
+            col.appendChild(fill);
+            col.appendChild(lbl);
+            container.appendChild(col);
+        });
+    }
+
+    // ═══════════════════════════════════════════════
+    // STATE
+    // ═══════════════════════════════════════════════
+
+    const state = {
+        explore: {
+            coin: { Heads: 0, Tails: 0 },
+            spinner: {},
+            dice: { '1': 0, '2': 0, '3': 0, '4': 0, '5': 0, '6': 0 },
+            bag: {},
+        },
+        practice: { questionIndex: 0, predictions: {} },
+        play: {
+            score: 0, total: 0, gameIndex: 0,
+            manipUsed: 0, manipAvailableCount: 0,
+            questionsCorrectWithManip: 0,
+            questionsCorrectWithoutManip: 0,
+        },
+    };
+
+    // ═══════════════════════════════════════════════
+    // EXPLORE MODE
+    // ═══════════════════════════════════════════════
+
+    let exploreInitialized = false;
+    function initExplore() {
+        if (exploreInitialized) return;
+        exploreInitialized = true;
+
+        buildDiceFaces();
+        drawSpinner(spinnerSections);
+        renderBagMarbles('5r5b');
+        resetExploreCharts();
+
+        // Coin
+        document.getElementById('flip-btn').addEventListener('click', () => {
+            flipCoin(r => { state.explore.coin[r === 'heads' ? 'Heads' : 'Tails']++; updateCoinChart(); });
+        });
+        document.getElementById('flip-10-btn').addEventListener('click', () => { batchAction(10, 100, i => flipCoin(r => { state.explore.coin[r === 'heads' ? 'Heads' : 'Tails']++; updateCoinChart(); })); });
+        document.getElementById('reset-coin').addEventListener('click', () => { state.explore.coin = { Heads: 0, Tails: 0 }; updateCoinChart(); document.getElementById('coin-result').textContent = ''; });
+        document.getElementById('coin-manip').addEventListener('click', () => document.getElementById('flip-btn').click());
+
+        // Spinner
+        document.getElementById('spin-btn').addEventListener('click', () => {
+            spinSpinner(spinnerSections, r => { state.explore.spinner[r] = (state.explore.spinner[r] || 0) + 1; updateSpinnerChart(); });
+        });
+        document.getElementById('spin-10-btn').addEventListener('click', () => { batchAction(10, 3700, i => spinSpinner(spinnerSections, r => { state.explore.spinner[r] = (state.explore.spinner[r] || 0) + 1; updateSpinnerChart(); })); });
+        document.getElementById('reset-spinner').addEventListener('click', () => { state.explore.spinner = {}; updateSpinnerChart(); document.getElementById('spinner-result').textContent = ''; });
+        document.getElementById('spinner-manip').addEventListener('click', () => document.getElementById('spin-btn').click());
+
+        // Dice
+        document.getElementById('roll-btn').addEventListener('click', () => {
+            rollDice(r => { state.explore.dice[r]++; updateDiceChart(); });
+        });
+        document.getElementById('roll-10-btn').addEventListener('click', () => { batchAction(10, 1200, i => rollDice(r => { state.explore.dice[r]++; updateDiceChart(); })); });
+        document.getElementById('reset-dice').addEventListener('click', () => { state.explore.dice = {'1':0,'2':0,'3':0,'4':0,'5':0,'6':0}; updateDiceChart(); document.getElementById('dice-result').textContent = ''; });
+        document.getElementById('dice-manip').addEventListener('click', () => document.getElementById('roll-btn').click());
+
+        // Bag
+        document.getElementById('bag-setup').addEventListener('change', function() {
+            renderBagMarbles(this.value);
+            state.explore.bag = {};
+            updateBagChart();
+        });
+        document.getElementById('draw-btn').addEventListener('click', () => {
+            const cfg = document.getElementById('bag-setup').value;
+            drawFromBag(cfg, r => { state.explore.bag[r] = (state.explore.bag[r] || 0) + 1; updateBagChart(); });
+        });
+        document.getElementById('draw-10-btn').addEventListener('click', () => {
+            const cfg = document.getElementById('bag-setup').value;
+            batchAction(10, 600, i => drawFromBag(cfg, r => { state.explore.bag[r] = (state.explore.bag[r] || 0) + 1; updateBagChart(); }));
+        });
+        document.getElementById('reset-bag').addEventListener('click', () => { state.explore.bag = {}; updateBagChart(); document.getElementById('drawn-marble-display').innerHTML = ''; });
+        document.getElementById('bag-manip').addEventListener('click', () => document.getElementById('draw-btn').click());
+    }
+
+    function batchAction(count, delay, fn) {
+        for (let i = 0; i < count; i++) setTimeout(() => fn(i), i * delay);
+    }
+
+    function updateCoinChart() {
+        renderBarChart('coin-chart', state.explore.coin, { Heads: COLORS.yellow, Tails: '#95A5A6' });
+        document.getElementById('coin-total').textContent = state.explore.coin.Heads + state.explore.coin.Tails;
+    }
+    function updateSpinnerChart() {
+        const colors = {}; spinnerSections.forEach(s => colors[s.label] = s.color);
+        renderBarChart('spinner-chart', state.explore.spinner, colors);
+        document.getElementById('spinner-total').textContent = Object.values(state.explore.spinner).reduce((a,b)=>a+b,0);
+    }
+    function updateDiceChart() {
+        const diceColors = {}; for (let i=1;i<=6;i++) diceColors[i] = COLORS.blue;
+        renderBarChart('dice-chart', state.explore.dice, diceColors);
+        document.getElementById('dice-total').textContent = Object.values(state.explore.dice).reduce((a,b)=>a+b,0);
+    }
+    function updateBagChart() {
+        const bagColors = {}; Object.keys(state.explore.bag).forEach(k => bagColors[k] = COLORS[k] || '#999');
+        renderBarChart('bag-chart', state.explore.bag, bagColors);
+        document.getElementById('bag-total').textContent = Object.values(state.explore.bag).reduce((a,b)=>a+b,0);
+    }
+    function resetExploreCharts() { updateCoinChart(); updateSpinnerChart(); updateDiceChart(); updateBagChart(); }
+
+    // ═══════════════════════════════════════════════
+    // PRACTICE MODE
+    // ═══════════════════════════════════════════════
+
+    const practiceQuestions = [
+        { type:'coin', q:'You flip a coin 20 times. What do you predict?', options:['More Heads','More Tails','About Equal'], answer:'About Equal', explanation:'A fair coin has equal chance of heads or tails. With 20 flips, results should be close to even!' },
+        { type:'spinner', q:'A spinner has 4 equal sections (Red, Blue, Yellow, Green). Spin 20 times. What happens?', options:['One color wins big','All about equal','Red always wins'], answer:'All about equal', explanation:'Equal sections = equal chance! Each color should come up about 5 times.' },
+        { type:'dice', q:'Roll a die 30 times. Will you get more high (4,5,6) or low (1,2,3) numbers?', options:['More High','More Low','About Equal'], answer:'About Equal', explanation:'Each number 1-6 has the same chance: 1 out of 6!' },
+        { type:'bag', q:'A bag has 7 red and 3 blue marbles. Draw 20 times (putting it back). What happens?', options:['More Red','More Blue','About Equal'], answer:'More Red', explanation:'There are more red marbles, so red gets drawn more often. That makes it unfair!' },
+        { type:'spinner', q:'A spinner is 3/4 red and 1/4 blue. Spin 20 times. What will happen?', options:['More Red','More Blue','About Equal'], answer:'More Red', explanation:'Red takes up 3 times more space, so it lands on red about 3 times more often!' },
+        { type:'bag', q:'A bag has 5 red and 5 blue marbles. Draw 10 times. What happens?', options:['More Red','More Blue','About Equal'], answer:'About Equal', explanation:'Same number of each color = same chance = fair!' },
+        { type:'coin', q:'Your friend says "I got 3 heads in a row, so tails MUST come next." Is that true?', options:['Yes, tails is due','No, still 50/50','Maybe'], answer:'No, still 50/50', explanation:'Each flip is independent! Past flips don\'t change future chances. This is called the gambler\'s fallacy.' },
+        { type:'dice', q:'Can you roll a 7 on a single standard die?', options:['Yes sometimes','No, impossible','Only if you try hard'], answer:'No, impossible', explanation:'A standard die only has faces 1-6. Rolling a 7 is impossible — there\'s no face for it!' },
+    ];
+
+    function renderPractice() {
+        const area = document.getElementById('practice-area');
+        area.innerHTML = '';
+        const idx = state.practice.questionIndex % practiceQuestions.length;
+        const pq = practiceQuestions[idx];
+
+        const card = document.createElement('div');
+        card.className = 'game-scenario';
+        card.innerHTML = `
+            <h4>${pq.type === 'coin' ? '🪙' : pq.type === 'spinner' ? '🎡' : pq.type === 'dice' ? '🎲' : '🎒'} Question ${idx + 1} of ${practiceQuestions.length}</h4>
+            <p class="scenario-text">${pq.q}</p>
+            <div class="prediction-grid" id="pred-grid"></div>
+            <div class="btn-row">
+                <button class="action-btn" id="check-pred">Check My Prediction</button>
+                <button class="action-btn secondary" id="next-practice" style="display:none;">Next Question →</button>
+            </div>
+            <div id="practice-feedback"></div>
+            <div id="practice-manip" class="manip-stage" style="display:none;"></div>
+            <div id="practice-results"></div>
+        `;
+        area.appendChild(card);
+
+        const grid = document.getElementById('pred-grid');
+        pq.options.forEach(opt => {
+            const btn = document.createElement('button');
+            btn.className = 'pred-btn';
+            btn.textContent = opt;
+            btn.addEventListener('click', function() {
+                grid.querySelectorAll('.pred-btn').forEach(b => b.classList.remove('selected'));
+                this.classList.add('selected');
+                state.practice.predictions[idx] = opt;
             });
-
-            resetBtn.addEventListener('click', () => {
-                state.explore.coin = { heads: 0, tails: 0 };
-                updateCoinDisplay();
-            });
-        }
-
-        function updateCoinDisplay() {
-            const { heads, tails } = state.explore.coin;
-            document.getElementById('heads-count').textContent = heads;
-            document.getElementById('tails-count').textContent = tails;
-            const total = Math.max(heads + tails, 1);
-            const headsPct = (heads / total) * 100;
-            const tailsPct = (tails / total) * 100;
-            document.getElementById('heads-bar').style.height = headsPct + '%';
-            document.getElementById('tails-bar').style.height = tailsPct + '%';
-        }
-
-        function setupSpinner() {
-            const spinBtn = document.getElementById('spin-btn');
-            const resetBtn = document.getElementById('reset-spinner');
-            const colors = ['red', 'blue', 'yellow', 'green'];
-
-            spinBtn.addEventListener('click', () => {
-                const result = colors[Math.floor(Math.random() * 4)];
-                state.explore.spinner[result]++;
-                updateSpinnerDisplay();
-            });
-
-            resetBtn.addEventListener('click', () => {
-                state.explore.spinner = { red: 0, blue: 0, yellow: 0, green: 0 };
-                updateSpinnerDisplay();
-            });
-        }
-
-        function updateSpinnerDisplay() {
-            const s = state.explore.spinner;
-            const counts = [s.red, s.blue, s.yellow, s.green];
-            document.getElementById('red-count').textContent = s.red;
-            document.getElementById('blue-count').textContent = s.blue;
-            document.getElementById('yellow-count').textContent = s.yellow;
-            document.getElementById('green-count').textContent = s.green;
-            const total = Math.max(counts.reduce((a, b) => a + b, 0), 1);
-            ['red', 'blue', 'yellow', 'green'].forEach((col, i) => {
-                const bar = document.getElementById(col + '-bar');
-                if (bar) bar.style.height = ((counts[i] / total) * 100) + '%';
-            });
-        }
-
-        function setupDice() {
-            const rollBtn = document.getElementById('roll-btn');
-            const resetBtn = document.getElementById('reset-dice');
-
-            rollBtn.addEventListener('click', () => {
-                const roll = Math.floor(Math.random() * 6) + 1;
-                state.explore.dice[roll]++;
-                updateDiceDisplay();
-            });
-
-            resetBtn.addEventListener('click', () => {
-                state.explore.dice = { 1: 0, 2: 0, 3: 0, 4: 0, 5: 0, 6: 0 };
-                updateDiceDisplay();
-            });
-        }
-
-        function updateDiceDisplay() {
-            const d = state.explore.dice;
-            const counts = [d[1], d[2], d[3], d[4], d[5], d[6]];
-            const total = Math.max(counts.reduce((a, b) => a + b, 0), 1);
-
-            for (let i = 1; i <= 6; i++) {
-                const bar = document.getElementById(i + '-bar');
-                if (bar) bar.style.height = ((d[i] / total) * 100) + '%';
-            }
-        }
-
-        // ─────────────────────────────────────────────────────
-        // PRACTICE MODE
-        // ─────────────────────────────────────────────────────
-
-        function renderPractice() {
-            document.getElementById('test-coin-pred').addEventListener('click', testCoinPred);
-            document.getElementById('test-spinner-pred').addEventListener('click', testSpinnerPred);
-            document.getElementById('test-dice-pred').addEventListener('click', testDicePred);
-
-            document.querySelectorAll('.prediction-btn').forEach(btn => {
-                btn.addEventListener('click', function() {
-                    const container = this.parentElement;
-                    container.querySelectorAll('.prediction-btn').forEach(b => b.classList.remove('selected'));
-                    this.classList.add('selected');
-                });
-            });
-        }
-
-        function testCoinPred() {
-            const pred = document.querySelector('[id^="pred-"][id*="heads"], [id^="pred-"][id*="tails"], [id^="pred-"][id*="equal"].selected');
-            if (!pred) {
-                showFeedback('Choose a prediction first!', 'warning');
-                return;
-            }
-            const trials = 20;
-            let heads = 0;
-            for (let i = 0; i < trials; i++) {
-                if (Math.random() > 0.5) heads++;
-            }
-            const tails = trials - heads;
-            const feedback = document.getElementById('coin-pred-feedback');
-            feedback.innerHTML = `<p><strong>Result:</strong> Heads: ${heads}, Tails: ${tails}</p>`;
-            if (Math.abs(heads - tails) <= 3) {
-                feedback.innerHTML += '<p style="color: var(--color-fair);">✓ Great prediction! They came out nearly equal!</p>';
-            } else {
-                feedback.innerHTML += '<p style="color: #333;">One came out ahead this time, but with more flips they balance out!</p>';
-            }
-        }
-
-        function testSpinnerPred() {
-            const feedback = document.getElementById('spinner-pred-feedback');
-            const trials = 20;
-            const colors = ['red', 'blue', 'yellow', 'green'];
-            const counts = { red: 0, blue: 0, yellow: 0, green: 0 };
-            for (let i = 0; i < trials; i++) {
-                counts[colors[Math.floor(Math.random() * 4)]]++;
-            }
-            let max = Math.max(...Object.values(counts));
-            feedback.innerHTML = `<p><strong>Results:</strong> Red: ${counts.red}, Blue: ${counts.blue}, Yellow: ${counts.yellow}, Green: ${counts.green}</p>`;
-            const maxCount = Object.values(counts).filter(c => c === max).length;
-            if (maxCount > 1) {
-                feedback.innerHTML += '<p style="color: var(--color-fair);">✓ With equal space, colors balanced nicely!</p>';
-            } else {
-                feedback.innerHTML += '<p style="color: #333;">One color led this time, but that\'s just luck!</p>';
-            }
-        }
-
-        function testDicePred() {
-            const feedback = document.getElementById('dice-pred-feedback');
-            const trials = 20;
-            let high = 0, low = 0;
-            for (let i = 0; i < trials; i++) {
-                const roll = Math.floor(Math.random() * 6) + 1;
-                if (roll >= 4) high++;
-                else low++;
-            }
-            feedback.innerHTML = `<p><strong>Results:</strong> Low (1-3): ${low}, High (4-6): ${high}</p>`;
-            if (Math.abs(high - low) <= 3) {
-                feedback.innerHTML += '<p style="color: var(--color-fair);">✓ Great guess! They came out nearly equal!</p>';
-            } else {
-                feedback.innerHTML += '<p style="color: #333;">One side came ahead this time, but they have equal chance!</p>';
-            }
-        }
-
-        // ─────────────────────────────────────────────────────
-        // PLAY MODE
-        // ─────────────────────────────────────────────────────
-
-        function renderPlay() {
-            state.play = { score: 0, total: 0, gameIndex: 0 };
-            showGameQuestion();
-
-            document.getElementById('fair-btn').addEventListener('click', () => checkAnswer(true));
-            document.getElementById('unfair-btn').addEventListener('click', () => checkAnswer(false));
-            document.getElementById('next-game').addEventListener('click', showGameQuestion);
-        }
-
-        function showGameQuestion() {
-            if (state.play.gameIndex >= fairGames.length) {
-                state.play.gameIndex = 0;
-            }
-
-            const game = fairGames[state.play.gameIndex];
-            const container = document.getElementById('game-question');
-            container.innerHTML = `<div class="game-card"><p style="font-size: 1.3rem; font-weight: 600;">${game.q}</p></div>`;
-            document.getElementById('game-feedback').innerHTML = '';
-            document.getElementById('next-game').style.display = 'none';
-            document.getElementById('fair-btn').style.display = 'inline-block';
-            document.getElementById('unfair-btn').style.display = 'inline-block';
-        }
-
-        function checkAnswer(userAnswer) {
-            const game = fairGames[state.play.gameIndex];
-            const isCorrect = userAnswer === game.answer;
-            state.play.total++;
-            if (isCorrect) state.play.score++;
-
-            const feedback = document.getElementById('game-feedback');
-            const icon = isCorrect ? '✓' : '✗';
-            const color = isCorrect ? 'var(--color-fair)' : 'var(--color-unfair)';
-            feedback.innerHTML = `<div style="background: ${color}20; border-left: 4px solid ${color}; padding: 1rem; border-radius: 4px; margin: 1rem 0;">
-                <p style="color: ${color}; font-weight: 700; font-size: 1.2rem;">${icon} ${isCorrect ? 'Correct!' : 'Not quite!'}</p>
-                <p style="color: #333;">${game.exp}</p>
-            </div>`;
-
-            document.getElementById('play-score').textContent = state.play.score;
-            document.getElementById('play-total').textContent = state.play.total;
-            document.getElementById('fair-btn').style.display = 'none';
-            document.getElementById('unfair-btn').style.display = 'none';
-            document.getElementById('next-game').style.display = 'inline-block';
-            state.play.gameIndex++;
-        }
-
-        // ─────────────────────────────────────────────────────
-        // Mode switching
-        // ─────────────────────────────────────────────────────
-
-        document.querySelectorAll('.vinculum-mode-tab').forEach(tab => {
-            tab.addEventListener('click', function() {
-                const mode = this.getAttribute('data-mode');
-                switchMode(mode);
-            });
+            grid.appendChild(btn);
         });
 
-        function switchMode(mode) {
-            document.querySelectorAll('.vinculum-mode-content').forEach(el => {
-                el.style.display = 'none';
-            });
-            document.querySelectorAll('.vinculum-mode-tab').forEach(tab => {
-                tab.classList.remove('active');
-            });
+        document.getElementById('check-pred').addEventListener('click', () => {
+            const selected = state.practice.predictions[idx];
+            if (!selected) {
+                if (typeof showFB === 'function') showFB('Choose a prediction first!', 'warn');
+                return;
+            }
+            const correct = selected === pq.answer;
+            const fb = document.getElementById('practice-feedback');
+            fb.innerHTML = `<div class="feedback-box ${correct ? 'correct' : 'incorrect'}">
+                <p style="font-weight:700;font-size:1.1rem;">${correct ? '✓ Great prediction!' : '✗ Not quite!'}</p>
+                <p>${pq.explanation}</p>
+            </div>`;
+            if (typeof VinculumAudio !== 'undefined') {
+                correct ? VinculumAudio.correct() : VinculumAudio.incorrect();
+            }
+            document.getElementById('check-pred').style.display = 'none';
+            document.getElementById('next-practice').style.display = 'inline-block';
 
-            const content = document.querySelector(`.vinculum-mode-content[data-mode="${mode}"]`);
-            if (content) content.style.display = 'block';
-            document.querySelector(`.vinculum-mode-tab[data-mode="${mode}"]`).classList.add('active');
+            // Run the simulation visually
+            runPracticeSimulation(pq);
+        });
 
-            if (mode === 'explore') renderExplore();
-            else if (mode === 'practice') renderPractice();
-            else if (mode === 'play') renderPlay();
+        document.getElementById('next-practice').addEventListener('click', () => {
+            state.practice.questionIndex++;
+            renderPractice();
+        });
+    }
+
+    function runPracticeSimulation(pq) {
+        const resultsDiv = document.getElementById('practice-results');
+        const data = {};
+        const trials = 20;
+        if (pq.type === 'coin') {
+            let heads = 0;
+            for (let i = 0; i < trials; i++) heads += Math.random() < 0.5 ? 1 : 0;
+            data['Heads'] = heads; data['Tails'] = trials - heads;
+            renderBarChart('practice-results', data, { Heads: COLORS.yellow, Tails: '#95A5A6' });
+        } else if (pq.type === 'dice') {
+            for (let i = 1; i <= 6; i++) data[i] = 0;
+            for (let i = 0; i < 30; i++) data[Math.floor(Math.random() * 6) + 1]++;
+            const colors = {}; for (let i=1;i<=6;i++) colors[i] = COLORS.blue;
+            resultsDiv.className = 'results-bar-chart';
+            renderBarChart('practice-results', data, colors);
+        } else if (pq.type === 'spinner') {
+            const isUnequal = pq.q.includes('3/4');
+            const sections = isUnequal
+                ? [{ l: 'Red', w: 3 }, { l: 'Blue', w: 1 }]
+                : [{ l: 'Red', w: 1 }, { l: 'Blue', w: 1 }, { l: 'Yellow', w: 1 }, { l: 'Green', w: 1 }];
+            const totalW = sections.reduce((s, sec) => s + sec.w, 0);
+            sections.forEach(s => data[s.l] = 0);
+            for (let i = 0; i < trials; i++) {
+                let r = Math.random() * totalW, cum = 0;
+                for (const s of sections) { cum += s.w; if (r < cum) { data[s.l]++; break; } }
+            }
+            const colors = { Red: COLORS.red, Blue: COLORS.blue, Yellow: COLORS.yellow, Green: COLORS.green };
+            resultsDiv.className = 'results-bar-chart';
+            renderBarChart('practice-results', data, colors);
+        } else if (pq.type === 'bag') {
+            const isFair = pq.q.includes('5 red and 5 blue');
+            const config = isFair ? BAG_CONFIGS['5r5b'] : BAG_CONFIGS['7r3b'];
+            const marbles = [];
+            config.forEach(c => { for (let i = 0; i < c.count; i++) marbles.push(c.color); });
+            marbles.forEach(c => data[c] = data[c] || 0);
+            for (let i = 0; i < trials; i++) data[marbles[Math.floor(Math.random() * marbles.length)]]++;
+            const colors = {}; Object.keys(data).forEach(k => colors[k] = COLORS[k]);
+            resultsDiv.className = 'results-bar-chart';
+            renderBarChart('practice-results', data, colors);
+        }
+    }
+
+    // ═══════════════════════════════════════════════
+    // PLAY MODE — 24 GAME SCENARIOS
+    // ═══════════════════════════════════════════════
+
+    const fairGames = [
+        // COINS
+        { q: 'Flip a coin: if it lands on Heads, Player 1 wins. If Tails, Player 2 wins.', fair: true, type: 'coin', explain: 'A fair coin has 2 equal sides. Each player has a 1 in 2 chance!' },
+        { q: 'Flip two coins: if both match (HH or TT), Player 1 wins. If they don\'t match (HT or TH), Player 2 wins.', fair: false, type: 'coin', explain: 'There are 4 outcomes: HH, HT, TH, TT. Matching = 2 outcomes, Not matching = 2 outcomes. Actually this IS fair! But wait — let\'s think: HH, HT, TH, TT. Matches: 2. Non-matches: 2. It\'s fair!' },
+        { q: 'Flip a coin 3 times: if you get at least 2 Heads, you win. Otherwise you lose.', fair: true, type: 'coin', explain: 'Out of 8 possible outcomes (HHH, HHT, HTH, THH, HTT, THT, TTH, TTT), exactly 4 have 2+ heads. That\'s 50/50!' },
+
+        // DICE
+        { q: 'Roll a die: if you get 1, 2, or 3 you win. If you get 4, 5, or 6, you lose.', fair: true, type: 'dice', explain: '3 winning numbers out of 6 total = 3/6 = 1/2 chance. Fair!' },
+        { q: 'Roll a die: if you get 6, you win. Any other number, you lose.', fair: false, type: 'dice', explain: 'Only 1 winning number out of 6. That\'s only a 1/6 chance — very unfair!' },
+        { q: 'Roll a die: even numbers (2, 4, 6) win. Odd numbers (1, 3, 5) lose.', fair: true, type: 'dice', explain: '3 even numbers, 3 odd numbers. Equal chances = fair game!' },
+        { q: 'Roll two dice and add them. If the sum is 7, Player 1 wins. If the sum is anything else, Player 2 wins.', fair: false, type: 'dice', explain: 'There are 36 possible combinations. Only 6 make a sum of 7. Player 2 wins 30 out of 36 times!' },
+        { q: 'Roll a die: if you get a number greater than 2, you win.', fair: false, type: 'dice', explain: 'Numbers > 2 are: 3, 4, 5, 6. That\'s 4 out of 6 = 2/3 chance. Not fair — too easy!' },
+
+        // SPINNERS
+        { q: 'A spinner has 4 equal sections: Red, Blue, Yellow, Green. You win if it lands on your color.', fair: true, type: 'spinner', explain: 'Each color has exactly 1/4 of the space. Equal sections = fair!' },
+        { q: 'A spinner is 3/4 Red and 1/4 Blue. Player 1 picks Red, Player 2 picks Blue.', fair: false, type: 'spinner', explain: 'Red has 3 times more space! Player 1 wins about 75% of the time.' },
+        { q: 'A spinner has 3 equal sections. You need to land on Green to win.', fair: false, type: 'spinner', explain: 'Green is only 1/3 of the spinner. You\'d lose 2/3 of the time.' },
+        { q: 'A spinner has 2 equal halves: Win and Lose.', fair: true, type: 'spinner', explain: 'Two equal halves = 50/50 chance. Fair!' },
+        { q: 'A spinner has 6 sections: 3 Red and 3 Blue, all equal size. Red wins for Player 1, Blue for Player 2.', fair: true, type: 'spinner', explain: '3 sections each, same total space. Equal chances = fair!' },
+        { q: 'A spinner has 8 sections: 5 are "Lose" and 3 are "Win."', fair: false, type: 'spinner', explain: 'Only 3/8 chance to win vs 5/8 chance to lose. Unfair!' },
+
+        // MARBLE BAGS
+        { q: 'A bag has 5 red marbles and 5 blue marbles. Pick one without looking. Red wins for Player 1, Blue for Player 2.', fair: true, type: 'bag', explain: 'Equal numbers of each color = equal chance = fair!' },
+        { q: 'A bag has 8 red marbles and 2 blue marbles. Pick one without looking.', fair: false, type: 'bag', explain: 'Red: 8/10 = 80% chance. Blue: 2/10 = 20% chance. Very unfair!' },
+        { q: 'A bag has 3 red, 3 blue, and 3 yellow marbles. You win if you draw red.', fair: false, type: 'bag', explain: 'Red is only 3/9 = 1/3 of the marbles. You lose 2/3 of the time.' },
+        { q: 'A bag has 4 red and 4 blue marbles. You draw 2 marbles. If they match, you win.', fair: false, type: 'bag', explain: 'After drawing the first marble, there are fewer of that color left. Matching is less likely than not matching.' },
+        { q: 'A bag has 10 marbles: 5 red and 5 blue. Two players each pick a color. Fair?', fair: true, type: 'bag', explain: '5 of each color in 10 total. Each player has a 5/10 = 1/2 chance. Fair!' },
+
+        // COMPOUND / REAL-WORLD
+        { q: 'Rock-Paper-Scissors: each player picks at the same time.', fair: true, type: 'coin', explain: 'Each player has 3 choices, and each choice beats exactly one other. Completely fair!' },
+        { q: 'A card game: draw from a deck. Red card = Player 1 wins. Black card = Player 2 wins.', fair: true, type: 'bag', explain: 'A standard deck has 26 red and 26 black cards. Equal numbers = fair!' },
+        { q: 'Pick a number 1-10. If it\'s prime (2,3,5,7), you win. If not, you lose.', fair: false, type: 'dice', explain: 'Only 4 primes out of 10 numbers. You only win 40% of the time.' },
+        { q: 'A number cube has: 1, 1, 2, 2, 3, 3. Roll it. Odd number = Player 1, Even = Player 2.', fair: false, type: 'dice', explain: 'Odd faces: 1, 1, 3, 3 = 4 faces. Even faces: 2, 2 = 2 faces. Player 1 has double the chance!' },
+        { q: 'Flip a coin. Heads: move forward 1 space. Tails: move forward 1 space. First to 10 wins.', fair: true, type: 'coin', explain: 'Both outcomes move you forward the same amount. Both players advance equally. Fair!' },
+    ];
+
+    let playManipUsedThisQuestion = false;
+
+    function renderPlay() {
+        const difficulty = document.getElementById('difficulty-select').value;
+        const area = document.getElementById('play-area');
+        area.innerHTML = '';
+
+        if (state.play.gameIndex >= fairGames.length) {
+            // Game over
+            const pct = state.play.total > 0 ? Math.round((state.play.score / state.play.total) * 100) : 0;
+            let rubric = 1;
+            if (pct >= 90 && state.play.manipUsed === 0) rubric = 4;
+            else if (pct >= 70) rubric = state.play.manipUsed > 0 ? 3 : (pct >= 90 ? 4 : 3);
+            else if (pct >= 40) rubric = 2;
+
+            area.innerHTML = `<div class="game-scenario">
+                <h4>🎉 Game Complete!</h4>
+                <p class="scenario-text">You scored ${state.play.score} out of ${state.play.total} (${pct}%)</p>
+                <p>Manipulatives used: ${state.play.manipUsed} times</p>
+                <p style="font-size:1.3rem;font-weight:700;color:${rubric >= 3 ? 'var(--color-fair)' : 'var(--color-coin)'};">
+                    Rubric Score: ${rubric} / 4 (${['','Beginning','Developing','Proficient','Distinguished'][rubric]})
+                </p>
+                ${state.play.manipUsed > 0 && pct >= 90 ? '<p style="color:var(--color-coin);font-style:italic;">Note: Score capped at Proficient (3) because manipulatives were used. Great understanding though!</p>' : ''}
+                <div class="btn-row"><button class="action-btn" id="play-again">Play Again</button></div>
+            </div>`;
+            document.getElementById('play-again').addEventListener('click', () => {
+                state.play = { score: 0, total: 0, gameIndex: 0, manipUsed: 0, manipAvailableCount: 0, questionsCorrectWithManip: 0, questionsCorrectWithoutManip: 0 };
+                document.getElementById('play-score').textContent = '0';
+                document.getElementById('play-total').textContent = '0';
+                renderPlay();
+            });
+            updateRubricDots();
+            return;
         }
 
-        function showFeedback(msg, type = 'info') {
-            const fb = document.getElementById('feedback');
-            fb.innerHTML = `<div class="${type}">${msg}</div>`;
-            setTimeout(() => fb.innerHTML = '', 3000);
+        const game = fairGames[state.play.gameIndex];
+        playManipUsedThisQuestion = false;
+
+        // Determine if manipulative should auto-show or be on-call
+        const questionProgress = state.play.gameIndex / fairGames.length;
+        const showManip = difficulty === 'emergent' ||
+            (difficulty === 'proficient' && questionProgress < 0.5) ||
+            false; // advanced: never auto-show
+        const offerManip = !showManip && difficulty !== 'advanced' || (difficulty === 'advanced' && true); // always offer on-call
+
+        const card = document.createElement('div');
+        card.className = 'game-scenario';
+        card.innerHTML = `
+            <h4>Question ${state.play.gameIndex + 1} of ${fairGames.length}</h4>
+            <p class="scenario-text">${game.q}</p>
+            <div id="play-manip-area" style="${showManip ? '' : 'display:none;'}"></div>
+            ${offerManip && !showManip ? '<div class="btn-row"><button class="action-btn manip-call" id="show-manip-btn">🔍 Show Manipulative</button></div>' : ''}
+            <div class="btn-row" id="answer-btns">
+                <button class="action-btn fair-btn" id="answer-fair">✓ FAIR</button>
+                <button class="action-btn unfair-btn" id="answer-unfair">✗ UNFAIR</button>
+            </div>
+            <div id="play-feedback"></div>
+            <div class="btn-row"><button class="action-btn secondary" id="next-play" style="display:none;">Next →</button></div>
+        `;
+        area.appendChild(card);
+
+        // Render manipulative if showing
+        if (showManip) {
+            renderPlayManipulative(game, 'play-manip-area');
+            playManipUsedThisQuestion = true;
+            state.play.manipUsed++;
         }
 
-        // Initialize
-        switchMode('explore');
+        // On-call button
+        const showBtn = document.getElementById('show-manip-btn');
+        if (showBtn) {
+            showBtn.addEventListener('click', () => {
+                document.getElementById('play-manip-area').style.display = '';
+                renderPlayManipulative(game, 'play-manip-area');
+                showBtn.style.display = 'none';
+                playManipUsedThisQuestion = true;
+                state.play.manipUsed++;
+                state.play.manipAvailableCount++;
+            });
+        }
+
+        document.getElementById('answer-fair').addEventListener('click', () => checkPlayAnswer(true, game));
+        document.getElementById('answer-unfair').addEventListener('click', () => checkPlayAnswer(false, game));
+
+        document.getElementById('next-play').addEventListener('click', () => {
+            state.play.gameIndex++;
+            renderPlay();
+        });
+
+        updateRubricDots();
+    }
+
+    function renderPlayManipulative(game, containerId) {
+        const container = document.getElementById(containerId);
+        if (!container) return;
+        // Simple visual representation based on game type
+        const typeIcons = { coin: '🪙', dice: '🎲', spinner: '🎡', bag: '🎒' };
+        container.innerHTML = `<div class="manip-stage" style="min-height:80px;">
+            <span style="font-size:3rem;">${typeIcons[game.type] || '🎯'}</span>
+            <span class="manip-note" style="margin-left:1rem;">Try it in Explore mode to test this scenario!</span>
+        </div>`;
+    }
+
+    function checkPlayAnswer(userSaidFair, game) {
+        const correct = userSaidFair === game.fair;
+        state.play.total++;
+        if (correct) state.play.score++;
+
+        if (playManipUsedThisQuestion) {
+            if (correct) state.play.questionsCorrectWithManip++;
+        } else {
+            if (correct) state.play.questionsCorrectWithoutManip++;
+        }
+
+        document.getElementById('play-score').textContent = state.play.score;
+        document.getElementById('play-total').textContent = state.play.total;
+
+        const fb = document.getElementById('play-feedback');
+        fb.innerHTML = `<div class="feedback-box ${correct ? 'correct' : 'incorrect'}">
+            <p style="font-weight:700;font-size:1.1rem;">${correct ? '✓ Correct!' : '✗ Not quite!'}</p>
+            <p>This game is <strong style="color:${game.fair ? 'var(--color-fair)' : 'var(--color-unfair)'};">${game.fair ? 'FAIR' : 'UNFAIR'}</strong></p>
+            <p>${game.explain}</p>
+        </div>`;
+
+        if (typeof VinculumAudio !== 'undefined') {
+            correct ? VinculumAudio.correct() : VinculumAudio.incorrect();
+        }
+
+        document.getElementById('answer-btns').style.display = 'none';
+        document.getElementById('next-play').style.display = 'inline-block';
+        const showBtn = document.getElementById('show-manip-btn');
+        if (showBtn) showBtn.style.display = 'none';
+
+        updateRubricDots();
+    }
+
+    function updateRubricDots() {
+        const dots = document.getElementById('rubric-dots');
+        if (!dots) return;
+        const pct = state.play.total > 0 ? (state.play.score / state.play.total) * 100 : 0;
+        let rubric = 0;
+        if (state.play.total === 0) rubric = 0;
+        else if (pct >= 90 && state.play.manipUsed === 0) rubric = 4;
+        else if (pct >= 70) rubric = 3;
+        else if (pct >= 40) rubric = 2;
+        else rubric = 1;
+        const capped = state.play.manipUsed > 0 && pct >= 90;
+        dots.innerHTML = '';
+        for (let i = 1; i <= 4; i++) {
+            const d = document.createElement('div');
+            d.className = 'rubric-dot';
+            if (i <= rubric) d.classList.add(capped && i === 4 ? 'capped' : 'filled');
+            dots.appendChild(d);
+        }
+    }
+
+    // ═══════════════════════════════════════════════
+    // MODE SWITCHING
+    // ═══════════════════════════════════════════════
+
+    document.querySelectorAll('.vinculum-mode-tab').forEach(tab => {
+        tab.addEventListener('click', function() {
+            switchMode(this.getAttribute('data-mode'));
+        });
+    });
+
+    function switchMode(mode) {
+        document.querySelectorAll('.vinculum-mode-content').forEach(el => el.style.display = 'none');
+        document.querySelectorAll('.vinculum-mode-tab').forEach(tab => tab.classList.remove('active'));
+        const content = document.querySelector(`.vinculum-mode-content[data-mode="${mode}"]`);
+        if (content) content.style.display = 'block';
+        const tab = document.querySelector(`.vinculum-mode-tab[data-mode="${mode}"]`);
+        if (tab) tab.classList.add('active');
+
+        if (mode === 'explore') initExplore();
+        else if (mode === 'practice') renderPractice();
+        else if (mode === 'play') renderPlay();
+    }
+
+    document.getElementById('difficulty-select').addEventListener('change', () => {
+        const activeMode = document.querySelector('.vinculum-mode-tab.active');
+        if (activeMode && activeMode.dataset.mode === 'play') {
+            state.play = { score: 0, total: 0, gameIndex: 0, manipUsed: 0, manipAvailableCount: 0, questionsCorrectWithManip: 0, questionsCorrectWithoutManip: 0 };
+            document.getElementById('play-score').textContent = '0';
+            document.getElementById('play-total').textContent = '0';
+            renderPlay();
+        }
+    });
+
+    // Initialize
+    switchMode('explore');
     </script>
 </body>
 </html>
