@@ -1,0 +1,1277 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="VINCULUM Learning Hub - Chance Trees: Compound Probability with Tree Diagrams">
+    <meta name="author" content="VINCULUM">
+    <title>Chance Trees — VINCULUM Hub</title>
+    <link rel="stylesheet" href="../../vinculum-core.css">
+    <style>
+        :root {
+            --color-coin: #FFD700;
+            --color-spinner: #FF6B9D;
+            --color-dice: #4ECDC4;
+            --color-bag: #9B59B6;
+            --color-branch: #667eea;
+            --color-leaf-fair: #2ECC71;
+            --color-leaf-unfair: #E74C3C;
+        }
+
+        /* ── LAYOUT ── */
+        .app-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 1rem;
+            padding: 1rem;
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+        @media (max-width: 900px) {
+            .app-grid { grid-template-columns: 1fr; }
+        }
+
+        .tool-card {
+            background: var(--card-bg, rgba(255,255,255,0.05));
+            border: 1px solid var(--border, rgba(255,255,255,0.1));
+            border-radius: 12px;
+            padding: 1.5rem;
+        }
+        .tool-card h3 {
+            margin: 0 0 0.5rem 0;
+            color: var(--text);
+        }
+        .tool-card p {
+            color: var(--text-secondary, #aaa);
+            margin: 0.3rem 0;
+            font-size: 0.9rem;
+        }
+
+        .full-width { grid-column: 1 / -1; }
+
+        /* ── TREE DIAGRAM (Canvas) ── */
+        .tree-canvas-wrap {
+            position: relative;
+            width: 100%;
+            min-height: 400px;
+            background: rgba(0,0,0,0.03);
+            border-radius: 12px;
+            overflow: hidden;
+        }
+        #tree-canvas {
+            display: block;
+            width: 100%;
+        }
+
+        /* ── PREMIUM COIN ── */
+        .coin-wrap {
+            perspective: 800px;
+            width: 80px; height: 80px;
+            cursor: pointer;
+            filter: drop-shadow(0 4px 8px rgba(0,0,0,0.3));
+            display: inline-block;
+        }
+        .coin-inner {
+            width: 100%; height: 100%;
+            position: relative;
+            transform-style: preserve-3d;
+            transition: transform 0.1s;
+        }
+        .coin-inner.flipping {
+            animation: coinFlip 0.8s cubic-bezier(0.25, 0.46, 0.45, 0.94) forwards;
+        }
+        .coin-inner.flipping-tails {
+            animation: coinFlipTails 0.8s cubic-bezier(0.25, 0.46, 0.45, 0.94) forwards;
+        }
+        @keyframes coinFlip {
+            0% { transform: rotateY(0deg) translateY(0) scale(1); }
+            30% { transform: rotateY(540deg) translateY(-50px) scale(1.1); }
+            70% { transform: rotateY(1260deg) translateY(-15px) scale(1.02); }
+            100% { transform: rotateY(1440deg) translateY(0) scale(1); }
+        }
+        @keyframes coinFlipTails {
+            0% { transform: rotateY(0deg) translateY(0) scale(1); }
+            30% { transform: rotateY(540deg) translateY(-50px) scale(1.1); }
+            70% { transform: rotateY(1260deg) translateY(-15px) scale(1.02); }
+            100% { transform: rotateY(1620deg) translateY(0) scale(1); }
+        }
+        .coin-face {
+            position: absolute; width: 100%; height: 100%;
+            border-radius: 50%;
+            backface-visibility: hidden;
+            display: flex; align-items: center; justify-content: center;
+            flex-direction: column;
+            border: 3px solid #B8860B;
+            box-shadow: 0 0 0 1px #DAA520, inset 0 3px 6px rgba(255,255,255,0.4), inset 0 -3px 6px rgba(139,69,20,0.3);
+        }
+        .coin-heads {
+            background: conic-gradient(from 0deg, #FFD700, #FFC125, #FFD700, #DAA520, #FFD700, #FFE66D, #FFD700);
+            color: #7B5B14;
+            font-size: 1.6rem; font-weight: 900; font-family: 'Georgia', serif;
+            text-shadow: 0 1px 0 rgba(255,230,109,0.8);
+        }
+        .coin-tails {
+            background: conic-gradient(from 180deg, #C0C0C0, #D8D8D8, #A9A9A9, #C0C0C0, #D3D3D3, #B0B0B0, #C0C0C0);
+            color: #555;
+            font-size: 1.6rem; font-weight: 900; font-family: 'Georgia', serif;
+            text-shadow: 0 1px 0 rgba(255,255,255,0.6);
+            transform: rotateY(180deg);
+            border-color: #888;
+        }
+
+        /* ── PREMIUM DICE ── */
+        .dice-3d-sm {
+            width: 60px; height: 60px;
+            perspective: 300px;
+            cursor: pointer;
+            filter: drop-shadow(0 4px 8px rgba(0,0,0,0.3));
+            display: inline-block;
+        }
+        .dice-cube-sm {
+            width: 60px; height: 60px;
+            position: relative;
+            transform-style: preserve-3d;
+            transition: transform 0.1s;
+        }
+        .dice-cube-sm.rolling { animation: diceRollSm 0.8s cubic-bezier(0.25, 0.46, 0.45, 0.94) forwards; }
+        @keyframes diceRollSm {
+            0% { transform: rotateX(0) rotateY(0) rotateZ(0) translateY(0); }
+            20% { transform: rotateX(240deg) rotateY(180deg) rotateZ(90deg) translateY(-40px); }
+            60% { transform: rotateX(540deg) rotateY(450deg) rotateZ(225deg) translateY(-15px); }
+            100% { transform: var(--dice-end); }
+        }
+        .dice-face-sm {
+            position: absolute; width: 60px; height: 60px;
+            background: linear-gradient(145deg, #ffffff, #f0f0f0);
+            border-radius: 10px;
+            display: grid;
+            padding: 8px;
+            box-shadow: inset 0 2px 3px rgba(255,255,255,0.8), inset 0 -2px 3px rgba(0,0,0,0.06);
+        }
+        .dice-face-sm.f1 { transform: translateZ(30px); }
+        .dice-face-sm.f2 { transform: rotateY(180deg) translateZ(30px); }
+        .dice-face-sm.f3 { transform: rotateY(90deg) translateZ(30px); }
+        .dice-face-sm.f4 { transform: rotateY(-90deg) translateZ(30px); }
+        .dice-face-sm.f5 { transform: rotateX(90deg) translateZ(30px); }
+        .dice-face-sm.f6 { transform: rotateX(-90deg) translateZ(30px); }
+        .pip-sm {
+            width: 10px; height: 10px;
+            background: radial-gradient(circle at 40% 35%, #555, #1a1a1a);
+            border-radius: 50%;
+            align-self: center; justify-self: center;
+        }
+        .dice-face-sm.f1 { grid-template: 1fr / 1fr; place-items: center; }
+        .dice-face-sm.f1 .pip-sm { width: 14px; height: 14px; background: radial-gradient(circle at 40% 35%, #E74C3C, #C0392B); }
+        .dice-face-sm.f2 { grid-template: 1fr 1fr / 1fr; }
+        .dice-face-sm.f2 .pip-sm:first-child { justify-self: end; align-self: start; }
+        .dice-face-sm.f2 .pip-sm:last-child { justify-self: start; align-self: end; }
+        .dice-face-sm.f3 { grid-template: 1fr 1fr 1fr / 1fr; }
+        .dice-face-sm.f3 .pip-sm:first-child { justify-self: end; align-self: start; }
+        .dice-face-sm.f3 .pip-sm:nth-child(2) { justify-self: center; }
+        .dice-face-sm.f3 .pip-sm:last-child { justify-self: start; align-self: end; }
+        .dice-face-sm.f4 { grid-template: 1fr 1fr / 1fr 1fr; }
+        .dice-face-sm.f5 { grid-template: 1fr 1fr 1fr / 1fr 1fr; }
+        .dice-face-sm.f5 .pip-sm:nth-child(5) { grid-column: 1 / -1; }
+        .dice-face-sm.f6 { grid-template: 1fr 1fr 1fr / 1fr 1fr; }
+
+        /* ── MINI SPINNER ── */
+        .spinner-mini-wrap {
+            position: relative; width: 80px; height: 80px;
+            display: inline-block; cursor: pointer;
+        }
+        .spinner-mini-wrap::before {
+            content: '';
+            position: absolute;
+            top: -3px; left: -3px; right: -3px; bottom: -3px;
+            border-radius: 50%;
+            background: conic-gradient(from 0deg, #888, #ccc, #888, #aaa, #ddd, #888);
+            z-index: 0;
+        }
+        .spinner-mini {
+            width: 100%; height: 100%;
+            border-radius: 50%;
+            position: relative; z-index: 1;
+            transition: transform 0.1s;
+        }
+        .spinner-mini.spinning {
+            transition: transform 2.5s cubic-bezier(0.17, 0.67, 0.08, 0.99);
+        }
+
+        /* ── MARBLE ── */
+        .marble-sm {
+            width: 30px; height: 30px;
+            border-radius: 50%;
+            display: inline-block;
+            box-shadow: inset -4px -4px 6px rgba(0,0,0,0.35), inset 3px 3px 4px rgba(255,255,255,0.25), 1px 2px 4px rgba(0,0,0,0.3);
+            position: relative;
+        }
+        .marble-sm::after {
+            content: '';
+            position: absolute;
+            top: 4px; left: 5px;
+            width: 8px; height: 5px;
+            background: rgba(255,255,255,0.5);
+            border-radius: 50%;
+            transform: rotate(-30deg);
+        }
+
+        /* ── MANIPULATIVE STAGE ── */
+        .manip-stage {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 1.5rem;
+            min-height: 120px;
+            margin: 0.5rem 0;
+            flex-wrap: wrap;
+        }
+
+        /* ── EXPERIMENT SETUP ── */
+        .setup-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 0.5rem;
+            margin: 0.5rem 0;
+        }
+        .setup-item {
+            padding: 0.6rem;
+            border: 2px solid var(--border, rgba(255,255,255,0.1));
+            border-radius: 8px;
+            background: var(--card-bg, rgba(255,255,255,0.03));
+            cursor: pointer;
+            text-align: center;
+            font-weight: 600;
+            font-size: 0.85rem;
+            color: var(--text);
+            transition: all 0.2s;
+        }
+        .setup-item:hover { border-color: var(--cyan, #00d4ff); }
+        .setup-item.selected { background: var(--cyan, #00d4ff); color: white; border-color: var(--cyan); }
+
+        /* ── BUTTONS ── */
+        .action-btn {
+            padding: 0.6rem 1.2rem;
+            background: linear-gradient(135deg, var(--cyan, #00d4ff), #0099cc);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: transform 0.15s, box-shadow 0.15s;
+            font-size: 0.95rem;
+        }
+        .action-btn:hover { transform: translateY(-2px); box-shadow: 0 4px 12px rgba(0,212,255,0.3); }
+        .action-btn:active { transform: translateY(0); }
+        .action-btn.secondary { background: linear-gradient(135deg, #667eea, #764ba2); }
+        .action-btn.run-btn { background: linear-gradient(135deg, #2ECC71, #27AE60); font-size: 1.1rem; padding: 0.7rem 2rem; }
+        .btn-row { display: flex; gap: 0.5rem; flex-wrap: wrap; margin: 0.8rem 0; }
+
+        /* ── OUTCOME PANEL ── */
+        .outcome-panel {
+            background: rgba(0,0,0,0.03);
+            border-radius: 10px;
+            padding: 1rem;
+            margin: 0.5rem 0;
+        }
+        .outcome-row {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 0.4rem 0;
+            border-bottom: 1px solid rgba(255,255,255,0.05);
+            font-size: 0.85rem;
+        }
+        .outcome-row:last-child { border-bottom: none; }
+        .outcome-prob {
+            font-family: 'SF Mono','Fira Code','Cascadia Code',monospace;
+            font-weight: 700;
+            color: var(--cyan, #00d4ff);
+        }
+
+        /* ── PROBABILITY READOUT ── */
+        .prob-readout {
+            display: grid;
+            grid-template-columns: 1fr 1fr 1fr;
+            gap: 0.5rem;
+            margin: 0.5rem 0;
+        }
+        .prob-stat {
+            text-align: center;
+            padding: 0.6rem;
+            background: var(--card-bg, rgba(255,255,255,0.03));
+            border: 1px solid var(--border);
+            border-radius: 8px;
+        }
+        .prob-stat .label {
+            font-size: 0.65rem;
+            text-transform: uppercase;
+            letter-spacing: 1.5px;
+            color: var(--text-secondary, #888);
+        }
+        .prob-stat .value {
+            font-size: 1.2rem;
+            font-weight: 800;
+            font-family: 'SF Mono','Fira Code','Cascadia Code',monospace;
+            color: var(--cyan, #00d4ff);
+        }
+
+        /* ── PRACTICE / PLAY ── */
+        .question-card {
+            background: var(--card-bg, rgba(255,255,255,0.05));
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 1.5rem;
+            margin: 0.5rem 0;
+        }
+        .question-text {
+            font-size: 1.1rem;
+            line-height: 1.5;
+            color: var(--text);
+            margin: 0.5rem 0;
+        }
+        .answer-input {
+            width: 100%;
+            max-width: 300px;
+            padding: 0.6rem 1rem;
+            border: 2px solid var(--border);
+            border-radius: 8px;
+            background: var(--card-bg, rgba(255,255,255,0.05));
+            color: var(--text);
+            font-size: 1.1rem;
+            font-weight: 700;
+            font-family: 'SF Mono','Fira Code','Cascadia Code',monospace;
+            text-align: center;
+        }
+        .answer-input:focus { outline: none; border-color: var(--cyan); }
+
+        .feedback-box {
+            padding: 1rem;
+            border-radius: 8px;
+            margin: 0.8rem 0;
+            border-left: 4px solid;
+        }
+        .feedback-box.correct { background: rgba(46,204,113,0.1); border-color: #2ECC71; }
+        .feedback-box.incorrect { background: rgba(231,76,60,0.1); border-color: #E74C3C; }
+
+        .score-display {
+            font-size: 1.8rem;
+            font-weight: 700;
+            color: #2ECC71;
+            text-align: center;
+            padding: 0.8rem;
+            background: rgba(46,204,113,0.1);
+            border-radius: 8px;
+            margin: 0.8rem 0;
+            font-family: 'SF Mono','Fira Code','Cascadia Code',monospace;
+        }
+
+        .pred-btn {
+            padding: 0.5rem 1rem;
+            border: 2px solid var(--border);
+            background: var(--card-bg, rgba(255,255,255,0.05));
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: 600;
+            color: var(--text);
+            transition: all 0.2s;
+        }
+        .pred-btn:hover { border-color: var(--cyan); }
+        .pred-btn.selected { background: var(--cyan); color: white; border-color: var(--cyan); }
+
+        .cra-badge {
+            display: inline-block;
+            padding: 2px 8px;
+            border-radius: 12px;
+            font-size: 0.65rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+        .cra-c { background: rgba(78,205,196,0.2); color: #4ECDC4; }
+        .cra-r { background: rgba(102,126,234,0.2); color: #667eea; }
+        .cra-a { background: rgba(155,89,182,0.2); color: #9B59B6; }
+
+        .difficulty-selector {
+            display: flex; align-items: center; gap: 0.5rem;
+        }
+
+        /* ── VINCULUM GLOW ── */
+        .tool-card {
+            box-shadow: 0 0 0 1px var(--border), 0 4px 20px var(--glow, rgba(0,212,255,0.08));
+            transition: box-shadow 0.3s, border-color 0.3s;
+        }
+        .tool-card:hover {
+            box-shadow: 0 0 0 1px var(--cyan), 0 4px 30px var(--glow, rgba(0,212,255,0.15));
+        }
+        .tool-card h3 {
+            background: var(--grad, linear-gradient(135deg,#00d4ff,#b388ff));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+        .tree-canvas-wrap {
+            box-shadow: inset 0 0 40px var(--glow, rgba(0,212,255,0.05));
+            border: 1px solid var(--border);
+        }
+        .action-btn.run-btn {
+            box-shadow: 0 0 20px rgba(46,204,113,0.3);
+        }
+        .action-btn.run-btn:hover {
+            box-shadow: 0 0 30px rgba(46,204,113,0.5);
+        }
+        .setup-item.selected {
+            box-shadow: 0 0 12px var(--glow, rgba(0,212,255,0.2));
+        }
+        .prob-stat .value {
+            text-shadow: 0 0 8px var(--glow, rgba(0,212,255,0.3));
+        }
+        .score-display {
+            box-shadow: inset 0 0 30px rgba(46,204,113,0.08);
+        }
+        .outcome-prob {
+            text-shadow: 0 0 6px var(--glow, rgba(0,212,255,0.25));
+        }
+        .cra-badge {
+            box-shadow: 0 0 8px currentColor;
+        }
+        .question-card {
+            box-shadow: 0 0 0 1px var(--border), 0 4px 20px var(--glow, rgba(0,212,255,0.08));
+        }
+
+        *:focus-visible { outline: 2px solid var(--cyan); outline-offset: 2px; border-radius: 4px; }
+        .sr-only { position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0; }
+    </style>
+</head>
+<body>
+    <div class="vinculum-header">
+        <div class="vinculum-header-left">
+            <a class="vinculum-back-btn" href="../../VINCULUM-Hub.html" style="text-decoration:none;">&#9664; Hub</a>
+            <div class="vinculum-header-title"><span>VINCULUM</span> Chance Trees</div>
+            <span class="vinculum-header-badge">7 &middot; SP</span>
+            <span class="vinculum-std-tag">7.SP.C.8a</span>
+            <span class="vinculum-std-tag">7.SP.C.8b</span>
+        </div>
+    </div>
+
+    <div class="vinculum-mode-tabs">
+        <button class="vinculum-mode-tab" data-mode="explore"><svg width="18" height="18" viewBox="0 0 48 48" fill="none"><path d="M4 24C4 24 12 12 24 12C36 12 44 24 44 24C44 24 36 36 24 36C12 36 4 24 4 24Z" stroke="currentColor" stroke-width="3" fill="none"/><circle cx="24" cy="24" r="7" stroke="currentColor" stroke-width="3" fill="none"/><circle cx="24" cy="24" r="3" fill="currentColor"/></svg> Explore</button>
+        <button class="vinculum-mode-tab" data-mode="practice"><svg width="18" height="18" viewBox="0 0 48 48" fill="none"><circle cx="24" cy="24" r="20" stroke="currentColor" stroke-width="3" fill="none" opacity="0.3"/><circle cx="24" cy="24" r="20" stroke="currentColor" stroke-width="3" fill="none" stroke-dasharray="126" stroke-dashoffset="32" stroke-linecap="round"/><polyline points="16,24 22,32 34,16" stroke="currentColor" stroke-width="4" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg> Practice</button>
+        <button class="vinculum-mode-tab" data-mode="play"><svg width="18" height="18" viewBox="0 0 48 48" fill="none"><polygon points="28,4 12,28 22,28 18,44 36,18 26,18" fill="none" stroke="currentColor" stroke-width="3" stroke-linejoin="round"/></svg> Play</button>
+        <div class="difficulty-selector">
+            <label for="difficulty-select">Difficulty:</label>
+            <select id="difficulty-select" class="vinculum-diff-button">
+                <option value="emergent">Emergent</option>
+                <option value="proficient" selected>Proficient</option>
+                <option value="advanced">Advanced</option>
+            </select>
+        </div>
+    </div>
+
+    <!-- ═══════════ EXPLORE ═══════════ -->
+    <div class="vinculum-mode-content" data-mode="explore">
+        <div class="tool-card full-width" style="margin:1rem;">
+            <h3>Build a Chance Tree</h3>
+            <p>Choose devices, set up compound experiments, and watch the tree diagram grow. See how probabilities multiply along branches.</p>
+        </div>
+
+        <div class="app-grid">
+            <!-- LEFT: Setup + Manipulatives -->
+            <div>
+                <div class="tool-card">
+                    <h3>🎯 Experiment Setup</h3>
+
+                    <p style="margin-bottom:0.5rem;"><strong>Event 1:</strong></p>
+                    <div class="setup-grid" id="event1-grid">
+                        <div class="setup-item selected" data-device="coin" data-event="1" onclick="selectDevice(this)">🪙 Coin</div>
+                        <div class="setup-item" data-device="die" data-event="1" onclick="selectDevice(this)">🎲 Die</div>
+                        <div class="setup-item" data-device="spinner" data-event="1" onclick="selectDevice(this)">🎡 Spinner</div>
+                        <div class="setup-item" data-device="bag" data-event="1" onclick="selectDevice(this)">🎒 Marbles</div>
+                    </div>
+
+                    <p style="margin:0.8rem 0 0.5rem;"><strong>Event 2:</strong></p>
+                    <div class="setup-grid" id="event2-grid">
+                        <div class="setup-item selected" data-device="coin" data-event="2" onclick="selectDevice(this)">🪙 Coin</div>
+                        <div class="setup-item" data-device="die" data-event="2" onclick="selectDevice(this)">🎲 Die</div>
+                        <div class="setup-item" data-device="spinner" data-event="2" onclick="selectDevice(this)">🎡 Spinner</div>
+                        <div class="setup-item" data-device="bag" data-event="2" onclick="selectDevice(this)">🎒 Marbles</div>
+                    </div>
+
+                    <div class="btn-row" style="margin-top:1rem;">
+                        <button class="action-btn run-btn" id="run-btn" onclick="runExperiment()">▶ Build Tree</button>
+                        <button class="action-btn secondary" onclick="runSimulation()">🔄 Simulate 50×</button>
+                        <button class="action-btn secondary" onclick="resetExplore()">Reset</button>
+                    </div>
+                </div>
+
+                <!-- Manipulative Display -->
+                <div class="tool-card" id="manip-display">
+                    <h3>🔬 Manipulatives <span class="cra-badge cra-c">Concrete</span></h3>
+                    <div class="manip-stage" id="manip-stage">
+                        <p style="color:var(--text-secondary);">Click <strong>Build Tree</strong> to run the experiment and see the manipulatives in action.</p>
+                    </div>
+                    <div id="manip-result" style="text-align:center;font-size:1.1rem;font-weight:700;min-height:1.5rem;"></div>
+                </div>
+
+                <!-- Outcome list -->
+                <div class="tool-card">
+                    <h3>📊 Sample Space <span class="cra-badge cra-a">Abstract</span></h3>
+                    <div class="prob-readout">
+                        <div class="prob-stat"><div class="label">Outcomes</div><div class="value" id="stat-outcomes">—</div></div>
+                        <div class="prob-stat"><div class="label">P(target)</div><div class="value" id="stat-target">—</div></div>
+                        <div class="prob-stat"><div class="label">Simulated</div><div class="value" id="stat-simulated">—</div></div>
+                    </div>
+                    <div class="outcome-panel" id="outcome-list">
+                        <p style="color:var(--text-secondary);font-size:0.85rem;">Outcomes will appear after building the tree.</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- RIGHT: Tree Diagram -->
+            <div>
+                <div class="tool-card" style="height:100%;">
+                    <h3>🌳 Tree Diagram <span class="cra-badge cra-r">Representational</span></h3>
+                    <div class="tree-canvas-wrap">
+                        <canvas id="tree-canvas" width="600" height="500"></canvas>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ═══════════ PRACTICE ═══════════ -->
+    <div class="vinculum-mode-content" data-mode="practice">
+        <div class="tool-card full-width" style="margin:1rem;">
+            <h3>Practice: Read the Tree</h3>
+            <p>Given a tree diagram, calculate compound probabilities. Use multiplication along branches and addition across paths.</p>
+        </div>
+        <div style="max-width:900px;margin:0 auto;padding:0 1rem;" id="practice-area"></div>
+    </div>
+
+    <!-- ═══════════ PLAY ═══════════ -->
+    <div class="vinculum-mode-content" data-mode="play">
+        <div class="tool-card full-width" style="margin:1rem;">
+            <h3>Play: Probability Challenge</h3>
+            <p>Read compound probability scenarios and calculate the answer. Use tree diagrams if you need help!</p>
+        </div>
+        <div class="score-display" style="margin:0 1rem;">
+            Score: <span id="play-score">0</span> / <span id="play-total">0</span>
+        </div>
+        <div style="max-width:900px;margin:0 auto;padding:0 1rem;" id="play-area"></div>
+    </div>
+
+    <div id="feedback" class="feedback"></div>
+    <div id="sr-announcements" class="sr-only" aria-live="polite" aria-atomic="true"></div>
+
+    <script src="../../vinculum-dashboard.js"></script>
+    <script src="../../vinculum-audio.js"></script>
+    <script src="../../vinculum-layout.js"></script>
+    <script src="../../vinculum-feedback.js"></script>
+    <script src="../../vinculum-guide.js"></script>
+    <script src="../../vinculum-indigenous.js"></script>
+    <script src="../../indigenous-context-panel.js"></script>
+    <script src="../../vinculum-input.js"></script>
+    <script src="../../vinculum-stories.js"></script>
+
+    <script>
+    // ═══════════════════════════════════════════════
+    // CONSTANTS
+    // ═══════════════════════════════════════════════
+    const COLORS = {
+        red: '#E74C3C', blue: '#3498DB', yellow: '#F1C40F',
+        green: '#2ECC71', purple: '#9B59B6', orange: '#E67E22',
+        heads: '#FFD700', tails: '#95A5A6',
+        '1': '#E74C3C', '2': '#3498DB', '3': '#2ECC71', '4': '#F1C40F', '5': '#9B59B6', '6': '#E67E22',
+    };
+
+    const DEVICES = {
+        coin: { outcomes: ['Heads', 'Tails'], probs: [0.5, 0.5], icon: '🪙' },
+        die:  { outcomes: ['1','2','3','4','5','6'], probs: [1/6,1/6,1/6,1/6,1/6,1/6], icon: '🎲' },
+        spinner: { outcomes: ['Red','Blue','Green','Yellow'], probs: [0.25,0.25,0.25,0.25], icon: '🎡' },
+        bag: { outcomes: ['Red','Blue'], probs: [0.5, 0.5], icon: '🎒' },
+    };
+
+    // ═══════════════════════════════════════════════
+    // STATE
+    // ═══════════════════════════════════════════════
+    const state = {
+        event1: 'coin',
+        event2: 'coin',
+        treeData: null,
+        simCounts: {},
+        practiceIndex: 0,
+        playScore: 0,
+        playTotal: 0,
+        playIndex: 0,
+    };
+
+    // ═══════════════════════════════════════════════
+    // DEVICE SELECTION
+    // ═══════════════════════════════════════════════
+    function selectDevice(el) {
+        const event = el.dataset.event;
+        const device = el.dataset.device;
+        state['event' + event] = device;
+        const grid = document.getElementById('event' + event + '-grid');
+        grid.querySelectorAll('.setup-item').forEach(s => s.classList.remove('selected'));
+        el.classList.add('selected');
+    }
+
+    // ═══════════════════════════════════════════════
+    // BUILD TREE
+    // ═══════════════════════════════════════════════
+    function buildTreeData(d1, d2) {
+        const dev1 = DEVICES[d1], dev2 = DEVICES[d2];
+        const branches = [];
+        dev1.outcomes.forEach((o1, i) => {
+            const p1 = dev1.probs[i];
+            dev2.outcomes.forEach((o2, j) => {
+                const p2 = dev2.probs[j];
+                branches.push({
+                    e1: o1, e2: o2,
+                    p1, p2,
+                    compound: p1 * p2,
+                    label: `${o1}, ${o2}`
+                });
+            });
+        });
+        return { dev1, dev2, d1, d2, branches, totalOutcomes: branches.length };
+    }
+
+    // ═══════════════════════════════════════════════
+    // DRAW TREE DIAGRAM ON CANVAS
+    // ═══════════════════════════════════════════════
+    function drawTree(treeData) {
+        const canvas = document.getElementById('tree-canvas');
+        if (!canvas) return;
+        const wrap = canvas.parentElement;
+        const W = wrap.clientWidth || 600;
+        const e1Count = treeData.dev1.outcomes.length;
+        const e2Count = treeData.dev2.outcomes.length;
+        const totalLeaves = e1Count * e2Count;
+        const H = Math.max(500, totalLeaves * 32 + 80);
+        canvas.width = W * 2; canvas.height = H * 2;
+        canvas.style.width = W + 'px'; canvas.style.height = H + 'px';
+        const ctx = canvas.getContext('2d');
+        ctx.scale(2, 2); // Retina
+        ctx.clearRect(0, 0, W, H);
+
+        const rootX = 40, rootY = H / 2;
+        const midX = W * 0.35;
+        const leafX = W * 0.65;
+        const resultX = W * 0.72;
+
+        // Root node
+        ctx.beginPath();
+        ctx.arc(rootX, rootY, 8, 0, Math.PI * 2);
+        ctx.fillStyle = '#667eea';
+        ctx.fill();
+        ctx.fillStyle = 'var(--text)';
+        ctx.font = 'bold 11px Inter, Arial';
+        ctx.textAlign = 'left';
+        ctx.textBaseline = 'middle';
+
+        const e1Spacing = (H - 60) / (e1Count);
+        const branchColors = ['#E74C3C', '#3498DB', '#2ECC71', '#F1C40F', '#9B59B6', '#E67E22'];
+
+        treeData.dev1.outcomes.forEach((o1, i) => {
+            const midY = 30 + e1Spacing * (i + 0.5);
+            const e2Spacing = e1Spacing / (e2Count);
+
+            // Branch 1: root → mid
+            const color1 = branchColors[i % branchColors.length];
+            ctx.beginPath();
+            ctx.moveTo(rootX + 8, rootY);
+            ctx.quadraticCurveTo(rootX + (midX - rootX) * 0.5, rootY, midX - 6, midY);
+            ctx.strokeStyle = color1;
+            ctx.lineWidth = 2.5;
+            ctx.stroke();
+
+            // Probability label on branch 1
+            const bx1 = rootX + (midX - rootX) * 0.4;
+            const by1 = rootY + (midY - rootY) * 0.4 - 8;
+            ctx.fillStyle = color1;
+            ctx.font = 'bold 10px SF Mono, monospace';
+            ctx.textAlign = 'center';
+            ctx.fillText(fracStr(treeData.dev1.probs[i]), bx1, by1);
+
+            // Mid node
+            ctx.beginPath();
+            ctx.arc(midX, midY, 6, 0, Math.PI * 2);
+            ctx.fillStyle = color1;
+            ctx.fill();
+
+            // Mid label
+            ctx.fillStyle = color1;
+            ctx.font = 'bold 11px Inter, Arial';
+            ctx.textAlign = 'center';
+            ctx.fillText(o1, midX, midY - 12);
+
+            treeData.dev2.outcomes.forEach((o2, j) => {
+                const leafY = midY - e1Spacing / 2 + e2Spacing * (j + 0.5);
+                const color2 = branchColors[(j + 2) % branchColors.length];
+
+                // Branch 2: mid → leaf
+                ctx.beginPath();
+                ctx.moveTo(midX + 6, midY);
+                ctx.quadraticCurveTo(midX + (leafX - midX) * 0.5, midY, leafX - 4, leafY);
+                ctx.strokeStyle = color2;
+                ctx.lineWidth = 1.8;
+                ctx.stroke();
+
+                // Probability label on branch 2
+                const bx2 = midX + (leafX - midX) * 0.4;
+                const by2 = midY + (leafY - midY) * 0.4 - 6;
+                ctx.fillStyle = color2;
+                ctx.font = 'bold 9px SF Mono, monospace';
+                ctx.textAlign = 'center';
+                ctx.fillText(fracStr(treeData.dev2.probs[j]), bx2, by2);
+
+                // Leaf node
+                ctx.beginPath();
+                ctx.arc(leafX, leafY, 4, 0, Math.PI * 2);
+                ctx.fillStyle = color2;
+                ctx.fill();
+
+                // Leaf label: outcome + compound probability
+                const compound = treeData.dev1.probs[i] * treeData.dev2.probs[j];
+                ctx.fillStyle = '#888';
+                ctx.font = '10px Inter, Arial';
+                ctx.textAlign = 'left';
+                ctx.fillText(`(${o1}, ${o2})`, resultX, leafY - 5);
+                ctx.fillStyle = '#667eea';
+                ctx.font = 'bold 10px SF Mono, monospace';
+                ctx.fillText(`P = ${fracStr(compound)}`, resultX, leafY + 8);
+            });
+        });
+    }
+
+    function fracStr(decimal) {
+        const fracs = [
+            [1, '1'], [0.5, '1/2'], [1/3, '1/3'], [2/3, '2/3'],
+            [0.25, '1/4'], [0.75, '3/4'], [1/6, '1/6'], [5/6, '5/6'],
+            [1/8, '1/8'], [3/8, '3/8'], [1/12, '1/12'], [1/16, '1/16'],
+            [1/24, '1/24'], [1/36, '1/36'],
+        ];
+        for (const [v, s] of fracs) {
+            if (Math.abs(decimal - v) < 0.0001) return s;
+        }
+        // Try n/d for common denominators
+        for (const d of [2,3,4,5,6,8,10,12,16,24,36]) {
+            const n = Math.round(decimal * d);
+            if (Math.abs(n/d - decimal) < 0.0001 && n > 0) {
+                return n + '/' + d;
+            }
+        }
+        return decimal.toFixed(3);
+    }
+
+    // ═══════════════════════════════════════════════
+    // RUN EXPERIMENT
+    // ═══════════════════════════════════════════════
+    function runExperiment() {
+        state.treeData = buildTreeData(state.event1, state.event2);
+        state.simCounts = {};
+        drawTree(state.treeData);
+        renderOutcomes(state.treeData);
+        animateManipulatives(state.event1, state.event2);
+        if (typeof VinculumAudio !== 'undefined') VinculumAudio.sfx.click();
+    }
+
+    function resetExplore() {
+        state.treeData = null;
+        state.simCounts = {};
+        const canvas = document.getElementById('tree-canvas');
+        if (canvas) {
+            const ctx = canvas.getContext('2d');
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+        }
+        document.getElementById('outcome-list').innerHTML = '<p style="color:var(--text-secondary);font-size:0.85rem;">Outcomes will appear after building the tree.</p>';
+        document.getElementById('stat-outcomes').textContent = '—';
+        document.getElementById('stat-target').textContent = '—';
+        document.getElementById('stat-simulated').textContent = '—';
+        document.getElementById('manip-stage').innerHTML = '<p style="color:var(--text-secondary);">Click <strong>Build Tree</strong> to run the experiment.</p>';
+        document.getElementById('manip-result').textContent = '';
+    }
+
+    function renderOutcomes(tree) {
+        const list = document.getElementById('outcome-list');
+        list.innerHTML = '';
+        tree.branches.forEach(b => {
+            const row = document.createElement('div');
+            row.className = 'outcome-row';
+            row.innerHTML = `
+                <span>${tree.dev1.icon}${b.e1} → ${tree.dev2.icon}${b.e2}</span>
+                <span style="flex:1"></span>
+                <span class="outcome-prob">${fracStr(b.compound)}</span>
+            `;
+            list.appendChild(row);
+        });
+        document.getElementById('stat-outcomes').textContent = tree.totalOutcomes;
+        // Pick a target event
+        const target = tree.branches[0];
+        document.getElementById('stat-target').textContent = fracStr(target.compound);
+    }
+
+    // ═══════════════════════════════════════════════
+    // SIMULATE
+    // ═══════════════════════════════════════════════
+    function runSimulation() {
+        if (!state.treeData) {
+            state.treeData = buildTreeData(state.event1, state.event2);
+            drawTree(state.treeData);
+            renderOutcomes(state.treeData);
+        }
+        const tree = state.treeData;
+        const counts = {};
+        tree.branches.forEach(b => counts[b.label] = 0);
+
+        for (let i = 0; i < 50; i++) {
+            const r1 = weightedRandom(tree.dev1.outcomes, tree.dev1.probs);
+            const r2 = weightedRandom(tree.dev2.outcomes, tree.dev2.probs);
+            const key = `${r1}, ${r2}`;
+            counts[key] = (counts[key] || 0) + 1;
+        }
+        state.simCounts = counts;
+
+        // Update outcome list with sim counts
+        const list = document.getElementById('outcome-list');
+        list.innerHTML = '';
+        tree.branches.forEach(b => {
+            const simCount = counts[b.label] || 0;
+            const simPct = (simCount / 50 * 100).toFixed(0);
+            const row = document.createElement('div');
+            row.className = 'outcome-row';
+            row.innerHTML = `
+                <span>${tree.dev1.icon}${b.e1} → ${tree.dev2.icon}${b.e2}</span>
+                <span style="flex:1"></span>
+                <span style="font-size:0.8rem;color:var(--text-secondary);">${simCount}/50 (${simPct}%)</span>
+                <span class="outcome-prob">${fracStr(b.compound)}</span>
+            `;
+            list.appendChild(row);
+        });
+        const firstTarget = tree.branches[0];
+        const simPctTarget = ((counts[firstTarget.label] || 0) / 50 * 100).toFixed(0);
+        document.getElementById('stat-simulated').textContent = simPctTarget + '%';
+        if (typeof VinculumAudio !== 'undefined') VinculumAudio.sfx.click();
+    }
+
+    function weightedRandom(outcomes, probs) {
+        let r = Math.random(), cum = 0;
+        for (let i = 0; i < outcomes.length; i++) {
+            cum += probs[i];
+            if (r < cum) return outcomes[i];
+        }
+        return outcomes[outcomes.length - 1];
+    }
+
+    // ═══════════════════════════════════════════════
+    // MANIPULATIVE ANIMATIONS
+    // ═══════════════════════════════════════════════
+    function animateManipulatives(d1, d2) {
+        const stage = document.getElementById('manip-stage');
+        stage.innerHTML = '';
+
+        const r1 = weightedRandom(DEVICES[d1].outcomes, DEVICES[d1].probs);
+        const r2 = weightedRandom(DEVICES[d2].outcomes, DEVICES[d2].probs);
+
+        // Build device 1 visual
+        const wrap1 = document.createElement('div');
+        wrap1.style.textAlign = 'center';
+        wrap1.innerHTML = buildMiniDevice(d1, r1);
+        stage.appendChild(wrap1);
+
+        // Arrow between
+        const arrow = document.createElement('div');
+        arrow.innerHTML = '<span style="font-size:1.5rem;color:var(--text-secondary);">→</span>';
+        stage.appendChild(arrow);
+
+        // Build device 2 visual
+        const wrap2 = document.createElement('div');
+        wrap2.style.textAlign = 'center';
+        wrap2.innerHTML = buildMiniDevice(d2, r2);
+        stage.appendChild(wrap2);
+
+        document.getElementById('manip-result').innerHTML = `Result: <strong>${r1}</strong> then <strong>${r2}</strong> → P = <span style="color:var(--cyan,#00d4ff)">${fracStr(findCompound(r1, r2))}</span>`;
+    }
+
+    function findCompound(r1, r2) {
+        if (!state.treeData) return 0;
+        const b = state.treeData.branches.find(b => b.e1 === r1 && b.e2 === r2);
+        return b ? b.compound : 0;
+    }
+
+    function buildMiniDevice(device, result) {
+        if (device === 'coin') {
+            return `<div style="text-align:center">
+                <div class="coin-wrap">
+                    <div class="coin-inner">
+                        <div class="coin-face coin-heads">H</div>
+                        <div class="coin-face coin-tails">T</div>
+                    </div>
+                </div>
+                <div style="margin-top:6px;font-weight:700;font-size:0.85rem;">${result}</div>
+            </div>`;
+        }
+        if (device === 'die') {
+            return `<div style="text-align:center">
+                <div style="width:50px;height:50px;background:linear-gradient(145deg,#fff,#f0f0f0);border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:1.5rem;font-weight:900;box-shadow:0 3px 8px rgba(0,0,0,0.2);margin:0 auto;">${result}</div>
+                <div style="margin-top:6px;font-weight:700;font-size:0.85rem;">Rolled ${result}</div>
+            </div>`;
+        }
+        if (device === 'spinner') {
+            const colors = { Red: '#E74C3C', Blue: '#3498DB', Green: '#2ECC71', Yellow: '#F1C40F' };
+            return `<div style="text-align:center">
+                <div style="width:50px;height:50px;border-radius:50%;background:${colors[result] || '#667eea'};margin:0 auto;box-shadow:0 3px 8px rgba(0,0,0,0.2);display:flex;align-items:center;justify-content:center;color:white;font-weight:700;font-size:0.75rem;">${result}</div>
+                <div style="margin-top:6px;font-weight:700;font-size:0.85rem;">${result}</div>
+            </div>`;
+        }
+        if (device === 'bag') {
+            const colors = { Red: '#E74C3C', Blue: '#3498DB' };
+            return `<div style="text-align:center">
+                <div class="marble-sm" style="background:radial-gradient(circle at 35% 35%, ${lighten(colors[result] || '#E74C3C')}, ${colors[result] || '#E74C3C'});margin:0 auto;"></div>
+                <div style="margin-top:6px;font-weight:700;font-size:0.85rem;">${result}</div>
+            </div>`;
+        }
+        return '';
+    }
+
+    function lighten(hex) {
+        const r = Math.min(255, parseInt(hex.slice(1,3),16) + 60);
+        const g = Math.min(255, parseInt(hex.slice(3,5),16) + 60);
+        const b = Math.min(255, parseInt(hex.slice(5,7),16) + 60);
+        return `rgb(${r},${g},${b})`;
+    }
+
+    // ═══════════════════════════════════════════════
+    // PRACTICE MODE
+    // ═══════════════════════════════════════════════
+    const practiceProblems = [
+        // Emergent
+        { diff: 'emergent', q: 'You flip a coin AND roll a die. How many total outcomes are possible?', answer: '12', hint: 'Coin has 2 outcomes × Die has 6 outcomes', explain: '2 × 6 = 12 total outcomes in the sample space.' },
+        { diff: 'emergent', q: 'You flip two coins. How many outcomes are in the sample space?', answer: '4', hint: '2 outcomes × 2 outcomes', explain: 'HH, HT, TH, TT = 4 outcomes. 2 × 2 = 4.' },
+        { diff: 'emergent', q: 'A spinner has 3 equal sections and you flip a coin. How many combined outcomes?', answer: '6', hint: '3 spinner × 2 coin', explain: '3 × 2 = 6 combined outcomes.' },
+        { diff: 'emergent', q: 'You roll two dice. How many total outcomes are in the sample space?', answer: '36', hint: '6 × 6', explain: '6 outcomes on die 1 × 6 outcomes on die 2 = 36 total.' },
+
+        // Proficient
+        { diff: 'proficient', q: 'You flip a coin and roll a die. What is P(Heads AND 3)?', answer: '1/12', hint: 'P(H) × P(3) = ?', explain: 'P(Heads) = 1/2, P(3) = 1/6. Since independent: 1/2 × 1/6 = 1/12.' },
+        { diff: 'proficient', q: 'You flip two coins. What is P(both Heads)?', answer: '1/4', hint: 'P(H) × P(H)', explain: '1/2 × 1/2 = 1/4. The tree shows HH is 1 of 4 equally likely outcomes.' },
+        { diff: 'proficient', q: 'You spin a 4-section spinner and flip a coin. What is P(Red AND Tails)?', answer: '1/8', hint: 'P(Red) × P(Tails)', explain: '1/4 × 1/2 = 1/8. Multiply along the branch: Red → Tails.' },
+        { diff: 'proficient', q: 'You flip a coin and roll a die. What is P(Tails AND even number)?', answer: '1/4', hint: 'P(T) × P(even) = 1/2 × 3/6', explain: 'P(Tails) = 1/2, P(even) = 3/6 = 1/2. Product: 1/2 × 1/2 = 1/4.' },
+        { diff: 'proficient', q: 'Two coins are flipped. What is P(at least one Head)?', answer: '3/4', hint: 'Easier: 1 − P(no Heads)', explain: 'P(TT) = 1/4. P(at least one H) = 1 − 1/4 = 3/4. Or count: HH, HT, TH = 3 out of 4.' },
+
+        // Advanced
+        { diff: 'advanced', q: 'You roll two dice. What is P(sum = 7)?', answer: '1/6', hint: 'List pairs that sum to 7', explain: 'Pairs: (1,6)(2,5)(3,4)(4,3)(5,2)(6,1) = 6 out of 36 = 1/6.' },
+        { diff: 'advanced', q: 'A bag has 3 red and 2 blue marbles. You draw twice WITH replacement. P(both red)?', answer: '9/25', hint: 'P(R) × P(R) since replaced', explain: '3/5 × 3/5 = 9/25. With replacement, events are independent.' },
+        { diff: 'advanced', q: 'You flip 3 coins. What is P(exactly 2 Heads)?', answer: '3/8', hint: 'List outcomes with exactly 2 H', explain: 'HHT, HTH, THH = 3 outcomes out of 8 total. P = 3/8.' },
+        { diff: 'advanced', q: 'Die and spinner (4 equal). P(odd AND blue)?', answer: '1/8', hint: 'P(odd) × P(blue)', explain: 'P(odd) = 3/6 = 1/2. P(Blue) = 1/4. Product: 1/2 × 1/4 = 1/8.' },
+        { diff: 'advanced', q: 'You roll two dice. What is P(doubles — both show same number)?', answer: '1/6', hint: 'How many pairs match out of 36?', explain: '(1,1)(2,2)(3,3)(4,4)(5,5)(6,6) = 6 pairs. 6/36 = 1/6.' },
+    ];
+
+    function renderPractice() {
+        const diff = document.getElementById('difficulty-select').value;
+        const available = practiceProblems.filter(p => p.diff === diff || diff === 'proficient' && p.diff !== 'advanced');
+        const idx = state.practiceIndex % available.length;
+        const prob = available[idx];
+
+        const area = document.getElementById('practice-area');
+        area.innerHTML = '';
+
+        const card = document.createElement('div');
+        card.className = 'question-card';
+        card.innerHTML = `
+            <h4>Question ${idx + 1} of ${available.length}</h4>
+            <p class="question-text">${prob.q}</p>
+            <p style="color:var(--text-secondary);font-size:0.85rem;font-style:italic;">💡 Hint: ${prob.hint}</p>
+            <div class="btn-row" style="align-items:center;">
+                <input type="text" class="answer-input" id="practice-answer" placeholder="e.g., 1/12 or 0.083" autocomplete="off">
+                <button class="action-btn" onclick="checkPractice()">Check</button>
+            </div>
+            <div id="practice-feedback"></div>
+            <div class="btn-row">
+                <button class="action-btn secondary" id="next-practice" style="display:none;" onclick="nextPractice()">Next →</button>
+                <button class="action-btn secondary" onclick="showPracticeTree()">🌳 Show Tree</button>
+            </div>
+            <div id="practice-tree-area"></div>
+        `;
+        area.appendChild(card);
+
+        // Store current problem
+        state.currentPracticeProblem = prob;
+
+        document.getElementById('practice-answer').addEventListener('keydown', e => {
+            if (e.key === 'Enter') checkPractice();
+        });
+    }
+
+    function checkPractice() {
+        const input = document.getElementById('practice-answer').value.trim().toLowerCase().replace(/\s/g, '');
+        const prob = state.currentPracticeProblem;
+        const fb = document.getElementById('practice-feedback');
+
+        let correct = input === prob.answer;
+        if (!correct) {
+            // Check decimal equivalence
+            const inputVal = evalFraction(input);
+            const ansVal = evalFraction(prob.answer);
+            if (!isNaN(inputVal) && !isNaN(ansVal)) {
+                correct = Math.abs(inputVal - ansVal) < 0.01;
+            }
+        }
+
+        fb.innerHTML = `<div class="feedback-box ${correct ? 'correct' : 'incorrect'}">
+            <p style="font-weight:700;font-size:1.1rem;">${correct ? '✓ Correct!' : '✗ Not quite. Answer: ' + prob.answer}</p>
+            <p>${prob.explain}</p>
+        </div>`;
+
+        if (typeof VinculumAudio !== 'undefined') {
+            correct ? VinculumAudio.correct() : VinculumAudio.incorrect();
+        }
+
+        document.getElementById('next-practice').style.display = 'inline-block';
+    }
+
+    function evalFraction(str) {
+        if (str.includes('/')) {
+            const [n, d] = str.split('/').map(Number);
+            return d !== 0 ? n / d : NaN;
+        }
+        return parseFloat(str);
+    }
+
+    function nextPractice() {
+        state.practiceIndex++;
+        renderPractice();
+    }
+
+    function showPracticeTree() {
+        const area = document.getElementById('practice-tree-area');
+        const prob = state.currentPracticeProblem;
+        // Build a relevant tree based on the problem
+        let d1 = 'coin', d2 = 'coin';
+        if (prob.q.includes('die') || prob.q.includes('dice') || prob.q.includes('Die')) {
+            d1 = 'die';
+            if (prob.q.includes('two dice') || prob.q.includes('Two dice') || prob.q.includes('roll two')) d2 = 'die';
+            else if (prob.q.includes('coin')) d2 = 'coin';
+            else if (prob.q.includes('spinner')) d2 = 'spinner';
+            else d2 = 'coin';
+        } else if (prob.q.includes('spinner')) {
+            d1 = 'spinner';
+            d2 = prob.q.includes('coin') ? 'coin' : 'spinner';
+        } else if (prob.q.includes('bag') || prob.q.includes('marble')) {
+            d1 = 'bag'; d2 = 'bag';
+        } else if (prob.q.includes('3 coins') || prob.q.includes('three coins')) {
+            d1 = 'coin'; d2 = 'coin';
+        }
+        area.innerHTML = `<div class="tree-canvas-wrap" style="margin-top:1rem;"><canvas id="practice-tree-canvas" width="600" height="400"></canvas></div>`;
+        const tree = buildTreeData(d1, d2);
+        // Draw on the practice canvas
+        const canvas = document.getElementById('practice-tree-canvas');
+        const wrap = canvas.parentElement;
+        const W = wrap.clientWidth || 600;
+        const e1Count = tree.dev1.outcomes.length;
+        const e2Count = tree.dev2.outcomes.length;
+        const totalLeaves = e1Count * e2Count;
+        const H = Math.max(350, totalLeaves * 28 + 60);
+        canvas.width = W * 2; canvas.height = H * 2;
+        canvas.style.width = W + 'px'; canvas.style.height = H + 'px';
+        const ctx = canvas.getContext('2d');
+        ctx.scale(2, 2);
+        // Reuse draw logic (simplified inline)
+        drawTreeOnCtx(ctx, tree, W, H);
+    }
+
+    function drawTreeOnCtx(ctx, tree, W, H) {
+        const rootX = 30, rootY = H / 2;
+        const midX = W * 0.32;
+        const leafX = W * 0.62;
+        const resultX = W * 0.68;
+        const e1Count = tree.dev1.outcomes.length;
+        const e2Count = tree.dev2.outcomes.length;
+        const branchColors = ['#E74C3C', '#3498DB', '#2ECC71', '#F1C40F', '#9B59B6', '#E67E22'];
+        const e1Spacing = (H - 40) / e1Count;
+
+        ctx.beginPath();
+        ctx.arc(rootX, rootY, 6, 0, Math.PI * 2);
+        ctx.fillStyle = '#667eea';
+        ctx.fill();
+
+        tree.dev1.outcomes.forEach((o1, i) => {
+            const midY = 20 + e1Spacing * (i + 0.5);
+            const e2Sp = e1Spacing / e2Count;
+            const c1 = branchColors[i % branchColors.length];
+
+            ctx.beginPath();
+            ctx.moveTo(rootX + 6, rootY);
+            ctx.quadraticCurveTo(rootX + (midX - rootX) * 0.5, rootY, midX - 4, midY);
+            ctx.strokeStyle = c1; ctx.lineWidth = 2; ctx.stroke();
+
+            const bx1 = rootX + (midX - rootX) * 0.4;
+            const by1 = rootY + (midY - rootY) * 0.4 - 6;
+            ctx.fillStyle = c1; ctx.font = 'bold 9px SF Mono'; ctx.textAlign = 'center';
+            ctx.fillText(fracStr(tree.dev1.probs[i]), bx1, by1);
+
+            ctx.beginPath(); ctx.arc(midX, midY, 4, 0, Math.PI * 2); ctx.fillStyle = c1; ctx.fill();
+            ctx.fillStyle = c1; ctx.font = 'bold 10px Inter'; ctx.textAlign = 'center';
+            ctx.fillText(o1, midX, midY - 9);
+
+            tree.dev2.outcomes.forEach((o2, j) => {
+                const leafY = midY - e1Spacing / 2 + e2Sp * (j + 0.5);
+                const c2 = branchColors[(j + 2) % branchColors.length];
+                ctx.beginPath();
+                ctx.moveTo(midX + 4, midY);
+                ctx.quadraticCurveTo(midX + (leafX - midX) * 0.5, midY, leafX - 3, leafY);
+                ctx.strokeStyle = c2; ctx.lineWidth = 1.5; ctx.stroke();
+
+                const bx2 = midX + (leafX - midX) * 0.4;
+                const by2 = midY + (leafY - midY) * 0.4 - 5;
+                ctx.fillStyle = c2; ctx.font = 'bold 8px SF Mono'; ctx.textAlign = 'center';
+                ctx.fillText(fracStr(tree.dev2.probs[j]), bx2, by2);
+
+                ctx.beginPath(); ctx.arc(leafX, leafY, 3, 0, Math.PI * 2); ctx.fillStyle = c2; ctx.fill();
+
+                const compound = tree.dev1.probs[i] * tree.dev2.probs[j];
+                ctx.fillStyle = '#888'; ctx.font = '9px Inter'; ctx.textAlign = 'left';
+                ctx.fillText(`(${o1},${o2})`, resultX, leafY - 4);
+                ctx.fillStyle = '#667eea'; ctx.font = 'bold 9px SF Mono';
+                ctx.fillText(fracStr(compound), resultX, leafY + 7);
+            });
+        });
+    }
+
+    // ═══════════════════════════════════════════════
+    // PLAY MODE
+    // ═══════════════════════════════════════════════
+    const playScenarios = [
+        { q: 'Flip 2 coins. P(both Tails)?', answer: '1/4', choices: ['1/2', '1/4', '1/8', '3/4'] },
+        { q: 'Coin + die. P(Heads AND 6)?', answer: '1/12', choices: ['1/6', '1/12', '1/2', '1/8'] },
+        { q: 'Two dice. How many outcomes in sample space?', answer: '36', choices: ['12', '24', '36', '6'] },
+        { q: 'Coin + 4-spinner. P(Tails AND Green)?', answer: '1/8', choices: ['1/4', '1/8', '1/2', '1/6'] },
+        { q: '2 coins. P(at least 1 Head)?', answer: '3/4', choices: ['1/2', '1/4', '3/4', '1'] },
+        { q: 'Coin + die. Total outcomes?', answer: '12', choices: ['8', '12', '6', '10'] },
+        { q: 'Die + 4-spinner. P(1 AND Red)?', answer: '1/24', choices: ['1/24', '1/10', '1/6', '1/12'] },
+        { q: 'Two dice. P(both show 6)?', answer: '1/36', choices: ['1/6', '1/12', '1/36', '1/18'] },
+        { q: '2 coins. P(HT in that order)?', answer: '1/4', choices: ['1/2', '1/4', '1/8', '3/4'] },
+        { q: 'Die + coin. P(even AND Tails)?', answer: '1/4', choices: ['1/4', '1/6', '1/3', '1/12'] },
+        { q: 'Two 4-spinners. Total outcomes?', answer: '16', choices: ['8', '12', '16', '4'] },
+        { q: '2 bags (3R, 2B each). P(both Red)?', answer: '9/25', choices: ['9/25', '6/10', '3/5', '1/4'] },
+        { q: 'Coin flipped 3 times. Sample space size?', answer: '8', choices: ['6', '8', '3', '12'] },
+        { q: 'Die + die. P(sum = 2)?', answer: '1/36', choices: ['1/6', '1/12', '1/36', '2/36'] },
+        { q: 'Coin + die. P(Heads AND odd)?', answer: '1/4', choices: ['1/4', '3/12', '1/6', '1/2'] },
+    ];
+
+    function renderPlay() {
+        const area = document.getElementById('play-area');
+        area.innerHTML = '';
+
+        if (state.playIndex >= playScenarios.length) {
+            const pct = state.playTotal > 0 ? Math.round(state.playScore / state.playTotal * 100) : 0;
+            area.innerHTML = `<div class="question-card">
+                <h4>🎉 Challenge Complete!</h4>
+                <p class="question-text">You scored ${state.playScore} out of ${state.playTotal} (${pct}%)</p>
+                <div class="btn-row"><button class="action-btn" onclick="resetPlay()">Play Again</button></div>
+            </div>`;
+            return;
+        }
+
+        const s = playScenarios[state.playIndex];
+        const shuffled = [...s.choices].sort(() => Math.random() - 0.5);
+
+        const card = document.createElement('div');
+        card.className = 'question-card';
+        card.innerHTML = `
+            <h4>Question ${state.playIndex + 1} of ${playScenarios.length}</h4>
+            <p class="question-text">${s.q}</p>
+            <div class="setup-grid" id="play-choices"></div>
+            <div id="play-feedback"></div>
+            <div class="btn-row"><button class="action-btn secondary" id="play-next" style="display:none;" onclick="nextPlay()">Next →</button></div>
+        `;
+        area.appendChild(card);
+
+        const grid = document.getElementById('play-choices');
+        shuffled.forEach(choice => {
+            const btn = document.createElement('div');
+            btn.className = 'setup-item';
+            btn.textContent = choice;
+            btn.style.fontSize = '1.1rem';
+            btn.addEventListener('click', () => checkPlay(choice, s));
+            grid.appendChild(btn);
+        });
+    }
+
+    function checkPlay(choice, scenario) {
+        state.playTotal++;
+        const correct = choice === scenario.answer;
+        if (correct) state.playScore++;
+
+        document.getElementById('play-score').textContent = state.playScore;
+        document.getElementById('play-total').textContent = state.playTotal;
+
+        const fb = document.getElementById('play-feedback');
+        fb.innerHTML = `<div class="feedback-box ${correct ? 'correct' : 'incorrect'}">
+            <p style="font-weight:700;">${correct ? '✓ Correct!' : '✗ The answer is ' + scenario.answer}</p>
+        </div>`;
+
+        if (typeof VinculumAudio !== 'undefined') {
+            correct ? VinculumAudio.correct() : VinculumAudio.incorrect();
+        }
+
+        // Disable choices
+        document.querySelectorAll('#play-choices .setup-item').forEach(btn => {
+            btn.style.pointerEvents = 'none';
+            if (btn.textContent === scenario.answer) {
+                btn.style.background = '#2ECC71';
+                btn.style.color = 'white';
+                btn.style.borderColor = '#2ECC71';
+            } else if (btn.textContent === choice && !correct) {
+                btn.style.background = '#E74C3C';
+                btn.style.color = 'white';
+                btn.style.borderColor = '#E74C3C';
+            }
+        });
+
+        document.getElementById('play-next').style.display = 'inline-block';
+    }
+
+    function nextPlay() {
+        state.playIndex++;
+        renderPlay();
+    }
+
+    function resetPlay() {
+        state.playScore = 0;
+        state.playTotal = 0;
+        state.playIndex = 0;
+        document.getElementById('play-score').textContent = '0';
+        document.getElementById('play-total').textContent = '0';
+        renderPlay();
+    }
+
+    // ═══════════════════════════════════════════════
+    // MODE SWITCHING
+    // ═══════════════════════════════════════════════
+    document.querySelectorAll('.vinculum-mode-tab').forEach(tab => {
+        tab.addEventListener('click', function() {
+            switchMode(this.getAttribute('data-mode'));
+        });
+    });
+
+    function switchMode(mode) {
+        document.querySelectorAll('.vinculum-mode-content').forEach(el => el.style.display = 'none');
+        document.querySelectorAll('.vinculum-mode-tab').forEach(tab => tab.classList.remove('active', 'active-explore', 'active-practice', 'active-play'));
+        const content = document.querySelector(`.vinculum-mode-content[data-mode="${mode}"]`);
+        if (content) content.style.display = 'block';
+        const tab = document.querySelector(`.vinculum-mode-tab[data-mode="${mode}"]`);
+        if (tab) {
+            tab.classList.add('active');
+            tab.classList.add('active-' + mode);
+        }
+
+        if (mode === 'practice') renderPractice();
+        else if (mode === 'play') renderPlay();
+    }
+
+    // Initialize
+    switchMode('explore');
+    </script>
+</body>
+</html>
